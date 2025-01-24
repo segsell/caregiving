@@ -7,8 +7,8 @@ from caregiving.model.shared import (
     is_child_age_4_to_6,
     is_child_age_7_to_9,
     is_full_time,
-    is_not_working,
     is_part_time,
+    is_unemployed,
 )
 
 
@@ -120,27 +120,40 @@ def inverse_marginal_utility(
 
 
 def utility_of_labor(choice, education, params):
-    """Reference category is full-time work."""
+    """Compute utility of labor.
+
+    Interacted with utility of consumption above.
+
+    Reference category is 'retired'."""
+    util_unemployed = (
+        params["util_cons_unemployed_low_educ"] * (1 - education)
+        + params["util_cons_unemployed_high_educ"] * education
+    )
     util_part_time = (
-        params["dis_util_pt_work_low"] * (1 - education)
-        + params["dis_util_pt_work_high"] * education
+        params["util_cons_part_time_low_educ"] * (1 - education)
+        + params["util_cons_part_time_high_educ"] * education
+    )
+    util_full_time = (
+        params["util_cons_full_time_low_educ"] * (1 - education)
+        + params["util_cons_full_time_high_educ"] * education
     )
 
-    util_not_working = (
-        params["dis_util_unemployed_low"] * (1 - education)
-        + params["dis_util_unemployed_high"] * education
-    )
-
-    not_working = is_not_working(choice)
+    unemployed = is_unemployed(choice)
     working_part_time = is_part_time(choice)
+    working_full_time = is_full_time(choice)
 
-    exp_factor = util_not_working * not_working + util_part_time * working_part_time
-
-    return exp_factor
+    return (
+        util_unemployed * unemployed
+        + util_part_time * working_part_time
+        + util_full_time * working_full_time
+    )
 
 
 def utility_of_labor_and_caregiving(choice, age_youngest_child, education, params):
-    """Compute utility of labor and caregiving."""
+    """Compute utility of labor and caregiving.
+
+    Reference category is 'retired'.
+    """
     util_unemployed_low_educ = (
         params["util_unemployed_low_educ_constant"]
         + params["util_unemployed_low_educ_child_bin_one"]
@@ -197,7 +210,7 @@ def utility_of_labor_and_caregiving(choice, age_youngest_child, education, param
         * is_child_age_7_to_9(age_youngest_child)
     )
 
-    not_working = is_not_working(choice)
+    not_working = is_unemployed(choice)
     working_part_time = is_part_time(choice)
     working_full_time = is_full_time(choice)
 

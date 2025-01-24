@@ -7,10 +7,6 @@ import jax
 import jax.numpy as jnp
 import pandas as pd
 import pytask
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.simulation.sim_utils import create_simulation_df
-from dcegm.simulation.simulate import simulate_all_periods
-from dcegm.solve import get_solve_func_for_model
 from pytask import Product
 
 from caregiving.config import BLD
@@ -21,10 +17,10 @@ from caregiving.model.shared import (
     FORMAL_CARE,
     FULL_TIME,
     INFORMAL_CARE,
-    NO_WORK,
-    OUT_OF_LABOR,
+    NOT_WORKING,
     PART_TIME,
     RETIREMENT,
+    UNEMPLOYED,
 )
 from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.task_specify_model import get_options_dict
@@ -41,6 +37,10 @@ from caregiving.simulation.simulate import (
     simulate_moments,
 )
 from caregiving.utils import load_dict_from_pickle, save_dict_to_pickle
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.simulation.sim_utils import create_simulation_df
+from dcegm.simulation.simulate import simulate_all_periods
+from dcegm.solve import get_solve_func_for_model
 
 jax.config.update("jax_enable_x64", True)  # noqa: FBT003
 
@@ -240,7 +240,7 @@ def task_debugging(
     share_not_working_by_age = get_share_by_age(
         arr,
         ind=idx,
-        choice=NO_WORK,
+        choice=UNEMPLOYED,
     )  # 15
     share_part_time_by_age = get_share_by_age(
         arr,
@@ -260,7 +260,7 @@ def task_debugging(
     share_out_of_labor_force = get_share_by_age(
         arr,
         ind=idx,
-        choice=OUT_OF_LABOR,
+        choice=NOT_WORKING,
     )  # 15
 
     share_informal_care_by_age_bin = get_share_by_type_by_age_bin(  # noqa: F841
@@ -282,7 +282,7 @@ def task_debugging(
     share_not_working_informal_care_by_age_bin = (  # noqa: F841
         get_share_by_type_by_age_bin(
             ind=idx,
-            choice=NO_WORK,
+            choice=UNEMPLOYED,
             care_type=INFORMAL_CARE,
             age_bins=AGE_BINS_SIM,
         )
