@@ -38,12 +38,12 @@ from caregiving.model.shared import (
     NO_CARE,
     NO_COMBINATION_CARE,
     NO_INFORMAL_CARE,
-    NO_WORK,
-    OUT_OF_LABOR,
+    NOT_WORKING,
     PART_TIME,
     PURE_INFORMAL_CARE,
     RETIREMENT,
     RETIREMENT_AGE,
+    UNEMPLOYED,
 )
 from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.task_specify_model import get_options_dict

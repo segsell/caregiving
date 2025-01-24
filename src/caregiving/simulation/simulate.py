@@ -23,7 +23,7 @@ from caregiving.model.shared import (
     NO_CARE,
     NO_COMBINATION_CARE,
     NO_INFORMAL_CARE,
-    OUT_OF_LABOR,
+    NOT_WORKING,
     PART_TIME,
     PURE_INFORMAL_CARE,
     RETIREMENT,
@@ -119,7 +119,7 @@ def simulate_moments(arr, idx):
     share_out_of_labor_by_age = get_share_by_age(
         arr,
         ind=idx,
-        choice=OUT_OF_LABOR,
+        choice=NOT_WORKING,
     )
     share_working_part_time_by_age = get_share_by_age(
         arr,
@@ -232,7 +232,7 @@ def simulate_moments(arr, idx):
     share_not_working_informal_care_by_age_bin = get_share_by_type_by_age_bin(
         arr,
         ind=idx,
-        choice=OUT_OF_LABOR,
+        choice=NOT_WORKING,
         care_type=INFORMAL_CARE,
         age_bins=AGE_BINS_SIM,
     )
@@ -336,19 +336,19 @@ def simulate_moments(arr, idx):
     no_work_to_no_work = get_transition(
         arr,
         ind=idx,
-        lagged_choice=OUT_OF_LABOR,
-        current_choice=OUT_OF_LABOR,
+        lagged_choice=NOT_WORKING,
+        current_choice=NOT_WORKING,
     )
     no_work_to_part_time = get_transition(
         arr,
         ind=idx,
-        lagged_choice=OUT_OF_LABOR,
+        lagged_choice=NOT_WORKING,
         current_choice=PART_TIME,
     )
     no_work_to_full_time = get_transition(
         arr,
         ind=idx,
-        lagged_choice=OUT_OF_LABOR,
+        lagged_choice=NOT_WORKING,
         current_choice=FULL_TIME,
     )
 
@@ -356,7 +356,7 @@ def simulate_moments(arr, idx):
         arr,
         ind=idx,
         lagged_choice=PART_TIME,
-        current_choice=OUT_OF_LABOR,
+        current_choice=NOT_WORKING,
     )
     part_time_to_part_time = get_transition(
         arr,
@@ -375,7 +375,7 @@ def simulate_moments(arr, idx):
         arr,
         ind=idx,
         lagged_choice=FULL_TIME,
-        current_choice=OUT_OF_LABOR,
+        current_choice=NOT_WORKING,
     )
     full_time_to_part_time = get_transition(
         arr,
@@ -1157,7 +1157,7 @@ def create_simulation_df_from_dict(sim_dict):
 
 
 def _assign_working_hours_vectorized(choices):
-    no_work_mask = jnp.isin(choices, OUT_OF_LABOR)
+    no_work_mask = jnp.isin(choices, NOT_WORKING)
     part_time_mask = jnp.isin(choices, PART_TIME)
     full_time_mask = jnp.isin(choices, FULL_TIME)
 

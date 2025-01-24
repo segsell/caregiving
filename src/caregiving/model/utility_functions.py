@@ -1,24 +1,15 @@
 """Utility functions for the model."""
 
-from typing import Any
-
 import jax.numpy as jnp
 
 from caregiving.model.shared import (
-    is_bad_health,
-    is_combination_care,
-    is_formal_care,
+    is_child_age_0_to_3,
+    is_child_age_4_to_6,
+    is_child_age_7_to_9,
     is_full_time,
-    is_informal_care,
-    is_no_care,
-    is_no_informal_care,
     is_part_time,
-    is_pure_informal_care,
+    is_unemployed,
 )
-
-CONSUMPTION_EQUIVALENCE_SCALE = 0.5
-
-# =====================================================================================
 
 
 def create_utility_functions():
@@ -30,14 +21,6 @@ def create_utility_functions():
     }
 
 
-def create_final_period_utility_functions():
-    """Create dict of utility functions for the final period."""
-    return {
-        "utility": utility_final_consume_all,
-        "marginal_utility": marginal_utility_final_consume_all,
-    }
-
-
 # =====================================================================================
 # Per-period utility
 # =====================================================================================
@@ -46,41 +29,14 @@ def create_final_period_utility_functions():
 def utility_func(
     consumption: jnp.array,
     choice: int,
-    period: int,
-    mother_health: int,
-    # has_sibling: int,
-    # options: dict,
+    has_partner: int,
+    n_children: int,
+    age_youngest_child: int,
+    education: int,
     params: dict,
+    options: dict,
 ) -> jnp.array:
-    """Computes the agent's current utility based on a CRRA utility function.
-
-    working_hours_weekly = (
-        part_time * WEEKLY_HOURS_PART_TIME + full_time * WEEKLY_HOURS_FULL_TIME
-    )
-    # From SOEP data we know that the 25% and 75% percentile in the care hours
-    # distribution are 7 and 21 hours per week in a comparative sample.
-    # We use these discrete mass-points as discrete choices of non-intensive and
-    # intensive informal care.
-    # In SHARE, respondents inform about the frequency with which they provide
-    # informal care. We use this information to proxy the care provision in the data.
-    caregiving_hours_weekly = informal_care * WEEKLY_INTENSIVE_INFORMAL_HOURS
-    leisure_hours = (
-        (TOTAL_WEEKLY_HOURS - working_hours_weekly - caregiving_hours_weekly)
-        * 4.33  # month
-        * 12  # year
-    )
-
-    # age is a proxy for health impacting the taste for free-time.
-    utility_leisure = (
-        (
-            params["utility_leisure_constant"]
-            + params["utility_leisure_age"] * (age - MIN_AGE)
-        )
-        * jnp.log(leisure_hours)
-        / 4_000
-    )
-
-    total_yearly_hours = TOTAL_WEEKLY_HOURS * N_WEEKS * N_MONTHS
+    """Compute the per-period utility based on a CRRA utility function.
 
     Args:
         period (int): Current period.
@@ -112,213 +68,171 @@ def utility_func(
     """
     rho = params["rho"]
 
-    # no_care = is_no_care(choice)
-    # no_informal_care = is_no_informal_care(choice)
-    # combination_care = is_combination_care(choice)
+    eta = utility_of_labor(choice, education, params)
 
-    # pure_informal_care = is_pure_informal_care(choice)
-    # pure_formal_care = is_pure_formal_care(choice)
+    cons_scale = consumption_scale(has_partner, n_children)
+    utility_consumption = ((consumption / cons_scale) ** (1 - rho) - 1) / (1 - rho)
 
-    informal_care = is_informal_care(choice)
-    part_time = is_part_time(choice)
-    full_time = is_full_time(choice)
+    zeta = utility_of_labor_and_caregiving(
+        choice, age_youngest_child, education, params
+    )
 
-    mother_bad_health = is_bad_health(mother_health)
+    return utility_consumption * jnp.exp(eta) + jnp.exp(zeta)
 
-    # working_hours_weekly = (
-    #     part_time * WEEKLY_HOURS_PART_TIME + full_time * WEEKLY_HOURS_FULL_TIME
-    # )
-    # From SOEP data we know that the 25% and 75% percentile in the care hours
-    # distribution are 7 and 21 hours per week in a comparative sample.
-    # We use these discrete mass-points as discrete choices of non-intensive and
-    # intensive informal care.
-    # In SHARE, respondents inform about the frequency with which they provide
-    # informal care. We use this information to proxy the care provision in the data.
-    # caregiving_hours_weekly = informal_care * WEEKLY_INTENSIVE_INFORMAL_HOURS
-    # leisure_hours = (
-    #     (TOTAL_WEEKLY_HOURS - working_hours_weekly)
-    #     * N_WEEKS  # month
-    #     * N_MONTHS  # year
-    # )
 
-    # age is a proxy for health impacting the taste for free-time.
-    # utility_leisure = (
-    #     params["utility_leisure_constant"]
-    #     + params["utility_leisure_age"] * period
-    #     + params["utility_leisure_age_squared"] * (period**2)
-    # ) * jnp.log(leisure_hours)
+def marginal_utility(consumption, has_partner, n_children, choice, education, params):
+    """Computes the marginal utility of consumption and labor.
 
-    utility_consumption = (
-        (consumption * CONSUMPTION_EQUIVALENCE_SCALE) ** (1 - rho) - 1
-    ) / (1 - rho)
+    consumption ** (-params["rho"])
+    marginal utility = (consumption^(-rho)) * (cons_scale^(rho-1)).
+    """
+    rho = params["rho"]
 
-    # disutility_working = (
-    #     params["disutility_part_time_constant"] * part_time
-    #     + params["disutility_part_time_age"] * period * part_time
-    #     + params["disutility_part_time_age_squared"] * (period**2) * part_time
-    #     + params["disutility_full_time_constant"] * full_time
-    #     + params["disutility_full_time_age"] * period * full_time
-    #     + params["disutility_full_time_age_squared"] * (period**2) * full_time
-    # )
+    eta = utility_of_labor(choice, education, params)
 
-    disutility_working = (
-        params["disutility_part_time_constant"] * part_time
-        + params["disutility_full_time_constant"] * full_time
-        #
-        # + params["disutility_part_time_age_40_50"]
-        # * period
-        # * part_time
-        # * is_in_age_range(period, 0, 10)
-        # + params["disutility_full_time_age_40_50"]
-        # * period
-        # * full_time
-        # * is_in_age_range(period, 0, 10)
-        # + params["disutility_part_time_age_50_plus"]
-        # * period
-        # * part_time
-        # * is_in_age_range(period, 10, 40)
-        # + params["disutility_full_time_age_50_plus"]
-        # * period
-        # * full_time
-        # * is_in_age_range(period, 10, 40)
-        # + params["disutility_part_time_age_squared_50_plus"]
-        # * (period**2)
-        # * part_time
-        # * is_in_age_range(period, 10, 40)
-        # + params["disutility_full_time_age_squared_50_plus"]
-        # * (period**2)
-        # * full_time
-        # * is_in_age_range(period, 10, 40)
-        + params["disutility_part_time_age"] * period * part_time
-        + params["disutility_full_time_age"] * period * full_time
-        + params["disutility_part_time_age_squared"] * (period**2) * part_time
-        + params["disutility_full_time_age_squared"] * (period**2) * full_time
-    ) * (1 - informal_care)
+    cons_scale = consumption_scale(has_partner, n_children)
 
-    disutility_working_informal_care = (
-        params["disutility_part_time_informal_care_constant"] * part_time
-        + params["disutility_full_time_informal_care_constant"] * full_time
-        # + params["disutility_part_time_informal_care_age"] * period * part_time
-        # + params["disutility_full_time_informal_care_age"] * period * full_time
-        # + params["disutility_part_time_informal_care_age_squared"]
-        # * (period**2)
-        # * part_time
-        # + params["disutility_full_time_informal_care_age_squared"]
-        # * (period**2)
-        # * full_time
-    ) * informal_care
+    return (consumption ** (-rho) * cons_scale ** (rho - 1)) * jnp.exp(eta)
 
-    # disutility_working_no_informal_care = (
-    #     params["disutility_part_time_constant"] * part_time * no_informal_care
-    #     + params["disutility_part_time_age"] * period * part_time * no_informal_care
-    #     + params["disutility_part_time_age_squared"]
-    #     * (period) ** 2
-    #     * part_time
-    #     * no_informal_care
-    #     + params["disutility_full_time_constant"] * full_time * no_informal_care
-    #     + params["disutility_full_time_age"] * period * full_time * no_informal_care
-    #     + params["disutility_full_time_age_squared"]
-    #     * (period**2)
-    #     * full_time
-    #     * no_informal_care
-    # )
 
-    # disutility_working_informal_care = (
-    #     params["disutility_part_time_informal_care_constant"]
-    #     * part_time
-    #     * informal_care
-    #     + params["disutility_part_time_informal_care_age"]
-    #     * period
-    #     * part_time
-    #     * informal_care
-    #     + params["disutility_part_time_informal_care_age_squared"]
-    #     * (period) ** 2
-    #     * part_time
-    #     * informal_care
-    #     + params["disutility_full_time_informal_care_constant"]
-    #     * full_time
-    #     * informal_care
-    #     + params["disutility_full_time_informal_care_age"]
-    #     * period
-    #     * full_time
-    #     * informal_care
-    #     + params["disutility_full_time_informal_care_age_squared"]
-    #     * (period**2)
-    #     * full_time
-    #     * informal_care
-    # )
+def inverse_marginal_utility(
+    marg_util, has_partner, n_children, choice, education, params
+):
+    """Compute the inverse marginal utility of consumption and labor.
 
-    utility_caregiving = (
-        params["utility_informal_care_parent_bad_health"]
-        * is_no_care(choice)
-        * mother_bad_health
-        + params["utility_informal_care_parent_bad_health"]
-        * is_pure_informal_care(choice)
-        * mother_bad_health
-        + params["utility_combination_care_parent_bad_health"]
-        * is_combination_care(choice)
-        * mother_bad_health
-        + params["utility_formal_care_parent_bad_health"]
-        * is_formal_care(choice)
-        * mother_bad_health
+    marginal_utility ** (-1 / params["rho"])
+    """
+    rho = params["rho"]
+
+    eta = utility_of_labor(choice, education, params)
+    cons_scale = consumption_scale(has_partner, n_children)
+
+    return (
+        marg_util ** (-1 / rho)
+        * (cons_scale ** ((rho - 1) / rho))
+        * (jnp.exp(eta) ** (1 / rho))
+    )
+
+
+# =====================================================================================
+# Auxiliary
+# =====================================================================================
+
+
+def utility_of_labor(choice, education, params):
+    """Compute utility of labor.
+
+    Interacted with utility of consumption above.
+
+    Reference category is 'retired'."""
+    util_unemployed = (
+        params["util_cons_unemployed_low_educ"] * (1 - education)
+        + params["util_cons_unemployed_high_educ"] * education
+    )
+    util_part_time = (
+        params["util_cons_part_time_low_educ"] * (1 - education)
+        + params["util_cons_part_time_high_educ"] * education
+    )
+    util_full_time = (
+        params["util_cons_full_time_low_educ"] * (1 - education)
+        + params["util_cons_full_time_high_educ"] * education
+    )
+
+    unemployed = is_unemployed(choice)
+    working_part_time = is_part_time(choice)
+    working_full_time = is_full_time(choice)
+
+    return (
+        util_unemployed * unemployed
+        + util_part_time * working_part_time
+        + util_full_time * working_full_time
+    )
+
+
+def utility_of_labor_and_caregiving(choice, age_youngest_child, education, params):
+    """Compute utility of labor and caregiving.
+
+    Reference category is 'retired'.
+    """
+    util_unemployed_low_educ = (
+        params["util_unemployed_low_educ_constant"]
+        + params["util_unemployed_low_educ_child_bin_one"]
+        * is_child_age_0_to_3(age_youngest_child)
+        + params["util_unemployed_low_educ_child_bin_two"]
+        * is_child_age_4_to_6(age_youngest_child)
+        + params["util_unemployed_low_educ_child_bin_three"]
+        * is_child_age_7_to_9(age_youngest_child)
+    )
+    util_part_time_low_educ = (
+        params["util_part_time_low_educ_constant"]
+        + params["util_part_time_low_educ_child_bin_one"]
+        * is_child_age_0_to_3(age_youngest_child)
+        + params["util_part_time_low_educ_child_bin_two"]
+        * is_child_age_4_to_6(age_youngest_child)
+        + params["util_part_time_low_educ_child_bin_three"]
+        * is_child_age_7_to_9(age_youngest_child)
+    )
+    util_full_time_low_educ = (
+        params["util_full_time_low_educ_constant"]
+        + params["util_full_time_low_educ_child_bin_one"]
+        * is_child_age_0_to_3(age_youngest_child)
+        + params["util_full_time_low_educ_child_bin_two"]
+        * is_child_age_4_to_6(age_youngest_child)
+        + params["util_full_time_low_educ_child_bin_three"]
+        * is_child_age_7_to_9(age_youngest_child)
+    )
+
+    util_unemployed_high_educ = (
+        params["util_unemployed_high_educ_constant"]
+        + params["util_unemployed_high_educ_child_bin_one"]
+        * is_child_age_0_to_3(age_youngest_child)
+        + params["util_unemployed_high_educ_child_bin_two"]
+        * is_child_age_4_to_6(age_youngest_child)
+        + params["util_unemployed_high_educ_child_bin_three"]
+        * is_child_age_7_to_9(age_youngest_child)
+    )
+    util_part_time_high_educ = (
+        params["util_part_time_high_educ_constant"]
+        + params["util_part_time_high_educ_child_bin_one"]
+        * is_child_age_0_to_3(age_youngest_child)
+        + params["util_part_time_high_educ_child_bin_two"]
+        * is_child_age_4_to_6(age_youngest_child)
+        + params["util_part_time_high_educ_child_bin_three"]
+        * is_child_age_7_to_9(age_youngest_child)
+    )
+    util_full_time_high_educ = (
+        params["util_full_time_high_educ_constant"]
+        + params["util_full_time_high_educ_child_bin_one"]
+        * is_child_age_0_to_3(age_youngest_child)
+        + params["util_full_time_high_educ_child_bin_two"]
+        * is_child_age_4_to_6(age_youngest_child)
+        + params["util_full_time_high_educ_child_bin_three"]
+        * is_child_age_7_to_9(age_youngest_child)
+    )
+
+    not_working = is_unemployed(choice)
+    working_part_time = is_part_time(choice)
+    working_full_time = is_full_time(choice)
+
+    util_not_working = (
+        util_unemployed_low_educ * (1 - education)
+        + util_unemployed_high_educ * education
+    )
+    util_part_time = (
+        util_part_time_low_educ * (1 - education) + util_part_time_high_educ * education
+    )
+    util_full_time = (
+        util_full_time_low_educ * (1 - education) + util_full_time_high_educ * education
     )
 
     return (
-        utility_consumption
-        + disutility_working
-        + disutility_working_informal_care
-        + utility_caregiving
+        util_not_working * not_working
+        + util_part_time * working_part_time
+        + util_full_time * working_full_time
     )
 
 
-def marginal_utility(consumption, params):
-    """Compute marginal utility of CRRA utility function."""
-    return consumption ** (-params["rho"])
-
-
-def inverse_marginal_utility(marginal_utility, params):
-    """Compute inverse of marginal utility of CRRA utility function."""
-    return marginal_utility ** (-1 / params["rho"])
-
-
-# =====================================================================================
-# Final period utility
-# =====================================================================================
-
-
-def utility_final_consume_all(
-    resources: jnp.array,
-    params: dict[str, float],
-    options: dict[str, Any],
-):
-    """Compute the agent's utility in the final period including bequest."""
-    rho = params["rho"]
-    bequest_scale = options["bequest_scale"]
-
-    return bequest_scale * (resources ** (1 - rho) - 1) / (1 - rho)
-
-
-def marginal_utility_final_consume_all(
-    resources: jnp.array,
-    params: dict[str, float],
-    options,
-) -> jnp.array:
-    """Computes marginal utility of CRRA utility function in final period.
-
-    Args:
-        choice (int): Choice of the agent, e.g. 0 = "retirement", 1 = "working".
-        resources (jnp.array): The agent's financial resources.
-            Array of shape (n_quad_stochastic * n_grid_wealth,).
-        consumption (jnp.array): Level of the agent's consumption.
-            Array of shape (n_quad_stochastic * n_grid_wealth,).
-        params (dict): Dictionary containing model parameters.
-            Relevant here is the CRRA coefficient theta.
-        options (dict): Dictionary containing model options.
-
-    Returns:
-        marginal_utility (jnp.array): Marginal utility of CRRA consumption
-            function. Array of shape (n_quad_stochastic * n_grid_wealth,).
-
-    """
-    bequest_scale = options["bequest_scale"]
-    return bequest_scale * (resources ** (-params["rho"]))
+def consumption_scale(has_partner, n_children):
+    """Adjust for number of people living in household."""
+    hh_size = 1 + has_partner + n_children
+    return jnp.sqrt(hh_size)
