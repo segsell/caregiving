@@ -1,13 +1,12 @@
 """Utility functions for the model."""
 
-from typing import Any
-
 import jax.numpy as jnp
 
 from caregiving.model.shared import (
     is_child_age_0_to_3,
     is_child_age_4_to_6,
     is_child_age_7_to_9,
+    is_full_time,
     is_not_working,
     is_part_time,
 )
@@ -85,6 +84,7 @@ def marginal_utility(consumption, has_partner, n_children, choice, education, pa
     """Computes the marginal utility of consumption and labor.
 
     consumption ** (-params["rho"])
+    marginal utility = (consumption^(-rho)) * (cons_scale^(rho-1)).
     """
     rho = params["rho"]
 
@@ -92,10 +92,7 @@ def marginal_utility(consumption, has_partner, n_children, choice, education, pa
 
     cons_scale = consumption_scale(has_partner, n_children)
 
-    # mu = e^eta * (1/cons_scale) * ( (c/cons_scale)^(-rho) )
-    # return jnp.exp(eta) * (consumption / cons_scale) ** (-rho) / cons_scale
-    # marginal utility = (consumption^(-rho)) * (cons_scale^(rho-1)).
-    return jnp.exp(eta) * consumption ** (-rho) * cons_scale ** (rho - 1)
+    return (consumption ** (-rho) * cons_scale ** (rho - 1)) * jnp.exp(eta)
 
 
 def inverse_marginal_utility(
@@ -110,11 +107,6 @@ def inverse_marginal_utility(
     eta = utility_of_labor(choice, education, params)
     cons_scale = consumption_scale(has_partner, n_children)
 
-    # c = ( [exp(eta) * cons_scale^(rho - 1)] / m )^(1/rho)
-    # numerator = jnp.exp(eta) * cons_scale ** (rho - 1)
-    # return (numerator / m) ** (1.0 / rho)
-
-    # return (cons_scale ** ((rho - 1) / rho)) * (marg_util ** (-1 / rho))
     return (
         marg_util ** (-1 / rho)
         * (cons_scale ** ((rho - 1) / rho))
@@ -149,7 +141,6 @@ def utility_of_labor(choice, education, params):
 
 def utility_of_labor_and_caregiving(choice, age_youngest_child, education, params):
     """Compute utility of labor and caregiving."""
-    # Define utility for unemployed based on child age and education
     util_unemployed_low_educ = (
         params["util_unemployed_low_educ_constant"]
         + params["util_unemployed_low_educ_child_bin_one"]
@@ -166,6 +157,15 @@ def utility_of_labor_and_caregiving(choice, age_youngest_child, education, param
         + params["util_part_time_low_educ_child_bin_two"]
         * is_child_age_4_to_6(age_youngest_child)
         + params["util_part_time_low_educ_child_bin_three"]
+        * is_child_age_7_to_9(age_youngest_child)
+    )
+    util_full_time_low_educ = (
+        params["util_full_time_low_educ_constant"]
+        + params["util_full_time_low_educ_child_bin_one"]
+        * is_child_age_0_to_3(age_youngest_child)
+        + params["util_full_time_low_educ_child_bin_two"]
+        * is_child_age_4_to_6(age_youngest_child)
+        + params["util_full_time_low_educ_child_bin_three"]
         * is_child_age_7_to_9(age_youngest_child)
     )
 
@@ -187,9 +187,19 @@ def utility_of_labor_and_caregiving(choice, age_youngest_child, education, param
         + params["util_part_time_high_educ_child_bin_three"]
         * is_child_age_7_to_9(age_youngest_child)
     )
+    util_full_time_high_educ = (
+        params["util_full_time_high_educ_constant"]
+        + params["util_full_time_high_educ_child_bin_one"]
+        * is_child_age_0_to_3(age_youngest_child)
+        + params["util_full_time_high_educ_child_bin_two"]
+        * is_child_age_4_to_6(age_youngest_child)
+        + params["util_full_time_high_educ_child_bin_three"]
+        * is_child_age_7_to_9(age_youngest_child)
+    )
 
     not_working = is_not_working(choice)
     working_part_time = is_part_time(choice)
+    working_full_time = is_full_time(choice)
 
     util_not_working = (
         util_unemployed_low_educ * (1 - education)
@@ -198,11 +208,18 @@ def utility_of_labor_and_caregiving(choice, age_youngest_child, education, param
     util_part_time = (
         util_part_time_low_educ * (1 - education) + util_part_time_high_educ * education
     )
+    util_full_time = (
+        util_full_time_low_educ * (1 - education) + util_full_time_high_educ * education
+    )
 
-    return util_not_working * not_working + util_part_time * working_part_time
+    return (
+        util_not_working * not_working
+        + util_part_time * working_part_time
+        + util_full_time * working_full_time
+    )
 
 
 def consumption_scale(has_partner, n_children):
-    """Compute the consumption equivalence scale."""
+    """Adjust for number of people living in household."""
     hh_size = 1 + has_partner + n_children
     return jnp.sqrt(hh_size)

@@ -1,5 +1,7 @@
 """Utility of bequest in the final period."""
 
+from typing import Any
+
 import jax.numpy as jnp
 
 
@@ -14,10 +16,11 @@ def create_final_period_utility_functions():
 def utility_final_consume_all(
     resources: jnp.array,
     params: dict[str, float],
+    options: dict[str, Any],
 ):
     """Compute the utility in the final period including bequest."""
     rho = params["rho"]
-    bequest_scale = params["bequest_scale"]
+    bequest_scale = options["bequest_scale"]
 
     return bequest_scale * (resources ** (1 - rho) - 1) / (1 - rho)
 
@@ -25,8 +28,9 @@ def utility_final_consume_all(
 def marginal_utility_final_consume_all(
     resources: jnp.array,
     params: dict[str, float],
+    options: dict[str, Any],
 ) -> jnp.array:
     """Compute marginal utility in the final period."""
-    bequest_scale = params["bequest_scale"]
+    bequest_scale = options["bequest_scale"]
 
     return bequest_scale * (resources ** (-params["rho"]))
