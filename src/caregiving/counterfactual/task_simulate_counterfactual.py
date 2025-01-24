@@ -8,10 +8,6 @@ import jax.numpy as jnp
 import numpy as np
 import pandas as pd
 import pytask
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.simulation.sim_utils import create_simulation_df
-from dcegm.simulation.simulate import simulate_all_periods
-from dcegm.solve import get_solve_func_for_model
 from pytask import Product
 
 from caregiving.config import BLD
@@ -38,12 +34,12 @@ from caregiving.model.shared import (
     NO_CARE,
     NO_COMBINATION_CARE,
     NO_INFORMAL_CARE,
-    NO_WORK,
-    OUT_OF_LABOR,
+    NOT_WORKING,
     PART_TIME,
     PURE_INFORMAL_CARE,
     RETIREMENT,
     RETIREMENT_AGE,
+    UNEMPLOYED,
 )
 from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.task_specify_model import get_options_dict
@@ -61,6 +57,10 @@ from caregiving.simulation.simulate import (
     simulate_moments,
 )
 from caregiving.utils import load_dict_from_pickle, save_dict_to_pickle
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.simulation.sim_utils import create_simulation_df
+from dcegm.simulation.simulate import simulate_all_periods
+from dcegm.solve import get_solve_func_for_model
 
 jax.config.update("jax_enable_x64", True)  # noqa: FBT003
 

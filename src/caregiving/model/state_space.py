@@ -9,7 +9,7 @@ from caregiving.model.shared import (
     FULL_TIME_AND_NO_WORK,
     NO_CARE,
     NO_RETIREMENT,
-    OUT_OF_LABOR,
+    NOT_WORKING,
     PART_TIME_AND_NO_WORK,
     RETIREMENT,
     WORK_AND_NO_WORK,
@@ -91,7 +91,7 @@ def get_state_specific_feasible_choice_set(
     elif (full_time_offer == 1) & (part_time_offer == 1):
         feasible_choice_set = [i for i in feasible_choice_set if i in WORK_AND_NO_WORK]
     else:
-        feasible_choice_set = [i for i in feasible_choice_set if i in OUT_OF_LABOR]
+        feasible_choice_set = [i for i in feasible_choice_set if i in NOT_WORKING]
 
     return np.array(feasible_choice_set)
 
