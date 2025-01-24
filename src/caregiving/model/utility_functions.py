@@ -12,10 +12,6 @@ from caregiving.model.shared import (
     is_part_time,
 )
 
-CONSUMPTION_EQUIVALENCE_SCALE = 2
-
-# =====================================================================================
-
 
 def create_utility_functions():
     """Create dict of utility functions."""
@@ -23,14 +19,6 @@ def create_utility_functions():
         "utility": utility_func,
         "marginal_utility": marginal_utility,
         "inverse_marginal_utility": inverse_marginal_utility,
-    }
-
-
-def create_final_period_utility_functions():
-    """Create dict of utility functions for the final period."""
-    return {
-        "utility": utility_final_consume_all,
-        "marginal_utility": marginal_utility_final_consume_all,
     }
 
 
@@ -218,46 +206,3 @@ def consumption_scale(has_partner, n_children):
     """Compute the consumption equivalence scale."""
     hh_size = 1 + has_partner + n_children
     return jnp.sqrt(hh_size)
-
-
-# =====================================================================================
-# Final period utility
-# =====================================================================================
-
-
-def utility_final_consume_all(
-    resources: jnp.array,
-    params: dict[str, float],
-    options: dict[str, Any],
-):
-    """Compute the agent's utility in the final period including bequest."""
-    rho = params["rho"]
-    bequest_scale = options["bequest_scale"]
-
-    return bequest_scale * (resources ** (1 - rho) - 1) / (1 - rho)
-
-
-def marginal_utility_final_consume_all(
-    resources: jnp.array,
-    params: dict[str, float],
-    options,
-) -> jnp.array:
-    """Computes marginal utility of CRRA utility function in final period.
-
-    Args:
-        choice (int): Choice of the agent, e.g. 0 = "retirement", 1 = "working".
-        resources (jnp.array): The agent's financial resources.
-            Array of shape (n_quad_stochastic * n_grid_wealth,).
-        consumption (jnp.array): Level of the agent's consumption.
-            Array of shape (n_quad_stochastic * n_grid_wealth,).
-        params (dict): Dictionary containing model parameters.
-            Relevant here is the CRRA coefficient theta.
-        options (dict): Dictionary containing model options.
-
-    Returns:
-        marginal_utility (jnp.array): Marginal utility of CRRA consumption
-            function. Array of shape (n_quad_stochastic * n_grid_wealth,).
-
-    """
-    bequest_scale = options["bequest_scale"]
-    return bequest_scale * (resources ** (-params["rho"]))
