@@ -3,6 +3,8 @@ from pathlib import Path
 import jax
 import numpy as np
 import pytask
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.solve import get_solve_func_for_model
 
 from caregiving.config import BLD, SRC
 from caregiving.model.budget import budget_constraint, create_savings_grid
@@ -23,8 +25,6 @@ from caregiving.model.utility_functions import (
     create_utility_functions,
 )
 from caregiving.utils import load_dict_from_pickle
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.solve import get_solve_func_for_model
 
 jax.config.update("jax_enable_x64", True)  # noqa: FBT003
 
