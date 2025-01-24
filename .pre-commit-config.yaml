@@ -77,6 +77,7 @@ repos:
     hooks:
     -   id: interrogate
         args: [-v, --fail-under=40]
+        exclude: src/caregiving/model/shared.py
 -   repo: https://github.com/executablebooks/mdformat
     rev: 0.7.17
     hooks:

@@ -148,28 +148,53 @@ NO_COMBINATION_CARE = jnp.array(
 NO_FORMAL_CARE = jnp.array(list(set(ALL.tolist()) - set(FORMAL_CARE.tolist())))
 
 # ==============================================================================
-# Conditions
+# Labor conditions
 # ==============================================================================
 
 
-def is_retired(lagged_choice):
-    return jnp.any(lagged_choice == RETIREMENT)
+def is_working(choice):
+    return jnp.any(choice == WORK)
 
 
-def is_not_working(lagged_choice):
-    return jnp.any(lagged_choice == NO_WORK)
+def is_full_time(choice):
+    return jnp.any(choice == FULL_TIME)
 
 
-def is_part_time(lagged_choice):
-    return jnp.any(lagged_choice == PART_TIME)
+def is_part_time(choice):
+    return jnp.any(choice == PART_TIME)
 
 
-def is_full_time(lagged_choice):
-    return jnp.any(lagged_choice == FULL_TIME)
+def is_not_working(choice):
+    return jnp.any(choice == NO_WORK)
 
 
-def is_working(lagged_choice):
-    return jnp.any(lagged_choice == WORK)
+def is_retired(choice):
+    return jnp.any(choice == RETIREMENT)
+
+
+# ==============================================================================
+# Age of youngest child
+# ==============================================================================
+AGE_BIN_0_TO_3 = 0
+AGE_BIN_4_TO_6 = 1
+AGE_BIN_7_TO_9 = 2
+
+
+def is_child_age_0_to_3(age_youngest_child):
+    return age_youngest_child == AGE_BIN_0_TO_3
+
+
+def is_child_age_4_to_6(age_youngest_child):
+    return age_youngest_child == AGE_BIN_4_TO_6
+
+
+def is_child_age_7_to_9(age_youngest_child):
+    return age_youngest_child == AGE_BIN_7_TO_9
+
+
+# ==============================================================================
+# Caregiving
+# ==============================================================================
 
 
 def is_no_care(lagged_choice):
