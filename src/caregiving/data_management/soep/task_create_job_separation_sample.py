@@ -1,4 +1,4 @@
-"""Create sample for job separation."""
+"""Create sample for estimation of job separation probability."""
 
 from pathlib import Path
 from typing import Annotated
