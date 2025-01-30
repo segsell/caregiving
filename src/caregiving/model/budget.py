@@ -5,12 +5,10 @@ from typing import Any
 import jax.numpy as jnp
 import numpy as np
 
-from caregiving.model.shared import (  # is_combination_care,; is_pure_informal_care,
+from caregiving.model.shared import (
     RETIREMENT_AGE,
-    is_combination_care,
     is_full_time,
     is_part_time,
-    is_pure_informal_care,
     is_retired,
     is_working,
 )
@@ -115,12 +113,12 @@ def budget_constraint(
     means_test = savings_end_of_previous_period < options["unemployment_wealth_thresh"]
     unemployment_benefits = means_test * options["unemployment_benefits"] * 12
 
-    cash_benefits_informal_care = (
-        is_pure_informal_care(lagged_choice) * options["informal_care_benefits"] * 12
-        + is_combination_care(lagged_choice)
-        * (options["informal_care_benefits"] / 2)
-        * 12
-    )
+    # cash_benefits_informal_care = (
+    #     is_pure_informal_care(lagged_choice) * options["informal_care_benefits"] * 12
+    #     + is_combination_care(lagged_choice)
+    #     * (options["informal_care_benefits"] / 2)
+    #     * 12
+    # )
 
     personal_income = jnp.maximum(
         is_working(lagged_choice) * labor_income
@@ -133,7 +131,7 @@ def budget_constraint(
 
     # Assume everyone is married
     income_and_cash_benefits = (
-        personal_income + spousal_income + cash_benefits_informal_care
+        personal_income + spousal_income  # + cash_benefits_informal_care
     )
 
     return (

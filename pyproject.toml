@@ -121,7 +121,10 @@ extend-ignore = [
 "src/caregiving/simulation/simulate.py" = ["ERA001"]
 "src/caregiving/data_management/task_create_estimation_data_set.py" = ["ERA001"]
 "src/caregiving/data_management/task_create_parent_child_data_set.py" = ["ERA001"]
-"src/caregiving/counterfactual/task_simulate_counterfactual.py" = ["ERA001"]
+"src/caregiving/counterfactual/task_simulate_counterfactual.py" = ["ERA001", "E501"]
+"src/caregiving/counterfactual/state_space_counterfactual.py" = ["E501"]
+"src/caregiving/estimation/task_estimate_standard_errors.py" = ["E501"]
+"src/caregiving/model/state_space.py" = ["E501"]
 "src/caregiving/exogenous_processes/task_create_exog_processes_soep.py" = ["ERA001"]
 "src/caregiving/moments/task_create_care_mix_coefficients.py" = ["ERA001"]
 
