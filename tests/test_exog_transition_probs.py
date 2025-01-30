@@ -2,14 +2,14 @@ import pytest
 from numpy.testing import assert_almost_equal as aaae
 
 from caregiving.config import BLD, SRC
-from caregiving.exogenous_processes.task_create_exog_processes import (
-    exog_health_transition,
-)
-from caregiving.model.exogenous_processes import (
+from caregiving.model.shared import BAD_HEALTH, GOOD_HEALTH
+from caregiving.model.stochastic_processes import (
     exog_health_transition_mother_with_survival,
 )
-from caregiving.model.shared import BAD_HEALTH, GOOD_HEALTH
 from caregiving.model.task_specify_model import get_options_dict
+from caregiving.stochastic_processes.task_create_exog_processes import (
+    exog_health_transition,
+)
 from caregiving.utils import load_dict_from_pickle
 
 MEDIUM_HEALTH = -99
