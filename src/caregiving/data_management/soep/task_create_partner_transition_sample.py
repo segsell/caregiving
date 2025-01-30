@@ -1,4 +1,4 @@
-"""Create sample for auxiliary partner transition."""
+"""Create sample for partner transition."""
 
 from pathlib import Path
 from typing import Annotated

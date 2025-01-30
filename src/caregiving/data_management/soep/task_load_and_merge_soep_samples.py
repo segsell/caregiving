@@ -8,21 +8,6 @@ import pandas as pd
 from pytask import Product
 
 from caregiving.config import BLD, SRC
-from caregiving.data_management.soep.auxiliary import (
-    create_lagged_and_lead_variables,
-    enforce_model_choice_restriction,
-    filter_data,
-)
-from caregiving.data_management.soep.variables import (
-    create_choice_variable,
-    create_education_type,
-    create_experience_variable,
-    create_partner_state,
-    determine_observed_job_offers,
-    generate_job_separation_var,
-)
-from caregiving.model.shared import PART_TIME, WORK
-from caregiving.specs.derive_specs import read_and_derive_specs
 
 
 def table(df_col):
