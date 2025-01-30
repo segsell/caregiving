@@ -11,7 +11,7 @@ def read_in_partner_transition_specs(paths_dict, specs):
     """Read in partner transition probabilities."""
 
     trans_probs = pd.read_csv(
-        paths_dict["est_results"] + "partner_transition_matrix.csv",
+        paths_dict["external_estimation_results"] + "partner_transition_matrix.csv",
         index_col=[0, 1, 2, 3, 4],
     )["proportion"]
 
