@@ -1,4 +1,4 @@
-"""Sample for auxiliary wage estimation."""
+"""Create sample for auxiliary wage estimation."""
 
 from pathlib import Path
 from typing import Annotated
@@ -17,46 +17,6 @@ from caregiving.data_management.soep.variables import (
 )
 from caregiving.model.shared import N_MONTHS, N_WEEKS_IN_YEAR, WORK
 from caregiving.specs.derive_specs import read_and_derive_specs
-
-# def task_load_and_merge_wage_sample(
-#     soep_c38_pgen: Path = SRC / "data" / "soep" / "pgen.dta",
-#     soep_c38_ppathl: Path = SRC / "data" / "soep" / "ppathl.dta",
-#     path_to_save: Annotated[Path, Product] = BLD / "data" / "soep_wage_data_raw.csv",
-# ) -> None:
-#     # Load SOEP core data
-#     pgen_data = pd.read_stata(
-#         soep_c38_pgen,
-#         columns=[
-#             "syear",
-#             "pid",
-#             "hid",
-#             "pgemplst",
-#             "pgexpft",
-#             "pgexppt",
-#             "pgstib",
-#             "pglabgro",
-#             "pgpsbil",
-#             "pgvebzeit",
-#         ],
-#         convert_categoricals=False,
-#     )
-#     pathl_data = pd.read_stata(
-#         soep_c38_ppathl,
-#         columns=["pid", "hid", "syear", "sex", "gebjahr"],
-#         convert_categoricals=False,
-#     )
-
-#     # Merge pgen data with pathl data and hl data
-#     merged_data = pd.merge(
-#         pgen_data, pathl_data, on=["pid", "hid", "syear"], how="inner"
-#     )
-
-#     merged_data["age"] = merged_data["syear"] - merged_data["gebjahr"]
-#     del pgen_data, pathl_data
-#     merged_data.set_index(["pid", "syear"], inplace=True)
-#     print(str(len(merged_data)) + " observations in SOEP C38 core.")
-
-#     merged_data.to_csv(path_to_save)
 
 
 def task_create_wage_sample(
