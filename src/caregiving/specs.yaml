@@ -1,0 +1,94 @@
+###############################################################################
+# Model specification
+###############################################################################
+# mathematical model features
+quadrature_points_stochastic: 5
+n_experience_grid_points: 11
+# Fixed structural parameters, we will not estimate
+interest_rate: 0.03
+discount_factor: 0.97
+
+# economic model parameters
+start_age: 40
+end_age: 80
+
+choice_labels: ["Retired", "Unemployed", "Part-time", "Full-time"]
+education_labels: ["Low Education", "High Education"]
+health_labels: ["Bad Health", "Good Health", "Death"]
+sex_labels: ["Men", "Women"]
+partner_labels: ["Single","Working Partner", "Retired Partner"]
+# Belief process parameters
+SRA_grid_size: 0.25
+min_SRA: 65
+max_SRA: 72
+resolution_age: 63
+informed_threshhold: 5
+
+# Retirement parameters
+ret_years_before_SRA: 4
+min_ret_age: 63
+max_ret_age: 72
+# Maximum age to estimate labor market
+max_est_age_labor: 65
+# Assume that part time gives half a year of experience
+exp_increase_part_time: 0.5
+
+# Parameters of the policy environment:
+# Start with unemployment benefits
+monthly_unemployment_benefits: 350
+monthly_unemployment_benefits_housing: 300
+monthly_child_unemployment_benefits: 250
+# Wealth threshold (for unemployment benefits)
+unemployment_wealth_thresh: 10_500
+# Now additional parameters for working and retirement
+monthly_child_benefits: 184
+monthly_min_wage: 1360
+
+# Retirement parameters
+early_retirement_penalty: 0.036
+late_retirement_bonus: 0.06
+monthly_pension_point_value_west_2010: 27.20
+monthly_pension_point_value_east_2010: 24.13
+
+###############################################################################
+# Data preparation
+###############################################################################
+start_year: 2001 # start year of estimation sample
+end_year: 2019 # end year of estimation sample
+reference_year: 2010  # reference year for monetary values, taxes, etc.
+###############################################
+# Wage process estimation (uses same start and end year)
+wage_trunc_low_perc: 0.01  # lower truncation of wage distribution
+wage_trunc_high_perc: 0.99  # upper truncation of wage distribution
+wealth_unit: 1_000  # unit of wealth in data
+###############################################
+# Belief process estimation
+# Limits for truncation of the normal distribution
+lower_limit: 66.5
+upper_limit: 72
+# points at which the CDF is evaluated from survey data
+first_cdf_point: 67.5
+second_cdf_point: 68.5
+# cohorts for which process parameters are estimated
+min_birth_year: 1947
+max_birth_year: 2000
+###############################################
+# Health process estimation parameters
+# smoothing bandwidth for weighted moving average (half of age range used to smooth)
+health_smoothing_bandwidth: 5
+health_kernel_type: "epanechnikov" # "gaussian" # type of kernel used for smoothing
+###############################################
+# Mortality process estimation parameters
+start_year_mortality: 1992
+start_age_mortality: 16
+end_year_mortality: 2020 # end year of lifespells in soep38
+end_age_mortality: 110
+life_table_max_age: 100
+
+
+
+###############################################################################
+# Simulation parameters
+###############################################################################
+n_agents: 100_000
+seed: 123
