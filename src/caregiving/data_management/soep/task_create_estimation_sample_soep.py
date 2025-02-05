@@ -166,8 +166,9 @@ def task_create_estimation_sample(
     # Filter out part-time men
     part_time_values = np.asarray(PART_TIME).ravel().tolist()
     mask = df["sex"] == 0
-    df = df[~(mask & (df["choice"].isin(part_time_values)))]
-    df = df[~(mask & (df["lagged_choice"].isin(part_time_values)))]
+    # df = df[~(mask & (df["choice"].isin(part_time_values)))]
+    df = df.loc[~(mask & df["choice"].isin(part_time_values))]
+    df = df.loc[~(mask & df["lagged_choice"].isin(part_time_values))]
 
     # Keep relevant columns (i.e. state variables) and set their minimal datatype
     type_dict = {

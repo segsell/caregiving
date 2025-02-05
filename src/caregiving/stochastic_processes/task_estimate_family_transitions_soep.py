@@ -13,6 +13,7 @@ from typing import Annotated
 
 import numpy as np
 import pandas as pd
+import statsmodels.api as sm
 from pytask import Product
 
 from caregiving.config import BLD, SRC
@@ -25,27 +26,27 @@ def task_estimate_partner_transitions(
     path_to_save: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
-    / "partner_transition_matrix2.csv",
+    / "partner_transition_matrix.csv",
 ) -> None:
-    """Estimate the partner state transition matrix."""
+    """Estimate the partner state transition matrix non-parametrically."""
 
     # Read specs and data; restrict to ages below end_age
     specs = read_and_derive_specs(path_to_specs)
-    est_data = pd.read_csv(path_to_data, index_col=["pid", "syear"])
-    est_data = est_data.loc[est_data["age"] <= specs["end_age"]].copy()
+    df = pd.read_csv(path_to_data, index_col=["pid", "syear"])
+    df = df.loc[df["age"] <= specs["end_age"]].copy()
 
     # Create age bins (10-year intervals)
-    est_data["age_bin"] = np.floor(est_data["age"] / 10) * 10
+    df["age_bin"] = np.floor(df["age"] / 10) * 10
 
     # Define covariates for grouping (including dummy partner state columns)
     cov_list = ["sex", "education", "age_bin", "partner_state_1.0", "partner_state_2.0"]
 
     # Create dummy variables for 'partner_state'
-    est_data = pd.get_dummies(est_data, columns=["partner_state"])
+    df = pd.get_dummies(df, columns=["partner_state"])
 
     # Group and compute the conditional probabilities, renaming the resulting Series
     trans_mat_series = (
-        est_data.groupby(cov_list)["lead_partner_state"]
+        df.groupby(cov_list)["lead_partner_state"]
         .value_counts(normalize=True)
         .rename("proportion")
     )
@@ -77,3 +78,59 @@ def task_estimate_partner_transitions(
 
     # Save the resulting DataFrame to CSV
     df.to_csv(path_to_save)
+
+
+def task_estimate_number_of_children_in_household(
+    path_to_specs: Path = SRC / "specs.yaml",
+    path_to_data: Path = BLD / "data" / "soep_partner_transition_data.csv",
+    path_to_save: Annotated[Path, Product] = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "nb_children_estimates.csv",
+) -> None:
+    """Estimate the number of children in the household vio OLS.
+
+    Conditiononal on sex, education, and age bin."""
+
+    # Read specs and data; restrict to ages below end_age
+    specs = read_and_derive_specs(path_to_specs)
+    df = pd.read_csv(path_to_data, index_col=["pid", "syear"])
+
+    start_age = specs["start_age"]
+    end_age = specs["end_age_children_in_household"]
+
+    df = df.loc[(df["age"] >= start_age) & (df["age"] <= end_age)]
+
+    df["period"] = df["age"] - start_age
+    df["period_sq"] = df["period"] ** 2
+    df["has_partner"] = (df["partner_state"] > 0).astype(int)
+    # estimate OLS for each combination of sex, education and has_partner
+
+    edu_states = list(range(specs["n_education_types"]))
+    sexes = [0, 1]
+    partner_states = [0, 1]
+
+    sub_group_names = ["sex", "education", "has_partner"]
+
+    multiindex = pd.MultiIndex.from_product(
+        [sexes, edu_states, partner_states],
+        names=sub_group_names,
+    )
+
+    columns = ["const", "period", "period_sq"]
+    estimates = pd.DataFrame(index=multiindex, columns=columns)
+    for sex in sexes:
+        for education in edu_states:
+            for has_partner in partner_states:
+                df_reduced = df[
+                    (df["sex"] == sex)
+                    & (df["education"] == education)
+                    & (df["has_partner"] == has_partner)
+                ]
+                X = df_reduced[columns[1:]]
+                X = sm.add_constant(X)
+                Y = df_reduced["children"]
+                model = sm.OLS(Y, X).fit()
+                estimates.loc[(sex, education, has_partner), columns] = model.params
+
+    estimates.to_csv(path_to_save)
