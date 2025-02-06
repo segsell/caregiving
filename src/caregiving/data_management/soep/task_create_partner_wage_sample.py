@@ -42,7 +42,7 @@ def task_create_partner_wage_sample(
     df = df[df["partner_state"] == 1]
 
     df.reset_index(inplace=True)
-    df.to_pickle(path_to_save)
+    df.to_csv(path_to_save)
 
 
 def create_wages(df):
