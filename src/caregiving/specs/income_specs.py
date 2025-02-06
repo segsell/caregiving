@@ -2,16 +2,23 @@ import numpy as np
 import pandas as pd
 from jax import numpy as jnp
 
-from caregiving.model.shared import is_full_time, is_part_time
+from caregiving.model.shared import FULL_TIME, PART_TIME
 
 
-def add_income_specs(specs, path_dict):
+def add_income_specs(
+    specs,
+    wage_params,
+    partner_wage_params_men,
+    partner_wage_params_women,
+    pop_averages,
+    mean_annual_wage,
+):
     # wages
     (
         specs["gamma_0"],
         specs["gamma_1"],
         specs["income_shock_scale"],
-    ) = process_wage_params(path_dict, specs)
+    ) = process_wage_params(specs, wage_params)
 
     # unemployment benefits
     (
@@ -29,14 +36,17 @@ def add_income_specs(specs, path_dict):
     (
         specs["annual_partner_wage"],
         specs["annual_partner_pension"],
-    ) = calculate_partner_incomes(path_dict, specs)
+    ) = calculate_partner_incomes(
+        specs, partner_wage_params_men, partner_wage_params_women
+    )
 
-    specs = add_population_averages(specs, path_dict)
+    specs = add_population_averages(specs, pop_averages, mean_annual_wage)
 
     # Add minimum wage
     specs["annual_min_wage_pt"], specs["annual_min_wage_ft"] = add_pt_and_ft_min_wage(
         specs
     )
+
     return specs
 
 
@@ -55,11 +65,11 @@ def calc_annual_unemployment_benefits(specs):
     )
 
 
-def add_population_averages(specs, path_dict):
+def add_population_averages(specs, pop_averages, mean_annual_wage):
+    part_time_values = np.asarray(PART_TIME).ravel().tolist()
+    full_time_values = np.asarray(FULL_TIME).ravel().tolist()
+
     # Assign population averages
-    pop_averages = pd.read_csv(
-        path_dict["est_results"] + "population_averages_working_hours.csv"
-    )
     av_annual_hours_pt = np.zeros(
         (specs["n_sexes"], specs["n_education_types"]), dtype=float
     )
@@ -73,19 +83,21 @@ def add_population_averages(specs, path_dict):
                 pop_averages["sex"] == sex_var
             )
             av_annual_hours_pt[sex_var, edu_var] = pop_averages.loc[
-                mask & is_part_time(pop_averages["choice"]), "annual_hours"
+                mask & pop_averages["choice"].isin(part_time_values), "annual_hours"
             ].values[0]
 
             av_annual_hours_ft[sex_var, edu_var] = pop_averages.loc[
-                mask & is_full_time(pop_averages["choice"]), "annual_hours"
+                mask & pop_averages["choice"].isin(full_time_values), "annual_hours"
             ].values[0]
 
     specs["av_annual_hours_pt"] = jnp.asarray(av_annual_hours_pt)
     specs["av_annual_hours_ft"] = jnp.asarray(av_annual_hours_ft)
 
-    # Create auxiliary mean hourly full time wage for pension calculation (see appendix)
-    mean_annual_wage = np.load(path_dict["est_results"] + "pop_avg_annual_wage.npy")
+    # Create auxiliary mean hourly full time wage for pension calculation
+    # (see appendix)
     specs["mean_hourly_ft_wage"] = jnp.asarray(mean_annual_wage / av_annual_hours_ft)
+    # ?! Why larger for women?!
+
     return specs
 
 
@@ -118,11 +130,7 @@ def calc_annual_pension_point_value(specs):
     return pension_point_value * 12
 
 
-def process_wage_params(path_dict, specs):
-    # wages
-    wage_params = pd.read_csv(
-        path_dict["est_results"] + "wage_eq_params.csv", index_col=0
-    )
+def process_wage_params(specs, wage_params):
 
     wage_params.reset_index(inplace=True)
 
@@ -149,7 +157,9 @@ def process_wage_params(path_dict, specs):
     return jnp.asarray(gamma_0), jnp.asarray(gamma_1), income_shock_scale
 
 
-def calculate_partner_incomes(path_dict, specs):
+def calculate_partner_incomes(
+    specs, partner_wage_params_men, partner_wage_params_women
+):
     """Calculate income of working aged partner."""
     periods = np.arange(0, specs["n_periods"], dtype=float)
     # Limit periods to the one of max retirement age as we restricted our estimation
@@ -160,21 +170,16 @@ def calculate_partner_incomes(path_dict, specs):
     )[0]
     periods[not_predicted_periods] = specs["max_ret_age"] - specs["start_age"]
 
-    # Only do this for men now
-    partner_wage_params_men = pd.read_csv(
-        path_dict["est_results"] + "partner_wage_eq_params_men.csv"
-    )
-    partner_wage_params_women = pd.read_csv(
-        path_dict["est_results"] + "partner_wage_eq_params_women.csv"
-    )
     partner_wages = np.zeros(
         (specs["n_sexes"], specs["n_education_types"], specs["n_periods"]), dtype=float
     )
+
     for sex_var, sex_label in enumerate(specs["sex_labels"]):
-        if sex_label == "Men":
-            params = partner_wage_params_men
-        else:
+        if sex_label == "Women":
             params = partner_wage_params_women
+        else:
+            params = partner_wage_params_men
+
         for edu_var, edu_label in enumerate(specs["education_labels"]):
             mask = params["education"] == edu_label
             partner_wages[sex_var, edu_var, :] = (

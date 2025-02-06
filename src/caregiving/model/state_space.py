@@ -164,7 +164,7 @@ from caregiving.model.wealth_and_budget.pensions import (
 
 
 def calc_experience_years_for_pension_adjustment(
-    period, sex, experience_years, education, policy_state, informed, options
+    period, sex, experience_years, education, policy_state, options
 ):
     """Calculate the reduced experience with early retirement penalty."""
     total_pension_points = calc_total_pension_points(
@@ -182,14 +182,9 @@ def calc_experience_years_for_pension_adjustment(
 
     # deduction factor for early  retirement
     early_retirement_penalty_informed = options["early_retirement_penalty"]
-    early_retirement_penalty_uninformed = options[
-        "uninformed_early_retirement_penalty"
-    ][education]
     early_retirement_penalty = (
-        informed * early_retirement_penalty_informed
-        + (1 - informed) * early_retirement_penalty_uninformed
+        1 - early_retirement_penalty_informed * retirement_age_difference
     )
-    early_retirement_penalty = 1 - early_retirement_penalty * retirement_age_difference
 
     # Total bonus for late retirement
     late_retirement_bonus = 1 + (
