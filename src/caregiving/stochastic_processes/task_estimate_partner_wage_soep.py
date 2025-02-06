@@ -38,22 +38,20 @@ def task_estimate_partner_wage_parameters(
     / "plots"
     / "stochastic_processes"
     / "wages_partner_women.png",
-    path_partner_wage_men: Annotated[Path, Product] = BLD
+    path_to_partner_wage_men: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
     / "partner_wage_eq_params_men.csv",
-    path_partner_wage_women: Annotated[Path, Product] = BLD
+    path_to_partner_wage_women: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
     / "partner_wage_eq_params_women.csv",
 ) -> None:
     """Estimate the wage parameters partners by education group in the sample.
 
-    Est_men is a boolean that determines whether the estimation is done for men or for
-    women.
+    Separately for men and women.
 
     """
-
     specs = read_and_derive_specs(path_to_specs)
 
     edu_labels = specs["education_labels"]
@@ -129,7 +127,7 @@ def task_estimate_partner_wage_parameters(
 
 def prepare_estimation_data(wage_data, specs, sex_var):
     """Prepare the data for the wage estimation."""
-    wage_data = wage_data[wage_data["sex"] == sex_var]
+    wage_data = wage_data[wage_data["sex"] == sex_var].copy()
 
     # Add period
     wage_data["period"] = wage_data["age"] - specs["start_age"]
@@ -149,29 +147,36 @@ def prepare_estimation_data(wage_data, specs, sex_var):
     return wage_data
 
 
-# def task_calculate_partner_hours(path_dict):
+# def task_calculate_partner_hours(
+#     path_to_specs: Path = SRC / "specs.yaml",
+#     path_to_data: Path = BLD / "data" / "soep_partner_wage_data.csv",
+#     path_to_partner_hours: Annotated[Path, Product] = BLD
+#     / "estimation"
+#     / "stochastic_processes"
+#     / "partner_hours.csv",
+# ) -> None:
 #     """Calculates average hours worked by working partners.
-#  conditional on working
-#     hours > 0)"""
-#     specs = read_and_derive_specs(path_dict["specs"])
+
+#     I.e. conditional on working hours > 0.
+
+#     """
+#     specs = read_and_derive_specs(path_to_specs)
+
 #     start_age = specs["start_age"]
 #     end_age = specs["max_ret_age"]
-#     # load data, filter, create age bins
-#     df = pd.read_pickle(
-#         path_dict["intermediate_data"] + "partner_wage_estimation_sample.pkl"
-#     )
+
+#     # Load data, filter, and create age bins
+#     df = pd.read_csv(path_to_data, index_col=0)
+#     breakpoint()
+
 #     df = df[df["age"] >= start_age]
 #     df = df[df["age"] <= end_age]
 #     df["age_bin"] = np.floor(df["age"] / 10) * 10
 #     df.loc[df["age"] > 60, "age_bin"] = 60
 #     df["period"] = df["age"] - start_age
 
-#     # calculate average hours worked by partner by age, sex and education
+#     # Calculate average hours worked by partner by age, sex and education
 #     cov_list = ["sex", "education", "age_bin"]
 #     partner_hours = df.groupby(cov_list)["working_hours_p"].mean()
 
-#     # save to csv
-#     out_file_path = path_dict["est_results"] + f"partner_hours.csv"
-#     partner_hours.to_csv(out_file_path)
-
-#     return partner_hours
+#     partner_hours.to_csv(path_to_partner_hours)
