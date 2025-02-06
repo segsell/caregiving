@@ -31,9 +31,7 @@ def task_estimate_job_separation(
     df_job = pd.read_csv(path_to_data, index_col=0)
 
     # Estimate job separation probabilities
-    job_sep_probs, job_sep_params = estimate_job_separation_probs_and_params_by_sample(
-        df_job, specs
-    )
+    job_sep_probs, job_sep_params = estimate_logit_by_sample(df_job, specs)
 
     # Save results
     job_sep_params.to_csv(path_to_save_params)
@@ -45,7 +43,8 @@ def task_estimate_job_separation(
     #     job_pkl = pkl.load(fp)
 
 
-def estimate_job_separation_probs_and_params_by_sample(df_job, specs):
+def estimate_logit_by_sample(df_job, specs):
+    """Estimate Logit parameters and probabilities."""
     df_job["age_sq"] = df_job["age"] ** 2
 
     index = pd.MultiIndex.from_product(
