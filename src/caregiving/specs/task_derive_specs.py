@@ -63,7 +63,7 @@ def task_write_specs(
     wage_params = pd.read_csv(path_to_wage_params, index_col=0)
     partner_wage_params_men = pd.read_csv(path_to_partner_wage_params_men)
     partner_wage_params_women = pd.read_csv(path_to_partner_wage_params_women)
-    pop_averages = pd.read_csv(path_to_pop_avg_working_hours)  # slightly different
+    avg_working_hours = pd.read_csv(path_to_pop_avg_working_hours)  # slightly different
     mean_annual_wage = np.load(path_to_pop_avg_annual_wage)  # identical :)
 
     specs = add_income_specs(
@@ -71,7 +71,7 @@ def task_write_specs(
         wage_params=wage_params,
         partner_wage_params_men=partner_wage_params_men,
         partner_wage_params_women=partner_wage_params_women,
-        pop_averages=pop_averages,
+        avg_working_hours=avg_working_hours,
         mean_annual_wage=mean_annual_wage,
     )
 

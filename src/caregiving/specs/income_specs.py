@@ -10,9 +10,11 @@ def add_income_specs(
     wage_params,
     partner_wage_params_men,
     partner_wage_params_women,
-    pop_averages,
+    avg_working_hours,
     mean_annual_wage,
 ):
+    """Add income specs."""
+
     # wages
     (
         specs["gamma_0"],
@@ -36,11 +38,11 @@ def add_income_specs(
     (
         specs["annual_partner_wage"],
         specs["annual_partner_pension"],
-    ) = calculate_partner_incomes(
+    ) = calculate_partner_income(
         specs, partner_wage_params_men, partner_wage_params_women
     )
 
-    specs = add_population_averages(specs, pop_averages, mean_annual_wage)
+    specs = add_average_population_hours(specs, avg_working_hours, mean_annual_wage)
 
     # Add minimum wage
     specs["annual_min_wage_pt"], specs["annual_min_wage_ft"] = add_pt_and_ft_min_wage(
@@ -51,6 +53,8 @@ def add_income_specs(
 
 
 def calc_annual_unemployment_benefits(specs):
+    """Calculate annual unemployment benefits."""
+
     annual_unemployment_benefits = specs["monthly_unemployment_benefits"] * 12
     annual_unemployment_benefits_housing = (
         specs["monthly_unemployment_benefits_housing"] * 12
@@ -65,7 +69,9 @@ def calc_annual_unemployment_benefits(specs):
     )
 
 
-def add_population_averages(specs, pop_averages, mean_annual_wage):
+def add_average_population_hours(specs, pop_averages, mean_annual_wage):
+    """Add average population hours to specs."""
+
     part_time_values = np.asarray(PART_TIME).ravel().tolist()
     full_time_values = np.asarray(FULL_TIME).ravel().tolist()
 
@@ -102,7 +108,7 @@ def add_population_averages(specs, pop_averages, mean_annual_wage):
 
 
 def add_pt_and_ft_min_wage(specs):
-    """Computes the annual minimum wage for part-time and full-time workers.
+    """Compute the annual minimum wage for part-time and full-time workers.
 
     Type-specific as hours are different between types.
 
@@ -121,8 +127,8 @@ def add_pt_and_ft_min_wage(specs):
 
 
 def calc_annual_pension_point_value(specs):
-    # Generate average pension point value weighted by east and west
-    # pensions
+    """Generate average pension point value weighted by east and west pensions."""
+
     pension_point_value = (
         0.75 * specs["monthly_pension_point_value_west_2010"]
         + 0.25 * specs["monthly_pension_point_value_east_2010"]
@@ -131,7 +137,7 @@ def calc_annual_pension_point_value(specs):
 
 
 def process_wage_params(specs, wage_params):
-
+    """Process wage parameters."""
     wage_params.reset_index(inplace=True)
 
     gamma_0 = np.zeros((specs["n_sexes"], specs["n_education_types"]), dtype=float)
@@ -157,11 +163,11 @@ def process_wage_params(specs, wage_params):
     return jnp.asarray(gamma_0), jnp.asarray(gamma_1), income_shock_scale
 
 
-def calculate_partner_incomes(
-    specs, partner_wage_params_men, partner_wage_params_women
-):
-    """Calculate income of working aged partner."""
+def calculate_partner_income(specs, partner_wage_params_men, partner_wage_params_women):
+    """Calculate income of working-age partner."""
+
     periods = np.arange(0, specs["n_periods"], dtype=float)
+
     # Limit periods to the one of max retirement age as we restricted our estimation
     # sample until then.
     # For the predictions after max retirement age we use the last max retirement period
@@ -170,7 +176,7 @@ def calculate_partner_incomes(
     )[0]
     periods[not_predicted_periods] = specs["max_ret_age"] - specs["start_age"]
 
-    partner_wages = np.zeros(
+    partner_monthly_income = np.zeros(
         (specs["n_sexes"], specs["n_education_types"], specs["n_periods"]), dtype=float
     )
 
@@ -182,17 +188,16 @@ def calculate_partner_incomes(
 
         for edu_var, edu_label in enumerate(specs["education_labels"]):
             mask = params["education"] == edu_label
-            partner_wages[sex_var, edu_var, :] = (
+            partner_monthly_income[sex_var, edu_var, :] = (
                 params.loc[mask, "constant"].values[0]
                 + params.loc[mask, "period"].values[0] * periods
                 + params.loc[mask, "period_sq"].values[0] * periods**2
             )
-    # annual partner wage
-    annual_partner_wages = partner_wages * 12
+    annual_partner_income = partner_monthly_income * 12
 
     # Quasi wealth hack
     annual_partner_pension = (
-        annual_partner_wages[:, :, ~not_predicted_periods].mean(axis=2) * 0.48
+        annual_partner_income[:, :, ~not_predicted_periods].mean(axis=2) * 0.48
     )
 
-    return jnp.asarray(annual_partner_wages), jnp.asarray(annual_partner_pension)
+    return jnp.asarray(annual_partner_income), jnp.asarray(annual_partner_pension)
