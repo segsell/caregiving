@@ -22,7 +22,7 @@ from caregiving.data_management.soep.variables import (
     generate_job_separation_var,
 )
 from caregiving.model.shared import PART_TIME, WORK
-from caregiving.specs.derive_specs import read_and_derive_specs
+from caregiving.specs.task_write_specs import read_and_derive_specs
 
 
 def table(df_col):
@@ -128,10 +128,12 @@ def table(df_col):
 #     merged_data.to_csv(path_to_save)
 
 
-def task_create_estimation_sample(
+def task_create_structural_estimation_sample(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_raw: Path = BLD / "data" / "soep_estimation_data_raw.csv",
-    path_to_save: Annotated[Path, Product] = BLD / "data" / "soep_estimation_data.csv",
+    path_to_save: Annotated[Path, Product] = BLD
+    / "data"
+    / "soep_structural_estimation_sample.csv",
 ) -> None:
 
     specs = read_and_derive_specs(path_to_specs)
@@ -191,4 +193,4 @@ def task_create_estimation_sample(
 
     # Anonymize and save data
     df.reset_index(drop=True, inplace=True)
-    df.to_pickle(path_to_save)
+    df.to_csv(path_to_save)

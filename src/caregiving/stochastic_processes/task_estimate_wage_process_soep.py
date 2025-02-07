@@ -30,6 +30,10 @@ def task_estimate_wage_parameters(
     / "plots"
     / "stochastic_processes"
     / "wages_women.png",
+    path_to_save_wage_params: Annotated[Path, Product] = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "wage_eq_params.csv",
     path_to_save_latex: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
@@ -128,6 +132,7 @@ def task_estimate_wage_parameters(
         )
 
     # Save results
+    wage_parameters.to_csv(path_to_save_wage_params)
     wage_parameters.T.to_latex(path_to_save_latex, float_format="%.4f")
 
     # After estimation print some summary statistics
