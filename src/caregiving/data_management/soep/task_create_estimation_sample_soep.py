@@ -22,7 +22,7 @@ from caregiving.data_management.soep.variables import (
     generate_job_separation_var,
 )
 from caregiving.model.shared import PART_TIME, WORK
-from caregiving.specs.task_derive_specs import read_and_derive_specs
+from caregiving.specs.task_write_specs import read_and_derive_specs
 
 
 def table(df_col):

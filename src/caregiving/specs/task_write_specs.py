@@ -7,6 +7,8 @@ from typing import Annotated, Any, Dict
 import jax.numpy as jnp
 import numpy as np
 import pandas as pd
+import yaml
+from pytask import Product
 
 from caregiving.config import BLD, SRC
 from caregiving.specs.derive_specs import read_and_derive_specs
@@ -19,7 +21,7 @@ from caregiving.specs.income_specs import add_income_specs
 
 
 def task_write_specs(
-    path_to_specs: Path = SRC / "specs.yaml",
+    path_to_load_specs: Path = SRC / "specs.yaml",
     path_to_wage_params: Path = BLD
     / "estimation"
     / "stochastic_processes"
@@ -57,7 +59,7 @@ def task_write_specs(
     / "soep_structural_estimation_sample.csv",
 ) -> Dict[str, Any]:
     """Read in specs and add specs from first-step estimation."""
-    specs = read_and_derive_specs(path_to_specs)
+    specs = read_and_derive_specs(path_to_load_specs)
 
     # Add income specs
     wage_params = pd.read_csv(path_to_wage_params, index_col=0)
