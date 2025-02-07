@@ -17,7 +17,7 @@ from caregiving.data_management.soep.variables import (
     create_education_type,
     generate_job_separation_var,
 )
-from caregiving.model.shared import N_MONTHS, N_WEEKS_IN_YEAR, PART_TIME, WORK
+from caregiving.model.shared import PART_TIME, WORK
 from caregiving.specs.derive_specs import read_and_derive_specs
 
 
@@ -70,14 +70,16 @@ def task_create_job_separation_sample(
         "job_sep": np.uint8,
     }
 
-    df = df[df["sex"] >= 0]
-    df = df[columns.keys()]
-    df = df.astype(columns)
+    df_sub = df[df["sex"] >= 0]
+    df_sub = df_sub[columns.keys()]
+    df_sub = df_sub.astype(columns)
     # Rename age fired to age
-    df.rename(columns={"age_fired": "age"}, inplace=True)
+    df_sub.rename(columns={"age_fired": "age"}, inplace=True)
     # Limit age range to start age and maximum retirement age
-    df = df[(df["age"] >= specs["start_age"]) & (df["age"] <= specs["max_ret_age"])]
-    print(f"{len(df)} observations in job separation sample.")
+    df_sub = df_sub[
+        (df_sub["age"] >= specs["start_age"]) & (df_sub["age"] <= specs["max_ret_age"])
+    ]
+    print(f"{len(df_sub)} observations in job separation sample.")
 
-    # save data
-    df.to_pickle(path_to_save)
+    # Save data
+    df_sub.to_csv(path_to_save)

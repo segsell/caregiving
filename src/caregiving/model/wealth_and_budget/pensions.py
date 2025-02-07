@@ -11,6 +11,7 @@ def calc_pensions_after_ssc(
     education,
     options,
 ):
+    """Calculate the pension income after SSC contributions."""
     retirement_income_gross = calc_gross_pension_income(
         experience_years=experience_years,
         education=education,

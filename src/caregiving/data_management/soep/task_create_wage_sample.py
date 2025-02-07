@@ -29,37 +29,37 @@ def task_create_wage_sample(
 
     df = pd.read_csv(path_to_raw, index_col=["pid", "syear"])
 
-    # filter data (age, sex, estimation period)
+    # Filter data (age, sex, estimation period)
     df = filter_data(df, specs, lag_and_lead_buffer_years=False)
 
-    # create labor choice, keep only working (2: part-time, 3: full-time)
+    # Create labor choice, keep only working (2: part-time, 3: full-time)
     df = create_choice_variable(df)
 
-    # weekly working hours
+    # Weekly working hours
     df = generate_working_hours(df)
 
-    # experience, where we use the sum of part and full time (note: unlike in
+    # Experience, where we use the sum of part and full time (note: unlike in
     # structural estimation, we do not round or enforce a cap on experience here)
     df = sum_experience_variables(df)
 
-    # gross monthly wage
+    # Gross monthly wage
     df.rename(columns={"pglabgro": "monthly_wage"}, inplace=True)
     df = df[df["monthly_wage"] > 0]
     print(str(len(df)) + " observations after dropping invalid wage values.")
 
-    # Drop retirees with wages
-    df = df[df["choice"].isin(WORK)]
+    # Drop retirees
+    df = df[df["choice"].isin(WORK.tolist())]
     print(str(len(df)) + " observations after dropping non-working individuals.")
 
     # Hourly wage
     df["monthly_hours"] = df["working_hours"] * N_WEEKS_IN_YEAR / N_MONTHS
     df["hourly_wage"] = df["monthly_wage"] / df["monthly_hours"]
 
-    # education
     df = create_education_type(df)
 
-    # bring back indices (pid, syear)
+    df = df.sort_values(by=["pid", "syear"])
     df = df.reset_index()
+
     print(str(len(df)) + " observations in final wage estimation dataset.")
 
     type_dict = {
@@ -79,6 +79,7 @@ def task_create_wage_sample(
     # Keep relevant columns
     df = df[type_dict.keys()]
     df = df.astype(type_dict)
+    # df = df.set_index(["pid", "syear"])
 
     # save data
-    df.to_pickle(path_to_save)
+    df.to_csv(path_to_save)

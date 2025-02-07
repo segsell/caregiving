@@ -54,7 +54,7 @@ def task_create_partner_transition_sample(
         + " observations in the final partner transition sample.  \n ----------------"
     )
 
-    df.to_pickle(path_to_save)
+    df.to_csv(path_to_save)
 
 
 def create_partner_and_lagged_state(df, specs):

@@ -4,12 +4,10 @@ import numpy as np
 import pandas as pd
 from jax import numpy as jnp
 
-from caregiving.config import BLD, SRC
-
 FEMALE = 1
 
 
-def predict_children_by_state(path_dict, specs):
+def predict_children_by_state(params, specs):
     """Predicts the number of children in the household for each individual conditional
     on state.
 
@@ -18,12 +16,9 @@ def predict_children_by_state(path_dict, specs):
 
     """
     n_periods = specs["end_age"] - specs["start_age"] + 1
-    params = pd.read_csv(
-        path_dict["external_estimation_results"] + "nb_children_estimates.csv",
-        index_col=[0, 1, 2],
-    )
-    # populate numpy ndarray which maps state to average number of children
+
     children = np.zeros((2, specs["n_education_types"], 2, n_periods))
+
     for sex in (0, 1):
         for edu in range(specs["n_education_types"]):
             for has_partner in (0, 1):
@@ -39,19 +34,17 @@ def predict_children_by_state(path_dict, specs):
     return jnp.asarray(children)
 
 
-def read_in_partner_transition_specs(paths_dict, specs):
+def read_in_partner_transition_specs(trans_mat, specs):
     """Read in partner transition probabilities."""
 
-    trans_probs = pd.read_csv(
-        paths_dict["external_estimation_results"] + "partner_transition_matrix.csv",
-        index_col=[0, 1, 2, 3, 4],
-    )["proportion"]
-
     n_periods = specs["n_periods"]
-    n_partner_states = trans_probs.index.get_level_values("partner_state").nunique()
+    n_partner_states = trans_mat.index.get_level_values(
+        "lagged_partner_state"
+    ).nunique()
+
     n_edu_types = len(specs["education_labels"])
     sexes = [0, 1]
-    age_bins = trans_probs.index.get_level_values("age_bin").unique()
+    age_bins = trans_mat.index.get_level_values("age_bin").unique()
 
     full_series_index = pd.MultiIndex.from_product(
         [
@@ -61,10 +54,10 @@ def read_in_partner_transition_specs(paths_dict, specs):
             range(n_partner_states),
             range(n_partner_states),
         ],
-        names=trans_probs.index.names,
+        names=trans_mat.index.names,
     )
-    full_series = pd.Series(index=full_series_index, data=0.0, name=trans_probs.name)
-    full_series.update(trans_probs)
+    full_series = pd.Series(index=full_series_index, data=0.0, name=trans_mat.name)
+    full_series.update(trans_mat)
 
     # Transition probalities for partner
     female_trans_probs = np.zeros(
@@ -83,5 +76,4 @@ def read_in_partner_transition_specs(paths_dict, specs):
                             (FEMALE, edu, age_bin, current_state, next_state)
                         ]
                     )
-
     return jnp.asarray(female_trans_probs), n_partner_states
