@@ -26,6 +26,7 @@ def task_load_and_merge_estimation_sample(
     soep_c38_hl: Path = SRC / "data" / "soep" / "hl.dta",
     soep_c38_pequiv: Path = SRC / "data" / "soep" / "pequiv.dta",
     soep_c38_pflege: Path = SRC / "data" / "soep" / "pflege.dta",
+    soep_c38_biobirth: Path = SRC / "data" / "soep" / "biobirth.dta",
     path_to_save: Annotated[Path, Product] = BLD
     / "data"
     / "soep_estimation_data_raw.csv",
@@ -99,7 +100,6 @@ def task_load_and_merge_estimation_sample(
 
     # Pflege
     pflege = pd.read_stata(soep_c38_pflege, convert_categoricals=False)
-
     pflege = pflege[pflege["pnrcare"] >= 0]
     merged_data_with_pflege = pd.merge(
         merged_data,
@@ -109,6 +109,30 @@ def task_load_and_merge_estimation_sample(
         how="left",
     )
     merged_data_with_pflege.rename(columns={"pid_x": "pid"}, inplace=True)
+
+    cols_biobirth = [
+        "pid",
+        "sumkids",
+        # "biokids",
+        # "bioinfo",
+        # "bioage",
+    ]
+    _child_columns = []
+    prefix = "kidgeb"
+    # for prefix in ["kidpnr", "kidgeb", "kidsex", "kidmon"]:
+    _child_columns += [
+        f"{prefix}0{i}" for i in range(1, 10)
+    ]  # kidpnr01 to kidpnr09, etc.
+    _child_columns += [
+        f"{prefix}{i}" for i in range(10, 20)
+    ]  # kidpnr10 to kidpnr19, etc.
+
+    cols_biobirth.extend(_child_columns)
+
+    biobirth = pd.read_stata(
+        soep_c38_biobirth, columns=cols_biobirth, convert_categoricals=False
+    )
+    merged_data = pd.merge(merged_data, biobirth, on="pid", how="left")
 
     # Set index
     merged_data["age"] = merged_data["d11101"].astype(int)
