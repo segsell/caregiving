@@ -11,6 +11,9 @@ PGSTIB_RETIREMENT = 13
 PGSBIL_FACHHOCHSCHULREIFE = 3
 PGSBIL_ABITUR = 4
 
+KIDAGE_THRESHOLD_UPPER = 10
+
+MISSING_VALUE = -99
 
 # =====================================================================================
 # Education
@@ -285,3 +288,69 @@ def merge_couples(df):
 
     print(str(len(merged_data)) + " observations after merging couples.")
     return merged_data
+
+
+# =====================================================================================
+# Age of youngest child
+# =====================================================================================
+
+
+def create_kidage_youngest(df):
+    """Create age of the youngest child."""
+    df["syear"] = df.index.get_level_values("syear")
+
+    child_cols = [col for col in df.columns if col.startswith("kidgeb")]
+    for col in child_cols:
+        df.loc[df[col] < 0, col] = np.nan
+
+    print(df["syear"].value_counts(dropna=False))
+
+    # print("Frequency table for pmonin:")
+    # print(df["pmonin"].value_counts(dropna=False))
+    # # Replace negative values in pmonin with NaN
+    # df.loc[df["pmonin"] < 0, "pmonin"] = np.nan
+
+    # # Calculate percentage of valid pmonin observations
+    # valid_syear_mask = df["syear"].notna() & (df["syear"] >= 0)
+    # total_obs = valid_syear_mask.sum()
+
+    # valid_pmonin_mask = df["pmonin"].notna() & (df["pmonin"] > 0) & valid_syear_mask
+    # valid_pmonin = valid_pmonin_mask.sum()
+
+    # percentage_valid_pmonin = (
+    #     (valid_pmonin / total_obs * 100) if total_obs > 0 else np.nan
+    # )
+
+    valid_birthyears = df[child_cols].where(df[child_cols] > 0)
+    df["yng_birthyear"] = valid_birthyears.max(axis=1)
+
+    df["kidage_youngest"] = df["syear"] - df["yng_birthyear"]
+
+    #  Modify kidage_youngest:
+    # - Values >= 10 are set to 10.
+    # - Values < 0 are set to 10.
+    # - NA values are set to 10.
+    # df["kidage_youngest"] = np.where(
+    #     (df["kidage_youngest"].isna())
+    #     | (df["kidage_youngest"] >= KIDAGE_THRESHOLD_UPPER)
+    #     | (df["kidage_youngest"] < 0),
+    #     KIDAGE_THRESHOLD_UPPER,
+    #     df["kidage_youngest"],
+    # )
+    df["kidage_youngest"] = np.where(
+        # (df["kidage_youngest"].isna()) | (df["kidage_youngest"] < 0),
+        (df["kidage_youngest"].isna()),
+        # | (df["kidage_youngest"] >= KIDAGE_THRESHOLD_UPPER),
+        MISSING_VALUE,
+        df["kidage_youngest"],
+    )
+
+    print(
+        "Distribution of kidage youngest:"
+        + str(df["kidage_youngest"].value_counts(dropna=False))
+    )
+
+    # Clean up
+    df.drop(columns=["syear", "yng_birthyear"] + child_cols, inplace=True)
+
+    return df

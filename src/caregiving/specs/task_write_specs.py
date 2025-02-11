@@ -14,6 +14,7 @@ from caregiving.config import BLD, SRC
 from caregiving.specs.derive_specs import read_and_derive_specs
 from caregiving.specs.experience_specs import create_max_experience
 from caregiving.specs.family_specs import (
+    predict_age_of_youngest_child_by_state,
     predict_children_by_state,
     read_in_partner_transition_specs,
 )
@@ -42,10 +43,14 @@ def task_write_specs(
     / "estimation"
     / "stochastic_processes"
     / "pop_avg_annual_wage.npy",
-    path_to_child_params: Path = BLD
+    path_to_nb_child_params: Path = BLD
     / "estimation"
     / "stochastic_processes"
     / "nb_children_estimates.csv",
+    path_to_age_youngest_child_params: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "age_youngest_child.csv",
     path_to_partner_trans_mat: Path = BLD
     / "estimation"
     / "stochastic_processes"
@@ -78,10 +83,18 @@ def task_write_specs(
     )
 
     # family transitions
-    child_params = pd.read_csv(path_to_child_params, index_col=[0, 1, 2])
+    children_params = pd.read_csv(path_to_nb_child_params, index_col=[0, 1, 2])
+
+    age_youngest_child_params = pd.read_csv(
+        path_to_age_youngest_child_params, index_col=[0, 1, 2]
+    )
 
     # Matches Bruno's & Max's result
-    specs["children_by_state"] = predict_children_by_state(child_params, specs)
+    specs["children_by_state"] = predict_children_by_state(children_params, specs)
+    specs["child_age_youngest_by_state"] = predict_age_of_youngest_child_by_state(
+        age_youngest_child_params,
+        specs,
+    )
 
     # Read in family transitions
     partner_trans_prop = pd.read_csv(
