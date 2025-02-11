@@ -144,8 +144,9 @@ def task_estimate_age_of_youngest_child(
     path_to_save: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
-    / "age_youngest_child.csv",
+    / "age_youngest_child_estimates.csv",
 ) -> None:
+    """Estimate the age of the youngest child via OLS."""
 
     # Read specs and data; restrict to ages below end_age
     specs = read_and_derive_specs(path_to_specs)
@@ -157,6 +158,9 @@ def task_estimate_age_of_youngest_child(
     df = df.loc[(df["age"] >= start_age) & (df["age"] <= end_age)]
 
     df = df.loc[df["kidage_youngest"] > MISSING_VALUE]
+
+    # Drop observations with a positive age of the youngest child
+    # but no children in the household
     df = df[~((df["kidage_youngest"] >= 0) & (df["children"] == 0))]
     df = df.loc[
         (df["kidage_youngest"] <= df["age"] - MINIMUM_CHILDBEARING_AGE)

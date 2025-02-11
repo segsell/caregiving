@@ -8,11 +8,10 @@ FEMALE = 1
 
 
 def predict_children_by_state(params, specs):
-    """Predicts the number of children in the household for each individual conditional
-    on state.
+    """Predict the number of children in the household conditional on state.
 
-    Produces children array of shape (n_sexes, n_education_types, n_has_partner_states,
-    n_periods)
+    Produces array of shape
+        (n_sexes, n_education_types, n_has_partner_states, n_periods)
 
     """
     n_periods = specs["end_age"] - specs["start_age"] + 1
@@ -31,7 +30,35 @@ def predict_children_by_state(params, specs):
                     children[sex, edu, has_partner, period] = np.maximum(
                         0, predicted_nb_children
                     )
+
     return jnp.asarray(children)
+
+
+def predict_age_of_youngest_child_by_state(params, specs):
+    """Predict the age of the youngest child conditional on state.
+
+    Produces array of shape
+        (n_sexes, n_education_types, n_has_partner_states, n_periods)
+
+    """
+    n_periods = specs["end_age"] - specs["start_age"] + 1
+
+    kidage_youngest = np.zeros((2, specs["n_education_types"], 2, n_periods))
+
+    for sex in (0, 1):
+        for edu in range(specs["n_education_types"]):
+            for has_partner in (0, 1):
+                for period in range(n_periods):
+                    predicted_kidage_youngest = (
+                        params.loc[(sex, edu, has_partner), "const"]
+                        + params.loc[(sex, edu, has_partner), "period"] * period
+                        + params.loc[(sex, edu, has_partner), "period_sq"] * period**2
+                    )
+                    kidage_youngest[sex, edu, has_partner, period] = np.maximum(
+                        0, predicted_kidage_youngest
+                    )
+
+    return jnp.asarray(kidage_youngest)
 
 
 def read_in_partner_transition_specs(trans_mat, specs):
