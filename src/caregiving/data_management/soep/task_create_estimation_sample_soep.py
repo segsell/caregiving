@@ -17,6 +17,7 @@ from caregiving.data_management.soep.variables import (
     create_choice_variable,
     create_education_type,
     create_experience_variable,
+    create_kidage_youngest,
     create_partner_state,
     determine_observed_job_offers,
     generate_job_separation_var,
@@ -43,6 +44,8 @@ def task_create_structural_estimation_sample(
     df = pd.read_csv(path_to_raw)
 
     df = create_partner_state(df, filter_missing=True)
+    df = create_kidage_youngest(df)
+
     df = create_choice_variable(df)
 
     # filter data. Leave additional years in for lagging and leading.
@@ -85,8 +88,7 @@ def task_create_structural_estimation_sample(
         "education": "int8",
         "sex": "int8",
         "children": "int8",
-        # "health": "int8",
-        # "kidage_youngest": "int8",
+        "kidage_youngest": "int8",
     }
     df = df[list(type_dict.keys())]
     df = df.astype(type_dict)
@@ -96,4 +98,3 @@ def task_create_structural_estimation_sample(
     # Anonymize and save data
     df.reset_index(drop=True, inplace=True)
     df.to_csv(path_to_save)
-    # breakpoint()
