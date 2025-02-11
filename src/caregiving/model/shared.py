@@ -15,6 +15,11 @@ MAX_AGE_SIM = 70
 MIN_AGE = 40
 MAX_AGE = 70
 
+AGE_0 = 0
+AGE_4 = 4
+AGE_7 = 7
+AGE_10 = 10
+
 AGE_40 = 40
 AGE_45 = 45
 AGE_50 = 50
@@ -187,15 +192,18 @@ def is_not_working(choice):
 
 
 def is_child_age_0_to_3(age_youngest_child):
-    return age_youngest_child == AGE_BIN_0_TO_3
+    # return age_youngest_child == AGE_BIN_0_TO_3
+    return AGE_0 <= age_youngest_child < AGE_4
 
 
 def is_child_age_4_to_6(age_youngest_child):
-    return age_youngest_child == AGE_BIN_4_TO_6
+    # return age_youngest_child == AGE_BIN_4_TO_6
+    return AGE_4 <= age_youngest_child < AGE_7
 
 
 def is_child_age_7_to_9(age_youngest_child):
-    return age_youngest_child == AGE_BIN_7_TO_9
+    # return age_youngest_child == AGE_BIN_7_TO_9
+    return AGE_7 <= age_youngest_child < AGE_10
 
 
 # ==============================================================================
