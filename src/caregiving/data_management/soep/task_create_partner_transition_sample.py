@@ -16,6 +16,7 @@ from caregiving.data_management.soep.auxiliary import (
 )
 from caregiving.data_management.soep.variables import (
     create_education_type,
+    create_kidage_youngest,
     create_partner_state,
 )
 from caregiving.specs.derive_specs import read_and_derive_specs
@@ -39,14 +40,23 @@ def task_create_partner_transition_sample(
     df = filter_years(df, specs["start_year"], specs["end_year"])
 
     # In this function also merging is called
-    df = create_partner_and_lagged_state(df, specs)
+    df = _create_partner_and_lagged_state(df, specs)
+    df = create_kidage_youngest(df)
 
     # Filter age and sex
     df = filter_below_age(df, specs["start_age"])
     df = recode_sex(df)
 
     df = df[
-        ["age", "sex", "education", "partner_state", "lead_partner_state", "children"]
+        [
+            "age",
+            "sex",
+            "education",
+            "partner_state",
+            "lead_partner_state",
+            "children",
+            "kidage_youngest",
+        ]
     ]
 
     print(
@@ -57,7 +67,7 @@ def task_create_partner_transition_sample(
     df.to_csv(path_to_save)
 
 
-def create_partner_and_lagged_state(df, specs):
+def _create_partner_and_lagged_state(df, specs):
     # The following code is dependent on span dataframe being called first.
     # In particular the lagged partner state must be after span dataframe and
     # create partner state.

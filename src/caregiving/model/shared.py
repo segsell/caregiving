@@ -2,6 +2,7 @@
 
 import jax.numpy as jnp
 
+MISSING_VALUE = -99
 BASE_YEAR = 2015
 
 N_PERIODS_SIM = 30
@@ -90,6 +91,9 @@ PART_TIME_HOURS = 20 * N_WEEKS * N_MONTHS
 FULL_TIME_HOURS = 40 * N_WEEKS * N_MONTHS
 
 MAX_LEISURE_HOURS = TOTAL_WEEKLY_HOURS * N_WEEKS * N_MONTHS
+
+MINIMUM_CHILDBEARING_AGE = 18
+MAXIMUM_CHILDBEARING_AGE = 42
 
 
 # ==============================================================================

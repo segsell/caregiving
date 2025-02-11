@@ -13,6 +13,8 @@ PGSBIL_ABITUR = 4
 
 KIDAGE_THRESHOLD_UPPER = 10
 
+MISSING_VALUE = -99
+
 # =====================================================================================
 # Education
 # =====================================================================================
@@ -328,11 +330,18 @@ def create_kidage_youngest(df):
     # - Values >= 10 are set to 10.
     # - Values < 0 are set to 10.
     # - NA values are set to 10.
+    # df["kidage_youngest"] = np.where(
+    #     (df["kidage_youngest"].isna())
+    #     | (df["kidage_youngest"] >= KIDAGE_THRESHOLD_UPPER)
+    #     | (df["kidage_youngest"] < 0),
+    #     KIDAGE_THRESHOLD_UPPER,
+    #     df["kidage_youngest"],
+    # )
     df["kidage_youngest"] = np.where(
-        (df["kidage_youngest"].isna())
-        | (df["kidage_youngest"] >= KIDAGE_THRESHOLD_UPPER)
-        | (df["kidage_youngest"] < 0),
-        KIDAGE_THRESHOLD_UPPER,
+        # (df["kidage_youngest"].isna()) | (df["kidage_youngest"] < 0),
+        (df["kidage_youngest"].isna()),
+        # | (df["kidage_youngest"] >= KIDAGE_THRESHOLD_UPPER),
+        MISSING_VALUE,
         df["kidage_youngest"],
     )
 

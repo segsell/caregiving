@@ -14,6 +14,28 @@ def table(df_col):
     return pd.crosstab(df_col, columns="Count")["Count"]
 
 
+def _get_cols_biobirth():
+    cols_biobirth = [
+        "pid",
+        "sumkids",
+        # "biokids",
+        # "bioinfo",
+        # "bioage",
+    ]
+    _child_columns = []
+    prefix = "kidgeb"
+    # for prefix in ["kidpnr", "kidgeb", "kidsex", "kidmon"]:
+    _child_columns += [
+        f"{prefix}0{i}" for i in range(1, 10)
+    ]  # kidpnr01 to kidpnr09, etc.
+    _child_columns += [
+        f"{prefix}{i}" for i in range(10, 20)
+    ]  # kidpnr10 to kidpnr19, etc.
+    cols_biobirth.extend(_child_columns)
+
+    return cols_biobirth
+
+
 # =====================================================================================
 # Estimation sample
 # =====================================================================================
@@ -110,25 +132,8 @@ def task_load_and_merge_estimation_sample(
     )
     merged_data_with_pflege.rename(columns={"pid_x": "pid"}, inplace=True)
 
-    cols_biobirth = [
-        "pid",
-        "sumkids",
-        # "biokids",
-        # "bioinfo",
-        # "bioage",
-    ]
-    _child_columns = []
-    prefix = "kidgeb"
-    # for prefix in ["kidpnr", "kidgeb", "kidsex", "kidmon"]:
-    _child_columns += [
-        f"{prefix}0{i}" for i in range(1, 10)
-    ]  # kidpnr01 to kidpnr09, etc.
-    _child_columns += [
-        f"{prefix}{i}" for i in range(10, 20)
-    ]  # kidpnr10 to kidpnr19, etc.
-
-    cols_biobirth.extend(_child_columns)
-
+    # Age of youngest child
+    cols_biobirth = _get_cols_biobirth()
     biobirth = pd.read_stata(
         soep_c38_biobirth, columns=cols_biobirth, convert_categoricals=False
     )
@@ -136,6 +141,63 @@ def task_load_and_merge_estimation_sample(
 
     # Set index
     merged_data["age"] = merged_data["d11101"].astype(int)
+    merged_data.set_index(["pid", "syear"], inplace=True)
+    print(str(len(merged_data)) + " observations in SOEP C38 core.")
+
+    merged_data.to_csv(path_to_save)
+
+
+# =====================================================================================
+# Partner transition sample
+# =====================================================================================
+
+
+def task_load_and_merge_partner_transition_sample(
+    soep_c38_pgen: Path = SRC / "data" / "soep" / "pgen.dta",
+    soep_c38_ppathl: Path = SRC / "data" / "soep" / "ppathl.dta",
+    soep_c38_pequiv: Path = SRC / "data" / "soep" / "pequiv.dta",
+    soep_c38_biobirth: Path = SRC / "data" / "soep" / "biobirth.dta",
+    path_to_save: Annotated[Path, Product] = BLD
+    / "data"
+    / "soep_partner_transition_data_raw.csv",
+) -> None:
+    # Load SOEP core data
+    pgen_data = pd.read_stata(
+        soep_c38_pgen,
+        columns=[
+            "syear",
+            "pid",
+            "hid",
+            "pgemplst",
+            "pgpsbil",
+            "pgstib",
+        ],
+        convert_categoricals=False,
+    )
+    ppathl_data = pd.read_stata(
+        soep_c38_ppathl,
+        columns=["syear", "pid", "hid", "sex", "parid", "gebjahr"],
+        convert_categoricals=False,
+    )
+    pequiv_data = pd.read_stata(
+        soep_c38_pequiv,
+        # d11107: number of children in household
+        columns=["pid", "syear", "d11107"],
+    )
+    merged_data = pd.merge(
+        pgen_data, ppathl_data, on=["pid", "hid", "syear"], how="inner"
+    )
+    merged_data = pd.merge(merged_data, pequiv_data, on=["pid", "syear"], how="inner")
+
+    # Age of youngest child
+    cols_biobirth = _get_cols_biobirth()
+    biobirth = pd.read_stata(
+        soep_c38_biobirth, columns=cols_biobirth, convert_categoricals=False
+    )
+    merged_data = pd.merge(merged_data, biobirth, on="pid", how="left")
+
+    merged_data.rename(columns={"d11107": "children"}, inplace=True)
+    merged_data["age"] = merged_data["syear"] - merged_data["gebjahr"]
     merged_data.set_index(["pid", "syear"], inplace=True)
     print(str(len(merged_data)) + " observations in SOEP C38 core.")
 
@@ -242,54 +304,6 @@ def task_load_and_merge_job_separation_sample(
 
     merged_data["age"] = merged_data["syear"] - merged_data["gebjahr"]
     del pgen_data, pathl_data
-    merged_data.set_index(["pid", "syear"], inplace=True)
-    print(str(len(merged_data)) + " observations in SOEP C38 core.")
-
-    merged_data.to_csv(path_to_save)
-
-
-# =====================================================================================
-# Partner transition sample
-# =====================================================================================
-
-
-def task_load_and_merge_partner_transition_sample(
-    soep_c38_pgen: Path = SRC / "data" / "soep" / "pgen.dta",
-    soep_c38_ppathl: Path = SRC / "data" / "soep" / "ppathl.dta",
-    soep_c38_pequiv: Path = SRC / "data" / "soep" / "pequiv.dta",
-    path_to_save: Annotated[Path, Product] = BLD
-    / "data"
-    / "soep_partner_transition_data_raw.csv",
-) -> None:
-    # Load SOEP core data
-    pgen_data = pd.read_stata(
-        soep_c38_pgen,
-        columns=[
-            "syear",
-            "pid",
-            "hid",
-            "pgemplst",
-            "pgpsbil",
-            "pgstib",
-        ],
-        convert_categoricals=False,
-    )
-    ppathl_data = pd.read_stata(
-        soep_c38_ppathl,
-        columns=["syear", "pid", "hid", "sex", "parid", "gebjahr"],
-        convert_categoricals=False,
-    )
-    pequiv_data = pd.read_stata(
-        soep_c38_pequiv,
-        # d11107: number of children in household
-        columns=["pid", "syear", "d11107"],
-    )
-    merged_data = pd.merge(
-        pgen_data, ppathl_data, on=["pid", "hid", "syear"], how="inner"
-    )
-    merged_data = pd.merge(merged_data, pequiv_data, on=["pid", "syear"], how="inner")
-    merged_data.rename(columns={"d11107": "children"}, inplace=True)
-    merged_data["age"] = merged_data["syear"] - merged_data["gebjahr"]
     merged_data.set_index(["pid", "syear"], inplace=True)
     print(str(len(merged_data)) + " observations in SOEP C38 core.")
 
