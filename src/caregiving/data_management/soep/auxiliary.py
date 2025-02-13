@@ -36,7 +36,7 @@ def recode_sex(df):
     return df
 
 
-def filter_data(merged_data, specs, lag_and_lead_buffer_years=True):
+def filter_data(merged_data, specs, lag_and_lead_buffer_years=True, event_study=False):
     """This function filters the data according to the model setup.
 
     Specifically, it filters out young people, women (if no_women=True), and years
@@ -44,16 +44,22 @@ def filter_data(merged_data, specs, lag_and_lead_buffer_years=True):
     sample to construct lagged_choice.
 
     """
-    merged_data = filter_below_age(merged_data, specs["start_age"] - 1)
+    if event_study:
+        start_age = specs["start_age_event_study"]
+        start_year = specs["start_year_event_study"]
+        end_year = specs["end_year_event_study"]
+    else:
+        start_age = specs["start_age"]
+        start_year = specs["start_year"]
+        end_year = specs["end_year"]
+
+    merged_data = filter_below_age(merged_data, start_age - 1)
 
     merged_data = recode_sex(merged_data)
 
     if lag_and_lead_buffer_years:
-        start_year = specs["start_year"] - 1
-        end_year = specs["end_year"] + 1
-    else:
-        start_year = specs["start_year"]
-        end_year = specs["end_year"]
+        start_year = start_year - 1
+        end_year = end_year + 1
 
     merged_data = filter_years(merged_data, start_year, end_year)
     return merged_data
@@ -102,6 +108,7 @@ def create_lagged_and_lead_variables(merged_data, specs, lead_job_sep=False):
         ].shift(-1)
 
     merged_data = full_container[full_container["lagged_choice"].notna()]
+
     if lead_job_sep:
         merged_data = merged_data[merged_data["job_sep_this_year"].notna()]
 
