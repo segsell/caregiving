@@ -87,7 +87,7 @@ end_age_mortality: 110
 life_table_max_age: 100
 ################################################
 # Event study
-start_year_event_study: 2001
+start_year_event_study: 1992
 end_year_event_study: 2019
 reference_year_event_study: 2015
 

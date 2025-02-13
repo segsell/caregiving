@@ -67,6 +67,10 @@ def task_load_and_merge_event_study_sample(
             "syear",
             "plb0304_h",  # why job ended
             "pli0046",  # how many hours per weekday support persons in care
+            "pld0030",  # number of sisters
+            "pld0032",  # number of brothers
+            "plj0118_h",  # distance to mother
+            "plj0119_h",  # distance to father
         ],
         chunksize=100000,
         convert_categoricals=False,
@@ -114,9 +118,7 @@ def task_load_and_merge_event_study_sample(
             "fybirth",
             "mydeath",
             "fydeath",
-            "sibl",
-            "nums",
-            "numb",
+            "locchild1",  #  lives now in same area where grew up
         ],
         convert_categoricals=False,
     )
