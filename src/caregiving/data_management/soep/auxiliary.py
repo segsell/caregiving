@@ -92,13 +92,20 @@ def span_dataframe(df, start_year, end_year):
     return full_container
 
 
-def create_lagged_and_lead_variables(merged_data, specs, lead_job_sep=False):
+def create_lagged_and_lead_variables(
+    merged_data, specs, lead_job_sep=False, event_study=False
+):
     """This function creates the lagged choice variable and drops missing lagged
     choices."""
 
-    full_container = span_dataframe(
-        merged_data, specs["start_year"] - 1, specs["end_year"] + 1
-    )
+    if event_study:
+        start_year = specs["start_year_event_study"]
+        end_year = specs["end_year_event_study"]
+    else:
+        start_year = specs["start_year"]
+        end_year = specs["end_year"]
+
+    full_container = span_dataframe(merged_data, start_year - 1, end_year + 1)
 
     full_container["lagged_choice"] = full_container.groupby(["pid"])["choice"].shift()
 

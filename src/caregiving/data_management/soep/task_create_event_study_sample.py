@@ -46,6 +46,8 @@ def task_create_event_study_sample(
     cpi = pd.read_csv(path_to_cpi, index_col=0)
     df = pd.read_csv(path_to_raw)
 
+    # df = create_parent_info(df)
+
     df = create_choice_variable(df)
     df = generate_working_hours(df, include_actual_hours=True, drop_missing=False)
     df = create_education_type(df)
@@ -55,12 +57,15 @@ def task_create_event_study_sample(
     df = create_hourly_wage(df)
 
     df = create_partner_state(df, filter_missing=True)
+    df = create_parent_info(df, filter_missing=True)
 
     # filter data. Leave additional years in for lagging and leading.
     df = filter_data(df, specs, event_study=True)
 
     df = generate_job_separation_var(df)
-    df = create_lagged_and_lead_variables(df, specs, lead_job_sep=False)
+    df = create_lagged_and_lead_variables(
+        df, specs, lead_job_sep=False, event_study=True
+    )
 
     df = create_experience_variable(df)
 
@@ -91,10 +96,10 @@ def task_create_event_study_sample(
         "pglabgro_deflated": "float32",
         "hourly_wage": "float32",
         # parent information
-        # "mother_age": "int8",
-        # "father_age": "int8",
-        # "mother_alive": "int8",
-        # "father_alive": "int8",
+        "mother_age": "float32",
+        "father_age": "float32",
+        "mother_alive": "float32",
+        "father_alive": "float32",
         # partner
         "parid": "int32",
         "age_p": "float16",
@@ -112,13 +117,16 @@ def task_create_event_study_sample(
     df = df[list(type_dict.keys())]
     df = df.astype(type_dict)
 
+    df = df[df["syear"] <= specs["end_year_event_study"]]
+
     # print_data_description(df)
+    # breakpoint()
 
     df.to_csv(path_to_save)
 
 
 # =====================================================================================
-# Deflate
+# Variables
 # =====================================================================================
 
 
@@ -146,9 +154,71 @@ def create_hourly_wage(df):
     )
 
     df["monthly_hours"] = df["working_hours"] * N_MONTHS / N_WEEKS_IN_YEAR
-    # df["hourly_wage"] = df["pglabgro_deflated"] / df["monthly_hours"]
     df["hourly_wage"] = np.where(
         df["working_hours"] == 0, 0, df["pglabgro_deflated"] / df["monthly_hours"]
     )
 
     return df
+
+
+def create_parent_info(df, filter_missing=True):
+    """Create parent age and alive status."""
+
+    df = df.reset_index()
+
+    df.loc[df["mybirth"] < 0] = np.nan
+    df.loc[df["fybirth"] < 0] = np.nan
+
+    df.loc[df["mydeath"] < 0] = np.nan
+    df.loc[df["fydeath"] < 0] = np.nan
+
+    for parent_var in ("mybirth", "fybirth"):
+        dup_byear = df.dropna(subset=[parent_var]).groupby("pid")[parent_var].nunique()
+        conflicts = dup_byear[dup_byear > 1]
+        if not conflicts.empty:
+            print(
+                "Warning: Conflicting birth years detected for some pids:",
+                conflicts.index.tolist(),
+            )
+
+    # Doesn't change anything
+    df = df.sort_values(["pid", "syear"])
+    df["mybirth"] = df.groupby("pid")["mybirth"].transform(lambda x: x.ffill().bfill())
+    df["fybirth"] = df.groupby("pid")["fybirth"].transform(lambda x: x.ffill().bfill())
+
+    # Drop observations with missing parent information
+    if filter_missing:
+        df = df[df["mybirth"] > 0]
+        df = df[df["fybirth"] > 0]
+
+    df["mother_age"] = df["syear"] - df["mybirth"]
+    df["father_age"] = df["syear"] - df["fybirth"]
+
+    _cond = (
+        (df["mybirth"].notna())
+        & (df["mybirth"] <= df["syear"])
+        & (df["mydeath"].isna() | (df["syear"] < df["mydeath"]))
+    )
+    df["mother_alive"] = np.where(_cond, 1, 0)
+
+    _cond = (
+        (df["fybirth"].notna())
+        & (df["fybirth"] <= df["syear"])
+        & (df["fydeath"].isna() | (df["syear"] < df["fydeath"]))
+    )
+    df["father_alive"] = np.where(_cond, 1, 0)
+
+    df_age = df.copy()
+
+    # If mother_alive == 0, set mother_age to NaN
+    df_age["mother_age"] = np.where(
+        df_age["mother_alive"] == 1, df_age["mother_age"], np.nan
+    )
+
+    # If father_alive == 0, set father_age to NaN
+    df_age["father_age"] = np.where(
+        df_age["father_alive"] == 1, df_age["father_age"], np.nan
+    )
+
+    df_age.set_index(["pid", "syear"], inplace=True)
+    return df_age
