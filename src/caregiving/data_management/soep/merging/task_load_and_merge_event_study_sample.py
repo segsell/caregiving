@@ -54,7 +54,6 @@ def task_load_and_merge_event_study_sample(
         columns=["pid", "hid", "syear", "sex", "gebjahr", "parid", "rv_id"],
         convert_categoricals=False,
     )
-    # Merge pgen data with pathl data and hl data
     merged_data = pd.merge(
         pgen_data, ppathl_data, on=["pid", "hid", "syear"], how="inner"
     )
@@ -82,10 +81,17 @@ def task_load_and_merge_event_study_sample(
     # get household level data
     hl_data = pd.read_stata(
         soep_c38_hl,
-        columns=["hid", "syear", "hlc0043"],
+        columns=[
+            "hid",
+            "syear",
+            "hlc0043",  # Kindergeld für wie viele Kinder
+            "hlc0005_h",  # monthly net household income
+            "hlc0120_h",  # monthly amount of savings
+        ],
         convert_categoricals=False,
     )
     merged_data = pd.merge(merged_data, hl_data, on=["hid", "syear"], how="left")
+
     pequiv_data = pd.read_stata(
         # d11107: number of children in household
         # d11101: age of individual
@@ -98,18 +104,6 @@ def task_load_and_merge_event_study_sample(
     )
     merged_data = pd.merge(merged_data, pequiv_data, on=["pid", "syear"], how="inner")
     merged_data.rename(columns={"d11107": "children"}, inplace=True)
-
-    # Pflege
-    pflege = pd.read_stata(soep_c38_pflege, convert_categoricals=False)
-    pflege = pflege[pflege["pnrcare"] >= 0]
-    merged_data_with_pflege = pd.merge(
-        merged_data,
-        pflege,
-        left_on=["pid", "syear"],
-        right_on=["pnrcare", "syear"],
-        how="left",
-    )
-    merged_data_with_pflege.rename(columns={"pid_x": "pid"}, inplace=True)
 
     # Parent information
     biparen = pd.read_stata(
@@ -135,55 +129,3 @@ def task_load_and_merge_event_study_sample(
     print(str(len(merged_data)) + " observations in SOEP C38 core.")
 
     merged_data.to_csv(path_to_save)
-
-
-# =====================================================================================
-# Partner transition sample
-# =====================================================================================
-
-
-def load_and_merge_partner_transition_sample(
-    soep_c38_pgen: Path = SRC / "data" / "soep" / "pgen.dta",
-    soep_c38_ppathl: Path = SRC / "data" / "soep" / "ppathl.dta",
-    soep_c38_pequiv: Path = SRC / "data" / "soep" / "pequiv.dta",
-    soep_c38_biobirth: Path = SRC / "data" / "soep" / "biobirth.dta",
-    # path_to_save: Annotated[Path, Product] = BLD
-    # / "data"
-    # / "soep_partner_transition_data_raw.csv",
-) -> None:
-    """Load partner sample"""
-
-    # Load SOEP core data
-    pgen_data = pd.read_stata(
-        soep_c38_pgen,
-        columns=[
-            "syear",
-            "pid",
-            "hid",
-            "pgemplst",
-            "pgpsbil",
-            "pgstib",
-        ],
-        convert_categoricals=False,
-    )
-    ppathl_data = pd.read_stata(
-        soep_c38_ppathl,
-        columns=["syear", "pid", "hid", "sex", "parid", "gebjahr"],
-        convert_categoricals=False,
-    )
-    pequiv_data = pd.read_stata(
-        soep_c38_pequiv,
-        # d11107: number of children in household
-        columns=["pid", "syear", "d11107"],
-    )
-    merged_data = pd.merge(
-        pgen_data, ppathl_data, on=["pid", "hid", "syear"], how="inner"
-    )
-    merged_data = pd.merge(merged_data, pequiv_data, on=["pid", "syear"], how="inner")
-
-    merged_data.rename(columns={"d11107": "children"}, inplace=True)
-    merged_data["age"] = merged_data["syear"] - merged_data["gebjahr"]
-    merged_data.set_index(["pid", "syear"], inplace=True)
-    print(str(len(merged_data)) + " observations in SOEP C38 core.")
-
-    # merged_data.to_csv(path_to_save)

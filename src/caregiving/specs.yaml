@@ -85,7 +85,11 @@ start_age_mortality: 16
 end_year_mortality: 2020 # end year of lifespells in soep38
 end_age_mortality: 110
 life_table_max_age: 100
-
+################################################
+# Event study
+start_year_event_study: 2001
+end_year_event_study: 2019
+reference_year_event_study: 2015
 
 
 ###############################################################################
