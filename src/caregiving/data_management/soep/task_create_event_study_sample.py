@@ -39,7 +39,122 @@ def task_create_event_study_sample(
     / "data"
     / "soep_event_study_sample.csv",
 ) -> None:
-    """Create variables and prepare sample for event study."""
+    """Create variables and prepare sample for event study.
+
+
+    pid
+       Unique personal identifier for each individual.
+
+    syear
+        Survey year (i.e., the year of the interview/observation).
+
+    age
+        Age of the individual in years.
+
+    sex
+        Numeric code for the individual's sex. 0: male, 1: female
+
+    choice
+        Coded choice variable that represents the individual's labor market decision
+        0: retired, 1: unemployed, 2: part-time, 3: full-time.
+
+    partner_state
+        Indicates the presence and/or type of partner arrangement.
+        0: no partner, 1: working-age partner, 2: retired partner
+
+    experience
+        Number of years of labor market experience.
+        Years of part-time work count as 0.5 years of experience.
+
+    education
+        Education level.
+        0: No Abitur, 1: Abitur (or higher)
+
+    children
+        Number of children living in the household.
+
+    health
+        Self-reported health status.
+        0: bad, 1: good
+
+    working_hours
+        Contractual weekly working hours.
+
+    working_hours_actual
+        Actual weekly working hours worked (including overtime).
+
+    pglabgro_deflated
+        Monthly gross labor income deflated to a base year using CPI data.
+
+    hourly_wage
+        Computed hourly wage, which is gross labor income divided by monthly
+        hours worked.
+
+    pli0046
+        Raw caregiving variable from the original dataset.
+        https://paneldata.org/soep-core/datasets/cov/pli0046
+
+    any_care
+        Indicator for whether the person provided any (light or intensive) care.
+
+    light_care
+        Indicator for whether the person provided “light” care only (== 1 hour per day)
+
+    intensive_care
+        Indicator for whether the person provided “intensive” care (>= 2 hours per day).
+
+    n_sisters
+        Number of sisters the individual has.
+
+    n_brothers
+        Number of brothers the individual has.
+
+    mother_age
+        Age of the individual's mother in the given survey year (if alive).
+
+    father_age
+        Age of the individual's father in the given survey year (if alive).
+
+    mother_alive
+        Indicator for whether the individual's mother is alive in the given survey year.
+
+    father_alive
+        Indicator for whether the individual's father is alive in the given survey year.
+
+    parid
+        Partner's person identifier.
+
+    age_p
+        Partner's age.
+
+    sex_p
+        Numeric code for the partner's sex.
+
+    choice_p
+        Labor market choice of the partner.
+
+    education_p
+        Education level of the partner.
+
+    health_p
+        Health status indicator of the partner.
+
+    working_hours_p
+        Contractual weekly working hours of the partner.
+
+    working_hours_actual_p
+        Actual weekly working hours of the partner.
+
+    pglabgro_deflated_p
+        Partner's monthly gross labor income, deflated to the base year.
+
+    hourly_wage_p
+        Partner's computed hourly wage.
+
+    any_care_p
+        Indicator for whether the partner provided any care.
+
+    """
 
     specs = read_and_derive_specs(path_to_specs)
 
@@ -63,7 +178,6 @@ def task_create_event_study_sample(
     # filter data. Leave additional years in for lagging and leading.
     df = filter_data(df, specs, event_study=True)
 
-    df = generate_job_separation_var(df)
     df = create_lagged_and_lead_variables(
         df, specs, lead_job_sep=False, event_study=True
     )
