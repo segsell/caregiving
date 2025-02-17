@@ -46,18 +46,19 @@ def task_create_event_study_sample(
     cpi = pd.read_csv(path_to_cpi, index_col=0)
     df = pd.read_csv(path_to_raw)
 
-    # df = create_parent_info(df)
-
     df = create_choice_variable(df)
     df = generate_working_hours(df, include_actual_hours=True, drop_missing=False)
     df = create_education_type(df)
     df = create_health_var(df, drop_missing=True)
+    df = create_caregiving(df, filter_missing=False)
 
     df = deflate_gross_labor_income(df, cpi_data=cpi, specs=specs)
     df = create_hourly_wage(df)
 
     df = create_partner_state(df, filter_missing=True)
+
     df = create_parent_info(df, filter_missing=True)
+    df = create_sibling_info(df, filter_missing=True)
 
     # filter data. Leave additional years in for lagging and leading.
     df = filter_data(df, specs, event_study=True)
@@ -95,6 +96,9 @@ def task_create_event_study_sample(
         "working_hours_actual": "float32",
         "pglabgro_deflated": "float32",
         "hourly_wage": "float32",
+        "any_care": "float32",
+        "light_care": "float32",
+        "intensive_care": "float32",
         # parent information
         "mother_age": "float32",
         "father_age": "float32",
@@ -111,6 +115,7 @@ def task_create_event_study_sample(
         "working_hours_actual_p": "float32",
         "pglabgro_deflated_p": "float32",
         "hourly_wage_p": "float32",
+        "any_care_p": "float32",
     }
 
     df.reset_index(drop=False, inplace=True)
@@ -120,7 +125,6 @@ def task_create_event_study_sample(
     df = df[df["syear"] <= specs["end_year_event_study"]]
 
     # print_data_description(df)
-    # breakpoint()
 
     df.to_csv(path_to_save)
 
@@ -222,3 +226,59 @@ def create_parent_info(df, filter_missing=True):
 
     df_age.set_index(["pid", "syear"], inplace=True)
     return df_age
+
+
+def create_sibling_info(df, filter_missing=False):
+
+    df.loc[df["pld0030"] < 0, "pld0030"] = np.nan
+    df.loc[df["pld0032"] < 0, "pld0032"] = np.nan
+
+    out = df.sort_values(["pid", "syear"]).copy()
+    out["pld0030"] = out.groupby("pid")["pld0030"].transform(
+        lambda x: x.ffill().bfill()
+    )
+    out["pld0032"] = out.groupby("pid")["pld0032"].transform(
+        lambda x: x.ffill().bfill()
+    )
+
+    out = out.rename(columns={"pld0030": "n_sisters", "pld0032": "n_brothers"})
+
+    if filter_missing:
+        out = out[out["n_sisters"] >= 0]
+        out = out[out["n_brothers"] >= 0]
+
+    return out
+
+
+def create_caregiving(df, filter_missing=False):
+
+    # any care, light care, intensive care
+
+    _cond = (
+        df["pli0046"].isna(),
+        df["pli0046"] == 0,
+        df["pli0046"] > 0,
+    )
+    _val = [np.nan, 0, 1]
+    df["any_care"] = np.select(_cond, _val, default=np.nan)
+
+    if filter_missing:
+        df = df[df["any_care"].notna()]
+
+    _cond = (
+        df["pli0046"].isna(),
+        (df["pli0046"] == 0) | (df["pli0046"] > 1),
+        df["pli0046"] == 1,
+    )
+    _val = [np.nan, 0, 1]
+    df["light_care"] = np.select(_cond, _val, default=np.nan)
+
+    _cond = (
+        df["pli0046"].isna(),
+        (df["pli0046"] == 0) | (df["pli0046"] == 1),
+        df["pli0046"] > 1,
+    )
+    _val = [np.nan, 0, 1]
+    df["intensive_care"] = np.select(_cond, _val, default=np.nan)
+
+    return df
