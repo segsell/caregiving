@@ -13,7 +13,10 @@ PGSBIL_ABITUR = 4
 
 KIDAGE_THRESHOLD_UPPER = 10
 
+DOES_NOT_APPLY = -2
+
 MISSING_VALUE = -99
+
 
 # =====================================================================================
 # Education
@@ -109,7 +112,7 @@ def sum_experience_variables(data):
 # =====================================================================================
 
 
-def generate_working_hours(data):
+def generate_working_hours(data, include_actual_hours=False, drop_missing=True):
     """This function creates a working hours variable from pgvebzeit in soep-pgen.
 
     This means working hours = contractual hours per week. The function drops
@@ -117,8 +120,28 @@ def generate_working_hours(data):
 
     """
     data = data.rename(columns={"pgvebzeit": "working_hours"})
-    data = data[data["working_hours"] >= 0]
-    print(str(len(data)) + " left after dropping people with missing working hours.")
+
+    if drop_missing:
+        data = data[data["working_hours"] >= 0]
+        print(
+            str(len(data)) + " left after dropping people with missing working hours."
+        )
+    else:
+        data.loc[data["working_hours"] == DOES_NOT_APPLY, "working_hours"] = 0
+        data.loc[data["working_hours"] < 0, "working_hours"] = np.nan
+        # data = data[data["working_hours"] >= 0]
+
+        print(
+            str(len(data)) + " left after dropping people with missing working hours."
+        )
+
+    if include_actual_hours:
+        data = data.rename(columns={"pgtatzeit": "working_hours_actual"})
+        data.loc[
+            data["working_hours_actual"] == DOES_NOT_APPLY, "working_hours_actual"
+        ] = 0
+        data.loc[data["working_hours_actual"] < 0, "working_hours_actual"] = np.nan
+
     return data
 
 
@@ -136,6 +159,7 @@ def generate_job_separation_var(data):
     """
     data.loc[:, "job_sep"] = 0
     data.loc[data["plb0304_h"].isin([1, 3, 5]), "job_sep"] = 1
+
     return data
 
 
@@ -354,3 +378,105 @@ def create_kidage_youngest(df):
     df.drop(columns=["syear", "yng_birthyear"] + child_cols, inplace=True)
 
     return df
+
+
+# =====================================================================================
+# Health (good/bad)
+# =====================================================================================
+
+
+# def create_health_var(data, drop_missing=True):
+#     """Create the health variable in the soep-PEQUIV dataset.
+
+#     - m11126: Self-Rated Health Status
+#     - m11124: Disability Status of Individual
+
+#     The function replaces the following values in the health variables:
+#     - [-1] keine Angabe
+#     - [-2] trifft nicht zu
+#     - [-5] in Fragebogenversion nicht enthalten
+
+#     with np.nan and converts the variables to float.
+
+#     The function uses a two category split of the population, encoding 1 if an
+#     individual has good health and 0 if an individual has bad health.
+
+#     """
+#     data = data[data["m11126"] >= 0]
+#     print(
+#         str(len(data))
+#         + " observations left after dropping people with missing health data."
+#     )
+
+#     data = data[data["m11124"] >= 0]
+#     print(
+#         str(len(data))
+#         + " observations left after dropping people with missing disability data."
+#     )
+
+#     # create health state = 0 if bad health, 1 if good health
+#     data["health"] = 0
+#     data.loc[data["m11126"].isin([1, 2, 3]) & data["m11124"].isin([0]), "health"] = 1
+
+#     return data
+
+
+def create_health_var(data, drop_missing=True):
+    """
+    Create the health variable in the soep-PEQUIV dataset.
+
+    Good health = 1, bad health = 0.
+
+    Variables:
+    - m11126: Self-Rated Health Status (1–5 for valid responses)
+    - m11124: Disability Status of Individual (0 or 1 for valid responses)
+
+    """
+
+    if drop_missing:
+        data = data[data["m11126"] >= 0]
+        print(
+            f"{len(data)} observations left after dropping people with "
+            "missing health data."
+        )
+        data = data[data["m11124"] >= 0]
+        print(
+            f"{len(data)} observations left after dropping people with "
+            "missing disability data."
+        )
+    else:
+        data.loc[data["m11126"] < 0, "m11126"] = np.nan
+        data.loc[data["m11124"] < 0, "m11124"] = np.nan
+
+    data["health"] = np.nan
+    data.loc[(data["m11126"].isin([4, 5])) | (data["m11124"] == 1), "health"] = 0
+    data.loc[(data["m11126"].isin([1, 2, 3])) & (data["m11124"] == 0), "health"] = 1
+
+    return data
+
+
+def clean_health_create_states(data):
+    """Create lead and lagged health variable.
+
+    The function replaces the health variable with 1 if both the previous and next
+    health are 1.
+
+    """
+
+    # replace health with 1 if both previous and next health are 1
+    data["lag_health"] = data.groupby(["pid"])["health"].shift(1)
+    data["lead_health"] = data.groupby(["pid"])["health"].shift(-1)
+
+    # one year bad health in between two years of good health
+    # is still considered good health
+    data.loc[
+        (data["lag_health"] == 1) & (data["lead_health"] == 1),
+        "health",
+    ] = 1
+
+    # update lead_health
+    data["lead_health"] = data.groupby(["pid"])["health"].shift(-1)
+    # update lag_health
+    data["lag_health"] = data.groupby(["pid"])["health"].shift(1)
+
+    return data
