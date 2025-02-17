@@ -57,8 +57,8 @@ def task_create_event_study_sample(
 
     df = create_partner_state(df, filter_missing=True)
 
-    df = create_parent_info(df, filter_missing=True)
-    df = create_sibling_info(df, filter_missing=True)
+    df = create_parent_info(df, filter_missing=False)
+    df = create_sibling_info(df, filter_missing=False)
 
     # filter data. Leave additional years in for lagging and leading.
     df = filter_data(df, specs, event_study=True)
@@ -96,9 +96,12 @@ def task_create_event_study_sample(
         "working_hours_actual": "float32",
         "pglabgro_deflated": "float32",
         "hourly_wage": "float32",
+        "pli0046": "int8",
         "any_care": "float32",
         "light_care": "float32",
         "intensive_care": "float32",
+        "n_sisters": "float32",
+        "n_brothers": "float32",
         # parent information
         "mother_age": "float32",
         "father_age": "float32",
@@ -125,6 +128,7 @@ def task_create_event_study_sample(
     df = df[df["syear"] <= specs["end_year_event_study"]]
 
     # print_data_description(df)
+    # breakpoint()
 
     df.to_csv(path_to_save)
 

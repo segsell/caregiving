@@ -159,6 +159,7 @@ def generate_job_separation_var(data):
     """
     data.loc[:, "job_sep"] = 0
     data.loc[data["plb0304_h"].isin([1, 3, 5]), "job_sep"] = 1
+
     return data
 
 
@@ -423,6 +424,8 @@ def create_kidage_youngest(df):
 def create_health_var(data, drop_missing=True):
     """
     Create the health variable in the soep-PEQUIV dataset.
+
+    Good health = 1, bad health = 0.
 
     Variables:
     - m11126: Self-Rated Health Status (1–5 for valid responses)
