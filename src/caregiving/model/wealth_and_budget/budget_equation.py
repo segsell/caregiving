@@ -4,7 +4,10 @@ from caregiving.model.shared import SEX, is_retired, is_working
 from caregiving.model.wealth_and_budget.partner_income import (
     calc_partner_income_after_ssc,
 )
-from caregiving.model.wealth_and_budget.pensions import calc_pensions_after_ssc
+from caregiving.model.wealth_and_budget.pensions import (
+    calc_experience_years_for_pension_adjustment,
+    calc_pensions_after_ssc,
+)
 from caregiving.model.wealth_and_budget.tax_and_ssc import calc_net_household_income
 from caregiving.model.wealth_and_budget.transfers import (
     calc_child_benefits,
@@ -40,8 +43,17 @@ def budget_constraint(
     )
 
     # Income from lagged choice 0
-    retirement_income_after_ssc = calc_pensions_after_ssc(
+    # Calculate experience with early retirement penalty
+    experience_years_with_penalty = calc_experience_years_for_pension_adjustment(
+        period=period,
         experience_years=experience_years,
+        sex=sex,
+        education=education,
+        options=options,
+    )
+
+    retirement_income_after_ssc = calc_pensions_after_ssc(
+        experience_years=experience_years_with_penalty,
         sex=sex,
         education=education,
         options=options,
