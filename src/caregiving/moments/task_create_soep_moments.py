@@ -3,6 +3,7 @@
 from pathlib import Path
 from typing import Annotated
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from pytask import Product
@@ -79,6 +80,8 @@ def task_create_structural_estimation_sample(
     df = pd.read_csv(path_to_sample)
     df = df[df["sex"] == 1]  # women only
 
+    df["kidage_youngest"] = df["kidage_youngest"] - 1
+
     # Initialize a dictionary to store all moments
     moments = {}
 
@@ -148,7 +151,7 @@ def task_create_structural_estimation_sample(
 
     # ---------------------------------------------------------------------
     # D) Moments by age of the youngest child (kidage_youngest) and education type
-    #     (D1: bins 0-3, 4-6, 7-9; D2: aggregated for ages 0 through 9)
+    #     Age bins 0-3, 4-6, 7-9
     # ---------------------------------------------------------------------
     kidage_bins = {"0_3": (0, 3), "4_6": (4, 6), "7_9": (7, 9)}
 
@@ -199,4 +202,99 @@ def task_create_structural_estimation_sample(
     moments_df = pd.DataFrame({"value": pd.Series(moments)})
     moments_df.index.name = "moment"
 
+    # breakpoint()
+
     moments_df.to_csv(path_to_save, index=True)
+
+
+# =====================================================================================
+# Plotting
+# =====================================================================================
+
+
+def plot_labor_shares_by_age(
+    df, age_var, start_age, end_age, condition_col=None, condition_val=None
+):
+    """
+    Plots labor share outcomes by age using a specified age variable.
+    Outcomes include full time, part time, unemployed, retired, and
+    not working (unemployed + retired).
+
+    Parameters:
+      df (pd.DataFrame): The data frame containing the data.
+      age_var (str): Column to use as the age variable (e.g., "age" or
+          "kidage_youngest").
+      start_age (int): Starting age (inclusive) for the plot.
+      end_age (int): Ending age (inclusive) for the plot.
+      condition_col (str or list, optional): Column name(s) to filter data.
+      condition_val (any or list, optional): Value(s) for filtering.
+          If multiple, supply a list/tuple that matches condition_col.
+    """
+    # Apply conditioning if specified.
+    if condition_col is not None:
+        if isinstance(condition_col, (list, tuple)):
+            if not isinstance(condition_val, (list, tuple)) or (
+                len(condition_col) != len(condition_val)
+            ):
+                raise ValueError(
+                    "When condition_col is a list/tuple, condition_val must be a "
+                    "list/tuple of the same length."
+                )
+            for col, val in zip(condition_col, condition_val, strict=False):
+                df = df[df[col] == val]
+        else:
+            df = df[df[condition_col] == condition_val]
+
+    # Filter on the chosen age variable.
+    df = df[(df[age_var] >= start_age) & (df[age_var] <= end_age)]
+
+    ages = list(range(start_age, end_age + 1))
+    full_time_shares = []
+    part_time_shares = []
+    not_working_shares = []
+    # unemployed_shares = []
+    # retired_shares = []
+
+    # Loop over each age.
+    for age in ages:
+        subdf = df[df[age_var] == age]
+        shares = compute_labor_shares(subdf)
+        full_time_shares.append(shares["full_time"])
+        part_time_shares.append(shares["part_time"])
+        not_working_shares.append(shares["not_working"])
+        # unemployed_shares.append(shares["unemployed"])
+        # retired_shares.append(shares["retired"])
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(ages, full_time_shares, marker="o", label="Full Time")
+    plt.plot(ages, part_time_shares, marker="o", label="Part Time")
+    plt.plot(ages, not_working_shares, marker="o", label="Not Working")
+    # plt.plot(ages, unemployed_shares, marker="o", label="Unemployed")
+    # plt.plot(ages, retired_shares, marker="o", label="Retired")
+
+    plt.xlabel(age_var.title())
+    plt.ylabel("Share")
+    title = (
+        "Labor Shares by "
+        + age_var.title()
+        + " (Ages "
+        + str(start_age)
+        + " to "
+        + str(end_age)
+        + ")"
+    )
+    if condition_col is not None:
+        if isinstance(condition_col, (list, tuple)):
+            conditions = ", ".join(
+                [
+                    f"{col}={val}"
+                    for col, val in zip(condition_col, condition_val, strict=False)
+                ]
+            )
+        else:
+            conditions = f"{condition_col}={condition_val}"
+        title += " | Conditions: " + conditions
+    plt.title(title)
+    plt.legend()
+    plt.grid(True)
+    plt.show()
