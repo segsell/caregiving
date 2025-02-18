@@ -55,7 +55,7 @@ def task_create_event_study_sample(
         Numeric code for the individual's sex. 0: male, 1: female
 
     choice
-        Coded choice variable that represents the individual's labor market decision
+        Categorical variable that represents the individual's labor market decision
         0: retired, 1: unemployed, 2: part-time, 3: full-time.
 
     partner_state
@@ -125,7 +125,7 @@ def task_create_event_study_sample(
         Partner's person identifier.
 
     age_p
-        Partner's age.
+        Partner's age (if present).
 
     sex_p
         Numeric code for the partner's sex.
@@ -162,6 +162,7 @@ def task_create_event_study_sample(
     df = pd.read_csv(path_to_raw)
 
     df = create_choice_variable(df)
+
     df = generate_working_hours(df, include_actual_hours=True, drop_missing=False)
     df = create_education_type(df)
     df = create_health_var(df, drop_missing=True)
@@ -186,12 +187,6 @@ def task_create_event_study_sample(
 
     # enforce choice restrictions based on model setup
     df = enforce_model_choice_restriction(df, specs)
-
-    # # Construct job offer state
-    # was_fired_last_period = df["job_sep_this_year"] == 1
-    # df = determine_observed_job_offers(
-    #     df, working_choices=WORK, was_fired_last_period=was_fired_last_period
-    # )
 
     # Keep relevant columns and set their minimal datatype
     type_dict = {

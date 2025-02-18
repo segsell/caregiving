@@ -3,6 +3,8 @@
 import numpy as np
 import pandas as pd
 
+# from src.caregiving.model.shared import FULL_TIME, PART_TIME, UNEMPLOYED, RETIRED
+
 PGEMPLST_UNEMPLOYED = 5
 PGEMPLST_PART_TIME = 2
 PGEMPLST_FULL_TIME = 1
