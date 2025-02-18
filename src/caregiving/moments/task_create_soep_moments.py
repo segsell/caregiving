@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from pytask import Product
 
-from caregiving.config import BLD
+from caregiving.config import BLD, SRC
 from caregiving.model.shared import (
     FULL_TIME,
     NOT_WORKING,
@@ -85,7 +85,7 @@ def compute_labor_shares(subdf):
 
 
 def task_create_structural_estimation_sample(
-    # path_to_specs: Path = SRC / "specs.yaml",
+    path_to_specs: Path = SRC / "specs.yaml",
     path_to_sample: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
     path_to_save_moments: Annotated[Path, Product] = BLD
     / "moments"
@@ -96,9 +96,12 @@ def task_create_structural_estimation_sample(
 ) -> None:
     """Create moments for MSM estimation."""
 
-    # Load data
+    specs = read_and_derive_specs(path_to_specs)
+    start_age = specs["start_age_msm"]
+    end_age = specs["end_age_msm"]
+
     df = pd.read_csv(path_to_sample)
-    df = df[df["sex"] == 1]  # women only
+    df = df[(df["sex"] == 1) & (df["age"] <= end_age)]  # women only
 
     df["kidage_youngest"] = df["kidage_youngest"] - 1
 
@@ -107,11 +110,13 @@ def task_create_structural_estimation_sample(
     variances = {}
 
     # A) Moments by age.
-    moments, variances = _get_labor_shares_by_age(df, moments, variances, 40, 69)
+    moments, variances = _get_labor_shares_by_age(
+        df, moments, variances, start_age, end_age
+    )
 
     # B) Moments by age and education.
     moments, variances = _get_labor_shares_by_age_and_education_level(
-        df, moments, variances, 40, 69
+        df, moments, variances, start_age, end_age
     )
 
     # C) Moments by number of children and education.
