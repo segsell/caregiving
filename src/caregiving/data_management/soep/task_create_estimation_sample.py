@@ -78,6 +78,7 @@ def task_create_structural_estimation_sample(
 
     # Keep relevant columns (i.e. state variables) and set their minimal datatype
     type_dict = {
+        "age": "int8",
         "period": "int8",
         "choice": "int8",
         "lagged_choice": "int8",
