@@ -2,6 +2,7 @@
 
 from typing import Any
 
+import jax
 import jax.numpy as jnp
 
 
@@ -22,7 +23,15 @@ def utility_final_consume_all(
     rho = params["rho"]
     bequest_scale = options["bequest_scale"]
 
-    return bequest_scale * (resources ** (1 - rho) - 1) / (1 - rho)
+    bequest_unscaled_with_rho_not_one = (resources ** (1 - rho) - 1) / (1 - rho)
+
+    bequest_unscaled = jax.lax.select(
+        jnp.allclose(rho, 1),
+        jnp.log(resources),
+        bequest_unscaled_with_rho_not_one,
+    )
+
+    return bequest_scale * bequest_unscaled
 
 
 def marginal_utility_final_consume_all(
@@ -31,6 +40,7 @@ def marginal_utility_final_consume_all(
     options: dict[str, Any],
 ) -> jnp.array:
     """Compute marginal utility in the final period."""
+    rho = params["rho"]
     bequest_scale = options["bequest_scale"]
 
-    return bequest_scale * (resources ** (-params["rho"]))
+    return bequest_scale * (resources ** (-rho))

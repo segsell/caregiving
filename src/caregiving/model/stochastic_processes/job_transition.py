@@ -2,7 +2,7 @@
 
 import jax.numpy as jnp
 
-from caregiving.model.shared import is_unemployed, is_working
+from caregiving.model.shared import SEX, is_unemployed, is_working
 
 
 def job_offer_process_transition(params, options, education, period, choice):
@@ -17,9 +17,9 @@ def job_offer_process_transition(params, options, education, period, choice):
     unemployment_choice = is_unemployed(choice)
     labor_choice = is_working(choice)
 
-    job_sep_prob = options["job_sep_probs"][education, period]
+    job_sep_prob = options["job_sep_probs"][SEX, education, period]
 
-    job_finding_prob = calc_job_finding_prob(period, education, params, options)
+    job_finding_prob = calc_job_finding_prob_women(period, education, params, options)
 
     # Transition probability
     prob_no_job = (
@@ -29,16 +29,16 @@ def job_offer_process_transition(params, options, education, period, choice):
     return jnp.array([prob_no_job, 1 - prob_no_job])
 
 
-def calc_job_finding_prob(period, education, params, options):
+def calc_job_finding_prob_women(period, education, params, options):
     high_edu = education == 1
     age = period + options["start_age"]
 
     # above_49 = age > 49
     exp_value = jnp.exp(
-        params["job_finding_logit_const"]
-        + params["job_finding_logit_age"] * age
+        params["job_finding_logit_const_women"]
+        + params["job_finding_logit_age_women"] * age
         # + params["job_finding_logit_above_49"] * above_49
-        + params["job_finding_logit_high_educ"] * high_edu
+        + params["job_finding_logit_high_educ_women"] * high_edu
     )
 
     return exp_value / (1 + exp_value)

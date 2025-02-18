@@ -4,6 +4,7 @@ import jax
 import jax.numpy as jnp
 
 from caregiving.model.shared import (
+    SEX,
     is_child_age_0_to_3,
     is_child_age_4_to_6,
     is_child_age_7_to_9,
@@ -11,8 +12,6 @@ from caregiving.model.shared import (
     is_part_time,
     is_unemployed,
 )
-
-SEX = 1
 
 
 def create_utility_functions():
