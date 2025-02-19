@@ -1,4 +1,4 @@
-# """Specify model for estimation and simulation."""
+"""Specify model for estimation."""
 
 # from pathlib import Path
 # from typing import Annotated, Any
@@ -156,7 +156,7 @@ from dcegm.pre_processing.setup_model import load_and_setup_model, setup_and_sav
 from dcegm.solve import get_solve_func_for_model
 
 
-def _task_specify_model(
+def task_specify_model(
     # load_model=False,
     # model_type="solution",
     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs.pkl",
