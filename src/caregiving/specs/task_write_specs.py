@@ -62,6 +62,7 @@ def task_write_specs(
     path_to_struct_estimation_sample: Path = BLD
     / "data"
     / "soep_structural_estimation_sample.csv",
+    path_to_save_dict: Annotated[Path, Product] = BLD / "model" / "specs" / "specs.pkl",
 ) -> Dict[str, Any]:
     """Read in specs and add specs from first-step estimation."""
     specs = read_and_derive_specs(path_to_load_specs)
@@ -112,5 +113,8 @@ def task_write_specs(
     # Set initial experience
     data_decision = pd.read_csv(path_to_struct_estimation_sample)
     specs["max_exp_diffs_per_period"] = create_max_experience(data_decision, specs)
+
+    with path_to_save_dict.open("wb") as f:
+        pkl.dump(specs, f)
 
     return specs

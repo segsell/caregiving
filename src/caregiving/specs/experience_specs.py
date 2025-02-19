@@ -1,13 +1,14 @@
+"""Create the maximum experience difference per period."""
+
 import jax.numpy as jnp
 import numpy as np
-import pandas as pd
 
 from caregiving.model.state_space import calc_experience_years_for_pension_adjustment
 
 
 def create_max_experience(data_decision, specs):
+    """Create maximum experience difference per period."""
     # max initial experience
-
     max_exp_diff_data = (data_decision["experience"] - data_decision["period"]).max()
 
     max_exp_diffs_per_period = np.zeros(specs["n_periods"], dtype=float)
@@ -37,7 +38,6 @@ def create_max_experience(data_decision, specs):
                     sex=sex_var,
                     experience_years=max_exp_period,
                     education=edu_var,
-                    policy_state=0,
                     options=specs,
                 )
                 max_exp_diff_to_periods[sex_var, edu_var, i] = new_exp - period
