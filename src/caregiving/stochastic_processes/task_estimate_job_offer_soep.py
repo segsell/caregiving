@@ -50,13 +50,12 @@ def task_estimate_job_offer(
 
 def estimate_logit_job_offer_params(df, specs):
     """Estimate job offer logit parameters."""
-    # Filter for unemployed, because we only estimate job offer probs on them
 
     unemployed_values = np.asarray(UNEMPLOYED).ravel().tolist()
     work_values = np.asarray(WORK).ravel().tolist()
 
+    # Filter for unemployed, because we only estimate job offer probs on them
     df_unemployed = df[df["lagged_choice"].isin(unemployed_values)].copy()
-    # df_unemployed = df[df["lagged_choice"] == 1].copy()
 
     # Create work start indicator
     df_unemployed.loc[:, "work_start"] = (

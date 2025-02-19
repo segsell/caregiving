@@ -1,7 +1,7 @@
 from jax import numpy as jnp
 
 from caregiving.model.shared import is_full_time, is_part_time
-from caregiving.model.wealth_and_budget import calc_after_ssc_income_worker
+from caregiving.model.wealth_and_budget.tax_and_ssc import calc_after_ssc_income_worker
 
 
 def calc_labor_income_after_ssc(

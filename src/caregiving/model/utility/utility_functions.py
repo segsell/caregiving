@@ -71,19 +71,19 @@ def utility_func(
 
     has_partner = (partner_state > 0).astype(int)
     n_children = options["children_by_state"][SEX, education, has_partner, period]
-    age_youngest_child = options["age_youngest_child_by_state"][
-        SEX, education, has_partner, period
-    ]
+    # age_youngest_child = options["age_youngest_child_by_state"][
+    #     SEX, education, has_partner, period
+    # ]
 
     cons_scale = consumption_scale(has_partner, n_children)
     utility_consumption = ((consumption / cons_scale) ** (1 - rho) - 1) / (1 - rho)
 
     eta = utility_of_labor_and_children(choice, education, n_children, params)
-    zeta = utility_of_labor_and_caregiving(
-        choice, age_youngest_child, education, params
-    )
+    # zeta = utility_of_labor_and_caregiving(
+    #     choice, age_youngest_child, education, params
+    # )
 
-    utility_with_rho_not_one = utility_consumption * jnp.exp(eta) + jnp.exp(zeta)
+    utility_with_rho_not_one = utility_consumption * jnp.exp(eta)  # + jnp.exp(zeta)
 
     utility = jax.lax.select(
         jnp.allclose(rho, 1),
@@ -172,14 +172,24 @@ def utility_of_labor_and_children(choice, education, n_children, params):
     working_part_time = is_part_time(choice)
     working_full_time = is_full_time(choice)
 
-    util_unemployed = (
-        params["util_cons_unemployed_low_educ"] * (1 - education)
-        + params["util_cons_unemployed_high_educ"] * education
-    )
+    # util_unemployed = (
+    #     params["util_cons_unemployed_low_educ"] * (1 - education)
+    #     + params["util_cons_unemployed_high_educ"] * education
+    # )
+    # util_part_time = params["util_cons_part_time"]
+    # util_full_time = (
+    #     params["util_cons_full_time"]
+    #     + params["util_cons_full_time_children"] * n_children
+    # ) * education
+
+    util_unemployed = params["util_cons_unemployed"]
     util_part_time = (
-        params["util_cons_part_time_low_educ"] * (1 - education)
-        + params["util_cons_part_time_high_educ"] * education
-    )
+        params["util_cons_part_time_low_educ"]
+        + params["util_cons_children_part_time_low_educ"] * n_children
+    ) * (1 - education) + (
+        params["util_cons_part_time_high_educ"]
+        + params["util_cons_children_part_time_high_educ"] * n_children
+    ) * education
     util_full_time = (
         params["util_cons_full_time_low_educ"]
         + params["util_cons_children_full_time_low_educ"] * n_children
