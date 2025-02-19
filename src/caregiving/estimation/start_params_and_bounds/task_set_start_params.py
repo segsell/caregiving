@@ -24,7 +24,7 @@ def task_load_and_set_start_params(
     / "job_offer_params.csv",
     path_to_save_updated_start_params: Annotated[Path, Product] = BLD
     / "model"
-    / "start_params_and_bounds"
+    / "params"
     / "start_params_updated.yaml",
 ) -> None:
     """Load start parameters and update them with job offer probabilities."""
