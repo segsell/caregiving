@@ -30,6 +30,7 @@ def load_specs():
     list(product(EDU_GRID, SEX_GRID, PERIOD_GRID, PARTNER_STATE_GRID)),
 )
 def test_vec_shape(education, sex, period, partner_state, load_specs):
+    """Test shape of transition vector."""
     specs = load_specs
 
     res = partner_transition(
