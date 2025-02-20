@@ -38,6 +38,7 @@ def create_max_experience(data_decision, specs):
                     sex=sex_var,
                     experience_years=max_exp_period,
                     education=edu_var,
+                    policy_state=0,
                     options=specs,
                 )
                 max_exp_diff_to_periods[sex_var, edu_var, i] = new_exp - period
