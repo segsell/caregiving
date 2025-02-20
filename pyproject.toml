@@ -109,7 +109,7 @@ extend-ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["D", "ANN"]
 "docs/source/conf.py" = ["INP001"]
-"src/caregiving/sandbox/run.py" = ["INP001"]
+"src/caregiving/sandbox/run.py" = ["INP001", "E501"]
 "src/caregiving/utils.py" = ["S301"]
 "src/caregiving/simulation/initial_conditions.py" = ["ERA001", "PD008"]
 "src/caregiving/moments/task_create_empirical_moments.py" = ["ERA001"]
@@ -127,8 +127,8 @@ extend-ignore = [
 "src/caregiving/model/state_space.py" = ["E501"]
 "src/caregiving/exogenous_processes/task_create_exog_processes_soep.py" = ["ERA001"]
 "src/caregiving/moments/task_create_care_mix_coefficients.py" = ["ERA001"]
-
-
+"src/caregiving/simulation/_simulate.py" = ["E501"]
+"src/caregiving/simulation/_initial_conditions.py" = ["E501"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
