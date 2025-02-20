@@ -129,6 +129,7 @@ extend-ignore = [
 "src/caregiving/moments/task_create_care_mix_coefficients.py" = ["ERA001"]
 "src/caregiving/simulation/_simulate.py" = ["E501"]
 "src/caregiving/simulation/_initial_conditions.py" = ["E501"]
+"tests/test_utility_functions.py" = ["E501"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
