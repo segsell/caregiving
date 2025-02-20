@@ -6,7 +6,7 @@ import numpy as np
 from caregiving.model.state_space import calc_experience_years_for_pension_adjustment
 
 
-def create_max_experience(data_decision, specs):
+def create_max_experience(data_decision, specs, path_to_save_txt):
     """Create maximum experience difference per period."""
     # max initial experience
     max_exp_diff_data = (data_decision["experience"] - data_decision["period"]).max()
@@ -57,9 +57,9 @@ def create_max_experience(data_decision, specs):
     total_max = np.maximum(max_across_ret_periods, max_exp_diff_data)
     max_exp_diffs_per_period[:] = total_max
 
-    # np.savetxt(
-    #     path_dict["first_step_results"] + "max_exp_diffs_per_period.txt",
-    #     max_exp_diffs_per_period,
-    # )
+    np.savetxt(
+        path_to_save_txt,
+        max_exp_diffs_per_period,
+    )
 
-    return jnp.asarray(max_exp_diffs_per_period)
+    return jnp.asarray(max_exp_diffs_per_period, dtype=jnp.float64)

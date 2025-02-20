@@ -1,43 +1,51 @@
-# """Test budget functions."""
+"""Test budget functions."""
 
-# import pytest
-# import pickle as pkl
-# import numpy as np
+import copy
+import pickle as pkl
+from itertools import product
 
-# from itertools import product
-# from caregiving.config import BLD
-# from caregiving.model.state_space import get_next_period_experience
-# from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
-# from caregiving.model.wealth_and_budget.partner_income import (
-#     calc_partner_income_after_ssc,
-# )
-# from caregiving.model.wealth_and_budget.tax_and_ssc import calc_health_ltc_contr
-# from caregiving.model.wealth_and_budget.tax_and_ssc import (
-#     calc_inc_tax_for_single_income,
-# )
-# from caregiving.model.wealth_and_budget.tax_and_ssc import calc_pension_unempl_contr
-# from caregiving.model.wealth_and_budget.transfers import calc_unemployment_benefits
-# import copy
+import jax
+import jax.numpy as jnp
+import numpy as np
+import pytest
 
+from caregiving.config import BLD
+from caregiving.model.state_space import get_next_period_experience
+from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
+from caregiving.model.wealth_and_budget.partner_income import (
+    calc_partner_income_after_ssc,
+)
+from caregiving.model.wealth_and_budget.tax_and_ssc import (
+    calc_health_ltc_contr,
+    calc_inc_tax_for_single_income,
+    calc_pension_unempl_contr,
+)
+from caregiving.model.wealth_and_budget.transfers import calc_unemployment_benefits
 
-# @pytest.fixture()
-# def load_specs():
-#     """Load specs from pickle file."""
-
-#     path_to_specs = BLD / "model" / "specs" / "specs.pkl"
-
-#     with path_to_specs.open("rb") as file:
-#         specs = pkl.load(file)
-
-#     return specs
+jax.config.update("jax_enable_x64", True)
 
 
-# SAVINGS_GRID_UNEMPLOYED = np.linspace(10, 25, 3)
-# PARTNER_STATES = np.array([0, 1, 2], dtype=int)
-# PERIOD_GRID = np.arange(0, 65, 15, dtype=int)
-# OLD_AGE_PERIOD_GRID = np.arange(33, 43, 3, dtype=int)
-# EDUCATION_GRID = [0, 1]
-# SEX_GRID = [1]
+@pytest.fixture()
+def load_specs():
+    """Load specs from pickle file."""
+
+    path_to_specs = BLD / "model" / "specs" / "specs.pkl"
+    # path_to_max_exp_diff = BLD / "model" / "specs" / "max_exp_diffs_per_period.txt"
+
+    with path_to_specs.open("rb") as file:
+        specs = pkl.load(file)
+
+    # specs["max_exp_diffs_per_period"] = jnp.array(np.loadtxt(path_to_max_exp_diff))
+
+    return specs
+
+
+SAVINGS_GRID_UNEMPLOYED = np.linspace(10, 25, 3)
+PARTNER_STATES = np.array([0, 1, 2], dtype=int)
+PERIOD_GRID = np.arange(0, 65, 15, dtype=int)
+OLD_AGE_PERIOD_GRID = np.arange(33, 43, 3, dtype=int)
+EDUCATION_GRID = [0, 1]
+SEX_GRID = [1]
 
 
 # @pytest.mark.parametrize(
@@ -138,143 +146,152 @@
 #     )
 
 
-# SAVINGS_GRID = np.linspace(8, 25, 3)
-# GAMMA_GRID = np.linspace(0.1, 0.9, 3)
-# EXP_GRID = np.linspace(10, 30, 3, dtype=int)
-# INCOME_SHOCK_GRID = np.linspace(-0.5, 0.5, 2)
-# WORKER_CHOICES = [2, 3]
+SAVINGS_GRID = np.linspace(8, 25, 3)
+GAMMA_GRID = np.linspace(0.1, 0.9, 3)
+EXP_GRID = np.linspace(10, 30, 3, dtype=int)
+INCOME_SHOCK_GRID = np.linspace(-0.5, 0.5, 2)
+WORKER_CHOICES = [2, 3]
 
 
-# @pytest.mark.parametrize(
-#     "working_choice,
-#       sex, period, partner_state ,education,
-# gamma, income_shock, experience, savings",
-#     list(
-#         product(
-#             WORKER_CHOICES,
-#             SEX_GRID,
-#             PERIOD_GRID,
-#             PARTNER_STATES,
-#             EDUCATION_GRID,
-#             GAMMA_GRID,
-#             INCOME_SHOCK_GRID,
-#             EXP_GRID,
-#             SAVINGS_GRID,
-#         )
-#     ),
-# )
-# def test_budget_worker(
-#     working_choice,
-#     sex,
-#     period,
-#     partner_state,
-#     education,
-#     gamma,
-#     income_shock,
-#     experience,
-#     savings,
-#     load_specs,
-# ):
-#     specs = load_specs
-#     specs_internal = copy.deepcopy(specs)
+@pytest.mark.parametrize(
+    (
+        "working_choice",
+        "sex",
+        "period",
+        "partner_state",
+        "education",
+        "gamma",
+        "income_shock",
+        "experience",
+        "savings",
+    ),
+    list(
+        product(
+            WORKER_CHOICES,
+            SEX_GRID,
+            PERIOD_GRID,
+            PARTNER_STATES,
+            EDUCATION_GRID,
+            GAMMA_GRID,
+            INCOME_SHOCK_GRID,
+            EXP_GRID,
+            SAVINGS_GRID,
+        )
+    ),
+)
+def test_budget_worker(
+    working_choice,
+    sex,
+    period,
+    partner_state,
+    education,
+    gamma,
+    income_shock,
+    experience,
+    savings,
+    load_specs,
+):
+    specs = load_specs
+    specs_internal = copy.deepcopy(specs)
 
-#     gamma_array = np.array([[gamma, gamma - 0.01], [gamma / 2, gamma / 2 - 0.01]])
-#     specs_internal["gamma_0"] = gamma_array
-#     specs_internal["gamma_1"] = gamma_array
+    gamma_array = np.array([[gamma, gamma - 0.01], [gamma / 2, gamma / 2 - 0.01]])
+    specs_internal["gamma_0"] = gamma_array
+    specs_internal["gamma_1"] = gamma_array
 
-#     params = {"interest_rate": specs_internal["interest_rate"]}
-#     max_init_exp_period = period + specs_internal["max_exp_diffs_per_period"][period]
-#     exp_cont = experience / max_init_exp_period
+    params = {"interest_rate": specs_internal["interest_rate"]}
+    max_init_exp_period = period + specs_internal["max_exp_diffs_per_period"][period]
+    exp_cont = experience / max_init_exp_period
 
-#     wealth = budget_constraint(
-#         period=period,
-#         partner_state=partner_state,
-#         education=education,
-#         lagged_choice=working_choice,
-#         experience=exp_cont,
-#         savings_end_of_previous_period=savings,
-#         income_shock_previous_period=income_shock,
-#         params=params,
-#         options=specs_internal,
-#     )
+    wealth = budget_constraint(
+        period=period,
+        partner_state=partner_state,
+        education=education,
+        lagged_choice=working_choice,
+        experience=exp_cont,
+        savings_end_of_previous_period=savings,
+        income_shock_previous_period=income_shock,
+        params=params,
+        options=specs_internal,
+    )
 
-#     savings_scaled = savings * specs_internal["wealth_unit"]
-#     hourly_wage = np.exp(
-#         gamma_array[sex, education]
-#         + gamma_array[sex, education] * np.log(experience + 1)
-#         + income_shock
-#     )
-#     if working_choice == 2:
-#         labor_income_year = (
-#             hourly_wage * specs_internal["av_annual_hours_pt"][sex, education]
-#         )
-#         min_wage_year = specs_internal["annual_min_wage_pt"][sex, education]
-#     else:
-#         labor_income_year = (
-#             hourly_wage * specs_internal["av_annual_hours_ft"][sex, education]
-#         )
-#         min_wage_year = specs_internal["annual_min_wage_ft"]
+    savings_scaled = savings * specs_internal["wealth_unit"]
+    hourly_wage = np.exp(
+        gamma_array[sex, education]
+        + gamma_array[sex, education] * np.log(experience + 1)
+        + income_shock
+    )
+    if working_choice == 2:  # noqa: PLR2004
+        labor_income_year = (
+            hourly_wage * specs_internal["av_annual_hours_pt"][sex, education]
+        )
+        min_wage_year = specs_internal["annual_min_wage_pt"][sex, education]
+    else:
+        labor_income_year = (
+            hourly_wage * specs_internal["av_annual_hours_ft"][sex, education]
+        )
+        min_wage_year = specs_internal["annual_min_wage_ft"]
 
-#     # Check against min wage
-#     if labor_income_year < min_wage_year:
-#         labor_income_year = min_wage_year
+    # Check against min wage
+    labor_income_year = max(labor_income_year, min_wage_year)
 
-#     income_scaled = labor_income_year
-#     sscs_worker = calc_health_ltc_contr(income_scaled) + calc_pension_unempl_contr(
-#         income_scaled
-#     )
-#     income_after_ssc = labor_income_year - sscs_worker
+    income_scaled = labor_income_year
+    sscs_worker = calc_health_ltc_contr(income_scaled) + calc_pension_unempl_contr(
+        income_scaled
+    )
+    income_after_ssc = labor_income_year - sscs_worker
 
-#     has_partner_int = (partner_state > 0).astype(int)
-#     unemployment_benefits = calc_unemployment_benefits(
-#         savings=savings_scaled,
-#         education=education,
-#         sex=sex,
-#         has_partner_int=has_partner_int,
-#         period=period,
-#         options=specs_internal,
-#     )
+    has_partner_int = (partner_state > 0).astype(int)
+    unemployment_benefits = calc_unemployment_benefits(
+        savings=savings_scaled,
+        education=education,
+        sex=sex,
+        has_partner_int=has_partner_int,
+        period=period,
+        options=specs_internal,
+    )
 
-#     nb_children = specs_internal["children_by_state"][
-#         sex, education, partner_state, period
-#     ]
-#     child_benefits = nb_children * specs_internal["monthly_child_benefits"] * 12
-#     if partner_state == 0:
-#         tax_total = calc_inc_tax_for_single_income(income_after_ssc)
-#         total_net_income = income_after_ssc - tax_total + child_benefits
-#         checked_income = np.maximum(total_net_income, unemployment_benefits)
-#         np.testing.assert_almost_equal(
-#             wealth,
-#             (savings_scaled * (1 + specs_internal["interest_rate"]) + checked_income)
-#             / specs_internal["wealth_unit"],
-#         )
-#     else:
-#         if partner_state == 1:
-#             partner_income_year = specs_internal["annual_partner_wage"][
-#                 sex, education, period
-#             ]
+    nb_children = specs_internal["children_by_state"][
+        sex, education, partner_state, period
+    ]
+    child_benefits = nb_children * specs_internal["monthly_child_benefits"] * 12
+    if partner_state == 0:
+        tax_total = calc_inc_tax_for_single_income(income_after_ssc)
+        total_net_income = income_after_ssc - tax_total + child_benefits
+        checked_income = np.maximum(total_net_income, unemployment_benefits)
+        np.testing.assert_almost_equal(
+            wealth,
+            (savings_scaled * (1 + specs_internal["interest_rate"]) + checked_income)
+            / specs_internal["wealth_unit"],
+            decimal=7,
+        )
+    else:
+        if partner_state == 1:
+            partner_income_year = specs_internal["annual_partner_wage"][
+                sex, education, period
+            ]
 
-#             sscs_partner = calc_health_ltc_contr(
-#                 partner_income_year
-#             ) + calc_pension_unempl_contr(partner_income_year)
-#         else:
-#             partner_income_year = specs_internal["annual_partner_pension"][
-#                 sex, education
-#             ]
-#             sscs_partner = calc_health_ltc_contr(partner_income_year)
+            sscs_partner = calc_health_ltc_contr(
+                partner_income_year
+            ) + calc_pension_unempl_contr(partner_income_year)
+        else:
+            partner_income_year = specs_internal["annual_partner_pension"][
+                sex, education
+            ]
+            sscs_partner = calc_health_ltc_contr(partner_income_year)
 
-#         income_partner = partner_income_year - sscs_partner
-#         total_income_after_ssc = income_after_ssc + income_partner
+        income_partner = partner_income_year - sscs_partner
+        total_income_after_ssc = income_after_ssc + income_partner
 
-#         tax_toal = calc_inc_tax_for_single_income(total_income_after_ssc / 2) * 2
-#         total_net_income = total_income_after_ssc + child_benefits - tax_toal
+        tax_toal = calc_inc_tax_for_single_income(total_income_after_ssc / 2) * 2
+        total_net_income = total_income_after_ssc + child_benefits - tax_toal
 
-#         checked_income = np.maximum(total_net_income, unemployment_benefits)
-#         np.testing.assert_almost_equal(
-#             wealth,
-#             (savings_scaled * (1 + specs_internal["interest_rate"]) + checked_income)
-#             / specs_internal["wealth_unit"],
-#         )
+        checked_income = np.maximum(total_net_income, unemployment_benefits)
+        np.testing.assert_almost_equal(
+            wealth,
+            (savings_scaled * (1 + specs_internal["interest_rate"]) + checked_income)
+            / specs_internal["wealth_unit"],
+            decimal=7,
+        )
 
 
 # EXP_GRID = np.linspace(10, 30, 3, dtype=int)
