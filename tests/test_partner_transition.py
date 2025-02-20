@@ -40,4 +40,6 @@ def test_vec_shape(education, sex, period, partner_state, load_specs):
         partner_state=partner_state,
         options=specs,
     )
+
     assert res.shape == (specs["n_partner_states"],)
+    np.testing.assert_allclose(res.sum(), 1.0)
