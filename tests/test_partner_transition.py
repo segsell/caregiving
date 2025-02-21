@@ -4,7 +4,7 @@ from itertools import product
 import numpy as np
 import pytest
 
-from caregiving.config import BLD
+from caregiving.config import SRC
 from caregiving.model.stochastic_processes.partner_transition import partner_transition
 
 EDU_GRID = np.arange(2, dtype=int)
@@ -17,7 +17,7 @@ SEX_GRID = [1]
 def load_specs():
     """Load specs from pickle file."""
 
-    path_to_specs = BLD / "model" / "specs" / "specs.pkl"
+    path_to_specs = SRC / "model" / "specs" / "specs.pkl"
 
     with path_to_specs.open("rb") as file:
         specs = pkl.load(file)
