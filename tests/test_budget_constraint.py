@@ -82,6 +82,7 @@ def test_budget_unemployed(
         education=education,
         lagged_choice=1,
         experience=exp_cont,
+        sex=sex,
         savings_end_of_previous_period=savings,
         income_shock_previous_period=0,
         params=params,
@@ -153,7 +154,6 @@ INCOME_SHOCK_GRID = np.linspace(-0.5, 0.5, 2)
 WORKER_CHOICES = [2, 3]
 
 
-@pytest.mark.skip()
 @pytest.mark.parametrize(
     (
         "working_choice",
@@ -209,6 +209,7 @@ def test_budget_worker(
         education=education,
         lagged_choice=working_choice,
         experience=exp_cont,
+        sex=sex,
         savings_end_of_previous_period=savings,
         income_shock_previous_period=income_shock,
         params=params,
