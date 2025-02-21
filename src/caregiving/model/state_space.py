@@ -253,7 +253,46 @@ def state_specific_choice_set(period, lagged_choice, job_offer, options):
             return ALL
 
 
-def get_next_period_experience(period, lagged_choice, experience, options):
+# def get_next_period_experience(period, lagged_choice, experience, options):
+#     """Update experience based on lagged choice and period."""
+#     exp_years_last_period = construct_experience_years(
+#         experience=experience,
+#         period=period - 1,
+#         max_exp_diffs_per_period=options["max_exp_diffs_per_period"],
+#     )
+
+#     # Update if working part or full time
+#     exp_update = (
+#         is_full_time(lagged_choice)
+#         + is_part_time(lagged_choice) * options["exp_increase_part_time"]
+#     )
+#     exp_new_period = exp_years_last_period + exp_update
+
+#     # # If retired, then we update experience according to the deduction function
+#     # fresh_retired = is_retired(lagged_choice)
+
+#     # # Calculate experience with early retirement penalty
+#     # experience_years_with_penalty = calc_experience_years_for_pension_adjustment(
+#     #     period=period,
+#     #     experience_years=exp_years_last_period,
+#     #     sex=sex,
+#     #     education=education,
+#     #     policy_state=policy_state,
+#     #     informed=informed,
+#     #     options=options,
+#     # )
+
+#     # # Update if fresh retired
+#     # exp_new_period = jax.lax.select(
+#     #     fresh_retired, experience_years_with_penalty, exp_new_period
+#     # )
+
+#     return (1 / (period + options["max_exp_diffs_per_period"][period])) * exp_new_period
+
+
+def get_next_period_experience(
+    period, lagged_choice, policy_state, sex, education, experience, informed, options
+):
     """Update experience based on lagged choice and period."""
     exp_years_last_period = construct_experience_years(
         experience=experience,
@@ -262,31 +301,30 @@ def get_next_period_experience(period, lagged_choice, experience, options):
     )
 
     # Update if working part or full time
-    exp_update = (
-        is_full_time(lagged_choice)
-        + is_part_time(lagged_choice) * options["exp_increase_part_time"]
-    )
+    exp_update = (lagged_choice == 3) + (lagged_choice == 2) * options[
+        "exp_increase_part_time"
+    ]
     exp_new_period = exp_years_last_period + exp_update
 
-    # # If retired, then we update experience according to the deduction function
-    # fresh_retired = is_retired(lagged_choice)
+    # If retired, then we update experience according to the deduction function
+    # degenerate_state_id = options["n_policy_states"] - 1
+    degenerate_state_id = 31 - 1
+    fresh_retired = (degenerate_state_id != policy_state) & (lagged_choice == 0)
 
-    # # Calculate experience with early retirement penalty
-    # experience_years_with_penalty = calc_experience_years_for_pension_adjustment(
-    #     period=period,
-    #     experience_years=exp_years_last_period,
-    #     sex=sex,
-    #     education=education,
-    #     policy_state=policy_state,
-    #     informed=informed,
-    #     options=options,
-    # )
-
-    # # Update if fresh retired
+    # Calculate experience with early retirement penalty
+    experience_years_with_penalty = calc_experience_years_for_pension_adjustment(
+        period=period,
+        experience_years=exp_years_last_period,
+        sex=sex,
+        education=education,
+        policy_state=policy_state,
+        # informed=informed,
+        options=options,
+    )
+    # Update if fresh retired
     # exp_new_period = jax.lax.select(
     #     fresh_retired, experience_years_with_penalty, exp_new_period
     # )
-
     return (1 / (period + options["max_exp_diffs_per_period"][period])) * exp_new_period
 
 
