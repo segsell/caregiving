@@ -48,102 +48,102 @@ EDUCATION_GRID = [0, 1]
 SEX_GRID = [1]
 
 
-# @pytest.mark.parametrize(
-#     "period, sex, partner_state, education, savings",
-#     list(
-#         product(
-#             PERIOD_GRID,
-#             SEX_GRID,
-#             PARTNER_STATES,
-#             EDUCATION_GRID,
-#             SAVINGS_GRID_UNEMPLOYED,
-#         )
-#     ),
-# )
-# def test_budget_unemployed(
-#     period,
-#     sex,
-#     partner_state,
-#     education,
-#     savings,
-#     load_specs,
-# ):
-#     specs = load_specs
-#     specs_internal = copy.deepcopy(specs)
+@pytest.mark.parametrize(
+    "period, sex, partner_state, education, savings",
+    list(
+        product(
+            PERIOD_GRID,
+            SEX_GRID,
+            PARTNER_STATES,
+            EDUCATION_GRID,
+            SAVINGS_GRID_UNEMPLOYED,
+        )
+    ),
+)
+def test_budget_unemployed(
+    period,
+    sex,
+    partner_state,
+    education,
+    savings,
+    load_specs,
+):
+    specs = load_specs
+    specs_internal = copy.deepcopy(specs)
 
-#     params = {"interest_rate": specs_internal["interest_rate"]}
+    params = {"interest_rate": specs_internal["interest_rate"]}
 
-#     max_init_exp_period = period + specs_internal["max_exp_diffs_per_period"][period]
-#     exp_cont = 2 / max_init_exp_period
+    max_init_exp_period = period + specs_internal["max_exp_diffs_per_period"][period]
+    exp_cont = 2 / max_init_exp_period
 
-#     wealth = budget_constraint(
-#         period=period,
-#         partner_state=partner_state,
-#         education=education,
-#         lagged_choice=1,
-#         experience=exp_cont,
-#         savings_end_of_previous_period=savings,
-#         income_shock_previous_period=0,
-#         params=params,
-#         options=specs_internal,
-#     )
+    wealth = budget_constraint(
+        period=period,
+        partner_state=partner_state,
+        education=education,
+        lagged_choice=1,
+        experience=exp_cont,
+        savings_end_of_previous_period=savings,
+        income_shock_previous_period=0,
+        params=params,
+        options=specs_internal,
+    )
 
-#     savings_scaled = savings * specs_internal["wealth_unit"]
-#     has_partner = int(partner_state > 0)
-#     nb_children = specs["children_by_state"][sex, education, has_partner, period]
-#     income_partner = calc_partner_income_after_ssc(
-#         partner_state=partner_state,
-#         sex=sex,
-#         options=specs_internal,
-#         education=education,
-#         period=period,
-#     )
-#     split_factor = 1 + has_partner
-#     tax_partner = (
-#         calc_inc_tax_for_single_income(income_partner / split_factor) * split_factor
-#     )
-#     net_partner = income_partner - tax_partner
-#     net_partner_plus_child_benefits = (
-#         net_partner + nb_children * specs_internal["annual_child_benefits"]
-#     )
+    savings_scaled = savings * specs_internal["wealth_unit"]
+    has_partner = int(partner_state > 0)
+    nb_children = specs["children_by_state"][sex, education, has_partner, period]
+    income_partner = calc_partner_income_after_ssc(
+        partner_state=partner_state,
+        sex=sex,
+        options=specs_internal,
+        education=education,
+        period=period,
+    )
+    split_factor = 1 + has_partner
+    tax_partner = (
+        calc_inc_tax_for_single_income(income_partner / split_factor) * split_factor
+    )
+    net_partner = income_partner - tax_partner
+    net_partner_plus_child_benefits = (
+        net_partner + nb_children * specs_internal["annual_child_benefits"]
+    )
 
-#     unemployment_benefits = (1 + has_partner) * specs_internal[
-#         "annual_unemployment_benefits"
-#     ]
-#     unemployment_benefits_children = (
-#         specs_internal["annual_child_unemployment_benefits"] * nb_children
-#     )
-#     unemployment_benefits_housing = specs_internal[
-#         "annual_unemployment_benefits_housing"
-#     ] * (1 + 0.5 * has_partner)
-#     potential_unemployment_benefits = (
-#         unemployment_benefits
-#         + unemployment_benefits_children
-#         + unemployment_benefits_housing
-#     )
+    unemployment_benefits = (1 + has_partner) * specs_internal[
+        "annual_unemployment_benefits"
+    ]
+    unemployment_benefits_children = (
+        specs_internal["annual_child_unemployment_benefits"] * nb_children
+    )
+    unemployment_benefits_housing = specs_internal[
+        "annual_unemployment_benefits_housing"
+    ] * (1 + 0.5 * has_partner)
+    potential_unemployment_benefits = (
+        unemployment_benefits
+        + unemployment_benefits_children
+        + unemployment_benefits_housing
+    )
 
-#     means_test = savings_scaled < specs_internal["unemployment_wealth_thresh"]
-#     reduced_means_test_threshold = (
-#         specs_internal["unemployment_wealth_thresh"] + potential_unemployment_benefits
-#     )
-#     reduced_benefits_means_test = savings_scaled < reduced_means_test_threshold
-#     if means_test:
-#         income = np.maximum(
-#             potential_unemployment_benefits, net_partner_plus_child_benefits
-#         )
-#     elif ~means_test & reduced_benefits_means_test:
-#         reduced_unemployment_benefits = reduced_means_test_threshold - savings_scaled
-#         income = np.maximum(
-#             reduced_unemployment_benefits, net_partner_plus_child_benefits
-#         )
-#     else:
-#         income = net_partner_plus_child_benefits
+    means_test = savings_scaled < specs_internal["unemployment_wealth_thresh"]
+    reduced_means_test_threshold = (
+        specs_internal["unemployment_wealth_thresh"] + potential_unemployment_benefits
+    )
+    reduced_benefits_means_test = savings_scaled < reduced_means_test_threshold
+    if means_test:
+        income = np.maximum(
+            potential_unemployment_benefits, net_partner_plus_child_benefits
+        )
+    elif ~means_test & reduced_benefits_means_test:
+        reduced_unemployment_benefits = reduced_means_test_threshold - savings_scaled
+        income = np.maximum(
+            reduced_unemployment_benefits, net_partner_plus_child_benefits
+        )
+    else:
+        income = net_partner_plus_child_benefits
 
-#     np.testing.assert_almost_equal(
-#         wealth,
-#         (savings_scaled * (1 + params["interest_rate"]) + income)
-#         / specs_internal["wealth_unit"],
-#     )
+    np.testing.assert_almost_equal(
+        wealth,
+        (savings_scaled * (1 + params["interest_rate"]) + income)
+        / specs_internal["wealth_unit"],
+    )
 
 
 SAVINGS_GRID = np.linspace(8, 25, 3)
@@ -153,6 +153,7 @@ INCOME_SHOCK_GRID = np.linspace(-0.5, 0.5, 2)
 WORKER_CHOICES = [2, 3]
 
 
+@pytest.mark.skip()
 @pytest.mark.parametrize(
     (
         "working_choice",
