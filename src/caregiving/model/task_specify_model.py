@@ -1,4 +1,4 @@
-# """Specify model for estimation and simulation."""
+"""Specify model for estimation."""
 
 # from pathlib import Path
 # from typing import Annotated, Any
@@ -127,3 +127,104 @@
 #     specs["income_shock_scale"] = wage_params.pop("wage_std_regression_residual")
 
 #     return specs, wage_params
+
+
+#######################################################################################
+
+import pickle
+from pathlib import Path
+from typing import Annotated, Any, Dict
+
+import jax.numpy as jnp
+import numpy as np
+import yaml
+from dcegm.pre_processing.setup_model import load_and_setup_model, setup_and_save_model
+from dcegm.solve import get_solve_func_for_model
+from pytask import Product
+
+from caregiving.config import BLD, SRC
+from caregiving.model.state_space import create_state_space_functions
+from caregiving.model.stochastic_processes.job_transition import (
+    job_offer_process_transition,
+)
+from caregiving.model.stochastic_processes.partner_transition import partner_transition
+from caregiving.model.utility.bequest_utility import (
+    create_final_period_utility_functions,
+)
+from caregiving.model.utility.utility_functions import create_utility_functions
+from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
+from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
+
+
+def task_specify_model(
+    # load_model=False,
+    # model_type="solution",
+    path_to_derived_specs: Path = BLD / "model" / "specs" / "specs.pkl",
+    path_to_start_params: Path = BLD / "model" / "params" / "start_params_updated.yaml",
+    path_to_save_model: Annotated[Path, Product] = BLD
+    / "model"
+    / "model_for_solution.pkl",
+):
+    """Generate model and options dictionaries."""
+
+    with path_to_derived_specs.open("rb") as f:
+        specs = pickle.load(f)
+
+    params = yaml.safe_load(path_to_start_params.open("rb"))
+
+    # Assign income shock scale to start_params_all
+    params["sigma"] = specs["income_shock_scale"]
+    params["interest_rate"] = specs["interest_rate"]
+    params["beta"] = specs["discount_factor"]
+
+    # Load specifications
+    n_periods = specs["n_periods"]
+    choices = np.arange(specs["n_choices"], dtype=int)
+
+    # Create savings grid
+    savings_grid = create_savings_grid()
+
+    # Experience grid
+    experience_grid = jnp.linspace(0, 1, specs["n_experience_grid_points"])
+
+    options = {
+        "state_space": {
+            "min_period_batch_segments": [33, 44],
+            "n_periods": n_periods,
+            "choices": choices,
+            "endogenous_states": {
+                "education": np.arange(specs["n_education_types"], dtype=int),
+                # "sex": np.arange(specs["n_sexes"], dtype=int),
+                "already_retired": np.arange(2, dtype=int),
+            },
+            "exogenous_processes": {
+                "job_offer": {
+                    "transition": job_offer_process_transition,
+                    "states": np.arange(2, dtype=int),
+                },
+                "partner_state": {
+                    "transition": partner_transition,
+                    "states": np.arange(specs["n_partner_states"], dtype=int),
+                },
+            },
+            "continuous_states": {
+                "wealth": savings_grid,
+                "experience": experience_grid,
+            },
+        },
+        "model_params": specs,
+    }
+
+    model = setup_and_save_model(
+        options=options,
+        state_space_functions=create_state_space_functions(),
+        utility_functions=create_utility_functions(),
+        utility_functions_final_period=create_final_period_utility_functions(),
+        budget_constraint=budget_constraint,
+        # shock_functions=shock_function_dict(),
+        path=path_to_save_model,
+        sim_model=False,
+    )
+
+    print("Model specified.")
+    return model, params

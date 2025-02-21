@@ -4,6 +4,7 @@ import pickle as pkl
 from pathlib import Path
 from typing import Annotated, Any, Dict
 
+import jax
 import jax.numpy as jnp
 import numpy as np
 import pandas as pd
@@ -19,6 +20,8 @@ from caregiving.specs.family_specs import (
     read_in_partner_transition_specs,
 )
 from caregiving.specs.income_specs import add_income_specs
+
+jax.config.update("jax_enable_x64", True)
 
 
 def task_write_specs(
@@ -62,6 +65,14 @@ def task_write_specs(
     path_to_struct_estimation_sample: Path = BLD
     / "data"
     / "soep_structural_estimation_sample.csv",
+    path_to_save_max_exp_diff: Annotated[Path, Product] = BLD
+    / "model"
+    / "specs"
+    / "max_exp_diffs_per_period.txt",
+    path_to_save_specs_dict: Annotated[Path, Product] = SRC
+    / "model"
+    / "specs"
+    / "specs.pkl",
 ) -> Dict[str, Any]:
     """Read in specs and add specs from first-step estimation."""
     specs = read_and_derive_specs(path_to_load_specs)
@@ -111,6 +122,12 @@ def task_write_specs(
 
     # Set initial experience
     data_decision = pd.read_csv(path_to_struct_estimation_sample)
-    specs["max_exp_diffs_per_period"] = create_max_experience(data_decision, specs)
+
+    specs["max_exp_diffs_per_period"] = create_max_experience(
+        data_decision, specs, path_to_save_txt=path_to_save_max_exp_diff
+    )
+
+    with path_to_save_specs_dict.open("wb") as f:
+        pkl.dump(specs, f)
 
     return specs

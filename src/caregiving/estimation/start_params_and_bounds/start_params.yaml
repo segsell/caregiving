@@ -1,0 +1,92 @@
+# Utility parameters
+# mu: 1.5
+#disutil_not_retired_bad: 1.0
+#disutil_working_bad: 0.3
+#disutil_not_retired_good: 1.0
+#disutil_working_good: 0.3
+
+# disutil_ft_work_good_men: -1.3
+# disutil_ft_work_bad_men: -1.3
+# disutil_pt_work_good_men: -1.3
+# disutil_pt_work_bad_men: -1.3
+# disutil_unemployed_men: -1.0
+# disutil_ft_work_good_women: -1.3
+# disutil_ft_work_bad_women: -1.3
+# disutil_pt_work_good_women: -1.3
+# disutil_pt_work_bad_women: -1.3
+# disutil_unemployed_women: -1.0
+
+# disutil_children_pt_work: -0.2
+# disutil_children_ft_work_low: -0.2
+# disutil_children_ft_work_high: -0.2
+
+# Utility parameters
+rho: 1.5
+
+# ------------------------------------------------------------------------
+# Parameters referenced in utility_of_labor_and_children
+# ------------------------------------------------------------------------
+# util_cons_unemployed_low_educ: -1.3
+# util_cons_unemployed_high_educ: -1.3
+# util_cons_part_time_low_educ: -1.3
+# util_cons_part_time_high_educ: -1.3
+# util_cons_full_time_low_educ: -1.3
+# util_cons_full_time_high_educ: -1.3
+
+util_cons_unemployed: -1.0
+util_cons_part_time: -1.3
+util_cons_full_time: -1.3
+
+util_cons_children_part_time_low_educ: -0.2
+util_cons_children_part_time_high_educ: -0.2
+
+util_cons_children_full_time_low_educ: -0.2
+util_cons_children_full_time_high_educ: -0.2
+
+# # ------------------------------------------------------------------------
+# # Parameters referenced in utility_of_labor_and_caregiving
+# # (Active code)
+# # ------------------------------------------------------------------------
+# util_part_time_low_educ_constant: -1.3
+# util_part_time_low_educ_child_bin_one: -1.3
+# util_part_time_low_educ_child_bin_two: -1.3
+# util_part_time_low_educ_child_bin_three: -1.3
+
+# util_full_time_low_educ_constant: -1.3
+# util_full_time_low_educ_child_bin_one: -1.3
+# util_full_time_low_educ_child_bin_two: -1.3
+# util_full_time_low_educ_child_bin_three: -1.3
+
+# util_part_time_high_educ_constant: -1.3
+# util_part_time_high_educ_child_bin_one: -1.3
+# util_part_time_high_educ_child_bin_two: -1.3
+# util_part_time_high_educ_child_bin_three: -1.3
+
+# util_full_time_high_educ_constant: -1.3
+# util_full_time_high_educ_child_bin_one: -1.3
+# util_full_time_high_educ_child_bin_two: -1.3
+# util_full_time_high_educ_child_bin_three: -1.3
+
+# # ------------------------------------------------------------------------
+# # Parameters referenced in utility_of_labor_and_caregiving
+# # (Commented-out code — included here just in case you need them)
+# # ------------------------------------------------------------------------
+# util_unemployed_low_educ_constant: -1.3
+# util_unemployed_low_educ_child_bin_one: -1.3
+# util_unemployed_low_educ_child_bin_two: -1.3
+# util_unemployed_low_educ_child_bin_three: -1.3
+
+# util_unemployed_high_educ_constant: -1.3
+# util_unemployed_high_educ_child_bin_one: -1.3
+# util_unemployed_high_educ_child_bin_two: -1.3
+# util_unemployed_high_educ_child_bin_three: -1.3
+
+# Bequest scale
+bequest_scale: 2.4
+
+# Job separation params are set internally driven by data
+
+# Taste shock scale
+lambda: 0.29
+#taste_shock_scale_men: 0.29
+#taste_shock_scale_women: 0.29
