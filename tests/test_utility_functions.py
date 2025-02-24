@@ -225,23 +225,7 @@ def test_marginal_utility(
     rho,
     load_specs,
 ):
-    # options = load_specs[1]
-    # params = {
-    #     "rho": rho,
-    #     "disutil_pt_work_good_men": disutil_work + 1,
-    #     "disutil_pt_work_bad_men": disutil_work,
-    #     "disutil_ft_work_good_men": disutil_work + 1,
-    #     "disutil_ft_work_bad_men": disutil_work,
-    #     "disutil_unemployed_men": disutil_unemployed,
-    #     "disutil_pt_work_good_women": disutil_work + 1,
-    #     "disutil_pt_work_bad_women": disutil_work,
-    #     "disutil_ft_work_good_women": disutil_work + 1,
-    #     "disutil_ft_work_bad_women": disutil_work,
-    #     "disutil_unemployed_women": disutil_unemployed,
-    #     "disutil_children_ft_work_low": 0.1,
-    #     "disutil_children_ft_work_high": 0.1,
-    #     "bequest_scale": 2,
-    # }
+    """Test marginal utility function."""
 
     options = load_specs
     params = {
@@ -261,99 +245,88 @@ def test_marginal_utility(
     random_choice = np.random.choice(np.array([0, 1, 2]))
     marg_util_jax = jax.jacfwd(utility_func, argnums=0)(
         consumption,
-        sex,
-        partner_state,
-        education,
-        period,
         random_choice,
+        period,
+        education,
+        partner_state,
         params,
         options,
     )
     marg_util_model = marginal_utility(
         consumption=consumption,
-        partner_state=partner_state,
-        education=education,
-        period=period,
-        sex=sex,
         choice=random_choice,
+        period=period,
+        education=education,
+        partner_state=partner_state,
         params=params,
         options=options,
     )
     np.testing.assert_almost_equal(marg_util_jax, marg_util_model)
 
 
-# @pytest.mark.parametrize(
-#     "consumption, sex, partner_state, education, health, period, disutil_work, disutil_unemployed, rho",
-#     list(
-#         product(
-#             CONSUMPTION_GRID,
-#             SEX_GRID,
-#             PARTNER_STATE_GRIRD,
-#             EDUCATION_GRID,
-#             HEALTH_GRID,
-#             PERIOD_GRID,
-#             UTIL_WORK_GRID,
-#             UTIL_UNEMPLOYED_GRID,
-#             RHO_GRID,
-#         )
-#     ),
-# )
-# def test_inv_marginal_utility(
-#     consumption,
-#     sex,
-#     partner_state,
-#     education,
-#     health,
-#     period,
-#     disutil_work,
-#     disutil_unemployed,
-#     rho,
-#     paths_and_specs,
-# ):
-#     params = {
-#         "rho": rho,
-#         "disutil_pt_work_good_men": disutil_work + 1,
-#         "disutil_pt_work_bad_men": disutil_work,
-#         "disutil_ft_work_good_men": disutil_work + 1,
-#         "disutil_ft_work_bad_men": disutil_work,
-#         "disutil_unemployed_men": disutil_unemployed,
-#         "disutil_pt_work_good_women": disutil_work + 1,
-#         "disutil_pt_work_bad_women": disutil_work,
-#         "disutil_ft_work_good_women": disutil_work + 1,
-#         "disutil_ft_work_bad_women": disutil_work,
-#         "disutil_unemployed_women": disutil_unemployed,
-#         "disutil_children_ft_work_low": 0.1,
-#         "disutil_children_ft_work_high": 0.1,
-#         "bequest_scale": 2,
-#     }
+@pytest.mark.parametrize(
+    "consumption, sex, partner_state, education,  period, util_work, util_unemployed, rho",
+    list(
+        product(
+            CONSUMPTION_GRID,
+            SEX_GRID,
+            PARTNER_STATE_GRIRD,
+            EDUCATION_GRID,
+            PERIOD_GRID,
+            UTIL_WORK_GRID,
+            UTIL_UNEMPLOYED_GRID,
+            RHO_GRID,
+        )
+    ),
+)
+def test_inverse_marginal_utility(
+    consumption,
+    sex,
+    partner_state,
+    education,
+    period,
+    util_work,
+    util_unemployed,
+    rho,
+    load_specs,
+):
+    options = load_specs
+    params = {
+        "rho": rho,
+        "util_cons_unemployed": util_unemployed,
+        "util_cons_part_time_low_educ": util_work,
+        "util_cons_part_time_high_educ": util_work,
+        "util_cons_full_time_low_educ": util_work,
+        "util_cons_full_time_high_educ": util_work,
+        "util_cons_children_part_time_low_educ": 0,
+        "util_cons_children_part_time_high_educ": 0,
+        "util_cons_children_full_time_low_educ": -0.1,
+        "util_cons_children_full_time_high_educ": -0.1,
+        "bequest_scale": 2,
+    }
 
-#     options = paths_and_specs[1]
-#     random_choice = np.random.choice(np.array([0, 1, 2]))
-#     marg_util = marg_utility(
-#         consumption=consumption,
-#         partner_state=partner_state,
-#         education=education,
-#         health=health,
-#         sex=sex,
-#         period=period,
-#         choice=random_choice,
-#         params=params,
-#         options=options,
-#     )
-#     np.testing.assert_almost_equal(
-#         inverse_marginal(
-#             marginal_utility=marg_util,
-#             partner_state=partner_state,
-#             education=education,
-#             health=health,
-#             sex=sex,
-#             period=period,
-#             choice=random_choice,
-#             params=params,
-#             options=options,
-#         ),
-#         consumption,
-#     )
+    random_choice = np.random.choice(np.array([0, 1, 2]))
+    marg_util = marginal_utility(
+        consumption=consumption,
+        choice=random_choice,
+        period=period,
+        education=education,
+        partner_state=partner_state,
+        params=params,
+        options=options,
+    )
+    np.testing.assert_almost_equal(
+        inverse_marginal_utility(
+            marginal_utility=marg_util,
+            choice=random_choice,
+            period=period,
+            education=education,
+            partner_state=partner_state,
+            params=params,
+            options=options,
+        ),
+        consumption,
+    )
 
 
 @pytest.mark.parametrize(

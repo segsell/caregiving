@@ -78,7 +78,9 @@ def utility_func(
     cons_scale = consumption_scale(has_partner, n_children)
     utility_consumption = ((consumption / cons_scale) ** (1 - rho) - 1) / (1 - rho)
 
-    eta = utility_of_labor_and_children(choice, education, n_children, params)
+    eta = utility_of_labor_and_children(
+        choice=choice, education=education, n_children=n_children, params=params
+    )
     # zeta = utility_of_labor_and_caregiving(
     #     choice, age_youngest_child, education, params
     # )
@@ -107,7 +109,9 @@ def marginal_utility(
     has_partner = (partner_state > 0).astype(int)
     n_children = options["children_by_state"][SEX, education, has_partner, period]
 
-    eta = utility_of_labor_and_children(choice, education, params)
+    eta = utility_of_labor_and_children(
+        choice=choice, education=education, n_children=n_children, params=params
+    )
 
     cons_scale = consumption_scale(has_partner, n_children)
 
@@ -125,7 +129,7 @@ def marginal_utility(
 
 
 def inverse_marginal_utility(
-    marg_util, choice, period, education, partner_state, params, options
+    marginal_utility, choice, period, education, partner_state, params, options
 ):
     """Compute the inverse marginal utility of consumption and labor.
 
@@ -136,18 +140,20 @@ def inverse_marginal_utility(
     has_partner = (partner_state > 0).astype(int)
     n_children = options["children_by_state"][SEX, education, has_partner, period]
 
-    eta = utility_of_labor_and_children(choice, education, params)
+    eta = utility_of_labor_and_children(
+        choice=choice, education=education, n_children=n_children, params=params
+    )
     cons_scale = consumption_scale(has_partner, n_children)
 
     inv_marg_util_with_rho_not_one = (
-        marg_util ** (-1 / rho)
+        marginal_utility ** (-1 / rho)
         * (cons_scale ** ((rho - 1) / rho))
         * (jnp.exp(eta) ** (1 / rho))
     )
 
     inv_marg_util = jax.lax.select(
         jnp.allclose(rho, 1),
-        1 / marg_util,
+        1 / marginal_utility,
         inv_marg_util_with_rho_not_one,
     )
 
