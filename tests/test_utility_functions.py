@@ -102,6 +102,7 @@ def test_utility_func(
     load_specs,
 ):
     """Test utility function for unemployed, part and full-time."""
+    options = load_specs
     params = {
         "rho": rho,
         "util_cons_unemployed": util_unemployed,
@@ -115,7 +116,6 @@ def test_utility_func(
         "util_cons_children_full_time_high_educ": -0.1,
         "bequest_scale": 2,
     }
-    options = load_specs
 
     has_partner = int(partner_state > 0)
     n_children = options["children_by_state"][sex, education, has_partner, period]
@@ -199,76 +199,87 @@ def test_utility_func(
     )
 
 
-# @pytest.mark.parametrize(
-#     "consumption, sex, partner_state, education, health, period, disutil_work, disutil_unemployed, rho",
-#     list(
-#         product(
-#             CONSUMPTION_GRID,
-#             SEX_GRID,
-#             PARTNER_STATE_GRIRD,
-#             EDUCATION_GRID,
-#             HEALTH_GRID,
-#             PERIOD_GRID,
-#             UTIL_WORK_GRID,
-#             UTIL_UNEMPLOYED_GRID,
-#             RHO_GRID,
-#         )
-#     ),
-# )
-# def test_marginal_utility(
-#     consumption,
-#     sex,
-#     partner_state,
-#     education,
-#     health,
-#     period,
-#     disutil_work,
-#     disutil_unemployed,
-#     rho,
-#     paths_and_specs,
-# ):
-#     options = paths_and_specs[1]
-#     params = {
-#         "rho": rho,
-#         "disutil_pt_work_good_men": disutil_work + 1,
-#         "disutil_pt_work_bad_men": disutil_work,
-#         "disutil_ft_work_good_men": disutil_work + 1,
-#         "disutil_ft_work_bad_men": disutil_work,
-#         "disutil_unemployed_men": disutil_unemployed,
-#         "disutil_pt_work_good_women": disutil_work + 1,
-#         "disutil_pt_work_bad_women": disutil_work,
-#         "disutil_ft_work_good_women": disutil_work + 1,
-#         "disutil_ft_work_bad_women": disutil_work,
-#         "disutil_unemployed_women": disutil_unemployed,
-#         "disutil_children_ft_work_low": 0.1,
-#         "disutil_children_ft_work_high": 0.1,
-#         "bequest_scale": 2,
-#     }
+@pytest.mark.parametrize(
+    "consumption, sex, partner_state, education,  period, util_work, util_unemployed, rho",
+    list(
+        product(
+            CONSUMPTION_GRID,
+            SEX_GRID,
+            PARTNER_STATE_GRIRD,
+            EDUCATION_GRID,
+            PERIOD_GRID,
+            UTIL_WORK_GRID,
+            UTIL_UNEMPLOYED_GRID,
+            RHO_GRID,
+        )
+    ),
+)
+def test_marginal_utility(
+    consumption,
+    sex,
+    partner_state,
+    education,
+    period,
+    util_work,
+    util_unemployed,
+    rho,
+    load_specs,
+):
+    # options = load_specs[1]
+    # params = {
+    #     "rho": rho,
+    #     "disutil_pt_work_good_men": disutil_work + 1,
+    #     "disutil_pt_work_bad_men": disutil_work,
+    #     "disutil_ft_work_good_men": disutil_work + 1,
+    #     "disutil_ft_work_bad_men": disutil_work,
+    #     "disutil_unemployed_men": disutil_unemployed,
+    #     "disutil_pt_work_good_women": disutil_work + 1,
+    #     "disutil_pt_work_bad_women": disutil_work,
+    #     "disutil_ft_work_good_women": disutil_work + 1,
+    #     "disutil_ft_work_bad_women": disutil_work,
+    #     "disutil_unemployed_women": disutil_unemployed,
+    #     "disutil_children_ft_work_low": 0.1,
+    #     "disutil_children_ft_work_high": 0.1,
+    #     "bequest_scale": 2,
+    # }
 
-#     random_choice = np.random.choice(np.array([0, 1, 2]))
-#     marg_util_jax = jax.jacfwd(utility_func, argnums=0)(
-#         consumption,
-#         sex,
-#         partner_state,
-#         education,
-#         health,
-#         period,
-#         random_choice,
-#         params,
-#         options,
-#     )
-#     marg_util_model = marg_utility(
-#         consumption=consumption,
-#         partner_state=partner_state,
-#         education=education,
-#         health=health,
-#         period=period,
-#         sex=sex,
-#         choice=random_choice,
-#         params=params,
-#         options=options,
-#     )
-#     np.testing.assert_almost_equal(marg_util_jax, marg_util_model)
+    options = load_specs
+    params = {
+        "rho": rho,
+        "util_cons_unemployed": util_unemployed,
+        "util_cons_part_time_low_educ": util_work,
+        "util_cons_part_time_high_educ": util_work,
+        "util_cons_full_time_low_educ": util_work,
+        "util_cons_full_time_high_educ": util_work,
+        "util_cons_children_part_time_low_educ": 0,
+        "util_cons_children_part_time_high_educ": 0,
+        "util_cons_children_full_time_low_educ": -0.1,
+        "util_cons_children_full_time_high_educ": -0.1,
+        "bequest_scale": 2,
+    }
+
+    random_choice = np.random.choice(np.array([0, 1, 2]))
+    marg_util_jax = jax.jacfwd(utility_func, argnums=0)(
+        consumption,
+        sex,
+        partner_state,
+        education,
+        period,
+        random_choice,
+        params,
+        options,
+    )
+    marg_util_model = marginal_utility(
+        consumption=consumption,
+        partner_state=partner_state,
+        education=education,
+        period=period,
+        sex=sex,
+        choice=random_choice,
+        params=params,
+        options=options,
+    )
+    np.testing.assert_almost_equal(marg_util_jax, marg_util_model)
 
 
 # @pytest.mark.parametrize(
@@ -350,6 +361,7 @@ def test_utility_func(
     list(product(CONSUMPTION_GRID, RHO_GRID, BEQUEST_SCALE)),
 )
 def test_bequest(consumption, rho, bequest_scale):
+    """Test bequest utility function."""
     params = {
         "rho": rho,
         "bequest_scale": bequest_scale,
@@ -368,6 +380,7 @@ def test_bequest(consumption, rho, bequest_scale):
     list(product(CONSUMPTION_GRID, RHO_GRID, BEQUEST_SCALE)),
 )
 def test_bequest_marginal(consumption, rho, bequest_scale):
+    """Test marginal utility of bequest function."""
     params = {
         "rho": rho,
         "bequest_scale": bequest_scale,
