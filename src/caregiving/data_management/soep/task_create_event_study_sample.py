@@ -157,8 +157,8 @@ def task_create_event_study_sample(
     """
 
     specs = read_and_derive_specs(path_to_specs)
-
     cpi = pd.read_csv(path_to_cpi, index_col=0)
+
     df = pd.read_csv(path_to_raw)
 
     df = create_choice_variable(df)

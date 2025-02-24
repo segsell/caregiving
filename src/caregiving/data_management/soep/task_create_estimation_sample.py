@@ -54,7 +54,7 @@ def task_create_structural_estimation_sample(
     df = generate_job_separation_var(df)
     df = create_lagged_and_lead_variables(df, specs, lead_job_sep=True)
 
-    # df = add_wealth_interpolate_and_deflate(df, paths, specs)
+    # df = add_wealth_interpolate_and_deflate(df, specs)
 
     df["period"] = df["age"] - specs["start_age"]
     df = create_experience_variable(df)
