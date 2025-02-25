@@ -33,6 +33,7 @@ def table(df_col):
 def task_create_structural_estimation_sample(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_raw: Path = BLD / "data" / "soep_estimation_data_raw.csv",
+    path_to_wealth: Path = BLD / "data" / "soep_wealth_data.csv",
     path_to_save: Annotated[Path, Product] = BLD
     / "data"
     / "soep_structural_estimation_sample.csv",
@@ -54,7 +55,8 @@ def task_create_structural_estimation_sample(
     df = generate_job_separation_var(df)
     df = create_lagged_and_lead_variables(df, specs, lead_job_sep=True)
 
-    # df = add_wealth_interpolate_and_deflate(df, specs)
+    wealth = pd.read_csv(path_to_wealth, index_col=[0])
+    df = add_wealth_data(df, wealth, drop_missing=False)
 
     df["period"] = df["age"] - specs["start_age"]
     df = create_experience_variable(df)
@@ -72,7 +74,6 @@ def task_create_structural_estimation_sample(
     # Filter out part-time men
     part_time_values = np.asarray(PART_TIME).ravel().tolist()
     mask = df["sex"] == 0
-    # df = df[~(mask & (df["choice"].isin(part_time_values)))]
     df = df.loc[~(mask & df["choice"].isin(part_time_values))]
     df = df.loc[~(mask & df["lagged_choice"].isin(part_time_values))]
 
@@ -85,7 +86,7 @@ def task_create_structural_estimation_sample(
         "partner_state": "int8",
         "job_offer": "int8",
         "experience": "int8",
-        # "wealth": "float32",
+        "wealth": "float32",
         "education": "int8",
         "sex": "int8",
         "children": "int8",
@@ -99,3 +100,18 @@ def task_create_structural_estimation_sample(
     # Anonymize and save data
     df.reset_index(drop=True, inplace=True)
     df.to_csv(path_to_save)
+
+
+def add_wealth_data(data, wealth, drop_missing=False):
+
+    data = data.reset_index()
+    data = data.merge(wealth, on=["hid", "syear"], how="left")
+
+    data.set_index(["pid", "syear"], inplace=True)
+
+    if drop_missing:
+        data = data[(data["wealth"].notna())]
+
+    print(str(len(data)) + " left after dropping people with missing wealth.")
+
+    return data

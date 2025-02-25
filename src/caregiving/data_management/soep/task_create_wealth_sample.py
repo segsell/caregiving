@@ -18,7 +18,7 @@ def task_create_household_wealth_sample(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
     soep_c38_hwealth: Path = SRC / "data" / "soep" / "hwealth.dta",
-    path_to_save: Annotated[Path, Product] = BLD / "data" / "wealth_data.csv",
+    path_to_save: Annotated[Path, Product] = BLD / "data" / "soep_wealth_data.csv",
 ) -> None:
     """Create sample for wealth estimation."""
 
