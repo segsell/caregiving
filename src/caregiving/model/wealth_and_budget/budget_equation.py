@@ -21,13 +21,15 @@ def budget_constraint(
     education,
     lagged_choice,  # d_{t-1}
     experience,
-    sex,
+    # sex,
     partner_state,
     savings_end_of_previous_period,  # A_{t-1}
     income_shock_previous_period,  # epsilon_{t - 1}
     params,
     options,
 ):
+    sex_var = SEX
+
     savings_scaled = savings_end_of_previous_period * options["wealth_unit"]
     # Recalculate experience
     max_exp_period = period + options["max_exp_diffs_per_period"][period]
@@ -36,7 +38,7 @@ def budget_constraint(
     # Calculate partner income
     partner_income_after_ssc = calc_partner_income_after_ssc(
         partner_state=partner_state,
-        sex=sex,
+        sex=sex_var,
         options=options,
         education=education,
         period=period,
@@ -45,7 +47,7 @@ def budget_constraint(
     # Income from lagged choice 0
     retirement_income_after_ssc = calc_pensions_after_ssc(
         experience_years=experience_years,
-        sex=sex,
+        sex=sex_var,
         education=education,
         options=options,
     )
@@ -56,7 +58,7 @@ def budget_constraint(
     unemployment_benefits = calc_unemployment_benefits(
         savings=savings_scaled,
         education=education,
-        sex=sex,
+        sex=sex_var,
         has_partner_int=has_partner_int,
         period=period,
         options=options,
@@ -67,7 +69,7 @@ def budget_constraint(
         lagged_choice=lagged_choice,
         experience_years=experience_years,
         education=education,
-        sex=sex,
+        sex=sex_var,
         income_shock=income_shock_previous_period,
         options=options,
     )
@@ -91,7 +93,7 @@ def budget_constraint(
     )
     child_benefits = calc_child_benefits(
         education=education,
-        sex=sex,
+        sex=sex_var,
         has_partner_int=has_partner_int,
         period=period,
         options=options,

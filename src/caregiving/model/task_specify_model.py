@@ -138,8 +138,6 @@ from typing import Annotated, Any, Dict
 import jax.numpy as jnp
 import numpy as np
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model, setup_and_save_model
-from dcegm.solve import get_solve_func_for_model
 from pytask import Product
 
 from caregiving.config import BLD, SRC
@@ -154,6 +152,8 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
+from dcegm.pre_processing.setup_model import setup_and_save_model
+from dcegm.solve import get_solve_func_for_model
 
 
 def task_specify_model(
@@ -161,9 +161,14 @@ def task_specify_model(
     # model_type="solution",
     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs.pkl",
     path_to_start_params: Path = BLD / "model" / "params" / "start_params_updated.yaml",
+    path_to_save_options: Annotated[Path, Product] = BLD / "model" / "options.pkl",
     path_to_save_model: Annotated[Path, Product] = BLD
     / "model"
     / "model_for_solution.pkl",
+    path_to_save_start_params: Annotated[Path, Product] = BLD
+    / "model"
+    / "params"
+    / "start_params_model.yaml",
 ):
     """Generate model and options dictionaries."""
 
@@ -173,9 +178,12 @@ def task_specify_model(
     params = yaml.safe_load(path_to_start_params.open("rb"))
 
     # Assign income shock scale to start_params_all
-    params["sigma"] = specs["income_shock_scale"]
-    params["interest_rate"] = specs["interest_rate"]
-    params["beta"] = specs["discount_factor"]
+    params["sigma"] = float(specs["income_shock_scale"])
+    params["interest_rate"] = float(specs["interest_rate"])
+    params["beta"] = float(specs["discount_factor"])
+
+    with path_to_save_start_params.open("w") as f:
+        yaml.dump(params, f)
 
     # Load specifications
     n_periods = specs["n_periods"]
@@ -214,6 +222,7 @@ def task_specify_model(
         },
         "model_params": specs,
     }
+    pickle.dump(options, path_to_save_options.open("wb"))
 
     model = setup_and_save_model(
         options=options,

@@ -10,6 +10,7 @@ from caregiving.model.shared import (  # BAD_HEALTH,; CARE_AND_NO_CARE,; FORMAL_
     NOT_WORKING,
     PART_TIME_AND_NO_WORK,
     RETIREMENT,
+    SEX,
     UNEMPLOYED,
     WORK_AND_NO_WORK,
     WORK_AND_UNEMPLOYED,
@@ -316,9 +317,11 @@ def state_specific_choice_set(period, lagged_choice, job_offer, options):
 
 
 def get_next_period_experience(
-    period, lagged_choice, already_retired, sex, education, experience, options
+    period, lagged_choice, already_retired, education, experience, options
 ):
     """Update experience based on lagged choice and period."""
+    sex = SEX
+
     exp_years_last_period = construct_experience_years(
         experience=experience,
         period=period - 1,
