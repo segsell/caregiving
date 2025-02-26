@@ -12,7 +12,7 @@ import seaborn as sns
 from pytask import Product
 
 from caregiving.config import BLD
-from caregiving.moments.task_create_empirical_moments import deflate_income_and_wealth
+from caregiving.moments._task_create_empirical_moments import deflate_income_and_wealth
 
 BASE_YEAR = 2015
 
