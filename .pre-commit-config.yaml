@@ -50,7 +50,7 @@ repos:
 #     -   id: docformatter
 #         args: [--in-place, --wrap-summaries, "88", --wrap-descriptions, "88", --blank]
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.6
+    rev: v0.9.7
     hooks:
     # Run the linter.
     -   id: ruff
@@ -107,7 +107,7 @@ repos:
     rev: v2.4.1
     hooks:
     -   id: codespell
-        exclude: src/caregiving/moments/task_care_mix_statistical_office.py
+        exclude: src/caregiving/moments/_task_care_mix_statistical_office.py
 -   repo: meta
     hooks:
     -   id: check-useless-excludes

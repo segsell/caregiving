@@ -10,7 +10,7 @@ import yaml
 from pytask import Product
 
 from caregiving.config import BLD, SRC
-from caregiving.model.shared import UNEMPLOYED, WORK
+from caregiving.model.shared import SEX, UNEMPLOYED, WORK
 
 
 def task_estimate_job_offer(
@@ -53,9 +53,11 @@ def estimate_logit_job_offer_params(df, specs):
 
     unemployed_values = np.asarray(UNEMPLOYED).ravel().tolist()
     work_values = np.asarray(WORK).ravel().tolist()
+    sex_var = SEX
 
     # Filter for unemployed, because we only estimate job offer probs on them
     df_unemployed = df[df["lagged_choice"].isin(unemployed_values)].copy()
+    df_unemployed["sex"] = sex_var
 
     # Create work start indicator
     df_unemployed.loc[:, "work_start"] = (
@@ -78,23 +80,23 @@ def estimate_logit_job_offer_params(df, specs):
         "education",
     ]
 
-    sex_append = ["men", "women"]
+    # sex_append = ["men", "women"]
     job_offer_params = {}
 
-    for sex_var, suffix in enumerate(sex_append):
-        logit_df_gender = logit_df[logit_df["sex"] == sex_var]
-        logit_model = sm.Logit(
-            logit_df_gender["work_start"], logit_df_gender[logit_vars]
-        )
-        logit_fitted = logit_model.fit()
+    suffix = "women"
 
-        params = logit_fitted.params
+    # for sex_var, suffix in enumerate(sex_append):
+    logit_df_gender = logit_df[logit_df["sex"] == sex_var]
+    logit_model = sm.Logit(logit_df_gender["work_start"], logit_df_gender[logit_vars])
+    logit_fitted = logit_model.fit()
 
-        gender_params = {
-            f"job_finding_logit_const_{suffix}": params["intercept"],
-            f"job_finding_logit_age_{suffix}": params["age"],
-            f"job_finding_logit_high_educ_{suffix}": params["education"],
-        }
-        job_offer_params = {**job_offer_params, **gender_params}
+    params = logit_fitted.params
+
+    gender_params = {
+        f"job_finding_logit_const_{suffix}": params["intercept"],
+        f"job_finding_logit_age_{suffix}": params["age"],
+        f"job_finding_logit_high_educ_{suffix}": params["education"],
+    }
+    job_offer_params = {**job_offer_params, **gender_params}
 
     return job_offer_params

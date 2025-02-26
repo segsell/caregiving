@@ -22,7 +22,7 @@ from caregiving.data_management.soep.variables import (
     determine_observed_job_offers,
     generate_job_separation_var,
 )
-from caregiving.model.shared import PART_TIME, WORK
+from caregiving.model.shared import PART_TIME, RETIREMENT, WORK
 from caregiving.specs.task_write_specs import read_and_derive_specs
 
 
@@ -33,6 +33,7 @@ def table(df_col):
 def task_create_structural_estimation_sample(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_raw: Path = BLD / "data" / "soep_estimation_data_raw.csv",
+    path_to_wealth: Path = BLD / "data" / "soep_wealth_data.csv",
     path_to_save: Annotated[Path, Product] = BLD
     / "data"
     / "soep_structural_estimation_sample.csv",
@@ -54,7 +55,21 @@ def task_create_structural_estimation_sample(
     df = generate_job_separation_var(df)
     df = create_lagged_and_lead_variables(df, specs, lead_job_sep=True)
 
-    # df = add_wealth_interpolate_and_deflate(df, paths, specs)
+    df = create_alreay_retired_variable(df)
+    # df = df.reset_index()
+    # df = df.sort_values(["pid", "syear"])
+
+    # retired_values = np.asarray(RETIREMENT).ravel().tolist()
+    # df["retire_flag"] = (
+    #     df["lagged_choice"].isin(retired_values) & df["choice"].isin(retired_values)
+    # ).astype(int)
+    # df["already_retired"] = df.groupby("pid")["retire_flag"].cummax()
+
+    # df.drop(columns=["retire_flag"], inplace=True)
+    # df.set_index(["pid", "syear"], inplace=True)
+
+    wealth = pd.read_csv(path_to_wealth, index_col=[0])
+    df = add_wealth_data(df, wealth, drop_missing=False)
 
     df["period"] = df["age"] - specs["start_age"]
     df = create_experience_variable(df)
@@ -72,7 +87,6 @@ def task_create_structural_estimation_sample(
     # Filter out part-time men
     part_time_values = np.asarray(PART_TIME).ravel().tolist()
     mask = df["sex"] == 0
-    # df = df[~(mask & (df["choice"].isin(part_time_values)))]
     df = df.loc[~(mask & df["choice"].isin(part_time_values))]
     df = df.loc[~(mask & df["lagged_choice"].isin(part_time_values))]
 
@@ -81,11 +95,12 @@ def task_create_structural_estimation_sample(
         "age": "int8",
         "period": "int8",
         "choice": "int8",
+        "already_retired": "int8",
         "lagged_choice": "int8",
         "partner_state": "int8",
         "job_offer": "int8",
         "experience": "int8",
-        # "wealth": "float32",
+        "wealth": "float32",
         "education": "int8",
         "sex": "int8",
         "children": "int8",
@@ -99,3 +114,42 @@ def task_create_structural_estimation_sample(
     # Anonymize and save data
     df.reset_index(drop=True, inplace=True)
     df.to_csv(path_to_save)
+
+
+def add_wealth_data(data, wealth, drop_missing=False):
+    """Add wealth data to the estimation sample."""
+
+    data = data.reset_index()
+    data = data.merge(wealth, on=["hid", "syear"], how="left")
+
+    data.set_index(["pid", "syear"], inplace=True)
+
+    if drop_missing:
+        data = data[(data["wealth"].notna())]
+
+    print(str(len(data)) + " left after dropping people with missing wealth.")
+
+    return data
+
+
+def create_alreay_retired_variable(data):
+    """Create already retired variable."""
+    data = data.reset_index()
+    data = data.sort_values(["pid", "syear"])
+
+    retired_values = np.asarray(RETIREMENT).ravel().tolist()
+    data["retire_flag"] = (
+        data["lagged_choice"].isin(retired_values) & data["choice"].isin(retired_values)
+    ).astype(int)
+    data["already_retired"] = data.groupby("pid")["retire_flag"].cummax()
+
+    # # Done in model enforcements
+    # switch_back_condition = data["lagged_choice"].isin(retired_values) & ~data[
+    #     "choice"
+    # ].isin(retired_values)
+    # assert not switch_back_condition.any()
+
+    data.drop(columns=["retire_flag"], inplace=True)
+    data.set_index(["pid", "syear"], inplace=True)
+
+    return data
