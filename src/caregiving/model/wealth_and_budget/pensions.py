@@ -66,33 +66,3 @@ def calc_experience_for_total_pension_points(
         (total_pension_points * mean_wage_all * gamma_1_plus_1 / jnp.exp(gamma_0) + 1)
         ** (1 / gamma_1_plus_1)
     ) - 1
-
-
-def calc_experience_years_for_pension_adjustment(
-    period, sex, experience_years, education, options
-):
-    """Calculate the reduced experience with early retirement penalty."""
-    # retirement age is last periods age
-    age = options["start_age"] + period - 1
-
-    total_pension_points = calc_total_pension_points(
-        education=education,
-        experience_years=experience_years,
-        sex=sex,
-        options=options,
-    )
-
-    # Select penalty depending on age difference
-    pension_factor = (
-        1 - (age - options["min_SRA"]) * options["early_retirement_penalty"]
-    )
-    adjusted_pension_points = pension_factor * total_pension_points
-
-    reduced_experience_years = calc_experience_for_total_pension_points(
-        total_pension_points=adjusted_pension_points,
-        sex=sex,
-        education=education,
-        options=options,
-    )
-
-    return reduced_experience_years

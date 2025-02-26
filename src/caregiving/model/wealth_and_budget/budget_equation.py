@@ -5,7 +5,6 @@ from caregiving.model.wealth_and_budget.partner_income import (
     calc_partner_income_after_ssc,
 )
 from caregiving.model.wealth_and_budget.pensions import (
-    calc_experience_years_for_pension_adjustment,
     calc_pensions_after_ssc,
 )
 from caregiving.model.wealth_and_budget.tax_and_ssc import calc_net_household_income
