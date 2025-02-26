@@ -8,7 +8,7 @@ from pytask import Product
 
 from caregiving.config import BLD
 from caregiving.model.shared import BAD_HEALTH
-from caregiving.moments.task_create_empirical_moments import deflate_income_and_wealth
+from caregiving.moments._task_create_empirical_moments import deflate_income_and_wealth
 
 
 # @pytask.mark.skip(reason="Compare mean with other module")
