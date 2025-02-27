@@ -162,6 +162,7 @@ bld/event_study/
 bld/moments/
 bld/output/
 bld/plots/
+bld/solve_and_simulate/
 bld/_old_model/
 
 # Ensure bld/ itself is tracked (optional but helpful for clarity)
