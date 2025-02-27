@@ -8,8 +8,6 @@ import jax.numpy as jnp
 import numpy as np
 import pandas as pd
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 from pytask import Product
 from scipy.stats import pareto
 
@@ -21,6 +19,8 @@ from caregiving.model.utility.bequest_utility import (
 )
 from caregiving.model.utility.utility_functions import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 
 def task_generate_start_states_for_solution(  # noqa: PLR0915
@@ -183,9 +183,10 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
 
     states = {
         "period": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
-        "experience": jnp.array(exp_agents, dtype=jnp.float64),
         "education": jnp.array(education_agents, dtype=jnp.uint8),
         "lagged_choice": jnp.array(lagged_choice, dtype=jnp.uint8),
+        "already_retired": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
+        "experience": jnp.array(exp_agents, dtype=jnp.float64),
         "job_offer": jnp.ones_like(exp_agents, dtype=jnp.uint8),
         "partner_state": jnp.array(partner_states, dtype=jnp.uint8),
     }

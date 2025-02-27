@@ -38,19 +38,47 @@ def create_state_space_functions():
 # =====================================================================================
 
 
-def next_period_endogenous_state(period, choice, lagged_choice):
-    if (lagged_choice == 0) & (choice == 0):
-        return {
-            "period": period + 1,
-            "lagged_choice": choice,
-            "already_retired": 1,
-        }
-    else:
-        return {
-            "period": period + 1,
-            "lagged_choice": choice,
-            "already_retired": 0,
-        }
+def next_period_endogenous_state(period, choice, lagged_choice, already_retired):
+    is_already_retired = is_retired(lagged_choice) & is_retired(choice)
+
+    states_already_retired = {
+        "period": period + 1,
+        "lagged_choice": choice,
+        "already_retired": jnp.ones_like(already_retired),
+    }
+    states_not_yet_retired = {
+        "period": period + 1,
+        "lagged_choice": choice,
+        "already_retired": jnp.zeros_like(already_retired),
+    }
+
+    # return jax.lax.select(
+    #     is_already_retired,
+    #     states_already_retired,
+    #     states_not_yet_retired,
+    # )
+
+    # return (
+    #     is_already_retired * states_already_retired
+    #     + (1 - is_already_retired) * states_not_yet_retired
+    # )
+    return {
+        "period": jnp.where(
+            is_already_retired,
+            states_already_retired["period"],
+            states_not_yet_retired["period"],
+        ),
+        "lagged_choice": jnp.where(
+            is_already_retired,
+            states_already_retired["lagged_choice"],
+            states_not_yet_retired["lagged_choice"],
+        ),
+        "already_retired": jnp.where(
+            is_already_retired,
+            states_already_retired["already_retired"],
+            states_not_yet_retired["already_retired"],
+        ),
+    }
 
 
 def sparsity_condition(  # noqa: PLR0911

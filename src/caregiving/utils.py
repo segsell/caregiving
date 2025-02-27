@@ -3,6 +3,12 @@
 import pickle
 from pathlib import Path
 
+import pandas as pd
+
+
+def table(df_col):
+    return pd.crosstab(df_col, columns="Count")["Count"]
+
 
 def statsmodels_params_to_dict(params, name_prefix, name_constant=None):
     """Turn statsmodels regression params object into dict.
