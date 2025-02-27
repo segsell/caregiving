@@ -152,7 +152,6 @@ dist
 .pytask
 _version.py
 
-
 # Ignore specific subdirectories inside bld/
 bld/counterfactual/
 bld/data/

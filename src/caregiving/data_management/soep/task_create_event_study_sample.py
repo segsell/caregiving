@@ -19,8 +19,6 @@ from caregiving.data_management.soep.variables import (
     create_experience_variable,
     create_health_var,
     create_partner_state,
-    determine_observed_job_offers,
-    generate_job_separation_var,
     generate_working_hours,
 )
 from caregiving.model.shared import N_MONTHS, N_WEEKS_IN_YEAR, PART_TIME, WORK

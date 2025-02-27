@@ -1,11 +1,8 @@
 """Set start parameters for the estimation."""
 
-import pickle as pkl
 from pathlib import Path
-from typing import Annotated, Any, Dict
+from typing import Annotated
 
-import jax.numpy as jnp
-import numpy as np
 import pandas as pd
 import yaml
 from pytask import Product
