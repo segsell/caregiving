@@ -71,6 +71,7 @@ def task_write_specs(
     / "max_exp_diffs_per_period.txt",
     path_to_save_specs_dict: Annotated[Path, Product] = BLD
     / "model"
+    / "specs"
     / "specs_full.pkl",
 ) -> Dict[str, Any]:
     """Read in specs and add specs from first-step estimation."""

@@ -21,8 +21,6 @@ from caregiving.model.utility.utility_functions import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.simulation.simulate import simulate_scenario
 from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.simulation.sim_utils import create_simulation_df
-from dcegm.simulation.simulate import simulate_all_periods
 from dcegm.solve import get_solve_func_for_model
 
 jax.config.update("jax_enable_x64", True)
@@ -32,8 +30,8 @@ def test_solve_and_simulate(
     path_to_options: Path = BLD / "model" / "options.pkl",
     path_to_model: Path = BLD / "model" / "model_for_solution.pkl",
     path_to_start_params: Path = BLD / "model" / "params" / "start_params_model.yaml",
-    path_to_discrete_states: Path = BLD / "model" / "states.pkl",
-    path_to_wealth: Path = BLD / "model" / "wealth.csv",
+    path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",
+    path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
     path_to_save_solution: Annotated[Path, Product] = TESTS
     / "resources"
     / "solution.pkl",

@@ -17,7 +17,7 @@ SEX_GRID = [1]
 def load_specs():
     """Load specs from pickle file."""
 
-    path_to_specs = BLD / "model" / "specs_full.pkl"
+    path_to_specs = BLD / "model" / "specs" / "specs_full.pkl"
 
     with path_to_specs.open("rb") as file:
         specs = pkl.load(file)

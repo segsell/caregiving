@@ -28,7 +28,7 @@ from dcegm.solve import get_solve_func_for_model
 def task_specify_model(
     # load_model=False,
     # model_type="solution",
-    path_to_derived_specs: Path = BLD / "model" / "specs_full.pkl",
+    path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_start_params: Path = BLD / "model" / "params" / "start_params_updated.yaml",
     path_to_save_options: Annotated[Path, Product] = BLD / "model" / "options.pkl",
     path_to_save_model: Annotated[Path, Product] = BLD

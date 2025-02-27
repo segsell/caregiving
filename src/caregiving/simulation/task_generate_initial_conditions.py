@@ -2,18 +2,16 @@
 
 import pickle
 from pathlib import Path
-from typing import Annotated, Any, Dict
+from typing import Annotated
 
 import jax.numpy as jnp
 import numpy as np
 import pandas as pd
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 from pytask import Product
 from scipy.stats import pareto
 
-from caregiving.config import BLD, SRC
+from caregiving.config import BLD
 from caregiving.model.shared import SEX
 from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.utility.bequest_utility import (
@@ -21,6 +19,8 @@ from caregiving.model.utility.bequest_utility import (
 )
 from caregiving.model.utility.utility_functions import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 
 def task_generate_start_states_for_solution(  # noqa: PLR0915
@@ -30,8 +30,12 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     path_to_start_params: Path = BLD / "model" / "params" / "start_params_model.yaml",
     path_to_save_discrete_states: Annotated[Path, Product] = BLD
     / "model"
+    / "initial_conditions"
     / "states.pkl",
-    path_to_save_wealth: Annotated[Path, Product] = BLD / "model" / "wealth.csv",
+    path_to_save_wealth: Annotated[Path, Product] = BLD
+    / "model"
+    / "initial_conditions"
+    / "wealth.csv",
 ) -> None:
     sex_var = SEX
 

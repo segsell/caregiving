@@ -28,7 +28,7 @@ jax.config.update("jax_enable_x64", True)
 def load_specs():
     """Load specs from pickle file."""
 
-    path_to_specs = BLD / "model" / "specs_full.pkl"
+    path_to_specs = BLD / "model" / "specs" / "specs_full.pkl"
     # path_to_max_exp_diff = BLD / "model" / "specs" / "max_exp_diffs_per_period.txt"
 
     with path_to_specs.open("rb") as file:
