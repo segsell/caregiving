@@ -1,12 +1,12 @@
 """Function that simulates the model for a given scenario."""
 
 import pandas as pd
+from dcegm.simulation.sim_utils import create_simulation_df
+from dcegm.simulation.simulate import simulate_all_periods
 
 from caregiving.model.shared import FULL_TIME, PART_TIME, SEX
 from caregiving.model.state_space import construct_experience_years
 from caregiving.utils import table
-from dcegm.simulation.sim_utils import create_simulation_df
-from dcegm.simulation.simulate import simulate_all_periods
 
 
 def simulate_scenario(
