@@ -2,7 +2,7 @@
 
 import pickle
 from pathlib import Path
-from typing import Annotated, Any, Dict
+from typing import Annotated
 
 import jax.numpy as jnp
 import numpy as np
@@ -13,7 +13,7 @@ from dcegm.wealth_correction import adjust_observed_wealth
 from pytask import Product
 from scipy.stats import pareto
 
-from caregiving.config import BLD, SRC
+from caregiving.config import BLD
 from caregiving.model.shared import SEX
 from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.utility.bequest_utility import (
@@ -30,8 +30,12 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     path_to_start_params: Path = BLD / "model" / "params" / "start_params_model.yaml",
     path_to_save_discrete_states: Annotated[Path, Product] = BLD
     / "model"
+    / "initial_conditions"
     / "states.pkl",
-    path_to_save_wealth: Annotated[Path, Product] = BLD / "model" / "wealth.csv",
+    path_to_save_wealth: Annotated[Path, Product] = BLD
+    / "model"
+    / "initial_conditions"
+    / "wealth.csv",
 ) -> None:
     sex_var = SEX
 
@@ -183,9 +187,10 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
 
     states = {
         "period": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
-        "experience": jnp.array(exp_agents, dtype=jnp.float64),
         "education": jnp.array(education_agents, dtype=jnp.uint8),
         "lagged_choice": jnp.array(lagged_choice, dtype=jnp.uint8),
+        "already_retired": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
+        "experience": jnp.array(exp_agents, dtype=jnp.float64),
         "job_offer": jnp.ones_like(exp_agents, dtype=jnp.uint8),
         "partner_state": jnp.array(partner_states, dtype=jnp.uint8),
     }

@@ -31,6 +31,7 @@ def table(df_col):
     return pd.crosstab(df_col, columns="Count")["Count"]
 
 
+@pytask.mark.skip()
 def task_create_params_parental_health_transition(
     path_to_save_params_female: Annotated[Path, Product] = BLD
     / "model"
@@ -64,6 +65,7 @@ def task_create_params_parental_health_transition(
     save_dict_to_pickle(params_female, path_to_save_params_female)
 
 
+@pytask.mark.skip()
 def task_create_params_spousal_income(
     path_to_raw_data: Path = BLD / "data" / "estimation_data.csv",
 ) -> None:
@@ -102,6 +104,7 @@ def task_create_params_spousal_income(
     return model.params
 
 
+@pytask.mark.skip()
 def task_create_params_exog_other_income(
     path_to_raw_data: Path = BLD / "data" / "estimation_data.csv",
 ) -> None:
@@ -141,6 +144,7 @@ def task_create_params_exog_other_income(
     return model.params
 
 
+@pytask.mark.skip()
 def task_create_parental_survival_prob(
     path_to_raw_data: Path = BLD / "data" / "estimation_data.csv",
     path_to_save_female: Annotated[Path, Product] = BLD

@@ -7,7 +7,7 @@ import jax
 import numpy as np
 import pytest
 
-from caregiving.config import SRC
+from caregiving.config import BLD
 from caregiving.model.utility.bequest_utility import (
     marginal_utility_final_consume_all,
     utility_final_consume_all,
@@ -26,7 +26,7 @@ jax.config.update("jax_enable_x64", True)
 def load_specs():
     """Load specs from pickle file."""
 
-    path_to_specs = SRC / "model" / "specs" / "specs.pkl"
+    path_to_specs = BLD / "model" / "specs" / "specs_full.pkl"
     # path_to_max_exp_diff = BLD / "model" / "specs" / "max_exp_diffs_per_period.txt"
 
     with path_to_specs.open("rb") as file:
