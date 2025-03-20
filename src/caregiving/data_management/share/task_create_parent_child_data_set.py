@@ -117,10 +117,6 @@ def task_create_parent_child_data(
     dat = create_health_variables(dat)
     dat = create_limitations_with_adl_categories(dat)
 
-    # model_men, model_women = run_multinomial_by_gender(dat)
-    # results_dict = get_nested_params(model_men, model_women)
-    # breakpoint()
-
     dat = create_care_variables(dat)
     dat = create_care_combinations(dat, informal_care_var="informal_care_child")
 
