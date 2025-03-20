@@ -5,6 +5,7 @@ from typing import Annotated
 
 import numpy as np
 import pandas as pd
+import statsmodels.formula.api as smf
 from pytask import Product
 
 from caregiving.config import BLD
@@ -18,8 +19,13 @@ WAVE_6 = 6
 WAVE_7 = 7
 WAVE_8 = 8
 
-FEMALE = 2
+FIVE = 5
+THREE = 3
+TWO = 2
+ONE = 1
+
 MALE = 1
+FEMALE = 2
 
 MIN_AGE = 65
 MAX_AGE = 105
@@ -107,7 +113,14 @@ def task_create_parent_child_data(
     dat = create_children_information(dat)
     dat = create_married_or_partner_alive(dat)
 
+    # Health, ADL and IADL
     dat = create_health_variables(dat)
+    dat = create_limitations_with_adl_categories(dat)
+
+    # model_men, model_women = run_multinomial_by_gender(dat)
+    # results_dict = get_nested_params(model_men, model_women)
+    # breakpoint()
+
     dat = create_care_variables(dat)
     dat = create_care_combinations(dat, informal_care_var="informal_care_child")
 
@@ -323,13 +336,46 @@ def create_health_variables(dat):
         (dat["ph003_"] == HEALTH_EXCELLENT)
         | (dat["ph003_"] == HEALTH_VERY_GOOD)
         | (dat["ph003_"] == HEALTH_GOOD),
-        (dat["ph003_"] == HEALTH_FAIR) | (dat["ph003_"] == HEALTH_POOR),
+        (dat["ph003_"] == HEALTH_FAIR),
+        (dat["ph003_"] == HEALTH_POOR),
     ]
-    _val = [0, 1]
+    _val = [0, 1, 2]
 
     dat["health"] = np.select(_cond, _val, default=np.nan)
 
     return dat
+
+
+def create_limitations_with_adl_categories(df):
+    """Create limitations with ADL categories.
+
+    0: Care degree 0 or 1
+    1: Care degree 2
+    2: Care degree 3
+    3: Care degree 4 or 5
+
+    Less than 2 ADL and no IADL: category 0
+    At least 2 ADL and at least 1 IADL: category 1
+    At least 3 ADL and at least 3 IADL: category 2
+    At least 5 ADL and at least 5 IADL: category 3
+
+    """
+
+    # Identify rows where both 'adl' and 'iadl' are NaN
+    both_nan = df["adl"].isna() & df["iadl"].isna()
+
+    # Conditions for each category
+    cond_3 = (df["adl"] >= FIVE) & (df["iadl"] >= FIVE)
+    cond_2 = (df["adl"] >= THREE) & (df["iadl"] >= THREE)
+    cond_1 = (df["adl"] >= TWO) & (df["iadl"] >= ONE)
+
+    # Create 'adl_cat' using np.select
+    df["adl_cat"] = np.select([cond_3, cond_2, cond_1], [3, 2, 1], default=0)
+
+    # Set 'adl_cat' to NaN where both 'adl' and 'iadl' are NaN
+    df.loc[both_nan, "adl_cat"] = np.nan
+
+    return df
 
 
 def create_care_variables(dat):
@@ -693,3 +739,118 @@ def _process_negative_values(dat):
         dat[col] = np.where(dat[col] < 0, np.nan, dat[col])
 
     return dat
+
+
+def run_multinomial_by_gender(df):
+    """
+    Run separate multinomial logit regressions of 'adl_cat' on
+    age, age^2, and health, by gender. We assume:
+       - gender == 1 => men
+       - gender == 2 => women
+    The 'health' variable is treated as categorical (with levels 0,1,2).
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame with columns:
+        ['adl_cat', 'age', 'health', 'gender'].
+
+    Returns
+    -------
+    (model_men, model_women)
+        Where each is a fitted multinomial logit model.
+    """
+    # Subset data for men and women
+    dat_men = df[df["gender"] == MALE].copy()
+    dat_women = df[df["gender"] == FEMALE].copy()
+
+    # Define the formula
+    formula = "adl_cat ~ age + I(age**2) + C(health)"
+
+    # Fit the model for men
+    model_men = smf.mnlogit(formula, data=dat_men).fit()
+    print("Results for men (gender == 1):")
+    print(model_men.summary())
+
+    # Fit the model for women
+    model_women = smf.mnlogit(formula, data=dat_women).fit()
+    print("\nResults for women (gender == 2):")
+    print(model_women.summary())
+
+    return model_men, model_women
+
+
+def get_nested_params(model_men, model_women):
+    """Convert the model.params into a nested dictionary.
+
+    {
+      "men": {
+        "category_1": {
+           "intercept": <coef>,
+           "medium_health": <coef>,
+           "bad_health": <coef>,
+           "age": <coef>,
+           "age_squared": <coef>
+        },
+        "category_2": {...},
+        "category_3": {...}
+      },
+      "women": {
+        "category_1": {...},
+        "category_2": {...},
+        "category_3": {...}
+      }
+    }
+
+    Notes:
+      - We map numeric categories (0,1,2,...) to "category_{X+1}".
+      - We rename row-index keys:
+         "Intercept"          -> "intercept"
+         "C(health)[T.1.0]"   -> "medium_health"
+         "C(health)[T.2.0]"   -> "bad_health"
+         "age"                -> "age"
+         "I(age ** 2)"        -> "age_squared"
+    """
+
+    # Helper dictionary to rename row-index keys
+    rename_map = {
+        "Intercept": "intercept",
+        "C(health)[T.1.0]": "medium_health",
+        "C(health)[T.2.0]": "bad_health",
+        "age": "age",
+        "I(age ** 2)": "age_squared",
+    }
+
+    def process_model_params(model_params: pd.DataFrame):
+        """Convert model_params (a DataFrame) to a nested dict.
+
+        {
+          "category_1": {var_name: coefficient, ...},
+          "category_2": {...},
+          "category_3": {...},
+          ...
+        }
+        """
+        outer_dict = {}
+
+        # model_params.columns are the categories (often 0,1,2,...)
+        for cat_col in model_params.columns:
+            # Create the new category label
+            cat_name = f"category_{int(cat_col) + 1}"
+
+            cat_dict = {}
+            for var_name in model_params.index:
+                # Rename the variable
+                new_var_name = rename_map.get(var_name, var_name)
+                # Extract coefficient
+                coef_value = model_params.loc[var_name, cat_col]
+                cat_dict[new_var_name] = coef_value
+
+            outer_dict[cat_name] = cat_dict
+
+        return outer_dict
+
+    men_nested = process_model_params(model_men.params)
+    women_nested = process_model_params(model_women.params)
+
+    return {"men": men_nested, "women": women_nested}
