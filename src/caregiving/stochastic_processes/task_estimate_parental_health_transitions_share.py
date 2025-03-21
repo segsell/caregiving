@@ -33,11 +33,15 @@ def task_estimate_parental_health_transitions(
 
     df = pd.read_csv(path_to_raw_data)
 
-    model_mother = run_multinomial_logit(df, parent="mother")
-    model_father = run_multinomial_logit(df, parent="father")
+    model_mother = run_multinomial_logit(df, outcome="health", parent="mother")
+    model_father = run_multinomial_logit(df, outcome="health", parent="father")
 
-    df_mother = pivot_model_params_parent(model_mother, parent="mother")
-    df_father = pivot_model_params_parent(model_father, parent="father")
+    df_mother = pivot_model_params_parent(
+        model_mother, outcome="health", parent="mother"
+    )
+    df_father = pivot_model_params_parent(
+        model_father, outcome="health", parent="father"
+    )
 
     # Plot the results
     coefs_mother = create_nested_dict_from_params(df_mother)
@@ -54,11 +58,41 @@ def task_estimate_parental_health_transitions(
     df_combined.to_csv(path_to_save_parental_health_transitions, index=False)
 
 
-def run_multinomial_logit(df, parent):
+def task_estimate_parental_survival(
+    path_to_raw_data: Path = BLD / "data" / "estimation_data.csv",
+    path_to_save_parental_survival: Annotated[Path, Product] = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "parental_survival_params.csv",
+):
+
+    df = pd.read_csv(path_to_raw_data)
+
+    model_mother = run_binary_logit(df, outcome="alive", parent="mother")
+    model_father = run_binary_logit(df, outcome="alive", parent="father")
+
+    df_mother = pivot_model_params_parent(
+        model_mother, outcome="alive", parent="mother"
+    )
+    df_father = pivot_model_params_parent(
+        model_father, outcome="alive", parent="father"
+    )
+
+    df_combined = pd.concat([df_mother, df_father], ignore_index=True)
+
+    df_combined.to_csv(path_to_save_parental_survival, index=False)
+
+
+# ====================================================================================
+# Auxiliary functions
+# ====================================================================================
+
+
+def run_multinomial_logit(df, outcome, parent):
     """Estimate Markov transition probabilities for parental health."""
 
     formula = (
-        f"{parent}_health ~ {parent}_age + I({parent}_age**2) + "
+        f"{parent}_{outcome} ~ {parent}_age + I({parent}_age**2) + "
         f"C({parent}_lagged_health)"
     )
 
@@ -70,7 +104,21 @@ def run_multinomial_logit(df, parent):
     return model_parent
 
 
-def pivot_model_params_parent(model, parent):
+def run_binary_logit(df, outcome, parent):
+    """
+    Estimate binary logit for parent's survival (0 or 1).
+    """
+    formula = (
+        f"{parent}_{outcome} ~ {parent}_age + I({parent}_age**2) + "
+        f"C({parent}_lagged_health)"
+    )
+    model_parent = smf.logit(formula, data=df).fit()
+    print(f"Results for {parent} (Binary Logit)")
+    print(model_parent.summary())
+    return model_parent
+
+
+def pivot_model_params_parent(model, outcome, parent):
     """
     Given a fitted mnlogit model (model.params) and a label for the parent
     (e.g., "Mother"/"Father"), return a WIDE DataFrame with columns:
@@ -81,11 +129,15 @@ def pivot_model_params_parent(model, parent):
     """
 
     # 1) Copy the param matrix: shape [param_names x categories]
-    df = model.params.copy()
+    params = model.params.copy()
 
-    # 2) Transpose so that categories become the row index
-    #    Now shape: [categories x param_names].
-    df = df.T
+    # 2) If it's a Series (binary logit case), convert to a single-row DataFrame
+    if isinstance(params, pd.Series):
+        # Binary logit -> create a 1×N DataFrame
+        # shape: (1, n_params) with columns = param names
+        df = pd.DataFrame([params.values], columns=params.index)
+    else:
+        df = params.T
 
     # 3) Rename the columns so they match the final desired column names.
     #    Adjust these mappings to match *your* exact variable names from the model.
@@ -101,7 +153,7 @@ def pivot_model_params_parent(model, parent):
     # 4) The row index is the numeric health category from the model (e.g., 0,1,2).
     #    We can rename 0->1, 1->2, etc. by adding +1 to the index.
     df.index = df.index + 1
-    df.index.name = "health_cat"
+    df.index.name = outcome
 
     # 5) Turn the row index into a regular column
     df.reset_index(inplace=True)
@@ -112,7 +164,7 @@ def pivot_model_params_parent(model, parent):
     # 7) Make sure we have the final columns in the EXACT order desired
     desired_cols = [
         "parent",
-        "health_cat",
+        outcome,
         "const",
         "age",
         "age_sq",
