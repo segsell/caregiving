@@ -173,6 +173,11 @@ bld/_old_model/
 !bld/model/**
 
 data
+
+!src/sandbox/
+!src/sandbox/data/
+!src/sandbox/data/**
+
 submodules
 
 backup_*/
