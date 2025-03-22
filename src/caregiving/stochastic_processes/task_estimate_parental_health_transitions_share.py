@@ -44,8 +44,8 @@ def task_estimate_parental_health_transitions(
     )
 
     # Plot the results
-    coefs_mother = create_nested_dict_from_params(df_mother)
-    coefs_father = create_nested_dict_from_params(df_father)
+    coefs_mother = create_nested_dict_from_params(df_mother, outcome="health")
+    coefs_father = create_nested_dict_from_params(df_father, outcome="health")
 
     test_probabilities_sum_to_one(coefs_mother, coefs_father)
 
@@ -298,7 +298,7 @@ def calculate_probabilities_for_health(coeffs_dict, ages, health_condition):
     return probabilities
 
 
-def create_nested_dict_from_params(df_parent):
+def create_nested_dict_from_params(df_parent, outcome):
     """
     Convert a pivoted parameter DataFrame (e.g., from pivot_model_params_parent)
     into a nested dictionary of coefficients, keyed by category.
@@ -324,10 +324,10 @@ def create_nested_dict_from_params(df_parent):
     nested_dict = {}
 
     # Collect all unique categories (e.g., 1, 2, 3).
-    categories = sorted(df_parent["health_cat"].unique())
+    categories = sorted(df_parent[outcome].unique())
 
     for cat in categories:
-        row = df_parent.loc[df_parent["health_cat"] == cat].squeeze()
+        row = df_parent.loc[df_parent[outcome] == cat].squeeze()
 
         nested_dict[f"category_{cat}"] = {
             "intercept": row.get("const", 0.0),
