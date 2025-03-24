@@ -49,45 +49,12 @@ def task_estimate_parental_health_transitions(
 
     test_probabilities_sum_to_one(coefs_mother, coefs_father)
 
-    # ages = np.arange(60, 101)  # e.g., from 60 to 100
-    # plot_probabilities_by_health(coefs_mother, coefs_father, ages)
+    # plot_probabilities_by_health(coefs_mother, coefs_father, ages=np.arange(60, 101))
 
     # Combine into one DataFrame
     df_combined = pd.concat([df_mother, df_father], ignore_index=True)
 
     df_combined.to_csv(path_to_save_parental_health_transitions, index=False)
-
-
-# def task_estimate_parental_survival(
-#     path_to_raw_data: Path = BLD / "data" / "estimation_data.csv",
-#     path_to_save_parental_survival: Annotated[Path, Product] = BLD
-#     / "estimation"
-#     / "stochastic_processes"
-#     / "parental_survival_params.csv",
-# ):
-
-#     df = pd.read_csv(path_to_raw_data)
-
-#     model_mother = run_binary_logit(df, outcome="alive", parent="mother")
-#     model_father = run_binary_logit(df, outcome="alive", parent="father")
-
-#     df_mother = pivot_model_params_parent(
-#         model_mother, outcome="alive", parent="mother"
-#     )
-#     df_father = pivot_model_params_parent(
-#         model_father, outcome="alive", parent="father"
-#     )
-
-#     # Plot the results
-#     coefs_mother = create_nested_dict_from_params(df_mother, outcome="alive")
-#     coefs_father = create_nested_dict_from_params(df_father, outcome="alive")
-
-#     ages = np.arange(60, 101)  # e.g., from 60 to 100
-#     plot_probabilities_alive_by_health(coefs_mother, coefs_father, ages)
-
-#     df_combined = pd.concat([df_mother, df_father], ignore_index=True)
-
-#     df_combined.to_csv(path_to_save_parental_survival, index=False)
 
 
 # ====================================================================================
@@ -108,20 +75,6 @@ def run_multinomial_logit(df, outcome, parent):
     print(f"Results for {parent}")
     print(model_parent.summary())
 
-    return model_parent
-
-
-def run_binary_logit(df, outcome, parent):
-    """
-    Estimate binary logit for parent's survival (0 or 1).
-    """
-    formula = (
-        f"{parent}_{outcome} ~ {parent}_age + I({parent}_age**2) + "
-        f"C({parent}_lagged_health)"
-    )
-    model_parent = smf.logit(formula, data=df).fit()
-    print(f"Results for {parent} (Binary Logit)")
-    print(model_parent.summary())
     return model_parent
 
 
@@ -196,90 +149,91 @@ def pivot_model_params_parent(model, outcome, parent):
 # ====================================================================================
 
 
-def plot_probabilities_alive_by_health(coeffs_mother, coeffs_father, ages):
-    """
-    Creates a single plot showing Probability(Alive=1) vs. Age
-    for 3 health conditions (good, medium, bad) and 2 genders (Mother, Father).
-    That means 6 lines total in one figure.
+# def plot_probabilities_alive_by_health(coeffs_mother, coeffs_father, ages):
+#     """
+#     Creates a single plot showing Probability(Alive=1) vs. Age
+#     for 3 health conditions (good, medium, bad) and 2 genders (Mother, Father).
+#     That means 6 lines total in one figure.
 
-    Parameters
-    ----------
-    coeffs_mother : dict
-        Example format (binary logit => 1 category):
-            {
-              "category_1": {
-                "intercept": ...,
-                "age": ...,
-                "age_squared": ...,
-                "medium_health": ...,
-                "bad_health": ...
-              }
-            }
-    coeffs_father : dict
-        Same structure as coeffs_mother but for father.
-    ages : array-like
-        Sequence of ages for plotting, e.g. np.arange(60, 101).
-    """
+#     Parameters
+#     ----------
+#     coeffs_mother : dict
+#         Example format (binary logit => 1 category):
+#             {
+#               "category_1": {
+#                 "intercept": ...,
+#                 "age": ...,
+#                 "age_squared": ...,
+#                 "medium_health": ...,
+#                 "bad_health": ...
+#               }
+#             }
+#     coeffs_father : dict
+#         Same structure as coeffs_mother but for father.
+#     ages : array-like
+#         Sequence of ages for plotting, e.g. np.arange(60, 101).
+#     """
 
-    # Three possible health conditions
-    health_conditions = ["good_health", "medium_health", "bad_health"]
+#     # Three possible health conditions
+#     health_conditions = ["good_health", "medium_health", "bad_health"]
 
-    # Initialize a single figure and axis
-    fig, ax = plt.subplots(figsize=(10, 6))
-    fig.suptitle("Probability of Being Alive by Age\n(3 Health Conditions × 2 Genders)")
+#     # Initialize a single figure and axis
+#     fig, ax = plt.subplots(figsize=(10, 6))
+#     fig.suptitle("Probability of Being Alive by Age\n(3 Health Conditions × Genders)")
 
-    # We'll store line labels and styles for clarity
-    line_styles = {
-        "Mother": "--",
-        "Father": "-",
-    }
+#     # We'll store line labels and styles for clarity
+#     line_styles = {
+#         "Mother": "--",
+#         "Father": "-",
+#     }
 
-    for health_cond in health_conditions:
-        # -- MOTHER
-        mother_params = coeffs_mother["category_1"]  # Only 'category_1' in binary case
-        # If the health condition key exists, add that to the logit
-        mother_extra = mother_params.get(health_cond, 0.0)
+#     for health_cond in health_conditions:
+#         # -- MOTHER
+#         # Only 'category_1' in binary case
+#         mother_params = coeffs_mother["category_1"]
+#         # If the health condition key exists, add that to the logit
+#         mother_extra = mother_params.get(health_cond, 0.0)
 
-        # Logit for mother = intercept + age*beta + age^2*beta2 + possible extra
-        logit_mother = (
-            mother_params["intercept"]
-            + mother_params["age"] * ages
-            + mother_params["age_squared"] * (ages**2)
-            + mother_extra
-        )
-        # Probability(alive=1) = 1 / [1 + exp(-logit)]
-        mother_prob_alive = 1.0 / (1.0 + np.exp(-logit_mother))
+#         # Logit for mother = intercept + age*beta + age^2*beta2 + possible extra
+#         logit_mother = (
+#             mother_params["intercept"]
+#             + mother_params["age"] * ages
+#             + mother_params["age_squared"] * (ages**2)
+#             + mother_extra
+#         )
+#         # Probability(alive=1) = 1 / [1 + exp(-logit)]
+#         mother_prob_alive = 1.0 / (1.0 + np.exp(-logit_mother))
 
-        ax.plot(
-            ages,
-            mother_prob_alive,
-            label=f"Mother - {health_cond}",
-            linestyle=line_styles["Mother"],
-        )
+#         ax.plot(
+#             ages,
+#             mother_prob_alive,
+#             label=f"Mother - {health_cond}",
+#             linestyle=line_styles["Mother"],
+#         )
 
-        # -- FATHER
-        father_params = coeffs_father["category_1"]
-        father_extra = father_params.get(health_cond, 0.0)
-        logit_father = (
-            father_params["intercept"]
-            + father_params["age"] * ages
-            + father_params["age_squared"] * (ages**2)
-            + father_extra
-        )
-        father_prob_alive = 1.0 / (1.0 + np.exp(-logit_father))
+#         # -- FATHER
+#         father_params = coeffs_father["category_1"]
+#         father_extra = father_params.get(health_cond, 0.0)
+#         logit_father = (
+#             father_params["intercept"]
+#             + father_params["age"] * ages
+#             + father_params["age_squared"] * (ages**2)
+#             + father_extra
+#         )
+#         father_prob_alive = 1.0 / (1.0 + np.exp(-logit_father))
 
-        ax.plot(
-            ages,
-            father_prob_alive,
-            label=f"Father - {health_cond}",
-            linestyle=line_styles["Father"],
-        )
+#         ax.plot(
+#             ages,
+#             father_prob_alive,
+#             label=f"Father - {health_cond}",
+#             linestyle=line_styles["Father"],
+#         )
 
-    ax.set_xlabel("Age")
-    ax.set_ylabel("Probability(Alive=1)")
-    ax.grid(True)
-    ax.legend()
-    plt.show()
+#     ax.set_xlabel("Age")
+#     ax.set_ylabel("Probability(Alive=1)")
+#     ax.grid(True)
+#     ax.legend()
+#     plt.show()
 
 
 def plot_probabilities_by_health(coeffs_mother, coeffs_father, ages):
@@ -300,7 +254,7 @@ def plot_probabilities_by_health(coeffs_mother, coeffs_father, ages):
     health_conditions = ["good_health", "medium_health", "bad_health"]
 
     fig, axes = plt.subplots(1, len(health_conditions), figsize=(18, 6), sharey=True)
-    fig.suptitle("Probability of Limitation Categories by Age (Mother vs. Father)")
+    fig.suptitle("Health by Age (Mothers and Fathers)")
 
     for i, health_cond in enumerate(health_conditions):
         ax = axes[i]
@@ -324,7 +278,7 @@ def plot_probabilities_by_health(coeffs_mother, coeffs_father, ages):
 
         ax.set_xlabel("Age")
         ax.set_ylabel("Probability")
-        ax.set_title(f"Assuming {health_cond.upper()} = 1")
+        ax.set_title(f'Previous period: {health_cond.replace("_", " ").capitalize()}')
         ax.legend()
         ax.grid(True)
 
@@ -384,7 +338,7 @@ def calculate_probabilities_for_health(coeffs_dict, ages, health_condition):
     denominator = 1.0 + sum_exp
 
     # 4) Compute probabilities for each category and for the baseline
-    probabilities = {"baseline": 1.0 / denominator}
+    probabilities = {"good_health": 1.0 / denominator}
     for cat_name in exp_logits:
         probabilities[cat_name] = exp_logits[cat_name] / denominator
 
@@ -414,6 +368,8 @@ def create_nested_dict_from_params(df_parent, outcome):
             ...
         }
     """
+    health_conditions = ["good_health", "medium_health", "bad_health"]
+
     nested_dict = {}
 
     # Collect all unique categories (e.g., 1, 2, 3).
@@ -422,7 +378,7 @@ def create_nested_dict_from_params(df_parent, outcome):
     for cat in categories:
         row = df_parent.loc[df_parent[outcome] == cat].squeeze()
 
-        nested_dict[f"category_{cat}"] = {
+        nested_dict[health_conditions[cat]] = {
             "intercept": row.get("const", 0.0),
             "age": row.get("age", 0.0),
             "age_squared": row.get("age_sq", 0.0),

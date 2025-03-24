@@ -19,10 +19,6 @@ from caregiving.model.shared import FEMALE, MALE
 
 
 def task_estimate_limitations_with_adl_categories(
-    path_to_load_specs: Path = SRC / "specs.yaml",
-    # path_to_start_params: Path = SRC
-    # / "start_params_and_bounds"
-    # / "start_params.yaml",
     path_to_parent_child_sample: Path = BLD / "data" / "parent_child_data.csv",
     path_to_save_adl_probabilities: Annotated[Path, Product] = BLD
     / "estimation"
