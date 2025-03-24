@@ -107,7 +107,7 @@ repos:
     rev: v2.4.1
     hooks:
     -   id: codespell
-        exclude: src/caregiving/moments/_task_care_mix_statistical_office.py
+        exclude: src/caregiving/moments/_task_care_mix_statistical_office.py|src/sandbox/*
 -   repo: meta
     hooks:
     -   id: check-useless-excludes

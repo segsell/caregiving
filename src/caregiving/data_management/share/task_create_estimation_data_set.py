@@ -844,39 +844,18 @@ def create_parental_health_status(dat, parent):
         parent_indicator = 1
     elif parent == "father":
         parent_indicator = 2
+
     _cond = [
         (dat[f"dn033_{parent_indicator}"] == HEALTH_EXCELLENT)
         | (dat[f"dn033_{parent_indicator}"] == HEALTH_VERY_GOOD)
         | (dat[f"dn033_{parent_indicator}"] == HEALTH_GOOD),
-        (dat[f"dn033_{parent_indicator}"] == HEALTH_FAIR)
-        | (dat[f"dn033_{parent_indicator}"] == HEALTH_POOR),
-    ]
-    _val = [0, 1]
-
-    dat[f"{parent}_health"] = np.select(_cond, _val, default=np.nan)
-    dat[f"{parent}_lagged_health"] = dat.groupby("mergeid")[f"{parent}_health"].shift(1)
-
-    return dat
-
-
-def create_parental_health_status_good_medium_bad(dat, parent):
-    """Aggregate health status of parents from 5 into 3 levels."""
-    dat = dat.sort_values(by=["mergeid", "int_year"])
-
-    if parent == "mother":
-        parent_indicator = 1
-    elif parent == "father":
-        parent_indicator = 2
-    _cond = [
-        (dat[f"dn033_{parent_indicator}"] == HEALTH_EXCELLENT)
-        | (dat[f"dn033_{parent_indicator}"] == HEALTH_VERY_GOOD),
-        (dat[f"dn033_{parent_indicator}"] == HEALTH_GOOD)
-        | (dat[f"dn033_{parent_indicator}"] == HEALTH_FAIR),
+        (dat[f"dn033_{parent_indicator}"] == HEALTH_FAIR),
         (dat[f"dn033_{parent_indicator}"] == HEALTH_POOR),
     ]
     _val = [0, 1, 2]
-
     dat[f"{parent}_health"] = np.select(_cond, _val, default=np.nan)
+
+    dat[f"{parent}_lead_health"] = dat.groupby("mergeid")[f"{parent}_health"].shift(-1)
     dat[f"{parent}_lagged_health"] = dat.groupby("mergeid")[f"{parent}_health"].shift(1)
 
     return dat

@@ -18,8 +18,13 @@ WAVE_6 = 6
 WAVE_7 = 7
 WAVE_8 = 8
 
-FEMALE = 2
+FIVE = 5
+THREE = 3
+TWO = 2
+ONE = 1
+
 MALE = 1
+FEMALE = 2
 
 MIN_AGE = 65
 MAX_AGE = 105
@@ -107,7 +112,10 @@ def task_create_parent_child_data(
     dat = create_children_information(dat)
     dat = create_married_or_partner_alive(dat)
 
+    # Health, ADL and IADL
     dat = create_health_variables(dat)
+    dat = create_limitations_with_adl_categories(dat)
+
     dat = create_care_variables(dat)
     dat = create_care_combinations(dat, informal_care_var="informal_care_child")
 
@@ -323,13 +331,46 @@ def create_health_variables(dat):
         (dat["ph003_"] == HEALTH_EXCELLENT)
         | (dat["ph003_"] == HEALTH_VERY_GOOD)
         | (dat["ph003_"] == HEALTH_GOOD),
-        (dat["ph003_"] == HEALTH_FAIR) | (dat["ph003_"] == HEALTH_POOR),
+        (dat["ph003_"] == HEALTH_FAIR),
+        (dat["ph003_"] == HEALTH_POOR),
     ]
-    _val = [0, 1]
+    _val = [0, 1, 2]
 
     dat["health"] = np.select(_cond, _val, default=np.nan)
 
     return dat
+
+
+def create_limitations_with_adl_categories(df):
+    """Create limitations with ADL categories.
+
+    0: Care degree 0 or 1
+    1: Care degree 2
+    2: Care degree 3
+    3: Care degree 4 or 5
+
+    Less than 2 ADL and no IADL: category 0
+    At least 2 ADL and at least 1 IADL: category 1
+    At least 3 ADL and at least 3 IADL: category 2
+    At least 5 ADL and at least 5 IADL: category 3
+
+    """
+
+    # Identify rows where both 'adl' and 'iadl' are NaN
+    both_nan = df["adl"].isna() & df["iadl"].isna()
+
+    # Conditions for each category
+    cond_3 = (df["adl"] >= FIVE) & (df["iadl"] >= FIVE)
+    cond_2 = (df["adl"] >= THREE) & (df["iadl"] >= THREE)
+    cond_1 = (df["adl"] >= TWO) & (df["iadl"] >= ONE)
+
+    # Create 'adl_cat' using np.select
+    df["adl_cat"] = np.select([cond_3, cond_2, cond_1], [3, 2, 1], default=0)
+
+    # Set 'adl_cat' to NaN where both 'adl' and 'iadl' are NaN
+    df.loc[both_nan, "adl_cat"] = np.nan
+
+    return df
 
 
 def create_care_variables(dat):
