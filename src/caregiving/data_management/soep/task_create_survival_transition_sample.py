@@ -16,13 +16,12 @@ from caregiving.data_management.soep.auxiliary import (
     span_dataframe,
 )
 from caregiving.data_management.soep.variables import (
+    DECEASED,
     clean_health_create_states,
     create_education_type,
     create_health_var,
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
-
-DECEASED = 4
 
 
 def table(df_col):
@@ -41,9 +40,11 @@ def task_create_survival_sample(
         BLD / "data" / "mortality_transition_estimation_sample.pkl"
     ),
     path_to_save_duplicate: Annotated[Path, Product] = (
-        BLD / "data" / "mortality_transition_estimation_sample_duplicated.pkl.pkl"
+        BLD / "data" / "mortality_transition_estimation_sample_duplicated.pkl"
     ),
 ):
+    """Create the survival transition sample for the mortality estimation."""
+
     specs = read_and_derive_specs(path_to_specs)
 
     df = pd.read_csv(path_to_raw_data, index_col=["pid", "syear"])
@@ -309,8 +310,10 @@ def fill_health_gaps_vectorized(df):
     """
     ffilled = df.groupby("pid")["health"].ffill()
     bfilled = df.groupby("pid")["health"].bfill()
+
     agreeing_mask = ffilled == bfilled
     df["health"] = np.where(df["health"].isna() & agreeing_mask, ffilled, df["health"])
+
     return df
 
 
@@ -327,10 +330,12 @@ def create_start_age_and_health(df):
     df = df.reset_index()
     df["start age"] = df.groupby("pid")["age"].transform("min")
     idx = df.groupby("pid")["syear"].idxmin()
+
     df["start health"] = np.nan
     df.loc[idx, "start health"] = df.loc[idx, "health"]
     df["start health"] = df.groupby("pid")["start health"].transform("max")
     df = df.set_index(["pid", "syear"])
+
     return df
 
 
@@ -360,4 +365,5 @@ def create_interaction_columns(df, columns, specs):
             if "start" in column1 or "start" in column2:
                 col_name = f"start {col_name}"
             df[col_name] = (df[column1] == val1) & (df[column2] == val2)
+
     return df
