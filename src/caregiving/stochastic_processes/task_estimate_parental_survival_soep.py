@@ -375,6 +375,7 @@ def survival_function(age, health_factors, params):
                             in the index and their values in a column named 'value'.
 
     Returns:
+
         float or array-like: The value(s) of the survival function.
     """
     coefficients = params["value"]

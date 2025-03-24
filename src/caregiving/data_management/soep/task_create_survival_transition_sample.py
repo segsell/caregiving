@@ -23,11 +23,6 @@ from caregiving.data_management.soep.variables import (
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
 
-
-def table(df_col):
-    return pd.crosstab(df_col, columns="Count")["Count"]
-
-
 # =====================================================================================
 # Create mortality estimation sample
 # =====================================================================================
