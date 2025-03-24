@@ -140,7 +140,9 @@ GV_VARS = [
     "gali",  # Limitation with activities: PH005
     "chronic",  # Number of chronic diseases: PH006
     "adl",  # Limitations with activities of daily living: PH049_1
+    "adl2",
     "iadl",  # Limitations with instrumental activities of daily living: PH049_2
+    "iadl2",
     "eurod",  # EURO depression scale: MH002-MH017 (MH031)
     "cjs",  # Current job situation: EP005
     "pwork",  # Did any paid work: EP002
