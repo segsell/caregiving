@@ -1,11 +1,9 @@
-"""SOEP jealth transitions."""
+"""SOEP health transitions."""
 
 from pathlib import Path
 from typing import Annotated
 
-import matplotlib.pyplot as plt
 import numpy as np
-import optimagic as om
 import pandas as pd
 import pytask
 import statsmodels.formula.api as smf
@@ -17,7 +15,7 @@ from caregiving.specs.derive_specs import read_and_derive_specs
 
 
 @pytask.mark.skip(reason="Estimate parametrically (see below)")
-def task_estimate_health_transitions(
+def task_estimate_health_transitions_nonparametric(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_health_sample: Path = BLD
     / "data"
@@ -27,7 +25,7 @@ def task_estimate_health_transitions(
     / "stochastic_processes"
     / "health_transition_matrix_nonparametric.csv",
 ):
-    """Estimate the health state transition matrix."""
+    """Estimate the health state transition matrix non-parametrically."""
 
     specs = read_and_derive_specs(path_to_specs)
 
@@ -125,11 +123,7 @@ def task_estimate_health_transitions(
     health_transition_matrix = pd.concat(
         [pd.DataFrame(row) for row in rows], ignore_index=True
     )
-
-    # Save the results to a CSV file
     health_transition_matrix.to_csv(path_to_save)
-
-    return health_transition_matrix
 
 
 def task_estimate_health_transitions_parametric(
@@ -224,5 +218,4 @@ def task_estimate_health_transitions_parametric(
                     1 - transition_probabilities
                 )
 
-    # Save the results to a CSV file
     health_transition_matrix.to_csv(path_to_save)

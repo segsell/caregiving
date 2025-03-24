@@ -19,6 +19,7 @@ from caregiving.specs.family_specs import (
     predict_children_by_state,
     read_in_partner_transition_specs,
 )
+from caregiving.specs.health_specs import read_in_health_transition_specs
 from caregiving.specs.income_specs import add_income_specs
 
 jax.config.update("jax_enable_x64", True)
@@ -58,6 +59,14 @@ def task_write_specs(
     / "estimation"
     / "stochastic_processes"
     / "partner_transition_matrix.csv",
+    path_to_health_transition_mat: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "health_transition_matrix.csv",
+    path_to_mortality_transition_mat: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "mortality_transition_matrix.csv",
     path_to_job_separation_probs: Path = BLD
     / "estimation"
     / "stochastic_processes"
@@ -115,6 +124,15 @@ def task_write_specs(
         specs["partner_trans_mat"],
         specs["n_partner_states"],
     ) = read_in_partner_transition_specs(partner_trans_prop, specs)
+
+    # Read in health transition matrix
+    health_trans_probs_df = pd.read_csv(
+        path_to_health_transition_mat,
+    )
+    death_prob_df = pd.read_csv(path_to_mortality_transition_mat)
+    specs["health_trans_mat"] = read_in_health_transition_specs(
+        health_trans_probs_df, death_prob_df, specs
+    )
 
     specs["job_sep_probs"] = jnp.asarray(
         pkl.load(path_to_job_separation_probs.open("rb"))
