@@ -19,7 +19,7 @@ from caregiving.data_management.soep.variables import (
     DECEASED,
     clean_health_create_states,
     create_education_type,
-    create_health_var,
+    create_health_var_good_bad,
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
 
@@ -257,7 +257,7 @@ def load_and_process_soep_health(pequiv_data, specs):
     """Load and process health data."""
 
     # Create health state variable and span the dataframe
-    pequiv_data = create_health_var(pequiv_data)
+    pequiv_data = create_health_var_good_bad(pequiv_data)
     pequiv_data = span_dataframe(
         pequiv_data, specs["start_year_mortality"], specs["end_year_mortality"]
     )

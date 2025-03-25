@@ -25,6 +25,14 @@ def read_and_derive_specs(spec_path):
         0
     ][0]
 
+    if "health_labels_three" in specs.keys():
+        specs["alive_health_vars_three"] = np.where(
+            np.array(specs["health_labels_three"]) != "Death"
+        )[0]
+        specs["death_health_var_three"] = np.where(
+            np.array(specs["health_labels_three"]) == "Death"
+        )[0][0]
+
     # Partner states
     specs["n_partner_states"] = len(specs["partner_labels"])
 

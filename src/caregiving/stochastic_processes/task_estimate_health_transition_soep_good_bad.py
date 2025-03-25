@@ -2,6 +2,7 @@
 
 from pathlib import Path
 from typing import Annotated
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -187,8 +188,8 @@ def task_estimate_health_transitions_parametric(
                     pd.DataFrame({"age": ages})
                 ).values
 
-                # For transition to healthy, we take the transition probabilities
-                healthy_label = specs["health_labels"][1]
+                # For transition to medium healthy, we take the transition probabilities
+                good_label = specs["health_labels"][1]
 
                 health_transition_matrix.loc[
                     (
@@ -196,14 +197,14 @@ def task_estimate_health_transitions_parametric(
                         edu_label,
                         slice(None),
                         alive_health_label,
-                        healthy_label,
+                        good_label,
                     ),
                     "transition_prob",
                 ] = transition_probabilities
 
                 # For transition to unhealthy, we simply take the complement
                 # of the transition to healthy
-                unhealthy_label = specs["health_labels"][0]
+                bad_label = specs["health_labels"][0]
 
                 health_transition_matrix.loc[
                     (
@@ -211,7 +212,7 @@ def task_estimate_health_transitions_parametric(
                         edu_label,
                         slice(None),
                         alive_health_label,
-                        unhealthy_label,
+                        bad_label,
                     ),
                     "transition_prob",
                 ] = (
