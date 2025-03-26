@@ -1,4 +1,4 @@
-"""Estimate the mortality matrix."""
+"""Estimate the mortality matrix given two health states."""
 
 import itertools
 from pathlib import Path

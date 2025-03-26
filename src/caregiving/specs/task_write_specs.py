@@ -134,6 +134,15 @@ def task_write_specs(
         health_trans_probs_df, death_prob_df, specs
     )
 
+    # if "health_vars_three" in specs.keys():
+    #     health_trans_probs_df = pd.read_csv(
+    #         path_to_health_transition_mat_three_states,
+    #     )
+    #     death_prob_df = pd.read_csv(path_to_mortality_transition_mat_three_states)
+    #     specs["health_trans_mat_three"] = read_in_health_transition_specs(
+    #         health_trans_probs_df, death_prob_df, specs
+    #     )
+
     specs["job_sep_probs"] = jnp.asarray(
         pkl.load(path_to_job_separation_probs.open("rb"))
     )

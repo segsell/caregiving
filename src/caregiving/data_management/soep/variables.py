@@ -488,7 +488,7 @@ def create_health_var_good_medium_bad(data, drop_missing=True):
 
     data["health"] = np.nan
     data.loc[(data["m11126"].isin([4, 5])) | (data["m11124"] == 1), "health"] = 0
-    data.loc[(data["m11126"].isin([3])) & (data["m11124"] == 0), "health"] = 1
+    data.loc[(data["m11126"].isin([3])), "health"] = 1
     data.loc[(data["m11126"].isin([1, 2])) & (data["m11124"] == 0), "health"] = 2
 
     return data
@@ -512,8 +512,12 @@ def clean_health_create_states(data):
         (data["lag_health"] == 1) & (data["lead_health"] == 1),
         "health",
     ] = 1
+    data.loc[
+        (data["lag_health"] == 2) & (data["lead_health"] == 2),
+        "health",
+    ] = 2
 
-    # update lead_health
+    # update lead_healt
     data["lead_health"] = data.groupby(["pid"])["health"].shift(-1)
     # update lag_health
     data["lag_health"] = data.groupby(["pid"])["health"].shift(1)
