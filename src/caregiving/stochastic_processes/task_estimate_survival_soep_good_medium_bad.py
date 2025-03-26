@@ -9,13 +9,12 @@ import numpy as np
 import optimagic as om
 import pandas as pd
 import pytask
+import statsmodels.api as sm
 from pytask import Product
 
 from caregiving.config import BLD, JET_COLOR_MAP, SRC
 from caregiving.specs.derive_specs import read_and_derive_specs
 from caregiving.stochastic_processes.auxiliary import loglike
-
-import statsmodels.api as sm
 
 
 # @pytask.mark.skip()
@@ -111,9 +110,9 @@ def task_estimate_mortality_for_three_health_states(
         #     while dropping one baseline (good=2, low=0).
         # -----------------------------------------------------------------
         # We'll keep an explicit intercept, so we do not create a dummy for that baseline.
-        # filtered_df[
-        #     f"{specs['health_labels_three'][0]} {specs['education_labels'][0]}"
-        # ] = ((filtered_df["health"] == 0) & (filtered_df["education"] == 0)).astype(int)
+        filtered_df[
+            f"{specs['health_labels_three'][0]} {specs['education_labels'][0]}"
+        ] = ((filtered_df["health"] == 0) & (filtered_df["education"] == 0)).astype(int)
         filtered_df[
             f"{specs['health_labels_three'][0]} {specs['education_labels'][1]}"
         ] = ((filtered_df["health"] == 0) & (filtered_df["education"] == 1)).astype(int)
@@ -134,6 +133,7 @@ def task_estimate_mortality_for_three_health_states(
         exog_cols = [
             "intercept",
             "age",
+            f"{specs['health_labels_three'][0]} {specs['education_labels'][0]}",
             f"{specs['health_labels_three'][0]} {specs['education_labels'][1]}",
             f"{specs['health_labels_three'][1]} {specs['education_labels'][0]}",
             f"{specs['health_labels_three'][1]} {specs['education_labels'][1]}",
@@ -190,6 +190,7 @@ def task_estimate_mortality_for_three_health_states(
                         "bad_high": [int(health == 0 and education == 1)],
                         "medium_low": [int(health == 1 and education == 0)],
                         "medium_high": [int(health == 1 and education == 1)],
+                        "good_low": [int(health == 2 and education == 0)],
                         "good_high": [int(health == 2 and education == 1)],
                     }
                 )
@@ -399,8 +400,10 @@ def task_plot_mortality_logit(
     women_params_df = pd.read_csv(path_to_params_women)
 
     # Create dictionaries for quick lookup: { "param_name": coef }
-    men_params = dict(zip(men_params_df["param"], men_params_df["coef"]))
-    women_params = dict(zip(women_params_df["param"], women_params_df["coef"]))
+    men_params = dict(zip(men_params_df["param"], men_params_df["coef"], strict=False))
+    women_params = dict(
+        zip(women_params_df["param"], women_params_df["coef"], strict=False)
+    )
 
     # Define the age range
     start_age = specs["start_age_mortality"]
@@ -428,7 +431,10 @@ def task_plot_mortality_logit(
         xb = param_dict.get("intercept", 0.0) + param_dict.get("age", 0.0) * age
 
         # Check the combination and add the corresponding dummy coefficient.
-        if health == 0 and edu == 1:
+        if health == 0 and edu == 0:
+            key = f"{specs['health_labels_three'][0]} {specs['education_labels'][0]}"
+            xb += param_dict.get(key, 0.0)
+        elif health == 0 and edu == 1:
             key = f"{specs['health_labels_three'][0]} {specs['education_labels'][1]}"
             xb += param_dict.get(key, 0.0)
         elif health == 1 and edu == 0:
