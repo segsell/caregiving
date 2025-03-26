@@ -9,13 +9,12 @@ import numpy as np
 import optimagic as om
 import pandas as pd
 import pytask
+import statsmodels.api as sm
 from pytask import Product
 
 from caregiving.config import BLD, JET_COLOR_MAP, SRC
 from caregiving.specs.derive_specs import read_and_derive_specs
 from caregiving.stochastic_processes.auxiliary import loglike
-
-import statsmodels.api as sm
 
 
 # @pytask.mark.skip()
@@ -399,8 +398,8 @@ def task_plot_mortality_logit(
     women_params_df = pd.read_csv(path_to_params_women)
 
     # Create dictionaries for quick lookup: { "param_name": coef }
-    men_params = dict(zip(men_params_df["param"], men_params_df["coef"]))
-    women_params = dict(zip(women_params_df["param"], women_params_df["coef"]))
+    men_params = dict(zip(men_params_df["param"], men_params_df["coef"], strict=False))
+    women_params = dict(zip(women_params_df["param"], women_params_df["coef"], strict=False))
 
     # Define the age range
     start_age = specs["start_age_mortality"]
