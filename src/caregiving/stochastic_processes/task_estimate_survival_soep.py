@@ -16,7 +16,7 @@ from caregiving.specs.derive_specs import read_and_derive_specs
 from caregiving.stochastic_processes.auxiliary import loglike
 
 
-# @pytask.mark.skip()
+@pytask.mark.skip()
 def task_estimate_mortality(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_lifetable: Path = SRC
@@ -81,6 +81,9 @@ def task_estimate_mortality(
 
     # Estimation sample - as in Kroll Lampert 2008 / Haan Schaller et al. 2024
     df = pd.read_pickle(path_to_mortatility_sample)
+
+    # Only keep true sample
+    df = df[df.index.get_level_values("true_sample") == 1].copy()
 
     # Df initial values i.e. first observations (+ sex column)
     start_df = df[

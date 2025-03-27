@@ -18,7 +18,6 @@ from caregiving.specs.derive_specs import read_and_derive_specs
 from caregiving.stochastic_processes.auxiliary import loglike
 
 
-@pytask.mark.skip
 def task_estimate_mortality(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_lifetable: Path = SRC
@@ -79,6 +78,9 @@ def task_estimate_mortality(
     # Estimation sample (as in Kroll Lampert 2008 / Haan Schaller et al. 2024)
     df = pd.read_pickle(path_to_mortatility_sample)
 
+    # Only keep true sample
+    # df = df[df.index.get_level_values("true_sample") == 1].copy()
+
     # Create initial (start) observations and adjust column names (remove "start " prefix)
     start_df = df[
         [col for col in df.columns if col.startswith("start")] + ["sex"]
@@ -100,57 +102,87 @@ def task_estimate_mortality(
         filtered_df = df[df["sex"] == sex]
         filtered_start_df = start_df[start_df["sex"] == sex]
 
-        # Define initial parameters.
-        # The model includes an intercept, an age effect, and one parameter per health state.
-        initial_params_data = {
-            "intercept": {
-                "value": -13,
-                "lower_bound": -np.inf,
-                "upper_bound": np.inf,
-                "soft_lower_bound": -15.0,
-                "soft_upper_bound": 15.0,
-            },
-            "age": {
-                "value": 0.1,
-                "lower_bound": 1e-8,
-                "upper_bound": np.inf,
-                "soft_lower_bound": 0.0001,
-                "soft_upper_bound": 1.0,
-            },
-            # For example, you might set the following starting values:
-            f"{specs['health_labels_three'][0]}": {  # e.g. "Bad"
-                "value": 0.2,
-                "lower_bound": -np.inf,
-                "upper_bound": np.inf,
-                "soft_lower_bound": -2.5,
-                "soft_upper_bound": 2.5,
-            },
-            f"{specs['health_labels_three'][1]}": {  # e.g. "Medium"
-                "value": -0.3,
-                "lower_bound": -np.inf,
-                "upper_bound": np.inf,
-                "soft_lower_bound": -2.5,
-                "soft_upper_bound": 2.5,
-            },
-            f"{specs['health_labels_three'][2]}": {  # e.g. "Good"
-                "value": -0.3,
-                "lower_bound": -np.inf,
-                "upper_bound": np.inf,
-                "soft_lower_bound": -2.5,
-                "soft_upper_bound": 2.5,
-            },
-        }
-        initial_params = pd.DataFrame.from_dict(initial_params_data, orient="index")
+        # # Define initial parameters.
+        # # The model includes an intercept, an age effect, and one parameter per health state.
+        # initial_params_data = {
+        #     "intercept": {
+        #         "value": -13,
+        #         "lower_bound": -np.inf,
+        #         "upper_bound": np.inf,
+        #         "soft_lower_bound": -15.0,
+        #         "soft_upper_bound": 15.0,
+        #     },
+        #     "age": {
+        #         "value": 0.1,
+        #         "lower_bound": 1e-8,
+        #         "upper_bound": np.inf,
+        #         "soft_lower_bound": 0.0001,
+        #         "soft_upper_bound": 1.0,
+        #     },
+        #     # For example, you might set the following starting values:
+        #     f"{specs['health_labels_three'][0]}": {  # e.g. "Bad"
+        #         "value": 0.2,
+        #         "lower_bound": -np.inf,
+        #         "upper_bound": np.inf,
+        #         "soft_lower_bound": -2.5,
+        #         "soft_upper_bound": 2.5,
+        #     },
+        #     f"{specs['health_labels_three'][1]}": {  # e.g. "Medium"
+        #         "value": -0.3,
+        #         "lower_bound": -np.inf,
+        #         "upper_bound": np.inf,
+        #         "soft_lower_bound": -2.5,
+        #         "soft_upper_bound": 2.5,
+        #     },
+        #     f"{specs['health_labels_three'][2]}": {  # e.g. "Good"
+        #         "value": -0.8,
+        #         "lower_bound": -np.inf,
+        #         "upper_bound": np.inf,
+        #         "soft_lower_bound": -2.5,
+        #         "soft_upper_bound": 2.5,
+        #     },
+        # }
+        # initial_params = pd.DataFrame.from_dict(initial_params_data, orient="index")
 
-        # Estimate parameters by maximizing the log-likelihood function.
-        res = om.maximize(
-            fun=loglike,
-            params=initial_params,
-            algorithm="fides",
-            fun_kwargs={"data": filtered_df, "start_data": filtered_start_df},
-            numdiff_options=om.NumdiffOptions(n_cores=4),
-            # multistart=om.MultistartOptions(n_samples=100, seed=0, n_cores=4),
-        )
+        # # Estimate parameters by maximizing the log-likelihood function.
+        # res = om.maximize(
+        #     fun=loglike,
+        #     params=initial_params,
+        #     algorithm="scipy_lbfgsb",
+        #     fun_kwargs={"data": filtered_df, "start_data": filtered_start_df},
+        #     numdiff_options=om.NumdiffOptions(n_cores=4),
+        #     multistart=om.MultistartOptions(n_samples=100, seed=0, n_cores=4),
+        # )
+
+        # -----------------------------------------------------------------
+        # 3a. Build dummy columns for the 3 health states × 2 edu states
+        #     while dropping one baseline (good=2, low=0).
+        # -----------------------------------------------------------------
+        # We'll keep an explicit intercept, so we do not create a dummy for that baseline.
+        filtered_df[f"{specs['health_labels_three'][0]}"] = (
+            (filtered_df["health"] == 0)
+        ).astype(int)
+        filtered_df[f"{specs['health_labels_three'][1]}"] = (
+            (filtered_df["health"] == 1)
+        ).astype(int)
+        filtered_df[f"{specs['health_labels_three'][2]}"] = (
+            (filtered_df["health"] == 2)
+        ).astype(int)
+
+        # Now define your X and y
+        exog_cols = [
+            "intercept",
+            "age",
+            f"{specs['health_labels_three'][0]}",
+            f"{specs['health_labels_three'][1]}",
+            f"{specs['health_labels_three'][2]}",
+        ]
+        endog = filtered_df["death event"]
+        exog = filtered_df[exog_cols]
+
+        # 3b. Fit logistic regression
+        model = sm.Logit(endog, exog)
+        res = model.fit(disp=True)  # disp=True prints iteration messages
 
         # Terminal log the results.
         print(res)
@@ -158,17 +190,16 @@ def task_estimate_mortality(
 
         # Save the parameter estimates.
         to_csv_summary = res.params.copy()
-        to_csv_summary["hazard_ratio"] = np.exp(to_csv_summary["value"])
+        # to_csv_summary["hazard_ratio"] = np.exp(to_csv_summary["value"])
         to_csv_summary.to_csv(path_to_save_params)
-        breakpoint()
 
         # Update mortality_df using the estimated parameters.
         # For each health state, adjust the death probability.
-        for health, health_label in enumerate(specs["health_labels"]):
+        for health, health_label in enumerate(specs["health_labels_three"][:-1]):
             mortality_df.loc[
                 (mortality_df["sex"] == sex) & (mortality_df["health"] == health),
                 "death_prob",
-            ] *= np.exp(res.params.loc[health_label, "value"])
+            ] *= np.exp(res.params[health_label])
 
     # Export the estimated mortality table and the original life table as CSV.
     lifetable_df = lifetable_df[
@@ -612,9 +643,11 @@ def task_plot_mortality_logit(
     women_params_df = pd.read_csv(path_to_params_women)
 
     # Create dictionaries for quick lookup: { "param_name": coef }
-    men_params = dict(zip(men_params_df["param"], men_params_df["coef"], strict=False))
+    men_params = dict(
+        zip(men_params_df["Unnamed: 0"], men_params_df["0"], strict=False)
+    )
     women_params = dict(
-        zip(women_params_df["param"], women_params_df["coef"], strict=False)
+        zip(women_params_df["Unnamed: 0"], women_params_df["0"], strict=False)
     )
 
     # Define the age range
@@ -627,12 +660,12 @@ def task_plot_mortality_logit(
     # List of health and education states
     # Here health is coded as: 0, 1, 2 and education as: 0, 1.
     health_states = [0, 1, 2]
-    edu_states = [0, 1]
+    # edu_states = [0, 1]
 
     # We'll accumulate rows of predicted probabilities here.
     curve_data = []
 
-    def logistic_prob_death(age, health, edu, param_dict, specs):
+    def logistic_prob_death(age, health, param_dict, specs):
         """
         Given an age, health state, and education, compute the predicted
         death probability from the logistic model.
@@ -645,24 +678,35 @@ def task_plot_mortality_logit(
         xb = param_dict.get("intercept", 0.0) + param_dict.get("age", 0.0) * age
 
         # Check the combination and add the corresponding dummy coefficient.
-        if health == 0 and edu == 0:
-            key = f"{specs['health_labels_three'][0]} {specs['education_labels'][0]}"
+        # if health == 0 and edu == 0:
+        #     key = f"{specs['health_labels_three'][0]} {specs['education_labels'][0]}"
+        #     xb += param_dict.get(key, 0.0)
+        # elif health == 0 and edu == 1:
+        #     key = f"{specs['health_labels_three'][0]} {specs['education_labels'][1]}"
+        #     xb += param_dict.get(key, 0.0)
+        # elif health == 1 and edu == 0:
+        #     key = f"{specs['health_labels_three'][1]} {specs['education_labels'][0]}"
+        #     xb += param_dict.get(key, 0.0)
+        # elif health == 1 and edu == 1:
+        #     key = f"{specs['health_labels_three'][1]} {specs['education_labels'][1]}"
+        #     xb += param_dict.get(key, 0.0)
+        # elif health == 2 and edu == 0:
+        #     key = f"{specs['health_labels_three'][2]} {specs['education_labels'][0]}"
+        #     xb += param_dict.get(key, 0.0)
+        # elif health == 2 and edu == 1:
+        #     key = f"{specs['health_labels_three'][2]} {specs['education_labels'][1]}"
+        #     xb += param_dict.get(key, 0.0)
+
+        if health == 0:
+            key = f"{specs['health_labels_three'][0]}"
             xb += param_dict.get(key, 0.0)
-        elif health == 0 and edu == 1:
-            key = f"{specs['health_labels_three'][0]} {specs['education_labels'][1]}"
+        elif health == 1:
+            key = f"{specs['health_labels_three'][1]}"
             xb += param_dict.get(key, 0.0)
-        elif health == 1 and edu == 0:
-            key = f"{specs['health_labels_three'][1]} {specs['education_labels'][0]}"
+        elif health == 2:
+            key = f"{specs['health_labels_three'][2]}"
             xb += param_dict.get(key, 0.0)
-        elif health == 1 and edu == 1:
-            key = f"{specs['health_labels_three'][1]} {specs['education_labels'][1]}"
-            xb += param_dict.get(key, 0.0)
-        elif health == 2 and edu == 0:
-            key = f"{specs['health_labels_three'][2]} {specs['education_labels'][0]}"
-            xb += param_dict.get(key, 0.0)
-        elif health == 2 and edu == 1:
-            key = f"{specs['health_labels_three'][2]} {specs['education_labels'][1]}"
-            xb += param_dict.get(key, 0.0)
+
         # For (health==0, edu==0) baseline: do nothing.
         p_death = 1.0 / (1.0 + np.exp(-xb))
         return p_death
@@ -670,24 +714,22 @@ def task_plot_mortality_logit(
     # Build survival curves for both sexes.
     for sex_var, param_dict in enumerate([men_params, women_params]):
         for h in health_states:
-            for edu in edu_states:
-                # Initialize cumulative survival probability at 1.
-                cum_surv = 1.0
-                for age in ages:
-                    p_death = logistic_prob_death(age, h, edu, param_dict, specs)
-                    # Save the survival probability *before* this year's death event.
-                    curve_data.append(
-                        {
-                            "sex": sex_var,
-                            "age": age,
-                            "health": h,
-                            "education": edu,
-                            "p_death": p_death,
-                            "p_surv": cum_surv,
-                        }
-                    )
-                    # Update survival for next year.
-                    cum_surv *= 1.0 - p_death
+            # Initialize cumulative survival probability at 1.
+            cum_surv = 1.0
+            for age in ages:
+                p_death = logistic_prob_death(age, h, param_dict, specs)
+                # Save the survival probability *before* this year's death event.
+                curve_data.append(
+                    {
+                        "sex": sex_var,
+                        "age": age,
+                        "health": h,
+                        "p_death": p_death,
+                        "p_surv": cum_surv,
+                    }
+                )
+                # Update survival for next year.
+                cum_surv *= 1.0 - p_death
 
     curve_df = pd.DataFrame(curve_data)
 
@@ -696,34 +738,30 @@ def task_plot_mortality_logit(
 
     # For labeling, use the specs for health and education labels.
     health_labels = specs["health_labels_three"]
-    education_labels = specs["education_labels"]
 
     for sex_var, ax in enumerate(axes):
         sex_label = specs["sex_labels"][sex_var]
-        for edu in edu_states:
-            for h in health_states:
-                sub = curve_df[
-                    (curve_df["sex"] == sex_var)
-                    & (curve_df["health"] == h)
-                    & (curve_df["education"] == edu)
-                ].copy()
-                # Use different linestyles to distinguish health states.
-                if h == 0:
-                    linestyle = "--"
-                elif h == 1:
-                    linestyle = "-."
-                else:
-                    linestyle = "-"
+        for h in health_states:
+            sub = curve_df[
+                (curve_df["sex"] == sex_var) & (curve_df["health"] == h)
+            ].copy()
+            # Use different linestyles to distinguish health states.
+            if h == 0:
+                linestyle = "--"
+            elif h == 1:
+                linestyle = "-."
+            else:
+                linestyle = "-"
 
-                # Build a label combining education and health.
-                lbl = f"{education_labels[edu]}, {health_labels[h]}"
-                ax.plot(
-                    sub["age"],
-                    sub["p_surv"],
-                    linestyle=linestyle,
-                    color=JET_COLOR_MAP[edu % len(JET_COLOR_MAP)],
-                    label=lbl,
-                )
+            # Build a label combining education and health.
+            lbl = f"{health_labels[h]}"
+            ax.plot(
+                sub["age"],
+                sub["p_surv"],
+                linestyle=linestyle,
+                # color=JET_COLOR_MAP[edu % len(JET_COLOR_MAP)],
+                label=lbl,
+            )
         ax.set_title(f"Survival Probability for {sex_label}")
         ax.set_xlabel("Age")
         ax.set_xlim([start_age, end_age])
@@ -736,7 +774,6 @@ def task_plot_mortality_logit(
     plt.close(fig)
 
 
-@pytask.mark.skip()
 def task_plot_mortality(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_mortality_transition_matrix: Path = BLD
@@ -768,61 +805,61 @@ def task_plot_mortality(
 
     for sex_var, _sex_label in enumerate(specs["sex_labels"]):
         for health in alive_health_states:
-            for edu_var, _edu_label in enumerate(specs["education_labels"]):
-                mask = (
-                    (estimated_mortality["sex"] == sex_var)
-                    & (estimated_mortality["health"] == health)
-                    & (estimated_mortality["education"] == edu_var)
-                )
+            # for edu_var, _edu_label in enumerate(specs["education_labels"]):
+            mask = (
+                (estimated_mortality["sex"] == sex_var)
+                & (estimated_mortality["health"] == health)
+                # & (estimated_mortality["education"] == edu_var)
+            )
 
-                filtered_data = estimated_mortality.loc[
-                    mask,
-                    ["death_prob", "age"],
-                ].sort_values(by="age")
+            filtered_data = estimated_mortality.loc[
+                mask,
+                ["death_prob", "age"],
+            ].sort_values(by="age")
 
-                filtered_data["survival_prob_year"] = 1 - filtered_data["death_prob"]
-                filtered_data["survival_prob"] = filtered_data[
-                    "survival_prob_year"
-                ].cumprod()
-                filtered_data["survival_prob"] = filtered_data["survival_prob"].shift(1)
-                filtered_data.loc[0, "survival_prob"] = 1
+            filtered_data["survival_prob_year"] = 1 - filtered_data["death_prob"]
+            filtered_data["survival_prob"] = filtered_data[
+                "survival_prob_year"
+            ].cumprod()
+            filtered_data["survival_prob"] = filtered_data["survival_prob"].shift(1)
+            filtered_data.loc[0, "survival_prob"] = 1
 
-                estimated_mortality.update(filtered_data)
+            estimated_mortality.update(filtered_data)
 
     fig, axes = plt.subplots(ncols=2, figsize=(12, 8))
 
     for sex_var, sex_label in enumerate(specs["sex_labels"]):
         ax = axes[sex_var]
 
-        for edu_var, edu_label in enumerate(specs["education_labels"]):
-            for health in alive_health_states:
-                mask = (
-                    (estimated_mortality["sex"] == sex_var)
-                    & (estimated_mortality["health"] == health)
-                    & (estimated_mortality["education"] == edu_var)
-                )
-                health_label = specs["health_labels_three"][health]
+        # for edu_var, edu_label in enumerate(specs["education_labels"]):
+        for health in alive_health_states:
+            mask = (
+                (estimated_mortality["sex"] == sex_var)
+                & (estimated_mortality["health"] == health)
+                # & (estimated_mortality["education"] == edu_var)
+            )
+            health_label = specs["health_labels_three"][health]
 
-                if health == 0:
-                    linestyle = "--"
-                elif health == 1:
-                    linestyle = "-."
-                else:
-                    linestyle = "-"
+            if health == 0:
+                linestyle = "--"
+            elif health == 1:
+                linestyle = "-."
+            else:
+                linestyle = "-"
 
-                ax.plot(
-                    estimated_mortality.loc[mask, "age"],
-                    estimated_mortality.loc[mask, "survival_prob"],
-                    color=JET_COLOR_MAP[edu_var],
-                    label=f"{edu_label}; {health_label}",
-                    linestyle=linestyle,
-                )
+            ax.plot(
+                estimated_mortality.loc[mask, "age"],
+                estimated_mortality.loc[mask, "survival_prob"],
+                color=JET_COLOR_MAP[sex_var],
+                label=f"{health_label}",
+                linestyle=linestyle,
+            )
 
-        ax.set_xlabel("Age")
-        ax.set_xlim(specs["start_age"], specs["end_age"] + 1)
-        ax.set_ylabel("Survival Probability")
-        ax.set_ylim(0, 1)
-        ax.set_title(f"Estimated Survival Probability for {sex_label}")
+    ax.set_xlabel("Age")
+    ax.set_xlim(specs["start_age"], specs["end_age"] + 1)
+    ax.set_ylabel("Survival Probability")
+    ax.set_ylim(0, 1)
+    ax.set_title(f"Estimated Survival Probability for {sex_label}")
 
     axes[0].legend(loc="lower left")
     fig.savefig(path_to_save_plot)

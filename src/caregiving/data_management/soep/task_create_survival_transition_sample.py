@@ -98,7 +98,7 @@ def task_create_survival_sample(
     df2 = df.copy().reset_index()
 
     # Modify df2 with unknown values
-    df2["education"] = np.nan
+    # df2["education"] = np.nan
     df2["health"] = np.nan
     df2["start_health"] = np.nan
 
@@ -160,7 +160,7 @@ def task_create_survival_sample_good_medium_bad(
             "age",
             "start age",
             "death event",
-            "education",
+            # "education",
             "sex",
             "health",
             "start health",
@@ -201,7 +201,7 @@ def task_create_survival_sample_good_medium_bad(
     df2 = df.copy().reset_index()
 
     # Modify df2 with unknown values
-    df2["education"] = np.nan
+    # df2["education"] = np.nan
     df2["health"] = np.nan
     df2["start_health"] = np.nan
 
