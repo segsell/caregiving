@@ -111,11 +111,14 @@ def task_create_survival_sample(
     df_dup.set_index(["pid", "syear", "true_sample"], inplace=True)
     df_dup.sort_index(inplace=True)
 
-    # Create interaction indicators for health and education
-    df_dup = create_interaction_columns(df_dup, ("health", "education"), specs)
+    # # Create interaction indicators for health and education
+    # df_dup = create_interaction_columns(df_dup, ("health", "education"), specs)
 
-    # Create interaction indicators for start health and education
-    df_dup = create_interaction_columns(df_dup, ("start health", "education"), specs)
+    # # Create interaction indicators for start health and education
+    # df_dup = create_interaction_columns(df_dup, ("start health", "education"), specs)
+
+    df_dup = create_health_columns(df_dup, "health", specs)
+    df_dup = create_health_columns(df_dup, "start health", specs)
 
     # Convert DataFrame to floats for computation
     df_dup = df_dup.astype(float)
@@ -212,14 +215,10 @@ def task_create_survival_sample_good_medium_bad(
     df_dup.sort_index(inplace=True)
 
     # Create interaction indicators for health and education
-    df_dup = create_interaction_columns_three_health_states(
-        df_dup, ("health", "education"), specs
-    )
+    df_dup = create_health_columns_three_health_states(df_dup, "health", specs)
 
     # Create interaction indicators for start health and education
-    df_dup = create_interaction_columns_three_health_states(
-        df_dup, ("start health", "education"), specs
-    )
+    df_dup = create_health_columns_three_health_states(df_dup, "start health", specs)
 
     # Convert DataFrame to floats for computation
     df_dup = df_dup.astype(float)
@@ -613,5 +612,78 @@ def create_interaction_columns_three_health_states(df, columns, specs):
 
             # Create boolean indicator
             df[col_name] = (df[column1] == val1) & (df[column2] == val2)
+
+    return df
+
+
+def create_health_columns(df, column1, specs):
+    """Create interaction indicator columns based on two 0-1-columns in the DataFrame.
+    Adds start_ prefix if necessary.
+
+    Parameters:
+        df (DataFrame): The DataFrame to modify.
+        columns (tuple): A tuple containing the two column names.
+        specs (dict): The specifications dictionary.
+
+    Returns:
+        DataFrame: The modified DataFrame with new interaction columns.
+
+    """
+    # Grab the label dictionaries from specs (e.g. {0: 'bad', 1: 'medium', 2: 'good'})
+    col1_labels = specs[f"{column1}_labels".replace("start ", "")]
+
+    # Decide which states to iterate over based on which column is "health"
+    # (0,1,2) or is something else like "education" (0,1).
+    val1_states = [0, 1]
+
+    # Now create columns for every combination
+    for val1 in val1_states:
+        # Label name
+        col_name = f"{col1_labels[val1]}"
+
+        # If it's a 'start' variable, you can prepend 'start '
+        if "start " in column1:
+            col_name = f"start {col_name}"
+
+        # Create boolean indicator
+        df[col_name] = df[column1] == val1
+
+    return df
+
+
+def create_health_columns_three_health_states(df, column1, specs):
+    """Create interaction indicator columns based on two 0-1-columns in the DataFrame.
+    Adds start_ prefix if necessary.
+
+    Parameters:
+        df (DataFrame): The DataFrame to modify.
+        columns (tuple): A tuple containing the two column names.
+        specs (dict): The specifications dictionary.
+
+    Returns:
+        DataFrame: The modified DataFrame with new interaction columns.
+
+    """
+    # Grab the label dictionaries from specs (e.g. {0: 'bad', 1: 'medium', 2: 'good'})
+    col1_labels = specs[f"{column1}_labels_three".replace("start ", "")]
+
+    # Decide which states to iterate over based on which column is "health"
+    # (0,1,2) or is something else like "education" (0,1).
+    if "health" in column1:
+        val1_states = [0, 1, 2]
+    else:
+        val1_states = [0, 1]
+
+    # Now create columns for every combination
+    for val1 in val1_states:
+        # Label name
+        col_name = f"{col1_labels[val1]}"
+
+        # If it's a 'start' variable, you can prepend 'start '
+        if "start " in column1:
+            col_name = f"start {col_name}"
+
+        # Create boolean indicator
+        df[col_name] = df[column1] == val1
 
     return df
