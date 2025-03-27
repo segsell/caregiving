@@ -160,13 +160,13 @@ def task_estimate_mortality(
         # -----------------------------------------------------------------
         # We'll keep an explicit intercept, so we do not create a dummy for that baseline.
         filtered_df[f"{specs['health_labels_three'][0]}"] = (
-            (filtered_df["health"] == 0)
+            filtered_df["health"] == 0
         ).astype(int)
         filtered_df[f"{specs['health_labels_three'][1]}"] = (
-            (filtered_df["health"] == 1)
+            filtered_df["health"] == 1
         ).astype(int)
         filtered_df[f"{specs['health_labels_three'][2]}"] = (
-            (filtered_df["health"] == 2)
+            filtered_df["health"] == 2
         ).astype(int)
 
         # Now define your X and y
