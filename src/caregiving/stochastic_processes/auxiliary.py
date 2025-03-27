@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 
-
 # def loglike(params, data, start_data):
 #     """Log-likelihood calculation.
 

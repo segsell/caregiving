@@ -4,10 +4,10 @@ import itertools
 from pathlib import Path
 from typing import Annotated
 
+import estimagic as em
 import matplotlib.pyplot as plt
 import numpy as np
 import optimagic as om
-import estimagic as em
 import pandas as pd
 import pytask
 import statsmodels.api as sm
