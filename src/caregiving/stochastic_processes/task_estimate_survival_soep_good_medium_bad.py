@@ -18,6 +18,7 @@ from caregiving.specs.derive_specs import read_and_derive_specs
 from caregiving.stochastic_processes.auxiliary import loglike
 
 
+@pytask.mark.skip()
 def task_estimate_mortality(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_lifetable: Path = SRC

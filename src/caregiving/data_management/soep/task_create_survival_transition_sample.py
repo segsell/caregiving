@@ -98,7 +98,7 @@ def task_create_survival_sample(
     df2 = df.copy().reset_index()
 
     # Modify df2 with unknown values
-    # df2["education"] = np.nan
+    df2["education"] = np.nan
     df2["health"] = np.nan
     df2["start_health"] = np.nan
 
@@ -111,14 +111,14 @@ def task_create_survival_sample(
     df_dup.set_index(["pid", "syear", "true_sample"], inplace=True)
     df_dup.sort_index(inplace=True)
 
-    # # Create interaction indicators for health and education
-    # df_dup = create_interaction_columns(df_dup, ("health", "education"), specs)
+    # Create interaction indicators for health and education
+    df_dup = create_interaction_columns(df_dup, ("health", "education"), specs)
 
-    # # Create interaction indicators for start health and education
-    # df_dup = create_interaction_columns(df_dup, ("start health", "education"), specs)
+    # Create interaction indicators for start health and education
+    df_dup = create_interaction_columns(df_dup, ("start health", "education"), specs)
 
-    df_dup = create_health_columns(df_dup, "health", specs)
-    df_dup = create_health_columns(df_dup, "start health", specs)
+    # df_dup = create_health_columns(df_dup, "health", specs)
+    # df_dup = create_health_columns(df_dup, "start health", specs)
 
     # Convert DataFrame to floats for computation
     df_dup = df_dup.astype(float)

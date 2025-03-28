@@ -18,6 +18,7 @@ dependencies:
   - optimagic
   - estimagic
   - jax
+  - lifelines
   - linearmodels
   - numpy
   - numba

@@ -16,7 +16,6 @@ from caregiving.specs.derive_specs import read_and_derive_specs
 from caregiving.stochastic_processes.auxiliary import loglike
 
 
-@pytask.mark.skip()
 def task_estimate_mortality(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_lifetable: Path = SRC
@@ -59,17 +58,17 @@ def task_estimate_mortality(
             {
                 "age": row["age"],
                 "health": combo[0],
-                # "education": combo[1],
-                "sex": combo[1],
+                "education": combo[1],
+                "sex": combo[2],
                 "death_prob": (
                     row["death_prob_male"]
-                    if combo[1] == 0
+                    if combo[2] == 0
                     else row["death_prob_female"]
                 ),  # male (0) or female (1) death prob
             }
             for _, row in lifetable_df.iterrows()
             for combo in list(
-                itertools.product([0, 1], repeat=2)
+                itertools.product([0, 1], repeat=3)
             )  # (health, education, sex)
         ]
     )
@@ -83,7 +82,7 @@ def task_estimate_mortality(
     df = pd.read_pickle(path_to_mortatility_sample)
 
     # Only keep true sample
-    df = df[df.index.get_level_values("true_sample") == 1].copy()
+    # df = df[df.index.get_level_values("true_sample") == 1].copy()
 
     # Df initial values i.e. first observations (+ sex column)
     start_df = df[
@@ -95,6 +94,8 @@ def task_estimate_mortality(
     # Add a intercept column to the df and start_df
     df["intercept"] = 1
     start_df["intercept"] = 1
+
+    # breakpoint()
 
     for sex, sex_label in enumerate(specs["sex_labels"]):
 
@@ -123,61 +124,61 @@ def task_estimate_mortality(
                 "soft_lower_bound": 0.0001,
                 "soft_upper_bound": 1.0,
             },
-            # f"{specs['health_labels'][1]} {specs['education_labels'][1]}": {
-            #     "value": -0.4,
-            #     "lower_bound": -np.inf,
-            #     "upper_bound": np.inf,
-            #     "soft_lower_bound": -2.5,
-            #     "soft_upper_bound": 2.5,
-            # },
-            # f"{specs['health_labels'][1]} {specs['education_labels'][0]}": {
-            #     "value": -0.3,
-            #     "lower_bound": -np.inf,
-            #     "upper_bound": np.inf,
-            #     "soft_lower_bound": -2.5,
-            #     "soft_upper_bound": 2.5,
-            # },
-            # f"{specs['health_labels'][0]} {specs['education_labels'][1]}": {
-            #     "value": 0.0,
-            #     "lower_bound": -np.inf,
-            #     "upper_bound": np.inf,
-            #     "soft_lower_bound": -2.5,
-            #     "soft_upper_bound": 2.5,
-            # },
-            # f"{specs['health_labels'][0]} {specs['education_labels'][0]}": {
-            #     "value": 0.2,
-            #     "lower_bound": -np.inf,
-            #     "upper_bound": np.inf,
-            #     "soft_lower_bound": -2.5,
-            #     "soft_upper_bound": 2.5,
-            # },
-            f"{specs['health_labels'][0]}": {
-                "value": 0.0,
+            f"{specs['health_labels'][1]} {specs['education_labels'][1]}": {
+                "value": -0.4,
                 "lower_bound": -np.inf,
                 "upper_bound": np.inf,
                 "soft_lower_bound": -2.5,
                 "soft_upper_bound": 2.5,
             },
-            f"{specs['health_labels'][1]}": {
+            f"{specs['health_labels'][1]} {specs['education_labels'][0]}": {
                 "value": -0.3,
                 "lower_bound": -np.inf,
                 "upper_bound": np.inf,
                 "soft_lower_bound": -2.5,
                 "soft_upper_bound": 2.5,
             },
+            f"{specs['health_labels'][0]} {specs['education_labels'][1]}": {
+                "value": 0.0,
+                "lower_bound": -np.inf,
+                "upper_bound": np.inf,
+                "soft_lower_bound": -2.5,
+                "soft_upper_bound": 2.5,
+            },
+            f"{specs['health_labels'][0]} {specs['education_labels'][0]}": {
+                "value": 0.2,
+                "lower_bound": -np.inf,
+                "upper_bound": np.inf,
+                "soft_lower_bound": -2.5,
+                "soft_upper_bound": 2.5,
+            },
+            # f"{specs['health_labels'][0]}": {
+            #     "value": 0.0,
+            #     "lower_bound": -np.inf,
+            #     "upper_bound": np.inf,
+            #     "soft_lower_bound": -2.5,
+            #     "soft_upper_bound": 2.5,
+            # },
+            # f"{specs['health_labels'][1]}": {
+            #     "value": -0.3,
+            #     "lower_bound": -np.inf,
+            #     "upper_bound": np.inf,
+            #     "soft_lower_bound": -2.5,
+            #     "soft_upper_bound": 2.5,
+            # },
         }
         initial_params = pd.DataFrame.from_dict(initial_params_data, orient="index")
 
-        # Estimate parameters
-        res = om.maximize(
-            fun=loglike,
-            params=initial_params,
-            algorithm="scipy_lbfgsb",
-            algo_options={"maxiter": 100},
-            fun_kwargs={"data": filtered_df, "start_data": filtered_start_df},
-            numdiff_options=om.NumdiffOptions(n_cores=4),
-            multistart=om.MultistartOptions(n_samples=100, seed=0, n_cores=4),
-        )
+        # # Estimate parameters
+        # res = om.maximize(
+        #     fun=loglike,
+        #     params=initial_params,
+        #     algorithm="scipy_lbfgsb",
+        #     # algo_options={"maxiter": 100},
+        #     fun_kwargs={"data": filtered_df, "start_data": filtered_start_df},
+        #     numdiff_options=om.NumdiffOptions(n_cores=4),
+        #     multistart=om.MultistartOptions(n_samples=100, seed=0, n_cores=4),
+        # )
 
         # terminal log the results
         print(res)
@@ -186,7 +187,7 @@ def task_estimate_mortality(
 
         # save the results
         to_csv_summary = res.params.copy()
-        to_csv_summary["hazard_ratio"] = np.exp(to_csv_summary["value"])
+        # to_csv_summary["hazard_ratio"] = np.exp(to_csv_summary["value"])
         to_csv_summary.to_csv(path_to_save_params)
 
         # update mortality_df with the estimated parameters
@@ -239,59 +240,6 @@ def task_estimate_mortality(
         sep=",",
         index=False,
     )
-
-
-# def loglike(params, data, start_data):
-#     """Log-likelihood calculation.
-
-#     params: pd.DataFrame
-#         DataFrame with the parameters.
-#     data: pd.DataFrame
-#         DataFrame with the data.
-#     data: pd.DataFrame
-#         DataFrame with the start data.
-
-#     """
-
-#     event = data["death event"]
-#     death = event.astype(bool)
-
-#     return (
-#         _log_density_function(data[death], params).sum()
-#         + _log_survival_function(data[~death], params).sum()
-#         - _log_survival_function(start_data, params).sum()
-#     )
-
-
-# def _log_density_function(data, params):
-#     """Calculate the log-density function.
-
-#     Log of the density function:
-
-#        (log of d[-S(age)]/d(age) = log of - dS(age)/d(age))
-
-#     """
-#     age_coef = params.loc["age", "value"]
-#     age_contrib = np.exp(age_coef * data["age"]) - 1
-
-#     log_lambda_ = sum(
-#         [params.loc[x, "value"] * data[x] for x in params.index if x != "age"]
-#     )
-#     lambda_ = np.exp(log_lambda_)
-
-#     return log_lambda_ + age_coef * data["age"] - ((lambda_ * age_contrib) / age_coef)
-
-
-# def _log_survival_function(data, params):
-#     """Calculate the log-survival function."""
-#     age_coef = params.loc["age", "value"]
-#     age_contrib = np.exp(age_coef * data["age"]) - 1
-
-#     lambda_ = np.exp(
-#         sum([params.loc[x, "value"] * data[x] for x in params.index if x != "age"])
-#     )
-
-#     return -(lambda_ * age_contrib) / age_coef
 
 
 # =====================================================================================
@@ -382,6 +330,7 @@ def task_plot_mortality(
 
     axes[0].legend(loc="lower left")
     fig.savefig(path_to_save_plot)
+    breakpoint()
 
 
 def survival_function(age, health_factors, params):
