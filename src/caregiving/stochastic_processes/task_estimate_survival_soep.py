@@ -9,9 +9,8 @@ import numpy as np
 import optimagic as om
 import pandas as pd
 import pytask
-from pytask import Product
-
 import statsmodels.api as sm
+from pytask import Product
 
 from caregiving.config import BLD, JET_COLOR_MAP, SRC
 from caregiving.specs.derive_specs import read_and_derive_specs
