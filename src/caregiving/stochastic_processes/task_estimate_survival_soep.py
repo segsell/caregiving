@@ -11,6 +11,8 @@ import pandas as pd
 import pytask
 from pytask import Product
 
+import statsmodels.api as sm
+
 from caregiving.config import BLD, JET_COLOR_MAP, SRC
 from caregiving.specs.derive_specs import read_and_derive_specs
 from caregiving.stochastic_processes.auxiliary import loglike
@@ -36,11 +38,11 @@ def task_estimate_mortality(
     path_to_save_mortality_transition_matrix: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
-    / "mortality_transition_matrix.csv",
+    / "mortality_transition_matrix_logit.csv",
     path_to_save_lifetable: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
-    / "lifetable.csv",
+    / "lifetable_logit.csv",
 ):
     """Estimate the mortality matrix."""
 
@@ -180,10 +182,44 @@ def task_estimate_mortality(
         #     multistart=om.MultistartOptions(n_samples=100, seed=0, n_cores=4),
         # )
 
-        # terminal log the results
+        # filtered_df[f"{specs['health_labels'][0]} {specs['education_labels'][0]}"] = (
+        #     (filtered_df["health"] == 0) & (filtered_df["education"] == 0)
+        # ).astype(int)
+        # filtered_df[f"{specs['health_labels'][1]} {specs['education_labels'][0]}"] = (
+        #     (filtered_df["health"] == 1) & (filtered_df["education"] == 0)
+        # ).astype(int)
+        # filtered_df[f"{specs['health_labels'][2]} {specs['education_labels'][0]}"] = (
+        #     (filtered_df["health"] == 2) & (filtered_df["education"] == 0)
+        # ).astype(int)
+        # filtered_df[f"{specs['health_labels'][0]} {specs['education_labels'][1]}"] = (
+        #     (filtered_df["health"] == 0) & (filtered_df["education"] == 1)
+        # ).astype(int)
+        # filtered_df[f"{specs['health_labels'][1]} {specs['education_labels'][1]}"] = (
+        #     (filtered_df["health"] == 1) & (filtered_df["education"] == 1)
+        # ).astype(int)
+        # filtered_df[f"{specs['health_labels'][2]} {specs['education_labels'][1]}"] = (
+        #     (filtered_df["health"] == 2) & (filtered_df["education"] == 1)
+        # ).astype(int)
+
+        # Now define your X and y
+        exog_cols = [
+            "intercept",
+            "age",
+            f"{specs['health_labels'][0]} {specs['education_labels'][0]}",
+            f"{specs['health_labels'][0]} {specs['education_labels'][1]}",
+            f"{specs['health_labels'][1]} {specs['education_labels'][0]}",
+            f"{specs['health_labels'][1]} {specs['education_labels'][1]}",
+        ]
+        endog = filtered_df["death event"]
+        exog = filtered_df[exog_cols]
+
+        # 3b. Fit logistic regression
+        model = sm.Logit(endog, exog)
+        res = model.fit(disp=True)  # disp=True prints iteration messages
+
+        # Terminal log the results.
         print(res)
         print(res.params)
-        breakpoint()
 
         # save the results
         to_csv_summary = res.params.copy()
@@ -201,7 +237,8 @@ def task_estimate_mortality(
                     & (mortality_df["health"] == health)
                     & (mortality_df["education"] == education),
                     "death_prob",
-                ] *= np.exp(res.params.loc[param, "value"])
+                ] *= np.exp(res.params.loc[param])
+                # ] *= np.exp(res.params.loc[param, "value"])
 
     # export the estimated mortality table and the original life table as csv
     lifetable_df = lifetable_df[
@@ -252,11 +289,11 @@ def task_plot_mortality(
     path_to_mortality_transition_matrix: Path = BLD
     / "estimation"
     / "stochastic_processes"
-    / "mortality_transition_matrix.csv",
+    / "mortality_transition_matrix_logit.csv",
     path_to_save_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "stochastic_processes"
-    / "estimated_survival_probabilities.png",
+    / "estimated_survival_probabilities_logit.png",
 ):
     """Plot mortality characteristics."""
 
