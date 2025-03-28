@@ -17,7 +17,7 @@ from caregiving.data_management.soep.variables import (
     create_choice_variable,
     create_education_type,
     create_experience_variable,
-    create_health_var,
+    create_health_var_good_bad,
     create_partner_state,
     generate_working_hours,
 )
@@ -163,7 +163,7 @@ def task_create_event_study_sample(
 
     df = generate_working_hours(df, include_actual_hours=True, drop_missing=False)
     df = create_education_type(df)
-    df = create_health_var(df, drop_missing=True)
+    df = create_health_var_good_bad(df, drop_missing=True)
     df = create_caregiving(df, filter_missing=False)
 
     df = deflate_gross_labor_income(df, cpi_data=cpi, specs=specs)

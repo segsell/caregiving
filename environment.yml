@@ -16,7 +16,9 @@ dependencies:
 
   # Package dependencies
   - optimagic
+  - estimagic
   - jax
+  - lifelines
   - linearmodels
   - numpy
   - numba
@@ -55,6 +57,7 @@ dependencies:
 
   - pip:
     - black
+    - fides>=0.7.4
     - jupyter==1.0.0
     - jupyter-console==6.6.3
     - jupyter-contrib-core==0.4.2

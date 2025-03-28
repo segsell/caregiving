@@ -8,10 +8,9 @@ import jax.numpy as jnp
 import numpy as np
 import yaml
 from dcegm.pre_processing.setup_model import setup_and_save_model
-from dcegm.solve import get_solve_func_for_model
 from pytask import Product
 
-from caregiving.config import BLD, SRC
+from caregiving.config import BLD
 from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.stochastic_processes.job_transition import (
     job_offer_process_transition,
