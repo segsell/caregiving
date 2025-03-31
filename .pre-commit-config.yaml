@@ -37,7 +37,7 @@ repos:
         name: isort
         args: ["--profile=black"]
 -   repo: https://github.com/asottile/setup-cfg-fmt
-    rev: v2.7.0
+    rev: v2.8.0
     hooks:
     -   id: setup-cfg-fmt
 -   repo: https://github.com/psf/black
@@ -50,7 +50,7 @@ repos:
 #     -   id: docformatter
 #         args: [--in-place, --wrap-summaries, "88", --wrap-descriptions, "88", --blank]
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.0
+    rev: v0.11.2
     hooks:
     # Run the linter.
     -   id: ruff
