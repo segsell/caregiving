@@ -15,6 +15,8 @@ PGSBIL_ABITUR = 4
 
 KIDAGE_THRESHOLD_UPPER = 10
 
+DECEASED = 4
+
 DOES_NOT_APPLY = -2
 
 MISSING_VALUE = -99
@@ -423,7 +425,7 @@ def create_kidage_youngest(df):
 #     return data
 
 
-def create_health_var(data, drop_missing=True):
+def create_health_var_good_bad(data, drop_missing=True):
     """
     Create the health variable in the soep-PEQUIV dataset.
 
@@ -457,6 +459,41 @@ def create_health_var(data, drop_missing=True):
     return data
 
 
+def create_health_var_good_medium_bad(data, drop_missing=True):
+    """
+    Create the health variable in the soep-PEQUIV dataset.
+
+    Good health = 2, medium (satisfactory) health 1, bad health = 0.
+
+    Variables:
+    - m11126: Self-Rated Health Status (1–5 for valid responses)
+    - m11124: Disability Status of Individual (0 or 1 for valid responses)
+
+    """
+
+    if drop_missing:
+        data = data[data["m11126"] >= 0]
+        print(
+            f"{len(data)} observations left after dropping people with "
+            "missing health data."
+        )
+        data = data[data["m11124"] >= 0]
+        print(
+            f"{len(data)} observations left after dropping people with "
+            "missing disability data."
+        )
+    else:
+        data.loc[data["m11126"] < 0, "m11126"] = np.nan
+        data.loc[data["m11124"] < 0, "m11124"] = np.nan
+
+    data["health"] = np.nan
+    data.loc[(data["m11126"].isin([4, 5])) | (data["m11124"] == 1), "health"] = 0
+    data.loc[(data["m11126"].isin([3])), "health"] = 1
+    data.loc[(data["m11126"].isin([1, 2])) & (data["m11124"] == 0), "health"] = 2
+
+    return data
+
+
 def clean_health_create_states(data):
     """Create lead and lagged health variable.
 
@@ -475,8 +512,12 @@ def clean_health_create_states(data):
         (data["lag_health"] == 1) & (data["lead_health"] == 1),
         "health",
     ] = 1
+    data.loc[
+        (data["lag_health"] == 2) & (data["lead_health"] == 2),
+        "health",
+    ] = 2
 
-    # update lead_health
+    # update lead_healt
     data["lead_health"] = data.groupby(["pid"])["health"].shift(-1)
     # update lag_health
     data["lag_health"] = data.groupby(["pid"])["health"].shift(1)

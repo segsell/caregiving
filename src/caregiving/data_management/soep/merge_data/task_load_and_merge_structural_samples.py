@@ -357,3 +357,50 @@ def task_load_and_merge_partner_wage_sample(
     print(str(len(merged_data)) + " observations in SOEP C38 core.")
 
     merged_data.to_csv(path_to_save)
+
+
+# =====================================================================================
+# Health sample
+# =====================================================================================
+
+
+def task_load_and_merge_health_sample(
+    soep_c38_pgen: Path = SRC / "data" / "soep" / "pgen.dta",
+    soep_c38_ppathl: Path = SRC / "data" / "soep" / "ppathl.dta",
+    soep_c38_pequiv: Path = SRC / "data" / "soep" / "pequiv.dta",
+    path_to_save: Annotated[Path, Product] = BLD / "data" / "soep_health_data_raw.csv",
+):
+    # Load SOEP core data
+    pgen_data = pd.read_stata(
+        soep_c38_pgen,
+        columns=[
+            "syear",
+            "pid",
+            "hid",
+            "pgemplst",
+            "pgpsbil",
+            "pgstib",
+        ],
+        convert_categoricals=False,
+    )
+    ppathl_data = pd.read_stata(
+        soep_c38_ppathl,
+        columns=["syear", "pid", "hid", "sex", "parid", "gebjahr"],
+        convert_categoricals=False,
+    )
+    pequiv_data = pd.read_stata(
+        # m11126: Self-Rated Health Status
+        # m11124: Disability Status of Individual
+        soep_c38_pequiv,
+        columns=["pid", "syear", "m11126", "m11124"],
+        convert_categoricals=False,
+    )
+    merged_data = pd.merge(
+        pgen_data, ppathl_data, on=["pid", "hid", "syear"], how="inner"
+    )
+    merged_data = pd.merge(merged_data, pequiv_data, on=["pid", "syear"], how="inner")
+    merged_data["age"] = merged_data["syear"] - merged_data["gebjahr"]
+    merged_data.set_index(["pid", "syear"], inplace=True)
+    print(str(len(merged_data)) + " observations in SOEP C38 core.")
+
+    merged_data.to_csv(path_to_save)
