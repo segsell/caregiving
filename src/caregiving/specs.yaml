@@ -18,6 +18,7 @@ end_age_children_in_household: 60
 choice_labels: ["Retired", "Unemployed", "Part-time", "Full-time"]
 education_labels: ["Low Education", "High Education"]
 health_labels: ["Bad Health", "Good Health", "Death"]
+health_labels_three: ["Bad Health", "Medium Health", "Good Health", "Death"]
 sex_labels: ["Men", "Women"]
 partner_labels: ["Single","Working Partner", "Retired Partner"]
 # Belief process parameters
