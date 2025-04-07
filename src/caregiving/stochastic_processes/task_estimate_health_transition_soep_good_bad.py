@@ -227,213 +227,16 @@ def task_estimate_health_transitions_parametric(
 # =====================================================================================
 
 
-# def task_plot_health_transitions(
-#     path_to_specs: Path = SRC / "specs.yaml",
-#     path_to_health_transition_matrix: Path = BLD
-#     / "estimation"
-#     / "stochastic_processes"
-#     / "health_transition_matrix.csv",
-#     path_to_save_plot: Annotated[Path, Product] = BLD
-#     / "plots"
-#     / "stochastic_processes"
-#     / "estimated_health_transition_probabilities.png",
-# ):
-#     """
-#     Plot estimated health transition probabilities (unconditional on mortality).
-
-#     The function assumes that `health_transition_matrix.csv` has columns:
-#       - sex
-#       - education
-#       - period
-#       - health
-#       - lead_health
-#       - transition_prob
-
-#     and that 'period' + start_age = actual age.
-#     """
-
-#     # 1. Specs
-#     specs = read_and_derive_specs(path_to_specs)
-#     start_age = specs["start_age"]
-#     end_age = specs["end_age"]
-#     sex_labels = specs["sex_labels"]
-#     edu_labels = specs["education_labels"]
-#     health_labels = specs["health_labels"]
-
-#     # Identify alive health states (everything except "Death", if your specs define one)
-#     # In your data, these appear to be "Good Health" or "Bad Health".
-#     alive_health_states = [h for h in health_labels if h != "Death"]
-
-#     # 2. Read the health transition data
-#     df = pd.read_csv(path_to_health_transition_matrix)
-#     df["age"] = df["period"] + start_age
-
-#     # 3. Set up the figure with two columns (men, women), similar to the mortality plot
-#     fig, axes = plt.subplots(ncols=2, figsize=(12, 6), sharey=True)
-
-#     # 4. Loop over sex
-#     for sex_idx, sex_label in enumerate(sex_labels):
-#         ax = axes[sex_idx]
-
-#         # Filter for this sex
-#         df_sex = df[df["sex"] == sex_label]
-
-#         # Plot lines for transitions out of each alive health state
-#         for health_state in alive_health_states:
-#             df_prev_health = df_sex[df_sex["health"] == health_state]
-
-#             for edu_idx, edu_label in enumerate(edu_labels):
-#                 df_edu = df_prev_health[df_prev_health["education"] == edu_label]
-
-#                 # Plot the probability of transitioning to "Good Health"
-#                 df_lead_good = df_edu[
-#                     df_edu["lead_health"] == "Good Health"
-#                 ].sort_values("age")
-
-#                 if len(df_lead_good) > 0:
-#                     ax.plot(
-#                         df_lead_good["age"],
-#                         df_lead_good["transition_prob"],
-#                         color=JET_COLOR_MAP[edu_idx],  # your color palette
-#                         linestyle="-" if health_state == "Good Health" else "--",
-#                         label=f"{edu_label}; {health_state}→Good Health",
-#                     )
-
-#                 # If you'd like also to plot transitions to "Bad Health", uncomment:
-#                 df_lead_bad = df_edu[df_edu["lead_health"] == "Bad Health"].sort_values(
-#                     "age"
-#                 )
-#                 if len(df_lead_bad) > 0:
-#                     ax.plot(
-#                         df_lead_bad["age"],
-#                         df_lead_bad["transition_prob"],
-#                         color=JET_COLOR_MAP[edu_idx],
-#                         linestyle="--" if health_state == "Good Health" else "-.",
-#                         label=f"{edu_label}; {health_state}→Bad Health",
-#                     )
-
-#         ax.set_xlabel("Age")
-#         ax.set_xlim(start_age, end_age)
-#         ax.set_ylabel("Transition Probability")
-#         ax.set_ylim(0, 1)
-#         ax.set_title(f"Health Transition Probability for {sex_label}")
-
-#         if sex_idx == 0:
-#             ax.legend(loc="best")
-
-#     fig.tight_layout()
-#     fig.savefig(path_to_save_plot)
-#     plt.close(fig)
-
-
-# def task_plot_health_transitions(
-#     path_to_specs: Path = SRC / "specs.yaml",
-#     path_to_health_transition_matrix: Path = BLD
-#     / "estimation"
-#     / "stochastic_processes"
-#     / "health_transition_matrix.csv",
-#     path_to_save_plot: Annotated[Path, Product] = BLD
-#     / "plots"
-#     / "stochastic_processes"
-#     / "estimated_health_transition_probabilities.png",
-# ):
-#     """
-#     Plot estimated health transition probabilities (unconditional on mortality).
-
-#     This version plots all alive-health to alive-health transitions:
-#       - Good Health → Good Health
-#       - Good Health → Bad Health
-#       - Bad Health → Good Health
-#       - Bad Health → Bad Health
-
-#     The function assumes that `health_transition_matrix.csv` has columns:
-#       - sex         (e.g. "Men", "Women")
-#       - education   (e.g. "Low Education", "High Education")
-#       - period      (integer: 0,1,2,... up to end_age - start_age)
-#       - health      (e.g. "Good Health", "Bad Health")
-#       - lead_health (e.g. "Good Health", "Bad Health")
-#       - transition_prob (float: probability)
-#       - age         (constructed = period + start_age)
-#     """
-
-#     # 1. Specs
-#     specs = read_and_derive_specs(path_to_specs)
-#     start_age = specs["start_age"]
-#     end_age = specs["end_age"]
-#     sex_labels = specs["sex_labels"]
-#     edu_labels = specs["education_labels"]
-#     health_labels = specs["health_labels"]
-
-#     # Identify alive health states (in your data: "Bad Health", "Good Health")
-#     alive_health_states = [h for h in health_labels if h != "Death"]
-
-#     # 2. Read the health transition data
-#     df = pd.read_csv(path_to_health_transition_matrix)
-#     # Ensure we have an 'age' column = period + start_age
-#     if "age" not in df.columns:
-#         df["age"] = df["period"] + start_age
-
-#     # 3. Set up figure with two columns (Men vs. Women, or whatever your sex labels are)
-#     fig, axes = plt.subplots(ncols=2, figsize=(12, 6), sharey=True)
-
-#     # 4. Loop over each sex
-#     for sex_idx, sex_label in enumerate(sex_labels):
-#         ax = axes[sex_idx]
-
-#         # Filter rows for this sex
-#         df_sex = df[df["sex"] == sex_label]
-
-#         # Now loop over each possible previous health state
-#         for prev_health_state in alive_health_states:
-#             df_prev_health = df_sex[df_sex["health"] == prev_health_state]
-
-#             # Then loop over each education group
-#             for edu_idx, edu_label in enumerate(edu_labels):
-#                 df_edu = df_prev_health[df_prev_health["education"] == edu_label]
-
-#                 # Finally, loop over each possible next health state
-#                 for next_health_state in alive_health_states:
-#                     df_lead = df_edu[
-#                         df_edu["lead_health"] == next_health_state
-#                     ].sort_values("age")
-#                     if not df_lead.empty:
-#                         # Example: solid line for next_health_state="Good Health",
-#                         # dashed line for next_health_state="Bad Health"
-#                         linestyle = "-" if next_health_state == "Good Health" else "--"
-
-#                         ax.plot(
-#                             df_lead["age"],
-#                             df_lead["transition_prob"],
-#                             color=JET_COLOR_MAP[edu_idx],  # color by education
-#                             linestyle=linestyle,
-#                             label=f"{edu_label}; {prev_health_state}→{next_health_state}",
-#                         )
-
-#         ax.set_xlabel("Age")
-#         ax.set_xlim(start_age, end_age)
-#         ax.set_ylabel("Transition Probability")
-#         ax.set_ylim(0, 1)
-#         ax.set_title(f"Health Transition Probability for {sex_label}")
-
-#         # We will add a legend on the first subplot; otherwise it can get too large.
-#         if sex_idx == 0:
-#             ax.legend(loc="best", ncol=1)
-
-#     fig.tight_layout()
-#     fig.savefig(path_to_save_plot)
-#     plt.close(fig)
-
-
 def task_plot_health_transitions(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_health_transition_matrix: Path = BLD
     / "estimation"
     / "stochastic_processes"
     / "health_transition_matrix.csv",
-    # path_to_save_plot: Annotated[Path, "Product"] = BLD
-    # / "plots"
-    # / "stochastic_processes"
-    # / "estimated_health_transition_probabilities.png",
+    path_to_save_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "stochastic_processes"
+    / "estimated_health_transition_probabilities.png",
 ):
     """
     Plot all health → health transitions, with:
@@ -500,7 +303,8 @@ def task_plot_health_transitions(
 
                     # --  COLOR LOGIC --
                     # "Use different colors for transitions FROM Bad Health"
-                    # so if prev_health == "Bad Health", pick color = JET_COLOR_MAP[edu_idx]
+                    # so if prev_health == "Bad Health",
+                    # pick color = JET_COLOR_MAP[edu_idx]
                     # otherwise, pick a neutral color, e.g., gray.
                     if prev_health == "Bad Health":
                         color = JET_COLOR_MAP[edu_idx]  # color by education
@@ -531,6 +335,6 @@ def task_plot_health_transitions(
             ax.legend(loc="best", ncol=1)
 
     fig.tight_layout()
-    # fig.savefig(path_to_save_plot)
+    fig.savefig(path_to_save_plot)
     plt.show()
     plt.close(fig)

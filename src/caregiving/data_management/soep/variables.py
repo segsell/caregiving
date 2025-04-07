@@ -513,7 +513,7 @@ def clean_health_create_states(data):
         "health",
     ] = 1
     data.loc[
-        (data["lag_health"] == 2) & (data["lead_health"] == 2),
+        (data["lag_health"] == 2) & (data["lead_health"] == 2),  # noqa: PLR2004
         "health",
     ] = 2
 
