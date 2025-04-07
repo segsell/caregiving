@@ -239,25 +239,14 @@ def task_plot_health_transitions(
     / "estimated_health_transition_probabilities.png",
 ):
     """
-    Plot all health → health transitions, with:
-      - different colors if the previous state = Bad Health,
-      - dashed lines if the next state = Bad Health,
-      - neutral color if the previous state = Good Health.
+    Plot all health → health transitions, colored by education level and with different
+    line styles for each (prev_health → next_health) combination:
 
-    This version includes transitions:
-      Bad Health → Bad Health
-      Bad Health → Good Health
-      Good Health → Bad Health
-      Good Health → Good Health
+      - Good Health → Good Health: solid
+      - Good Health → Bad Health: dashed
+      - Bad Health → Good Health: dash-dot
+      - Bad Health → Bad Health: dotted
 
-    The function assumes that `health_transition_matrix.csv` has columns:
-      - sex
-      - education
-      - period
-      - health
-      - lead_health
-      - transition_prob
-      (Optionally: 'age' = period + start_age, or we can create it.)
     """
 
     # 1. Read specs
@@ -276,6 +265,14 @@ def task_plot_health_transitions(
     # Ensure we have an 'age' column (if not already present)
     if "age" not in df.columns:
         df["age"] = df["period"] + start_age
+
+    # Define a mapping from (prev_health, next_health) to line styles
+    linestyle_map = {
+        ("Good Health", "Good Health"): "-",
+        ("Good Health", "Bad Health"): "--",
+        ("Bad Health", "Good Health"): "-.",
+        ("Bad Health", "Bad Health"): ":",
+    }
 
     # 4. Set up figure: one column per sex
     fig, axes = plt.subplots(ncols=len(sex_labels), figsize=(12, 6), sharey=True)
@@ -301,20 +298,14 @@ def task_plot_health_transitions(
                     if df_next.empty:
                         continue
 
-                    # --  COLOR LOGIC --
-                    # "Use different colors for transitions FROM Bad Health"
-                    # so if prev_health == "Bad Health",
-                    # pick color = JET_COLOR_MAP[edu_idx]
-                    # otherwise, pick a neutral color, e.g., gray.
-                    if prev_health == "Bad Health":
-                        color = JET_COLOR_MAP[edu_idx]  # color by education
-                    else:
-                        color = "gray"
+                    # -- COLOR: determined by education level
+                    color = JET_COLOR_MAP[edu_idx]
 
-                    # --  LINESTYLE LOGIC --
-                    # "Keep dashed for transitions TO Bad Health"
-                    # so if next_health == "Bad Health", dashed, else solid
-                    linestyle = "--" if next_health == "Bad Health" else "-"
+                    # -- LINESTYLE: determined by (prev_health, next_health)
+                    if (prev_health, next_health) in linestyle_map:
+                        linestyle = linestyle_map[(prev_health, next_health)]
+                    else:
+                        linestyle = "-"
 
                     ax.plot(
                         df_next["age"],
