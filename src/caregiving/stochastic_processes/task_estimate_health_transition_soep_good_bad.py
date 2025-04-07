@@ -327,5 +327,5 @@ def task_plot_health_transitions(
 
     fig.tight_layout()
     fig.savefig(path_to_save_plot)
-    plt.show()
+    # plt.show()
     plt.close(fig)

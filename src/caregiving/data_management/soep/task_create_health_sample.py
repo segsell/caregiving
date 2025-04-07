@@ -67,7 +67,7 @@ def task_create_health_transition_sample_good_medium_bad(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_raw_data: Path = BLD / "data" / "soep_health_data_raw.csv",
     path_to_save: Annotated[Path, Product] = (
-        BLD / "data" / "health_transition_estimation_sample_three_states.pkl"
+        BLD / "data" / "health_transition_estimation_sample_good_medium_bad.pkl"
     ),
 ):
 
