@@ -8,10 +8,9 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pandas as pd
-import yaml
 from pytask import Product
 
-from caregiving.config import BLD, SRC
+from caregiving.config import BLD, JET_COLOR_MAP, SRC
 from caregiving.specs.derive_specs import read_and_derive_specs
 from caregiving.specs.experience_specs import create_max_experience
 from caregiving.specs.family_specs import (
@@ -19,7 +18,11 @@ from caregiving.specs.family_specs import (
     predict_children_by_state,
     read_in_partner_transition_specs,
 )
-from caregiving.specs.health_specs import read_in_health_transition_specs
+from caregiving.specs.health_specs import (  # read_in_health_transition_specs_good_medium_bad,; plot_health_transitions_good_medium_bad,; read_in_health_transition_specs_good_medium_bad_df,
+    plot_health_transitions,
+    read_in_health_transition_specs,
+    read_in_health_transition_specs_df,
+)
 from caregiving.specs.income_specs import add_income_specs
 
 jax.config.update("jax_enable_x64", True)
@@ -66,7 +69,15 @@ def task_write_specs(
     path_to_mortality_transition_mat: Path = BLD
     / "estimation"
     / "stochastic_processes"
-    / "mortality_transition_matrix.csv",
+    / "mortality_transition_matrix_logit.csv",
+    # path_to_health_transition_mat_good_medium_bad: Path = BLD
+    # / "estimation"
+    # / "stochastic_processes"
+    # / "health_transition_matrix_good_medium_bad.csv",
+    # path_to_mortality_transition_mat_good_medium_bad: Path = BLD
+    # / "estimation"
+    # / "stochastic_processes"
+    # / "mortality_transition_matrix_logit_good_medium_bad.csv",
     path_to_job_separation_probs: Path = BLD
     / "estimation"
     / "stochastic_processes"
@@ -74,6 +85,14 @@ def task_write_specs(
     path_to_struct_estimation_sample: Path = BLD
     / "data"
     / "soep_structural_estimation_sample.csv",
+    path_to_save_health_death_transition_good_bad: Annotated[Path, Product] = BLD
+    / "plots"
+    / "stochastic_processes"
+    / "health_death_transition_good_bad.png",
+    # path_to_save_health_death_transition_good_medium_bad: Annotated[Path, Product] = BLD
+    # / "plots"
+    # / "stochastic_processes"
+    # / "health_death_transition_good_medium_bad.png",
     path_to_save_max_exp_diff: Annotated[Path, Product] = BLD
     / "model"
     / "specs"
@@ -133,14 +152,34 @@ def task_write_specs(
     specs["health_trans_mat"] = read_in_health_transition_specs(
         health_trans_probs_df, death_prob_df, specs
     )
+    health_trans_mat_df = read_in_health_transition_specs_df(
+        health_trans_probs_df=health_trans_probs_df,
+        death_prob_df=death_prob_df,
+        specs=specs,
+    )
+    plot_health_transitions(
+        specs=specs,
+        df=health_trans_mat_df,
+        path_to_save_plot=path_to_save_health_death_transition_good_bad,
+    )
 
     # if "health_vars_three" in specs.keys():
     #     health_trans_probs_df = pd.read_csv(
-    #         path_to_health_transition_mat_three_states,
+    #         path_to_health_transition_mat_good_medium_bad,
     #     )
-    #     death_prob_df = pd.read_csv(path_to_mortality_transition_mat_three_states)
-    #     specs["health_trans_mat_three"] = read_in_health_transition_specs(
+    #     death_prob_df = pd.read_csv(path_to_mortality_transition_mat_good_medium_bad)
+    #     specs["health_trans_mat"] = read_in_health_transition_specs_good_medium_bad(
     #         health_trans_probs_df, death_prob_df, specs
+    #     )
+    #     health_trans_mat_df = read_in_health_transition_specs_good_medium_bad_df(
+    #         health_trans_probs_df=health_trans_probs_df,
+    #         death_prob_df=death_prob_df,
+    #         specs=specs,
+    #     )
+    #     plot_health_transitions_good_medium_bad(
+    #         specs=specs,
+    #         df=health_trans_mat_df,
+    #         path_to_save_plot=path_to_save_health_death_transition_good_medium_bad,
     #     )
 
     specs["job_sep_probs"] = jnp.asarray(
