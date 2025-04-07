@@ -33,7 +33,7 @@ GOOD = 2
 # =====================================================================================
 
 
-def task_create_survival_sample(
+def task_create_survival_sample_good_bad(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_raw_data: Path = BLD / "data" / "soep_survival_sample_raw.csv",
     path_to_save: Annotated[Path, Product] = (
@@ -137,12 +137,12 @@ def task_create_survival_sample_good_medium_bad(
     / "data"
     / "soep_survival_sample_good_medium_bad_raw.csv",
     path_to_save: Annotated[Path, Product] = (
-        BLD / "data" / "mortality_transition_estimation_sample_three_states.pkl"
+        BLD / "data" / "mortality_transition_estimation_sample_good_medium_bad.pkl"
     ),
     path_to_save_duplicate: Annotated[Path, Product] = (
         BLD
         / "data"
-        / "mortality_transition_estimation_sample_three_states_duplicated.pkl"
+        / "mortality_transition_estimation_sample_good_medium_bad_duplicated.pkl"
     ),
 ):
     """Create the survival transition sample for the mortality estimation."""
