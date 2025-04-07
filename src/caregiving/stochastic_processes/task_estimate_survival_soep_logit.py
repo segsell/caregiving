@@ -14,7 +14,7 @@ from caregiving.config import BLD, JET_COLOR_MAP, SRC
 from caregiving.specs.derive_specs import read_and_derive_specs
 
 
-def task_estimate_mortality_logit(
+def task_estimate_mortality_logit_good_bad(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_lifetable: Path = SRC
     / "data"
@@ -100,7 +100,6 @@ def task_estimate_mortality_logit(
         # Filter data by sex
         filtered_df = df[df["sex"] == sex]
 
-        # Now define your X and y
         exog_cols = [
             "intercept",
             "age",
@@ -112,11 +111,9 @@ def task_estimate_mortality_logit(
         endog = filtered_df["death event"]
         exog = filtered_df[exog_cols]
 
-        # Fit logistic regression
         model = sm.Logit(endog, exog)
         res = model.fit(disp=True)  # disp=True prints iteration messages
 
-        # Terminal log the results.
         print(res)
         print(res.params)
 
@@ -136,7 +133,7 @@ def task_estimate_mortality_logit(
                     "death_prob",
                 ] *= np.exp(res.params.loc[param])
 
-    # export the estimated mortality table and the original life table as csv
+    # Export the estimated mortality table and the original life table as csv
     lifetable_df = lifetable_df[
         (lifetable_df["age"] >= specs["start_age_mortality"])
         & (lifetable_df["age"] <= specs["end_age_mortality"])
@@ -282,7 +279,7 @@ def task_estimate_mortality_logit_good_medium_bad(
 # =====================================================================================
 
 
-def task_plot_mortality(
+def task_plot_mortality_good_bad(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_mortality_transition_matrix: Path = BLD
     / "estimation"

@@ -121,9 +121,6 @@ def task_create_survival_sample_good_bad(
     # Create interaction indicators for start health and education
     df_dup = create_interaction_columns(df_dup, ("start health", "education"), specs)
 
-    # df_dup = create_health_columns(df_dup, "health", specs)
-    # df_dup = create_health_columns(df_dup, "start health", specs)
-
     # Convert DataFrame to floats for computation
     df_dup = df_dup.astype(float)
 
