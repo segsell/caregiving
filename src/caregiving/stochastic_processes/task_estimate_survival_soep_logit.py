@@ -6,18 +6,15 @@ from typing import Annotated
 
 import matplotlib.pyplot as plt
 import numpy as np
-import optimagic as om
 import pandas as pd
-import pytask
 import statsmodels.api as sm
 from pytask import Product
 
 from caregiving.config import BLD, JET_COLOR_MAP, SRC
 from caregiving.specs.derive_specs import read_and_derive_specs
-from caregiving.stochastic_processes.auxiliary import loglike
 
 
-def task_estimate_mortality(
+def task_estimate_mortality_logit(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_lifetable: Path = SRC
     / "data"
@@ -29,11 +26,11 @@ def task_estimate_mortality(
     path_to_save_mortality_params_men: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
-    / "mortality_params_men.csv",
+    / "mortality_params_men_logit.csv",
     path_to_save_mortality_params_women: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
-    / "mortality_params_women.csv",
+    / "mortality_params_women_logit.csv",
     path_to_save_mortality_transition_matrix: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
@@ -82,9 +79,6 @@ def task_estimate_mortality(
     # Estimation sample - as in Kroll Lampert 2008 / Haan Schaller et al. 2024
     df = pd.read_pickle(path_to_mortatility_sample)
 
-    # Only keep true sample
-    # df = df[df.index.get_level_values("true_sample") == 1].copy()
-
     # Df initial values i.e. first observations (+ sex column)
     start_df = df[
         [col for col in df.columns if col.startswith("start")] + ["sex"]
@@ -96,8 +90,6 @@ def task_estimate_mortality(
     df["intercept"] = 1
     start_df["intercept"] = 1
 
-    # breakpoint()
-
     for sex, sex_label in enumerate(specs["sex_labels"]):
 
         if sex_label.lower() == "men":
@@ -107,98 +99,6 @@ def task_estimate_mortality(
 
         # Filter data by sex
         filtered_df = df[df["sex"] == sex]
-        filtered_start_df = start_df[start_df["sex"] == sex]
-
-        # Initial parameters
-        initial_params_data = {
-            "intercept": {
-                "value": -13,
-                "lower_bound": -np.inf,
-                "upper_bound": np.inf,
-                "soft_lower_bound": -15.0,
-                "soft_upper_bound": 15.0,
-            },
-            "age": {
-                "value": 0.1,
-                "lower_bound": 1e-8,
-                "upper_bound": np.inf,
-                "soft_lower_bound": 0.0001,
-                "soft_upper_bound": 1.0,
-            },
-            f"{specs['health_labels'][1]} {specs['education_labels'][1]}": {
-                "value": -0.4,
-                "lower_bound": -np.inf,
-                "upper_bound": np.inf,
-                "soft_lower_bound": -2.5,
-                "soft_upper_bound": 2.5,
-            },
-            f"{specs['health_labels'][1]} {specs['education_labels'][0]}": {
-                "value": -0.3,
-                "lower_bound": -np.inf,
-                "upper_bound": np.inf,
-                "soft_lower_bound": -2.5,
-                "soft_upper_bound": 2.5,
-            },
-            f"{specs['health_labels'][0]} {specs['education_labels'][1]}": {
-                "value": 0.0,
-                "lower_bound": -np.inf,
-                "upper_bound": np.inf,
-                "soft_lower_bound": -2.5,
-                "soft_upper_bound": 2.5,
-            },
-            f"{specs['health_labels'][0]} {specs['education_labels'][0]}": {
-                "value": 0.2,
-                "lower_bound": -np.inf,
-                "upper_bound": np.inf,
-                "soft_lower_bound": -2.5,
-                "soft_upper_bound": 2.5,
-            },
-            # f"{specs['health_labels'][0]}": {
-            #     "value": 0.0,
-            #     "lower_bound": -np.inf,
-            #     "upper_bound": np.inf,
-            #     "soft_lower_bound": -2.5,
-            #     "soft_upper_bound": 2.5,
-            # },
-            # f"{specs['health_labels'][1]}": {
-            #     "value": -0.3,
-            #     "lower_bound": -np.inf,
-            #     "upper_bound": np.inf,
-            #     "soft_lower_bound": -2.5,
-            #     "soft_upper_bound": 2.5,
-            # },
-        }
-        initial_params = pd.DataFrame.from_dict(initial_params_data, orient="index")
-
-        # # Estimate parameters
-        # res = om.maximize(
-        #     fun=loglike,
-        #     params=initial_params,
-        #     algorithm="scipy_lbfgsb",
-        #     # algo_options={"maxiter": 100},
-        #     fun_kwargs={"data": filtered_df, "start_data": filtered_start_df},
-        #     numdiff_options=om.NumdiffOptions(n_cores=4),
-        #     multistart=om.MultistartOptions(n_samples=100, seed=0, n_cores=4),
-        # )
-
-        # filtered_df[f"{specs['health_labels'][0]} {specs['education_labels'][0]}"] = (
-        #     (filtered_df["health"] == 0) & (filtered_df["education"] == 0)
-        # ).astype(int)
-        # filtered_df[f"{specs['health_labels'][1]} {specs['education_labels'][0]}"] = (
-        #     (filtered_df["health"] == 1) & (filtered_df["education"] == 0)
-        # ).astype(int)
-        # filtered_df[f"{specs['health_labels'][2]} {specs['education_labels'][0]}"] = (
-        #     (filtered_df["health"] == 2) & (filtered_df["education"] == 0)
-        # ).astype(int)
-        # filtered_df[f"{specs['health_labels'][0]} {specs['education_labels'][1]}"] = (
-        #     (filtered_df["health"] == 0) & (filtered_df["education"] == 1)
-        # ).astype(int)
-        # filtered_df[f"{specs['health_labels'][1]} {specs['education_labels'][1]}"] = (
-        #     (filtered_df["health"] == 1) & (filtered_df["education"] == 1)
-        # ).astype(int)
-        # filtered_df[f"{specs['health_labels'][2]} {specs['education_labels'][1]}"] = (
-        #     (filtered_df["health"] == 2) & (filtered_df["education"] == 1)
-        # ).astype(int)
 
         # Now define your X and y
         exog_cols = [
@@ -212,7 +112,7 @@ def task_estimate_mortality(
         endog = filtered_df["death event"]
         exog = filtered_df[exog_cols]
 
-        # 3b. Fit logistic regression
+        # Fit logistic regression
         model = sm.Logit(endog, exog)
         res = model.fit(disp=True)  # disp=True prints iteration messages
 
@@ -220,9 +120,7 @@ def task_estimate_mortality(
         print(res)
         print(res.params)
 
-        # save the results
         to_csv_summary = res.params.copy()
-        # to_csv_summary["hazard_ratio"] = np.exp(to_csv_summary["value"])
         to_csv_summary.to_csv(path_to_save_params)
 
         # update mortality_df with the estimated parameters
@@ -237,7 +135,6 @@ def task_estimate_mortality(
                     & (mortality_df["education"] == education),
                     "death_prob",
                 ] *= np.exp(res.params.loc[param])
-                # ] *= np.exp(res.params.loc[param, "value"])
 
     # export the estimated mortality table and the original life table as csv
     lifetable_df = lifetable_df[
@@ -366,7 +263,6 @@ def task_plot_mortality(
 
     axes[0].legend(loc="lower left")
     fig.savefig(path_to_save_plot)
-    breakpoint()
 
 
 def survival_function(age, health_factors, params):
