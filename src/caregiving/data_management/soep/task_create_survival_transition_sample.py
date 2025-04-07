@@ -24,6 +24,10 @@ from caregiving.data_management.soep.variables import (
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
 
+BAD = 0
+MEDIUM = 1
+GOOD = 2
+
 # =====================================================================================
 # Create mortality estimation sample
 # =====================================================================================
@@ -174,9 +178,9 @@ def task_create_survival_sample_good_medium_bad(
     print(
         "Death events in the sample: ",
         f"{len(df[df['death event'] == 1])} (total) = "
-        f"{len(df[(df['death event'] == 1) & (df['health'] == 0)])} (health=0) + "
-        f"{len(df[(df['death event'] == 1) & (df['health'] == 1)])} (health=1) + "
-        f"{len(df[(df['death event'] == 1) & (df['health'] == 2)])} (health=2)",
+        f"{len(df[(df['death event'] == 1) & (df['health'] == BAD)])} (health=0) + "
+        f"{len(df[(df['death event'] == 1) & (df['health'] == MEDIUM)])} (health=1) + "
+        f"{len(df[(df['death event'] == 1) & (df['health'] == GOOD)])} (health=2)",
     )
 
     print(
@@ -634,12 +638,12 @@ def create_health_columns(df, column1, specs):
 
     # Decide which states to iterate over based on which column is "health"
     # (0,1,2) or is something else like "education" (0,1).
-    val1_states = [0, 1]
+    val1_states = (0, 1)
 
     # Now create columns for every combination
     for val1 in val1_states:
         # Label name
-        col_name = f"{col1_labels[val1]}"
+        col_name = str(col1_labels[val1])
 
         # If it's a 'start' variable, you can prepend 'start '
         if "start " in column1:
@@ -670,14 +674,14 @@ def create_health_columns_three_health_states(df, column1, specs):
     # Decide which states to iterate over based on which column is "health"
     # (0,1,2) or is something else like "education" (0,1).
     if "health" in column1:
-        val1_states = [0, 1, 2]
+        val1_states = (0, 1, 2)
     else:
-        val1_states = [0, 1]
+        val1_states = (0, 1)
 
     # Now create columns for every combination
     for val1 in val1_states:
         # Label name
-        col_name = f"{col1_labels[val1]}"
+        col_name = str(col1_labels[val1])
 
         # If it's a 'start' variable, you can prepend 'start '
         if "start " in column1:

@@ -3,8 +3,6 @@
 from typing import Any, Dict
 
 import numpy as np
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 
 from caregiving.model.state_space import (
     create_state_space_functions,
@@ -14,6 +12,8 @@ from caregiving.model.utility.bequest_utility import (
 )
 from caregiving.model.utility.utility_functions import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 
 def load_and_setup_full_model_for_solution(options, path_to_model) -> Dict[str, Any]:
