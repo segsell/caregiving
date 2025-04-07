@@ -195,4 +195,3 @@ def task_plot_health_transitions(
 
     plt.tight_layout()
     fig.savefig(path_to_save_plot, dpi=300)
-    plt.close(fig)
