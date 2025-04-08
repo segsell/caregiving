@@ -437,7 +437,7 @@ def plot_health_death_transitions_good_bad(specs, df, path_to_save_plot):
                 ax.set_ylabel("Transition Probability")
             ax.legend(title="Transitions", fontsize=8, title_fontsize=9)
 
-    plt.tight_layout()
+    # plt.tight_layout()
     fig.savefig(path_to_save_plot, dpi=300)
 
 
@@ -515,5 +515,5 @@ def plot_health_death_transitions_good_medium_bad(specs, df, path_to_save_plot):
             ax.set_ylabel("Transition Probability")
         ax.legend(title="Transitions", fontsize=9, title_fontsize=10)
 
-    plt.tight_layout()
+    # plt.tight_layout()
     fig.savefig(path_to_save_plot, dpi=300)

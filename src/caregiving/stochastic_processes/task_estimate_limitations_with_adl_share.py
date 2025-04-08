@@ -51,8 +51,11 @@ def task_estimate_limitations_with_adl_categories(
     health_transition_matrix = pd.read_csv(path_to_health_transition_matrix)
     health_death_transition_matrix = pd.read_csv(path_to_health_death_transition_matrix)
     # plot_weighted_adl_probabilities(df_combined, health_transition_matrix)
-    plot_weighted_adl_death_probabilities(df_combined, health_death_transition_matrix)
 
+    # plot_weighted_adl_death_probabilities(df_combined, health_death_transition_matrix)
+    plot_health_state_evolution(health_death_transition_matrix)
+
+    # breakpoint()
     # Check identity
     test_params_equality(results_dict, df_combined, tol=1e-10)
 
@@ -490,153 +493,311 @@ def plot_weighted_adl_probabilities(params, health_transition_matrix):
         ax.legend()
 
     plt.tight_layout()
-    plt.show()
-    # breakpoint()
+    # plt.show()
 
 
 def plot_weighted_adl_death_probabilities(params, health_death_trans_mat_df):
     """
-    Plots unconditional (weighted) predicted probabilities for the three adl (care degree)
-    outcomes as a function of age, taking into account health transitions that include death.
-    If a person is dead, no adl is estimated, so the overall adl probability is the survival probability
-    (1 - P(Death)) times the conditional adl probability given survival.
+    Revised plotting function.
 
-    Parameters:
-    -----------
-    params : pandas.DataFrame
-        DataFrame containing estimated logit parameters for each adl outcome.
-        Expected columns: 'sex', 'adl_cat', 'const', 'age', 'age_sq', 'medium_health', 'bad_health'.
-        The adl outcomes are interpreted as:
-            1: Care Degree 2
-            2: Care Degree 3
-            3: Care Degree 4 or 5
-        Subjective health enters via dummy variables where Good Health is the omitted (reference) category.
-        For these calculations we fix subjective health as follows:
-            Good Health   -> fixed value 2 (no dummy added)
-            Medium Health -> fixed value 1 (adds medium_health only for adl_cat 2)
-            Bad Health    -> fixed value 0 (adds bad_health only for adl_cat 3)
+    This function computes the unconditional ADL probabilities in a two-step process:
 
-    health_death_trans_mat_df : pandas.DataFrame
-        DataFrame with health-to-death transition probabilities.
-        Expected columns: 'sex', 'period', 'health', 'lead_health', 'transition_prob', 'age'.
-        Here, period is defined relative to age 30 (period = age - 30). The "lead_health" category
-        includes the three living states (“Good Health”, “Medium Health”, “Bad Health”) and “Death”.
+    (1) Initialization at age 66:
+         - Given initial lag health shares are provided for survivors only.
+         - Since the survival (alive) share is 0.75, the initial state distribution is:
+             Good Health   = 0.75 * 0.188007,
+             Medium Health = 0.75 * 0.743285,
+             Bad Health    = 0.75 * 0.068707,
+             Death         = 1 - 0.75 = 0.25.
+         This ensures the four-state distribution sums to 1.
+
+    (2) Iteration for ages 67+:
+         - For each subsequent age, we extract the gender and age-specific transition
+           probabilities (for moving from the previous – or lag – health state to the current state).
+         - We build a full 4x4 transition matrix (states: ["Good Health", "Medium Health", "Bad Health", "Death"]).
+         - Death is imposed as absorbing.
+         - The state distribution at the new age is S_new = S_old dot T.
+
+    At each age, we then compute unconditional ADL probabilities by:
+         - Converting the distribution among the living states (first three elements) into weights;
+         - Computing the conditional ADL probabilities given each health state
+           (using the fixed values: Good -> 2, Medium -> 1, Bad -> 0); and
+         - Taking a weighted average of these conditional probabilities multiplied by the overall
+           survival probability (sum of the living).
     """
-    # Define the age range
-    age_vals = np.arange(66, 100)  # adjust as needed
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import pandas as pd
 
-    # Labels for the adl outcomes (care degrees)
+    # Define the age range
+    age_vals = np.arange(66, 100)  # Ages 66 to 99
+
+    # Outcome labels for the three ADL (care degree) outcomes.
     outcome_labels = {1: "Care Degree 2", 2: "Care Degree 3", 3: "Care Degree 4 or 5"}
 
-    # Mapping for fixed subjective health states.
-    # Note: Good Health is the reference (fixed value 2), Medium Health uses 1, and Bad Health uses 0.
+    # Fixed mapping for subjective health used in the ADL model:
+    # For "Good Health" we use fixed value 2 (no additional dummy), for "Medium Health": 1, for "Bad Health": 0.
     health_mapping = {"Good Health": 2, "Medium Health": 1, "Bad Health": 0}
 
-    # Helper function to compute utility for a given row in params, fixed subjective health, and ages.
-    def compute_utility(row, fixed_health, ages):
-        # For adl_cat==1 (Care Degree 2): always reference, so no health effect.
-        # For adl_cat==2 (Care Degree 3): add medium_health if fixed_health is 1.
-        # For adl_cat==3 (Care Degree 4 or 5): add bad_health if fixed_health is 0.
-        if row["adl_cat"] == 1:
-            health_effect = 0.0
-        elif row["adl_cat"] == 2:
-            health_effect = row["medium_health"] if fixed_health == 1 else 0.0
-        elif row["adl_cat"] == 3:
-            health_effect = row["bad_health"] if fixed_health == 0 else 0.0
-        else:
-            health_effect = 0.0
-        return (
-            row["const"] + row["age"] * ages + row["age_sq"] * (ages**2) + health_effect
-        )
+    # Define the complete set of states (including death)
+    states = ["Good Health", "Medium Health", "Bad Health", "Death"]
 
-    # For each gender, precompute the conditional adl probabilities under each fixed subjective health state.
-    # These are computed in the same way as before.
+    # --- (1) Initialization at age 66 ---
+    # Given lag shares (for survivors only), and the overall share alive is 0.75:
+    init_alive = 0.75
+    init_good = 0.188007
+    init_medium = 0.743285
+    init_bad = 0.068707
+
+    # Construct state distribution at age 66:
+    # Multiply survivor share by the health shares.
+    S0 = np.array(
+        [
+            init_alive * init_good,
+            init_alive * init_medium,
+            init_alive * init_bad,
+            1 - init_alive,
+        ]
+    )  # Death probability = 0.25
+
+    # The state distribution S0 is a 4-element vector that sums to 1.
+    # For example: sum(S0) == 0.75* (0.188007+0.743285+0.068707) + 0.25 = 0.75*1 + 0.25 = 1
+
+    # Prepare to plot results for each gender.
     genders = params["sex"].unique()
-
-    # Set up one subplot per gender
     fig, axes = plt.subplots(
         1, len(genders), figsize=(7 * len(genders), 5), sharey=True
     )
     if len(genders) == 1:
         axes = [axes]
 
-    # Loop over genders
+    # For each gender, iterate over age and compute:
+    #   (i) the evolving state distribution via transitions,
+    #  (ii) the weighted (unconditional) ADL probabilities
     for idx, gender in enumerate(genders):
         ax = axes[idx]
-        # Subset params for the given gender and sort by adl_cat (should be 3 rows)
+        # Subset parameters (logit coefficients) for the current gender.
         df_gender = params[params["sex"] == gender].sort_values(by="adl_cat")
         if df_gender.shape[0] != 3:
             raise ValueError(
                 f"Expected 3 rows for gender {gender}, got {df_gender.shape[0]}"
             )
 
-        # Compute conditional adl probabilities for each fixed subjective health state.
-        # Store in a dictionary: keys are "Good Health", "Medium Health", "Bad Health"
-        adl_probs_by_health = {}
-        for health_str, fixed_val in health_mapping.items():
-            utilities = []
-            for _, row in df_gender.iterrows():
-                util = compute_utility(row, fixed_val, age_vals)
-                utilities.append(util)
-            utilities = np.vstack(utilities)  # shape: (3, len(age_vals))
-            # Apply softmax along the outcome dimension
-            exp_util = np.exp(utilities)
-            probs = exp_util / np.sum(exp_util, axis=0)
-            adl_probs_by_health[health_str] = probs
+        # Initialize list to store unconditional ADL probabilities for each age.
+        # Each element is a 3-element vector (one for each ADL outcome).
+        unconditional_adl_list = []
 
-        # Now, for each age, get the transition probabilities including death,
-        # then compute the unconditional adl probabilities.
-        weighted_adl = np.zeros((3, len(age_vals)))
-        for i, age in enumerate(age_vals):
-            # Determine period based on age; assume period = age - 30 (rounded to nearest integer)
-            period_val = int(round(age)) - 30
-            # Filter the health-death transition matrix for this gender and period
-            sub_ht = health_death_trans_mat_df[
-                (health_death_trans_mat_df["sex"] == gender)
-                & (health_death_trans_mat_df["period"] == period_val)
-            ]
-            # Group by lead_health and get the average transition probability
-            grp = sub_ht.groupby("lead_health")["transition_prob"].mean()
-            trans_dict = grp.to_dict()
-            # Extract probabilities for living states and for death
-            p_death = trans_dict.get("Death", 0)
-            p_good = trans_dict.get("Good Health", 0)
-            p_medium = trans_dict.get("Medium Health", 0)
-            p_bad = trans_dict.get("Bad Health", 0)
-            # Survival probability is one minus probability of death.
-            survival_prob = 1 - p_death
-            # Among the living, compute normalized weights.
-            sum_living = p_good + p_medium + p_bad
-            if sum_living > 0:
-                w_good = p_good / sum_living
-                w_medium = p_medium / sum_living
-                w_bad = p_bad / sum_living
+        # Set the initial state distribution for age 66.
+        S = S0.copy()
+
+        # Loop over each age.
+        for age in age_vals:
+            if age > 66:
+                # --- (2) Iterative transition for ages > 66 ---
+                # Define period as age - 30 (rounded to integer).
+                period_val = int(round(age)) - 30
+
+                # Extract transitions for the given gender and period.
+                # The transition data frame has columns "health" (lag state) and "lead_health" (next state).
+                sub_ht = health_death_trans_mat_df[
+                    (health_death_trans_mat_df["sex"] == gender)
+                    & (health_death_trans_mat_df["period"] == period_val)
+                ]
+
+                # Pivot the data to create a matrix with lag states as rows and lead states as columns.
+                T = sub_ht.pivot(
+                    index="health", columns="lead_health", values="transition_prob"
+                )
+
+                # Ensure that all four states are present as rows and columns.
+                T = T.reindex(index=states, columns=states, fill_value=0)
+
+                # Enforce the absorbing property for death.
+                T.loc["Death"] = [0, 0, 0, 1]
+
+                # Optionally, one might also check that each row sums (approximately) to 1.
+                # Update the state distribution: S_{age} = S_{previous} dot T.
+                S = S.dot(T.values)
+            # End of state transition
+
+            # For the current age, compute survival probability and weights among living states.
+            # Living states are the first three (Good, Medium, Bad).
+            survival_prob = S[0] + S[1] + S[2]
+            if survival_prob > 0:
+                w_good = S[0] / survival_prob
+                w_medium = S[1] / survival_prob
+                w_bad = S[2] / survival_prob
             else:
+                # In extreme cases when survival_prob is 0 (everyone is dead), use equal weights.
                 w_good = w_medium = w_bad = 1 / 3.0
 
-            # Retrieve conditional adl probabilities for each fixed health state at age i.
-            p_adl_good = adl_probs_by_health["Good Health"][:, i]  # shape (3,)
-            p_adl_medium = adl_probs_by_health["Medium Health"][:, i]
-            p_adl_bad = adl_probs_by_health["Bad Health"][:, i]
+            # --- Compute conditional ADL probabilities at the current age ---
+            # For each health state, we compute conditional outcome probabilities using the multinomial logit:
+            cond_adl = (
+                {}
+            )  # will hold a 3-element probability vector for each living health state.
+            for health_str, fixed_val in health_mapping.items():
+                utilities = []
+                # Iterate over each ADL outcome (the rows in df_gender).
+                for _, row in df_gender.iterrows():
+                    # For outcome 1 (Care Degree 2), no dummy effect is added.
+                    if row["adl_cat"] == 1:
+                        health_effect = 0.0
+                    # For outcome 2 (Care Degree 3), add "medium_health" coefficient if fixed value is 1.
+                    elif row["adl_cat"] == 2:
+                        health_effect = row["medium_health"] if fixed_val == 1 else 0.0
+                    # For outcome 3 (Care Degree 4 or 5), add "bad_health" coefficient if fixed value is 0.
+                    elif row["adl_cat"] == 3:
+                        health_effect = row["bad_health"] if fixed_val == 0 else 0.0
+                    else:
+                        health_effect = 0.0
+                    # Compute the utility as a function of age.
+                    u = (
+                        row["const"]
+                        + row["age"] * age
+                        + row["age_sq"] * (age**2)
+                        + health_effect
+                    )
+                    utilities.append(u)
+                utilities = np.array(utilities)
+                exp_util = np.exp(utilities)
+                cond_prob = exp_util / np.sum(exp_util)
+                cond_adl[health_str] = cond_prob  # Vector of length 3
+            # End of conditional probabilities
 
-            # Combine the probabilities as a weighted average and multiply by survival probability.
-            # That is, the unconditional probability of a given adl outcome equals:
-            # survival_prob * [w_good*p_adl_good + w_medium*p_adl_medium + w_bad*p_adl_bad]
-            weighted_adl[:, i] = survival_prob * (
-                w_good * p_adl_good + w_medium * p_adl_medium + w_bad * p_adl_bad
+            # --- Compute the unconditional ADL probabilities ---
+            # They are given by the survival probability (the share alive) multiplied by a weighted
+            # average of the conditional ADL probabilities, where the weights come from the living state shares.
+            uncond_adl = survival_prob * (
+                w_good * cond_adl["Good Health"]
+                + w_medium * cond_adl["Medium Health"]
+                + w_bad * cond_adl["Bad Health"]
             )
+            unconditional_adl_list.append(uncond_adl)
+        # End loop over ages
 
-        # Plot the unconditional adl probabilities as a function of age.
+        # Convert the collected probabilities to an array for plotting;
+        # shape: (3 outcomes, len(age_vals))
+        unconditional_adl_arr = np.array(unconditional_adl_list).T
+
+        # Plot each ADL outcome.
         for adl_cat, label in outcome_labels.items():
-            # df_gender is sorted by adl_cat so index 0 corresponds to adl_cat==1, etc.
-            ax.plot(age_vals, weighted_adl[adl_cat - 1, :], label=label)
+            # df_gender rows were ordered by outcome (adl_cat 1, 2, 3),
+            # so we use adl_cat-1 to index the corresponding unconditional probability.
+            ax.plot(age_vals, unconditional_adl_arr[adl_cat - 1, :], label=label)
         ax.set_title(f"{gender}")
         ax.set_xlabel("Age")
-        ax.set_ylabel("Unconditional Probability")
+        ax.set_ylabel("Unconditional ADL Probability")
         ax.legend()
 
     plt.tight_layout()
     plt.show()
+    # breakpoint()
+
+
+def plot_health_state_evolution(health_death_trans_mat_df):
+    """
+    Plots the evolution of the state distribution across ages.
+
+    This function begins at age 66 with the initial state distribution based on
+    the provided shares:
+         - Good Health   = 0.75 * 0.188007,
+         - Medium Health = 0.75 * 0.743285,
+         - Bad Health    = 0.75 * 0.068707,
+         - Death         = 1 - 0.75.
+
+    For each subsequent age (67+), the function retrieves the transition probabilities
+    for the given gender and period (period = age - 30) from the health_death_trans_mat_df
+    and computes the new state distribution, ensuring that Death is absorbing.
+
+    The resulting state distributions are plotted over the age range for each gender.
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import pandas as pd
+
+    # Define the age range, e.g. 66 to 99.
+    age_vals = np.arange(66, 100)
+
+    # Define the four states.
+    states = ["Good Health", "Medium Health", "Bad Health", "Death"]
+
+    # --- Initialization at Age 66 ---
+    # Provided shares for survivors (alive) and their health composition:
+    init_alive = 0.75
+    init_good = 0.188007
+    init_medium = 0.743285
+    init_bad = 0.068707
+
+    # Create the initial state distribution vector S0.
+    # The first three elements are the probabilities for the living states,
+    # and the fourth element is the death probability.
+    S0 = np.array(
+        [
+            init_alive * init_good,  # Good Health
+            init_alive * init_medium,  # Medium Health
+            init_alive * init_bad,  # Bad Health
+            1 - init_alive,  # Death
+        ]
+    )
+    # S0 now sums to 1.
+
+    # Determine the genders present in the transition matrix.
+    genders = health_death_trans_mat_df["sex"].unique()
+
+    # Set up a subplot for each gender.
+    fig, axes = plt.subplots(
+        1, len(genders), figsize=(7 * len(genders), 5), sharey=True
+    )
+    if len(genders) == 1:
+        axes = [axes]
+
+    # Loop over each gender.
+    for idx, gender in enumerate(genders):
+        ax = axes[idx]
+        # Create a list to store the state distribution at each age.
+        state_history = []
+        # Set the initial state distribution at age 66.
+        S = S0.copy()
+
+        # Iterate over each age in the range.
+        for age in age_vals:
+            # For age 66, we already have S0.
+            if age > 66:
+                # Define the period as age - 30 (using integer rounding).
+                period_val = int(round(age)) - 30
+                # Filter the transition matrix for the current gender and period.
+                sub_ht = health_death_trans_mat_df[
+                    (health_death_trans_mat_df["sex"] == gender)
+                    & (health_death_trans_mat_df["period"] == period_val)
+                ]
+                # Pivot the data to form a 4x4 matrix with rows as lag states and columns as lead states.
+                T = sub_ht.pivot(
+                    index="health", columns="lead_health", values="transition_prob"
+                )
+                # Ensure that the pivot table covers all four states.
+                T = T.reindex(index=states, columns=states, fill_value=0)
+                # Enforce that death is absorbing.
+                T.loc["Death"] = [0, 0, 0, 1]
+                # Update the state distribution: S_new = S_previous * T.
+                S = S.dot(T.values)
+            # Record the current state distribution.
+            state_history.append(S.copy())
+
+        # Convert the history to a NumPy array; shape: (n_ages, 4)
+        state_history = np.array(state_history)
+
+        # Plot the probability evolution for each state.
+        for i, state in enumerate(states):
+            ax.plot(age_vals, state_history[:, i], label=state)
+        ax.set_title(f"Gender: {gender}")
+        ax.set_xlabel("Age")
+        ax.set_ylabel("Probability")
+        ax.legend()
+
+    plt.tight_layout()
+    # plt.show()
+    # breakpoint()
 
 
 # =====================================================================================
