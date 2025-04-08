@@ -85,6 +85,7 @@ def run_multinomial_by_gender(df):
 
     # Define the formula
     formula = "adl_cat ~ age + I(age**2) + C(health)"
+    # formula = "adl_cat ~ age + I(age**2) + C(health, Treatment(reference=None)) - 1"
 
     # Fit the model for men
     model_men = smf.mnlogit(formula, data=dat_men).fit()
@@ -138,6 +139,9 @@ def get_nested_params(model_men, model_women):
         "I(age ** 2)": "age_sq",
         "C(health)[T.1.0]": "medium_health",
         "C(health)[T.2.0]": "bad_health",
+        # "C(health, Treatment(reference=None))[0.0]": "health_0",
+        # "C(health, Treatment(reference=None))[1.0]": "health_1",
+        # "C(health, Treatment(reference=None))[2.0]": "health_2",
     }
 
     def process_model_params(model_params: pd.DataFrame):
@@ -198,6 +202,9 @@ def pivot_model_params(model, sex_label):
         "I(age ** 2)": "age_sq",
         "C(health)[T.1.0]": "medium_health",
         "C(health)[T.2.0]": "bad_health",
+        # "C(health, Treatment(reference=None))[0.0]": "health_0",
+        # "C(health, Treatment(reference=None))[1.0]": "health_1",
+        # "C(health, Treatment(reference=None))[2.0]": "health_2",
     }
     df.rename(columns=rename_dict, inplace=True)
 
