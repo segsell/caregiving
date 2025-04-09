@@ -12,6 +12,7 @@ import statsmodels.formula.api as smf
 from pytask import Product
 
 from caregiving.config import BLD, SRC
+from caregiving.utils import table
 
 SYEAR_IS = 2016
 MALE = 1
@@ -25,10 +26,6 @@ MOTHER_OR_FATHER_IN_LAW = 3
 
 PGSBIL_FACHHOCHSCHULREIFE = 3
 PGSBIL_ABITUR = 4
-
-
-def table(df_col):
-    return pd.crosstab(df_col, columns="Count")["Count"]
 
 
 # =====================================================================================
@@ -45,9 +42,9 @@ def task_load_and_merge_exog_care_sample(
     # soep_is38_bioparen: Path = SRC / "data" / "soep_is" / "bioparen.dta",
     soep_c38_pgen: Path = SRC / "data" / "soep" / "pgen.dta",
     # soep_c38_ppathl: Path = SRC / "data" / "soep" / "ppathl.dta",
-    # path_to_save: Annotated[Path, Product] = BLD
-    # / "data"
-    # / "soep_is_exog_care_data_raw.csv",
+    path_to_save: Annotated[Path, Product] = BLD
+    / "data"
+    / "soep_is_exog_care_data_raw.csv",
 ) -> None:
     """Merge SOEP-IS caregiving module.
 
@@ -182,159 +179,14 @@ def task_load_and_merge_exog_care_sample(
 
     merged_data = pd.merge(merged_data, biol_data, on=["pid"], how="left")
 
-    # Initialize dummies with 0
-    merged_data["other_informal_care"] = 0
-    merged_data["formal_care"] = 0
+    del inno_data, pgen_data, ppfad_data, biol_data
+    merged_data.set_index(["pid"], inplace=True)
+    print(str(len(merged_data)) + " observations in SOEP IS 2016.")
 
-    # Assign 1 if conditions are met
-    merged_data.loc[
-        (merged_data["ip05"].isin([1, 2]))  # lives in private household
-        & ((merged_data["ip08a1"] == 1) | (merged_data["ip08a4"] == 1)),
-        "other_informal_care",
-    ] = 1
-
-    merged_data.loc[
-        (merged_data["ip08a2"] == 1)
-        | (merged_data["ip08a3"] == 1)
-        | (merged_data["ip08a5"] == 1),
-        "formal_care",
-    ] = 1
-
-    merged_data["only_own_informal_care"] = 0
-    merged_data["only_other_informal_care"] = 0
-    merged_data["only_formal_care"] = 0
-
-    # Assign 1 where conditions are met
-    merged_data.loc[
-        (merged_data["ip06"] == 1)
-        & (merged_data["ip05"].isin([1, 2]))  # lives in private household
-        # & (merged_data["ip07w"] >= 1)
-        & (merged_data["other_informal_care"] == 0),
-        # & (merged_data["formal_care"] == 0),
-        "only_own_informal_care",
-    ] = 1
-
-    merged_data.loc[
-        # ((merged_data["ip06"] == 2) | (merged_data["ip07w"] < 1))
-        (merged_data["ip06"] == NO) & (merged_data["other_informal_care"] == 1),
-        # & (merged_data["formal_care"] == 0),
-        "only_other_informal_care",
-    ] = 1
-
-    # only_other_informal_care
-    # 0    622
-    # 1    320
-
-    merged_data.loc[
-        (merged_data["ip06"] == NO)  # No
-        # & (merged_data["other_informal_care"] == 0)
-        & (merged_data["formal_care"] == 1),
-        "only_formal_care",
-    ] = 1
-
-    merged_data["has_sister"] = np.nan  # start with NaN (or use np.nan)
-    merged_data.loc[merged_data["l0063"] > 0, "has_sister"] = 1
-    merged_data.loc[merged_data["l0063"].isin([0, -2]), "has_sister"] = 0
-
-    # Replace negative values with NaN for summing purposes
-    l0062_clean = merged_data["l0062"].where(merged_data["l0062"] >= 0)
-    l0063_clean = merged_data["l0063"].where(merged_data["l0063"] >= 0)
-
-    # Calculate n_siblings as sum of non-negative values
-    merged_data["n_siblings"] = l0062_clean + l0063_clean
-
-    # Create subsamples for mother and father
-    est_sample = merged_data[merged_data["female"] == 1]
-    est_sample_mothers = est_sample[est_sample["ip03"] == FEMALE]
-
-    # First, drop any rows with missing values in the relevant variables
-    reg_data = est_sample_mothers[
-        ["other_informal_care", "age", "has_sister", "education"]
-    ].dropna()
-    reg_data["age_squared"] = reg_data["age"] ** 2
-
-    # Run logistic regression
-    model1 = smf.logit(
-        "other_informal_care ~ age + age_squared + has_sister + education",
-        data=reg_data,
-    ).fit()
-    print(model1.summary())
-
-    plot_logit_prediction_vs_age(model1)
-
-    # # Step 1: Define bin edges and labels
-    # bins = list(range(40, 70, 5)) + [70]  # [40, 45, 50, 55, 60, 65, 70]
-    # labels = [f"age_bin_{b}_{b+4}" for b in bins[:-1]]  # e.g. age_bin_40_44, ...
-
-    # # Step 2: Assign age bin categories
-    # est_sample_mothers["age_bin"] = pd.cut(
-    #     est_sample_mothers["age"],
-    #     bins=bins,
-    #     right=False,  # [40, 45) instead of (40, 45]
-    #     labels=labels,
-    # )
-
-    # # Step 3: Create dummy variables (one-hot encoding, include all dummies)
-    # age_bin_dummies = pd.get_dummies(
-    #     est_sample_mothers["age_bin"], prefix="", prefix_sep=""
-    # )
-
-    # # Step 4: Append dummies to est_sample_mothers
-    # est_sample_mothers = pd.concat([est_sample_mothers, age_bin_dummies], axis=1)
-
-    # # ### Plotting ###
-    # # # Count number of observations in each age bin
-    # # age_bin_counts = est_sample_mothers["age_bin"].value_counts().sort_index()
-
-    # # # Plot
-    # # plt.figure(figsize=(8, 5))
-    # # age_bin_counts.plot(kind="bar")
-
-    # # plt.xlabel("Age Bin")
-    # # plt.ylabel("Number of Observations")
-    # # plt.title("Number of Observations per Age Bin")
-    # # plt.grid(axis="y")
-    # # plt.tight_layout()
-    # # plt.show()
-
-    # # Choose your reference age bin (drop it from regression)
-    # ref_bin = "age_bin_40_44"
-    # age_bin_vars = [
-    #     col
-    #     for col in est_sample_mothers.columns
-    #     if col.startswith("age_bin_") and col != ref_bin
-    # ]
-
-    # # Build formula dynamically
-    # formula = (
-    #     f"other_informal_care ~ has_sister + education + {' + '.join(age_bin_vars)}"
-    # )
-
-    # # Drop rows with missing values in relevant columns
-    # reg_data_bins = est_sample_mothers[
-    #     ["other_informal_care", "has_sister", "education"] + age_bin_vars
-    # ].dropna()
-
-    # # Fit logistic regression
-    # model2 = smf.logit(formula, data=reg_data_bins).fit()
-    # print(model2.summary())
-
-    # plot_logit_prediction_by_age_bin(model2, age_bin_vars, ref_bin="age_bin_40_44")
-
-    # # Merge pgen data with pathl data and hl data
-    # merged_data = pd.merge(
-    #     pgen_data, pathl_data, on=["pid", "hid", "syear"], how="inner"
-    # )
-
-    # merged_data["age"] = merged_data["syear"] - merged_data["gebjahr"]
-    # del pgen_data, pathl_data
-    # merged_data.set_index(["pid", "syear"], inplace=True)
-    # print(str(len(merged_data)) + " observations in SOEP C38 core.")
-
-    # merged_data.to_csv(path_to_save)
+    merged_data.to_csv(path_to_save)
 
 
-def plot_logit_prediction_vs_age(model, age_range=(40, 80), step=1):
+def plot_logit_prediction_by_age(model, age_range=(40, 80), step=1):
     """
     Plot predicted probability vs. age for all combinations of has_sister and education.
 
@@ -375,53 +227,6 @@ def plot_logit_prediction_vs_age(model, age_range=(40, 80), step=1):
     plt.xlabel("Age")
     plt.ylabel("Predicted Probability of Other Informal Care")
     plt.title("Predicted Probability vs Age (by has_sister & education)")
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
-
-
-def plot_logit_prediction_by_age_bin(model, age_bins, ref_bin="age_bin_40_44"):
-    """Plot predicted probabilities across age bins by_sister and education.
-
-    Parameters:
-    - model: fitted statsmodels Logit model
-    - age_bins: list of all age_bin_* dummy column names
-    - ref_bin: the reference age bin omitted from the model
-    """
-    # All combinations of has_sister and education (0/1)
-    combos = list(itertools.product([0, 1], [0, 1]))
-
-    plt.figure(figsize=(10, 6))
-
-    for has_sister, education in combos:
-        pred_rows = []
-
-        for age_bin in age_bins + [ref_bin]:  # include ref bin for plotting
-            # Initialize all bins as 0
-            row = {bin_col: 0 for bin_col in age_bins}
-            if age_bin != ref_bin:
-                row[age_bin] = 1  # set 1 for the active bin
-
-            row.update({"has_sister": has_sister, "education": education})
-
-            # Predict
-            pred_df = pd.DataFrame([row])
-            prob = model.predict(pred_df)[0]
-
-            pred_rows.append((age_bin, prob))
-
-        # Sort by bin order
-        pred_rows = sorted(pred_rows, key=lambda x: x[0])  # noqa: FURB118
-        labels, probs = zip(*pred_rows, strict=False)
-
-        label = f"has_sister={has_sister}, education={education}"
-        plt.plot(labels, probs, marker="o", label=label)
-
-    plt.xlabel("Age Bin")
-    plt.ylabel("Predicted Probability of Other Informal Care")
-    plt.title("Predicted Probabilities by Age Bin (Logit Model)")
-    plt.xticks(rotation=45)
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
