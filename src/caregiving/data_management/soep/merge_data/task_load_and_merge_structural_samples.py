@@ -10,10 +10,13 @@ from caregiving.config import BLD, SRC
 
 
 def table(df_col):
+    """Return a table with the count of unique values in a column."""
     return pd.crosstab(df_col, columns="Count")["Count"]
 
 
 def _get_cols_biobirth():
+    """Get children's birth year columns for biobirth data."""
+
     cols_biobirth = [
         "pid",
         "sumkids",
@@ -52,7 +55,7 @@ def task_load_and_merge_estimation_sample(
     / "data"
     / "soep_estimation_data_raw.csv",
 ) -> None:
-    """Merge SOEP modules.
+    """Merge main estimation sample.
 
     https://paneldata.org/soep-core/datasets/pequiv/
     """
@@ -160,6 +163,8 @@ def task_load_and_merge_partner_transition_sample(
     / "data"
     / "soep_partner_transition_data_raw.csv",
 ) -> None:
+    """Merge exogenous partner transition sample."""
+
     # Load SOEP core data
     pgen_data = pd.read_stata(
         soep_c38_pgen,
@@ -213,6 +218,8 @@ def task_load_and_merge_wage_sample(
     soep_c38_ppathl: Path = SRC / "data" / "soep" / "ppathl.dta",
     path_to_save: Annotated[Path, Product] = BLD / "data" / "soep_wage_data_raw.csv",
 ) -> None:
+    """Merge exogenous wage sample."""
+
     # Load SOEP core data
     pgen_data = pd.read_stata(
         soep_c38_pgen,
@@ -262,6 +269,7 @@ def task_load_and_merge_job_separation_sample(
     / "data"
     / "soep_job_separation_data_raw.csv",
 ) -> None:
+    """Merge stochastic job transition sample."""
     # Load SOEP core data
     pgen_data = pd.read_stata(
         soep_c38_pgen,
@@ -321,6 +329,7 @@ def task_load_and_merge_partner_wage_sample(
     / "data"
     / "soep_partner_wage_data_raw.csv",
 ) -> None:
+    """Merge exogenous partner wage sample."""
 
     # Load SOEP core data
     pgen_data = pd.read_stata(
@@ -369,6 +378,8 @@ def task_load_and_merge_health_sample(
     soep_c38_pequiv: Path = SRC / "data" / "soep" / "pequiv.dta",
     path_to_save: Annotated[Path, Product] = BLD / "data" / "soep_health_data_raw.csv",
 ):
+    """Merge stochastic health transition sample."""
+
     # Load SOEP core data
     pgen_data = pd.read_stata(
         soep_c38_pgen,
