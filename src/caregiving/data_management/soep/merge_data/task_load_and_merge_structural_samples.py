@@ -5,9 +5,10 @@ from typing import Annotated
 
 import numpy as np
 import pandas as pd
-from pytask import Product
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
+from pytask import Product
+
 from caregiving.config import BLD, SRC
 
 SYEAR_IS = 2016
@@ -494,7 +495,6 @@ def task_load_and_merge_exog_care_sample(
         columns=["pid", "l0061", "l0062", "l0063"],
         convert_categoricals=False,
     )
-    #
 
     # Load SOEP core data
     pgen_data = pd.read_stata(
