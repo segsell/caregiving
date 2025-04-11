@@ -357,7 +357,7 @@ def read_in_health_transition_specs_good_medium_bad_df(
 # =====================================================================================
 
 
-def plot_health_transitions(specs, df, path_to_save_plot):
+def plot_health_death_transitions_good_bad(specs, df, path_to_save_plot):
     """Plot health and death transition probabilities by education level and gender.
 
     The plot is arranged in a 2x2 grid:
@@ -370,7 +370,7 @@ def plot_health_transitions(specs, df, path_to_save_plot):
     sex_labels = specs["sex_labels"]
     edu_labels = specs["education_labels"]
     start_age = specs["start_age"]
-    end_age = specs["end_age"]
+    end_age = specs["end_age"] - 1
     health_states = specs["health_labels"]
 
     # Create age column if needed.
@@ -437,11 +437,11 @@ def plot_health_transitions(specs, df, path_to_save_plot):
                 ax.set_ylabel("Transition Probability")
             ax.legend(title="Transitions", fontsize=8, title_fontsize=9)
 
-    plt.tight_layout()
+    # plt.tight_layout()
     fig.savefig(path_to_save_plot, dpi=300)
 
 
-def plot_health_transitions_good_medium_bad(specs, df, path_to_save_plot):
+def plot_health_death_transitions_good_medium_bad(specs, df, path_to_save_plot):
     """Plot health and death transition probabilities by gender.
 
     Transitions from 'Death' to any other state are not plotted.
@@ -449,7 +449,7 @@ def plot_health_transitions_good_medium_bad(specs, df, path_to_save_plot):
     """
     sex_labels = specs["sex_labels"]
     start_age = specs["start_age"]
-    end_age = specs["end_age"]
+    end_age = specs["end_age"] - 1
     health_states = specs["health_labels_three"]
 
     # Create age column if needed.
@@ -515,5 +515,5 @@ def plot_health_transitions_good_medium_bad(specs, df, path_to_save_plot):
             ax.set_ylabel("Transition Probability")
         ax.legend(title="Transitions", fontsize=9, title_fontsize=10)
 
-    plt.tight_layout()
+    # plt.tight_layout()
     fig.savefig(path_to_save_plot, dpi=300)
