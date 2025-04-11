@@ -76,31 +76,40 @@ def task_plot_initial_wealth(
         model=model,
     )
 
-    start_period_data_edu = start_period_data[(start_period_data["education"] == 1)]
-    print(start_period_data_edu["adjusted_wealth"].describe())
+    print(start_period_data["adjusted_wealth"].describe())
 
     # Plotting
     methods = ["uniform", "lognormal", "kde"]
     n_agents_edu = 1_000
-    samples_dict = {}
 
-    xmin, xmax = 0, 1_000  # or any manual values
-    bins = np.linspace(xmin, xmax, 101)  # 100 bins = 101 edges
+    xmin, xmax = 0, 1_000
+    bins = np.linspace(xmin, xmax, 101)
 
-    plt.figure(figsize=(12, 6))
-    # Generate samples
-    for method in methods:
-        samples = draw_start_wealth_dist(start_period_data_edu, n_agents_edu, method)
-        samples_dict[method] = samples
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5), sharey=True)
 
-        plt.hist(samples, bins=bins, density=True, alpha=0.6, label=method)
+    for idx, edu in enumerate(specs["education_labels"]):
+        # Filter data for this education level
+        start_period_data_edu = start_period_data[start_period_data["education"] == idx]
+        wealth_data = start_period_data_edu["adjusted_wealth"]
+        print(f"Education {edu}:\n", wealth_data.describe(), "\n")
 
-    plt.title("Comparison of Starting Wealth Distributions")
-    plt.xlabel("Wealth")
-    plt.ylabel("Density")
-    plt.xlim([xmin, xmax])
-    plt.legend()
-    plt.grid(True)
+        ax = axes[idx]  # Current subplot
+
+        for method in methods:
+            samples = draw_start_wealth_dist(
+                start_period_data_edu, n_agents_edu, method
+            )
+            # samples = np.clip(samples, xmin, xmax)  # Clip for visibility
+            ax.hist(samples, bins=bins, density=True, alpha=0.6, label=method)
+
+        ax.set_title(str(edu))
+        ax.set_xlim([xmin, xmax])
+        ax.set_xlabel("Wealth")
+        ax.grid(True)
+        if idx == 0:
+            ax.set_ylabel("Density")
+        ax.legend()
+
     plt.tight_layout()
 
     plt.savefig(path_to_save)
