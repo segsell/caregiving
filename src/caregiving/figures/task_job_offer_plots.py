@@ -76,4 +76,3 @@ def task_plot_job_transitions(
 
     axs[0].legend(loc="upper left")
     fig.savefig(path_to_save)
-    plt.show()
