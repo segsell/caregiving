@@ -27,7 +27,7 @@ def task_plot_incomes(
     path_to_data: Path = BLD / "data" / "soep_partner_transition_data.csv",
     path_to_save: Annotated[Path, Product] = BLD
     / "plots"
-    / "stochastic_processes"
+    / "wealth_and_budget"
     / "income.png",
 ):
     """Plot before and after ssc incomes.
@@ -178,7 +178,7 @@ def task_plot_total_household_income(
     path_to_full_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_save: Annotated[Path, Product] = BLD
     / "plots"
-    / "stochastic_processes"
+    / "wealth_and_budget"
     / "total_income.png",
 ):
     """Plot total household income."""
@@ -239,7 +239,7 @@ def task_plot_partner_wage(
     path_to_data: Path = BLD / "data" / "soep_partner_wage_data.csv",
     path_to_save: Annotated[Path, Product] = BLD
     / "plots"
-    / "stochastic_processes"
+    / "wealth_and_budget"
     / "partner_wage_ugly.png",
 ):
     """Plot the partner wage by age."""
@@ -289,7 +289,7 @@ def task_plot_child_benefits(
     path_to_full_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_save: Annotated[Path, Product] = BLD
     / "plots"
-    / "stochastic_processes"
+    / "wealth_and_budget"
     / "child_benefits.png",
 ):
 

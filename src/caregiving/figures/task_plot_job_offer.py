@@ -13,7 +13,6 @@ from caregiving.config import BLD, JET_COLOR_MAP, SRC
 
 
 def task_plot_job_transitions(
-    # path_to_specs: Path = SRC / "specs.yaml",
     path_to_full_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_data: Path = BLD / "data" / "soep_job_separation_data.csv",
     path_to_save: Annotated[Path, Product] = BLD
