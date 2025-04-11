@@ -8,8 +8,6 @@ import jax.numpy as jnp
 import numpy as np
 import pandas as pd
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
@@ -22,6 +20,8 @@ from caregiving.model.utility.bequest_utility import (
 )
 from caregiving.model.utility.utility_functions import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 
 def task_generate_start_states_for_solution(  # noqa: PLR0915
@@ -204,7 +204,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     wealth_agents.to_csv(path_to_save_wealth, index=False)
 
 
-def draw_start_wealth_dist(start_period_data_edu, n_agents_edu, method="uniform"):
+def draw_start_wealth_dist(start_period_data_edu, n_agents_edu, method="kde"):
     """Draws samples from the starting wealth distribution using different methods.
 
     Methods:
@@ -247,14 +247,20 @@ def draw_start_wealth_dist(start_period_data_edu, n_agents_edu, method="uniform"
         )
         wealth_start = kde.sample(n_agents_edu).flatten()
 
-    # elif method == "pareto":
-    #     # Fit a Pareto-like distribution (Shifted Pareto)
-    #     min_val = wealth_data.min()
-    #     shifted_data = wealth_data - min_val + 1e-6  # Shift data to avoid 0
-    #     shape, loc, scale = stats.pareto.fit(
-    #         shifted_data, floc=0
-    #     )  # Fix location at zero
-    #     samples = stats.pareto.rvs(shape, loc=loc, scale=scale, size=n_agents_edu)
-    #     wealth_start_edu = samples + min_val - 1e-6  # Shift back
+    elif method == "pareto":
+        # Fit a Pareto-like distribution (Shifted Pareto)
+        min_val = wealth_data.min()
+        shifted_data = wealth_data - min_val + 1e-6  # Shift data to avoid 0
+        shape, loc, scale = stats.pareto.fit(
+            shifted_data, floc=0
+        )  # Fix location at zero
+        samples = stats.pareto.rvs(shape, loc=loc, scale=scale, size=n_agents_edu)
+        wealth_start = samples + min_val - 1e-6  # Shift back
 
-    return wealth_start
+    wealth_start_clipped = np.clip(
+        wealth_start,
+        a_min=wealth_data.quantile(0),  # wealth_data.min()
+        a_max=wealth_data.quantile(0.98),
+    )
+
+    return wealth_start_clipped
