@@ -7,6 +7,7 @@ from typing import Annotated
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pytask
 from pytask import Product
 
 from caregiving.config import BLD, JET_COLOR_MAP, SRC
@@ -15,6 +16,7 @@ from caregiving.model.wealth_and_budget.tax_and_ssc import (
 )
 
 
+@pytask.mark.skip(reason="not used")
 def task_plot_pension_npv_by_age(
     path_to_full_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_save: Annotated[Path, Product] = BLD
@@ -33,18 +35,18 @@ def task_plot_pension_npv_by_age(
     end_age = specs["end_age"]
     discount_rate = 0.03
 
-    # calculate net periodic retirement income (assumption: working until 67)
+    # Calculate net periodic retirement income (assumption: working until 67)
     pension_factor = 1
     experience = 67 - start_age
     retirement_income_gross = pension_point_value * experience * pension_factor * 12
     retirement_income_net = calc_after_ssc_income_pensioneer(retirement_income_gross)
 
-    # calculate net present value of retirement income at age 67
+    # Calculate net present value of retirement income at age 67
     npv_67 = retirement_income_net / discount_rate - (
         retirement_income_net / discount_rate
     ) / (1 + discount_rate) ** (end_age - 67)
 
-    # calculate net present value of retirement income at different ages
+    # Calculate net present value of retirement income at different ages
     npv_by_age = np.full(67 - start_age + 1, npv_67)
     discount_factor_by_age = np.power(1 + discount_rate, np.arange(67 - start_age + 1))
     npv_by_age = npv_by_age / discount_factor_by_age
