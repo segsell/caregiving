@@ -312,7 +312,7 @@ def task_plot_mortality(
     fig.savefig(path_to_save_plot)
 
 
-def survival_function(age, health_factors, params):
+def _survival_function(age, health_factors, params):
     """
     Calculates the survival function: Exp(-(integral of the hazard function
     as a function of age from 0 to age)).

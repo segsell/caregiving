@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from pytask import Product
 
-from caregiving.config import BLD, JET_COLOR_MAP, SRC
+from caregiving.config import BLD, SRC
 from caregiving.specs.derive_specs import read_and_derive_specs
 from caregiving.specs.experience_specs import create_max_experience
 from caregiving.specs.family_specs import (

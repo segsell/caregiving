@@ -1,4 +1,4 @@
-"""Plot Net Present Value of Pensions."""
+"""Plot Net Present Value of pensions."""
 
 import pickle as pkl
 from pathlib import Path
