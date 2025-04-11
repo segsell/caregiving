@@ -202,10 +202,9 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
 
     wealth_agents = pd.DataFrame(wealth_agents, columns=["wealth"])
     wealth_agents.to_csv(path_to_save_wealth, index=False)
-    # return states, wealth_agents
 
 
-def draw_start_wealth_dist(start_period_data_edu, n_agents_edu, method="kde"):
+def draw_start_wealth_dist(start_period_data_edu, n_agents_edu, method="uniform"):
     """Draws samples from the starting wealth distribution using different methods.
 
     Methods:
