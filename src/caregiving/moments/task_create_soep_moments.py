@@ -38,7 +38,7 @@ def task_create_soep_moments(
     """Create moments for MSM estimation."""
 
     specs = read_and_derive_specs(path_to_specs)
-    start_age = specs["start_age_msm"]
+    start_age = specs["start_age"]
     end_age = specs["end_age_msm"]
 
     df = pd.read_csv(path_to_sample)
@@ -50,61 +50,99 @@ def task_create_soep_moments(
     moments = {}
     variances = {}
 
-    # A) Moments by age.
-    moments, variances = _get_labor_shares_by_age(
-        df, moments, variances, start_age, end_age
+    # =========================================================
+
+    age_range = range(start_age, end_age + 1)
+    age_groups = df.groupby("age")
+
+    # Compute the proportion for each status using vectorized operations
+    retired_shares = age_groups["choice"].apply(
+        lambda x: x.isin(np.atleast_1d(RETIREMENT)).mean()
+    )
+    unemployed_shares = age_groups["choice"].apply(
+        lambda x: x.isin(np.atleast_1d(UNEMPLOYED)).mean()
+    )
+    part_time_shares = age_groups["choice"].apply(
+        lambda x: x.isin(np.atleast_1d(PART_TIME)).mean()
+    )
+    full_time_shares = age_groups["choice"].apply(
+        lambda x: x.isin(np.atleast_1d(FULL_TIME)).mean()
     )
 
-    # B) Moments by age and education.
-    moments, variances = _get_labor_shares_by_age_and_education_level(
-        df, moments, variances, start_age, end_age
+    retired_vars = age_groups["choice"].apply(
+        lambda x: x.isin(np.atleast_1d(RETIREMENT)).var(ddof=DEGREES_OF_FREEDOM)
     )
+    unemployed_vars = age_groups["choice"].apply(
+        lambda x: x.isin(np.atleast_1d(UNEMPLOYED)).var(ddof=DEGREES_OF_FREEDOM)
+    )
+    part_time_vars = age_groups["choice"].apply(
+        lambda x: x.isin(np.atleast_1d(PART_TIME)).var(ddof=DEGREES_OF_FREEDOM)
+    )
+    full_time_vars = age_groups["choice"].apply(
+        lambda x: x.isin(np.atleast_1d(FULL_TIME)).var(ddof=DEGREES_OF_FREEDOM)
+    )
+
+    # Reindex to ensure that every age between start_age and end_age is included;
+    # missing ages will be filled with NaN
+    retired_shares = retired_shares.reindex(age_range, fill_value=np.nan)
+    unemployed_shares = unemployed_shares.reindex(age_range, fill_value=np.nan)
+    part_time_shares = part_time_shares.reindex(age_range, fill_value=np.nan)
+    full_time_shares = full_time_shares.reindex(age_range, fill_value=np.nan)
+
+    retired_vars = retired_vars.reindex(age_range, fill_value=np.nan)
+    unemployed_vars = unemployed_vars.reindex(age_range, fill_value=np.nan)
+    part_time_vars = part_time_vars.reindex(age_range, fill_value=np.nan)
+    full_time_vars = full_time_vars.reindex(age_range, fill_value=np.nan)
+
+    # Populate the moments dictionary for age-specific shares
+    for age in age_range:
+        moments[f"share_retired_age_{age}"] = retired_shares.loc[age]
+        variances[f"share_retired_age_{age}"] = retired_vars.loc[age]
+
+    for age in age_range:
+        moments[f"share_unemployed_age_{age}"] = unemployed_shares.loc[age]
+        variances[f"share_unemployed_age_{age}"] = unemployed_vars.loc[age]
+
+    for age in age_range:
+        moments[f"share_part_time_age_{age}"] = part_time_shares.loc[age]
+        variances[f"share_part_time_age_{age}"] = part_time_vars.loc[age]
+
+    for age in age_range:
+        moments[f"share_full_time_age_{age}"] = full_time_shares.loc[age]
+        variances[f"share_full_time_age_{age}"] = full_time_vars.loc[age]
+
+    # =========================================================
+
+    # # A) Moments by age.
+    # moments, variances = _get_labor_shares_by_age(
+    #     df, moments, variances, start_age, end_age
+    # )
+
+    # # B) Moments by age and education.
+    # moments, variances = _get_labor_shares_by_age_and_education_level(
+    #     df, moments, variances, start_age, end_age
+    # )
 
     # C) Moments by number of children and education.
-    children_groups = {
-        "0": lambda x: x == 0,
-        "1": lambda x: x == 1,
-        "2": lambda x: x == 2,  # noqa: PLR2004
-        "3_plus": lambda x: x >= 3,  # noqa: PLR2004
-    }
-    moments, variances = (
-        _get_labor_shares_by_education_level_and_number_of_children_in_hh(
-            df, moments, variances, children_groups
-        )
-    )
+    # children_groups = {
+    #     "0": lambda x: x == 0,
+    #     "1": lambda x: x == 1,
+    #     "2": lambda x: x == 2,  # noqa: PLR2004
+    #     "3_plus": lambda x: x >= 3,  # noqa: PLR2004
+    # }
+    # moments, variances = (
+    #     _get_labor_shares_by_education_level_and_number_of_children_in_hh(
+    #         df, moments, variances, children_groups
+    #     )
+    # )
 
     # D) Moments by kidage (youngest) and education.
-    kidage_bins = {"0_3": (0, 3), "4_6": (4, 6), "7_9": (7, 9)}
-    moments, variances = _get_labor_shares_by_education_level_and_age_of_youngest_child(
-        df, moments, variances, kidage_bins
-    )
+    # kidage_bins = {"0_3": (0, 3), "4_6": (4, 6), "7_9": (7, 9)}
+    # moments, variances = _get_labor_shares_by_educ_level_and_age_of_youngest_child(
+    #     df, moments, variances, kidage_bins
+    # )
 
     # E) Year-to-year labor supply transitions
-    # transition_matrix = pd.crosstab(
-    #     df["lagged_choice"], df["choice"], normalize="index"
-    # )
-
-    # # Get raw counts (needed for variance calculation)
-    # transition_counts = pd.crosstab(df["lagged_choice"], df["choice"])
-    # transition_variance = (
-    #     transition_matrix * (1 - transition_matrix) / transition_counts
-    # )
-
-    # # Build a mapping dictionary using the imported jax arrays
-    # choice_map = {code: "full_time" for code in FULL_TIME.tolist()}
-    # choice_map.update({code: "part_time" for code in PART_TIME.tolist()})
-    # choice_map.update({code: "not_working" for code in NOT_WORKING.tolist()})
-
-    # for lag in transition_matrix.index:
-    #     for current in transition_matrix.columns:
-    #         from_state = choice_map.get(lag, lag)
-    #         to_state = choice_map.get(current, current)
-
-    #         moment_name = f"transition_{from_state}_to_{to_state}"
-    #         moments[moment_name] = transition_matrix.loc[lag, current]
-
-    #         var_name = f"var_{moment_name}"
-    #         variances[var_name] = transition_variance.loc[lag, current]
 
     transition_moments, transition_variances = compute_transition_moments_and_variances(
         df, full_time=FULL_TIME, part_time=PART_TIME, not_working=NOT_WORKING
@@ -113,24 +151,21 @@ def task_create_soep_moments(
     variances.update(transition_variances)
 
     # F) Wealth moments by age and education (NEW)
-    # moments, variances = _get_wealth_moments_by_age_and_education(
-    #     df, moments, variances, start_age, end_age
+    # wealth_moments_edu_low, wealth_variances_edu_low = (
+    #     compute_wealth_moments_by_five_year_age_bins(
+    #         df, edu_level=0, start_age=start_age, end_age=end_age
+    #     )
     # )
-    wealth_moments_edu_low, wealth_variances_edu_low = (
-        compute_wealth_moments_by_five_year_age_bins(
-            df, edu_level=0, start_age=start_age, end_age=end_age
-        )
-    )
-    moments.update(wealth_moments_edu_low)
-    variances.update(wealth_variances_edu_low)
+    # moments.update(wealth_moments_edu_low)
+    # variances.update(wealth_variances_edu_low)
 
-    wealth_moments_edu_high, wealth_variances_edu_high = (
-        compute_wealth_moments_by_five_year_age_bins(
-            df, edu_level=1, start_age=start_age, end_age=end_age
-        )
-    )
-    moments.update(wealth_moments_edu_high)
-    variances.update(wealth_variances_edu_high)
+    # wealth_moments_edu_high, wealth_variances_edu_high = (
+    #     compute_wealth_moments_by_five_year_age_bins(
+    #         df, edu_level=1, start_age=start_age, end_age=end_age
+    #     )
+    # )
+    # moments.update(wealth_moments_edu_high)
+    # variances.update(wealth_variances_edu_high)
 
     # plot_wealth_by_age(df, start_age=30, end_age=70, educ_val=1)
     # plot_wealth_by_5yr_bins(df, start_age=30, end_age=70, educ_val=1)
@@ -241,38 +276,72 @@ def compute_transition_moments_and_variances(
         values are the corresponding variances of those probabilities.
     """
 
-    # 1) Transition matrix (row-normalized by lagged_col)
-    transition_matrix = pd.crosstab(df[lagged_choice], df[choice], normalize="index")
+    # # 1) Transition matrix (row-normalized by lagged_col)
+    # transition_matrix = pd.crosstab(df[lagged_choice], df[choice], normalize="index")
 
-    # 2) Raw counts (needed for variance calculation)
-    transition_counts = pd.crosstab(df[lagged_choice], df[choice])
+    # # 2) Raw counts (needed for variance calculation)
+    # transition_counts = pd.crosstab(df[lagged_choice], df[choice])
 
-    # Variance formula: p * (1 - p) / N
-    transition_variance = (
-        transition_matrix * (1 - transition_matrix)
-    ) / transition_counts
+    # # Variance formula: p * (1 - p) / N
+    # transition_variance = (
+    #     transition_matrix * (1 - transition_matrix)
+    # ) / transition_counts
 
-    # 3) Build a mapping dictionary to map numeric codes to textual labels
-    choice_map = {code: "full_time" for code in full_time.tolist()}
-    choice_map.update({code: "part_time" for code in part_time.tolist()})
-    choice_map.update({code: "not_working" for code in not_working.tolist()})
+    # # 3) Build a mapping dictionary to map numeric codes to textual labels
+    # choice_map = {code: "full_time" for code in full_time.tolist()}
+    # choice_map.update({code: "part_time" for code in part_time.tolist()})
+    # choice_map.update({code: "not_working" for code in not_working.tolist()})
 
-    # 4) Loop over all lag/current combinations to populate the dictionaries
+    # # 4) Loop over all lag/current combinations to populate the dictionaries
+    # moments = {}
+    # variances = {}
+
+    # for lag_val in transition_matrix.index:
+    #     for current_val in transition_matrix.columns:
+    #         from_state = choice_map.get(lag_val, lag_val)
+    #         to_state = choice_map.get(current_val, current_val)
+
+    #         # e.g. 'transition_full_time_to_part_time'
+    #         moment_name = f"transition_{from_state}_to_{to_state}"
+    #         moments[moment_name] = transition_matrix.loc[lag_val, current_val]
+
+    #         # e.g. 'var_transition_full_time_to_part_time'
+    #         var_name = f"var_{moment_name}"
+    #         variances[var_name] = transition_variance.loc[lag_val, current_val]
+
     moments = {}
     variances = {}
 
-    for lag_val in transition_matrix.index:
-        for current_val in transition_matrix.columns:
-            from_state = choice_map.get(lag_val, lag_val)
-            to_state = choice_map.get(current_val, current_val)
+    # --- (b) Transition probabilities ---
+    # Define the states of interest for transitions
+    states = {
+        "not_working": NOT_WORKING,
+        "part_time": PART_TIME,
+        "full_time": FULL_TIME,
+    }
 
-            # e.g. 'transition_full_time_to_part_time'
-            moment_name = f"transition_{from_state}_to_{to_state}"
-            moments[moment_name] = transition_matrix.loc[lag_val, current_val]
+    # For each "from" state, filter rows where lagged_choice is in that state,
+    # and for each "to" state, compute the probability that 'choice' is in that state.
+    for from_label, from_val in states.items():
+        # Use isin() to safely compare even if from_val is an array.
+        subset = df[df["lagged_choice"].isin(np.atleast_1d(from_val))]
 
-            # e.g. 'var_transition_full_time_to_part_time'
-            var_name = f"var_{moment_name}"
-            variances[var_name] = transition_variance.loc[lag_val, current_val]
+        for to_label, to_val in states.items():
+            if len(subset) > 0:
+                # Create a boolean series for whether 'choice' is in the "to" state.
+                bool_series = subset["choice"].isin(np.atleast_1d(to_val))
+                # Probability is the mean of that boolean indicator.
+                probability = bool_series.mean()
+                # Compute the sample variance (ddof=1) of the indicator.
+                variance = bool_series.astype(float).var(ddof=DEGREES_OF_FREEDOM)
+                # Variance of a Bernoulli variable with sample size N
+                # variance = probability * (1 - probability) / len(subset)
+            else:
+                probability = np.nan
+                variance = np.nan
+
+            moments[f"trans_{from_label}_to_{to_label}"] = probability
+            variances[f"var_trans_{from_label}_to_{to_label}"] = variance
 
     return moments, variances
 
@@ -466,17 +535,17 @@ def _get_labor_shares_by_age(df, moments, variances, min_age, max_age):
         subdf = df[df["age"] == age]
         shares = compute_labor_shares(subdf)
 
-        moments[f"share_working_full_time_age_{age}"] = shares["full_time"]
-        moments[f"share_working_part_time_age_{age}"] = shares["part_time"]
-        moments[f"share_unemployed_age_{age}"] = shares["unemployed"]
         moments[f"share_retired_age_{age}"] = shares["retired"]
-        moments[f"share_not_working_age_{age}"] = shares["not_working"]
+        moments[f"share_unemployed_age_{age}"] = shares["unemployed"]
+        moments[f"share_working_part_time_age_{age}"] = shares["part_time"]
+        moments[f"share_working_full_time_age_{age}"] = shares["full_time"]
+        # moments[f"share_not_working_age_{age}"] = shares["not_working"]
 
-        variances[f"share_working_full_time_age_{age}"] = shares["full_time_var"]
-        variances[f"share_working_part_time_age_{age}"] = shares["part_time_var"]
-        variances[f"share_unemployed_age_{age}"] = shares["unemployed_var"]
         variances[f"share_retired_age_{age}"] = shares["retired_var"]
-        variances[f"share_not_working_age_{age}"] = shares["not_working_var"]
+        variances[f"share_unemployed_age_{age}"] = shares["unemployed_var"]
+        variances[f"share_working_part_time_age_{age}"] = shares["part_time_var"]
+        variances[f"share_working_full_time_age_{age}"] = shares["full_time_var"]
+        # variances[f"share_not_working_age_{age}"] = shares["not_working_var"]
 
     return moments, variances
 
@@ -492,17 +561,17 @@ def _get_labor_shares_by_age_and_education_level(
             shares = compute_labor_shares(subdf)
             key = f"age_{age}_edu_{edu_label}"
 
-            moments[f"share_working_full_time_{key}"] = shares["full_time"]
-            moments[f"share_working_part_time_{key}"] = shares["part_time"]
-            moments[f"share_being_unemployed_{key}"] = shares["unemployed"]
             moments[f"share_being_retired_{key}"] = shares["retired"]
-            moments[f"share_not_working_{key}"] = shares["not_working"]
+            moments[f"share_being_unemployed_{key}"] = shares["unemployed"]
+            moments[f"share_working_part_time_{key}"] = shares["part_time"]
+            moments[f"share_working_full_time_{key}"] = shares["full_time"]
+            # moments[f"share_not_working_{key}"] = shares["not_working"]
 
-            variances[f"share_working_full_time_{key}"] = shares["full_time_var"]
-            variances[f"share_working_part_time_{key}"] = shares["part_time_var"]
-            variances[f"share_being_unemployed_{key}"] = shares["unemployed_var"]
             variances[f"share_being_retired_{key}"] = shares["retired_var"]
-            variances[f"share_not_working_{key}"] = shares["not_working_var"]
+            variances[f"share_being_unemployed_{key}"] = shares["unemployed_var"]
+            variances[f"share_working_part_time_{key}"] = shares["part_time_var"]
+            variances[f"share_working_full_time_{key}"] = shares["full_time_var"]
+            # variances[f"share_not_working_{key}"] = shares["not_working_var"]
 
     return moments, variances
 
@@ -518,18 +587,18 @@ def _get_labor_shares_by_education_level_and_number_of_children_in_hh(
             shares = compute_labor_shares(subdf)
             key = f"children_{grp_label}_edu_{edu_label}"
 
-            moments[f"share_full_time_{key}"] = shares["full_time"]
-            moments[f"share_part_time_{key}"] = shares["part_time"]
             moments[f"share_not_working_{key}"] = shares["not_working"]
+            moments[f"share_part_time_{key}"] = shares["part_time"]
+            moments[f"share_full_time_{key}"] = shares["full_time"]
 
-            variances[f"share_full_time_{key}"] = shares["full_time_var"]
-            variances[f"share_part_time_{key}"] = shares["part_time_var"]
             variances[f"share_not_working_{key}"] = shares["not_working_var"]
+            variances[f"share_part_time_{key}"] = shares["part_time_var"]
+            variances[f"share_full_time_{key}"] = shares["full_time_var"]
 
     return moments, variances
 
 
-def _get_labor_shares_by_education_level_and_age_of_youngest_child(
+def _get_labor_shares_by_educ_level_and_age_of_youngest_child(
     df, moments, variances, kidage_bins
 ):
     for edu in (0, 1):
