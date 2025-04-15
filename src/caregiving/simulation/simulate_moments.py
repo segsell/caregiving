@@ -74,14 +74,13 @@ def create_moments_pandas_like_empirical(sim_df, start_age, end_age):
         moments[f"share_unemployed_age_{age}"] = shares["unemployed"]
         moments[f"share_working_part_time_age_{age}"] = shares["part_time"]
         moments[f"share_working_full_time_age_{age}"] = shares["full_time"]
-        # moments[f"share_not_working_age_{age}"] = shares["not_working"]
 
     # B) Overall transition probabilities.
     trans_moments = _compute_transition_means(
         sim_df,
-        full_time=FULL_TIME,
-        part_time=PART_TIME,
         not_working=NOT_WORKING,
+        part_time=PART_TIME,
+        full_time=FULL_TIME,
         choice="choice",
         lagged_choice="lagged_choice",
     )
@@ -138,9 +137,9 @@ def _compute_labor_shares_means(subdf):
 
 def _compute_transition_means(
     df,
-    full_time,
-    part_time,
     not_working,
+    part_time,
+    full_time,
     choice="choice",
     lagged_choice="lagged_choice",
 ):
@@ -161,21 +160,42 @@ def _compute_transition_means(
         dict: A dictionary with keys like "transition_full_time_to_part_time"
             corresponding to the computed probabilities.
     """
-    # Create a row-normalized transition matrix.
-    transition_matrix = pd.crosstab(df[lagged_choice], df[choice], normalize="index")
+    # # Create a row-normalized transition matrix.
+    # transition_matrix = pd.crosstab(df[lagged_choice], df[choice], normalize="index")
 
-    # Build a mapping from numeric codes to descriptive labels.
-    choice_map = {code: "full_time" for code in full_time.tolist()}
-    choice_map.update({code: "part_time" for code in part_time.tolist()})
-    choice_map.update({code: "not_working" for code in not_working.tolist()})
+    # # Build a mapping from numeric codes to descriptive labels.
+    # choice_map = {code: "not_working" for code in not_working.tolist()}
+    # choice_map.update({code: "part_time" for code in part_time.tolist()})
+    # choice_map.update({code: "full_time" for code in full_time.tolist()})
+
+    # trans_moments = {}
+    # for lag_val in transition_matrix.index:
+    #     for current_val in transition_matrix.columns:
+    #         from_state = choice_map.get(lag_val, lag_val)
+    #         to_state = choice_map.get(current_val, current_val)
+    #         key = f"transition_{from_state}_to_{to_state}"
+    #         trans_moments[key] = transition_matrix.loc[lag_val, current_val]
 
     trans_moments = {}
-    for lag_val in transition_matrix.index:
-        for current_val in transition_matrix.columns:
-            from_state = choice_map.get(lag_val, lag_val)
-            to_state = choice_map.get(current_val, current_val)
-            key = f"transition_{from_state}_to_{to_state}"
-            trans_moments[key] = transition_matrix.loc[lag_val, current_val]
+    # --- (b) Transition probabilities ---
+    # Define the states of interest for transitions
+    states = {
+        "not_working": NOT_WORKING,
+        "part_time": PART_TIME,
+        "full_time": FULL_TIME,
+    }
+
+    # For each "from" state, filter rows where lagged_choice is in that state,
+    # and for each "to" state, compute the probability that 'choice' is in that state.
+    for from_label, from_val in states.items():
+        # Use isin() to safely compare even if from_val is an array.
+        subset = df[df["lagged_choice"].isin(np.atleast_1d(from_val))]
+        for to_label, to_val in states.items():
+            if len(subset) > 0:
+                probability = subset["choice"].isin(np.atleast_1d(to_val)).mean()
+            else:
+                probability = np.nan  # or 0 if that is preferable
+            trans_moments[f"trans_{from_label}_to_{to_label}"] = probability
 
     return trans_moments
 
@@ -261,11 +281,11 @@ def create_moments_pandas(df, start_age, end_age):
     # Populate the moments dictionary for age-specific shares
     for age in age_range:
         moments[f"share_retired_age_{age}"] = retired_shares.loc[age]
-    for age in age_range:
+        # for age in age_range:
         moments[f"share_unemployed_age_{age}"] = unemployed_shares.loc[age]
-    for age in age_range:
+        # for age in age_range:
         moments[f"share_part_time_age_{age}"] = part_time_shares.loc[age]
-    for age in age_range:
+        # for age in age_range:
         moments[f"share_full_time_age_{age}"] = full_time_shares.loc[age]
 
     # --- (b) Transition probabilities ---

@@ -276,38 +276,72 @@ def compute_transition_moments_and_variances(
         values are the corresponding variances of those probabilities.
     """
 
-    # 1) Transition matrix (row-normalized by lagged_col)
-    transition_matrix = pd.crosstab(df[lagged_choice], df[choice], normalize="index")
+    # # 1) Transition matrix (row-normalized by lagged_col)
+    # transition_matrix = pd.crosstab(df[lagged_choice], df[choice], normalize="index")
 
-    # 2) Raw counts (needed for variance calculation)
-    transition_counts = pd.crosstab(df[lagged_choice], df[choice])
+    # # 2) Raw counts (needed for variance calculation)
+    # transition_counts = pd.crosstab(df[lagged_choice], df[choice])
 
-    # Variance formula: p * (1 - p) / N
-    transition_variance = (
-        transition_matrix * (1 - transition_matrix)
-    ) / transition_counts
+    # # Variance formula: p * (1 - p) / N
+    # transition_variance = (
+    #     transition_matrix * (1 - transition_matrix)
+    # ) / transition_counts
 
-    # 3) Build a mapping dictionary to map numeric codes to textual labels
-    choice_map = {code: "full_time" for code in full_time.tolist()}
-    choice_map.update({code: "part_time" for code in part_time.tolist()})
-    choice_map.update({code: "not_working" for code in not_working.tolist()})
+    # # 3) Build a mapping dictionary to map numeric codes to textual labels
+    # choice_map = {code: "full_time" for code in full_time.tolist()}
+    # choice_map.update({code: "part_time" for code in part_time.tolist()})
+    # choice_map.update({code: "not_working" for code in not_working.tolist()})
 
-    # 4) Loop over all lag/current combinations to populate the dictionaries
+    # # 4) Loop over all lag/current combinations to populate the dictionaries
+    # moments = {}
+    # variances = {}
+
+    # for lag_val in transition_matrix.index:
+    #     for current_val in transition_matrix.columns:
+    #         from_state = choice_map.get(lag_val, lag_val)
+    #         to_state = choice_map.get(current_val, current_val)
+
+    #         # e.g. 'transition_full_time_to_part_time'
+    #         moment_name = f"transition_{from_state}_to_{to_state}"
+    #         moments[moment_name] = transition_matrix.loc[lag_val, current_val]
+
+    #         # e.g. 'var_transition_full_time_to_part_time'
+    #         var_name = f"var_{moment_name}"
+    #         variances[var_name] = transition_variance.loc[lag_val, current_val]
+
     moments = {}
     variances = {}
 
-    for lag_val in transition_matrix.index:
-        for current_val in transition_matrix.columns:
-            from_state = choice_map.get(lag_val, lag_val)
-            to_state = choice_map.get(current_val, current_val)
+    # --- (b) Transition probabilities ---
+    # Define the states of interest for transitions
+    states = {
+        "not_working": NOT_WORKING,
+        "part_time": PART_TIME,
+        "full_time": FULL_TIME,
+    }
 
-            # e.g. 'transition_full_time_to_part_time'
-            moment_name = f"transition_{from_state}_to_{to_state}"
-            moments[moment_name] = transition_matrix.loc[lag_val, current_val]
+    # For each "from" state, filter rows where lagged_choice is in that state,
+    # and for each "to" state, compute the probability that 'choice' is in that state.
+    for from_label, from_val in states.items():
+        # Use isin() to safely compare even if from_val is an array.
+        subset = df[df["lagged_choice"].isin(np.atleast_1d(from_val))]
 
-            # e.g. 'var_transition_full_time_to_part_time'
-            var_name = f"var_{moment_name}"
-            variances[var_name] = transition_variance.loc[lag_val, current_val]
+        for to_label, to_val in states.items():
+            if len(subset) > 0:
+                # Create a boolean series for whether 'choice' is in the "to" state.
+                bool_series = subset["choice"].isin(np.atleast_1d(to_val))
+                # Probability is the mean of that boolean indicator.
+                probability = bool_series.mean()
+                # Compute the sample variance (ddof=1) of the indicator.
+                variance = bool_series.astype(float).var(ddof=DEGREES_OF_FREEDOM)
+                # Variance of a Bernoulli variable with sample size N
+                # variance = probability * (1 - probability) / len(subset)
+            else:
+                probability = np.nan
+                variance = np.nan
+
+            moments[f"trans_{from_label}_to_{to_label}"] = probability
+            variances[f"var_trans_{from_label}_to_{to_label}"] = variance
 
     return moments, variances
 
