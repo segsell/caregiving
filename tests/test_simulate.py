@@ -7,11 +7,9 @@ from typing import Annotated
 import jax
 import jax.numpy as jnp
 import pandas as pd
+import pytest
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.simulation.sim_utils import create_simulation_df
-from dcegm.simulation.simulate import simulate_all_periods
-from dcegm.solve import get_solve_func_for_model
+from numpy.testing import assert_array_equal as aae
 from pytask import Product
 
 from caregiving.config import BLD, TESTS
@@ -24,6 +22,15 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.simulation.simulate import simulate_scenario
+from caregiving.simulation.simulate_moments import (
+    simulate_moments_jax,
+    simulate_moments_pandas,
+    simulate_moments_pandas_like_empirical,
+)
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.simulation.sim_utils import create_simulation_df
+from dcegm.simulation.simulate import simulate_all_periods
+from dcegm.solve import get_solve_func_for_model
 
 jax.config.update("jax_enable_x64", True)
 
@@ -43,7 +50,6 @@ def test_solve_and_simulate(
     params = yaml.safe_load(path_to_start_params.open("rb"))
 
     # 1) Solve
-
     model_full = load_and_setup_model(
         options=options,
         state_space_functions=create_state_space_functions(),
@@ -64,7 +70,6 @@ def test_solve_and_simulate(
     # pickle.dump(solution_dict, path_to_save_solution.open("wb"))
 
     # 2) Simulate
-
     initial_states = pickle.load(path_to_discrete_states.open("rb"))
     wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
 
@@ -104,3 +109,21 @@ def test_solve_and_simulate(
     df_50 = sim_df.xs(end_period, level="period")
     assert df_50["total_income"].isna().all()
     assert df_50["savings_dec"].isna().all()
+
+
+def test_simulate_moments(
+    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_simulated_data: Path = BLD / "solve_and_simulate" / "simulated_data.pkl",
+) -> None:
+
+    options = pickle.load(path_to_options.open("rb"))
+    df_sim = pd.read_pickle(path_to_simulated_data)
+
+    # sim_moms_jax = simulate_moments_jax(df_sim, options=options)
+    sim_moms_pandas = simulate_moments_pandas(df_sim, options=options)
+    sim_moms_pandas_like_empirical = simulate_moments_pandas_like_empirical(
+        df_sim, options=options
+    )
+
+    # aae(sim_moms_jax, sim_moms_pandas)
+    aae(sim_moms_pandas_like_empirical, sim_moms_pandas)
