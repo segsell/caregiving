@@ -1,204 +1,21 @@
-"""Simulate using JAX numpy."""
+"""Simulate moments."""
+
+from itertools import product
+from typing import Optional
 
 import jax.numpy as jnp
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from dcegm.simulation.sim_utils import create_simulation_df
-from dcegm.simulation.simulate import simulate_all_periods
 
 from caregiving.model.shared import (
     FULL_TIME,
     NOT_WORKING,
     PART_TIME,
     RETIREMENT,
-    SEX,
     UNEMPLOYED,
+    WORK,
 )
-from caregiving.model.state_space import construct_experience_years
-from caregiving.utils import table
-
-
-# =====================================================================================
-# Pandas (like empirical moments)
-# =====================================================================================
-def simulate_moments_pandas_like_empirical(
-    df,
-    options,
-) -> pd.DataFrame:
-    """Simulate the model for given parametrization and model solution."""
-
-    model_params = options["model_params"]
-    start_age = model_params["start_age"]
-    end_age = model_params["end_age_msm"]
-
-    return create_moments_pandas_like_empirical(df, start_age, end_age)
-
-
-def create_moments_pandas_like_empirical(sim_df, start_age, end_age):
-    """
-    Create simulation moments (means only) following the coding logic
-    used in the empirical SOEP moments module.
-
-    This function performs two main tasks:
-
-    A) Computes labor share moments by age. For each age between start_age and end_age,
-       it computes:
-         - share of agents working full-time,
-         - share working part-time,
-         - share unemployed,
-         - share retired, and
-         - share not working (unemployed or retired).
-       Keys are named like "share_working_full_time_age_40".
-
-    B) Computes overall year-to-year transition probabilities between the states
-       full_time, part_time, and not_working. Keys are named like
-       "transition_full_time_to_part_time".
-
-    Parameters:
-        sim_df (pd.DataFrame): The simulation DataFrame, assumed to contain at least:
-                               'age', 'choice', and 'lagged_choice'.
-        start_age (int): Lower bound (inclusive) of the age range.
-        end_age (int): Upper bound (inclusive) of the age range.
-
-    Returns:
-        pd.Series: A Series with descriptive moment names as the index and the
-        computed means as values.
-    """
-    moments = {}
-
-    # A) Labor shares by age.
-    for age in range(start_age, end_age + 1):
-        subdf = sim_df[sim_df["age"] == age]
-        shares = _compute_labor_shares_means(subdf)
-        moments[f"share_retired_age_{age}"] = shares["retired"]
-        moments[f"share_unemployed_age_{age}"] = shares["unemployed"]
-        moments[f"share_working_part_time_age_{age}"] = shares["part_time"]
-        moments[f"share_working_full_time_age_{age}"] = shares["full_time"]
-
-    # B) Overall transition probabilities.
-    trans_moments = _compute_transition_means(
-        sim_df,
-        not_working=NOT_WORKING,
-        part_time=PART_TIME,
-        full_time=FULL_TIME,
-        choice="choice",
-        lagged_choice="lagged_choice",
-    )
-    moments.update(trans_moments)
-
-    return pd.Series(moments)
-
-
-def _compute_labor_shares_means(subdf):
-    """
-    Compute labor shares (means) for a given subsample.
-
-    Parameters:
-        subdf (pd.DataFrame): Subsample of the simulation DataFrame.
-
-    Returns:
-        dict: Dictionary with the mean shares for:
-            - "full_time": share working full-time,
-            - "part_time": share working part-time,
-            - "unemployed": share unemployed,
-            - "retired": share retired,
-            - "not_working": share not working (unemployed or retired).
-            If no observations are available, each value is set to np.nan.
-    """
-    total = len(subdf)
-    if total == 0:
-        return {
-            "full_time": np.nan,
-            "part_time": np.nan,
-            "unemployed": np.nan,
-            "retired": np.nan,
-            "not_working": np.nan,
-        }
-
-    full_time = subdf["choice"].isin(FULL_TIME.tolist()).astype(float).mean()
-    part_time = subdf["choice"].isin(PART_TIME.tolist()).astype(float).mean()
-    unemployed = subdf["choice"].isin(UNEMPLOYED.tolist()).astype(float).mean()
-    retired = subdf["choice"].isin(RETIREMENT.tolist()).astype(float).mean()
-    not_working = (
-        subdf["choice"]
-        .isin(UNEMPLOYED.tolist() + RETIREMENT.tolist())
-        .astype(float)
-        .mean()
-    )
-
-    return {
-        "full_time": full_time,
-        "part_time": part_time,
-        "unemployed": unemployed,
-        "retired": retired,
-        "not_working": not_working,
-    }
-
-
-def _compute_transition_means(
-    df,
-    not_working,
-    part_time,
-    full_time,
-    choice="choice",
-    lagged_choice="lagged_choice",
-):
-    """
-    Compute overall year-to-year labor supply transition probabilities (means).
-
-    The function creates a row-normalized transition matrix using pd.crosstab,
-    and then maps numeric codes to descriptive labels using the provided constants.
-
-    Parameters:
-       df (pd.DataFrame): DataFrame containing the columns specified by `lagged_choice`
-                          and `choice`.
-       full_time, part_time, not_working: Array-like codes for the respective states.
-       choice (str): Column name for the current period’s state.
-       lagged_choice (str): Column name for the previous period’s state.
-
-    Returns:
-        dict: A dictionary with keys like "transition_full_time_to_part_time"
-            corresponding to the computed probabilities.
-    """
-    # # Create a row-normalized transition matrix.
-    # transition_matrix = pd.crosstab(df[lagged_choice], df[choice], normalize="index")
-
-    # # Build a mapping from numeric codes to descriptive labels.
-    # choice_map = {code: "not_working" for code in not_working.tolist()}
-    # choice_map.update({code: "part_time" for code in part_time.tolist()})
-    # choice_map.update({code: "full_time" for code in full_time.tolist()})
-
-    # trans_moments = {}
-    # for lag_val in transition_matrix.index:
-    #     for current_val in transition_matrix.columns:
-    #         from_state = choice_map.get(lag_val, lag_val)
-    #         to_state = choice_map.get(current_val, current_val)
-    #         key = f"transition_{from_state}_to_{to_state}"
-    #         trans_moments[key] = transition_matrix.loc[lag_val, current_val]
-
-    trans_moments = {}
-    # --- (b) Transition probabilities ---
-    # Define the states of interest for transitions
-    states = {
-        "not_working": NOT_WORKING,
-        "part_time": PART_TIME,
-        "full_time": FULL_TIME,
-    }
-
-    # For each "from" state, filter rows where lagged_choice is in that state,
-    # and for each "to" state, compute the probability that 'choice' is in that state.
-    for from_label, from_val in states.items():
-        # Use isin() to safely compare even if from_val is an array.
-        subset = df[df["lagged_choice"].isin(np.atleast_1d(from_val))]
-        for to_label, to_val in states.items():
-            if len(subset) > 0:
-                probability = subset["choice"].isin(np.atleast_1d(to_val)).mean()
-            else:
-                probability = np.nan  # or 0 if that is preferable
-            trans_moments[f"trans_{from_label}_to_{to_label}"] = probability
-
-    return trans_moments
-
 
 # =====================================================================================
 # Pandas
@@ -281,11 +98,11 @@ def create_moments_pandas(df, start_age, end_age):
     # Populate the moments dictionary for age-specific shares
     for age in age_range:
         moments[f"share_retired_age_{age}"] = retired_shares.loc[age]
-        # for age in age_range:
+    for age in age_range:
         moments[f"share_unemployed_age_{age}"] = unemployed_shares.loc[age]
-        # for age in age_range:
+    for age in age_range:
         moments[f"share_part_time_age_{age}"] = part_time_shares.loc[age]
-        # for age in age_range:
+    for age in age_range:
         moments[f"share_full_time_age_{age}"] = full_time_shares.loc[age]
 
     # --- (b) Transition probabilities ---
@@ -298,15 +115,31 @@ def create_moments_pandas(df, start_age, end_age):
 
     # For each "from" state, filter rows where lagged_choice is in that state,
     # and for each "to" state, compute the probability that 'choice' is in that state.
-    for from_label, from_val in states.items():
-        # Use isin() to safely compare even if from_val is an array.
-        subset = df[df["lagged_choice"].isin(np.atleast_1d(from_val))]
-        for to_label, to_val in states.items():
+    # for from_label, from_val in states.items():
+    #     # Use isin() to safely compare even if from_val is an array.
+    #     subset = df[df["lagged_choice"].isin(np.atleast_1d(from_val))]
+    #     for to_label, to_val in states.items():
+    #         if len(subset) > 0:
+    #             probability = subset["choice"].isin(np.atleast_1d(to_val)).mean()
+    #         else:
+    #             probability = np.nan  # or 0 if that is preferable
+    #         moments[f"trans_{from_label}_to_{to_label}"] = probability
+
+    for (from_label, from_val), (to_label, to_val) in product(
+        states.items(), states.items()
+    ):
+        for age in age_range:
+            df_age = df[df["age"] == age]
+            subset = df_age[df_age["lagged_choice"].isin(np.atleast_1d(from_val))]
             if len(subset) > 0:
-                probability = subset["choice"].isin(np.atleast_1d(to_val)).mean()
+                bool_series = subset["choice"].isin(np.atleast_1d(to_val))
+                probability = bool_series.mean()
             else:
-                probability = np.nan  # or 0 if that is preferable
-            moments[f"trans_{from_label}_to_{to_label}"] = probability
+                probability = np.nan
+
+            # key = f"trans_{from_label}_to_{to_label}"
+            key = f"trans_{from_label}_to_{to_label}_age_{age}"
+            moments[key] = probability
 
     return pd.Series(moments)
 
@@ -337,37 +170,66 @@ def create_moments_jax(sim_df, min_age, max_age):
     idx = column_indices.copy()
     arr = jnp.asarray(sim_df)
 
+    # df_low_educ = sim_df.loc[sim_df["education"] == 0]
+    # df_high_educ = sim_df.loc[sim_df["education"] == 1]
+
+    # arr_low_educ = arr[arr[:, idx["education"]] == 0]
+    # arr_high_educ = arr[arr[:, idx["education"]] == 1]
+
     share_retired_by_age = get_share_by_age(
         arr, ind=idx, choice=RETIREMENT, min_age=min_age, max_age=max_age
-    )  # 15
+    )
     share_unemployed_by_age = get_share_by_age(
         arr, ind=idx, choice=UNEMPLOYED, min_age=min_age, max_age=max_age
-    )  # 15
+    )
     share_working_part_time_by_age = get_share_by_age(
         arr, ind=idx, choice=PART_TIME, min_age=min_age, max_age=max_age
-    )  # 15
+    )
     share_working_full_time_by_age = get_share_by_age(
         arr, ind=idx, choice=FULL_TIME, min_age=min_age, max_age=max_age
-    )  # 15
+    )
 
     # Work transitions
-    no_work_to_no_work = get_transition(
+    # no_work_to_no_work_by_age = get_transition(
+    #     arr,
+    #     ind=idx,
+    #     lagged_choice=NOT_WORKING,
+    #     current_choice=NOT_WORKING,
+    #     min_age=min_age,
+    #     max_age=max_age,
+    # )
+    # work_to_work_by_age = get_transition(
+    #     arr,
+    #     ind=idx,
+    #     lagged_choice=WORK,
+    #     current_choice=WORK,
+    #     min_age=min_age,
+    #     max_age=max_age,
+    # )
+
+    no_work_to_no_work_by_age = get_transition(
         arr,
         ind=idx,
         lagged_choice=NOT_WORKING,
         current_choice=NOT_WORKING,
+        min_age=min_age,
+        max_age=max_age,
     )
-    no_work_to_part_time = get_transition(
+    no_work_to_part_time_by_age = get_transition(
         arr,
         ind=idx,
         lagged_choice=NOT_WORKING,
         current_choice=PART_TIME,
+        min_age=min_age,
+        max_age=max_age,
     )
     no_work_to_full_time = get_transition(
         arr,
         ind=idx,
         lagged_choice=NOT_WORKING,
         current_choice=FULL_TIME,
+        min_age=min_age,
+        max_age=max_age,
     )
 
     part_time_to_no_work = get_transition(
@@ -375,18 +237,24 @@ def create_moments_jax(sim_df, min_age, max_age):
         ind=idx,
         lagged_choice=PART_TIME,
         current_choice=NOT_WORKING,
+        min_age=min_age,
+        max_age=max_age,
     )
     part_time_to_part_time = get_transition(
         arr,
         ind=idx,
         lagged_choice=PART_TIME,
         current_choice=PART_TIME,
+        min_age=min_age,
+        max_age=max_age,
     )
     part_time_to_full_time = get_transition(
         arr,
         ind=idx,
         lagged_choice=PART_TIME,
         current_choice=FULL_TIME,
+        min_age=min_age,
+        max_age=max_age,
     )
 
     full_time_to_no_work = get_transition(
@@ -394,18 +262,24 @@ def create_moments_jax(sim_df, min_age, max_age):
         ind=idx,
         lagged_choice=FULL_TIME,
         current_choice=NOT_WORKING,
+        min_age=min_age,
+        max_age=max_age,
     )
     full_time_to_part_time = get_transition(
         arr,
         ind=idx,
         lagged_choice=FULL_TIME,
         current_choice=PART_TIME,
+        min_age=min_age,
+        max_age=max_age,
     )
     full_time_to_full_time = get_transition(
         arr,
         ind=idx,
         lagged_choice=FULL_TIME,
         current_choice=FULL_TIME,
+        min_age=min_age,
+        max_age=max_age,
     )
 
     return jnp.asarray(
@@ -413,8 +287,8 @@ def create_moments_jax(sim_df, min_age, max_age):
         + share_unemployed_by_age
         + share_working_part_time_by_age
         + share_working_full_time_by_age
-        + no_work_to_no_work
-        + no_work_to_part_time
+        + no_work_to_no_work_by_age
+        + no_work_to_part_time_by_age
         + no_work_to_full_time
         + part_time_to_no_work
         + part_time_to_part_time
@@ -444,7 +318,36 @@ def get_share_by_age(df_arr, ind, choice, min_age, max_age):
     return shares
 
 
-def get_share_by_age_bin(df_arr, ind, choice, age_bins):
+def get_transition(df_arr, ind, lagged_choice, current_choice, min_age, max_age):
+    """Get transition probability from lagged choice to current choice."""
+    # return [
+    #     jnp.sum(
+    #         jnp.isin(df_arr[:, ind["lagged_choice"]], lagged_choice)
+    #         & jnp.isin(df_arr[:, ind["choice"]], current_choice),
+    #     )
+    #     / jnp.sum(jnp.isin(df_arr[:, ind["lagged_choice"]], lagged_choice)),
+    # ]
+    probs = []
+    for age in range(min_age, max_age + 1):
+        # Create a mask selecting only the rows for the current age.
+        age_mask = df_arr[:, ind["age"]] == age
+
+        # Create masks for the lagged and current state. The use of jnp.isin
+        # allows lagged_choice and current_choice to be single values or iterables.
+        lagged_mask = jnp.isin(df_arr[:, ind["lagged_choice"]], lagged_choice)
+        current_mask = jnp.isin(df_arr[:, ind["choice"]], current_choice)
+
+        num = jnp.sum(age_mask & lagged_mask & current_mask)
+        den = jnp.sum(age_mask & lagged_mask)
+
+        # Handle potential division by zero.
+        prob = num / den if den > 0 else jnp.nan
+        probs.append(prob)
+
+    return probs
+
+
+def _get_share_by_age_bin(df_arr, ind, choice, age_bins):
     """Get share of agents choosing lagged choice by age bin."""
     return [
         jnp.mean(
@@ -456,7 +359,7 @@ def get_share_by_age_bin(df_arr, ind, choice, age_bins):
     ]
 
 
-def get_mean_by_age_bin_for_lagged_choice(df_arr, ind, var, choice, age_bins):
+def _get_mean_by_age_bin_for_lagged_choice(df_arr, ind, var, choice, age_bins):
     """Get mean of agents choosing lagged choice by age bin."""
     lagged_choice_mask = jnp.isin(df_arr[:, ind["choice"]], choice)
     means = []
@@ -470,7 +373,7 @@ def get_mean_by_age_bin_for_lagged_choice(df_arr, ind, var, choice, age_bins):
     return means
 
 
-def get_share_by_type_by_age_bin(df_arr, ind, choice, care_type, age_bins):
+def _get_share_by_type_by_age_bin(df_arr, ind, choice, care_type, age_bins):
     """Get share of agents of given care type choosing lagged choice by age bin."""
     lagged_choice_mask = jnp.isin(df_arr[:, ind["choice"]], choice)
     care_type_mask = jnp.isin(df_arr[:, ind["choice"]], care_type)
@@ -488,7 +391,7 @@ def get_share_by_type_by_age_bin(df_arr, ind, choice, care_type, age_bins):
     return shares
 
 
-def get_share_by_type(df_arr, ind, choice, care_type):
+def _get_share_by_type(df_arr, ind, choice, care_type):
     """Get share of agents of given care type choosing lagged choice by age bin."""
     lagged_choice_mask = jnp.isin(df_arr[:, ind["choice"]], choice)
     care_type_mask = jnp.isin(df_arr[:, ind["choice"]], care_type)
@@ -496,12 +399,141 @@ def get_share_by_type(df_arr, ind, choice, care_type):
     return jnp.sum(lagged_choice_mask & care_type_mask) / jnp.sum(care_type_mask)
 
 
-def get_transition(df_arr, ind, lagged_choice, current_choice):
-    """Get transition probability from lagged choice to current choice."""
-    return [
-        jnp.sum(
-            jnp.isin(df_arr[:, ind["lagged_choice"]], lagged_choice)
-            & jnp.isin(df_arr[:, ind["choice"]], current_choice),
-        )
-        / jnp.sum(jnp.isin(df_arr[:, ind["lagged_choice"]], lagged_choice)),
-    ]
+# =====================================================================================
+# Plotting
+# =====================================================================================
+
+
+def plot_model_fit_labor_moments_pandas(
+    moms_emp: pd.Series, moms_sim: pd.Series, path_to_save_plot: Optional[str] = None
+) -> None:
+    """
+    Plots the age specific labor supply shares (choice shares) for four states:
+    retired, unemployed, part-time, and full-time based on the empirical
+    and simulated moments.
+
+    Both data_emp and data_sim are pandas Series indexed by moment names in the format:
+      "share_{state}_age_{age}"
+    e.g., "share_retired_age_30", "share_unemployed_age_40", etc.
+
+    Parameters
+    ----------
+    data_emp : pd.Series
+        Empirical moments with keys like "share_retired_age_30", etc.
+    data_sim : pd.Series
+        Simulated moments with the same key naming convention.
+    path_to_save_plot : str
+        File path to save the generated plot.
+    """
+
+    # Define the states of interest.
+    states = ["retired", "unemployed", "part_time", "full_time"]
+
+    fig, axs = plt.subplots(1, 4, figsize=(16, 4), sharex=True, sharey=True)
+    axs = axs.flatten()
+
+    # Loop through each state to plot its empirical and simulated shares.
+    for ax, state in zip(axs, states, strict=False):
+        # Filter the keys for the given state for both empirical and simulated data.
+        emp_keys = [k for k in moms_emp.index if k.startswith(f"share_{state}_age_")]
+        sim_keys = [k for k in moms_sim.index if k.startswith(f"share_{state}_age_")]
+
+        # Sort the keys by age.
+        emp_keys_sorted = sorted(emp_keys, key=_extract_age)
+        sim_keys_sorted = sorted(sim_keys, key=_extract_age)
+
+        # Build lists of ages and corresponding values.
+        emp_ages = [_extract_age(k) for k in emp_keys_sorted]
+        emp_values = [moms_emp[k] for k in emp_keys_sorted]
+        sim_ages = [_extract_age(k) for k in sim_keys_sorted]
+        sim_values = [moms_sim[k] for k in sim_keys_sorted]
+
+        # Plot empirical and simulated shares.
+        ax.plot(sim_ages, sim_values, label="Simulated")
+        ax.plot(emp_ages, emp_values, label="Observed", ls="--")
+
+        ax.set_title(state.capitalize())
+        ax.set_xlabel("Age")
+        ax.set_ylim([0, 1])
+
+        if state == "retired":
+            ax.set_ylabel("Share")
+            ax.legend()
+
+    plt.tight_layout()
+    plt.savefig(path_to_save_plot, transparent=True, dpi=300)
+    plt.show()
+
+
+def plot_model_fit_labor_moments_pandas_jax(
+    moms_emp: pd.Series, moms_sim: jnp.ndarray, path_to_save_plot: Optional[str] = None
+) -> None:
+    """
+    Plots the age specific labor supply shares (choice shares) for four states:
+    retired, unemployed, part-time, and full-time based on the empirical
+    and simulated moments.
+
+    Both data_emp and data_sim are pandas Series indexed by moment names in the format:
+      "share_{state}_age_{age}"
+    e.g., "share_retired_age_30", "share_unemployed_age_40", etc.
+
+    Parameters
+    ----------
+    data_emp : pd.Series
+        Empirical moments with keys like "share_retired_age_30", etc.
+    data_sim : pd.Series
+        Simulated moments with the same key naming convention.
+    path_to_save_plot : str
+        File path to save the generated plot.
+    """
+
+    # Define the states of interest.
+    states = ["retired", "unemployed", "part_time", "full_time"]
+
+    # Convert the simulated array to a NumPy array (if needed).
+    sim_array = np.asarray(moms_sim)
+
+    fig, axs = plt.subplots(1, 4, figsize=(16, 4), sharex=True, sharey=True)
+    axs = axs.flatten()
+
+    # Loop through each state to plot its empirical and simulated shares.
+    for ax, state in zip(axs, states, strict=False):
+
+        # Get positions where keys match the current state. This preserves the order
+        # of the empirical Series.
+        indices = [
+            i
+            for i, key in enumerate(moms_emp.index)
+            if key.startswith(f"share_{state}_age_")
+        ]
+        # Retrieve the keys for these positions.
+        keys = [moms_emp.index[i] for i in indices]
+        # Extract the ages from these keys.
+        ages = [_extract_age(key) for key in keys]
+
+        # Extract empirical values using iloc and simulated values from the jax array
+        # using the same indices.
+        emp_values = moms_emp.iloc[indices].values
+        sim_values = sim_array[indices]
+
+        # Plot empirical and simulated shares.
+        ax.plot(ages, sim_values, label="Simulated")
+        ax.plot(ages, emp_values, label="Observed", ls="--")
+
+        ax.set_title(state.capitalize())
+        ax.set_xlabel("Age")
+        ax.set_ylim([0, 1])
+
+        if state == "retired":
+            ax.set_ylabel("Share")
+            ax.legend()
+
+    plt.tight_layout()
+    plt.savefig(path_to_save_plot, transparent=True, dpi=300)
+    plt.show()
+
+
+# Helper function to extract age from key (assumes format: "share_{state}_age_{age}")
+def _extract_age(key: str) -> int:
+    # The age is assumed to be the number after the last underscore.
+    return int(key.split("_")[-1])
