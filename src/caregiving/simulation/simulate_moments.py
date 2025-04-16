@@ -17,6 +17,8 @@ from caregiving.model.shared import (
     WORK,
 )
 
+SEX = 1
+
 # =====================================================================================
 # Pandas
 # =====================================================================================
@@ -32,10 +34,27 @@ def simulate_moments_pandas(
     start_age = model_params["start_age"]
     end_age = model_params["end_age_msm"]
 
-    return create_moments_pandas(df, start_age, end_age)
+    age_range = range(start_age, end_age + 1)
+
+    df_low = df[df["education"] == 0]
+    df_high = df[df["education"] == 1]
+
+    moments = {}
+
+    moments = create_labor_share_moments_pandas(df, moments, age_range=age_range)
+    moments = create_labor_share_moments_pandas(
+        df_low, moments, age_range=age_range, label="low_education"
+    )
+    moments = create_labor_share_moments_pandas(
+        df_high, moments, age_range=age_range, label="high_education"
+    )
+
+    moments = compute_transition_moments_pandas(df, moments, age_range)
+
+    return pd.Series(moments)
 
 
-def create_moments_pandas(df, start_age, end_age):
+def create_labor_share_moments_pandas(df, moments, age_range, label=None):
     """
     Create a Pandas Series of simulation moments.
 
@@ -64,12 +83,16 @@ def create_moments_pandas(df, start_age, end_age):
     Returns:
         pd.Series: A Series with moment names as the index and computed moments
             as the values.
-    """
-    moments = {}
 
-    # --- (a) Age-specific shares ---
+    """
+
+    if label is None:
+        label = ""
+    else:
+        label = "_" + label
+
+    # 1) Labor shares
     # Create the desired age range
-    age_range = range(start_age, end_age + 1)
 
     # Group by 'age' over the entire dataframe (assumes df already has an 'age' column)
     age_groups = df.groupby("age")
@@ -97,15 +120,19 @@ def create_moments_pandas(df, start_age, end_age):
 
     # Populate the moments dictionary for age-specific shares
     for age in age_range:
-        moments[f"share_retired_age_{age}"] = retired_shares.loc[age]
+        moments[f"share_retired{label}_age_{age}"] = retired_shares.loc[age]
     for age in age_range:
-        moments[f"share_unemployed_age_{age}"] = unemployed_shares.loc[age]
+        moments[f"share_unemployed{label}_age_{age}"] = unemployed_shares.loc[age]
     for age in age_range:
-        moments[f"share_part_time_age_{age}"] = part_time_shares.loc[age]
+        moments[f"share_part_time{label}_age_{age}"] = part_time_shares.loc[age]
     for age in age_range:
-        moments[f"share_full_time_age_{age}"] = full_time_shares.loc[age]
+        moments[f"share_full_time{label}_age_{age}"] = full_time_shares.loc[age]
 
-    # --- (b) Transition probabilities ---
+    return moments
+
+
+def compute_transition_moments_pandas(df, moments, age_range):
+    # 2) Transition probabilities
     # Define the states of interest for transitions
     states = {
         "not_working": NOT_WORKING,
@@ -137,11 +164,10 @@ def create_moments_pandas(df, start_age, end_age):
             else:
                 probability = np.nan
 
-            # key = f"trans_{from_label}_to_{to_label}"
             key = f"trans_{from_label}_to_{to_label}_age_{age}"
             moments[key] = probability
 
-    return pd.Series(moments)
+    return moments
 
 
 # =====================================================================================
@@ -402,6 +428,86 @@ def _get_share_by_type(df_arr, ind, choice, care_type):
 # =====================================================================================
 # Plotting
 # =====================================================================================
+
+
+def plot_model_fit_labor_moments_pandas_by_education(
+    moms_emp: pd.Series,
+    moms_sim: pd.Series,
+    specs: dict,
+    path_to_save_plot: Optional[str] = None,
+) -> None:
+    """
+    Plots the age specific labor supply shares (choice shares) for four states:
+    retired, unemployed, part-time, and full-time based on the empirical
+    and simulated moments.
+
+    Both data_emp and data_sim are pandas Series indexed by moment names in the format:
+      "share_{state}_age_{age}"
+    e.g., "share_retired_age_30", "share_unemployed_age_40", etc.
+
+    Parameters
+    ----------
+    data_emp : pd.Series
+        Empirical moments with keys like "share_retired_age_30", etc.
+    data_sim : pd.Series
+        Simulated moments with the same key naming convention.
+    path_to_save_plot : str
+        File path to save the generated plot.
+    """
+
+    choices = ["retired", "unemployed", "part_time", "full_time"]
+
+    fig, axs = plt.subplots(2, 4, figsize=(16, 4), sharex=True, sharey=True)
+
+    for edu_var, edu_label in enumerate(specs["education_labels"]):
+
+        for choice_var, choice_label in enumerate(specs["choice_labels"]):
+
+            ax = axs[edu_var, choice_var]
+
+            emp_keys = [
+                k
+                for k in moms_emp.index
+                if k.startswith(f"share_{choices[choice_var]}_")
+                and str(edu_label.lower().replace(" ", "_")) in k
+            ]
+            sim_keys = [
+                k
+                for k in moms_sim.index
+                if k.startswith(f"share_{choices[choice_var]}_")
+                and str(edu_label.lower().replace(" ", "_")) in k
+            ]
+
+            # Sort the keys by age.
+            emp_keys_sorted = sorted(emp_keys, key=_extract_age)
+            sim_keys_sorted = sorted(sim_keys, key=_extract_age)
+
+            # Build lists of ages and corresponding values.
+            emp_ages = [_extract_age(k) for k in emp_keys_sorted]
+            emp_values = [moms_emp[k] for k in emp_keys_sorted]
+            sim_ages = [_extract_age(k) for k in sim_keys_sorted]
+            sim_values = [moms_sim[k] for k in sim_keys_sorted]
+
+            # Plot empirical and simulated shares.
+            ax.plot(sim_ages, sim_values, label="Simulated")
+            ax.plot(emp_ages, emp_values, label="Observed", ls="--")
+
+            ax.set_xlabel("Age")
+            ax.set_ylim([0, 1])
+
+            # if edu_var == 0:
+            ax.set_title(choice_label)
+            ax.tick_params(labelbottom=True)
+
+            if choice_var == 0:
+                ax.set_ylabel(edu_label + "\nShare")
+                ax.legend()
+            else:
+                ax.set_ylabel("")
+
+    plt.tight_layout()
+    if path_to_save_plot:
+        plt.savefig(path_to_save_plot, transparent=False, dpi=300)
 
 
 def plot_model_fit_labor_moments_pandas(

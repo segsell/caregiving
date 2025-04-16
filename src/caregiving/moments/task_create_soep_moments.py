@@ -41,19 +41,112 @@ def task_create_soep_moments(
     specs = read_and_derive_specs(path_to_specs)
     start_age = specs["start_age"]
     end_age = specs["end_age_msm"]
+    age_range = range(start_age, end_age + 1)
 
     df = pd.read_csv(path_to_sample)
     df = df[(df["sex"] == 1) & (df["age"] <= end_age)]  # women only
 
     df["kidage_youngest"] = df["kidage_youngest"] - 1
 
-    # Initialize a dictionary to store all moments
+    df_low = df[df["education"] == 0]
+    df_high = df[df["education"] == 1]
+
     moments = {}
     variances = {}
 
-    # =========================================================
+    # A) Moments by age.
+    moments, variances = compute_labor_shares_by_age(
+        df,
+        moments=moments,
+        variances=variances,
+        age_range=age_range,
+    )
 
-    age_range = range(start_age, end_age + 1)
+    # B) Moments by age and education.
+    moments, variances = compute_labor_shares_by_age(
+        df_low,
+        moments=moments,
+        variances=variances,
+        age_range=age_range,
+        label="low_education",
+    )
+    moments, variances = compute_labor_shares_by_age(
+        df_high,
+        moments=moments,
+        variances=variances,
+        age_range=age_range,
+        label="high_education",
+    )
+
+    # =================================================================================
+
+    # C) Moments by number of children and education.
+    # children_groups = {
+    #     "0": lambda x: x == 0,
+    #     "1": lambda x: x == 1,
+    #     "2": lambda x: x == 2,  # noqa: PLR2004
+    #     "3_plus": lambda x: x >= 3,  # noqa: PLR2004
+    # }
+    # moments, variances = (
+    #     _get_labor_shares_by_education_level_and_number_of_children_in_hh(
+    #         df, moments, variances, children_groups
+    #     )
+    # )
+
+    # D) Moments by kidage (youngest) and education.
+    # kidage_bins = {"0_3": (0, 3), "4_6": (4, 6), "7_9": (7, 9)}
+    # moments, variances = _get_labor_shares_by_educ_level_and_age_of_youngest_child(
+    #     df, moments, variances, kidage_bins
+    # )
+    # =================================================================================
+
+    # E) Year-to-year labor supply transitions
+    transition_moments, transition_variances = compute_transition_moments_and_variances(
+        df,
+        min_age=start_age,
+        max_age=end_age,
+        full_time=FULL_TIME,
+        part_time=PART_TIME,
+        not_working=NOT_WORKING,
+    )
+    moments.update(transition_moments)
+    variances.update(transition_variances)
+
+    # F) Wealth moments by age and education (NEW)
+    # wealth_moments_edu_low, wealth_variances_edu_low = (
+    #     compute_wealth_moments_by_five_year_age_bins(
+    #         df, edu_level=0, start_age=start_age, end_age=end_age
+    #     )
+    # )
+    # moments.update(wealth_moments_edu_low)
+    # variances.update(wealth_variances_edu_low)
+    # wealth_moments_edu_high, wealth_variances_edu_high = (
+    #     compute_wealth_moments_by_five_year_age_bins(
+    #         df, edu_level=1, start_age=start_age, end_age=end_age
+    #     )
+    # )
+    # moments.update(wealth_moments_edu_high)
+    # variances.update(wealth_variances_edu_high)
+    # plot_wealth_by_age(df, start_age=30, end_age=70, educ_val=1)
+    # plot_wealth_by_5yr_bins(df, start_age=30, end_age=70, educ_val=1)
+
+    moments_df = pd.DataFrame({"value": pd.Series(moments)})
+    moments_df.index.name = "moment"
+
+    variances_df = pd.DataFrame({"value": pd.Series(variances)})
+    variances_df.index.name = "moment"
+
+    moments_df.to_csv(path_to_save_moments, index=True)
+    variances_df.to_csv(path_to_save_variances, index=True)
+
+
+def compute_labor_shares_by_age(df, moments, variances, age_range, label=None):
+
+    if label is None:
+        label = ""
+    else:
+        label = "_" + label
+
     age_groups = df.groupby("age")
 
     # Compute the proportion for each status using vectorized operations
@@ -97,153 +190,22 @@ def task_create_soep_moments(
 
     # Populate the moments dictionary for age-specific shares
     for age in age_range:
-        moments[f"share_retired_age_{age}"] = retired_shares.loc[age]
-        variances[f"share_retired_age_{age}"] = retired_vars.loc[age]
+        moments[f"share_retired{label}_age_{age}"] = retired_shares.loc[age]
+        variances[f"share_retired{label}_age_{age}"] = retired_vars.loc[age]
 
     for age in age_range:
-        moments[f"share_unemployed_age_{age}"] = unemployed_shares.loc[age]
-        variances[f"share_unemployed_age_{age}"] = unemployed_vars.loc[age]
+        moments[f"share_unemployed{label}_age_{age}"] = unemployed_shares.loc[age]
+        variances[f"share_unemployed{label}_age_{age}"] = unemployed_vars.loc[age]
 
     for age in age_range:
-        moments[f"share_part_time_age_{age}"] = part_time_shares.loc[age]
-        variances[f"share_part_time_age_{age}"] = part_time_vars.loc[age]
+        moments[f"share_part_time{label}_age_{age}"] = part_time_shares.loc[age]
+        variances[f"share_part_time{label}_age_{age}"] = part_time_vars.loc[age]
 
     for age in age_range:
-        moments[f"share_full_time_age_{age}"] = full_time_shares.loc[age]
-        variances[f"share_full_time_age_{age}"] = full_time_vars.loc[age]
+        moments[f"share_full_time{label}_age_{age}"] = full_time_shares.loc[age]
+        variances[f"share_full_time{label}_age_{age}"] = full_time_vars.loc[age]
 
-    # =========================================================
-
-    # # A) Moments by age.
-    # moments, variances = _get_labor_shares_by_age(
-    #     df, moments, variances, start_age, end_age
-    # )
-
-    # # B) Moments by age and education.
-    # moments, variances = _get_labor_shares_by_age_and_education_level(
-    #     df, moments, variances, start_age, end_age
-    # )
-
-    # C) Moments by number of children and education.
-    # children_groups = {
-    #     "0": lambda x: x == 0,
-    #     "1": lambda x: x == 1,
-    #     "2": lambda x: x == 2,  # noqa: PLR2004
-    #     "3_plus": lambda x: x >= 3,  # noqa: PLR2004
-    # }
-    # moments, variances = (
-    #     _get_labor_shares_by_education_level_and_number_of_children_in_hh(
-    #         df, moments, variances, children_groups
-    #     )
-    # )
-
-    # D) Moments by kidage (youngest) and education.
-    # kidage_bins = {"0_3": (0, 3), "4_6": (4, 6), "7_9": (7, 9)}
-    # moments, variances = _get_labor_shares_by_educ_level_and_age_of_youngest_child(
-    #     df, moments, variances, kidage_bins
-    # )
-
-    # E) Year-to-year labor supply transitions
-
-    transition_moments, transition_variances = compute_transition_moments_and_variances(
-        df,
-        min_age=start_age,
-        max_age=end_age,
-        full_time=FULL_TIME,
-        part_time=PART_TIME,
-        not_working=NOT_WORKING,
-    )
-    moments.update(transition_moments)
-    variances.update(transition_variances)
-
-    # F) Wealth moments by age and education (NEW)
-    # wealth_moments_edu_low, wealth_variances_edu_low = (
-    #     compute_wealth_moments_by_five_year_age_bins(
-    #         df, edu_level=0, start_age=start_age, end_age=end_age
-    #     )
-    # )
-    # moments.update(wealth_moments_edu_low)
-    # variances.update(wealth_variances_edu_low)
-
-    # wealth_moments_edu_high, wealth_variances_edu_high = (
-    #     compute_wealth_moments_by_five_year_age_bins(
-    #         df, edu_level=1, start_age=start_age, end_age=end_age
-    #     )
-    # )
-    # moments.update(wealth_moments_edu_high)
-    # variances.update(wealth_variances_edu_high)
-
-    # plot_wealth_by_age(df, start_age=30, end_age=70, educ_val=1)
-    # plot_wealth_by_5yr_bins(df, start_age=30, end_age=70, educ_val=1)
-
-    # Create the final moments DataFrame/Series
-    moments_df = pd.DataFrame({"value": pd.Series(moments)})
-    moments_df.index.name = "moment"
-
-    variances_df = pd.DataFrame({"value": pd.Series(variances)})
-    variances_df.index.name = "moment"
-
-    moments_df.to_csv(path_to_save_moments, index=True)
-    variances_df.to_csv(path_to_save_variances, index=True)
-
-
-def compute_labor_shares(subdf):
-    """Compute labor shares and their variances for a given subsample."""
-    total = len(subdf)
-
-    if total == 0:
-        return {
-            "full_time": np.nan,
-            "full_time_var": np.nan,
-            "part_time": np.nan,
-            "part_time_var": np.nan,
-            "unemployed": np.nan,
-            "unemployed_var": np.nan,
-            "retired": np.nan,
-            "retired_var": np.nan,
-            "not_working": np.nan,
-            "not_working_var": np.nan,
-        }
-
-    # Full time
-    ind_full = subdf["choice"].isin(FULL_TIME.tolist()).astype(float)
-    full_time = ind_full.mean()
-    full_time_var = np.var(ind_full, ddof=DEGREES_OF_FREEDOM)
-
-    # Part time
-    ind_part = subdf["choice"].isin(PART_TIME.tolist()).astype(float)
-    part_time = ind_part.mean()
-    part_time_var = np.var(ind_part, ddof=DEGREES_OF_FREEDOM)
-
-    # Unemployed
-    ind_unemp = subdf["choice"].isin(UNEMPLOYED.tolist()).astype(float)
-    unemployed = ind_unemp.mean()
-    unemployed_var = np.var(ind_unemp, ddof=DEGREES_OF_FREEDOM)
-
-    # Retired
-    ind_ret = subdf["choice"].isin(RETIREMENT.tolist()).astype(float)
-    retired = ind_ret.mean()
-    retired_var = np.var(ind_ret, ddof=DEGREES_OF_FREEDOM)
-
-    # Not working indicator: either unemployed or retired.
-    ind_not_working = (
-        subdf["choice"].isin(UNEMPLOYED.tolist() + RETIREMENT.tolist()).astype(float)
-    )
-    not_working = ind_not_working.mean()
-    not_working_var = np.var(ind_not_working, ddof=DEGREES_OF_FREEDOM)
-
-    return {
-        "full_time": full_time,
-        "full_time_var": full_time_var,
-        "part_time": part_time,
-        "part_time_var": part_time_var,
-        "unemployed": unemployed,
-        "unemployed_var": unemployed_var,
-        "retired": retired,
-        "retired_var": retired_var,
-        "not_working": not_working,
-        "not_working_var": not_working_var,
-    }
+    return moments, variances
 
 
 def compute_transition_moments_and_variances(
@@ -579,101 +541,54 @@ def compute_wealth_moments(subdf):
 # =====================================================================================
 
 
-def _get_labor_shares_by_age(df, moments, variances, min_age, max_age):
+# def _get_labor_shares_by_education_level_and_number_of_children_in_hh(
+#     df, moments, variances, children_groups
+# ):
+#     for edu in (0, 1):
+#         edu_label = "low" if edu == 0 else "high"
+#         for grp_label, cond_func in children_groups.items():
 
-    for age in range(min_age, max_age + 1):
-        subdf = df[df["age"] == age]
-        shares = compute_labor_shares(subdf)
+#             subdf = df[(df["education"] == edu) & (df["children"].apply(cond_func))]
+#             shares = compute_labor_shares(subdf)
+#             key = f"children_{grp_label}_edu_{edu_label}"
 
-        moments[f"share_retired_age_{age}"] = shares["retired"]
-        moments[f"share_unemployed_age_{age}"] = shares["unemployed"]
-        moments[f"share_working_part_time_age_{age}"] = shares["part_time"]
-        moments[f"share_working_full_time_age_{age}"] = shares["full_time"]
-        # moments[f"share_not_working_age_{age}"] = shares["not_working"]
+#             moments[f"share_not_working_{key}"] = shares["not_working"]
+#             moments[f"share_part_time_{key}"] = shares["part_time"]
+#             moments[f"share_full_time_{key}"] = shares["full_time"]
 
-        variances[f"share_retired_age_{age}"] = shares["retired_var"]
-        variances[f"share_unemployed_age_{age}"] = shares["unemployed_var"]
-        variances[f"share_working_part_time_age_{age}"] = shares["part_time_var"]
-        variances[f"share_working_full_time_age_{age}"] = shares["full_time_var"]
-        # variances[f"share_not_working_age_{age}"] = shares["not_working_var"]
+#             variances[f"share_not_working_{key}"] = shares["not_working_var"]
+#             variances[f"share_part_time_{key}"] = shares["part_time_var"]
+#             variances[f"share_full_time_{key}"] = shares["full_time_var"]
 
-    return moments, variances
-
-
-def _get_labor_shares_by_age_and_education_level(
-    df, moments, variances, min_age, max_age
-):
-    for edu in (0, 1):
-        edu_label = "low" if edu == 0 else "high"
-        for age in range(min_age, max_age + 1):
-
-            subdf = df[(df["age"] == age) & (df["education"] == edu)]
-            shares = compute_labor_shares(subdf)
-            key = f"age_{age}_edu_{edu_label}"
-
-            moments[f"share_being_retired_{key}"] = shares["retired"]
-            moments[f"share_being_unemployed_{key}"] = shares["unemployed"]
-            moments[f"share_working_part_time_{key}"] = shares["part_time"]
-            moments[f"share_working_full_time_{key}"] = shares["full_time"]
-            # moments[f"share_not_working_{key}"] = shares["not_working"]
-
-            variances[f"share_being_retired_{key}"] = shares["retired_var"]
-            variances[f"share_being_unemployed_{key}"] = shares["unemployed_var"]
-            variances[f"share_working_part_time_{key}"] = shares["part_time_var"]
-            variances[f"share_working_full_time_{key}"] = shares["full_time_var"]
-            # variances[f"share_not_working_{key}"] = shares["not_working_var"]
-
-    return moments, variances
+#     return moments, variances
 
 
-def _get_labor_shares_by_education_level_and_number_of_children_in_hh(
-    df, moments, variances, children_groups
-):
-    for edu in (0, 1):
-        edu_label = "low" if edu == 0 else "high"
-        for grp_label, cond_func in children_groups.items():
+# def _get_labor_shares_by_educ_level_and_age_of_youngest_child(
+#     df, moments, variances, kidage_bins
+# ):
+#     for edu in (0, 1):
+#         edu_label = "low" if edu == 0 else "high"
+#         for bin_label, (lb, ub) in kidage_bins.items():
 
-            subdf = df[(df["education"] == edu) & (df["children"].apply(cond_func))]
-            shares = compute_labor_shares(subdf)
-            key = f"children_{grp_label}_edu_{edu_label}"
+#             subdf = df[
+#                 (df["education"] == edu)
+#                 & (df["kidage_youngest"] >= lb)
+#                 & (df["kidage_youngest"] <= ub)
+#             ]
+#             shares = compute_labor_shares(subdf)
+#             key = f"kidage_{bin_label}_edu_{edu_label}"
 
-            moments[f"share_not_working_{key}"] = shares["not_working"]
-            moments[f"share_part_time_{key}"] = shares["part_time"]
-            moments[f"share_full_time_{key}"] = shares["full_time"]
+#             moments[f"share_full_time_{key}"] = shares["full_time"]
+#             moments[f"share_part_time_{key}"] = shares["part_time"]
+#             moments[f"share_unemployed_{key}"] = shares["unemployed"]
+#             moments[f"share_retired_{key}"] = shares["retired"]
 
-            variances[f"share_not_working_{key}"] = shares["not_working_var"]
-            variances[f"share_part_time_{key}"] = shares["part_time_var"]
-            variances[f"share_full_time_{key}"] = shares["full_time_var"]
+#             variances[f"share_full_time_{key}"] = shares["full_time_var"]
+#             variances[f"share_part_time_{key}"] = shares["part_time_var"]
+#             variances[f"share_unemployed_{key}"] = shares["unemployed_var"]
+#             variances[f"share_retired_{key}"] = shares["retired_var"]
 
-    return moments, variances
-
-
-def _get_labor_shares_by_educ_level_and_age_of_youngest_child(
-    df, moments, variances, kidage_bins
-):
-    for edu in (0, 1):
-        edu_label = "low" if edu == 0 else "high"
-        for bin_label, (lb, ub) in kidage_bins.items():
-
-            subdf = df[
-                (df["education"] == edu)
-                & (df["kidage_youngest"] >= lb)
-                & (df["kidage_youngest"] <= ub)
-            ]
-            shares = compute_labor_shares(subdf)
-            key = f"kidage_{bin_label}_edu_{edu_label}"
-
-            moments[f"share_full_time_{key}"] = shares["full_time"]
-            moments[f"share_part_time_{key}"] = shares["part_time"]
-            moments[f"share_unemployed_{key}"] = shares["unemployed"]
-            moments[f"share_retired_{key}"] = shares["retired"]
-
-            variances[f"share_full_time_{key}"] = shares["full_time_var"]
-            variances[f"share_part_time_{key}"] = shares["part_time_var"]
-            variances[f"share_unemployed_{key}"] = shares["unemployed_var"]
-            variances[f"share_retired_{key}"] = shares["retired_var"]
-
-    return moments, variances
+#     return moments, variances
 
 
 def _get_wealth_moments_by_age_and_education(df, moments, variances, min_age, max_age):
@@ -765,92 +680,92 @@ def bootstrap_transition_variances(df, choice_map, n_bootstrap=1000):
 # =====================================================================================
 
 
-def plot_labor_shares_by_age(
-    df, age_var, start_age, end_age, condition_col=None, condition_val=None
-):
-    """
-    Plots labor share outcomes by age using a specified age variable.
-    Outcomes include full time, part time, unemployed, retired, and
-    not working (unemployed + retired).
+# def plot_labor_shares_by_age(
+#     df, age_var, start_age, end_age, condition_col=None, condition_val=None
+# ):
+#     """
+#     Plots labor share outcomes by age using a specified age variable.
+#     Outcomes include full time, part time, unemployed, retired, and
+#     not working (unemployed + retired).
 
-    Parameters:
-      df (pd.DataFrame): The data frame containing the data.
-      age_var (str): Column to use as the age variable (e.g., "age" or
-          "kidage_youngest").
-      start_age (int): Starting age (inclusive) for the plot.
-      end_age (int): Ending age (inclusive) for the plot.
-      condition_col (str or list, optional): Column name(s) to filter data.
-      condition_val (any or list, optional): Value(s) for filtering.
-          If multiple, supply a list/tuple that matches condition_col.
-    """
-    # Apply conditioning if specified.
-    if condition_col is not None:
-        if isinstance(condition_col, (list, tuple)):
-            if not isinstance(condition_val, (list, tuple)) or (
-                len(condition_col) != len(condition_val)
-            ):
-                raise ValueError(
-                    "When condition_col is a list/tuple, condition_val must be a "
-                    "list/tuple of the same length."
-                )
-            for col, val in zip(condition_col, condition_val, strict=False):
-                df = df[df[col] == val]
-        else:
-            df = df[df[condition_col] == condition_val]
+#     Parameters:
+#       df (pd.DataFrame): The data frame containing the data.
+#       age_var (str): Column to use as the age variable (e.g., "age" or
+#           "kidage_youngest").
+#       start_age (int): Starting age (inclusive) for the plot.
+#       end_age (int): Ending age (inclusive) for the plot.
+#       condition_col (str or list, optional): Column name(s) to filter data.
+#       condition_val (any or list, optional): Value(s) for filtering.
+#           If multiple, supply a list/tuple that matches condition_col.
+#     """
+#     # Apply conditioning if specified.
+#     if condition_col is not None:
+#         if isinstance(condition_col, (list, tuple)):
+#             if not isinstance(condition_val, (list, tuple)) or (
+#                 len(condition_col) != len(condition_val)
+#             ):
+#                 raise ValueError(
+#                     "When condition_col is a list/tuple, condition_val must be a "
+#                     "list/tuple of the same length."
+#                 )
+#             for col, val in zip(condition_col, condition_val, strict=False):
+#                 df = df[df[col] == val]
+#         else:
+#             df = df[df[condition_col] == condition_val]
 
-    # Filter on the chosen age variable.
-    df = df[(df[age_var] >= start_age) & (df[age_var] <= end_age)]
+#     # Filter on the chosen age variable.
+#     df = df[(df[age_var] >= start_age) & (df[age_var] <= end_age)]
 
-    ages = list(range(start_age, end_age + 1))
-    full_time_shares = []
-    part_time_shares = []
-    not_working_shares = []
-    # unemployed_shares = []
-    # retired_shares = []
+#     ages = list(range(start_age, end_age + 1))
+#     full_time_shares = []
+#     part_time_shares = []
+#     not_working_shares = []
+#     # unemployed_shares = []
+#     # retired_shares = []
 
-    # Loop over each age.
-    for age in ages:
-        subdf = df[df[age_var] == age]
-        shares = compute_labor_shares(subdf)
-        full_time_shares.append(shares["full_time"])
-        part_time_shares.append(shares["part_time"])
-        not_working_shares.append(shares["not_working"])
-        # unemployed_shares.append(shares["unemployed"])
-        # retired_shares.append(shares["retired"])
+#     # Loop over each age.
+#     for age in ages:
+#         subdf = df[df[age_var] == age]
+#         shares = compute_labor_shares(subdf)
+#         full_time_shares.append(shares["full_time"])
+#         part_time_shares.append(shares["part_time"])
+#         not_working_shares.append(shares["not_working"])
+#         # unemployed_shares.append(shares["unemployed"])
+#         # retired_shares.append(shares["retired"])
 
-    plt.figure(figsize=(10, 6))
-    plt.plot(ages, full_time_shares, marker="o", label="Full Time")
-    plt.plot(ages, part_time_shares, marker="o", label="Part Time")
-    plt.plot(ages, not_working_shares, marker="o", label="Not Working")
-    # plt.plot(ages, unemployed_shares, marker="o", label="Unemployed")
-    # plt.plot(ages, retired_shares, marker="o", label="Retired")
+#     plt.figure(figsize=(10, 6))
+#     plt.plot(ages, full_time_shares, marker="o", label="Full Time")
+#     plt.plot(ages, part_time_shares, marker="o", label="Part Time")
+#     plt.plot(ages, not_working_shares, marker="o", label="Not Working")
+#     # plt.plot(ages, unemployed_shares, marker="o", label="Unemployed")
+#     # plt.plot(ages, retired_shares, marker="o", label="Retired")
 
-    plt.xlabel(age_var.title())
-    plt.ylabel("Share")
-    title = (
-        "Labor Shares by "
-        + age_var.title()
-        + " (Ages "
-        + str(start_age)
-        + " to "
-        + str(end_age)
-        + ")"
-    )
-    if condition_col is not None:
-        if isinstance(condition_col, (list, tuple)):
-            conditions = ", ".join(
-                [
-                    f"{col}={val}"
-                    for col, val in zip(condition_col, condition_val, strict=False)
-                ]
-            )
-        else:
-            conditions = f"{condition_col}={condition_val}"
-        title += " | Conditions: " + conditions
-    plt.title(title)
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+#     plt.xlabel(age_var.title())
+#     plt.ylabel("Share")
+#     title = (
+#         "Labor Shares by "
+#         + age_var.title()
+#         + " (Ages "
+#         + str(start_age)
+#         + " to "
+#         + str(end_age)
+#         + ")"
+#     )
+#     if condition_col is not None:
+#         if isinstance(condition_col, (list, tuple)):
+#             conditions = ", ".join(
+#                 [
+#                     f"{col}={val}"
+#                     for col, val in zip(condition_col, condition_val, strict=False)
+#                 ]
+#             )
+#         else:
+#             conditions = f"{condition_col}={condition_val}"
+#         title += " | Conditions: " + conditions
+#     plt.title(title)
+#     plt.legend()
+#     plt.grid(True)
+#     plt.show()
 
 
 def plot_wealth_by_age(df, start_age, end_age, educ_val=None):
