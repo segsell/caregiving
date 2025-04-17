@@ -49,8 +49,23 @@ def simulate_moments_pandas(
         df_high, moments, age_range=age_range, label="high_education"
     )
 
-    moments = compute_transition_moments_pandas(df, moments, age_range)
+    states = {
+        "not_working": NOT_WORKING,
+        "part_time": PART_TIME,
+        "full_time": FULL_TIME,
+    }
+    moments = compute_transition_moments_pandas(df, moments, age_range, states=states)
 
+    states_work_no_work = {
+        "working": WORK,
+        "not_working": NOT_WORKING,
+    }
+    moments = compute_transition_moments_pandas(
+        df_low, moments, age_range, states=states_work_no_work, label="low_education"
+    )
+    moments = compute_transition_moments_pandas(
+        df_high, moments, age_range, states=states_work_no_work, label="high_education"
+    )
     return pd.Series(moments)
 
 
@@ -131,14 +146,9 @@ def create_labor_share_moments_pandas(df, moments, age_range, label=None):
     return moments
 
 
-def compute_transition_moments_pandas(df, moments, age_range):
+def compute_transition_moments_pandas(df, moments, age_range, states, label=None):
     # 2) Transition probabilities
     # Define the states of interest for transitions
-    states = {
-        "not_working": NOT_WORKING,
-        "part_time": PART_TIME,
-        "full_time": FULL_TIME,
-    }
 
     # For each "from" state, filter rows where lagged_choice is in that state,
     # and for each "to" state, compute the probability that 'choice' is in that state.
@@ -152,6 +162,11 @@ def compute_transition_moments_pandas(df, moments, age_range):
     #             probability = np.nan  # or 0 if that is preferable
     #         moments[f"trans_{from_label}_to_{to_label}"] = probability
 
+    if label is None:
+        label = ""
+    else:
+        label = "_" + label
+
     for (from_label, from_val), (to_label, to_val) in product(
         states.items(), states.items()
     ):
@@ -164,7 +179,7 @@ def compute_transition_moments_pandas(df, moments, age_range):
             else:
                 probability = np.nan
 
-            key = f"trans_{from_label}_to_{to_label}_age_{age}"
+            key = f"trans_{from_label}_to_{to_label}{label}_age_{age}"
             moments[key] = probability
 
     return moments
@@ -216,22 +231,30 @@ def create_moments_jax(sim_df, min_age, max_age):
     )
 
     # Work transitions
-    # no_work_to_no_work_by_age = get_transition(
-    #     arr,
-    #     ind=idx,
-    #     lagged_choice=NOT_WORKING,
-    #     current_choice=NOT_WORKING,
-    #     min_age=min_age,
-    #     max_age=max_age,
-    # )
-    # work_to_work_by_age = get_transition(
-    #     arr,
-    #     ind=idx,
-    #     lagged_choice=WORK,
-    #     current_choice=WORK,
-    #     min_age=min_age,
-    #     max_age=max_age,
-    # )
+    work_to_work_by_age = get_transition(
+        arr,
+        ind=idx,
+        lagged_choice=WORK,
+        current_choice=WORK,
+        min_age=min_age,
+        max_age=max_age,
+    )
+    work_to_no_work_by_age = get_transition(
+        arr,
+        ind=idx,
+        lagged_choice=WORK,
+        current_choice=NOT_WORKING,
+        min_age=min_age,
+        max_age=max_age,
+    )
+    no_work_to_work_by_age = get_transition(
+        arr,
+        ind=idx,
+        lagged_choice=NOT_WORKING,
+        current_choice=WORK,
+        min_age=min_age,
+        max_age=max_age,
+    )
 
     no_work_to_no_work_by_age = get_transition(
         arr,
@@ -313,6 +336,9 @@ def create_moments_jax(sim_df, min_age, max_age):
         + share_unemployed_by_age
         + share_working_part_time_by_age
         + share_working_full_time_by_age
+        + work_to_work_by_age
+        + work_to_no_work_by_age
+        + no_work_to_work_by_age
         + no_work_to_no_work_by_age
         + no_work_to_part_time_by_age
         + no_work_to_full_time
@@ -567,8 +593,110 @@ def plot_model_fit_labor_moments_pandas(
             ax.legend()
 
     plt.tight_layout()
-    plt.savefig(path_to_save_plot, transparent=True, dpi=300)
-    plt.show()
+    if path_to_save_plot:
+        plt.savefig(path_to_save_plot, dpi=300, transparent=True)
+
+
+def plot_transition_shares_by_age(
+    moms_emp: pd.Series,
+    moms_sim: pd.Series,
+    specs: dict,
+    states: dict,
+    state_labels: Optional[dict] = None,
+    path_to_save_plot: Optional[str] = None,
+) -> None:
+    """
+    Plot age-specific transition probabilities for each from→to state pair.
+
+    Parameters
+    ----------
+    moms_emp : pd.Series
+        Empirical transition moments, indexed by keys like
+        'trans_{from}_to_{to}_age_{age}'.
+    moms_sim : pd.Series
+        Simulated transition moments, same indexing convention.
+    states : dict
+        Mapping of state-labels to their underlying values (e.g.
+        {"not_working": NOT_WORKING, ...}).
+    state_labels : dict, optional
+        Pretty names for each state key.  If None, will use .capitalize().
+        Example: {"not_working": "Not Working", ...}
+    path_to_save_plot : str, optional
+        If given, where to save the resulting figure (PNG).
+    """
+    # Prepare labels
+    # state_labels = {s: s.replace("_", " ").capitalize() for s in states}
+
+    # if state_labels is None:
+    #     state_labels = [
+    #         label.lower().replace("-", "_") for label in specs["choice_labels"]
+    #     ]
+
+    from_states = list(states.keys())
+    to_states = list(states.keys())
+    from_and_to_states = list(states.keys())
+
+    n_from = len(from_states)
+    n_to = len(to_states)
+
+    fig, axs = plt.subplots(
+        2, n_from, figsize=(4 * n_to, 3 * n_from), sharex=True, sharey=True
+    )
+
+    for edu_var, edu_label in enumerate(specs["education_labels"]):
+
+        for i, s in enumerate(from_and_to_states):
+            # for j, to_s in enumerate(to_states):
+            ax = axs[edu_var, i] if n_from > 1 else axs[i]
+
+            # Filter and sort keys
+            prefix = f"trans_{s}_to_{s}_"
+            emp_keys = sorted(
+                [
+                    k
+                    for k in moms_emp.index
+                    if k.startswith(prefix)
+                    and str(edu_label.lower().replace(" ", "_")) in k
+                ],
+                key=_extract_age,
+            )
+            sim_keys = sorted(
+                [
+                    k
+                    for k in moms_sim.index
+                    if k.startswith(prefix)
+                    and str(edu_label.lower().replace(" ", "_")) in k
+                ],
+                key=_extract_age,
+            )
+
+            # Extract ages and values
+            emp_ages = [_extract_age(k) for k in emp_keys]
+            emp_vals = [moms_emp[k] for k in emp_keys]
+            sim_ages = [_extract_age(k) for k in sim_keys]
+            sim_vals = [moms_sim[k] for k in sim_keys]
+
+            # Plot
+            ax.plot(sim_ages, sim_vals, label="Simulated")
+            ax.plot(emp_ages, emp_vals, ls="--", label="Observed")
+
+            # Titles & labels
+            ax.set_title(f"{state_labels[s]} → {state_labels[s]}")
+            ax.tick_params(labelbottom=True)
+            ax.set_xlim(min(emp_ages + sim_ages), max(emp_ages + sim_ages))
+
+            ax.set_xlabel("Age")
+            ax.set_ylim([0, 1])
+
+            # if i == n_from - 1:
+            # ax.set_xlabel("Age")
+            if s == from_states[0] == to_states[0]:
+                ax.set_ylabel(edu_label + "\nTransition Rate")
+                ax.legend()
+
+    plt.tight_layout()
+    if path_to_save_plot:
+        plt.savefig(path_to_save_plot, dpi=300, transparent=True)
 
 
 def plot_model_fit_labor_moments_pandas_jax(
@@ -636,7 +764,6 @@ def plot_model_fit_labor_moments_pandas_jax(
 
     plt.tight_layout()
     plt.savefig(path_to_save_plot, transparent=True, dpi=300)
-    plt.show()
 
 
 # Helper function to extract age from key (assumes format: "share_{state}_age_{age}")

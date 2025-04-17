@@ -16,14 +16,12 @@ from caregiving.model.shared import (
     PART_TIME,
     RETIREMENT,
     UNEMPLOYED,
+    WORK,
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
+from caregiving.utils import table
 
 DEGREES_OF_FREEDOM = 1
-
-
-def table(df_col):
-    return pd.crosstab(df_col, columns="Count")["Count"]
 
 
 def task_create_soep_moments(
@@ -101,17 +99,53 @@ def task_create_soep_moments(
     # =================================================================================
 
     # E) Year-to-year labor supply transitions
+    states_work_no_work = {
+        "working": WORK,
+        "not_working": NOT_WORKING,
+    }
     transition_moments, transition_variances = compute_transition_moments_and_variances(
-        df,
+        df_low,
         min_age=start_age,
         max_age=end_age,
+        states=states_work_no_work,
+        full_time=FULL_TIME,
+        part_time=PART_TIME,
+        not_working=NOT_WORKING,
+        label="low_education",
+    )
+    moments.update(transition_moments)
+    variances.update(transition_variances)
+
+    transition_moments, transition_variances = compute_transition_moments_and_variances(
+        df_high,
+        min_age=start_age,
+        max_age=end_age,
+        states=states_work_no_work,
+        full_time=FULL_TIME,
+        part_time=PART_TIME,
+        not_working=NOT_WORKING,
+        label="high_education",
+    )
+    moments.update(transition_moments)
+    variances.update(transition_variances)
+
+    states = {
+        "not_working": NOT_WORKING,
+        "part_time": PART_TIME,
+        "full_time": FULL_TIME,
+    }
+    transition_moments, transition_variances = compute_transition_moments_and_variances(
+        df,
+        min_age=start_age + 1,
+        max_age=end_age + 1,
+        states=states,
         full_time=FULL_TIME,
         part_time=PART_TIME,
         not_working=NOT_WORKING,
     )
     moments.update(transition_moments)
     variances.update(transition_variances)
-
+    # breakpoint()
     # F) Wealth moments by age and education (NEW)
     # wealth_moments_edu_low, wealth_variances_edu_low = (
     #     compute_wealth_moments_by_five_year_age_bins(
@@ -210,6 +244,7 @@ def compute_labor_shares_by_age(df, moments, variances, age_range, label=None):
 
 def compute_transition_moments_and_variances(
     df,
+    states,
     full_time,
     part_time,
     not_working,
@@ -217,6 +252,7 @@ def compute_transition_moments_and_variances(
     max_age,
     choice="choice",
     lagged_choice="lagged_choice",
+    label=None,
 ):
     """
     Compute year-to-year labor supply transition moments and their variances.
@@ -246,16 +282,15 @@ def compute_transition_moments_and_variances(
         values are the corresponding variances of those probabilities.
     """
 
+    if label is None:
+        label = ""
+    else:
+        label = "_" + label
+
     age_range = range(min_age, max_age + 1)
 
     moments = {}
     variances = {}
-
-    states = {
-        "not_working": NOT_WORKING,
-        "part_time": PART_TIME,
-        "full_time": FULL_TIME,
-    }
 
     # # For each "from" state, filter rows where lagged_choice is in that state,
     # # and for each "to" state, compute the probability that 'choice' is in that state.
@@ -349,7 +384,7 @@ def compute_transition_moments_and_variances(
                 variance = np.nan
 
             # key = f"trans_{from_label}_to_{to_label}"
-            key = f"trans_{from_label}_to_{to_label}_age_{age}"
+            key = f"trans_{from_label}_to_{to_label}{label}_age_{age}"
             moments[key] = probability
             variances[f"var_{key}"] = variance
 
