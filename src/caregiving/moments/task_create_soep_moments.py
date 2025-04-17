@@ -129,23 +129,23 @@ def task_create_soep_moments(
     moments.update(transition_moments)
     variances.update(transition_variances)
 
-    states = {
-        "not_working": NOT_WORKING,
-        "part_time": PART_TIME,
-        "full_time": FULL_TIME,
-    }
-    transition_moments, transition_variances = compute_transition_moments_and_variances(
-        df,
-        min_age=start_age + 1,
-        max_age=end_age + 1,
-        states=states,
-        full_time=FULL_TIME,
-        part_time=PART_TIME,
-        not_working=NOT_WORKING,
-    )
-    moments.update(transition_moments)
-    variances.update(transition_variances)
-    # breakpoint()
+    # states = {
+    #     "not_working": NOT_WORKING,
+    #     "part_time": PART_TIME,
+    #     "full_time": FULL_TIME,
+    # }
+    # trans_moments, trans_variances = compute_transition_moments_and_variances(
+    #     df,
+    #     min_age=start_age + 1,
+    #     max_age=end_age + 1,
+    #     states=states,
+    #     full_time=FULL_TIME,
+    #     part_time=PART_TIME,
+    #     not_working=NOT_WORKING,
+    # )
+    # moments.update(trans_moments)
+    # variances.update(trans_variances)
+
     # F) Wealth moments by age and education (NEW)
     # wealth_moments_edu_low, wealth_variances_edu_low = (
     #     compute_wealth_moments_by_five_year_age_bins(

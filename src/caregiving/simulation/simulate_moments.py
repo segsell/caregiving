@@ -49,16 +49,16 @@ def simulate_moments_pandas(
         df_high, moments, age_range=age_range, label="high_education"
     )
 
-    states = {
-        "not_working": NOT_WORKING,
-        "part_time": PART_TIME,
-        "full_time": FULL_TIME,
-    }
-    moments = compute_transition_moments_pandas(df, moments, age_range, states=states)
+    # states = {
+    #     "not_working": NOT_WORKING,
+    #     "part_time": PART_TIME,
+    #     "full_time": FULL_TIME,
+    # }
+    # moments = compute_transition_moments_pandas(df, moments, age_range, states=states)
 
     states_work_no_work = {
-        "working": WORK,
         "not_working": NOT_WORKING,
+        "working": WORK,
     }
     moments = compute_transition_moments_pandas(
         df_low, moments, age_range, states=states_work_no_work, label="low_education"
@@ -66,6 +66,7 @@ def simulate_moments_pandas(
     moments = compute_transition_moments_pandas(
         df_high, moments, age_range, states=states_work_no_work, label="high_education"
     )
+
     return pd.Series(moments)
 
 
@@ -214,8 +215,8 @@ def create_moments_jax(sim_df, min_age, max_age):
     # df_low_educ = sim_df.loc[sim_df["education"] == 0]
     # df_high_educ = sim_df.loc[sim_df["education"] == 1]
 
-    # arr_low_educ = arr[arr[:, idx["education"]] == 0]
-    # arr_high_educ = arr[arr[:, idx["education"]] == 1]
+    arr_low_educ = arr[arr[:, idx["education"]] == 0]
+    arr_high_educ = arr[arr[:, idx["education"]] == 1]
 
     share_retired_by_age = get_share_by_age(
         arr, ind=idx, choice=RETIREMENT, min_age=min_age, max_age=max_age
@@ -230,124 +231,200 @@ def create_moments_jax(sim_df, min_age, max_age):
         arr, ind=idx, choice=FULL_TIME, min_age=min_age, max_age=max_age
     )
 
-    # Work transitions
-    work_to_work_by_age = get_transition(
-        arr,
+    share_retired_by_age_low_educ = get_share_by_age(
+        arr_low_educ, ind=idx, choice=RETIREMENT, min_age=min_age, max_age=max_age
+    )
+    share_unemployed_by_age_low_educ = get_share_by_age(
+        arr_low_educ, ind=idx, choice=UNEMPLOYED, min_age=min_age, max_age=max_age
+    )
+    share_working_part_time_by_age_low_educ = get_share_by_age(
+        arr_low_educ, ind=idx, choice=PART_TIME, min_age=min_age, max_age=max_age
+    )
+    share_working_full_time_by_age_low_educ = get_share_by_age(
+        arr_low_educ, ind=idx, choice=FULL_TIME, min_age=min_age, max_age=max_age
+    )
+
+    share_retired_by_age_high_educ = get_share_by_age(
+        arr_high_educ, ind=idx, choice=RETIREMENT, min_age=min_age, max_age=max_age
+    )
+    share_unemployed_by_age_high_educ = get_share_by_age(
+        arr_high_educ, ind=idx, choice=UNEMPLOYED, min_age=min_age, max_age=max_age
+    )
+    share_working_part_time_by_age_high_educ = get_share_by_age(
+        arr_high_educ, ind=idx, choice=PART_TIME, min_age=min_age, max_age=max_age
+    )
+    share_working_full_time_by_age_high_educ = get_share_by_age(
+        arr_high_educ, ind=idx, choice=FULL_TIME, min_age=min_age, max_age=max_age
+    )
+
+    # # Work transitions
+    work_to_work_low_educ_by_age = get_transition(
+        arr_low_educ,
         ind=idx,
         lagged_choice=WORK,
         current_choice=WORK,
         min_age=min_age,
         max_age=max_age,
     )
-    work_to_no_work_by_age = get_transition(
-        arr,
+    work_to_no_work_low_educ_by_age = get_transition(
+        arr_low_educ,
         ind=idx,
         lagged_choice=WORK,
         current_choice=NOT_WORKING,
         min_age=min_age,
         max_age=max_age,
     )
-    no_work_to_work_by_age = get_transition(
-        arr,
+    no_work_to_work_low_educ_by_age = get_transition(
+        arr_low_educ,
         ind=idx,
         lagged_choice=NOT_WORKING,
         current_choice=WORK,
         min_age=min_age,
         max_age=max_age,
     )
-
-    no_work_to_no_work_by_age = get_transition(
-        arr,
+    no_work_to_no_work_low_educ_by_age = get_transition(
+        arr_low_educ,
         ind=idx,
         lagged_choice=NOT_WORKING,
         current_choice=NOT_WORKING,
         min_age=min_age,
         max_age=max_age,
     )
-    no_work_to_part_time_by_age = get_transition(
-        arr,
-        ind=idx,
-        lagged_choice=NOT_WORKING,
-        current_choice=PART_TIME,
-        min_age=min_age,
-        max_age=max_age,
-    )
-    no_work_to_full_time = get_transition(
-        arr,
-        ind=idx,
-        lagged_choice=NOT_WORKING,
-        current_choice=FULL_TIME,
-        min_age=min_age,
-        max_age=max_age,
-    )
 
-    part_time_to_no_work = get_transition(
-        arr,
+    work_to_work_high_educ_by_age = get_transition(
+        arr_high_educ,
         ind=idx,
-        lagged_choice=PART_TIME,
+        lagged_choice=WORK,
+        current_choice=WORK,
+        min_age=min_age,
+        max_age=max_age,
+    )
+    work_to_no_work_high_educ_by_age = get_transition(
+        arr_high_educ,
+        ind=idx,
+        lagged_choice=WORK,
         current_choice=NOT_WORKING,
         min_age=min_age,
         max_age=max_age,
     )
-    part_time_to_part_time = get_transition(
-        arr,
+    no_work_to_work_high_educ_by_age = get_transition(
+        arr_high_educ,
         ind=idx,
-        lagged_choice=PART_TIME,
-        current_choice=PART_TIME,
+        lagged_choice=NOT_WORKING,
+        current_choice=WORK,
         min_age=min_age,
         max_age=max_age,
     )
-    part_time_to_full_time = get_transition(
-        arr,
+    no_work_to_no_work_high_educ_by_age = get_transition(
+        arr_high_educ,
         ind=idx,
-        lagged_choice=PART_TIME,
-        current_choice=FULL_TIME,
-        min_age=min_age,
-        max_age=max_age,
-    )
-
-    full_time_to_no_work = get_transition(
-        arr,
-        ind=idx,
-        lagged_choice=FULL_TIME,
+        lagged_choice=NOT_WORKING,
         current_choice=NOT_WORKING,
         min_age=min_age,
         max_age=max_age,
     )
-    full_time_to_part_time = get_transition(
-        arr,
-        ind=idx,
-        lagged_choice=FULL_TIME,
-        current_choice=PART_TIME,
-        min_age=min_age,
-        max_age=max_age,
-    )
-    full_time_to_full_time = get_transition(
-        arr,
-        ind=idx,
-        lagged_choice=FULL_TIME,
-        current_choice=FULL_TIME,
-        min_age=min_age,
-        max_age=max_age,
-    )
+
+    # no_work_to_part_time_by_age = get_transition(
+    #     arr,
+    #     ind=idx,
+    #     lagged_choice=NOT_WORKING,
+    #     current_choice=PART_TIME,
+    #     min_age=min_age,
+    #     max_age=max_age,
+    # )
+    # no_work_to_full_time = get_transition(
+    #     arr,
+    #     ind=idx,
+    #     lagged_choice=NOT_WORKING,
+    #     current_choice=FULL_TIME,
+    #     min_age=min_age,
+    #     max_age=max_age,
+    # )
+
+    # part_time_to_no_work = get_transition(
+    #     arr,
+    #     ind=idx,
+    #     lagged_choice=PART_TIME,
+    #     current_choice=NOT_WORKING,
+    #     min_age=min_age,
+    #     max_age=max_age,
+    # )
+    # part_time_to_part_time = get_transition(
+    #     arr,
+    #     ind=idx,
+    #     lagged_choice=PART_TIME,
+    #     current_choice=PART_TIME,
+    #     min_age=min_age,
+    #     max_age=max_age,
+    # )
+    # part_time_to_full_time = get_transition(
+    #     arr,
+    #     ind=idx,
+    #     lagged_choice=PART_TIME,
+    #     current_choice=FULL_TIME,
+    #     min_age=min_age,
+    #     max_age=max_age,
+    # )
+
+    # full_time_to_no_work = get_transition(
+    #     arr,
+    #     ind=idx,
+    #     lagged_choice=FULL_TIME,
+    #     current_choice=NOT_WORKING,
+    #     min_age=min_age,
+    #     max_age=max_age,
+    # )
+    # full_time_to_part_time = get_transition(
+    #     arr,
+    #     ind=idx,
+    #     lagged_choice=FULL_TIME,
+    #     current_choice=PART_TIME,
+    #     min_age=min_age,
+    #     max_age=max_age,
+    # )
+    # full_time_to_full_time = get_transition(
+    #     arr,
+    #     ind=idx,
+    #     lagged_choice=FULL_TIME,
+    #     current_choice=FULL_TIME,
+    #     min_age=min_age,
+    #     max_age=max_age,
+    # )
 
     return jnp.asarray(
         share_retired_by_age
         + share_unemployed_by_age
         + share_working_part_time_by_age
         + share_working_full_time_by_age
-        + work_to_work_by_age
-        + work_to_no_work_by_age
-        + no_work_to_work_by_age
-        + no_work_to_no_work_by_age
-        + no_work_to_part_time_by_age
-        + no_work_to_full_time
-        + part_time_to_no_work
-        + part_time_to_part_time
-        + part_time_to_full_time
-        + full_time_to_no_work
-        + full_time_to_part_time
-        + full_time_to_full_time
+        + share_retired_by_age_low_educ
+        + share_unemployed_by_age_low_educ
+        + share_working_part_time_by_age_low_educ
+        + share_working_full_time_by_age_low_educ
+        + share_retired_by_age_high_educ
+        + share_unemployed_by_age_high_educ
+        + share_working_part_time_by_age_high_educ
+        + share_working_full_time_by_age_high_educ
+        + no_work_to_no_work_low_educ_by_age
+        + no_work_to_work_low_educ_by_age
+        + work_to_no_work_low_educ_by_age
+        + work_to_work_low_educ_by_age
+        + no_work_to_no_work_high_educ_by_age
+        + no_work_to_work_high_educ_by_age
+        + work_to_no_work_high_educ_by_age
+        + work_to_work_high_educ_by_age
+        #
+        # + work_to_work_by_age
+        # + work_to_no_work_by_age
+        # + no_work_to_work_by_age
+        # + no_work_to_no_work_by_age
+        # + no_work_to_part_time_by_age
+        # + no_work_to_full_time
+        # + part_time_to_no_work
+        # + part_time_to_part_time
+        # + part_time_to_full_time
+        # + full_time_to_no_work
+        # + full_time_to_part_time
+        # + full_time_to_full_time
     )
 
 
@@ -483,7 +560,7 @@ def plot_model_fit_labor_moments_pandas_by_education(
 
     choices = ["retired", "unemployed", "part_time", "full_time"]
 
-    fig, axs = plt.subplots(2, 4, figsize=(16, 4), sharex=True, sharey=True)
+    fig, axs = plt.subplots(2, 4, figsize=(16, 6), sharex=True, sharey=True)
 
     for edu_var, edu_label in enumerate(specs["education_labels"]):
 
@@ -561,7 +638,7 @@ def plot_model_fit_labor_moments_pandas(
     # Define the states of interest.
     states = ["retired", "unemployed", "part_time", "full_time"]
 
-    fig, axs = plt.subplots(1, 4, figsize=(16, 4), sharex=True, sharey=True)
+    fig, axs = plt.subplots(1, 4, figsize=(16, 6), sharex=True, sharey=True)
     axs = axs.flatten()
 
     # Loop through each state to plot its empirical and simulated shares.
@@ -688,8 +765,6 @@ def plot_transition_shares_by_age(
             ax.set_xlabel("Age")
             ax.set_ylim([0, 1])
 
-            # if i == n_from - 1:
-            # ax.set_xlabel("Age")
             if s == from_states[0] == to_states[0]:
                 ax.set_ylabel(edu_label + "\nTransition Rate")
                 ax.legend()
@@ -697,6 +772,89 @@ def plot_transition_shares_by_age(
     plt.tight_layout()
     if path_to_save_plot:
         plt.savefig(path_to_save_plot, dpi=300, transparent=True)
+
+
+# =====================================================================================
+# JAX numpy
+# =====================================================================================
+
+
+def plot_model_fit_labor_moments_by_education_pandas_jax(
+    moms_emp: pd.Series,
+    moms_sim: jnp.ndarray,
+    specs: dict,
+    path_to_save_plot: Optional[str] = None,
+) -> None:
+    """
+    Plots the age specific labor supply shares (choice shares) for four states:
+    retired, unemployed, part-time, and full-time based on the empirical
+    and simulated moments.
+
+    Both data_emp and data_sim are pandas Series indexed by moment names in the format:
+      "share_{state}_age_{age}"
+    e.g., "share_retired_age_30", "share_unemployed_age_40", etc.
+
+    Parameters
+    ----------
+    data_emp : pd.Series
+        Empirical moments with keys like "share_retired_age_30", etc.
+    data_sim : pd.Series
+        Simulated moments with the same key naming convention.
+    path_to_save_plot : str
+        File path to save the generated plot.
+    """
+
+    choices = ["retired", "unemployed", "part_time", "full_time"]
+
+    sim_array = np.asarray(moms_sim)
+
+    fig, axs = plt.subplots(2, 4, figsize=(16, 6), sharex=True, sharey=True)
+
+    for edu_var, edu_label in enumerate(specs["education_labels"]):
+
+        for choice_var, choice_label in enumerate(specs["choice_labels"]):
+
+            ax = axs[edu_var, choice_var]
+
+            # Get positions where keys match the current state. This preserves the order
+            # of the empirical Series.
+            indices = [
+                i
+                for i, k in enumerate(moms_emp.index)
+                # if key.startswith(f"share_{state}_age_")
+                if k.startswith(f"share_{choices[choice_var]}_")
+                and str(edu_label.lower().replace(" ", "_")) in k
+            ]
+            # Retrieve the keys for these positions.
+            keys = [moms_emp.index[i] for i in indices]
+            # Extract the ages from these keys.
+            ages = [_extract_age(key) for key in keys]
+
+            # Extract empirical values using iloc and simulated values from the jax
+            # array using the same indices.
+            emp_values = moms_emp.iloc[indices].values
+            sim_values = sim_array[indices]
+
+            # Plot empirical and simulated shares.
+            ax.plot(ages, sim_values, label="Simulated")
+            ax.plot(ages, emp_values, label="Observed", ls="--")
+
+            ax.set_xlabel("Age")
+            ax.set_ylim([0, 1])
+
+            # if edu_var == 0:
+            ax.set_title(choice_label)
+            ax.tick_params(labelbottom=True)
+
+            if choice_var == 0:
+                ax.set_ylabel(edu_label + "\nShare")
+                ax.legend()
+            else:
+                ax.set_ylabel("")
+
+    plt.tight_layout()
+    if path_to_save_plot:
+        plt.savefig(path_to_save_plot, transparent=False, dpi=300)
 
 
 def plot_model_fit_labor_moments_pandas_jax(
@@ -727,7 +885,7 @@ def plot_model_fit_labor_moments_pandas_jax(
     # Convert the simulated array to a NumPy array (if needed).
     sim_array = np.asarray(moms_sim)
 
-    fig, axs = plt.subplots(1, 4, figsize=(16, 4), sharex=True, sharey=True)
+    fig, axs = plt.subplots(1, 4, figsize=(16, 6), sharex=True, sharey=True)
     axs = axs.flatten()
 
     # Loop through each state to plot its empirical and simulated shares.
