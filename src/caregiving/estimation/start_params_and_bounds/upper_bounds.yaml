@@ -1,0 +1,25 @@
+# Utility parameters
+rho: 2
+
+util_cons_unemployed: 5
+util_cons_part_time_low_educ: 5
+util_cons_part_time_high_educ: 5
+util_cons_full_time_low_educ: 5
+util_cons_full_time_high_educ: 5
+
+util_cons_children_part_time_low_educ: 5
+util_cons_children_part_time_high_educ: 5
+
+util_cons_children_full_time_low_educ: 5
+util_cons_children_full_time_high_educ: 5
+
+# Bequest scale
+bequest_scale: 5
+
+# Taste shock scale
+lambda: 2
+
+# Job finding
+job_finding_logit_const_women: 5
+job_finding_logit_age_women: 0.5
+job_finding_logit_high_educ_women: 5
