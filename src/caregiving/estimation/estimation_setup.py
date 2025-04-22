@@ -1,13 +1,21 @@
 """Functions for pre and post estimation setup."""
 
+import pickle
+import time
+from functools import partial
 from typing import Any, Dict, Optional
 
-import numpy as np
 import jax
 import jax.numpy as jnp
+import numpy as np
+import optimagic as om
+import pandas as pd
+import yaml
 from dcegm.pre_processing.setup_model import load_and_setup_model
 from dcegm.wealth_correction import adjust_observed_wealth
 
+from caregiving.config import BLD, SRC
+from caregiving.model.shared import RETIREMENT
 from caregiving.model.state_space import (
     create_state_space_functions,
 )
@@ -16,20 +24,8 @@ from caregiving.model.utility.bequest_utility import (
 )
 from caregiving.model.utility.utility_functions import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
-from caregiving.model.shared import RETIREMENT
-from caregiving.simulation.simulate_moments import simulate_moments_jax
-
-from caregiving.config import SRC, BLD
-
-import yaml
-import optimagic as om
-from functools import partial
-
-import pandas as pd
-import time
-import pickle
-
 from caregiving.simulation.simulate import simulate_scenario
+from caregiving.simulation.simulate_moments import simulate_moments_jax
 
 jax.config.update("jax_enable_x64", True)
 
@@ -92,7 +88,7 @@ def estimate_model(
     # elif method == "identity":
     #     array_weights = np.identity(_internal_cov.shape[0])
 
-    with open(path_to_updated_start_params, "r") as file:
+    with open(path_to_updated_start_params) as file:
         start_params_all = yaml.safe_load(file)
 
     # Assign start params from before
