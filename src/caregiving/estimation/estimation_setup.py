@@ -11,8 +11,6 @@ import numpy as np
 import optimagic as om
 import pandas as pd
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import RETIREMENT
@@ -29,6 +27,8 @@ from caregiving.simulation.simulate_moments import (
     simulate_moments_jax,
     simulate_moments_pandas,
 )
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 jax.config.update("jax_enable_x64", True)
 
@@ -76,7 +76,7 @@ def estimate_model(
     empirical_variances = jnp.array(
         pd.read_csv(path_to_empirical_variance, index_col=0).squeeze()
     )
-    empirical_variances_reg = np.maximum(empirical_variances, 1e-3)
+    empirical_variances_reg = np.maximum(empirical_variances, 1e-4)
     weights = jnp.diag(1 / empirical_variances_reg)
 
     # if method == "optimal":
@@ -140,7 +140,7 @@ def estimate_model(
         constraints=fixed_constraint,
         # scaling=True,
         # scaling_options={"method": "bounds", "clipping_value": 0.1, "magnitude": 1},
-        error_handling="continue",
+        error_handling="raise",
     )
 
     pickle.dump(result, open(path_to_save_estimation_result, "wb"))
