@@ -24,7 +24,6 @@ from caregiving.simulation.plot_model_fit import (
 )
 
 
-@pytask.mark.skip()
 def task_plot_model_fit(
     path_to_options: Path = BLD / "model" / "options.pkl",
     path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",

@@ -11,8 +11,7 @@ import yaml
 from dcegm.pre_processing.setup_model import load_and_setup_model
 from dcegm.wealth_correction import adjust_observed_wealth
 from pytask import Product
-from scipy import stats
-from sklearn.neighbors import KernelDensity
+from scipy.stats import pareto
 
 from caregiving.config import BLD
 from caregiving.model.shared import SEX
@@ -22,7 +21,6 @@ from caregiving.model.utility.bequest_utility import (
 )
 from caregiving.model.utility.utility_functions import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
-from caregiving.utils import table
 
 
 def task_generate_start_states_for_solution(  # noqa: PLR0915
@@ -204,64 +202,32 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     wealth_agents = pd.DataFrame(wealth_agents, columns=["wealth"])
     wealth_agents.to_csv(path_to_save_wealth, index=False)
 
+    return states, wealth_agents
 
-def draw_start_wealth_dist(start_period_data_edu, n_agents_edu, method="kde"):
-    """Draws samples from the starting wealth distribution using different methods.
 
-    Methods:
-    - "uniform": Uniform sampling between the 30th and 70th percentiles.
-    - "lognormal": Fit a shifted lognormal distribution and sample from it.
-    - "kde": Kernel Density Estimation (KDE) based sampling.
-    - "pareto": Fit a shifted Pareto distribution and sample from it.
-
-    Parameters:
-        start_period_data_edu (pd.DataFrame): Data containing "adjusted_wealth".
-        n_agents_edu (int): Number of samples to draw.
-        method (str): Sampling method ("uniform", "lognormal", "kde", "pareto").
-
-    Returns:
-        np.ndarray: Sampled wealth values.
-    """
-
-    wealth_data = start_period_data_edu["adjusted_wealth"]
-
-    if method == "uniform":
-        # Existing uniform sampling between 30th and 70th quantiles
-        wealth_start = np.random.uniform(
-            wealth_data.quantile(0.3), wealth_data.quantile(0.7), n_agents_edu
-        )
-
-    elif method == "lognormal":
-        # Fit a shifted lognormal distribution
-        min_val = wealth_data.min()
-        shifted_data = wealth_data - min_val + 1e-6  # Avoid log(0)
-        shape, loc, scale = stats.lognorm.fit(
-            shifted_data, floc=0
-        )  # Fix location at zero
-        samples = stats.lognorm.rvs(shape, loc=loc, scale=scale, size=n_agents_edu)
-        wealth_start = samples + min_val - 1e-6  # Shift back
-
-    elif method == "kde":
-        # Kernel Density Estimation (KDE) sampling
-        kde = KernelDensity(kernel="gaussian", bandwidth=0.1 * wealth_data.std()).fit(
-            wealth_data.values.reshape(-1, 1)
-        )
-        wealth_start = kde.sample(n_agents_edu).flatten()
-
-    elif method == "pareto":
-        # Fit a Pareto-like distribution (Shifted Pareto)
-        min_val = wealth_data.min()
-        shifted_data = wealth_data - min_val + 1e-6  # Shift data to avoid 0
-        shape, loc, scale = stats.pareto.fit(
-            shifted_data, floc=0
-        )  # Fix location at zero
-        samples = stats.pareto.rvs(shape, loc=loc, scale=scale, size=n_agents_edu)
-        wealth_start = samples + min_val - 1e-6  # Shift back
-
-    wealth_start_clipped = np.clip(
-        wealth_start,
-        a_min=wealth_data.quantile(0),  # wealth_data.min()
-        a_max=wealth_data.quantile(0.98),
+def draw_start_wealth_dist(start_period_data_edu, n_agents_edu):
+    """Draw uniform wealth distribution from 30 to 70th quantile."""
+    wealth_start_edu = np.random.uniform(
+        start_period_data_edu["adjusted_wealth"].quantile(0.3),
+        start_period_data_edu["adjusted_wealth"].quantile(0.7),
+        n_agents_edu,
     )
-
-    return wealth_start_clipped
+    return wealth_start_edu
+    # if edu == 1:
+    #     # Filter out high outliers for high
+    #     wealth_edu = wealth_edu[wealth_edu < np.quantile(wealth_edu, 0.85)]
+    #
+    # median = np.quantile(wealth_edu, 0.5)
+    # fscale = min_unemployment_benefits - 0.01
+    #
+    # # # Adjust shape to ensure the median is as desired
+    # # adjusted_shape = np.log(2) / np.log(median / fscale)
+    #
+    # # Estimate pareto wealth distribution.
+    # # Take single unemployment benefits as minimum.
+    # shape_param, loc_param, scale_param = pareto.fit(wealth_edu, fscale=fscale)
+    #
+    # wealth_agents[edu_agents == edu] = pareto.rvs(
+    # shape_param, loc=loc_param, scale=fscale, size=n_agents_edu
+    # )
+    # breakpoint()

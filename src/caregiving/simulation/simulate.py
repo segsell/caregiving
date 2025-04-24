@@ -76,12 +76,7 @@ def simulate_scenario(
     df["total_income"] = (
         df.groupby("agent")["wealth_at_beginning"].shift(-1) - df["savings"]
     )
-    df["income_wo_interest"] = df.groupby("agent")["wealth_at_beginning"].shift(
-        -1
-    ) - df["savings"] * (1 + params["interest_rate"])
-
-    # periodic savings and savings rate
+    # Finally the savings decision
     df["savings_dec"] = df["total_income"] - df["consumption"]
-    df["savings_rate"] = df["savings_dec"] / df["total_income"]
 
     return df
