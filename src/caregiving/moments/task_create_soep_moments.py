@@ -108,9 +108,6 @@ def task_create_soep_moments(
         min_age=start_age,
         max_age=end_age,
         states=states_work_no_work,
-        full_time=FULL_TIME,
-        part_time=PART_TIME,
-        not_working=NOT_WORKING,
         label="low_education",
     )
     moments.update(transition_moments)
@@ -121,9 +118,6 @@ def task_create_soep_moments(
         min_age=start_age,
         max_age=end_age,
         states=states_work_no_work,
-        full_time=FULL_TIME,
-        part_time=PART_TIME,
-        not_working=NOT_WORKING,
         label="high_education",
     )
     moments.update(transition_moments)
@@ -223,9 +217,9 @@ def compute_labor_shares_by_age(df, moments, variances, age_range, label=None):
     full_time_vars = full_time_vars.reindex(age_range, fill_value=np.nan)
 
     # Populate the moments dictionary for age-specific shares
-    for age in age_range:
-        moments[f"share_retired{label}_age_{age}"] = retired_shares.loc[age]
-        variances[f"share_retired{label}_age_{age}"] = retired_vars.loc[age]
+    # for age in age_range:
+    #     moments[f"share_retired{label}_age_{age}"] = retired_shares.loc[age]
+    #     variances[f"share_retired{label}_age_{age}"] = retired_vars.loc[age]
 
     for age in age_range:
         moments[f"share_unemployed{label}_age_{age}"] = unemployed_shares.loc[age]
@@ -245,9 +239,6 @@ def compute_labor_shares_by_age(df, moments, variances, age_range, label=None):
 def compute_transition_moments_and_variances(
     df,
     states,
-    full_time,
-    part_time,
-    not_working,
     min_age,
     max_age,
     choice="choice",
@@ -465,9 +456,6 @@ def compute_transition_moments_by_five_year_age_bins(
             subdf,
             start_age,
             end_age,
-            full_time=full_time,
-            part_time=part_time,
-            not_working=not_working,
             choice=choice,
             lagged_choice=lagged_choice,
         )

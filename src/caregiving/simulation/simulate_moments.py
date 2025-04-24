@@ -114,9 +114,9 @@ def create_labor_share_moments_pandas(df, moments, age_range, label=None):
     age_groups = df.groupby("age")
 
     # Compute the proportion for each status using vectorized operations
-    retired_shares = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(RETIREMENT)).mean()
-    )
+    # retired_shares = age_groups["choice"].apply(
+    #     lambda x: x.isin(np.atleast_1d(RETIREMENT)).mean()
+    # )
     unemployed_shares = age_groups["choice"].apply(
         lambda x: x.isin(np.atleast_1d(UNEMPLOYED)).mean()
     )
@@ -129,14 +129,14 @@ def create_labor_share_moments_pandas(df, moments, age_range, label=None):
 
     # Reindex to ensure that every age between start_age and end_age is included;
     # missing ages will be filled with NaN
-    retired_shares = retired_shares.reindex(age_range, fill_value=np.nan)
+    # retired_shares = retired_shares.reindex(age_range, fill_value=np.nan)
     unemployed_shares = unemployed_shares.reindex(age_range, fill_value=np.nan)
     part_time_shares = part_time_shares.reindex(age_range, fill_value=np.nan)
     full_time_shares = full_time_shares.reindex(age_range, fill_value=np.nan)
 
     # Populate the moments dictionary for age-specific shares
-    for age in age_range:
-        moments[f"share_retired{label}_age_{age}"] = retired_shares.loc[age]
+    # for age in age_range:
+    #     moments[f"share_retired{label}_age_{age}"] = retired_shares.loc[age]
     for age in age_range:
         moments[f"share_unemployed{label}_age_{age}"] = unemployed_shares.loc[age]
     for age in age_range:
@@ -218,9 +218,9 @@ def create_moments_jax(sim_df, min_age, max_age):
     arr_low_educ = arr[arr[:, idx["education"]] == 0]
     arr_high_educ = arr[arr[:, idx["education"]] == 1]
 
-    share_retired_by_age = get_share_by_age(
-        arr, ind=idx, choice=RETIREMENT, min_age=min_age, max_age=max_age
-    )
+    # share_retired_by_age = get_share_by_age(
+    #     arr, ind=idx, choice=RETIREMENT, min_age=min_age, max_age=max_age
+    # )
     share_unemployed_by_age = get_share_by_age(
         arr, ind=idx, choice=UNEMPLOYED, min_age=min_age, max_age=max_age
     )
@@ -231,9 +231,9 @@ def create_moments_jax(sim_df, min_age, max_age):
         arr, ind=idx, choice=FULL_TIME, min_age=min_age, max_age=max_age
     )
 
-    share_retired_by_age_low_educ = get_share_by_age(
-        arr_low_educ, ind=idx, choice=RETIREMENT, min_age=min_age, max_age=max_age
-    )
+    # share_retired_by_age_low_educ = get_share_by_age(
+    #     arr_low_educ, ind=idx, choice=RETIREMENT, min_age=min_age, max_age=max_age
+    # )
     share_unemployed_by_age_low_educ = get_share_by_age(
         arr_low_educ, ind=idx, choice=UNEMPLOYED, min_age=min_age, max_age=max_age
     )
@@ -244,9 +244,9 @@ def create_moments_jax(sim_df, min_age, max_age):
         arr_low_educ, ind=idx, choice=FULL_TIME, min_age=min_age, max_age=max_age
     )
 
-    share_retired_by_age_high_educ = get_share_by_age(
-        arr_high_educ, ind=idx, choice=RETIREMENT, min_age=min_age, max_age=max_age
-    )
+    # share_retired_by_age_high_educ = get_share_by_age(
+    #     arr_high_educ, ind=idx, choice=RETIREMENT, min_age=min_age, max_age=max_age
+    # )
     share_unemployed_by_age_high_educ = get_share_by_age(
         arr_high_educ, ind=idx, choice=UNEMPLOYED, min_age=min_age, max_age=max_age
     )
@@ -392,15 +392,15 @@ def create_moments_jax(sim_df, min_age, max_age):
     # )
 
     return jnp.asarray(
-        share_retired_by_age
-        + share_unemployed_by_age
+        # share_retired_by_age
+        share_unemployed_by_age
         + share_working_part_time_by_age
         + share_working_full_time_by_age
-        + share_retired_by_age_low_educ
+        # + share_retired_by_age_low_educ
         + share_unemployed_by_age_low_educ
         + share_working_part_time_by_age_low_educ
         + share_working_full_time_by_age_low_educ
-        + share_retired_by_age_high_educ
+        # + share_retired_by_age_high_educ
         + share_unemployed_by_age_high_educ
         + share_working_part_time_by_age_high_educ
         + share_working_full_time_by_age_high_educ
