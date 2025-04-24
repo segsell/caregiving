@@ -1,5 +1,6 @@
 # Utility parameters
 rho: 2
+beta: 0.999999999999
 
 util_cons_unemployed: 5
 util_cons_part_time_low_educ: 5
@@ -23,3 +24,8 @@ lambda: 2
 job_finding_logit_const_women: 5
 job_finding_logit_age_women: 0.5
 job_finding_logit_high_educ_women: 5
+
+
+# Other
+interest_rate: 0.1
+sigma: 1.0

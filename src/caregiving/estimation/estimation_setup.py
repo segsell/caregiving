@@ -11,6 +11,8 @@ import numpy as np
 import optimagic as om
 import pandas as pd
 import yaml
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import RETIREMENT
@@ -23,35 +25,30 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.simulation.simulate import simulate_scenario
-from caregiving.simulation.simulate_moments import simulate_moments_jax
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
+from caregiving.simulation.simulate_moments import (
+    simulate_moments_jax,
+    simulate_moments_pandas,
+)
 
 jax.config.update("jax_enable_x64", True)
 
 
 def estimate_model(
-    model_for_solution: Dict[str, Any],
     model_for_simulation: Dict[str, Any],
+    start_params: Dict[str, Any],
     solve_func: callable,
     options: Dict[str, Any],
     algo: str,
     algo_options: Dict[str, Any],
-    params_to_estimate_names: list[str],
+    *,
     path_to_discrete_states: str = BLD / "model" / "initial_conditions" / "states.pkl",
     path_to_wealth: str = BLD / "model" / "initial_conditions" / "wealth.csv",
-    path_to_empirical_moments: str = BLD
-    / "estimation"
-    / "empirical_moments"
-    / "empirical_moments.csv",
-    path_to_empirical_variance: str = BLD
-    / "estimation"
-    / "empirical_moments"
-    / "empirical_variance.csv",
-    path_to_updated_start_params: str = BLD
-    / "model"
-    / "params"
-    / "start_params_updated.yaml",
+    path_to_empirical_moments: str = BLD / "moments" / "soep_moments.csv",
+    path_to_empirical_variance: str = BLD / "moments" / "soep_variances.csv",
+    # path_to_updated_start_params: str = BLD
+    # / "model"
+    # / "params"
+    # / "start_params_model.yaml",
     path_to_lower_bounds: str = SRC
     / "estimation"
     / "start_params_and_bounds"
@@ -60,7 +57,9 @@ def estimate_model(
     / "estimation"
     / "start_params_and_bounds"
     / "upper_bounds.yaml",
-    last_estimate: Optional[Dict[str, Any]] = None,
+    path_to_save_estimation_result: str = BLD / "estimation" / "result.pkl",
+    path_to_save_estimation_params: str = BLD / "estimation" / "estimated_params.csv",
+    # last_estimate: Optional[Dict[str, Any]] = None,
 ) -> None:
     """Estimate the model based on empirical data and starting parameters."""
 
@@ -74,11 +73,11 @@ def estimate_model(
     empirical_moments = jnp.array(
         pd.read_csv(path_to_empirical_moments, index_col=0).squeeze()
     )
-    empirical_covariance = jnp.array(
+    empirical_variances = jnp.array(
         pd.read_csv(path_to_empirical_variance, index_col=0).squeeze()
     )
-    _diagonal_values = 1 / jnp.diagonal(empirical_covariance)
-    weights = jnp.diag(_diagonal_values)
+    empirical_variances_reg = np.maximum(empirical_variances, 1e-3)
+    weights = jnp.diag(1 / empirical_variances_reg)
 
     # if method == "optimal":
     #     array_weights = robust_inverse(_internal_cov)
@@ -88,58 +87,43 @@ def estimate_model(
     # elif method == "identity":
     #     array_weights = np.identity(_internal_cov.shape[0])
 
-    with open(path_to_updated_start_params) as file:
-        start_params_all = yaml.safe_load(file)
+    # start_params_all = yaml.safe_load(path_to_updated_start_params.open("rb"))
 
-    # Assign start params from before
-    if last_estimate is not None:
-        for key in last_estimate.keys():
-            if key in ("sigma", "interest_rate", "beta"):
-                continue
-            try:
-                print(
-                    f"Start params value of {key} was {start_params_all[key]} and is"
-                    f"replaced by {last_estimate[key]}"
-                )
-            except KeyError as err:
-                raise ValueError(f"Key {key} not found in start params.") from err
-            start_params_all[key] = last_estimate[key]
+    # # Assign start params from before
+    # if last_estimate is not None:
+    #     for key in last_estimate.keys():
+    #         if key in ("sigma", "interest_rate", "beta"):
+    #             continue
+    #         try:
+    #             print(
+    #                 f"Start params value of {key} was {start_params_all[key]} and is"
+    #                 f"replaced by {last_estimate[key]}"
+    #             )
+    #         except KeyError as err:
+    #             raise ValueError(f"Key {key} not found in start params.") from err
+    #         start_params_all[key] = last_estimate[key]
 
-    start_params = {name: start_params_all[name] for name in params_to_estimate_names}
+    # start_params = {name: start_params_all[name] for name in start_params.keys()}
 
     lower_bounds_all = yaml.safe_load(open(path_to_lower_bounds, "rb"))
-    lower_bounds = {name: lower_bounds_all[name] for name in params_to_estimate_names}
+    lower_bounds = {name: lower_bounds_all[name] for name in start_params.keys()}
 
     upper_bounds_all = yaml.safe_load(open(path_to_upper_bounds, "rb"))
-    upper_bounds = {name: upper_bounds_all[name] for name in params_to_estimate_names}
+    upper_bounds = {name: upper_bounds_all[name] for name in start_params.keys()}
 
     bounds = om.Bounds(lower=lower_bounds, upper=upper_bounds)
-
-    # # Solve and simulate
-    # solution_dict = solve_func(model_for_solution, params=start_params)
-
-    # sim_df = simulate_scenario(
-    #     model_for_simulation,
-    #     solution=solution_dict,
-    #     initial_states=initial_states,
-    #     wealth_agents=wealth_agents,
-    #     params=start_params,
-    #     options=options,
-    #     seed=options["model_params"]["seed"],
-    # )
-    # simulated_moments = simulate_moments_jax(sim_df, options=options)
+    fixed_constraint = om.FixedConstraint(selector=select_fixed_params)
 
     simulate_moments_given_params = partial(
         simulate_moments,
         solve_func=solve_func,
         initial_states=initial_states,
         wealth_agents=wealth_agents,
-        model_for_solution=model_for_solution,
         model_for_simulation=model_for_simulation,
         options=options,
+        pandas=True,
     )
 
-    # Minimize
     criterion_func = get_msm_optimization_function(
         simulate_moments=simulate_moments_given_params,
         empirical_moments=empirical_moments,
@@ -149,26 +133,25 @@ def estimate_model(
     result = om.minimize(
         fun=criterion_func,
         params=start_params,
-        bounds=bounds,
         algorithm=algo,
         algo_options=algo_options,
         # multistart=om.MultistartOptions(n_samples=100, seed=0, n_cores=4),
-        # logging="test_log.db",
+        bounds=bounds,
+        constraints=fixed_constraint,
+        # scaling=True,
+        # scaling_options={"method": "bounds", "clipping_value": 0.1, "magnitude": 1},
         error_handling="continue",
     )
 
+    pickle.dump(result, open(path_to_save_estimation_result, "wb"))
+
+    start_params.update(result.params)
+    # with open(path_to_save_estimation_params, "w") as yamlfile:
+    #     yaml.dump(start_params, yamlfile)
+    start_params_series = pd.Series(start_params, name="value")
+    start_params_series.to_csv(path_to_save_estimation_params, header=True)
+
     return result
-
-    # pickle.dump(
-    #     result,
-    # open(path_dict["struct_results"] + f"em_result_{file_append}.pkl", "wb")
-    # )
-    # start_params_all.update(result.params)
-
-    # pickle.dump(
-    #     start_params_all,
-    #     open(path_dict["struct_results"] + f"est_params_{file_append}.pkl", "wb"),
-    # )
 
 
 # =====================================================================================
@@ -181,13 +164,18 @@ def simulate_moments(
     solve_func: callable,
     initial_states: Dict[str, Any],
     wealth_agents: jnp.ndarray,
-    model_for_solution: Dict[str, Any],
     model_for_simulation: Dict[str, Any],
     options: Dict[str, Any],
+    pandas: bool = False,
 ):
     """Solve the model and simulate moments."""
 
-    solution_dict = solve_func(model_for_solution, params=params)
+    solution_dict = {}
+    (
+        solution_dict["value"],
+        solution_dict["policy"],
+        solution_dict["endog_grid"],
+    ) = solve_func(params)
 
     sim_df = simulate_scenario(
         model=model_for_simulation,
@@ -199,9 +187,15 @@ def simulate_moments(
         seed=options["model_params"]["seed"],
     )
 
-    simulated_moments = simulate_moments_jax(sim_df, options=options)
+    if pandas:
+        simulated_moments = simulate_moments_pandas(sim_df, options=options)
+    else:
+        simulated_moments = simulate_moments_jax(sim_df, options=options)
 
-    return simulated_moments
+    out = jnp.asarray(simulated_moments.to_numpy())
+    out = jnp.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0)
+
+    return out
 
 
 def get_msm_optimization_function(
@@ -221,7 +215,6 @@ def get_msm_optimization_function(
         )
     )
 
-    # out = {"fun": criterion}
     return criterion
 
 
@@ -238,144 +231,34 @@ def msm_criterion(
     deviations = simulated_flat - flat_empirical_moments
     residuals = deviations @ chol_weights
 
-    # LeastSquaresFunctionValue(value=residuals)
     return residuals
 
 
-# def solve_and_simulate(
-#     params,
-#     solve_func: callable,
-#     model_for_solution: Dict[str, Any],
-#     model_for_simulation: Dict[str, Any],
-#     initial_states: Dict[str, Any],
-#     wealth_agents: jnp.ndarray,
-#     options: Dict[str, Any],
-# ):
+def get_msm_residuals(simulated_flat, flat_empirical_moments, weights):
+    chol_weights = jnp.linalg.cholesky(weights)
 
-#     # Solve and simulate
-#     solution_dict = solve_func(model_for_solution, params=params)
+    deviations = simulated_flat - flat_empirical_moments
+    residuals = deviations @ chol_weights
 
-#     sim_df = simulate_scenario(
-#         model_for_simulation,
-#         solution=solution_dict,
-#         initial_states=initial_states,
-#         wealth_agents=wealth_agents,
-#         params=params,
-#         options=options,
-#         seed=options["model_params"]["seed"],
-#     )
-#     simulated_moments = simulate_moments_jax(sim_df, options=options)
-
-#     return simulated_moments
+    return residuals
 
 
-# def get_criterion_function(
-#     model: Dict[str, Any],
-#     empirical_moments: np.ndarray,
-#     empirical_variance: np.ndarray,
-#     initial_states: Dict[str, Any],
-#     initial_resources: np.ndarray,
-#     params_fixed: Dict[str, Any],
-#     params_to_estimate: Dict[str, Any],
-#     params_to_estimate_names: list[str],
-#     params_to_estimate_values: np.ndarray,
-#     params_to_estimate_bounds: Dict[str, Any],
-#     params_to_estimate_bounds_names: list[str],
-# ) -> np.ndarray:
-#     """Get the criterion function for the estimation."""
+def select_fixed_params(params):
+    """Select fixed parameters for the optimization."""
 
-#     # Update params with new values
-#     params = params_fixed.copy()
-#     for name, value in zip(params_to_estimate_names, params_to_estimate_values):
-#         params[name] = value
+    fixed_params = {
+        "sigma": params["sigma"],
+        "interest_rate": params["interest_rate"],
+        "beta": params["beta"],
+        "rho": params["rho"],
+    }
 
-#     # Get the solve function
-#     solve_func = get_solve_func_for_model(
-#         model=model,
-#         initial_states=initial_states,
-#         initial_resources=initial_resources,
-#         params=params,
-#         endog_grid_solved=None,
-#         value_solved=None,
-#         policy_solved=None,
-#     )
+    job_finding_params = {
+        key: val for key, val in params.items() if key.startswith("job_finding")
+    }
+    fixed_params.update(job_finding_params)
 
-#     # Get the moment error vector
-#     moment_error_vec = get_moment_error_vec(
-#         params_fixed=params_fixed,
-#         options=model["options"],
-#         emp_moments=empirical_moments,
-#         model_loaded=model,
-#         solve_func=solve_func,
-#         initial_states=initial_states,
-#         initial_resources=initial_resources,
-#     )
-
-#     # Calculate the criterion function
-#     criterion_function = (
-#         moment_error_vec.T @ np.linalg.inv(empirical_variance) @ moment_error_vec
-#     )
-
-#     return criterion_function
-
-
-# def get_solve_func_for_model(
-#     model: Dict[str, Any],
-#     initial_states: Dict[str, Any],
-#     initial_resources: np.ndarray,
-#     params: Dict[str, Any],
-#     endog_grid_solved: Optional[np.ndarray] = None,
-#     value_solved: Optional[np.ndarray] = None,
-#     policy_solved: Optional[np.ndarray] = None,
-# ) -> Any:
-#     """Get the solve function for the model."""
-
-#     # Get the solve function
-#     solve_func = model["solve_func"]
-
-#     # Solve the model
-#     if endog_grid_solved is None or value_solved is None or policy_solved is None:
-#         (
-#             endog_grid_solved,
-#             value_solved,
-#             policy_solved,
-#         ) = solve_func(
-#             initial_states=initial_states,
-#             initial_resources=initial_resources,
-#             params=params,
-#         )
-
-#     return endog_grid_solved, value_solved, policy_solved
-
-
-# def get_moment_error_vec(
-#     params_fixed: Dict[str, Any],
-#     options: Dict[str, Any],
-#     emp_moments: np.ndarray,
-#     model_loaded: Dict[str, Any],
-#     solve_func: Any,
-#     initial_states: Dict[str, Any],
-#     initial_resources: np.ndarray,
-# ) -> np.ndarray:
-#     """Get the moment error vector for the estimation."""
-
-#     # Get the model parameters
-#     params = params_fixed.copy()
-
-#     # Get the empirical moments
-#     empirical_moments = emp_moments
-
-#     # Get the model moments
-#     model_moments = solve_func(
-#         initial_states=initial_states,
-#         initial_resources=initial_resources,
-#         params=params,
-#     )
-
-#     # Calculate the moment error vector
-#     moment_error_vec = empirical_moments - model_moments
-
-#     return moment_error_vec
+    return fixed_params
 
 
 # =====================================================================================
