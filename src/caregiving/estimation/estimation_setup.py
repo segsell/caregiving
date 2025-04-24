@@ -1,11 +1,21 @@
 """Functions for pre and post estimation setup."""
 
-from typing import Any, Dict
+import pickle
+import time
+from functools import partial
+from typing import Any, Dict, Optional
 
+import jax
+import jax.numpy as jnp
 import numpy as np
+import optimagic as om
+import pandas as pd
+import yaml
 from dcegm.pre_processing.setup_model import load_and_setup_model
 from dcegm.wealth_correction import adjust_observed_wealth
 
+from caregiving.config import BLD, SRC
+from caregiving.model.shared import RETIREMENT
 from caregiving.model.state_space import (
     create_state_space_functions,
 )
@@ -14,6 +24,246 @@ from caregiving.model.utility.bequest_utility import (
 )
 from caregiving.model.utility.utility_functions import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
+from caregiving.simulation.simulate import simulate_scenario
+from caregiving.simulation.simulate_moments import (
+    simulate_moments_jax,
+    simulate_moments_pandas,
+)
+
+jax.config.update("jax_enable_x64", True)
+
+
+def estimate_model(
+    model_for_simulation: Dict[str, Any],
+    start_params: Dict[str, Any],
+    solve_func: callable,
+    options: Dict[str, Any],
+    algo: str,
+    algo_options: Dict[str, Any],
+    *,
+    path_to_discrete_states: str = BLD / "model" / "initial_conditions" / "states.pkl",
+    path_to_wealth: str = BLD / "model" / "initial_conditions" / "wealth.csv",
+    path_to_empirical_moments: str = BLD / "moments" / "soep_moments.csv",
+    path_to_empirical_variance: str = BLD / "moments" / "soep_variances.csv",
+    # path_to_updated_start_params: str = BLD
+    # / "model"
+    # / "params"
+    # / "start_params_model.yaml",
+    path_to_lower_bounds: str = SRC
+    / "estimation"
+    / "start_params_and_bounds"
+    / "lower_bounds.yaml",
+    path_to_upper_bounds: str = SRC
+    / "estimation"
+    / "start_params_and_bounds"
+    / "upper_bounds.yaml",
+    path_to_save_estimation_result: str = BLD / "estimation" / "result.pkl",
+    path_to_save_estimation_params: str = BLD / "estimation" / "estimated_params.csv",
+    # last_estimate: Optional[Dict[str, Any]] = None,
+) -> None:
+    """Estimate the model based on empirical data and starting parameters."""
+
+    # ! random seed !
+    # seed = int(time.time())
+
+    initial_states = pickle.load(path_to_discrete_states.open("rb"))
+    wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
+
+    # Load empirical data
+    empirical_moments = jnp.array(
+        pd.read_csv(path_to_empirical_moments, index_col=0).squeeze()
+    )
+    empirical_variances = jnp.array(
+        pd.read_csv(path_to_empirical_variance, index_col=0).squeeze()
+    )
+    empirical_variances_reg = np.maximum(empirical_variances, 1e-3)
+    weights = jnp.diag(1 / empirical_variances_reg)
+
+    # if method == "optimal":
+    #     array_weights = robust_inverse(_internal_cov)
+    # elif method == "diagonal":
+    #     diagonal_values = 1 / np.clip(np.diagonal(_internal_cov), clip_value, np.inf)
+    #     array_weights = np.diag(diagonal_values)
+    # elif method == "identity":
+    #     array_weights = np.identity(_internal_cov.shape[0])
+
+    # start_params_all = yaml.safe_load(path_to_updated_start_params.open("rb"))
+
+    # # Assign start params from before
+    # if last_estimate is not None:
+    #     for key in last_estimate.keys():
+    #         if key in ("sigma", "interest_rate", "beta"):
+    #             continue
+    #         try:
+    #             print(
+    #                 f"Start params value of {key} was {start_params_all[key]} and is"
+    #                 f"replaced by {last_estimate[key]}"
+    #             )
+    #         except KeyError as err:
+    #             raise ValueError(f"Key {key} not found in start params.") from err
+    #         start_params_all[key] = last_estimate[key]
+
+    # start_params = {name: start_params_all[name] for name in start_params.keys()}
+
+    lower_bounds_all = yaml.safe_load(open(path_to_lower_bounds, "rb"))
+    lower_bounds = {name: lower_bounds_all[name] for name in start_params.keys()}
+
+    upper_bounds_all = yaml.safe_load(open(path_to_upper_bounds, "rb"))
+    upper_bounds = {name: upper_bounds_all[name] for name in start_params.keys()}
+
+    bounds = om.Bounds(lower=lower_bounds, upper=upper_bounds)
+    fixed_constraint = om.FixedConstraint(selector=select_fixed_params)
+
+    simulate_moments_given_params = partial(
+        simulate_moments,
+        solve_func=solve_func,
+        initial_states=initial_states,
+        wealth_agents=wealth_agents,
+        model_for_simulation=model_for_simulation,
+        options=options,
+        pandas=True,
+    )
+
+    criterion_func = get_msm_optimization_function(
+        simulate_moments=simulate_moments_given_params,
+        empirical_moments=empirical_moments,
+        weights=weights,
+    )
+
+    result = om.minimize(
+        fun=criterion_func,
+        params=start_params,
+        algorithm=algo,
+        algo_options=algo_options,
+        # multistart=om.MultistartOptions(n_samples=100, seed=0, n_cores=4),
+        bounds=bounds,
+        constraints=fixed_constraint,
+        # scaling=True,
+        # scaling_options={"method": "bounds", "clipping_value": 0.1, "magnitude": 1},
+        error_handling="continue",
+    )
+
+    pickle.dump(result, open(path_to_save_estimation_result, "wb"))
+
+    start_params.update(result.params)
+    # with open(path_to_save_estimation_params, "w") as yamlfile:
+    #     yaml.dump(start_params, yamlfile)
+    start_params_series = pd.Series(start_params, name="value")
+    start_params_series.to_csv(path_to_save_estimation_params, header=True)
+
+    return result
+
+
+# =====================================================================================
+# Criterion function
+# =====================================================================================
+
+
+def simulate_moments(
+    params: jnp.ndarray,
+    solve_func: callable,
+    initial_states: Dict[str, Any],
+    wealth_agents: jnp.ndarray,
+    model_for_simulation: Dict[str, Any],
+    options: Dict[str, Any],
+    pandas: bool = False,
+):
+    """Solve the model and simulate moments."""
+
+    solution_dict = {}
+    (
+        solution_dict["value"],
+        solution_dict["policy"],
+        solution_dict["endog_grid"],
+    ) = solve_func(params)
+
+    sim_df = simulate_scenario(
+        model=model_for_simulation,
+        solution=solution_dict,
+        initial_states=initial_states,
+        wealth_agents=wealth_agents,
+        params=params,
+        options=options,
+        seed=options["model_params"]["seed"],
+    )
+
+    if pandas:
+        simulated_moments = simulate_moments_pandas(sim_df, options=options)
+    else:
+        simulated_moments = simulate_moments_jax(sim_df, options=options)
+
+    out = jnp.asarray(simulated_moments.to_numpy())
+    out = jnp.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0)
+
+    return out
+
+
+def get_msm_optimization_function(
+    simulate_moments: callable,
+    empirical_moments: jnp.ndarray,
+    weights: jnp.ndarray,
+) -> jnp.ndarray:
+
+    chol_weights = jnp.linalg.cholesky(weights)
+
+    criterion = om.mark.least_squares(
+        partial(
+            msm_criterion,
+            simulate_moments=simulate_moments,
+            flat_empirical_moments=empirical_moments,
+            chol_weights=chol_weights,
+        )
+    )
+
+    return criterion
+
+
+def msm_criterion(
+    params: jnp.ndarray,
+    simulate_moments: callable,
+    flat_empirical_moments: jnp.ndarray,
+    chol_weights: jnp.ndarray,
+) -> jnp.ndarray:
+    """Calculate the raw criterion based on simulated and empirical moments."""
+
+    simulated_flat = simulate_moments(params)
+
+    deviations = simulated_flat - flat_empirical_moments
+    residuals = deviations @ chol_weights
+
+    return residuals
+
+
+def get_msm_residuals(simulated_flat, flat_empirical_moments, weights):
+    chol_weights = jnp.linalg.cholesky(weights)
+
+    deviations = simulated_flat - flat_empirical_moments
+    residuals = deviations @ chol_weights
+
+    return residuals
+
+
+def select_fixed_params(params):
+    """Select fixed parameters for the optimization."""
+
+    fixed_params = {
+        "sigma": params["sigma"],
+        "interest_rate": params["interest_rate"],
+        "beta": params["beta"],
+        "rho": params["rho"],
+    }
+
+    job_finding_params = {
+        key: val for key, val in params.items() if key.startswith("job_finding")
+    }
+    fixed_params.update(job_finding_params)
+
+    return fixed_params
+
+
+# =====================================================================================
+# Preparation for estimation
+# =====================================================================================
 
 
 def load_and_setup_full_model_for_solution(options, path_to_model) -> Dict[str, Any]:
@@ -45,7 +295,7 @@ def load_and_prep_data(data_emp, model, start_params, drop_retirees=True):
 
     # Also already retired individuals hold no identification
     if drop_retirees:
-        data_emp = data_emp[data_emp["lagged_choice"] != 0]
+        data_emp = data_emp[~data_emp["lagged_choice"].isin(RETIREMENT.tolist())]
 
     data_emp.loc[:, "age"] = data_emp["period"] + specs["start_age"]
     data_emp.loc[:, "age_bin"] = np.floor(data_emp["age"] / 10)
