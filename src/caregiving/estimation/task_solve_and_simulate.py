@@ -1,11 +1,11 @@
-"""Solve and simulate the model for start parameters."""
-
 import pickle
 from pathlib import Path
 from typing import Annotated
 
 import jax
 import jax.numpy as jnp
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import yaml
 from dcegm.pre_processing.setup_model import load_and_setup_model
@@ -16,6 +16,7 @@ from caregiving.config import BLD
 from caregiving.estimation.estimation_setup import (
     load_and_setup_full_model_for_solution,
 )
+from caregiving.model.shared import SEX
 from caregiving.model.state_space import (
     create_state_space_functions,
 )
@@ -25,8 +26,6 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.simulation.simulate import simulate_scenario
-
-jax.config.update("jax_enable_x64", True)
 
 
 def task_solve_and_simulate_start_params(
@@ -41,26 +40,26 @@ def task_solve_and_simulate_start_params(
     path_to_save_simulated_data: Annotated[Path, Product] = BLD
     / "solve_and_simulate"
     / "simulated_data.pkl",
-    # path_to_save_simulated_data_jax: Annotated[Path, Product] = BLD
-    # / "solve_and_simulate"
-    # / "simulated_data_jax.pkl",
 ) -> None:
 
     options = pickle.load(path_to_options.open("rb"))
     params = yaml.safe_load(path_to_start_params.open("rb"))
 
-    model_for_solution = load_and_setup_full_model_for_solution(
+    model_full = load_and_setup_full_model_for_solution(
         options, path_to_model=path_to_solution_model
     )
 
     # 1) Solve
+
+    initial_states = pickle.load(path_to_discrete_states.open("rb"))
+    wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
 
     solution_dict = {}
     (
         solution_dict["value"],
         solution_dict["policy"],
         solution_dict["endog_grid"],
-    ) = get_solve_func_for_model(model_for_solution)(params)
+    ) = get_solve_func_for_model(model_full)(params)
     pickle.dump(solution_dict, path_to_save_solution.open("wb"))
 
     # 2) Simulate
