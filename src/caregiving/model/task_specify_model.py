@@ -12,7 +12,7 @@ from pytask import Product
 from caregiving.config import BLD
 from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.stochastic_processes.job_transition import (
-    job_offer_process_transition_array,
+    job_offer_process_transition,
 )
 from caregiving.model.stochastic_processes.partner_transition import partner_transition
 from caregiving.model.utility.bequest_utility import (
@@ -75,7 +75,7 @@ def task_specify_model(
             },
             "exogenous_processes": {
                 "job_offer": {
-                    "transition": job_offer_process_transition_array,
+                    "transition": job_offer_process_transition,
                     "states": np.arange(2, dtype=int),
                 },
                 "partner_state": {
