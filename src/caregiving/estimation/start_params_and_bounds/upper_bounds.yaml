@@ -2,17 +2,17 @@
 rho: 2
 beta: 0.999999999999
 
-util_cons_unemployed: 5
-util_cons_part_time_low_educ: 5
-util_cons_part_time_high_educ: 5
-util_cons_full_time_low_educ: 5
-util_cons_full_time_high_educ: 5
+util_cons_unemployed: -1e-12
+util_cons_part_time_low_educ: -1e-12
+util_cons_part_time_high_educ: -1e-12
+util_cons_full_time_low_educ: -1e-12
+util_cons_full_time_high_educ: -1e-12
 
-util_cons_children_part_time_low_educ: 5
-util_cons_children_part_time_high_educ: 5
+util_cons_children_part_time_low_educ: -1e-12
+util_cons_children_part_time_high_educ: -1e-12
 
-util_cons_children_full_time_low_educ: 5
-util_cons_children_full_time_high_educ: 5
+util_cons_children_full_time_low_educ: -1e-12
+util_cons_children_full_time_high_educ: -1e-12
 
 # Bequest scale
 bequest_scale: 5

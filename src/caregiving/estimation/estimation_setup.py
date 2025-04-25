@@ -6,7 +6,6 @@ from functools import partial
 from typing import Any, Dict, Optional
 
 import jax
-import jax.numpy as jnp
 import numpy as np
 import optimagic as om
 import pandas as pd
@@ -60,6 +59,11 @@ def estimate_model(
     path_to_save_estimation_result: str = BLD / "estimation" / "result.pkl",
     path_to_save_estimation_params: str = BLD / "estimation" / "estimated_params.csv",
     # last_estimate: Optional[Dict[str, Any]] = None,
+    scaling: bool = False,
+    scaling_options: Optional[Dict[str, Any]] = None,
+    multistart: bool = False,
+    multistart_options: Optional[Dict[str, Any]] = None,
+    error_handling: str = "continue",
 ) -> None:
     """Estimate the model based on empirical data and starting parameters."""
 
@@ -67,17 +71,17 @@ def estimate_model(
     # seed = int(time.time())
 
     initial_states = pickle.load(path_to_discrete_states.open("rb"))
-    wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
+    wealth_agents = np.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
 
     # Load empirical data
-    empirical_moments = jnp.array(
+    empirical_moments = np.array(
         pd.read_csv(path_to_empirical_moments, index_col=0).squeeze()
     )
-    empirical_variances = jnp.array(
+    empirical_variances = np.array(
         pd.read_csv(path_to_empirical_variance, index_col=0).squeeze()
     )
     empirical_variances_reg = np.maximum(empirical_variances, 1e-4)
-    weights = jnp.diag(1 / empirical_variances_reg)
+    weights = np.diag(1 / empirical_variances_reg)
 
     # if method == "optimal":
     #     array_weights = robust_inverse(_internal_cov)
@@ -130,18 +134,36 @@ def estimate_model(
         weights=weights,
     )
 
-    result = om.minimize(
-        fun=criterion_func,
-        params=start_params,
-        algorithm=algo,
-        algo_options=algo_options,
-        # multistart=om.MultistartOptions(n_samples=100, seed=0, n_cores=4),
-        bounds=bounds,
-        constraints=fixed_constraint,
-        # scaling=True,
-        # scaling_options={"method": "bounds", "clipping_value": 0.1, "magnitude": 1},
-        error_handling="raise",
-    )
+    minimize_kwargs = {
+        "fun": criterion_func,
+        "params": start_params,
+        "algorithm": algo,
+        "algo_options": algo_options,
+        "bounds": bounds,
+        "constraints": fixed_constraint,
+        "error_handling": error_handling,
+    }
+
+    if scaling:
+        # Either use user-supplied dict or fall back to your defaults
+        so_opts = scaling_options or {
+            "method": "bounds",
+            "clipping_value": 0.1,
+            "magnitude": 1,
+        }
+        minimize_kwargs["scaling"] = True
+        minimize_kwargs["scaling_options"] = so_opts
+
+    if multistart:
+        # allow custom options or fall back to your defaults
+        ms_opts = (
+            om.MultistartOptions(**multistart_options)
+            if multistart_options is not None
+            else om.MultistartOptions(n_samples=100, seed=0, n_cores=4)
+        )
+        minimize_kwargs["multistart"] = ms_opts
+
+    result = om.minimize(**minimize_kwargs)
 
     pickle.dump(result, open(path_to_save_estimation_result, "wb"))
 
@@ -160,10 +182,10 @@ def estimate_model(
 
 
 def simulate_moments(
-    params: jnp.ndarray,
+    params: np.ndarray,
     solve_func: callable,
     initial_states: Dict[str, Any],
-    wealth_agents: jnp.ndarray,
+    wealth_agents: np.ndarray,
     model_for_simulation: Dict[str, Any],
     options: Dict[str, Any],
     pandas: bool = False,
@@ -192,19 +214,19 @@ def simulate_moments(
     else:
         simulated_moments = simulate_moments_jax(sim_df, options=options)
 
-    out = jnp.asarray(simulated_moments.to_numpy())
-    out = jnp.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0)
+    out = np.asarray(simulated_moments.to_numpy())
+    out = np.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0)
 
     return out
 
 
 def get_msm_optimization_function(
     simulate_moments: callable,
-    empirical_moments: jnp.ndarray,
-    weights: jnp.ndarray,
-) -> jnp.ndarray:
+    empirical_moments: np.ndarray,
+    weights: np.ndarray,
+) -> np.ndarray:
 
-    chol_weights = jnp.linalg.cholesky(weights)
+    chol_weights = np.linalg.cholesky(weights)
 
     criterion = om.mark.least_squares(
         partial(
@@ -219,11 +241,11 @@ def get_msm_optimization_function(
 
 
 def msm_criterion(
-    params: jnp.ndarray,
+    params: np.ndarray,
     simulate_moments: callable,
-    flat_empirical_moments: jnp.ndarray,
-    chol_weights: jnp.ndarray,
-) -> jnp.ndarray:
+    flat_empirical_moments: np.ndarray,
+    chol_weights: np.ndarray,
+) -> np.ndarray:
     """Calculate the raw criterion based on simulated and empirical moments."""
 
     simulated_flat = simulate_moments(params)
@@ -235,7 +257,7 @@ def msm_criterion(
 
 
 def get_msm_residuals(simulated_flat, flat_empirical_moments, weights):
-    chol_weights = jnp.linalg.cholesky(weights)
+    chol_weights = np.linalg.cholesky(weights)
 
     deviations = simulated_flat - flat_empirical_moments
     residuals = deviations @ chol_weights
