@@ -20,7 +20,7 @@ from caregiving.simulation.simulate_moments import (
     plot_model_fit_labor_moments_by_education_pandas_jax,
     plot_model_fit_labor_moments_pandas,
     plot_model_fit_labor_moments_pandas_by_education,
-    plot_transition_shares_by_age,
+    plot_transition_shares_by_age_bins,
     simulate_moments_jax,
     simulate_moments_pandas,
 )
@@ -78,7 +78,7 @@ def task_simulate_moments(
         "not_working": "Not Working",
         "working": "Work",
     }
-    plot_transition_shares_by_age(
+    plot_transition_shares_by_age_bins(
         moms_emp=emp_moms,
         moms_sim=sim_moms_pandas,
         specs=specs,

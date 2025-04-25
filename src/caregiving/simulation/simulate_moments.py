@@ -1,5 +1,6 @@
 """Simulate moments."""
 
+import re
 from itertools import product
 from typing import Optional
 
@@ -60,10 +61,10 @@ def simulate_moments_pandas(
         "not_working": NOT_WORKING,
         "working": WORK,
     }
-    moments = compute_transition_moments_pandas(
+    moments = compute_transition_moments_pandas_for_age_bins(
         df_low, moments, age_range, states=states_work_no_work, label="low_education"
     )
-    moments = compute_transition_moments_pandas(
+    moments = compute_transition_moments_pandas_for_age_bins(
         df_high, moments, age_range, states=states_work_no_work, label="high_education"
     )
 
@@ -143,6 +144,67 @@ def create_labor_share_moments_pandas(df, moments, age_range, label=None):
         moments[f"share_part_time{label}_age_{age}"] = part_time_shares.loc[age]
     for age in age_range:
         moments[f"share_full_time{label}_age_{age}"] = full_time_shares.loc[age]
+
+    return moments
+
+
+def compute_transition_moments_pandas_for_age_bins(
+    df,
+    moments,
+    age_range,
+    states,
+    label=None,
+    bin_width: int = 5,
+):
+    """
+    Compute same-state transition probabilities aggregated into 5-year age bins.
+
+    Processes one state fully across all bins before moving to the next.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Must contain columns 'age', 'lagged_choice', and 'choice'.
+    moments : dict
+        Pre-existing moments dict to append to.
+    age_range : iterable of int
+        Sequence of ages to include in bins.
+    states : dict
+        Mapping of state labels to their codes in the data.
+    label : str, optional
+        Suffix label for keys.
+    bin_width : int, default 5
+        Width of each age bin.
+
+    Returns
+    -------
+    moments : dict
+        Updated with keys 'trans_<state>_to_<state>_<label>_age_<start>_<end>'.
+    """
+    suffix = f"_{label}" if label else ""
+    start_age = min(age_range)
+    end_age = max(age_range)
+
+    # Build complete bins
+    bins = []
+    start = start_age
+    while start + bin_width - 1 <= end_age:
+        end = start + bin_width - 1
+        bins.append((start, end))
+        start += bin_width
+
+    # Compute transitions per state then per bin
+    for state_label, state_val in states.items():
+        for start, end in bins:
+            df_bin = df[(df["age"] >= start) & (df["age"] <= end)]
+            subset = df_bin[df_bin["lagged_choice"].isin(np.atleast_1d(state_val))]
+            if len(subset) > 0:
+                prob = subset["choice"].isin(np.atleast_1d(state_val)).mean()
+            else:
+                prob = np.nan
+
+            key = f"trans_{state_label}_to_{state_label}{suffix}_age_{start}_{end}"
+            moments[key] = prob
 
     return moments
 
@@ -258,7 +320,7 @@ def create_moments_jax(sim_df, min_age, max_age):
     )
 
     # # Work transitions
-    work_to_work_low_educ_by_age = get_transition(
+    work_to_work_low_educ_by_age = get_transition_for_age_bins(
         arr_low_educ,
         ind=idx,
         lagged_choice=WORK,
@@ -266,23 +328,7 @@ def create_moments_jax(sim_df, min_age, max_age):
         min_age=min_age,
         max_age=max_age,
     )
-    work_to_no_work_low_educ_by_age = get_transition(
-        arr_low_educ,
-        ind=idx,
-        lagged_choice=WORK,
-        current_choice=NOT_WORKING,
-        min_age=min_age,
-        max_age=max_age,
-    )
-    no_work_to_work_low_educ_by_age = get_transition(
-        arr_low_educ,
-        ind=idx,
-        lagged_choice=NOT_WORKING,
-        current_choice=WORK,
-        min_age=min_age,
-        max_age=max_age,
-    )
-    no_work_to_no_work_low_educ_by_age = get_transition(
+    no_work_to_no_work_low_educ_by_age = get_transition_for_age_bins(
         arr_low_educ,
         ind=idx,
         lagged_choice=NOT_WORKING,
@@ -291,7 +337,7 @@ def create_moments_jax(sim_df, min_age, max_age):
         max_age=max_age,
     )
 
-    work_to_work_high_educ_by_age = get_transition(
+    work_to_work_high_educ_by_age = get_transition_for_age_bins(
         arr_high_educ,
         ind=idx,
         lagged_choice=WORK,
@@ -299,23 +345,7 @@ def create_moments_jax(sim_df, min_age, max_age):
         min_age=min_age,
         max_age=max_age,
     )
-    work_to_no_work_high_educ_by_age = get_transition(
-        arr_high_educ,
-        ind=idx,
-        lagged_choice=WORK,
-        current_choice=NOT_WORKING,
-        min_age=min_age,
-        max_age=max_age,
-    )
-    no_work_to_work_high_educ_by_age = get_transition(
-        arr_high_educ,
-        ind=idx,
-        lagged_choice=NOT_WORKING,
-        current_choice=WORK,
-        min_age=min_age,
-        max_age=max_age,
-    )
-    no_work_to_no_work_high_educ_by_age = get_transition(
+    no_work_to_no_work_high_educ_by_age = get_transition_for_age_bins(
         arr_high_educ,
         ind=idx,
         lagged_choice=NOT_WORKING,
@@ -405,12 +435,8 @@ def create_moments_jax(sim_df, min_age, max_age):
         + share_working_part_time_by_age_high_educ
         + share_working_full_time_by_age_high_educ
         + no_work_to_no_work_low_educ_by_age
-        + no_work_to_work_low_educ_by_age
-        + work_to_no_work_low_educ_by_age
         + work_to_work_low_educ_by_age
         + no_work_to_no_work_high_educ_by_age
-        + no_work_to_work_high_educ_by_age
-        + work_to_no_work_high_educ_by_age
         + work_to_work_high_educ_by_age
         #
         # + work_to_work_by_age
@@ -445,6 +471,68 @@ def get_share_by_age(df_arr, ind, choice, min_age, max_age):
         shares.append(share)
 
     return shares
+
+
+def get_transition_for_age_bins(
+    df_arr,
+    ind,
+    lagged_choice,
+    current_choice,
+    min_age,
+    max_age,
+    bin_width: int = 5,
+):
+    """
+    Get transition probability from lagged_choice to current_choice,
+    aggregated into fixed-width age bins (default 5-year bins).
+
+    Only complete bins are returned (no partial final bin).
+
+    Parameters
+    ----------
+    df_arr : np.ndarray or jnp.ndarray
+        2D array where rows are observations and columns indexed by `ind`.
+    ind : dict
+        Mapping of column names ('age', 'lagged_choice', 'choice') to integer indices.
+    lagged_choice : scalar or iterable
+        Value(s) representing the previous state.
+    current_choice : scalar or iterable
+        Value(s) representing the current state.
+    min_age : int
+        Minimum age (inclusive) for binning.
+    max_age : int
+        Maximum age (inclusive) for binning.
+    bin_width : int, default 5
+        Width of each age bin in years.
+
+    Returns
+    -------
+    List of transition probabilities for each 5-year bin.
+    """
+    probs = []
+    # Build only complete bins
+    bins = []
+    start = min_age
+    while start + bin_width - 1 <= max_age:
+        end = start + bin_width - 1
+        bins.append((start, end))
+        start += bin_width
+
+    # Compute per-bin transition
+    for bin_start, bin_end in bins:
+        # Masks for age within the bin
+        ages = df_arr[:, ind["age"]]
+        age_mask = (ages >= bin_start) & (ages <= bin_end)
+        # Masks for lagged and current states
+        lagged_mask = jnp.isin(df_arr[:, ind["lagged_choice"]], lagged_choice)
+        current_mask = jnp.isin(df_arr[:, ind["choice"]], current_choice)
+
+        num = jnp.sum(age_mask & lagged_mask & current_mask)
+        den = jnp.sum(age_mask & lagged_mask)
+        prob = num / den if den > 0 else jnp.nan
+        probs.append(prob)
+
+    return probs
 
 
 def get_transition(df_arr, ind, lagged_choice, current_choice, min_age, max_age):
@@ -674,6 +762,88 @@ def plot_model_fit_labor_moments_pandas(
         plt.savefig(path_to_save_plot, dpi=300, transparent=True)
 
 
+def plot_transition_shares_by_age_bins(
+    moms_emp: pd.Series,
+    moms_sim: pd.Series,
+    specs: dict,
+    states: dict,
+    state_labels: Optional[dict] = None,
+    path_to_save_plot: Optional[str] = None,
+    bin_width: int = 5,
+) -> None:
+    """
+    Plot age-specific transition probabilities for each from-to state pair by age bins.
+
+    Parameters
+    ----------
+    moms_emp : pd.Series
+        Empirical transition moments, indexed by keys like
+        'trans_{state}_to_{state}_{label}_age_{start}_{end}'.
+    moms_sim : pd.Series
+        Simulated transition moments, same indexing convention.
+    specs : dict
+        Specification dict containing 'education_labels'.
+    states : dict
+        Mapping of state-labels to their underlying values.
+    state_labels : dict, optional
+        Pretty names for each state key. If None, will use .capitalize().
+    path_to_save_plot : str, optional
+        If given, where to save the resulting figure (PNG).
+    bin_width : int, default 5
+        Width of each age bin (for axis labeling).
+    """
+
+    # Default pretty names
+    if state_labels is None:
+        state_labels = {s: s.replace("_", " ").capitalize() for s in states}
+
+    edu_levels = specs.get("education_labels", [""])
+    n_edu = len(edu_levels)
+    n_states = len(states)
+
+    fig, axs = plt.subplots(
+        n_edu, n_states, figsize=(4 * n_states, 3 * n_edu), sharex=True, sharey=True
+    )
+    axs = np.atleast_2d(axs)
+
+    for edu_var, edu_label in enumerate(edu_levels):
+        suffix = edu_label.lower().replace(" ", "_")
+
+        for i, state_key in enumerate(states):
+            ax = axs[edu_var, i]
+            prefix = f"trans_{state_key}_to_{state_key}"
+            emp_keys = sorted(
+                [k for k in moms_emp.index if k.startswith(prefix) and suffix in k],
+                key=_bin_start,
+            )
+            sim_keys = sorted(
+                [k for k in moms_sim.index if k.startswith(prefix) and suffix in k],
+                key=_bin_start,
+            )
+            x_emp = [_bin_start(k) for k in emp_keys]
+            y_emp = [moms_emp[k] for k in emp_keys]
+            x_sim = [_bin_start(k) for k in sim_keys]
+            y_sim = [moms_sim[k] for k in sim_keys]
+
+            ax.plot(x_sim, y_sim, label="Simulated")
+            ax.plot(x_emp, y_emp, ls="--", label="Observed")
+
+            ax.set_title(f"{state_labels[state_key]} → {state_labels[state_key]}")
+            ax.set_xlabel("Age Bin")
+
+            if i == 0:
+                ax.set_ylabel(
+                    f"{edu_label}\nTransition Rate" if edu_label else "Transition Rate"
+                )
+                ax.legend()
+
+            ax.set_ylim(0, 1)
+
+    plt.tight_layout()
+    if path_to_save_plot:
+        plt.savefig(path_to_save_plot, dpi=300, transparent=True)
+
+
 def plot_transition_shares_by_age(
     moms_emp: pd.Series,
     moms_sim: pd.Series,
@@ -683,7 +853,7 @@ def plot_transition_shares_by_age(
     path_to_save_plot: Optional[str] = None,
 ) -> None:
     """
-    Plot age-specific transition probabilities for each from→to state pair.
+    Plot age-specific transition probabilities for each from-to state pair.
 
     Parameters
     ----------
@@ -708,6 +878,10 @@ def plot_transition_shares_by_age(
     #     state_labels = [
     #         label.lower().replace("-", "_") for label in specs["choice_labels"]
     #     ]
+
+    # Default pretty names
+    if state_labels is None:
+        state_labels = {s: s.replace("_", " ").capitalize() for s in states}
 
     from_states = list(states.keys())
     to_states = list(states.keys())
@@ -925,6 +1099,13 @@ def plot_model_fit_labor_moments_pandas_jax(
 
 
 # Helper function to extract age from key (assumes format: "share_{state}_age_{age}")
+
+
 def _extract_age(key: str) -> int:
     # The age is assumed to be the number after the last underscore.
     return int(key.split("_")[-1])
+
+
+def _bin_start(key: str) -> int:
+    m = re.search(r"_age_(\d+)_", key)
+    return int(m.group(1)) if m else 0

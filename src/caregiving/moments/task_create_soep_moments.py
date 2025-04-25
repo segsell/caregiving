@@ -103,22 +103,26 @@ def task_create_soep_moments(
         "working": WORK,
         "not_working": NOT_WORKING,
     }
-    transition_moments, transition_variances = compute_transition_moments_and_variances(
-        df_low,
-        min_age=start_age,
-        max_age=end_age,
-        states=states_work_no_work,
-        label="low_education",
+    transition_moments, transition_variances = (
+        compute_transition_moments_and_variances_for_age_bins(
+            df_low,
+            min_age=start_age,
+            max_age=end_age,
+            states=states_work_no_work,
+            label="low_education",
+        )
     )
     moments.update(transition_moments)
     variances.update(transition_variances)
 
-    transition_moments, transition_variances = compute_transition_moments_and_variances(
-        df_high,
-        min_age=start_age,
-        max_age=end_age,
-        states=states_work_no_work,
-        label="high_education",
+    transition_moments, transition_variances = (
+        compute_transition_moments_and_variances_for_age_bins(
+            df_high,
+            min_age=start_age,
+            max_age=end_age,
+            states=states_work_no_work,
+            label="high_education",
+        )
     )
     moments.update(transition_moments)
     variances.update(transition_variances)
@@ -232,6 +236,90 @@ def compute_labor_shares_by_age(df, moments, variances, age_range, label=None):
     for age in age_range:
         moments[f"share_full_time{label}_age_{age}"] = full_time_shares.loc[age]
         variances[f"share_full_time{label}_age_{age}"] = full_time_vars.loc[age]
+
+    return moments, variances
+
+
+def compute_transition_moments_and_variances_for_age_bins(
+    df,
+    states,
+    min_age,
+    max_age,
+    choice="choice",
+    lagged_choice="lagged_choice",
+    label=None,
+    bin_width: int = 5,
+):
+    """
+    Compute year-to-year labor supply transition moments and their variances.
+
+    Aggregated in fixed-width age bins (default 5-year bins).
+
+    Only compute transitions where the initial and final state are the same.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Must contain columns for age, lagged_choice, and choice.
+    states : dict
+        Mapping of state labels to their codes in the data.
+    min_age : int
+        Minimum age for binning (inclusive).
+    max_age : int
+        Maximum age for binning (inclusive).
+    choice : str, default "choice"
+        Column name for current year's labor supply choice.
+    lagged_choice : str, default "lagged_choice"
+        Column name for previous year's labor supply choice.
+    label : str, optional
+        Suffix label for keys (e.g. education level).
+    bin_width : int, default 5
+        Width of each age bin (in years).
+
+    Returns
+    -------
+    moments : dict
+        Keys like 'trans_working_to_working_low_education_age_30_34',
+        values are probabilities.
+    variances : dict
+        Keys like 'var_trans_working_to_working_low_education_age_30_34',
+        values are variances.
+    """
+
+    # Prepare label suffix
+    suffix = f"_{label}" if label else ""
+
+    moments = {}
+    variances = {}
+
+    # Define age bins
+    bins = []
+    start = min_age
+    while start + bin_width - 1 <= max_age:
+        end = start + bin_width - 1
+        bins.append((start, end))
+        start += bin_width
+
+    # Loop over states and age bins
+    for state_label, state_val in states.items():
+        for start, end in bins:
+            # Filter df for this age bin
+            df_bin = df[(df["age"] >= start) & (df["age"] <= end)]
+
+            # Subset where last year's state matches
+            subset = df_bin[df_bin[lagged_choice].isin(np.atleast_1d(state_val))]
+            if len(subset) > 0:
+                is_same = subset[choice].isin(np.atleast_1d(state_val))
+                prob = is_same.mean()
+                var = is_same.astype(float).var(ddof=DEGREES_OF_FREEDOM)
+            else:
+                prob = np.nan
+                var = np.nan
+
+            # Construct keys including bin range and optional suffix
+            key = f"trans_{state_label}_to_{state_label}{suffix}_age_{start}_{end}"
+            moments[key] = prob
+            variances[f"var_{key}"] = var
 
     return moments, variances
 
@@ -382,94 +470,94 @@ def compute_transition_moments_and_variances(
     return moments, variances
 
 
-def compute_transition_moments_by_five_year_age_bins(
-    df,
-    full_time,
-    part_time,
-    not_working,
-    start_age,
-    end_age,
-    choice="choice",
-    lagged_choice="lagged_choice",
-):
-    """
-    Compute year-to-year labor supply transition moments and variances
-    by 5-year age bin, e.g. [30,35), [35,40), etc.
+# def compute_transition_moments_by_five_year_age_bins(
+#     df,
+#     full_time,
+#     part_time,
+#     not_working,
+#     start_age,
+#     end_age,
+#     choice="choice",
+#     lagged_choice="lagged_choice",
+# ):
+#     """
+#     Compute year-to-year labor supply transition moments and variances
+#     by 5-year age bin, e.g. [30,35), [35,40), etc.
 
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Must contain columns 'age', plus the columns in 'choice' and 'lagged_choice'.
-    full_time : array-like
-        Codes representing full-time in the 'choice' columns.
-    part_time : array-like
-        Codes representing part-time in the 'choice' columns.
-    not_working : array-like
-        Codes representing not-working states in the 'choice' columns.
-    start_age : int
-        Lower bound (inclusive) of the age range.
-    end_age : int
-        Upper bound (inclusive) of the age range.
-    choice : str, default "choice"
-        Column name for current year's labor supply choice.
-    lagged_choice : str, default "lagged_choice"
-        Column name for last year's labor supply choice.
+#     Parameters
+#     ----------
+#     df : pd.DataFrame
+#         Must contain columns 'age', plus the columns in 'choice' and 'lagged_choice'.
+#     full_time : array-like
+#         Codes representing full-time in the 'choice' columns.
+#     part_time : array-like
+#         Codes representing part-time in the 'choice' columns.
+#     not_working : array-like
+#         Codes representing not-working states in the 'choice' columns.
+#     start_age : int
+#         Lower bound (inclusive) of the age range.
+#     end_age : int
+#         Upper bound (inclusive) of the age range.
+#     choice : str, default "choice"
+#         Column name for current year's labor supply choice.
+#     lagged_choice : str, default "lagged_choice"
+#         Column name for last year's labor supply choice.
 
-    Returns
-    -------
-    moments : dict
-        A dictionary of transition probabilities for each 5-year bin.
-        Keys look like: "transition_full_time_to_part_time_[30,35)".
-    variances : dict
-        Corresponding variances, with keys like:
-        "var_transition_full_time_to_part_time_[30,35)".
-    """
+#     Returns
+#     -------
+#     moments : dict
+#         A dictionary of transition probabilities for each 5-year bin.
+#         Keys look like: "transition_full_time_to_part_time_[30,35)".
+#     variances : dict
+#         Corresponding variances, with keys like:
+#         "var_transition_full_time_to_part_time_[30,35)".
+#     """
 
-    # --- 1) Define the 5-year bins ---
-    # If start_age=30, end_age=42 => bins = [30, 35, 40, 45]
-    # => intervals: [30,35), [35,40), [40,45)
-    bins = list(range(start_age, end_age + 1, 5))
-    if bins[-1] < end_age:
-        bins.append(end_age + 1)  # Ensure we cover up to end_age
-    # Create labels like "[30,35)", "[35,40)", etc.
-    bin_labels = [f"age_{bins[i]}_{bins[i+1] - 1}" for i in range(len(bins) - 1)]
+#     # --- 1) Define the 5-year bins ---
+#     # If start_age=30, end_age=42 => bins = [30, 35, 40, 45]
+#     # => intervals: [30,35), [35,40), [40,45)
+#     bins = list(range(start_age, end_age + 1, 5))
+#     if bins[-1] < end_age:
+#         bins.append(end_age + 1)  # Ensure we cover up to end_age
+#     # Create labels like "[30,35)", "[35,40)", etc.
+#     bin_labels = [f"age_{bins[i]}_{bins[i+1] - 1}" for i in range(len(bins) - 1)]
 
-    # Prepare storage for aggregated results
-    moments = {}
-    variances = {}
+#     # Prepare storage for aggregated results
+#     moments = {}
+#     variances = {}
 
-    # --- 2) Loop over each bin, filter df, compute transitions ---
-    for i in range(len(bin_labels)):
-        bin_label = bin_labels[i]
-        age_lower = bins[i]
-        age_upper = bins[i + 1]
+#     # --- 2) Loop over each bin, filter df, compute transitions ---
+#     for i in range(len(bin_labels)):
+#         bin_label = bin_labels[i]
+#         age_lower = bins[i]
+#         age_upper = bins[i + 1]
 
-        # Filter rows whose age is in [age_lower, age_upper)
-        subdf = df[(df["age"] >= age_lower) & (df["age"] < age_upper)].copy()
+#         # Filter rows whose age is in [age_lower, age_upper)
+#         subdf = df[(df["age"] >= age_lower) & (df["age"] < age_upper)].copy()
 
-        # If there's no data in that bin, skip it
-        if subdf.empty:
-            continue
+#         # If there's no data in that bin, skip it
+#         if subdf.empty:
+#             continue
 
-        # --- 3) Compute transitions for the subsample ---
-        sub_moments, sub_variances = compute_transition_moments_and_variances(
-            subdf,
-            start_age,
-            end_age,
-            choice=choice,
-            lagged_choice=lagged_choice,
-        )
+#         # --- 3) Compute transitions for the subsample ---
+#         sub_moments, sub_variances = compute_transition_moments_and_variances(
+#             subdf,
+#             start_age,
+#             end_age,
+#             choice=choice,
+#             lagged_choice=lagged_choice,
+#         )
 
-        # --- 4) Append bin label to the keys and store ---
-        for k, v in sub_moments.items():
-            new_key = f"{k}_{bin_label}"
-            moments[new_key] = v
+#         # --- 4) Append bin label to the keys and store ---
+#         for k, v in sub_moments.items():
+#             new_key = f"{k}_{bin_label}"
+#             moments[new_key] = v
 
-        for k, v in sub_variances.items():
-            new_key = f"{k}_{bin_label}"
-            variances[new_key] = v
+#         for k, v in sub_variances.items():
+#             new_key = f"{k}_{bin_label}"
+#             variances[new_key] = v
 
-    return moments, variances
+#     return moments, variances
 
 
 def compute_wealth_moments_by_five_year_age_bins(df, edu_level, start_age, end_age):
