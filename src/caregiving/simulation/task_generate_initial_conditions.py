@@ -17,6 +17,9 @@ from sklearn.neighbors import KernelDensity
 from caregiving.config import BLD
 from caregiving.model.shared import SEX
 from caregiving.model.state_space import create_state_space_functions
+from caregiving.model.stochastic_processes.job_transition import (
+    job_offer_process_transition_initial_conditions,
+)
 from caregiving.model.utility.bequest_utility import (
     create_final_period_utility_functions,
 )
@@ -127,6 +130,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     exp_agents = np.empty(n_agents, np.float64)
     lagged_choice = np.empty(n_agents, np.uint8)
     partner_states = np.empty(n_agents, np.uint8)
+    job_offer_agents = np.empty(n_agents, np.uint8)
 
     # for sex_var in range(specs["n_sexes"]):
     for edu in range(specs["n_education_types"]):
@@ -167,6 +171,22 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         )
         lagged_choice[type_mask] = lagged_choice_edu
 
+        # Generate job offer probabilities
+        job_offer_probs = job_offer_process_transition_initial_conditions(
+            params=params,
+            options=specs,
+            # sex=jnp.ones_like(lagged_choice_edu) * sex_var,
+            education=jnp.ones_like(lagged_choice_edu) * edu,
+            period=jnp.zeros_like(lagged_choice_edu),
+            choice=lagged_choice_edu,
+        ).T
+        # Job offer probs is n_agents x 2. Choose for each row the job offer state
+        # with np random choice
+        job_offer_edu = np.array(
+            [np.random.choice(a=len(p), p=p) for p in job_offer_probs]
+        )
+        job_offer_agents[type_mask] = job_offer_edu
+
         # Get type specific partner states
         empirical_partner_probs = start_period_data_edu["partner_state"].value_counts(
             normalize=True
@@ -193,7 +213,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         "lagged_choice": jnp.array(lagged_choice, dtype=jnp.uint8),
         "already_retired": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
         "experience": jnp.array(exp_agents, dtype=jnp.float64),
-        "job_offer": jnp.ones_like(exp_agents, dtype=jnp.uint8),
+        "job_offer": jnp.array(job_offer_agents, dtype=jnp.uint8),
         "partner_state": jnp.array(partner_states, dtype=jnp.uint8),
     }
 
