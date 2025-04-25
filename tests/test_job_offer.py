@@ -6,7 +6,7 @@ import pytest
 
 from caregiving.config import BLD
 from caregiving.model.stochastic_processes.job_transition import (
-    job_offer_process_transition_array,
+    job_offer_process_transition,
 )
 
 EDU_GRID = [0, 1]
@@ -47,7 +47,7 @@ def test_job_destruction(education, sex, period, logit_param, work_choice, load_
     job_dest_prob = options["job_sep_probs"][sex, education, period]
     full_probs_expec = np.array([job_dest_prob, 1 - job_dest_prob])
 
-    probs = job_offer_process_transition_array(
+    probs = job_offer_process_transition(
         params=params,
         options=options,
         education=education,
