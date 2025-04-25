@@ -8,8 +8,6 @@ import jax.numpy as jnp
 import numpy as np
 import pandas as pd
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
@@ -18,7 +16,7 @@ from caregiving.config import BLD
 from caregiving.model.shared import SEX
 from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.stochastic_processes.job_transition import (
-    job_offer_process_transition_array,
+    job_offer_process_transition_initial_conditions,
 )
 from caregiving.model.utility.bequest_utility import (
     create_final_period_utility_functions,
@@ -26,6 +24,8 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.utils import table
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 
 def task_generate_start_states_for_solution(  # noqa: PLR0915
@@ -172,7 +172,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         lagged_choice[type_mask] = lagged_choice_edu
 
         # Generate job offer probabilities
-        job_offer_probs = job_offer_process_transition_array(
+        job_offer_probs = job_offer_process_transition_initial_conditions(
             params=params,
             options=specs,
             # sex=jnp.ones_like(lagged_choice_edu) * sex_var,

@@ -29,7 +29,9 @@ def job_offer_process_transition(params, options, education, period, choice):
     return jnp.array([prob_no_job, 1 - prob_no_job])
 
 
-def job_offer_process_transition_array(params, options, education, period, choice):
+def job_offer_process_transition_initial_conditions(
+    params, options, education, period, choice
+):
     """Transition probability for next period job offer state.
 
     The values of process are the following:
