@@ -105,7 +105,8 @@ def test_utility_func(
     options = load_specs
     params = {
         "rho": rho,
-        "util_cons_unemployed": util_unemployed,
+        "util_cons_unemployed_low_educ": util_unemployed,
+        "util_cons_unemployed_high_educ": util_unemployed,
         "util_cons_part_time_low_educ": util_work,
         "util_cons_part_time_high_educ": util_work,
         "util_cons_full_time_low_educ": util_work,

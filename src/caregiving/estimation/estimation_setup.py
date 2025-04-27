@@ -3,15 +3,13 @@
 import pickle
 import time
 from functools import partial
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 import jax
 import numpy as np
 import optimagic as om
 import pandas as pd
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import RETIREMENT
@@ -28,6 +26,8 @@ from caregiving.simulation.simulate_moments import (
     simulate_moments_jax,
     simulate_moments_pandas,
 )
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 jax.config.update("jax_enable_x64", True)
 
@@ -59,16 +59,23 @@ def estimate_model(
     path_to_save_estimation_result: str = BLD / "estimation" / "result.pkl",
     path_to_save_estimation_params: str = BLD / "estimation" / "estimated_params.csv",
     # last_estimate: Optional[Dict[str, Any]] = None,
+    select_fixed_params: Optional[Callable[[str, Any], bool]] = None,
     scaling: bool = False,
     scaling_options: Optional[Dict[str, Any]] = None,
     multistart: bool = False,
     multistart_options: Optional[Dict[str, Any]] = None,
+    random_seed: bool = False,
     error_handling: str = "continue",
 ) -> None:
     """Estimate the model based on empirical data and starting parameters."""
 
-    # ! random seed !
-    # seed = int(time.time())
+    # 1) set up a single RNG if we’re doing truly random draws
+    if random_seed:
+        seed_generator = np.random.default_rng()  # draws come from system entropy
+        fixed_seed = None
+    else:
+        seed_generator = None
+        fixed_seed = options["model_params"]["seed"]  # same seed every call
 
     initial_states = pickle.load(path_to_discrete_states.open("rb"))
     wealth_agents = np.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
@@ -125,6 +132,8 @@ def estimate_model(
         wealth_agents=wealth_agents,
         model_for_simulation=model_for_simulation,
         options=options,
+        fixed_seed=fixed_seed,
+        seed_generator=seed_generator,
         pandas=True,
     )
 
@@ -143,6 +152,10 @@ def estimate_model(
         "constraints": fixed_constraint,
         "error_handling": error_handling,
     }
+
+    if select_fixed_params is not None:
+        fixed_constraint = om.FixedConstraint(selector=select_fixed_params)
+        minimize_kwargs["constraints"] = fixed_constraint
 
     if scaling:
         # Either use user-supplied dict or fall back to your defaults
@@ -188,9 +201,24 @@ def simulate_moments(
     wealth_agents: np.ndarray,
     model_for_simulation: Dict[str, Any],
     options: Dict[str, Any],
+    fixed_seed: Optional[int],
+    seed_generator: Optional[np.random.Generator],
     pandas: bool = False,
 ):
-    """Solve the model and simulate moments."""
+    """Solve the model and simulate moments.
+
+    - If seed_generator is not None, we draw a brand-new random seed from it.
+    - Otherwise we just reuse fixed_seed every time.
+
+    """
+
+    if seed_generator is not None:
+        # extremely fast: draws a uint64 from PCG64
+        # seed = int(seed_generator.integers(0, 2**63, dtype=np.uint64))
+        # seed = int(seed_generator.integers(0, 2**16, dtype=np.uint16))
+        seed = int(seed_generator.integers(0, 2**32, dtype=np.uint32))
+    else:
+        seed = fixed_seed
 
     solution_dict = {}
     (
@@ -206,7 +234,7 @@ def simulate_moments(
         wealth_agents=wealth_agents,
         params=params,
         options=options,
-        seed=options["model_params"]["seed"],
+        seed=seed,
     )
 
     if pandas:
