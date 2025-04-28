@@ -54,10 +54,10 @@ def plot_choice_shares_by_education(data_emp, data_sim, specs, path_to_save_plot
     age range [start_age, end_age_msm]."""
 
     # Copy and compute age columns
-    data_emp = data_emp.copy()
-    data_sim = data_sim.copy()
-    data_emp["age"] = data_emp["period"] + specs["start_age"]
-    data_sim["age"] = data_sim["period"] + specs["start_age"]
+    # data_emp = data_emp.copy()
+    # data_sim = data_sim.copy()
+    # data_emp["age"] = data_emp["period"] + specs["start_age"]
+    # data_sim["age"] = data_sim["period"] + specs["start_age"]
 
     # Define age bounds
     age_min = specs["start_age"]
@@ -76,9 +76,7 @@ def plot_choice_shares_by_education(data_emp, data_sim, specs, path_to_save_plot
         emp_edu = data_emp[
             (data_emp["sex"] == sex) & (data_emp["education"] == edu_var)
         ]
-        sim_edu = data_sim[
-            (data_sim["sex"] == sex) & (data_sim["education"] == edu_var)
-        ]
+        sim_edu = data_sim[(data_sim["education"] == edu_var)]
 
         # Compute choice‐by‐age shares
         sim_shares = (
@@ -127,8 +125,8 @@ def plot_choice_shares_by_education(data_emp, data_sim, specs, path_to_save_plot
 def plot_choice_shares_single(data_emp, data_sim, specs, path_to_save_plot):
     """Plot choice-specific shares by age and education."""
 
-    data_emp.loc[:, "age"] = data_emp["period"] + specs["start_age"]
-    data_sim.loc[:, "age"] = data_sim["period"] + specs["start_age"]
+    # data_emp.loc[:, "age"] = data_emp["period"] + specs["start_age"]
+    # data_sim.loc[:, "age"] = data_sim["period"] + specs["start_age"]
 
     sex = SEX
 

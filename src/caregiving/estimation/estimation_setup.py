@@ -39,6 +39,7 @@ def estimate_model(
     options: Dict[str, Any],
     algo: str,
     algo_options: Dict[str, Any],
+    weighting_method: str = "identity",
     *,
     path_to_discrete_states: str = BLD / "model" / "initial_conditions" / "states.pkl",
     path_to_wealth: str = BLD / "model" / "initial_conditions" / "wealth.csv",
@@ -87,8 +88,14 @@ def estimate_model(
     empirical_variances = np.array(
         pd.read_csv(path_to_empirical_variance, index_col=0).squeeze()
     )
-    empirical_variances_reg = np.maximum(empirical_variances, 1e-4)
-    weights = np.diag(1 / empirical_variances_reg)
+
+    if weighting_method == "identity":
+        weights = np.identity(empirical_moments.shape[0])
+    elif weighting_method == "diagonal":
+        empirical_variances_reg = np.maximum(empirical_variances, 1e-4)
+        weights = np.diag(1 / empirical_variances_reg)
+    else:
+        raise ValueError(f"Unknown weighting method: {weighting_method}")
 
     # if method == "optimal":
     #     array_weights = robust_inverse(_internal_cov)
@@ -160,12 +167,11 @@ def estimate_model(
     if scaling:
         # Either use user-supplied dict or fall back to your defaults
         so_opts = scaling_options or {
-            "method": "bounds",
+            "method": "start_values",
             "clipping_value": 0.1,
             "magnitude": 1,
         }
-        minimize_kwargs["scaling"] = True
-        minimize_kwargs["scaling_options"] = so_opts
+        minimize_kwargs["scaling"] = so_opts
 
     if multistart:
         # allow custom options or fall back to your defaults
