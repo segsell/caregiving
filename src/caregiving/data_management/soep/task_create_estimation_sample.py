@@ -17,6 +17,7 @@ from caregiving.data_management.soep.variables import (
     create_choice_variable,
     create_education_type,
     create_experience_variable,
+    create_health_var_good_bad,
     create_kidage_youngest,
     create_partner_state,
     determine_observed_job_offers,
@@ -74,6 +75,7 @@ def task_create_structural_estimation_sample(
     df["period"] = df["age"] - specs["start_age"]
     df = create_experience_variable(df)
     df = create_education_type(df)
+    df = create_health_var_good_bad(df)
 
     # enforce choice restrictions based on model setup
     df = enforce_model_choice_restriction(df, specs)
@@ -102,6 +104,7 @@ def task_create_structural_estimation_sample(
         "experience": "int8",
         "wealth": "float32",
         "education": "int8",
+        "health": "int8",
         "sex": "int8",
         "children": "int8",
         "kidage_youngest": "int8",

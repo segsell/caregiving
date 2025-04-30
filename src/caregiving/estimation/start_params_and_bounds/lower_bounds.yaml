@@ -2,21 +2,30 @@
 rho: 1
 beta: 0.9
 
-util_cons_unemployed_low_educ: -5
-util_cons_unemployed_high_educ: -5
-util_cons_part_time_low_educ: -5
-util_cons_part_time_high_educ: -5
-util_cons_full_time_low_educ: -5
-util_cons_full_time_high_educ: -5
+disutil_ft_work_good_women: 1.0e-12
+disutil_ft_work_bad_women: 1.0e-12
+disutil_pt_work_good_women: 1.0e-12
+disutil_pt_work_bad_women: 1.0e-12
+disutil_unemployed_women: 1.0e-12
+disutil_children_pt_work: 1.0e-12
+disutil_children_ft_work_low: 1.0e-12
+disutil_children_ft_work_high: 1.0e-12
 
-# util_cons_children_unemployed_low_educ: -5
-# util_cons_children_unemployed_high_educ: -5
+# util_cons_unemployed_low_educ: -5
+# util_cons_unemployed_high_educ: -5
+# util_cons_part_time_low_educ: -5
+# util_cons_part_time_high_educ: -5
+# util_cons_full_time_low_educ: -5
+# util_cons_full_time_high_educ: -5
 
-util_cons_children_part_time_low_educ: -5
-util_cons_children_part_time_high_educ: -5
+# # util_cons_children_unemployed_low_educ: -5
+# # util_cons_children_unemployed_high_educ: -5
 
-util_cons_children_full_time_low_educ: -5
-util_cons_children_full_time_high_educ: -5
+# util_cons_children_part_time_low_educ: -5
+# util_cons_children_part_time_high_educ: -5
+
+# util_cons_children_full_time_low_educ: -5
+# util_cons_children_full_time_high_educ: -5
 
 # Bequest scale
 bequest_scale: 1.0e-12

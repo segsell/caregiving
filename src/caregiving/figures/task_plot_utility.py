@@ -42,7 +42,7 @@ def task_plot_utility(
                 consumption=c,
                 partner_state=partner_state,
                 # sex=1,
-                # health=1,
+                health=1,
                 education=education,
                 period=period,
                 choice=choice,
@@ -127,10 +127,16 @@ def task_plot_cons_scale(
             cons_scale = np.zeros(n_periods)
 
             for period in range(n_periods):
-                has_partner = (np.array(married_val) > 0).astype(int)
-                n_children = specs["children_by_state"][1, edu_val, has_partner, period]
-
-                cons_scale[period] = consumption_scale(has_partner, n_children)
+                # has_partner = (np.array(married_val) > 0).astype(int)
+                # n_child = specs["children_by_state"][1, edu_val, has_partner, period]
+                # cons_scale[period] = consumption_scale(has_partner, n_children)
+                cons_scale[period] = consumption_scale(
+                    partner_state=np.array(married_val),
+                    # sex=1,
+                    education=edu_val,
+                    period=period,
+                    options=specs,
+                )
 
             axs[married_val].plot(cons_scale, label=edu_label)
             axs[married_val].set_title(married_label)

@@ -8,8 +8,6 @@ import jax.numpy as jnp
 import numpy as np
 import pandas as pd
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
@@ -26,6 +24,8 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.utils import table
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 
 def task_generate_start_states_for_solution(  # noqa: PLR0915
@@ -130,6 +130,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     exp_agents = np.empty(n_agents, np.float64)
     lagged_choice = np.empty(n_agents, np.uint8)
     partner_states = np.empty(n_agents, np.uint8)
+    health_agents = np.empty(n_agents, np.uint8)
     job_offer_agents = np.empty(n_agents, np.uint8)
 
     # for sex_var in range(specs["n_sexes"]):
@@ -200,6 +201,19 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         )
         partner_states[type_mask] = partner_states_edu
 
+        # Generate health states
+        empirical_health_probs = start_period_data_edu["health"].value_counts(
+            normalize=True
+        )
+        health_probs = pd.Series(
+            index=np.arange(specs["n_health_states"]), data=0, dtype=float
+        )
+        health_probs.update(empirical_health_probs)
+        health_states_edu = np.random.choice(
+            specs["n_health_states"], size=n_agents_edu, p=health_probs.values
+        )
+        health_agents[type_mask] = health_states_edu
+
     # Transform it to be between 0 and 1
     exp_agents /= specs["max_exp_diffs_per_period"][0]
 
@@ -210,6 +224,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     states = {
         "period": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
         "education": jnp.array(education_agents, dtype=jnp.uint8),
+        "health": jnp.array(health_agents, dtype=jnp.uint8),
         "lagged_choice": jnp.array(lagged_choice, dtype=jnp.uint8),
         "already_retired": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
         "experience": jnp.array(exp_agents, dtype=jnp.float64),
