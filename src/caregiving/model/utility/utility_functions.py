@@ -188,7 +188,10 @@ def utility_of_labor_and_children(choice, education, n_children, params):
     #     + params["util_cons_full_time_children"] * n_children
     # ) * education
 
-    util_unemployed = params["util_cons_unemployed"]
+    util_unemployed = (
+        params["util_cons_unemployed_low_educ"] * (1 - education)
+        + params["util_cons_unemployed_high_educ"] * education
+    )
     util_part_time = (
         params["util_cons_part_time_low_educ"]
         + params["util_cons_children_part_time_low_educ"] * n_children

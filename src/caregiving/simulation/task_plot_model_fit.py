@@ -4,6 +4,7 @@ import pickle
 from pathlib import Path
 from typing import Annotated
 
+import numpy as np
 import pandas as pd
 import pytask
 import yaml
@@ -19,12 +20,13 @@ from caregiving.simulation.plot_model_fit import (
     plot_average_savings_decision,
     plot_average_wealth,
     plot_choice_shares,
+    plot_choice_shares_by_education,
     plot_choice_shares_single,
     plot_states,
 )
 
 
-@pytask.mark.skip()
+# @pytask.mark.skip()
 def task_plot_model_fit(
     path_to_options: Path = BLD / "model" / "options.pkl",
     path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
@@ -71,10 +73,51 @@ def task_plot_model_fit(
     plot_average_wealth(df_emp_prep, df_sim, specs, path_to_save_wealth_plot)
     plot_average_savings_decision(df_sim, path_to_save_savings_plot)
 
-    plot_choice_shares_single(
+    # plot_choice_shares_single(
+    #     df_emp, df_sim, specs, path_to_save_plot=path_to_save_single_choice_plot
+    # )
+    plot_choice_shares_by_education(
         df_emp, df_sim, specs, path_to_save_plot=path_to_save_single_choice_plot
     )
+    test_choice_shares_sum_to_one(df_emp, df_sim, specs)
 
     # plot_choice_shares(df_emp, df_sim, specs)
     # discrete_state_names = model_full["model_structure"]["discrete_states_names"]
     # plot_states(df_emp, df_sim, discrete_state_names, specs)
+
+
+def test_choice_shares_sum_to_one(data_emp, data_sim, specs):
+    """
+    Test that, for each age, the sum of choice-specific shares equals 1
+    in both empirical and simulated datasets.
+
+    Parameters
+    ----------
+    data_emp : pd.DataFrame
+        Empirical data with columns "period" and "choice".
+    data_sim : pd.DataFrame
+        Simulated data with columns "period" and "choice".
+    specs : dict
+        Must contain "start_age" (int).
+    """
+    for df, name in ((data_emp, "data_emp"), (data_sim, "data_sim")):
+
+        df_gender = df[df["sex"] == SEX]
+        df_gender["age"] = df_gender["period"] + specs["start_age"]
+
+        # compute normalized choice shares by age
+        shares = (
+            df_gender.groupby("age")["choice"]
+            .value_counts(normalize=True)
+            .unstack(fill_value=0)
+        )
+
+        # sum across choices for each age
+        sum_per_age = shares.sum(axis=1)
+
+        # assert all sums are (approximately) 1
+        if not np.allclose(sum_per_age.values, 1.0, atol=1e-8):
+            bad = sum_per_age[~np.isclose(sum_per_age, 1.0)]
+            raise AssertionError(
+                f"In {name}, choice shares do not sum to 1 at ages:\n{bad}"
+            )

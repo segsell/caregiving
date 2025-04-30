@@ -98,34 +98,34 @@ def task_create_soep_moments(
     # )
     # =================================================================================
 
-    # E) Year-to-year labor supply transitions
-    states_work_no_work = {
-        "working": WORK,
-        "not_working": NOT_WORKING,
-    }
-    transition_moments, transition_variances = (
-        compute_transition_moments_and_variances_for_age_bins(
-            df_low,
-            min_age=start_age,
-            max_age=end_age,
-            states=states_work_no_work,
-            label="low_education",
-        )
-    )
-    moments.update(transition_moments)
-    variances.update(transition_variances)
+    # # E) Year-to-year labor supply transitions
+    # states_work_no_work = {
+    #     "working": WORK,
+    #     "not_working": NOT_WORKING,
+    # }
+    # transition_moments, transition_variances = (
+    #     compute_transition_moments_and_variances_for_age_bins(
+    #         df_low,
+    #         min_age=start_age,
+    #         max_age=end_age,
+    #         states=states_work_no_work,
+    #         label="low_education",
+    #     )
+    # )
+    # moments.update(transition_moments)
+    # variances.update(transition_variances)
 
-    transition_moments, transition_variances = (
-        compute_transition_moments_and_variances_for_age_bins(
-            df_high,
-            min_age=start_age,
-            max_age=end_age,
-            states=states_work_no_work,
-            label="high_education",
-        )
-    )
-    moments.update(transition_moments)
-    variances.update(transition_variances)
+    # transition_moments, transition_variances = (
+    #     compute_transition_moments_and_variances_for_age_bins(
+    #         df_high,
+    #         min_age=start_age,
+    #         max_age=end_age,
+    #         states=states_work_no_work,
+    #         label="high_education",
+    #     )
+    # )
+    # moments.update(transition_moments)
+    # variances.update(transition_variances)
 
     # states = {
     #     "not_working": NOT_WORKING,

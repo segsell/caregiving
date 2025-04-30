@@ -57,16 +57,20 @@ def simulate_moments_pandas(
     # }
     # moments = compute_transition_moments_pandas(df, moments, age_range, states=states)
 
-    states_work_no_work = {
-        "not_working": NOT_WORKING,
-        "working": WORK,
-    }
-    moments = compute_transition_moments_pandas_for_age_bins(
-        df_low, moments, age_range, states=states_work_no_work, label="low_education"
-    )
-    moments = compute_transition_moments_pandas_for_age_bins(
-        df_high, moments, age_range, states=states_work_no_work, label="high_education"
-    )
+    # states_work_no_work = {
+    #     "not_working": NOT_WORKING,
+    #     "working": WORK,
+    # }
+    # moments = compute_transition_moments_pandas_for_age_bins(
+    #     df_low, moments, age_range, states=states_work_no_work, label="low_education"
+    # )
+    # moments = compute_transition_moments_pandas_for_age_bins(
+    #     df_high,
+    # moments,
+    # age_range,
+    # states=states_work_no_work,
+    # label="high_education"
+    # )
 
     return pd.Series(moments)
 
@@ -319,40 +323,41 @@ def create_moments_jax(sim_df, min_age, max_age):
         arr_high_educ, ind=idx, choice=FULL_TIME, min_age=min_age, max_age=max_age
     )
 
-    # # Work transitions
-    work_to_work_low_educ_by_age = get_transition_for_age_bins(
-        arr_low_educ,
-        ind=idx,
-        lagged_choice=WORK,
-        current_choice=WORK,
-        min_age=min_age,
-        max_age=max_age,
-    )
-    no_work_to_no_work_low_educ_by_age = get_transition_for_age_bins(
-        arr_low_educ,
-        ind=idx,
-        lagged_choice=NOT_WORKING,
-        current_choice=NOT_WORKING,
-        min_age=min_age,
-        max_age=max_age,
-    )
+    # Work transitions
+    # work_to_work_low_educ_by_age = get_transition_for_age_bins(
+    #     arr_low_educ,
+    #     ind=idx,
+    #     lagged_choice=WORK,
+    #     current_choice=WORK,
+    #     min_age=min_age,
+    #     max_age=max_age,
+    # )
+    # no_work_to_no_work_low_educ_by_age = get_transition_for_age_bins(
+    #     arr_low_educ,
+    #     ind=idx,
+    #     lagged_choice=NOT_WORKING,
+    #     current_choice=NOT_WORKING,
+    #     min_age=min_age,
+    #     max_age=max_age,
+    # )
 
-    work_to_work_high_educ_by_age = get_transition_for_age_bins(
-        arr_high_educ,
-        ind=idx,
-        lagged_choice=WORK,
-        current_choice=WORK,
-        min_age=min_age,
-        max_age=max_age,
-    )
-    no_work_to_no_work_high_educ_by_age = get_transition_for_age_bins(
-        arr_high_educ,
-        ind=idx,
-        lagged_choice=NOT_WORKING,
-        current_choice=NOT_WORKING,
-        min_age=min_age,
-        max_age=max_age,
-    )
+    # work_to_work_high_educ_by_age = get_transition_for_age_bins(
+    #     arr_high_educ,
+    #     ind=idx,
+    #     lagged_choice=WORK,
+    #     current_choice=WORK,
+    #     min_age=min_age,
+    #     max_age=max_age,
+    # )
+    # no_work_to_no_work_high_educ_by_age = get_transition_for_age_bins(
+    #     arr_high_educ,
+    #     ind=idx,
+    #     lagged_choice=NOT_WORKING,
+    #     current_choice=NOT_WORKING,
+    #     min_age=min_age,
+    #     max_age=max_age,
+    # )
+    # #
 
     # no_work_to_part_time_by_age = get_transition(
     #     arr,
@@ -434,10 +439,11 @@ def create_moments_jax(sim_df, min_age, max_age):
         + share_unemployed_by_age_high_educ
         + share_working_part_time_by_age_high_educ
         + share_working_full_time_by_age_high_educ
-        + no_work_to_no_work_low_educ_by_age
-        + work_to_work_low_educ_by_age
-        + no_work_to_no_work_high_educ_by_age
-        + work_to_work_high_educ_by_age
+        # # work to work transitions
+        # + no_work_to_no_work_low_educ_by_age
+        # + work_to_work_low_educ_by_age
+        # + no_work_to_no_work_high_educ_by_age
+        # + work_to_work_high_educ_by_age
         #
         # + work_to_work_by_age
         # + work_to_no_work_by_age
