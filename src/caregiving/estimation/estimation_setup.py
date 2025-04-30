@@ -3,7 +3,7 @@
 import pickle
 import time
 from functools import partial
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 import jax
 import numpy as np
@@ -39,6 +39,7 @@ def estimate_model(
     options: Dict[str, Any],
     algo: str,
     algo_options: Dict[str, Any],
+    weighting_method: str = "identity",
     *,
     path_to_discrete_states: str = BLD / "model" / "initial_conditions" / "states.pkl",
     path_to_wealth: str = BLD / "model" / "initial_conditions" / "wealth.csv",
@@ -59,16 +60,23 @@ def estimate_model(
     path_to_save_estimation_result: str = BLD / "estimation" / "result.pkl",
     path_to_save_estimation_params: str = BLD / "estimation" / "estimated_params.csv",
     # last_estimate: Optional[Dict[str, Any]] = None,
+    select_fixed_params: Optional[Callable[[str, Any], bool]] = None,
     scaling: bool = False,
     scaling_options: Optional[Dict[str, Any]] = None,
     multistart: bool = False,
     multistart_options: Optional[Dict[str, Any]] = None,
+    random_seed: bool = False,
     error_handling: str = "continue",
 ) -> None:
     """Estimate the model based on empirical data and starting parameters."""
 
-    # ! random seed !
-    # seed = int(time.time())
+    # 1) set up a single RNG if we’re doing truly random draws
+    if random_seed:
+        seed_generator = np.random.default_rng()  # draws come from system entropy
+        fixed_seed = None
+    else:
+        seed_generator = None
+        fixed_seed = options["model_params"]["seed"]  # same seed every call
 
     initial_states = pickle.load(path_to_discrete_states.open("rb"))
     wealth_agents = np.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
@@ -80,8 +88,14 @@ def estimate_model(
     empirical_variances = np.array(
         pd.read_csv(path_to_empirical_variance, index_col=0).squeeze()
     )
-    empirical_variances_reg = np.maximum(empirical_variances, 1e-4)
-    weights = np.diag(1 / empirical_variances_reg)
+
+    if weighting_method == "identity":
+        weights = np.identity(empirical_moments.shape[0])
+    elif weighting_method == "diagonal":
+        empirical_variances_reg = np.maximum(empirical_variances, 1e-4)
+        weights = np.diag(1 / empirical_variances_reg)
+    else:
+        raise ValueError(f"Unknown weighting method: {weighting_method}")
 
     # if method == "optimal":
     #     array_weights = robust_inverse(_internal_cov)
@@ -125,6 +139,8 @@ def estimate_model(
         wealth_agents=wealth_agents,
         model_for_simulation=model_for_simulation,
         options=options,
+        fixed_seed=fixed_seed,
+        seed_generator=seed_generator,
         pandas=True,
     )
 
@@ -144,15 +160,18 @@ def estimate_model(
         "error_handling": error_handling,
     }
 
+    if select_fixed_params is not None:
+        fixed_constraint = om.FixedConstraint(selector=select_fixed_params)
+        minimize_kwargs["constraints"] = fixed_constraint
+
     if scaling:
         # Either use user-supplied dict or fall back to your defaults
         so_opts = scaling_options or {
-            "method": "bounds",
+            "method": "start_values",
             "clipping_value": 0.1,
             "magnitude": 1,
         }
-        minimize_kwargs["scaling"] = True
-        minimize_kwargs["scaling_options"] = so_opts
+        minimize_kwargs["scaling"] = so_opts
 
     if multistart:
         # allow custom options or fall back to your defaults
@@ -188,9 +207,24 @@ def simulate_moments(
     wealth_agents: np.ndarray,
     model_for_simulation: Dict[str, Any],
     options: Dict[str, Any],
+    fixed_seed: Optional[int],
+    seed_generator: Optional[np.random.Generator],
     pandas: bool = False,
 ):
-    """Solve the model and simulate moments."""
+    """Solve the model and simulate moments.
+
+    - If seed_generator is not None, we draw a brand-new random seed from it.
+    - Otherwise we just reuse fixed_seed every time.
+
+    """
+
+    if seed_generator is not None:
+        # extremely fast: draws a uint64 from PCG64
+        # seed = int(seed_generator.integers(0, 2**63, dtype=np.uint64))
+        # seed = int(seed_generator.integers(0, 2**16, dtype=np.uint16))
+        seed = int(seed_generator.integers(0, 2**32, dtype=np.uint32))
+    else:
+        seed = fixed_seed
 
     solution_dict = {}
     (
@@ -206,7 +240,7 @@ def simulate_moments(
         wealth_agents=wealth_agents,
         params=params,
         options=options,
-        seed=options["model_params"]["seed"],
+        seed=seed,
     )
 
     if pandas:

@@ -70,22 +70,23 @@ def task_simulate_moments(
     #     "part_time": "Part-time",
     #     "full_time": "Full-time",
     # }
-    states = {
-        "not_working": NOT_WORKING,
-        "working": WORK,
-    }
-    state_labels = {
-        "not_working": "Not Working",
-        "working": "Work",
-    }
-    plot_transition_shares_by_age_bins(
-        moms_emp=emp_moms,
-        moms_sim=sim_moms_pandas,
-        specs=specs,
-        states=states,
-        state_labels=state_labels,
-        path_to_save_plot=path_to_save_transitions_pandas,
-    )
+
+    # states = {
+    #     "not_working": NOT_WORKING,
+    #     "working": WORK,
+    # }
+    # state_labels = {
+    #     "not_working": "Not Working",
+    #     "working": "Work",
+    # }
+    # plot_transition_shares_by_age_bins(
+    #     moms_emp=emp_moms,
+    #     moms_sim=sim_moms_pandas,
+    #     specs=specs,
+    #     states=states,
+    #     state_labels=state_labels,
+    #     path_to_save_plot=path_to_save_transitions_pandas,
+    # )
 
     plot_model_fit_labor_moments_pandas_by_education(
         moms_emp=emp_moms,

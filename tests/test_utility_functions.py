@@ -105,7 +105,8 @@ def test_utility_func(
     options = load_specs
     params = {
         "rho": rho,
-        "util_cons_unemployed": util_unemployed,
+        "util_cons_unemployed_low_educ": util_unemployed,
+        "util_cons_unemployed_high_educ": util_unemployed,
         "util_cons_part_time_low_educ": util_work,
         "util_cons_part_time_high_educ": util_work,
         "util_cons_full_time_low_educ": util_work,
@@ -124,7 +125,10 @@ def test_utility_func(
         n_children=n_children,
     )
 
-    disutil_unemployment = np.exp(params["util_cons_unemployed"])
+    disutil_unemployment = (
+        np.exp(params["util_cons_unemployed_low_educ"]) * (1 - education)
+        + np.exp(params["util_cons_unemployed_high_educ"]) * education
+    )
 
     exp_factor_pt_work = params["util_cons_part_time_low_educ"] * (
         1 - education
@@ -230,7 +234,8 @@ def test_marginal_utility(
     options = load_specs
     params = {
         "rho": rho,
-        "util_cons_unemployed": util_unemployed,
+        "util_cons_unemployed_low_educ": util_unemployed,
+        "util_cons_unemployed_high_educ": util_unemployed,
         "util_cons_part_time_low_educ": util_work,
         "util_cons_part_time_high_educ": util_work,
         "util_cons_full_time_low_educ": util_work,
@@ -293,7 +298,8 @@ def test_inverse_marginal_utility(
     options = load_specs
     params = {
         "rho": rho,
-        "util_cons_unemployed": util_unemployed,
+        "util_cons_unemployed_low_educ": util_unemployed,
+        "util_cons_unemployed_high_educ": util_unemployed,
         "util_cons_part_time_low_educ": util_work,
         "util_cons_part_time_high_educ": util_work,
         "util_cons_full_time_low_educ": util_work,
