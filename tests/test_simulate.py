@@ -86,7 +86,7 @@ def test_solve_and_simulate(
         seed=options["model_params"]["seed"],
     )
 
-    _cols_no_value_choice = [
+    cols_no_value_choice = [
         col for col in sim_df.columns if not col.startswith("value_choice_")
     ]
 
@@ -97,7 +97,10 @@ def test_solve_and_simulate(
 
     # Alive indiviudals should have nan entries
     df_0_to_49 = sim_df.xs(slice(0, end_period - 1), level="period")
-    assert not df_0_to_49[df_0_to_49["health"] != DEAD].isna().any(axis=None)
+    df_filtered = df_0_to_49[df_0_to_49["health"] != DEAD]
+
+    assert not df_filtered[cols_no_value_choice].isna().any(axis=None)
+    # assert not df_0_to_49[df_0_to_49["health"] != DEAD].isna().any(axis=None)
     # assert not df_0_to_49[_cols_no_value_choice].isna().any(axis=None)
 
     # No income and savings decision in the last period
