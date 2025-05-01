@@ -20,6 +20,7 @@ from caregiving.data_management.soep.variables import (
     create_health_var_good_bad,
     create_kidage_youngest,
     create_partner_state,
+    create_policy_state,
     determine_observed_job_offers,
     generate_job_separation_var,
 )
@@ -73,11 +74,12 @@ def task_create_structural_estimation_sample(
     df = add_wealth_data(df, wealth, drop_missing=False)
 
     df["period"] = df["age"] - specs["start_age"]
+
+    df = create_policy_state(df, specs)
     df = create_experience_variable(df)
     df = create_education_type(df)
     df = create_health_var_good_bad(df)
 
-    # enforce choice restrictions based on model setup
     df = enforce_model_choice_restriction(df, specs)
 
     # Construct job offer state
@@ -113,7 +115,7 @@ def task_create_structural_estimation_sample(
     df = df.astype(type_dict)
 
     # print_data_description(df)
-
+    ###
     # Anonymize and save data
     df.reset_index(drop=True, inplace=True)
     df.to_csv(path_to_save)
