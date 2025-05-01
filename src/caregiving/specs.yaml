@@ -59,8 +59,8 @@ monthly_pension_point_value_east_2010: 24.13
 ###############################################################################
 # Data preparation
 ###############################################################################
-start_year: 2001 # start year of estimation sample
-end_year: 2019 # end year of estimation sample
+start_year: 2010 # start year of estimation sample
+end_year: 2017 # end year of estimation sample
 # start_year: 2010 # start year of estimation sample
 # end_year: 2017 # end year of estimation sample
 reference_year: 2010  # reference year for monetary values, taxes, etc.
