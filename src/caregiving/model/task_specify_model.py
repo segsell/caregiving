@@ -12,6 +12,7 @@ from pytask import Product
 
 from caregiving.config import BLD
 from caregiving.model.state_space import create_state_space_functions
+from caregiving.model.stochastic_processes.health_transition import health_transition
 from caregiving.model.stochastic_processes.job_transition import (
     job_offer_process_transition,
 )
@@ -81,6 +82,10 @@ def task_specify_model(
                 "partner_state": {
                     "transition": partner_transition,
                     "states": np.arange(specs["n_partner_states"], dtype=int),
+                },
+                "health": {
+                    "transition": health_transition,
+                    "states": np.arange(specs["n_health_states"], dtype=int),
                 },
             },
             "continuous_states": {

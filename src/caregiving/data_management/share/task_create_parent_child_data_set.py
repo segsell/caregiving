@@ -8,6 +8,13 @@ import pandas as pd
 from pytask import Product
 
 from caregiving.config import BLD
+from caregiving.model.shared import (
+    MAX_AGE_PARENTS,
+    MIN_AGE_PARENTS,
+    STATE_BAD_HEALTH,
+    STATE_GOOD_HEALTH,
+    STATE_MEDIUM_HEALTH,
+)
 
 WAVE_1 = 1
 WAVE_2 = 2
@@ -25,9 +32,6 @@ ONE = 1
 
 MALE = 1
 FEMALE = 2
-
-MIN_AGE = 65
-MAX_AGE = 105
 
 HEALTH_EXCELLENT = 1
 HEALTH_VERY_GOOD = 2
@@ -97,6 +101,8 @@ def task_create_parent_child_data(
     """Create the estimation data set."""
     dat = pd.read_csv(path_to_raw_data)
 
+    dat["sex"] = dat["gender"].map({MALE: 0, FEMALE: 1})
+
     # Make prettier
     dat["age"] = dat.apply(
         lambda row: (
@@ -107,7 +113,7 @@ def task_create_parent_child_data(
         axis=1,
     )
 
-    dat = dat[(dat["age"] > MIN_AGE) & (dat["age"] <= MAX_AGE)]
+    dat = dat[(dat["age"] >= MIN_AGE_PARENTS) & (dat["age"] <= MAX_AGE_PARENTS)]
 
     dat = create_children_information(dat)
     dat = create_married_or_partner_alive(dat)
@@ -334,7 +340,7 @@ def create_health_variables(dat):
         (dat["ph003_"] == HEALTH_FAIR),
         (dat["ph003_"] == HEALTH_POOR),
     ]
-    _val = [0, 1, 2]
+    _val = [STATE_GOOD_HEALTH, STATE_MEDIUM_HEALTH, STATE_BAD_HEALTH]
 
     dat["health"] = np.select(_cond, _val, default=np.nan)
 

@@ -37,6 +37,12 @@ def task_estimate_job_separation(
     job_sep_params.to_csv(path_to_save_params)
     pkl.dump(job_sep_probs, path_to_save_probs.open("wb"))
 
+    # job_sep_probs_df = pd.DataFrame(
+    #     job_sep_probs.reshape(specs["n_sexes"], specs["n_education_types"], -1)
+    # )
+    # job_sep_probs_df.to_csv(path_to_save_probs, index=False)
+    # breakpoint()
+
     # load pickle file
     # pkl_path = BLD / "estimation" / "stochastic_processes" / "job_sep_probs.pkl"
     # with open(pkl_path, "rb") as fp:
