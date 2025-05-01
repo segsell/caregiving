@@ -115,7 +115,7 @@ def task_create_structural_estimation_sample(
     df = df.astype(type_dict)
 
     # print_data_description(df)
-    ###
+
     # Anonymize and save data
     df.reset_index(drop=True, inplace=True)
     df.to_csv(path_to_save)
