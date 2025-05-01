@@ -121,6 +121,7 @@ def task_plot_model_fit(
         specs,
         states,
         state_labels,
+        bin_width=10,
         one_way=True,
         path_to_save_plot=path_to_save_work_transition_age_bin_plot,
     )
@@ -132,9 +133,35 @@ def task_plot_model_fit(
         & data_emp["age"].between(60, 70)
     )
     df_60_70 = data_emp[mask]
-
     counts = (  # noqa: F841
         df_60_70.groupby("age")
+        .size()
+        .reindex(range(60, 71), fill_value=0)
+        .rename("count")
+        .reset_index()
+    )
+
+    mask2 = (
+        data_emp["lagged_choice"].isin(WORK)
+        # & data_emp["choice"].isin(WORK)
+        & data_emp["age"].between(60, 70)
+    )
+    df_60_70_2 = data_emp[mask2]
+    counts_2 = (  # noqa: F841
+        df_60_70_2.groupby("age")
+        .size()
+        .reindex(range(60, 71), fill_value=0)
+        .rename("count")
+        .reset_index()
+    )
+
+    mask3 = (
+        data_emp["age"].between(60, 70)
+        # & data_emp["choice"].isin(WORK)
+    )
+    df_60_70_3 = data_emp[mask3]
+    counts_3 = (  # noqa: F841
+        df_60_70_3.groupby("age")
         .size()
         .reindex(range(60, 71), fill_value=0)
         .rename("count")

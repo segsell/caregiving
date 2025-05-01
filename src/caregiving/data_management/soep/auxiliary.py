@@ -195,5 +195,19 @@ def enforce_model_choice_restriction(df, specs):
         )
     ]
 
+    # recode choice → retired for post‐SRA unemployed
+    # mask1 = (post_sra >= 0) & df["choice"].isin(unemployed_values)
+    # df.loc[mask1, "choice"] = 0
+    # # recode lagged_choice → retired for post‐SRA unemployed
+    # mask2 = (post_sra >= 1) & df["lagged_choice"].isin(unemployed_values)
+    # df.loc[mask2, "lagged_choice"] = 0
+    # # recode choice → retired once age ≥ min_SRA
+    # mask3 = (df["age"] >= specs["min_SRA"]) & df["choice"].isin(unemployed_values)
+    # df.loc[mask3, "choice"] = 0
+    # # recode lagged_choice → retired once age > min_SRA
+    # mask4 = (df["age"] > specs["min_SRA"]) & df[
+    # "lagged_choice"].isin(unemployed_values)
+    # df.loc[mask4, "lagged_choice"] = 0
+
     print(str(len(df)) + " left after dropping people who come back from retirement.")
     return df

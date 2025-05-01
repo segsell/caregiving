@@ -114,6 +114,7 @@ def task_create_structural_estimation_sample(
     df = df[list(type_dict.keys())]
     df = df.astype(type_dict)
 
+    #
     # print_data_description(df)
 
     # Anonymize and save data

@@ -19,6 +19,7 @@ from caregiving.data_management.soep.variables import (
     create_experience_variable,
     create_health_var_good_bad,
     create_partner_state,
+    create_policy_state,
     generate_working_hours,
 )
 from caregiving.model.shared import N_MONTHS, N_WEEKS_IN_YEAR, PART_TIME, WORK
@@ -162,6 +163,8 @@ def task_create_event_study_sample(
     df = create_choice_variable(df)
 
     df = generate_working_hours(df, include_actual_hours=True, drop_missing=False)
+
+    df = create_policy_state(df, specs)
     df = create_education_type(df)
     df = create_health_var_good_bad(df, drop_missing=True)
     df = create_caregiving(df, filter_missing=False)
