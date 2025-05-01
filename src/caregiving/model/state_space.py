@@ -14,6 +14,8 @@ from caregiving.model.shared import (  # BAD_HEALTH,; CARE_AND_NO_CARE,; FORMAL_
     UNEMPLOYED,
     WORK_AND_NO_WORK,
     WORK_AND_UNEMPLOYED,
+    is_alive,
+    is_dead,
     is_full_time,
     is_part_time,
     is_retired,
@@ -86,13 +88,16 @@ def sparsity_condition(  # noqa: PLR0911
     lagged_choice,
     already_retired,
     education,
+    health,
     partner_state,
     options,
 ):
     start_age = options["start_age"]
     max_ret_age = options["max_ret_age"]
     min_ret_age_state_space = options["min_ret_age"]
+
     # Generate last period, because only here are death states
+    last_period = options["n_periods"] - 1
 
     age = start_age + period
 
@@ -104,14 +109,28 @@ def sparsity_condition(  # noqa: PLR0911
     elif (not is_retired(lagged_choice)) & (already_retired == 1):
         return False
     # After the maximum retirement age, you must be retired.
-    elif (age > max_ret_age) & (not is_retired(lagged_choice)):
+    elif (age > max_ret_age) & (not is_retired(lagged_choice)) & (is_alive(health)):
         return False
     elif (age > max_ret_age + 1) & (already_retired != 1):
         return False
     else:
         # Now turn to the states, where it is decided by the value of an exogenous
         # state if it is valid or not. For invalid states we provide a proxy child state
-        if (age <= max_ret_age + 1) and is_retired(lagged_choice):
+        if is_dead(health):
+            # Lead all states with death to last period death states
+            # with job offer 0 (not relevant for bequest). You could be in principle
+            # die upon retirement for which we need informed and policy state
+            state_proxy = {
+                "period": last_period,
+                "lagged_choice": 0,
+                "already_retired": 1,
+                "education": education,
+                "health": health,
+                "partner_state": partner_state,
+                "job_offer": 0,
+            }
+            return state_proxy
+        elif (age <= max_ret_age + 1) and is_retired(lagged_choice):
             # If retirement is already chosen we proxy all states to job offer 0.
             # Until age max_ret_age + 1 the individual could also be freshly retired
             state_proxy = {
@@ -119,6 +138,7 @@ def sparsity_condition(  # noqa: PLR0911
                 "lagged_choice": lagged_choice,
                 "already_retired": already_retired,
                 "education": education,
+                "health": health,
                 "partner_state": partner_state,
                 "job_offer": 0,
             }
@@ -131,6 +151,7 @@ def sparsity_condition(  # noqa: PLR0911
                 "lagged_choice": lagged_choice,
                 "already_retired": already_retired,
                 "education": education,
+                "health": health,
                 "partner_state": partner_state,
                 "job_offer": 0,
             }
@@ -139,11 +160,15 @@ def sparsity_condition(  # noqa: PLR0911
             return True
 
 
-def state_specific_choice_set(period, lagged_choice, job_offer, options):
+def state_specific_choice_set(  # noqa: PLR0911
+    period, lagged_choice, job_offer, health, options
+):
     age = period + options["start_age"]
 
+    if is_dead(health):
+        return np.array([0])
     # Retirement is absorbing
-    if lagged_choice == 0:
+    elif lagged_choice == 0:
         return RETIREMENT
     # Check if the person is not in the voluntary retirement range.
     elif age < options["min_ret_age"]:

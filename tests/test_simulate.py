@@ -13,6 +13,7 @@ from dcegm.solve import get_solve_func_for_model
 from pytask import Product
 
 from caregiving.config import BLD, TESTS
+from caregiving.model.shared import DEAD
 from caregiving.model.state_space import (
     create_state_space_functions,
 )
@@ -94,9 +95,15 @@ def test_solve_and_simulate(
         options["model_params"]["end_age"] - options["model_params"]["start_age"]
     )
 
+    # Alive indiviudals should have nan entries
     df_0_to_49 = sim_df.xs(slice(0, end_period - 1), level="period")
-    assert not df_0_to_49[cols_no_value_choice].isna().any(axis=None)
+    df_filtered = df_0_to_49[df_0_to_49["health"] != DEAD]
 
+    assert not df_filtered[cols_no_value_choice].isna().any(axis=None)
+    # assert not df_0_to_49[df_0_to_49["health"] != DEAD].isna().any(axis=None)
+    # assert not df_0_to_49[_cols_no_value_choice].isna().any(axis=None)
+
+    # No income and savings decision in the last period
     df_50 = sim_df.xs(end_period, level="period")
     assert df_50["total_income"].isna().all()
     assert df_50["savings_dec"].isna().all()

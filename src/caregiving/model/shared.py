@@ -78,8 +78,8 @@ AGE_BIN_0_TO_3 = 0
 AGE_BIN_4_TO_6 = 1
 AGE_BIN_7_TO_9 = 2
 
-GOOD_HEALTH = 0
-BAD_HEALTH = 1
+BAD_HEALTH = 0
+GOOD_HEALTH = 1
 DEAD = 2
 MEDIUM_HEALTH = -99
 
@@ -250,6 +250,27 @@ def is_child_age_7_to_9(age_youngest_child):
 
 # def is_combination_care(lagged_choice):
 #     return jnp.any(lagged_choice == COMBINATION_CARE)
+
+
+# ==============================================================================
+# Own health
+# ==============================================================================
+
+
+def is_bad_health(health):
+    return jnp.any(health == BAD_HEALTH)
+
+
+def is_good_health(health):
+    return jnp.any(health == GOOD_HEALTH)
+
+
+def is_alive(health):
+    return jnp.any(health != DEAD)
+
+
+def is_dead(health):
+    return jnp.any(health == DEAD)
 
 
 # ==============================================================================

@@ -23,6 +23,19 @@
 # Utility parameters
 rho: 1.5
 
+#disutil_not_retired_bad: 1.0
+#disutil_working_bad: 0.3
+#disutil_not_retired_good: 1.0
+#disutil_working_good: 0.3
+disutil_ft_work_good_women: 1.3
+disutil_ft_work_bad_women: 1.3
+disutil_pt_work_good_women: 1.3
+disutil_pt_work_bad_women: 1.3
+disutil_unemployed_women: 1.0
+disutil_children_pt_work: 0.2
+disutil_children_ft_work_low: 0.2
+disutil_children_ft_work_high: 0.2
+
 # ------------------------------------------------------------------------
 # Parameters referenced in utility_of_labor_and_children
 # ------------------------------------------------------------------------
@@ -33,18 +46,18 @@ rho: 1.5
 # util_cons_full_time_low_educ: -1.3
 # util_cons_full_time_high_educ: -1.3
 
-util_cons_unemployed_low_educ: -1.0
-util_cons_unemployed_high_educ: -1.0
-util_cons_part_time_low_educ: -1.3
-util_cons_part_time_high_educ: -1.3
-util_cons_full_time_low_educ: -1.3
-util_cons_full_time_high_educ: -1.3
+# util_cons_unemployed_low_educ: -1.0
+# util_cons_unemployed_high_educ: -1.0
+# util_cons_part_time_low_educ: -1.3
+# util_cons_part_time_high_educ: -1.3
+# util_cons_full_time_low_educ: -1.3
+# util_cons_full_time_high_educ: -1.3
 
-util_cons_children_part_time_low_educ: -0.2
-util_cons_children_part_time_high_educ: -0.2
+# util_cons_children_part_time_low_educ: -0.2
+# util_cons_children_part_time_high_educ: -0.2
 
-util_cons_children_full_time_low_educ: -0.2
-util_cons_children_full_time_high_educ: -0.2
+# util_cons_children_full_time_low_educ: -0.2
+# util_cons_children_full_time_high_educ: -0.2
 
 # # ------------------------------------------------------------------------
 # # Parameters referenced in utility_of_labor_and_caregiving

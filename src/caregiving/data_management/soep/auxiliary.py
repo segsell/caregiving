@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from caregiving.model.shared import RETIREMENT
+from caregiving.model.shared import RETIREMENT, UNEMPLOYED
 
 # =====================================================================================
 # Filter Data
@@ -147,6 +147,7 @@ def enforce_model_choice_restriction(df, specs):
     """
 
     retired_values = np.asarray(RETIREMENT).ravel().tolist()
+    unemployed_values = np.asarray(UNEMPLOYED).ravel().tolist()
 
     max_ret_age = specs["max_ret_age"]
     min_ret_age = specs["min_ret_age"]
@@ -183,9 +184,10 @@ def enforce_model_choice_restriction(df, specs):
     ]
 
     # # Filter out people who are unemployed after sra
-    # post_sra = df["age"] - df["policy_state_value"]
-    # df = df[~((post_sra >= 0) & (df["choice"] == 1))]
-    # df = df[~((post_sra >= 1) & (df["lagged_choice"] == 1))]
+    post_sra = df["age"] - df["policy_state_value"]
+    df = df[~((post_sra >= 0) & (df["choice"].isin(unemployed_values)))]
+    df = df[~((post_sra >= 1) & (df["lagged_choice"].isin(unemployed_values)))]
+    df = df[~((df["age"] >= specs["min_SRA"]) & (df["choice"].isin(unemployed_values)))]
 
     print(str(len(df)) + " left after dropping people who come back from retirement.")
     return df

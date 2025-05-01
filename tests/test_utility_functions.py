@@ -14,8 +14,8 @@ from caregiving.model.utility.bequest_utility import (
 )
 from caregiving.model.utility.utility_functions import (
     consumption_scale,
-    inverse_marginal_utility,
-    marginal_utility,
+    inverse_marginal,
+    marg_utility,
     utility_func,
 )
 
@@ -39,8 +39,10 @@ def load_specs():
 
 RHO_GRID = [1, 1.5]
 CONSUMPTION_GRID = np.linspace(10, 100, 3)
-UTIL_UNEMPLOYED_GRID = np.linspace(-0.1, -0.9, 2)
-UTIL_WORK_GRID = np.linspace(-0.1, -0.9, 2)
+_UTIL_UNEMPLOYED_GRID = np.linspace(-0.1, -0.9, 2)
+_UTIL_WORK_GRID = np.linspace(-0.1, -0.9, 2)
+DISUTIL_UNEMPLOYED_GRID = np.linspace(0.1, 0.9, 2)
+DISUTIL_WORK_GRID = np.linspace(0.1, 0.9, 2)
 BEQUEST_SCALE = np.linspace(1, 4, 2)
 PARTNER_STATE_GRIRD = np.array([0, 1, 2], dtype=int)
 NB_CHILDREN_GRID = np.arange(0, 2, 0.5, dtype=int)
@@ -63,29 +65,30 @@ def test_consumption_scale(partner_state, sex, education, period, load_specs):
     hh_size = 1 + has_partner + n_children
 
     cons_scale = consumption_scale(
-        # partner_state=partner_state,
+        partner_state=partner_state,
         # sex=sex,
-        # education=education,
-        # period=period,
-        # options=options,
-        has_partner=has_partner,
-        n_children=n_children,
+        education=education,
+        period=period,
+        options=options,
+        # has_partner=has_partner,
+        # n_children=n_children,
     )
 
     np.testing.assert_almost_equal(cons_scale, np.sqrt(hh_size))
 
 
 @pytest.mark.parametrize(
-    "consumption, sex, partner_state, education, period, util_work, util_unemployed, rho",
+    "consumption, sex, partner_state, education, health, period, disutil_work, disutil_unemployed, rho",
     list(
         product(
             CONSUMPTION_GRID,
             SEX_GRID,
             PARTNER_STATE_GRIRD,
             EDUCATION_GRID,
+            HEALTH_GRID,
             PERIOD_GRID,
-            UTIL_WORK_GRID,
-            UTIL_UNEMPLOYED_GRID,
+            DISUTIL_WORK_GRID,
+            DISUTIL_UNEMPLOYED_GRID,
             RHO_GRID,
         )
     ),
@@ -95,9 +98,10 @@ def test_utility_func(
     sex,
     partner_state,
     education,
+    health,
     period,
-    util_work,
-    util_unemployed,
+    disutil_work,
+    disutil_unemployed,
     rho,
     load_specs,
 ):
@@ -105,66 +109,104 @@ def test_utility_func(
     options = load_specs
     params = {
         "rho": rho,
-        "util_cons_unemployed_low_educ": util_unemployed,
-        "util_cons_unemployed_high_educ": util_unemployed,
-        "util_cons_part_time_low_educ": util_work,
-        "util_cons_part_time_high_educ": util_work,
-        "util_cons_full_time_low_educ": util_work,
-        "util_cons_full_time_high_educ": util_work,
-        "util_cons_children_part_time_low_educ": 0,
-        "util_cons_children_part_time_high_educ": 0,
-        "util_cons_children_full_time_low_educ": -0.1,
-        "util_cons_children_full_time_high_educ": -0.1,
+        # "util_cons_unemployed_low_educ": util_unemployed,
+        # "util_cons_unemployed_high_educ": util_unemployed,
+        # "util_cons_part_time_low_educ": util_work,
+        # "util_cons_part_time_high_educ": util_work,
+        # "util_cons_full_time_low_educ": util_work,
+        # "util_cons_full_time_high_educ": util_work,
+        # "util_cons_children_part_time_low_educ": 0,
+        # "util_cons_children_part_time_high_educ": 0,
+        # "util_cons_children_full_time_low_educ": -0.1,
+        # "util_cons_children_full_time_high_educ": -0.1,
+        "disutil_pt_work_good_women": disutil_work + 1,
+        "disutil_pt_work_bad_women": disutil_work,
+        "disutil_ft_work_good_women": disutil_work + 1,
+        "disutil_ft_work_bad_women": disutil_work,
+        "disutil_unemployed_women": disutil_unemployed,
+        "disutil_children_ft_work_low": 0.1,
+        "disutil_children_ft_work_high": 0.1,
         "bequest_scale": 2,
     }
 
-    has_partner = int(partner_state > 0)
-    n_children = options["children_by_state"][sex, education, has_partner, period]
+    # has_partner = int(partner_state > 0)
+    # n_children = options["children_by_state"][sex, education, has_partner, period]
     cons_scale = consumption_scale(
-        has_partner=has_partner,
-        n_children=n_children,
+        partner_state=partner_state,
+        # sex=sex,
+        education=education,
+        period=period,
+        options=options,
+        # has_partner=has_partner,
+        # n_children=n_children,
     )
 
-    disutil_unemployment = (
-        np.exp(params["util_cons_unemployed_low_educ"]) * (1 - education)
-        + np.exp(params["util_cons_unemployed_high_educ"]) * education
-    )
+    health_str = "good" * health + "bad" * (1 - health)
+    sex_str = "women"
 
-    exp_factor_pt_work = params["util_cons_part_time_low_educ"] * (
-        1 - education
-    ) + params["util_cons_children_part_time_low_educ"] * n_children * (1 - education)
-    exp_factor_pt_work += (
-        params["util_cons_part_time_high_educ"] * education
-        + params["util_cons_children_part_time_high_educ"] * n_children * education
-    )
+    # disutil_unemployment = (
+    # np.exp(params["util_cons_unemployed_low_educ"])
+    # * (1 - education)
+    # + np.exp(params["util_cons_unemployed_high_educ"]) * education
+    # )
+    disutil_unemployment = np.exp(-params[f"disutil_unemployed_{sex_str}"])
 
-    exp_factor_ft_work = params["util_cons_full_time_low_educ"] * (
-        1 - education
-    ) + params["util_cons_children_full_time_low_educ"] * n_children * (1 - education)
+    # exp_factor_pt_work = params["util_cons_part_time_low_educ"] * (
+    #     1 - education
+    # ) + params["util_cons_children_part_time_low_educ"] * n_children * (1 - education)
+    # exp_factor_pt_work += (
+    #     params["util_cons_part_time_high_educ"] * education
+    #     + params["util_cons_children_part_time_high_educ"] * n_children * education
+    # )
+
+    # exp_factor_ft_work = params["util_cons_full_time_low_educ"] * (
+    #     1 - education
+    # ) + params["util_cons_children_full_time_low_educ"] * n_children * (1 - education)
+    # exp_factor_ft_work += (
+    #     params["util_cons_full_time_high_educ"] * education
+    #     + params["util_cons_children_full_time_high_educ"] * n_children * education
+    # )
+
+    exp_factor_pt_work = params[f"disutil_pt_work_{health_str}_{sex_str}"]
+    exp_factor_ft_work = params[f"disutil_ft_work_{health_str}_{sex_str}"]
+    # if sex == 1:
+    has_partner_int = int(partner_state > 0)
+    nb_children = options["children_by_state"][sex, education, has_partner_int, period]
     exp_factor_ft_work += (
-        params["util_cons_full_time_high_educ"] * education
-        + params["util_cons_children_full_time_high_educ"] * n_children * education
+        params["disutil_children_ft_work_high"] * nb_children * education
+    )
+    exp_factor_ft_work += (
+        params["disutil_children_ft_work_low"] * nb_children * (1 - education)
     )
 
-    disutil_pt_work = np.exp(exp_factor_pt_work)
-    disutil_ft_work = np.exp(exp_factor_ft_work)
+    disutil_pt_work = np.exp(-exp_factor_pt_work)
+    disutil_ft_work = np.exp(-exp_factor_ft_work)
 
+    # if rho == 1:
+    #     utility_lambda = lambda util: np.log(  # noqa: E731
+    #         consumption * util / cons_scale
+    #     )
+    # else:
+    #     utility_lambda = (  # noqa: E731
+    #         lambda util: ((consumption / cons_scale) ** (1 - rho) - 1)
+    #         / (1 - rho)
+    #         * util
+    #     )
     if rho == 1:
-        utility_lambda = lambda util: np.log(  # noqa: E731
-            consumption * util / cons_scale
-        )
+        utility_lambda = lambda disutil: np.log(  # noqa: E731
+            consumption * disutil / cons_scale
+        )  # noqa: E730
     else:
-        utility_lambda = (  # noqa: E731
-            lambda util: ((consumption / cons_scale) ** (1 - rho) - 1)
-            / (1 - rho)
-            * util
-        )
+        utility_lambda = lambda disutil: (  # noqa: E731
+            (consumption * disutil / cons_scale) ** (1 - rho) - 1
+        ) / (1 - rho)
 
     np.testing.assert_almost_equal(
         utility_func(
             consumption=consumption,
             partner_state=partner_state,
             education=education,
+            health=health,
             # sex=sex,
             period=period,
             choice=1,
@@ -179,6 +221,7 @@ def test_utility_func(
             consumption=consumption,
             partner_state=partner_state,
             education=education,
+            health=health,
             # sex=sex,
             period=period,
             choice=2,
@@ -193,6 +236,7 @@ def test_utility_func(
             consumption=consumption,
             partner_state=partner_state,
             education=education,
+            health=health,
             # sex=sex,
             period=period,
             choice=3,
@@ -204,16 +248,17 @@ def test_utility_func(
 
 
 @pytest.mark.parametrize(
-    "consumption, sex, partner_state, education,  period, util_work, util_unemployed, rho",
+    "consumption, sex, partner_state, education, health, period, disutil_work, disutil_unemployed, rho",
     list(
         product(
             CONSUMPTION_GRID,
             SEX_GRID,
             PARTNER_STATE_GRIRD,
             EDUCATION_GRID,
+            HEALTH_GRID,
             PERIOD_GRID,
-            UTIL_WORK_GRID,
-            UTIL_UNEMPLOYED_GRID,
+            DISUTIL_WORK_GRID,
+            DISUTIL_UNEMPLOYED_GRID,
             RHO_GRID,
         )
     ),
@@ -223,9 +268,10 @@ def test_marginal_utility(
     sex,
     partner_state,
     education,
+    health,
     period,
-    util_work,
-    util_unemployed,
+    disutil_work,
+    disutil_unemployed,
     rho,
     load_specs,
 ):
@@ -234,16 +280,23 @@ def test_marginal_utility(
     options = load_specs
     params = {
         "rho": rho,
-        "util_cons_unemployed_low_educ": util_unemployed,
-        "util_cons_unemployed_high_educ": util_unemployed,
-        "util_cons_part_time_low_educ": util_work,
-        "util_cons_part_time_high_educ": util_work,
-        "util_cons_full_time_low_educ": util_work,
-        "util_cons_full_time_high_educ": util_work,
-        "util_cons_children_part_time_low_educ": 0,
-        "util_cons_children_part_time_high_educ": 0,
-        "util_cons_children_full_time_low_educ": -0.1,
-        "util_cons_children_full_time_high_educ": -0.1,
+        # "util_cons_unemployed_low_educ": util_unemployed,
+        # "util_cons_unemployed_high_educ": util_unemployed,
+        # "util_cons_part_time_low_educ": util_work,
+        # "util_cons_part_time_high_educ": util_work,
+        # "util_cons_full_time_low_educ": util_work,
+        # "util_cons_full_time_high_educ": util_work,
+        # "util_cons_children_part_time_low_educ": 0,
+        # "util_cons_children_part_time_high_educ": 0,
+        # "util_cons_children_full_time_low_educ": -0.1,
+        # "util_cons_children_full_time_high_educ": -0.1,
+        "disutil_pt_work_good_women": disutil_work + 1,
+        "disutil_pt_work_bad_women": disutil_work,
+        "disutil_ft_work_good_women": disutil_work + 1,
+        "disutil_ft_work_bad_women": disutil_work,
+        "disutil_unemployed_women": disutil_unemployed,
+        "disutil_children_ft_work_low": 0.1,
+        "disutil_children_ft_work_high": 0.1,
         "bequest_scale": 2,
     }
 
@@ -253,15 +306,17 @@ def test_marginal_utility(
         random_choice,
         period,
         education,
+        health,
         partner_state,
         params,
         options,
     )
-    marg_util_model = marginal_utility(
+    marg_util_model = marg_utility(
         consumption=consumption,
         choice=random_choice,
         period=period,
         education=education,
+        health=health,
         partner_state=partner_state,
         params=params,
         options=options,
@@ -270,16 +325,17 @@ def test_marginal_utility(
 
 
 @pytest.mark.parametrize(
-    "consumption, sex, partner_state, education,  period, util_work, util_unemployed, rho",
+    "consumption, sex, partner_state, education, health, period, disutil_work, disutil_unemployed, rho",
     list(
         product(
             CONSUMPTION_GRID,
             SEX_GRID,
             PARTNER_STATE_GRIRD,
             EDUCATION_GRID,
+            HEALTH_GRID,
             PERIOD_GRID,
-            UTIL_WORK_GRID,
-            UTIL_UNEMPLOYED_GRID,
+            DISUTIL_WORK_GRID,
+            DISUTIL_UNEMPLOYED_GRID,
             RHO_GRID,
         )
     ),
@@ -289,44 +345,54 @@ def test_inverse_marginal_utility(
     sex,
     partner_state,
     education,
+    health,
     period,
-    util_work,
-    util_unemployed,
+    disutil_work,
+    disutil_unemployed,
     rho,
     load_specs,
 ):
     options = load_specs
     params = {
         "rho": rho,
-        "util_cons_unemployed_low_educ": util_unemployed,
-        "util_cons_unemployed_high_educ": util_unemployed,
-        "util_cons_part_time_low_educ": util_work,
-        "util_cons_part_time_high_educ": util_work,
-        "util_cons_full_time_low_educ": util_work,
-        "util_cons_full_time_high_educ": util_work,
-        "util_cons_children_part_time_low_educ": 0,
-        "util_cons_children_part_time_high_educ": 0,
-        "util_cons_children_full_time_low_educ": -0.1,
-        "util_cons_children_full_time_high_educ": -0.1,
+        # "util_cons_unemployed_low_educ": util_unemployed,
+        # "util_cons_unemployed_high_educ": util_unemployed,
+        # "util_cons_part_time_low_educ": util_work,
+        # "util_cons_part_time_high_educ": util_work,
+        # "util_cons_full_time_low_educ": util_work,
+        # "util_cons_full_time_high_educ": util_work,
+        # "util_cons_children_part_time_low_educ": 0,
+        # "util_cons_children_part_time_high_educ": 0,
+        # "util_cons_children_full_time_low_educ": -0.1,
+        # "util_cons_children_full_time_high_educ": -0.1,
+        "disutil_pt_work_good_women": disutil_work + 1,
+        "disutil_pt_work_bad_women": disutil_work,
+        "disutil_ft_work_good_women": disutil_work + 1,
+        "disutil_ft_work_bad_women": disutil_work,
+        "disutil_unemployed_women": disutil_unemployed,
+        "disutil_children_ft_work_low": 0.1,
+        "disutil_children_ft_work_high": 0.1,
         "bequest_scale": 2,
     }
 
     random_choice = np.random.choice(np.array([0, 1, 2]))
-    marg_util = marginal_utility(
+    marg_util = marg_utility(
         consumption=consumption,
         choice=random_choice,
         period=period,
         education=education,
+        health=health,
         partner_state=partner_state,
         params=params,
         options=options,
     )
     np.testing.assert_almost_equal(
-        inverse_marginal_utility(
+        inverse_marginal(
             marginal_utility=marg_util,
             choice=random_choice,
             period=period,
             education=education,
+            health=health,
             partner_state=partner_state,
             params=params,
             options=options,
