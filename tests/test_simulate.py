@@ -100,8 +100,6 @@ def test_solve_and_simulate(
     df_filtered = df_0_to_49[df_0_to_49["health"] != DEAD]
 
     assert not df_filtered[cols_no_value_choice].isna().any(axis=None)
-    # assert not df_0_to_49[df_0_to_49["health"] != DEAD].isna().any(axis=None)
-    # assert not df_0_to_49[_cols_no_value_choice].isna().any(axis=None)
 
     # No income and savings decision in the last period
     df_50 = sim_df.xs(end_period, level="period")

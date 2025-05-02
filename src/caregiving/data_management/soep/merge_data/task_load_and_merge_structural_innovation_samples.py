@@ -184,3 +184,50 @@ def task_load_and_merge_exog_care_sample(
     print(str(len(merged_data)) + " observations in SOEP IS 2016.")
 
     merged_data.to_csv(path_to_save)
+
+
+def plot_logit_prediction_by_age(model, age_range=(40, 80), step=1):
+    """
+    Plot predicted probability vs. age for all combinations of has_sister and education.
+
+    Parameters:
+    - model: fitted statsmodels Logit model (with age and age_squared)
+    - age_range: tuple, (min_age, max_age)
+    - step: step size for age increments
+
+    """
+
+    # Age range
+    ages = np.arange(age_range[0], age_range[1] + 1, step)
+
+    # All 4 combinations of has_sister and education (0 or 1)
+    combos = [(hs, ed) for hs in (0, 1) for ed in (0, 1)]
+
+    plt.figure(figsize=(10, 6))
+
+    for has_sister, education in combos:
+        # Build prediction DataFrame
+        pred_df = pd.DataFrame(
+            {
+                "age": ages,
+                "age_squared": ages**2,
+                "has_sister": has_sister,
+                "education": education,
+            }
+        )
+
+        # Predict probabilities
+        pred_df["predicted_prob"] = model.predict(pred_df)
+
+        # Line label
+        label = f"has_sister={has_sister}, education={education}"
+        plt.plot(pred_df["age"], pred_df["predicted_prob"], label=label)
+
+    # Plot settings
+    plt.xlabel("Age")
+    plt.ylabel("Predicted Probability of Other Informal Care")
+    plt.title("Predicted Probability vs Age (by has_sister & education)")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()

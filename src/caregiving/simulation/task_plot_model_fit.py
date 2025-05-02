@@ -15,7 +15,7 @@ from caregiving.estimation.estimation_setup import (
     load_and_prep_data,
     load_and_setup_full_model_for_solution,
 )
-from caregiving.model.shared import SEX
+from caregiving.model.shared import FULL_TIME, NOT_WORKING, PART_TIME, SEX, WORK
 from caregiving.simulation.plot_model_fit import (
     plot_average_savings_decision,
     plot_average_wealth,
@@ -23,10 +23,11 @@ from caregiving.simulation.plot_model_fit import (
     plot_choice_shares_by_education,
     plot_choice_shares_single,
     plot_states,
+    plot_transitions_by_age,
+    plot_transitions_by_age_bins,
 )
 
 
-# @pytask.mark.skip()
 def task_plot_model_fit(
     path_to_options: Path = BLD / "model" / "options.pkl",
     path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
@@ -46,7 +47,15 @@ def task_plot_model_fit(
     path_to_save_single_choice_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "model_fit"
-    / "single_choice.png",
+    / "labor_shares_by_educ_and_age.png",
+    path_to_save_work_transition_age_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "model_fit"
+    / "work_transitions_by_edu_and_age.png",
+    path_to_save_work_transition_age_bin_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "model_fit"
+    / "work_transitions_by_edu_and_age_bin.png",
 ) -> None:
     """Plot model fit between empirical and simulated data."""
 
@@ -84,6 +93,80 @@ def task_plot_model_fit(
     # plot_choice_shares(df_emp, df_sim, specs)
     # discrete_state_names = model_full["model_structure"]["discrete_states_names"]
     # plot_states(df_emp, df_sim, discrete_state_names, specs)
+
+    states = {
+        "not_working": NOT_WORKING,
+        "working": WORK,
+        # "part_time": PART_TIME,
+        # "full_time": FULL_TIME,
+    }
+    state_labels = {
+        "not_working": "Not Working",
+        "working": "Work",
+        # "part_time": "Part-time",
+        # "full_time": "Full-time",
+    }
+    plot_transitions_by_age(
+        df_emp,
+        df_sim,
+        specs,
+        states,
+        state_labels,
+        one_way=True,
+        path_to_save_plot=path_to_save_work_transition_age_plot,
+    )
+    plot_transitions_by_age_bins(
+        df_emp,
+        df_sim,
+        specs,
+        states,
+        state_labels,
+        bin_width=10,
+        one_way=True,
+        path_to_save_plot=path_to_save_work_transition_age_bin_plot,
+    )
+
+    data_emp = df_emp.copy()
+    mask = (
+        data_emp["lagged_choice"].isin(WORK)
+        & data_emp["choice"].isin(WORK)
+        & data_emp["age"].between(60, 70)
+    )
+    df_60_70 = data_emp[mask]
+    counts = (  # noqa: F841
+        df_60_70.groupby("age")
+        .size()
+        .reindex(range(60, 71), fill_value=0)
+        .rename("count")
+        .reset_index()
+    )
+
+    mask2 = (
+        data_emp["lagged_choice"].isin(WORK)
+        # & data_emp["choice"].isin(WORK)
+        & data_emp["age"].between(60, 70)
+    )
+    df_60_70_2 = data_emp[mask2]
+    counts_2 = (  # noqa: F841
+        df_60_70_2.groupby("age")
+        .size()
+        .reindex(range(60, 71), fill_value=0)
+        .rename("count")
+        .reset_index()
+    )
+
+    mask3 = (
+        data_emp["age"].between(60, 70)
+        # & data_emp["choice"].isin(WORK)
+    )
+    df_60_70_3 = data_emp[mask3]
+    counts_3 = (  # noqa: F841
+        df_60_70_3.groupby("age")
+        .size()
+        .reindex(range(60, 71), fill_value=0)
+        .rename("count")
+        .reset_index()
+    )
 
 
 def test_choice_shares_sum_to_one(data_emp, data_sim, specs):

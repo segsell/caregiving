@@ -46,6 +46,8 @@ def task_create_survival_sample_good_bad(
     """Create the survival transition sample for the mortality estimation."""
 
     specs = read_and_derive_specs(path_to_specs)
+    specs["start_year"] = 2010
+    specs["end_year"] = 2017
 
     df = pd.read_csv(path_to_raw_data, index_col=["pid", "syear"])
 

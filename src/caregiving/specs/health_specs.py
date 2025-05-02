@@ -308,7 +308,8 @@ def read_in_health_transition_specs_good_medium_bad_df(
                     records.append(
                         {
                             "sex": sex_label,
-                            "period": period,
+                            # "period": period,
+                            "age": current_age,
                             "health": current_health_label,
                             "lead_health": lead_health_label,
                             "transition_prob": adjusted_prob,
@@ -320,7 +321,8 @@ def read_in_health_transition_specs_good_medium_bad_df(
                 records.append(
                     {
                         "sex": sex_label,
-                        "period": period,
+                        # "period": period,
+                        "age": current_age,
                         "health": current_health_label,
                         "lead_health": death_state_label,
                         "transition_prob": death_prob,
@@ -339,7 +341,8 @@ def read_in_health_transition_specs_good_medium_bad_df(
                 records.append(
                     {
                         "sex": sex_label,
-                        "period": period,
+                        "age": current_age,
+                        # "period": period,
                         "health": death_state_label,
                         "lead_health": lead_health_label,
                         "transition_prob": prob,
