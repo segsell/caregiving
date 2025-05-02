@@ -11,9 +11,9 @@ from caregiving.config import BLD
 from caregiving.model.shared import (
     MAX_AGE_PARENTS,
     MIN_AGE_PARENTS,
-    STATE_BAD_HEALTH,
-    STATE_GOOD_HEALTH,
-    STATE_MEDIUM_HEALTH,
+    PARENT_BAD_HEALTH,
+    PARENT_GOOD_HEALTH,
+    PARENT_MEDIUM_HEALTH,
 )
 
 WAVE_1 = 1
@@ -339,7 +339,7 @@ def create_health_variables(dat):
         (dat["ph003_"] == HEALTH_FAIR),
         (dat["ph003_"] == HEALTH_POOR),
     ]
-    _val = [STATE_GOOD_HEALTH, STATE_MEDIUM_HEALTH, STATE_BAD_HEALTH]
+    _val = [PARENT_GOOD_HEALTH, PARENT_MEDIUM_HEALTH, PARENT_BAD_HEALTH]
 
     dat["health"] = np.select(_cond, _val, default=np.nan)
 

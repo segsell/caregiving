@@ -21,9 +21,9 @@ from caregiving.model.shared import (
     FEMALE,
     MALE,
     MIN_AGE_PARENTS,
-    STATE_DEAD,
-    STATE_GOOD_HEALTH,
-    STATE_MEDIUM_HEALTH,
+    PARENT_DEAD,
+    PARENT_GOOD_HEALTH,
+    PARENT_MEDIUM_HEALTH,
 )
 from caregiving.specs.derive_specs import read_and_derive_specs
 from caregiving.utils import table
@@ -118,14 +118,14 @@ def task_estimate_adl_transitions_one_logit(  # noqa: PLR0912
                         val += row_params["age_cubed"] * (age**3)
 
                     if (
-                        h_idx == STATE_MEDIUM_HEALTH
+                        h_idx == PARENT_MEDIUM_HEALTH
                         and "medium_health" in row_params
                         and not pd.isna(row_params["medium_health"])
                     ):
                         val += row_params["medium_health"]
 
                     if (
-                        h_idx == STATE_GOOD_HEALTH
+                        h_idx == PARENT_GOOD_HEALTH
                         and "good_health" in row_params
                         and not pd.isna(row_params["good_health"])
                     ):
@@ -1363,7 +1363,7 @@ def plot_adl_probabilities_by_health(
     # 2.  Empirical (observed) probabilities
     # ──────────────────────────────────────────────────────────────────────────
     df_obs = df_sample.copy()
-    df_obs = df_obs[df_obs["health"] != STATE_DEAD]  # drop death rows if present
+    df_obs = df_obs[df_obs["health"] != PARENT_DEAD]  # drop death rows if present
 
     df_obs["sex"] = df_obs["gender"].map(gender_map)
     df_obs["health_str"] = df_obs["health"].map(health_map_num_to_str)

@@ -8,6 +8,7 @@ from caregiving.model.shared import (  # BAD_HEALTH,; CARE_AND_NO_CARE,; FORMAL_
     FULL_TIME_AND_NO_WORK,
     NO_RETIREMENT,
     NOT_WORKING,
+    PARENT_DEAD,
     PART_TIME_AND_NO_WORK,
     RETIREMENT,
     SEX,
@@ -88,12 +89,13 @@ def sparsity_condition(  # noqa: PLR0911
     lagged_choice,
     already_retired,
     education,
-    # has_sister,
+    has_sister,
     health,
     partner_state,
-    # mother_health,
-    # care_demand,
+    mother_health,
+    care_demand,
     # care_supply,
+    job_offer,
     options,
 ):
     start_age = options["start_age"]
@@ -129,12 +131,12 @@ def sparsity_condition(  # noqa: PLR0911
                 "lagged_choice": 0,
                 "already_retired": 1,
                 "education": education,
-                # "has_sister": has_sister,
+                "has_sister": has_sister,
                 "health": health,
                 "partner_state": partner_state,
-                # "mother_health": mother_health,
-                # "care_demand": care_demand,
-                # "care_supply": care_supply,
+                "mother_health": PARENT_DEAD,
+                "care_demand": 0,
+                # "care_supply": 0,
                 "job_offer": 0,
             }
             return state_proxy
@@ -146,8 +148,12 @@ def sparsity_condition(  # noqa: PLR0911
                 "lagged_choice": lagged_choice,
                 "already_retired": already_retired,
                 "education": education,
+                "has_sister": has_sister,
                 "health": health,
                 "partner_state": partner_state,
+                "mother_health": mother_health,
+                "care_demand": care_demand,
+                # "care_supply": care_supply,
                 "job_offer": 0,
             }
             return state_proxy
@@ -159,9 +165,45 @@ def sparsity_condition(  # noqa: PLR0911
                 "lagged_choice": lagged_choice,
                 "already_retired": already_retired,
                 "education": education,
+                "has_sister": has_sister,
                 "health": health,
                 "partner_state": partner_state,
+                "mother_health": PARENT_DEAD,
+                "care_demand": 0,
+                # "care_supply": 0,
                 "job_offer": 0,
+            }
+            return state_proxy
+        elif age > options["end_age_msm"]:
+            # No caregiving decision after 70
+            state_proxy = {
+                "period": period,
+                "lagged_choice": lagged_choice,
+                "already_retired": already_retired,
+                "education": education,
+                "has_sister": has_sister,
+                "health": health,
+                "partner_state": partner_state,
+                "mother_health": PARENT_DEAD,
+                "care_demand": 0,
+                # "care_supply": 0,
+                "job_offer": job_offer,
+            }
+            return state_proxy
+        elif mother_health == PARENT_DEAD:
+            # If mother is dead, no care demand and supply
+            state_proxy = {
+                "period": period,
+                "lagged_choice": lagged_choice,
+                "already_retired": already_retired,
+                "education": education,
+                "has_sister": has_sister,
+                "health": health,
+                "partner_state": partner_state,
+                "mother_health": mother_health,
+                "care_demand": 0,
+                # "care_supply": 0,
+                "job_offer": job_offer,
             }
             return state_proxy
         else:

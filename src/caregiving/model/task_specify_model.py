@@ -12,8 +12,8 @@ from pytask import Product
 from caregiving.config import BLD
 from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.stochastic_processes.caregiving_transition import (
+    care_demand_transition,
     exog_care_transition,
-    limitations_with_adl_transition,
 )
 from caregiving.model.stochastic_processes.health_transition import (
     health_transition,
@@ -80,7 +80,7 @@ def task_specify_model(
                 "education": np.arange(specs["n_education_types"], dtype=int),
                 # "sex": np.arange(specs["n_sexes"], dtype=int),
                 "already_retired": np.arange(2, dtype=int),
-                # "has_sister": np.arange(2, dtype=int),
+                "has_sister": np.arange(2, dtype=int),
             },
             "exogenous_processes": {
                 "job_offer": {
@@ -95,15 +95,15 @@ def task_specify_model(
                     "transition": health_transition,
                     "states": np.arange(specs["n_health_states"], dtype=int),
                 },
-                # # caregiving
-                # "mother_health": {
-                #     "transition": health_transition_good_medium_bad,
-                #     "states": np.arange(specs["n_health_states_three"], dtype=int),
-                # },
-                # "care_demand": {
-                #     "transition": limitations_with_adl_transition,
-                #     "states": np.arange(2, dtype=int),
-                # },
+                # caregiving
+                "mother_health": {
+                    "transition": health_transition_good_medium_bad,
+                    "states": np.arange(specs["n_health_states_three"], dtype=int),
+                },
+                "care_demand": {
+                    "transition": care_demand_transition,
+                    "states": np.arange(2, dtype=int),
+                },
                 # "care_supply": {
                 #     "transition": exog_care_transition,
                 #     "states": np.arange(2, dtype=int),
