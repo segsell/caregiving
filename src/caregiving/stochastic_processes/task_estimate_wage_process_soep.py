@@ -56,6 +56,8 @@ def task_estimate_wage_parameters(
     """
 
     specs = read_and_derive_specs(path_to_specs)
+    specs["start_year"] = 2010
+    specs["end_year"] = 2017
 
     # Specs and data
     edu_labels = specs["education_labels"]

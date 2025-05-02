@@ -23,6 +23,9 @@ def task_create_household_wealth_sample(
     """Create sample for wealth estimation."""
 
     specs = read_and_derive_specs(path_to_specs)
+    specs["start_year"] = 2010
+    specs["end_year"] = 2017
+
     cpi = pd.read_csv(path_to_cpi, index_col=0)
 
     wealth_data = pd.read_stata(

@@ -26,6 +26,8 @@ def task_create_wage_sample(
 ) -> None:
 
     specs = read_and_derive_specs(path_to_specs)
+    specs["start_year"] = 2010
+    specs["end_year"] = 2017
 
     df = pd.read_csv(path_to_raw, index_col=["pid", "syear"])
 
