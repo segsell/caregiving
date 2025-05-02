@@ -73,7 +73,6 @@ def count(df_col):
 
 def task_create_parent_child_data(
     path_to_raw_data: Path = BLD / "data" / "data_parent_child_merged.csv",
-    # parent - child
     path_to_main: Annotated[Path, Product] = BLD / "data" / "parent_child_data.csv",
     path_to_design_weight: Annotated[Path, Product] = BLD
     / "data"

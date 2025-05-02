@@ -88,8 +88,12 @@ def sparsity_condition(  # noqa: PLR0911
     lagged_choice,
     already_retired,
     education,
+    # has_sister,
     health,
     partner_state,
+    # mother_health,
+    # care_demand,
+    # care_supply,
     options,
 ):
     start_age = options["start_age"]
@@ -125,8 +129,12 @@ def sparsity_condition(  # noqa: PLR0911
                 "lagged_choice": 0,
                 "already_retired": 1,
                 "education": education,
+                # "has_sister": has_sister,
                 "health": health,
                 "partner_state": partner_state,
+                # "mother_health": mother_health,
+                # "care_demand": care_demand,
+                # "care_supply": care_supply,
                 "job_offer": 0,
             }
             return state_proxy
