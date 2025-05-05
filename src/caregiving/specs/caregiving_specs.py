@@ -3,7 +3,13 @@
 import jax.numpy as jnp
 import numpy as np
 
-from caregiving.model.shared import MOTHER
+from caregiving.model.shared import (
+    INITIAL_CONDITIONS_AGE_HIGH,
+    INITIAL_CONDITIONS_AGE_LOW,
+    INITIAL_CONDITIONS_COHORT_HIGH,
+    INITIAL_CONDITIONS_COHORT_LOW,
+    MOTHER,
+)
 
 
 def read_in_adl_transition_specs(adl_trans_df, specs):
@@ -178,3 +184,24 @@ def read_in_care_supply_transition_specs(exog_care_df, specs):
                 care_trans_mat[period, sister_idx, edu_idx] = prob
 
     return jnp.asarray(care_trans_mat)
+
+
+def read_in_mother_age_diff_specs(sample):
+    """Read in mother age difference specifications."""
+
+    mother_cohort = sample.loc[
+        (sample["gebjahr"] >= INITIAL_CONDITIONS_COHORT_LOW)
+        & (sample["gebjahr"] <= INITIAL_CONDITIONS_COHORT_HIGH)
+        & (sample["age"] >= INITIAL_CONDITIONS_AGE_LOW)
+        & (sample["age"] <= INITIAL_CONDITIONS_AGE_HIGH)
+    ]
+    mother_age_diff_means = (
+        mother_cohort.groupby(["has_sister", "education"])["mother_age_diff"]
+        .mean()  # mean within each (education, has_sister) cell
+        .unstack()  # 2×2 matrix: rows → education, cols → has_sister
+        # .rename(columns={0: "no_sister", 1: "has_sister"})
+        # .sort_idex()  # optional: sort education levels
+        .reindex(index=[0, 1], columns=[0, 1])
+    )
+
+    return jnp.asarray(mother_age_diff_means.values)

@@ -15,6 +15,7 @@ from caregiving.specs.caregiving_specs import (
     read_in_adl_transition_specs,
     read_in_adl_transition_specs_binary,
     read_in_care_supply_transition_specs,
+    read_in_mother_age_diff_specs,
 )
 from caregiving.specs.derive_specs import read_and_derive_specs
 from caregiving.specs.experience_specs import create_max_experience
@@ -38,6 +39,7 @@ jax.config.update("jax_enable_x64", True)
 
 def task_write_specs(
     path_to_load_specs: Path = SRC / "specs.yaml",
+    path_to_sample: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
     path_to_wage_params: Path = BLD
     / "estimation"
     / "stochastic_processes"
@@ -129,6 +131,8 @@ def task_write_specs(
     / "specs_full.pkl",
 ) -> Dict[str, Any]:
     """Read in specs and add specs from first-step estimation."""
+
+    estimation_sample = pd.read_csv(path_to_sample, index_col=[0])
     specs = read_and_derive_specs(path_to_load_specs)
 
     # Add income specs
@@ -232,6 +236,7 @@ def task_write_specs(
         specs["exogenous_care_supply"] = read_in_care_supply_transition_specs(
             exogenous_care_supply, specs
         )
+        specs["mother_age_diff"] = read_in_mother_age_diff_specs(estimation_sample)
 
     specs["job_sep_probs"] = jnp.asarray(
         pkl.load(path_to_job_separation_probs.open("rb"))

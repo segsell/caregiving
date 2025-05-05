@@ -6,7 +6,7 @@ from caregiving.model.shared import MOTHER, SEX
 def care_demand_transition(health, period, has_sister, education, options):
     """Transition probability for next period care demand."""
     adl_mat = options["limitations_with_adl_mat"]
-    mother_age = period + options["mother_age_difference"]
+    mother_age = period + options["mother_age_difference"][has_sister, education, :]
     limitations_with_adl = adl_mat[MOTHER, mother_age, health, :]
 
     exog_care_supply_mat = options["exog_care_trans_mat"]
