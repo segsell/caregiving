@@ -204,4 +204,4 @@ def read_in_mother_age_diff_specs(sample):
         .reindex(index=[0, 1], columns=[0, 1])
     )
 
-    return jnp.asarray(mother_age_diff_means.values)
+    return jnp.asarray(mother_age_diff_means.values).astype(jnp.uint8)

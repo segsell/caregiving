@@ -233,9 +233,10 @@ def task_write_specs(
         exogenous_care_supply = pd.read_csv(
             path_to_exogenous_care_supply_transition,
         )
-        specs["exogenous_care_supply"] = read_in_care_supply_transition_specs(
+        specs["exog_care_supply"] = read_in_care_supply_transition_specs(
             exogenous_care_supply, specs
         )
+        # make sure output is uin8
         specs["mother_age_diff"] = read_in_mother_age_diff_specs(estimation_sample)
 
     specs["job_sep_probs"] = jnp.asarray(

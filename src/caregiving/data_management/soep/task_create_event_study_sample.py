@@ -167,7 +167,7 @@ def task_create_event_study_sample(
     df = create_policy_state(df, specs)
     df = create_education_type(df)
     df = create_health_var_good_bad(df, drop_missing=True)
-    df = create_caregiving(df, create_lagged=False, filter_missing=False)
+    df = create_caregiving(df, filter_missing=False)
 
     df = deflate_gross_labor_income(df, cpi_data=cpi, specs=specs)
     df = create_hourly_wage(df)
@@ -279,15 +279,14 @@ def create_hourly_wage(df):
     return df
 
 
-def create_parent_info(df, filter_missing=True):
+def create_parent_info(df, filter_missing=False):
     """Create parent age and alive status."""
     df = df.reset_index()
 
-    df.loc[df["mybirth"] < 0] = np.nan
-    df.loc[df["fybirth"] < 0] = np.nan
-
-    df.loc[df["mydeath"] < 0] = np.nan
-    df.loc[df["fydeath"] < 0] = np.nan
+    df.loc[df["mybirth"] < 0, "mybirth"] = np.nan
+    df.loc[df["fybirth"] < 0, "fybirth"] = np.nan
+    df.loc[df["mydeath"] < 0, "mydeath"] = np.nan
+    df.loc[df["fydeath"] < 0, "fydeath"] = np.nan
 
     for parent_var in ("mybirth", "fybirth"):
         dup_byear = df.dropna(subset=[parent_var]).groupby("pid")[parent_var].nunique()
@@ -368,7 +367,7 @@ def create_sibling_info(df, filter_missing=False):
     return out
 
 
-def create_caregiving(df, create_lagged=False, filter_missing=False):
+def create_caregiving(df, filter_missing=False):
 
     # any care, light care, intensive care
 
