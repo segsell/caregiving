@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import yaml
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 from pytask import Product
 
 from caregiving.config import BLD, JET_COLOR_MAP, SRC
@@ -20,8 +22,6 @@ from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.simulation.task_generate_initial_conditions import (
     draw_start_wealth_dist,
 )
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 
 
 def task_plot_initial_wealth(
