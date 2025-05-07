@@ -17,8 +17,8 @@ DONT_KNOW = -1
 ANSWER_YES = 1
 ANSWER_NO = 5
 
-MIN_AGE = 40
-MAX_AGE = 70
+MIN_AGE = 30
+MAX_AGE = 100
 MIN_WORKING_AGE = 14
 
 MIN_YEARS_SCHOOLING = 0
@@ -955,6 +955,7 @@ def create_age_parent_and_parent_alive(dat, parent):
     dat[f"{parent}_age"] = np.select(_cond, _val, default=dat[f"{parent}_age"])
 
     dat[f"{parent}_lagged_age"] = dat.groupby("mergeid")[f"{parent}_age"].shift(1)
+    dat[f"{parent}_age_diff"] = dat[f"{parent}_age"] - dat["age"]
 
     return dat
 
@@ -1769,6 +1770,31 @@ def create_high_educ(dat: pd.DataFrame) -> pd.DataFrame:
     conditions = [(dat["isced"] >= HOCHSCHUL_DEGREE), (dat["isced"] < HOCHSCHUL_DEGREE)]
     values = [1, 0]
     dat["high_isced"] = np.select(conditions, values, default=np.nan)
+
+    THREE = 3
+    FOUR = 4
+    SIX = 6
+    SEVEN = 7
+    _cond = [
+        (dat["wave"].isin([1, 2, 4])) & ((dat["dn010_"]) == THREE)
+        | (dat["dn010_"] == FOUR),
+        (dat["wave"].between(5, 8)) & ((dat["dn010_"]) == SIX)
+        | (dat["dn010_"] == SEVEN),
+        (dat["wave"].isin([1, 2, 4])) & ((dat["dn010_"]) < THREE),
+        (dat["wave"].between(5, 8)) & ((dat["dn010_"]) < SIX),
+    ]
+    _val = [1, 1, 0, 0]
+    dat["high_educ"] = np.select(_cond, _val, default=np.nan)
+
+    THRESH = 4
+    _cond = [
+        (dat["wave"].isin([1, 2, 4])) & ((dat["isced"]) >= THRESH),
+        (dat["wave"].between(5, 8)) & ((dat["isced"]) >= THRESH),
+        (dat["wave"].isin([1, 2, 4])) & ((dat["isced"]) < THRESH),
+        (dat["wave"].between(5, 8)) & ((dat["isced"]) < THRESH),
+    ]
+    _val = [1, 1, 0, 0]
+    dat["high_educ_isced"] = np.select(_cond, _val, default=np.nan)
 
     return dat
 

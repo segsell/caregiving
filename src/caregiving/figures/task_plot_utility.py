@@ -61,6 +61,7 @@ def task_plot_utility(
 
     plt.tight_layout()
     plt.savefig(path_to_save)
+    plt.close(fig)
 
 
 def task_plot_bequest(
@@ -102,6 +103,7 @@ def task_plot_bequest(
 
     plt.tight_layout()
     plt.savefig(path_to_save)
+    plt.close(fig)
 
 
 def task_plot_cons_scale(
@@ -150,3 +152,4 @@ def task_plot_cons_scale(
 
     plt.tight_layout()
     plt.savefig(path_to_save)
+    plt.close(fig)

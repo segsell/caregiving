@@ -124,6 +124,8 @@ def task_estimate_partner_wage_parameters(
             / f"partner_wage_eq_params_{sex_label.lower()}.csv"
         )
 
+        plt.close(fig)
+
 
 def prepare_estimation_data(wage_data, specs, sex_var):
     """Prepare the data for the wage estimation."""

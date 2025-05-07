@@ -279,16 +279,14 @@ def create_hourly_wage(df):
     return df
 
 
-def create_parent_info(df, filter_missing=True):
+def create_parent_info(df, filter_missing=False):
     """Create parent age and alive status."""
-
     df = df.reset_index()
 
-    df.loc[df["mybirth"] < 0] = np.nan
-    df.loc[df["fybirth"] < 0] = np.nan
-
-    df.loc[df["mydeath"] < 0] = np.nan
-    df.loc[df["fydeath"] < 0] = np.nan
+    df.loc[df["mybirth"] < 0, "mybirth"] = np.nan
+    df.loc[df["fybirth"] < 0, "fybirth"] = np.nan
+    df.loc[df["mydeath"] < 0, "mydeath"] = np.nan
+    df.loc[df["fydeath"] < 0, "fydeath"] = np.nan
 
     for parent_var in ("mybirth", "fybirth"):
         dup_byear = df.dropna(subset=[parent_var]).groupby("pid")[parent_var].nunique()
@@ -312,19 +310,23 @@ def create_parent_info(df, filter_missing=True):
     df["mother_age"] = df["syear"] - df["mybirth"]
     df["father_age"] = df["syear"] - df["fybirth"]
 
-    _cond = (
+    _cond = [
+        df["mydeath"].isna(),
         (df["mybirth"].notna())
         & (df["mybirth"] <= df["syear"])
-        & (df["mydeath"].isna() | (df["syear"] < df["mydeath"]))
-    )
-    df["mother_alive"] = np.where(_cond, 1, 0)
+        & (df["syear"] < df["mydeath"]),
+        # & (df["mydeath"].isna() | (df["syear"] < df["mydeath"])),
+    ]
+    df["mother_alive"] = np.select(_cond, [np.nan, 1], default=0)
 
-    _cond = (
+    _cond = [
+        df["fydeath"].isna(),
         (df["fybirth"].notna())
         & (df["fybirth"] <= df["syear"])
-        & (df["fydeath"].isna() | (df["syear"] < df["fydeath"]))
-    )
-    df["father_alive"] = np.where(_cond, 1, 0)
+        & (df["syear"] < df["fydeath"]),
+        # & (df["fydeath"].isna() | (df["syear"] < df["fydeath"])),
+    ]
+    df["father_alive"] = np.select(_cond, [np.nan, 1], default=0)
 
     df_age = df.copy()
 
@@ -339,6 +341,7 @@ def create_parent_info(df, filter_missing=True):
     )
 
     df_age.set_index(["pid", "syear"], inplace=True)
+
     return df_age
 
 

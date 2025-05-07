@@ -13,6 +13,11 @@ from caregiving.data_management.soep.auxiliary import (
     enforce_model_choice_restriction,
     filter_data,
 )
+from caregiving.data_management.soep.task_create_event_study_sample import (
+    create_caregiving,
+    create_parent_info,
+    create_sibling_info,
+)
 from caregiving.data_management.soep.variables import (
     create_choice_variable,
     create_education_type,
@@ -44,12 +49,16 @@ def task_create_structural_estimation_sample(
     specs = read_and_derive_specs(path_to_specs)
 
     # merged_data = pd.read_csv(path_to_raw, index_col=[0, 1])
-    df = pd.read_csv(path_to_raw)
+    df = pd.read_csv(path_to_raw, index_col=[0, 1])
 
     df = create_partner_state(df, filter_missing=True)
     df = create_kidage_youngest(df)
 
+    df = create_parent_info(df, filter_missing=False)
+    df = create_sibling_info(df, filter_missing=False)
+
     df = create_choice_variable(df)
+    df = create_caregiving(df, filter_missing=False)
 
     # filter data. Leave additional years in for lagging and leading.
     df = filter_data(df, specs)
@@ -94,8 +103,13 @@ def task_create_structural_estimation_sample(
     df = df.loc[~(mask & df["choice"].isin(part_time_values))]
     df = df.loc[~(mask & df["lagged_choice"].isin(part_time_values))]
 
+    df["has_sister"] = (df["n_sisters"] > 0).astype(int)
+    df["mother_age_diff"] = df["mother_age"] - df["age"]
+    df["father_age_diff"] = df["father_age"] - df["age"]
+
     # Keep relevant columns (i.e. state variables) and set their minimal datatype
     type_dict = {
+        "gebjahr": "int16",
         "age": "int8",
         "period": "int8",
         "choice": "int8",
@@ -110,11 +124,19 @@ def task_create_structural_estimation_sample(
         "sex": "int8",
         "children": "int8",
         "kidage_youngest": "int8",
+        # caregiving, contains nans
+        "any_care": "float32",
+        "light_care": "float32",
+        "intensive_care": "float32",
+        "has_sister": "float32",
+        "mother_age_diff": "float32",
+        "father_age_diff": "float32",
+        "mother_alive": "float32",
+        "father_alive": "float32",
     }
     df = df[list(type_dict.keys())]
     df = df.astype(type_dict)
 
-    #
     # print_data_description(df)
 
     # Anonymize and save data

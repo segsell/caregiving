@@ -21,31 +21,17 @@ from caregiving.model.shared import (
     FEMALE,
     MALE,
     MIN_AGE_PARENTS,
-    STATE_GOOD_HEALTH,
-    STATE_MEDIUM_HEALTH,
+    PARENT_DEAD,
+    PARENT_GOOD_HEALTH,
+    PARENT_MEDIUM_HEALTH,
 )
 from caregiving.specs.derive_specs import read_and_derive_specs
+from caregiving.utils import table
 
 
-def task_estimate_adl_transitions_one_logit(
+def task_estimate_adl_transitions_one_logit(  # noqa: PLR0912
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_parent_child_sample: Path = BLD / "data" / "parent_child_data.csv",
-    path_to_health_transition_matrix: Path = BLD
-    / "estimation"
-    / "stochastic_processes"
-    / "health_transition_matrix_good_medium_bad.csv",
-    path_to_death_transition_matrix: Path = BLD
-    / "estimation"
-    / "stochastic_processes"
-    / "mortality_transition_matrix_logit_good_medium_bad.csv",
-    path_to_health_death_transition_matrix: Path = BLD
-    / "estimation"
-    / "stochastic_processes"
-    / "health_death_transition_matrix_good_medium_bad.csv",
-    path_to_health_death_transition_matrix_NEW: Annotated[Path, Product] = BLD
-    / "estimation"
-    / "stochastic_processes"
-    / "health_death_transition_matrix_good_medium_bad_NEW.csv",
     path_to_save_adl_probabilities: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
@@ -57,11 +43,7 @@ def task_estimate_adl_transitions_one_logit(
     path_to_save_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "stochastic_processes"
-    / "adl_transition_probs.png",
-    path_to_save_weighted_adl_transitions_by_age_plot: Annotated[Path, Product] = BLD
-    / "plots"
-    / "stochastic_processes"
-    / "weighted_adl_transitions_by_age.png",
+    / "adl_transitions.png",
 ):
     specs = read_and_derive_specs(path_to_specs)
 
@@ -74,12 +56,6 @@ def task_estimate_adl_transitions_one_logit(
     df_combined = pd.concat([df_men, df_women], ignore_index=True)
 
     df_combined.to_csv(path_to_save_adl_probabilities, index=False)
-
-    health_trans_mat = pd.read_csv(path_to_health_transition_matrix)
-    death_trans_mat = pd.read_csv(path_to_death_transition_matrix)
-    health_death_trans_mat = pd.read_csv(
-        path_to_health_death_transition_matrix, index_col=[0]
-    )
 
     # 1. Setup the index ranges
     ages = np.arange(specs["start_age_parents"], specs["end_age"] + 1)
@@ -136,15 +112,20 @@ def task_estimate_adl_transitions_one_logit(
                     if "age_sq" in row_params and not pd.isna(row_params["age_sq"]):
                         val += row_params["age_sq"] * (age**2)
 
+                    if "age_cubed" in row_params and not pd.isna(
+                        row_params["age_cubed"]
+                    ):
+                        val += row_params["age_cubed"] * (age**3)
+
                     if (
-                        h_idx == STATE_MEDIUM_HEALTH
+                        h_idx == PARENT_MEDIUM_HEALTH
                         and "medium_health" in row_params
                         and not pd.isna(row_params["medium_health"])
                     ):
                         val += row_params["medium_health"]
 
                     if (
-                        h_idx == STATE_GOOD_HEALTH
+                        h_idx == PARENT_GOOD_HEALTH
                         and "good_health" in row_params
                         and not pd.isna(row_params["good_health"])
                     ):
@@ -166,6 +147,48 @@ def task_estimate_adl_transitions_one_logit(
 
     adl_transition_matrix.to_csv(path_to_save)
 
+    plot_adl_probabilities_by_health(
+        df, adl_transition_matrix, specs, path_to_save_plot=path_to_save_plot
+    )
+
+
+def task_plot_care_demand(
+    path_to_specs: Path = SRC / "specs.yaml",
+    path_to_adl_mat: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "adl_transition_matrix.csv",
+    path_to_health_transition_matrix: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "health_transition_matrix_good_medium_bad.csv",
+    path_to_death_transition_matrix: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "mortality_transition_matrix_logit_good_medium_bad.csv",
+    path_to_health_death_transition_matrix: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "health_death_transition_matrix_good_medium_bad.csv",
+    path_to_health_death_transition_matrix_NEW: Annotated[Path, Product] = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "health_death_transition_matrix_good_medium_bad_NEW.csv",
+    path_to_save_weighted_adl_transitions_by_age_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "stochastic_processes"
+    / "weighted_adl_transitions_by_age.png",
+):
+
+    specs = read_and_derive_specs(path_to_specs)
+
+    health_trans_mat = pd.read_csv(path_to_health_transition_matrix)
+    death_trans_mat = pd.read_csv(path_to_death_transition_matrix)
+    health_death_trans_mat = pd.read_csv(
+        path_to_health_death_transition_matrix, index_col=[0]
+    )
+    adl_transition_matrix = pd.read_csv(path_to_adl_mat, index_col=[0, 1, 2, 3])
+
     hdeath_df = build_health_death_transition_matrix(
         specs, health_trans_mat, death_trans_mat
     )
@@ -181,10 +204,7 @@ def task_estimate_adl_transitions_one_logit(
         adl_transition_df=adl_transition_matrix,
         # health_death_df=hdeath_df,
         health_death_df=health_death_trans_mat,
-        path_to_save_plot=BLD
-        / "plots"
-        / "stochastic_processes"
-        / "care_demand_fom_one_mat_fixed.png",
+        path_to_save_plot=path_to_save_weighted_adl_transitions_by_age_plot,
         start_age=66,
     )
 
@@ -580,7 +600,8 @@ def estimate_multinomial_logit_by_gender(df):
     dat_men = df[df["gender"] == MALE].copy()
     dat_women = df[df["gender"] == FEMALE].copy()
 
-    formula = "adl_cat ~ age + I(age**2) + C(health)"
+    # formula = "adl_cat ~ age + I(age**2) + C(health)"
+    formula = "adl_cat ~ age + I(age**2)  + I(age**3) + C(health)"
 
     model_men = smf.mnlogit(formula, data=dat_men).fit()
     print("Results for men (gender == 1):")
@@ -604,6 +625,7 @@ def pivot_model_params(model, sex_label):
         "Intercept": "const",
         "age": "age",
         "I(age ** 2)": "age_sq",
+        "I(age ** 3)": "age_cubed",
         "C(health)[T.1.0]": "medium_health",
         "C(health)[T.2.0]": "good_health",
     }
@@ -622,6 +644,7 @@ def pivot_model_params(model, sex_label):
         "const",
         "age",
         "age_sq",
+        "age_cubed",
         "medium_health",
         "good_health",
     ]
@@ -1271,3 +1294,152 @@ def build_health_death_transition_matrix(
         raise ValueError("Row sums are not 1.0; check inputs.")
 
     return out
+
+
+def plot_adl_probabilities_by_health(
+    df_sample: pd.DataFrame,
+    adl_transition_matrix: pd.DataFrame,
+    specs: dict,
+    path_to_save_plot: Optional[str] = None,
+) -> plt.Figure:
+    """
+    2 x 3 grid:
+        ┌───────────────┬───────────────┬───────────────┐
+        │ Men / Good    │ Men / Medium  │ Men / Bad     │
+        ├───────────────┼───────────────┼───────────────┤
+        │ Women / Good  │ Women / Medium│ Women / Bad   │
+        └───────────────┴───────────────┴───────────────┘
+
+    • Solid lines  : probabilities predicted by the multinomial-logit
+    • Scatter dots : empirical probabilities in the estimation sample
+                     (conditional on being alive)
+
+    Parameters
+    ----------
+    df_sample
+        Estimation sample with columns
+        ['gender', 'age', 'health', 'adl_cat']
+        *gender*: 1 = Men, 2 = Women (constants MALE/FEMALE in your code)
+        *health*: 0 = Bad, 1 = Medium, 2 = Good
+        *adl_cat*: 0 = No ADL, 1 = ADL 1, 2 = ADL 2, 3 = ADL 3
+    adl_transition_matrix
+        DataFrame produced right after the prediction loop.
+        MultiIndex = (sex, age, health, adl_cat),
+        value column = 'transition_prob'.
+    specs
+        Full specification dictionary created by `read_and_derive_specs`.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+    """
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # 1.  String ↔ code mappings that appear in the file layout
+    # ──────────────────────────────────────────────────────────────────────────
+    gender_map = {1: "Men", 2: "Women"}
+    health_map_num_to_str = {
+        0: "Bad Health",
+        1: "Medium Health",
+        2: "Good Health",
+    }
+    adl_map_num_to_str = {
+        0: "No ADL",
+        1: "ADL 1",
+        2: "ADL 2",
+        3: "ADL 3",
+    }
+    adl_colors = {
+        "No ADL": "blue",
+        "ADL 1": "green",
+        "ADL 2": "orange",
+        "ADL 3": "red",
+    }
+
+    health_labels = specs["health_labels_three"][:-1]  # excludes "Death"
+    adl_order = specs["adl_labels"]  # ["No ADL", "ADL 1", "ADL 2", "ADL 3"]
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # 2.  Empirical (observed) probabilities
+    # ──────────────────────────────────────────────────────────────────────────
+    df_obs = df_sample.copy()
+    df_obs = df_obs[df_obs["health"] != PARENT_DEAD]  # drop death rows if present
+
+    df_obs["sex"] = df_obs["gender"].map(gender_map)
+    df_obs["health_str"] = df_obs["health"].map(health_map_num_to_str)
+    df_obs["adl_str"] = df_obs["adl_cat"].map(adl_map_num_to_str)
+
+    # counts per (sex, age, health, adl)
+    counts = (
+        df_obs.groupby(["sex", "age", "health_str", "adl_str"])
+        .size()
+        .rename("n")
+        .reset_index()
+    )
+    # alive totals per (sex, age, health)
+    totals = (
+        df_obs.groupby(["sex", "age", "health_str"])
+        .size()
+        .rename("total")
+        .reset_index()
+    )
+
+    df_emp = counts.merge(totals, on=["sex", "age", "health_str"])
+    df_emp["prob"] = df_emp["n"] / df_emp["total"]
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # 3.  Predicted probabilities
+    # ──────────────────────────────────────────────────────────────────────────
+    df_pred = adl_transition_matrix.reset_index().rename(
+        columns={"transition_prob": "prob"}
+    )
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # 4.  Plot
+    # ──────────────────────────────────────────────────────────────────────────
+    fig, axes = plt.subplots(
+        nrows=2,
+        ncols=3,
+        figsize=(14, 6),
+        sharex=True,
+        sharey=True,
+    )
+
+    for row, sex in enumerate(specs["sex_labels"]):  # ["Men", "Women"]
+        for col, hlth in enumerate(health_labels):
+            ax = axes[row, col]
+
+            # predicted ––– solid lines
+            for adl in adl_order:
+                dat = df_pred[
+                    (df_pred["sex"] == sex)
+                    & (df_pred["health"] == hlth)
+                    & (df_pred["adl_cat"] == adl)
+                ]
+                ax.plot(dat["age"], dat["prob"], label=adl, color=adl_colors[adl])
+
+            # observed ––– scatter points
+            for adl in adl_order:
+                dat = df_emp[
+                    (df_emp["sex"] == sex)
+                    & (df_emp["health_str"] == hlth)
+                    & (df_emp["adl_str"] == adl)
+                ]
+                ax.scatter(
+                    dat["age"], dat["prob"], s=12, alpha=1, color=adl_colors[adl]
+                )
+
+            # cosmetics
+            if row == 1:
+                ax.set_xlabel("Age")
+            if col == 0:
+                ax.set_ylabel("Probability")
+            ax.set_title(f"{sex} - {hlth.replace(' Health','')}")
+
+    # one legend for the whole figure
+    handles, labels = axes[0, 0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper center", ncol=len(adl_order))
+    fig.tight_layout(rect=[0, 0, 1, 0.93])
+
+    if path_to_save_plot:
+        fig.savefig(path_to_save_plot, dpi=300)
