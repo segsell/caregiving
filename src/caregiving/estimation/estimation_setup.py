@@ -374,6 +374,7 @@ def load_and_prep_data(data_emp, model, start_params, drop_retirees=True):
     states_dict = {
         name: data_emp[name].values
         for name in model["model_structure"]["discrete_states_names"]
+        if name not in ("mother_health", "care_demand")
     }
     states_dict["experience"] = data_emp["experience"].values
     states_dict["wealth"] = data_emp["wealth"].values / specs["wealth_unit"]

@@ -11,10 +11,11 @@ discount_factor: 0.97
 # economic model parameters
 start_age: 30
 end_age: 100
-start_age_parents: 60
+start_age_parents: 50
 start_age_msm: 40
 end_age_msm: 70
 end_age_children_in_household: 60
+# mother_age_difference: 26
 
 choice_labels: ["Retired", "Unemployed", "Part-time", "Full-time"]
 education_labels: ["Low Education", "High Education"]
@@ -23,6 +24,7 @@ health_labels_three: ["Bad Health", "Medium Health", "Good Health", "Death"]
 adl_labels: ["No ADL", "ADL 1", "ADL 2", "ADL 3"]
 sex_labels: ["Men", "Women"]
 partner_labels: ["Single","Working Partner", "Retired Partner"]
+
 # Belief process parameters
 SRA_grid_size: 0.25
 min_SRA: 65
@@ -59,7 +61,7 @@ monthly_pension_point_value_east_2010: 24.13
 ###############################################################################
 # Data preparation
 ###############################################################################
-start_year: 2005 # start year of estimation sample
+start_year: 2010 # start year of estimation sample
 end_year: 2017 # end year of estimation sample
 # start_year: 2010 # start year of estimation sample
 # end_year: 2017 # end year of estimation sample

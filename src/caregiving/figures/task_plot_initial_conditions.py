@@ -66,6 +66,7 @@ def task_plot_initial_wealth(
     states_dict = {
         name: start_period_data[name].values
         for name in model["model_structure"]["discrete_states_names"]
+        if name not in ("mother_health", "care_demand")
     }
 
     states_dict["wealth"] = start_period_data["wealth"].values / specs["wealth_unit"]
@@ -113,3 +114,4 @@ def task_plot_initial_wealth(
     plt.tight_layout()
 
     plt.savefig(path_to_save)
+    plt.close(fig)

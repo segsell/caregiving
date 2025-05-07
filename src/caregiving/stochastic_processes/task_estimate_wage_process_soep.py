@@ -132,6 +132,7 @@ def task_estimate_wage_parameters(
         fig.savefig(
             BLD / "plots" / "stochastic_processes" / f"wages_{sex_label.lower()}.png"
         )
+        plt.close(fig)
 
     # Save results
     wage_parameters.to_csv(path_to_save_wage_params)

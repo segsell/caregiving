@@ -11,9 +11,9 @@ from caregiving.config import BLD
 from caregiving.model.shared import (
     MAX_AGE_PARENTS,
     MIN_AGE_PARENTS,
-    STATE_BAD_HEALTH,
-    STATE_GOOD_HEALTH,
-    STATE_MEDIUM_HEALTH,
+    PARENT_BAD_HEALTH,
+    PARENT_GOOD_HEALTH,
+    PARENT_MEDIUM_HEALTH,
 )
 
 WAVE_1 = 1
@@ -73,7 +73,6 @@ def count(df_col):
 
 def task_create_parent_child_data(
     path_to_raw_data: Path = BLD / "data" / "data_parent_child_merged.csv",
-    # parent - child
     path_to_main: Annotated[Path, Product] = BLD / "data" / "parent_child_data.csv",
     path_to_design_weight: Annotated[Path, Product] = BLD
     / "data"
@@ -340,7 +339,7 @@ def create_health_variables(dat):
         (dat["ph003_"] == HEALTH_FAIR),
         (dat["ph003_"] == HEALTH_POOR),
     ]
-    _val = [STATE_GOOD_HEALTH, STATE_MEDIUM_HEALTH, STATE_BAD_HEALTH]
+    _val = [PARENT_GOOD_HEALTH, PARENT_MEDIUM_HEALTH, PARENT_BAD_HEALTH]
 
     dat["health"] = np.select(_cond, _val, default=np.nan)
 
