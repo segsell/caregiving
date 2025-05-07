@@ -279,6 +279,128 @@ def create_hourly_wage(df):
     return df
 
 
+# def create_parent_info(df, filter_missing=False):
+#     """Create parent age and alive status."""
+#     df = df.reset_index()
+
+#     df.loc[df["mybirth"] < 0, "mybirth"] = np.nan
+#     df.loc[df["fybirth"] < 0, "fybirth"] = np.nan
+#     df.loc[df["mydeath"] < 0, "mydeath"] = np.nan
+#     df.loc[df["fydeath"] < 0, "fydeath"] = np.nan
+
+#     for parent_var in ("mybirth", "fybirth"):
+#         dup_byear = df.dropna(subset=[parent_var]).groupby("pid")[parent_var].nunique()
+#         conflicts = dup_byear[dup_byear > 1]
+#         if not conflicts.empty:
+#             print(
+#                 "Warning: Conflicting birth years detected for some pids:",
+#                 conflicts.index.tolist(),
+#             )
+
+#     # Doesn't change anything
+#     df = df.sort_values(["pid", "syear"])
+#     df["mybirth"] = df.groupby("pid")["mybirth"].transform(lambda x: x.ffill().bfill())
+#     df["fybirth"] = df.groupby("pid")["fybirth"].transform(lambda x: x.ffill().bfill())
+
+#     # Drop observations with missing parent information
+#     if filter_missing:
+#         df = df[df["mybirth"] > 0]
+#         df = df[df["fybirth"] > 0]
+
+#     df["mother_age"] = df["syear"] - df["mybirth"]
+#     df["father_age"] = df["syear"] - df["fybirth"]
+
+#     _cond = [
+#         df["mydeath"].isna(),
+#         (df["mybirth"].notna())
+#         & (df["mybirth"] <= df["syear"])
+#         & (df["syear"] < df["mydeath"]),
+#         # & (df["mydeath"].isna() | (df["syear"] < df["mydeath"])),
+#     ]
+#     df["mother_alive"] = np.select(_cond, [np.nan, 1], default=0)
+
+#     _cond = [
+#         df["fydeath"].isna(),
+#         (df["fybirth"].notna())
+#         & (df["fybirth"] <= df["syear"])
+#         & (df["syear"] < df["fydeath"]),
+#         # & (df["fydeath"].isna() | (df["syear"] < df["fydeath"])),
+#     ]
+#     df["father_alive"] = np.select(_cond, [np.nan, 1], default=0)
+
+#     df_age = df.copy()
+
+#     # If mother_alive == 0, set mother_age to NaN
+#     df_age["mother_age"] = np.where(
+#         df_age["mother_alive"] == 1, df_age["mother_age"], np.nan
+#     )
+
+#     # If father_alive == 0, set father_age to NaN
+#     df_age["father_age"] = np.where(
+#         df_age["father_alive"] == 1, df_age["father_age"], np.nan
+#     )
+
+#     df_age.set_index(["pid", "syear"], inplace=True)
+
+#     return df_age
+
+
+# def create_sibling_info(df, filter_missing=False):
+
+#     df.loc[df["pld0030"] < 0, "pld0030"] = np.nan
+#     df.loc[df["pld0032"] < 0, "pld0032"] = np.nan
+
+#     out = df.sort_values(["pid", "syear"]).copy()
+#     out["pld0030"] = out.groupby("pid")["pld0030"].transform(
+#         lambda x: x.ffill().bfill()
+#     )
+#     out["pld0032"] = out.groupby("pid")["pld0032"].transform(
+#         lambda x: x.ffill().bfill()
+#     )
+
+#     out = out.rename(columns={"pld0030": "n_sisters", "pld0032": "n_brothers"})
+
+#     if filter_missing:
+#         out = out[out["n_sisters"] >= 0]
+#         out = out[out["n_brothers"] >= 0]
+
+#     return out
+
+
+# def create_caregiving(df, filter_missing=False):
+
+#     # any care, light care, intensive care
+
+#     _cond = (
+#         df["pli0046"].isna(),
+#         df["pli0046"] == 0,
+#         df["pli0046"] > 0,
+#     )
+#     _val = [np.nan, 0, 1]
+#     df["any_care"] = np.select(_cond, _val, default=np.nan)
+
+#     if filter_missing:
+#         df = df[df["any_care"].notna()]
+
+#     _cond = (
+#         df["pli0046"].isna(),
+#         (df["pli0046"] == 0) | (df["pli0046"] > 1),
+#         df["pli0046"] == 1,
+#     )
+#     _val = [np.nan, 0, 1]
+#     df["light_care"] = np.select(_cond, _val, default=np.nan)
+
+#     _cond = (
+#         df["pli0046"].isna(),
+#         (df["pli0046"] == 0) | (df["pli0046"] == 1),
+#         df["pli0046"] > 1,
+#     )
+#     _val = [np.nan, 0, 1]
+#     df["intensive_care"] = np.select(_cond, _val, default=np.nan)
+
+#     return df
+
+
 def create_parent_info(df, filter_missing=False):
     """Create parent age and alive status."""
     df = df.reset_index()

@@ -48,9 +48,9 @@ def task_create_soep_moments(
 
     df_low = df[df["education"] == 0]
     df_high = df[df["education"] == 1]
-    df_caregivers = df[df["any_care"] == 1]
-    _df_caregivers_low = df_low[df_low["any_care"] == 1]
-    _df_caregivers_high = df_high[df_high["any_care"] == 1]
+    # df_caregivers = df[df["any_care"] == 1]
+    # _df_caregivers_low = df_low[df_low["any_care"] == 1]
+    # _df_caregivers_high = df_high[df_high["any_care"] == 1]
 
     moments = {}
     variances = {}
@@ -78,13 +78,13 @@ def task_create_soep_moments(
         age_range=age_range,
         label="high_education",
     )
-    # B2) Moments by age bin conditional on caregiving
-    moments, variances = compute_labor_shares_by_age_bin(
-        df_caregivers,
-        moments=moments,
-        variances=variances,
-        label="caregivers",
-    )
+    # # B2) Moments by age bin conditional on caregiving
+    # moments, variances = compute_labor_shares_by_age_bin(
+    #     df_caregivers,
+    #     moments=moments,
+    #     variances=variances,
+    #     label="caregivers",
+    # )
     # moments, variances = compute_labor_shares_by_age_bin(
     #     df_caregivers_low,
     #     moments=moments,

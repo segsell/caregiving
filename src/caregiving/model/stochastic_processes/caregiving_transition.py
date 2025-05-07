@@ -4,21 +4,23 @@ import numpy as np
 from caregiving.model.shared import MOTHER
 
 
-def health_transition_good_medium_bad(health, education, has_sister, period, options):
+def health_transition_good_medium_bad(
+    mother_health, education, has_sister, period, options
+):
     """Transition probability for next period health state."""
     trans_mat = options["health_trans_mat_three"]
     mother_age = period + options["mother_age_diff"][has_sister, education]
 
-    prob_vector = trans_mat[MOTHER, mother_age, health, :]
+    prob_vector = trans_mat[MOTHER, mother_age, mother_health, :]
 
     return prob_vector
 
 
-def care_demand_transition(health, period, has_sister, education, options):
+def care_demand_transition(mother_health, period, has_sister, education, options):
     """Transition probability for next period care demand."""
     adl_mat = options["limitations_with_adl_mat"]
     mother_age = period + options["mother_age_diff"][has_sister, education]
-    limitations_with_adl = adl_mat[MOTHER, mother_age, health, :]
+    limitations_with_adl = adl_mat[MOTHER, mother_age, mother_health, :]
 
     exog_care_supply_mat = options["exog_care_supply"]
     own_age = period + options["start_age"]

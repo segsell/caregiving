@@ -65,7 +65,7 @@ def task_create_structural_estimation_sample(
 
     df = generate_job_separation_var(df)
     df = create_lagged_and_lead_variables(df, specs, lead_job_sep=True)
-    df["lagged_care"] = df.groupby(["pid"])["any_care"].shift(1)
+    # df["lagged_care"] = df.groupby(["pid"])["any_care"].shift(1)
 
     df = create_alreay_retired_variable(df)
     # df = df.reset_index()
@@ -108,7 +108,7 @@ def task_create_structural_estimation_sample(
     df["mother_age_diff"] = df["mother_age"] - df["age"]
     df["father_age_diff"] = df["father_age"] - df["age"]
 
-    _obs_per_pid = df.groupby("pid").size().rename("n_obs")
+    # _obs_per_pid = df.groupby("pid").size().rename("n_obs")
 
     # Keep relevant columns (i.e. state variables) and set their minimal datatype
     type_dict = {
@@ -131,7 +131,6 @@ def task_create_structural_estimation_sample(
         "any_care": "float32",
         "light_care": "float32",
         "intensive_care": "float32",
-        "lagged_care": "float32",
         "has_sister": "float32",
         "mother_age_diff": "float32",
         "father_age_diff": "float32",

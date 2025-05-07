@@ -44,6 +44,7 @@ def task_estimate_job_offer(
     ).reset_index()
     job_offer_params_df.columns = ["param", "value"]
 
+    #
     # Save as csv
     job_offer_params_df.to_csv(path_to_save_job_offer_params, index=False)
 
