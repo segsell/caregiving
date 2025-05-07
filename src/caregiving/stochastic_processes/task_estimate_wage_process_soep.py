@@ -66,6 +66,7 @@ def task_estimate_wage_parameters(
     coefficients = regressors + [param + "_ser" for param in regressors]
 
     wage_data = pd.read_csv(path_to_data, index_col=0)
+
     # Modify
     wage_data["ln_wage"] = np.log(wage_data["hourly_wage"])
     wage_data["ln_exp"] = np.log(wage_data["experience"] + 1)

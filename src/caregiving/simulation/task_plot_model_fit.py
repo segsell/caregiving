@@ -15,7 +15,7 @@ from caregiving.estimation.estimation_setup import (
     load_and_prep_data,
     load_and_setup_full_model_for_solution,
 )
-from caregiving.model.shared import FULL_TIME, NOT_WORKING, PART_TIME, SEX, WORK
+from caregiving.model.shared import NOT_WORKING_CHOICES, SEX, WORK_CHOICES
 from caregiving.simulation.plot_model_fit import (
     plot_average_savings_decision,
     plot_average_wealth,
@@ -95,8 +95,8 @@ def task_plot_model_fit(
     # plot_states(df_emp, df_sim, discrete_state_names, specs)
 
     states = {
-        "not_working": NOT_WORKING,
-        "working": WORK,
+        "not_working": NOT_WORKING_CHOICES,
+        "working": WORK_CHOICES,
         # "part_time": PART_TIME,
         # "full_time": FULL_TIME,
     }
@@ -128,8 +128,8 @@ def task_plot_model_fit(
 
     data_emp = df_emp.copy()
     mask = (
-        data_emp["lagged_choice"].isin(WORK)
-        & data_emp["choice"].isin(WORK)
+        data_emp["lagged_choice"].isin(WORK_CHOICES)
+        & data_emp["choice"].isin(WORK_CHOICES)
         & data_emp["age"].between(60, 70)
     )
     df_60_70 = data_emp[mask]
@@ -142,8 +142,8 @@ def task_plot_model_fit(
     )
 
     mask2 = (
-        data_emp["lagged_choice"].isin(WORK)
-        # & data_emp["choice"].isin(WORK)
+        data_emp["lagged_choice"].isin(WORK_CHOICES)
+        # & data_emp["choice"].isin(WORK_CHOICES)
         & data_emp["age"].between(60, 70)
     )
     df_60_70_2 = data_emp[mask2]
@@ -157,7 +157,7 @@ def task_plot_model_fit(
 
     mask3 = (
         data_emp["age"].between(60, 70)
-        # & data_emp["choice"].isin(WORK)
+        # & data_emp["choice"].isin(WORK_CHOICES)
     )
     df_60_70_3 = data_emp[mask3]
     counts_3 = (  # noqa: F841

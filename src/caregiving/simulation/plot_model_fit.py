@@ -93,7 +93,7 @@ def plot_choice_shares_by_education(data_emp, data_sim, specs, path_to_save_plot
         )
 
         # Loop through each choice
-        for choice_var in range(n_choices):
+        for choice_var in range(4):
             ax = axs[edu_var, choice_var]
 
             # Select only ages within bounds
