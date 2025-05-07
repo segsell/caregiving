@@ -39,7 +39,7 @@ def utility_func(
     period: int,
     education: int,
     health: int,
-    # care_demand: int,
+    care_demand: int,
     partner_state: int,
     params: dict,
     options: dict,
@@ -80,7 +80,7 @@ def utility_func(
         partner_state=partner_state,
         education=education,
         health=health,
-        # care_demand=care_demand,
+        care_demand=care_demand,
         period=period,
         choice=choice,
         params=params,
@@ -101,7 +101,7 @@ def utility_func_alive(
     partner_state,
     education,
     health,
-    # care_demand,
+    care_demand,
     period,
     choice,
     params,
@@ -129,9 +129,9 @@ def utility_func_alive(
         options=options,
     )
 
-    # zeta = utility_of_caregiving(
-    #     period, choice, education, care_demand, params, options
-    # )
+    zeta = utility_of_caregiving(
+        period, choice, education, care_demand, params, options
+    )
 
     # compute utility
     scaled_consumption = consumption * eta / cons_scale
@@ -142,7 +142,7 @@ def utility_func_alive(
         jnp.log(consumption * eta / cons_scale),
         utility_rho_not_one,
     )
-    return utility  # + zeta
+    return utility + zeta
 
 
 def _utility_func_alive(
@@ -373,8 +373,8 @@ def utility_of_caregiving(period, choice, education, care_demand, params, option
     care = is_informal_care(choice)
 
     util_unemployed_and_care_women = params["util_unemployed_and_care_women"] * care
-    util_ft_work_and_care_women = params["util_ft_work_and_care_women"] * care
     util_pt_work_and_care_women = params["util_pt_work_and_care_women"] * care
+    util_ft_work_and_care_women = params["util_ft_work_and_care_women"] * care
     util_no_informal_care = params["util_formal_care_women"] * (1 - care)
 
     factor_women = (
