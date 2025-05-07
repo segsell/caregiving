@@ -161,7 +161,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     sex_agents = np.full(n_agents, sex_var, dtype=np.uint8)
 
     # Restrict to start data for sex == 1
-    start_data_sex = start_period_data[start_period_data["sex"] == 1]
+    start_data_sex = start_period_data[start_period_data["sex"] == sex_var]
 
     # Generate education distribution
     edu_shares = start_data_sex["education"].value_counts(normalize=True).sort_index()
@@ -323,7 +323,6 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
 
     wealth_agents = pd.DataFrame(wealth_agents, columns=["wealth"])
     wealth_agents.to_csv(path_to_save_wealth, index=False)
-    ####
 
 
 def draw_start_wealth_dist(start_period_data_edu, n_agents_edu, method="kde"):

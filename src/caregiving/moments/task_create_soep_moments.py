@@ -48,6 +48,9 @@ def task_create_soep_moments(
 
     df_low = df[df["education"] == 0]
     df_high = df[df["education"] == 1]
+    df_caregivers = df[df["any_care"] == 1]
+    _df_caregivers_low = df_low[df_low["any_care"] == 1]
+    _df_caregivers_high = df_high[df_high["any_care"] == 1]
 
     moments = {}
     variances = {}
@@ -60,7 +63,7 @@ def task_create_soep_moments(
         age_range=age_range,
     )
 
-    # B) Moments by age and education.
+    # B1) Moments by age and education.
     moments, variances = compute_labor_shares_by_age(
         df_low,
         moments=moments,
@@ -75,6 +78,25 @@ def task_create_soep_moments(
         age_range=age_range,
         label="high_education",
     )
+    # B2) Moments by age bin conditional on caregiving
+    moments, variances = compute_labor_shares_by_age_bin(
+        df_caregivers,
+        moments=moments,
+        variances=variances,
+        label="caregivers",
+    )
+    # moments, variances = compute_labor_shares_by_age_bin(
+    #     df_caregivers_low,
+    #     moments=moments,
+    #     variances=variances,
+    #     label="caregivers_low_education",
+    # )
+    # moments, variances = compute_labor_shares_by_age_bin(
+    #     df_caregivers_high,
+    #     moments=moments,
+    #     variances=variances,
+    #     label="caregivers_high_education",
+    # )
 
     # =================================================================================
 
@@ -143,6 +165,24 @@ def task_create_soep_moments(
     # )
     # moments.update(trans_moments)
     # variances.update(trans_variances)
+
+    # states_care_to_care = {
+    #     "caregiving": 1,
+    #     "not_caregiving": 0,
+    # }
+    # transition_moments, transition_variances = (
+    #     compute_transition_moments_and_variances_for_age_bins(
+    #         df_low,
+    #         min_age=start_age,
+    #         max_age=end_age,
+    #         states=states_care_to_care,
+    #         # label="low_education",
+    #         choice="any_care",
+    #         lagged_choice="lagged_care",
+    #     )
+    # )
+    # moments.update(transition_moments)
+    # variances.update(transition_variances)
 
     # F) Wealth moments by age and education (NEW)
     # wealth_moments_edu_low, wealth_variances_edu_low = (
@@ -236,6 +276,117 @@ def compute_labor_shares_by_age(df, moments, variances, age_range, label=None):
     for age in age_range:
         moments[f"share_full_time{label}_age_{age}"] = full_time_shares.loc[age]
         variances[f"share_full_time{label}_age_{age}"] = full_time_vars.loc[age]
+
+    return moments, variances
+
+
+def compute_labor_shares_by_age_bin(
+    df: pd.DataFrame,
+    moments: dict,
+    variances: dict,
+    age_bins: tuple | None = None,
+    label: str | None = None,
+):
+    """
+    Compute labour-market status shares and their variances by 5-year age-bin.
+
+    Parameters
+    ----------
+    df : DataFrame
+        Must contain the columns ``age`` (int) and ``choice`` (categorical / int).
+    moments, variances : dict
+        Dictionaries updated **in-place** with the new statistics.
+    age_bins : tuple[list[int], list[str]] | None
+        Optional ``(bin_edges, bin_labels)``.
+        *bin_edges* must include the left edge of the first bin and the right
+        edge of the last bin, exactly as required by ``pd.cut``.
+        If *None*, the default edges ``[40, 45, 50, 55, 60, 65, 70]`` and the
+        labels ``["40_44", "45_49", … , "65_69"]`` are used.
+    label : str | None
+        Optional extra label inserted in every key (prefixed with “_” if given).
+
+    Returns
+    -------
+    moments, variances : dict
+        The same objects that were passed in, for convenience.
+    """
+
+    # 1. Prepare labels and default bin specification
+    label = f"_{label}" if label else ""
+
+    if age_bins is None:
+        # bin edges: 40,45,50,55,60,65,70  (right edge 70 is *exclusive*)
+        bin_edges = list(range(40, 75, 5))  # [40,45,50,55,60,65,70]
+        bin_labels = [f"{s}_{s+4}" for s in bin_edges[:-1]]
+    else:
+        bin_edges, bin_labels = age_bins
+
+    # 2. Keep only ages we care about and create an “age_bin” column
+    df = df[df["age"].between(bin_edges[0], bin_edges[-1] - 1)].copy()
+
+    df["age_bin"] = pd.cut(
+        df["age"],
+        bins=bin_edges,
+        labels=bin_labels,
+        right=False,  # left-closed / right-open ⇒ 40-44, 45-49, …
+    )
+    _counts = df.groupby("age_bin").size().reindex(bin_labels, fill_value=np.nan)
+
+    # 3. Group by the new bins and compute shares & variances
+    age_groups = df.groupby("age_bin")
+
+    retired_shares = age_groups["choice"].apply(
+        lambda x: x.isin(np.atleast_1d(RETIREMENT)).mean()
+    )
+    unemployed_shares = age_groups["choice"].apply(
+        lambda x: x.isin(np.atleast_1d(UNEMPLOYED)).mean()
+    )
+    part_time_shares = age_groups["choice"].apply(
+        lambda x: x.isin(np.atleast_1d(PART_TIME)).mean()
+    )
+    full_time_shares = age_groups["choice"].apply(
+        lambda x: x.isin(np.atleast_1d(FULL_TIME)).mean()
+    )
+
+    retired_vars = age_groups["choice"].apply(
+        lambda x: x.isin(np.atleast_1d(RETIREMENT)).var(ddof=DEGREES_OF_FREEDOM)
+    )
+    unemployed_vars = age_groups["choice"].apply(
+        lambda x: x.isin(np.atleast_1d(UNEMPLOYED)).var(ddof=DEGREES_OF_FREEDOM)
+    )
+    part_time_vars = age_groups["choice"].apply(
+        lambda x: x.isin(np.atleast_1d(PART_TIME)).var(ddof=DEGREES_OF_FREEDOM)
+    )
+    full_time_vars = age_groups["choice"].apply(
+        lambda x: x.isin(np.atleast_1d(FULL_TIME)).var(ddof=DEGREES_OF_FREEDOM)
+    )
+
+    # Re-index so every bin is present even if it appears nowhere in the data
+    retired_shares = retired_shares.reindex(bin_labels, fill_value=np.nan)
+    unemployed_shares = unemployed_shares.reindex(bin_labels, fill_value=np.nan)
+    part_time_shares = part_time_shares.reindex(bin_labels, fill_value=np.nan)
+    full_time_shares = full_time_shares.reindex(bin_labels, fill_value=np.nan)
+
+    retired_vars = retired_vars.reindex(bin_labels, fill_value=np.nan)
+    unemployed_vars = unemployed_vars.reindex(bin_labels, fill_value=np.nan)
+    part_time_vars = part_time_vars.reindex(bin_labels, fill_value=np.nan)
+    full_time_vars = full_time_vars.reindex(bin_labels, fill_value=np.nan)
+
+    for bin in bin_labels:
+        moments[f"share_retired{label}_age_bin_{bin}"] = retired_shares.loc[bin]
+        variances[f"share_retired{label}_age_bin_{bin}"] = retired_vars.loc[bin]
+
+    for bin in bin_labels:
+        moments[f"share_unemployed{label}_age_bin_{bin}"] = unemployed_shares.loc[bin]
+        variances[f"share_unemployed{label}_age_bin_{bin}"] = unemployed_vars.loc[bin]
+
+    for bin in bin_labels:
+        moments[f"share_part_time{label}_age_bin_{bin}"] = part_time_shares.loc[bin]
+        variances[f"share_part_time{label}_age_bin_{bin}"] = part_time_vars.loc[bin]
+
+    for bin in bin_labels:
+        moments[f"share_full_time{label}_age_bin_{bin}"] = full_time_shares.loc[bin]
+        variances[f"share_full_time{label}_age_bin_{bin}"] = full_time_vars.loc[bin]
 
     return moments, variances
 
