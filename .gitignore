@@ -166,15 +166,18 @@ bld/solve_and_simulate/
 bld/_old_model/
 
 
-# Ensure bld/ itself is tracked (optional but helpful for clarity)
-!bld/
-
-# Ensure bld/model/ and its contents are explicitly included
-!bld/model/
-!bld/model/**
-
 # File too large to be tracked
-model_for_solution.pkl
+/bld/model/model_for_solution.pkl
+
+# # Ensure bld/ itself is tracked
+# !bld/
+
+# # Ensure bld/model/ and its contents are explicitly included
+# !bld/model/
+# !/bld/model/**
+# !/bld/model/options.pkl
+# !/bld/model/initial_conditions/
+# !/bld/model/initial_conditions/**
 
 data
 

@@ -6,7 +6,7 @@ disutil_ft_work_bad_women: 1.3
 disutil_ft_work_good_women: 1.3
 disutil_pt_work_bad_women: 1.3
 disutil_pt_work_good_women: 1.3
-disutil_unemployed_women: 1.0
+disutil_unemployed_women: 1.3
 job_finding_logit_age_women: -0.0475783164531643
 job_finding_logit_const_women: 0.5135874720361568
 job_finding_logit_high_educ_women: 0.7045008453729357

@@ -20,6 +20,7 @@ from caregiving.model.shared import (
     UNEMPLOYED,
     UNEMPLOYED_CHOICES,
 )
+from caregiving.utils import table
 
 
 def plot_average_wealth(

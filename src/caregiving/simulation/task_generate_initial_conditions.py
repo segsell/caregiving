@@ -8,8 +8,6 @@ import jax.numpy as jnp
 import numpy as np
 import pandas as pd
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
@@ -34,6 +32,8 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.utils import table
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 
 def task_generate_start_states_for_solution(  # noqa: PLR0915
@@ -246,11 +246,11 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
             "lagged_choice"
         ].value_counts(normalize=True)
         lagged_choice_probs = pd.Series(
-            index=np.arange(0, specs["n_choices"]), data=0, dtype=float
+            index=np.arange(0, specs["n_choices"] // 2), data=0, dtype=float
         )
         lagged_choice_probs.update(empirical_lagged_choice_probs)
         lagged_choice_edu = np.random.choice(
-            specs["n_choices"], size=n_agents_edu, p=lagged_choice_probs.values
+            specs["n_choices"] // 2, size=n_agents_edu, p=lagged_choice_probs.values
         )
         lagged_choice[type_mask] = lagged_choice_edu
 

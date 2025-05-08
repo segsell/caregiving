@@ -13,7 +13,7 @@ from caregiving.model.shared import (
     FULL_TIME,
     NOT_WORKING_CARE,
     PART_TIME,
-    RETIREMENT_CARE,
+    RETIREMENT,
     UNEMPLOYED,
     WORK,
 )

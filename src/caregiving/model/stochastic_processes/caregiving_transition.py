@@ -31,9 +31,9 @@ def care_demand_transition(mother_health, period, has_sister, education, options
     return jnp.array([1 - care_demand, care_demand])
 
 
-def exog_care_transition(has_sister, education, period, options):
-    """Transition probability for next period family care supply."""
-    exog_care_supply_mat = options["exog_care_supply"]
-    prob_other_care_supply = exog_care_supply_mat[period, has_sister, education]
+# def exog_care_transition(has_sister, education, period, options):
+#     """Transition probability for next period family care supply."""
+#     exog_care_supply_mat = options["exog_care_supply"]
+#     prob_other_care_supply = exog_care_supply_mat[period, has_sister, education]
 
-    return jnp.array([1 - prob_other_care_supply, prob_other_care_supply])
+#     return jnp.array([1 - prob_other_care_supply, prob_other_care_supply])
