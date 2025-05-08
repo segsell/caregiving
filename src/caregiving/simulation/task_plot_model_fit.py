@@ -15,12 +15,14 @@ from caregiving.estimation.estimation_setup import (
     load_and_prep_data,
     load_and_setup_full_model_for_solution,
 )
-from caregiving.model.shared import NOT_WORKING, SEX, WORK, WORK_CHOICES
+from caregiving.model.shared import INFORMAL_CARE, NOT_WORKING, SEX, WORK, WORK_CHOICES
 from caregiving.simulation.plot_model_fit import (
     plot_average_savings_decision,
     plot_average_wealth,
+    plot_caregiver_shares_by_age,
     plot_choice_shares,
     plot_choice_shares_by_education,
+    plot_choice_shares_overall,
     plot_choice_shares_single,
     plot_states,
     plot_transitions_by_age,
@@ -44,10 +46,18 @@ def task_plot_model_fit(
     / "plots"
     / "model_fit"
     / "average_savings.png",
-    path_to_save_single_choice_plot: Annotated[Path, Product] = BLD
+    path_to_save_labor_shares_by_educ_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "model_fit"
     / "labor_shares_by_educ_and_age.png",
+    path_to_save_labor_shares_caregivers_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "model_fit"
+    / "labor_shares_caregivers_by_age.png",
+    path_to_save_caregiver_share_by_age_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "model_fit"
+    / "share_caregivers_by_age.png",
     path_to_save_work_transition_age_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "model_fit"
@@ -86,9 +96,28 @@ def task_plot_model_fit(
     #     df_emp, df_sim, specs, path_to_save_plot=path_to_save_single_choice_plot
     # )
     plot_choice_shares_by_education(
-        df_emp, df_sim, specs, path_to_save_plot=path_to_save_single_choice_plot
+        df_emp, df_sim, specs, path_to_save_plot=path_to_save_labor_shares_by_educ_plot
     )
     test_choice_shares_sum_to_one(df_emp, df_sim, specs)
+
+    df_emp_caregivers = df_emp.loc[df_emp["any_care"] == 1].copy()
+    df_sim_caregivers = df_sim.loc[
+        df_sim["choice"].isin(np.asarray(INFORMAL_CARE).tolist())
+    ].copy()
+    plot_choice_shares_overall(
+        df_emp_caregivers,
+        df_sim_caregivers,
+        specs,
+        path_to_save_plot=path_to_save_labor_shares_caregivers_plot,
+    )
+
+    plot_caregiver_shares_by_age(
+        df_emp,
+        df_sim,
+        specs,
+        choice_set=INFORMAL_CARE,
+        path_to_save_plot=path_to_save_caregiver_share_by_age_plot,
+    )
 
     # plot_choice_shares(df_emp, df_sim, specs)
     # discrete_state_names = model_full["model_structure"]["discrete_states_names"]
