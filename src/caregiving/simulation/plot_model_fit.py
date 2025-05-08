@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from caregiving.config import BLD
-from caregiving.model.shared import ALL, SEX
+from caregiving.model.shared import SEX
 
 
 def plot_average_wealth(
@@ -69,7 +69,7 @@ def plot_choice_shares_by_education(data_emp, data_sim, specs, path_to_save_plot
 
     # Prepare figure grid
     n_edu = len(specs["education_labels"])
-    n_choices = specs["n_choices"]
+    n_choices = 4  # specs["n_choices"]
     fig, axs = plt.subplots(n_edu, n_choices, figsize=(16, 6), sharex=True, sharey=True)
 
     # Loop over education groups and choices
@@ -93,7 +93,7 @@ def plot_choice_shares_by_education(data_emp, data_sim, specs, path_to_save_plot
         )
 
         # Loop through each choice
-        for choice_var in range(4):
+        for choice_var in range(n_choices):
             ax = axs[edu_var, choice_var]
 
             # Select only ages within bounds
@@ -152,7 +152,7 @@ def plot_choice_shares_single(data_emp, data_sim, specs, path_to_save_plot):
         )
         # if sex == 0:
         #     choice_range = all but part-time
-        choice_range = range(len(ALL))
+        choice_range = range(len(specs["choice_labels"]))
 
         for choice in choice_range:
             ax = axes[edu_var, choice]

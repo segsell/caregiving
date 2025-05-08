@@ -174,7 +174,7 @@ bld/_old_model/
 !bld/model/**
 
 # File too large to be tracked
-bld/model/model_for_solution.pkl
+model_for_solution.pkl
 
 data
 

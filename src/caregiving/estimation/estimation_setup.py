@@ -10,11 +10,9 @@ import numpy as np
 import optimagic as om
 import pandas as pd
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 
 from caregiving.config import BLD, SRC
-from caregiving.model.shared import RETIREMENT
+from caregiving.model.shared import RETIREMENT_CARE
 from caregiving.model.state_space import (
     create_state_space_functions,
 )
@@ -28,6 +26,8 @@ from caregiving.simulation.simulate_moments import (
     simulate_moments_jax,
     simulate_moments_pandas,
 )
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 jax.config.update("jax_enable_x64", True)
 
@@ -351,7 +351,7 @@ def load_and_prep_data(data_emp, model, start_params, drop_retirees=True):
 
     # Also already retired individuals hold no identification
     if drop_retirees:
-        data_emp = data_emp[~data_emp["lagged_choice"].isin(RETIREMENT.tolist())]
+        data_emp = data_emp[~data_emp["lagged_choice"].isin(RETIREMENT_CARE.tolist())]
 
     data_emp.loc[:, "age"] = data_emp["period"] + specs["start_age"]
     data_emp.loc[:, "age_bin"] = np.floor(data_emp["age"] / 10)

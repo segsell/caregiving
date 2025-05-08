@@ -29,7 +29,7 @@ from caregiving.data_management.soep.variables import (
     determine_observed_job_offers,
     generate_job_separation_var,
 )
-from caregiving.model.shared import PART_TIME, RETIREMENT, WORK
+from caregiving.model.shared import PART_TIME_CHOICES, RETIREMENT_CHOICES, WORK_CHOICES
 from caregiving.specs.task_write_specs import read_and_derive_specs
 
 
@@ -95,11 +95,11 @@ def task_create_structural_estimation_sample(
     # Construct job offer state
     was_fired_last_period = df["job_sep_this_year"] == 1
     df = determine_observed_job_offers(
-        df, working_choices=WORK, was_fired_last_period=was_fired_last_period
+        df, working_choices=WORK_CHOICES, was_fired_last_period=was_fired_last_period
     )
 
     # Filter out part-time men
-    part_time_values = np.asarray(PART_TIME).ravel().tolist()
+    part_time_values = np.asarray(PART_TIME_CHOICES).ravel().tolist()
     mask = df["sex"] == 0
     df = df.loc[~(mask & df["choice"].isin(part_time_values))]
     df = df.loc[~(mask & df["lagged_choice"].isin(part_time_values))]
@@ -168,7 +168,7 @@ def create_alreay_retired_variable(data):
     data = data.reset_index()
     data = data.sort_values(["pid", "syear"])
 
-    retired_values = np.asarray(RETIREMENT).ravel().tolist()
+    retired_values = np.asarray(RETIREMENT_CHOICES).ravel().tolist()
     data["retire_flag"] = (
         data["lagged_choice"].isin(retired_values) & data["choice"].isin(retired_values)
     ).astype(int)

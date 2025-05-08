@@ -10,7 +10,7 @@ import yaml
 from pytask import Product
 
 from caregiving.config import BLD, SRC
-from caregiving.model.shared import SEX, UNEMPLOYED, WORK
+from caregiving.model.shared import SEX, UNEMPLOYED_CHOICES, WORK_CHOICES
 
 
 def task_estimate_job_offer(
@@ -44,7 +44,6 @@ def task_estimate_job_offer(
     ).reset_index()
     job_offer_params_df.columns = ["param", "value"]
 
-    #
     # Save as csv
     job_offer_params_df.to_csv(path_to_save_job_offer_params, index=False)
 
@@ -52,8 +51,8 @@ def task_estimate_job_offer(
 def estimate_logit_job_offer_params(df, specs):
     """Estimate job offer logit parameters."""
 
-    unemployed_values = np.asarray(UNEMPLOYED).ravel().tolist()
-    work_values = np.asarray(WORK).ravel().tolist()
+    unemployed_values = np.asarray(UNEMPLOYED_CHOICES).ravel().tolist()
+    work_values = np.asarray(WORK_CHOICES).ravel().tolist()
     sex_var = SEX
 
     # Filter for unemployed, because we only estimate job offer probs on them

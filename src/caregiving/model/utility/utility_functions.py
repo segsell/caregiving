@@ -129,9 +129,9 @@ def utility_func_alive(
         options=options,
     )
 
-    zeta = utility_of_caregiving(
-        period, choice, education, care_demand, params, options
-    )
+    # zeta = utility_of_caregiving(
+    #     period, choice, education, care_demand, params, options
+    # )
 
     # compute utility
     scaled_consumption = consumption * eta / cons_scale
@@ -142,7 +142,7 @@ def utility_func_alive(
         jnp.log(consumption * eta / cons_scale),
         utility_rho_not_one,
     )
-    return utility + zeta
+    return utility  # + zeta
 
 
 def _utility_func_alive(

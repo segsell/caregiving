@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from caregiving.model.shared import RETIREMENT, UNEMPLOYED
+from caregiving.model.shared import RETIREMENT_CHOICES, UNEMPLOYED_CHOICES
 
 # =====================================================================================
 # Filter Data
@@ -146,8 +146,8 @@ def enforce_model_choice_restriction(df, specs):
 
     """
 
-    retired_values = np.asarray(RETIREMENT).ravel().tolist()
-    unemployed_values = np.asarray(UNEMPLOYED).ravel().tolist()
+    retired_values = np.asarray(RETIREMENT_CHOICES).ravel().tolist()
+    unemployed_values = np.asarray(UNEMPLOYED_CHOICES).ravel().tolist()
 
     max_ret_age = specs["max_ret_age"]
     min_ret_age = specs["min_ret_age"]
