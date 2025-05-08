@@ -166,14 +166,6 @@ PART_TIME_CARE = jnp.array([6])
 FULL_TIME_CARE = jnp.array([7])
 WORK_AND_NO_WORK_CARE = jnp.array([4, 5, 6, 7])
 
-# ALL = jnp.array([0, 1, 2, 3, 4, 5, 6, 7])
-# RETIREMENT = jnp.array([0, 1])
-# UNEMPLOYED = jnp.array([2, 3])
-# PART_TIME = jnp.array([4, 5])
-# FULL_TIME = jnp.array([6, 7])
-# WORK_AND_NO_WORK = jnp.array([0, 1, 2, 3, 4, 5, 6, 7])
-
-
 ALL_NO_CARE = jnp.array([0, 1, 2, 3])
 RETIREMENT_NO_CARE = jnp.array([0])
 UNEMPLOYED_NO_CARE = jnp.array([1])

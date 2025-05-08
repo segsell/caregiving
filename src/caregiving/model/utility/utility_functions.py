@@ -130,7 +130,7 @@ def utility_func_alive(
     )
 
     # zeta = utility_of_caregiving(
-    #     period, choice, education, care_demand, params, options
+    #     period, choice, education, params, options
     # )
 
     # compute utility
@@ -142,7 +142,7 @@ def utility_func_alive(
         jnp.log(consumption * eta / cons_scale),
         utility_rho_not_one,
     )
-    return utility  # + zeta
+    return utility  # + zeta * care_demand
 
 
 def _utility_func_alive(
@@ -365,7 +365,7 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     return disutility
 
 
-def utility_of_caregiving(period, choice, education, care_demand, params, options):
+def utility_of_caregiving(period, choice, education, params, options):
     # choice booleans
     unemployed = is_unemployed(choice)
     working_part_time = is_part_time(choice)
@@ -386,7 +386,7 @@ def utility_of_caregiving(period, choice, education, care_demand, params, option
 
     # compute zeta
     # utility = jnp.exp(-exp_factor_women)
-    utility = factor_women * care_demand
+    utility = factor_women
 
     return utility
 

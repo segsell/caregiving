@@ -15,7 +15,7 @@ from caregiving.estimation.estimation_setup import (
     load_and_prep_data,
     load_and_setup_full_model_for_solution,
 )
-from caregiving.model.shared import NOT_WORKING_CHOICES, SEX, WORK_CHOICES
+from caregiving.model.shared import NOT_WORKING, SEX, WORK, WORK_CHOICES
 from caregiving.simulation.plot_model_fit import (
     plot_average_savings_decision,
     plot_average_wealth,
@@ -95,8 +95,8 @@ def task_plot_model_fit(
     # plot_states(df_emp, df_sim, discrete_state_names, specs)
 
     states = {
-        "not_working": NOT_WORKING_CHOICES,
-        "working": WORK_CHOICES,
+        "not_working": NOT_WORKING,
+        "working": WORK,
         # "part_time": PART_TIME,
         # "full_time": FULL_TIME,
     }

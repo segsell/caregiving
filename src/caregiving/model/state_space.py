@@ -3,7 +3,6 @@ import jax.numpy as jnp
 import numpy as np
 
 from caregiving.model.shared import (  # BAD_HEALTH,; CARE_AND_NO_CARE,; FORMAL_CARE,; FORMAL_CARE_AND_NO_CARE,; NO_CARE,; is_formal_care,
-    AGE_50,
     ALL,
     ALL_CARE,
     ALL_NO_CARE,
@@ -135,11 +134,9 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
             if period == last_period:
                 return True
 
-            lagged_choice_proxy = 0  # if care_demand else 1
-
             state_proxy = {
                 "period": last_period,
-                "lagged_choice": lagged_choice_proxy,
+                "lagged_choice": 0,
                 "already_retired": 1,
                 "education": education,
                 "has_sister": has_sister,
@@ -163,7 +160,6 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "partner_state": partner_state,
                 "mother_health": mother_health,
                 "care_demand": care_demand,
-                # "care_supply": care_supply,
                 "job_offer": 0,
             }
             return state_proxy
@@ -180,26 +176,24 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "partner_state": partner_state,
                 "mother_health": PARENT_DEAD,
                 "care_demand": care_demand,
-                # "care_supply": 0,
                 "job_offer": 0,
             }
             return state_proxy
-        elif age > options["end_age_msm"]:
-            # No caregiving decision after 70
-            state_proxy = {
-                "period": period,
-                "lagged_choice": lagged_choice,
-                "already_retired": already_retired,
-                "education": education,
-                "has_sister": has_sister,
-                "health": health,
-                "partner_state": partner_state,
-                "mother_health": PARENT_DEAD,
-                "care_demand": care_demand,
-                # "care_supply": 0,
-                "job_offer": job_offer,
-            }
-            return state_proxy
+        # elif age > options["end_age_msm"]:
+        #     # No caregiving decision after 70
+        #     state_proxy = {
+        #         "period": period,
+        #         "lagged_choice": lagged_choice,
+        #         "already_retired": already_retired,
+        #         "education": education,
+        #         "has_sister": has_sister,
+        #         "health": health,
+        #         "partner_state": partner_state,
+        #         "mother_health": PARENT_DEAD,
+        #         "care_demand": care_demand,
+        #         "job_offer": job_offer,
+        #     }
+        #     return state_proxy
         elif mother_health == PARENT_DEAD:
             # If mother is dead, no care demand and supply
             state_proxy = {
