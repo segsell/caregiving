@@ -11,7 +11,7 @@ import pandas as pd
 
 from caregiving.model.shared import (
     FULL_TIME,
-    NOT_WORKING,
+    NOT_WORKING_CARE,
     PART_TIME,
     RETIREMENT,
     UNEMPLOYED,

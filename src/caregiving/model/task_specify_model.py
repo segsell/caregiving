@@ -103,10 +103,6 @@ def task_specify_model(
                     "transition": care_demand_transition,
                     "states": np.arange(2, dtype=int),
                 },
-                # "care_supply": {
-                #     "transition": exog_care_transition,
-                #     "states": np.arange(2, dtype=int),
-                # },
             },
             "continuous_states": {
                 "wealth": savings_grid,

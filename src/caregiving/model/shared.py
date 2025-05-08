@@ -128,12 +128,64 @@ INITIAL_CONDITIONS_AGE_HIGH = 60
 # WORK_NO_CARE = jnp.array([0, 4, 8])
 # WORK_AND_NO_WORK = ALL
 
-ALL = jnp.array([0, 1, 2, 3])
-RETIREMENT = jnp.array([0])
-UNEMPLOYED = jnp.array([1])
-PART_TIME = jnp.array([2])
-FULL_TIME = jnp.array([3])
-WORK_AND_NO_WORK = jnp.array([0, 1, 2, 3])
+# ALL = jnp.array([0, 1, 2, 3])
+# RETIREMENT = jnp.array([0])
+# UNEMPLOYED = jnp.array([1])
+# PART_TIME = jnp.array([2])
+# FULL_TIME = jnp.array([3])
+# WORK_AND_NO_WORK = jnp.array([0, 1, 2, 3])
+
+# ALL_NO_CARE = jnp.array([0, 1, 2, 3])
+# RETIREMENT_NO_CARE = jnp.array([0])
+# UNEMPLOYED_NO_CARE = jnp.array([1])
+# PART_TIME_NO_CARE = jnp.array([2])
+# FULL_TIME_NO_CARE = jnp.array([3])
+# WORK_AND_NO_WORK_NO_CARE = jnp.array([0, 1, 2, 3])
+
+# INFORMAL_CARE = jnp.array([0, 1, 2, 3])
+# NO_INFORMAL_CARE = jnp.array([0, 1, 2, 3])
+
+WORK_CHOICES = jnp.array([2, 3])  # part-time, full-time
+NOT_WORKING_CHOICES = jnp.array([0, 1])  # retirement, unemployed
+RETIREMENT_CHOICES = jnp.array([0])  # retirement
+UNEMPLOYED_CHOICES = jnp.array([1])  # unemployed
+PART_TIME_CHOICES = jnp.array([2])  # part-time
+FULL_TIME_CHOICES = jnp.array([3])  # full-time
+
+ALL = jnp.array([0, 1, 2, 3, 4, 5, 6, 7])
+RETIREMENT = jnp.array([0, 4])
+UNEMPLOYED = jnp.array([1, 5])
+PART_TIME = jnp.array([2, 6])
+FULL_TIME = jnp.array([3, 7])
+WORK_AND_NO_WORK = jnp.array([0, 1, 2, 3, 4, 5, 6, 7])
+
+ALL_CARE = jnp.array([4, 5, 6, 7])
+RETIREMENT_CARE = jnp.array([4])
+UNEMPLOYED_CARE = jnp.array([5])
+PART_TIME_CARE = jnp.array([6])
+FULL_TIME_CARE = jnp.array([7])
+WORK_AND_NO_WORK_CARE = jnp.array([4, 5, 6, 7])
+
+ALL_NO_CARE = jnp.array([0, 1, 2, 3])
+RETIREMENT_NO_CARE = jnp.array([0])
+UNEMPLOYED_NO_CARE = jnp.array([1])
+PART_TIME_NO_CARE = jnp.array([2])
+FULL_TIME_NO_CARE = jnp.array([3])
+WORK_AND_NO_WORK_NO_CARE = jnp.array([0, 1, 2, 3])
+
+INFORMAL_CARE = jnp.array([0, 1, 2, 3])
+NO_INFORMAL_CARE = jnp.array([0, 1, 2, 3])
+
+# ALL_NO_CARE = jnp.array([0, 2, 4, 6])
+# RETIREMENT_NO_CARE = jnp.array([0])
+# UNEMPLOYED_NO_CARE = jnp.array([2])
+# PART_TIME_NO_CARE = jnp.array([4])
+# FULL_TIME_NO_CARE = jnp.array([6])
+# WORK_AND_NO_WORK_NO_CARE = jnp.array([0, 2, 4, 6])
+
+# INFORMAL_CARE = jnp.array([1, 3, 5, 7])
+# NO_INFORMAL_CARE = jnp.array([0, 2, 4, 6])
+
 
 NOT_WORKING = jnp.concatenate([UNEMPLOYED, RETIREMENT])
 WORK = jnp.concatenate([PART_TIME, FULL_TIME])
@@ -141,8 +193,47 @@ WORK_AND_UNEMPLOYED = jnp.concatenate([UNEMPLOYED, PART_TIME, FULL_TIME])
 WORK_AND_RETIREMENT = jnp.concatenate([RETIREMENT, PART_TIME, FULL_TIME])
 PART_TIME_AND_NO_WORK = jnp.concatenate([PART_TIME, NOT_WORKING])
 FULL_TIME_AND_NO_WORK = jnp.concatenate([FULL_TIME, NOT_WORKING])
-
 NO_RETIREMENT = jnp.concatenate([UNEMPLOYED, PART_TIME, FULL_TIME])
+
+NOT_WORKING_CARE = jnp.concatenate([UNEMPLOYED_CARE, RETIREMENT_CARE])
+WORK_CARE = jnp.concatenate([PART_TIME_CARE, FULL_TIME_CARE])
+WORK_AND_UNEMPLOYED_CARE = jnp.concatenate(
+    [UNEMPLOYED_CARE, PART_TIME_CARE, FULL_TIME_CARE]
+)
+WORK_AND_RETIREMENT_CARE = jnp.concatenate(
+    [RETIREMENT_CARE, PART_TIME_CARE, FULL_TIME_CARE]
+)
+PART_TIME_AND_WORK_CARE = jnp.concatenate([PART_TIME_CARE, NOT_WORKING_CARE])
+FULL_TIME_AND_WORK_CARE = jnp.concatenate([FULL_TIME_CARE, NOT_WORKING_CARE])
+NO_RETIREMENT_CARE = jnp.concatenate([UNEMPLOYED_CARE, PART_TIME_CARE, FULL_TIME_CARE])
+
+NOT_WORKING_NO_CARE = jnp.concatenate([UNEMPLOYED_NO_CARE, RETIREMENT_NO_CARE])
+WORK_NO_CARE = jnp.concatenate([PART_TIME_NO_CARE, FULL_TIME_NO_CARE])
+WORK_AND_UNEMPLOYED_NO_CARE = jnp.concatenate(
+    [UNEMPLOYED_NO_CARE, PART_TIME_NO_CARE, FULL_TIME_NO_CARE]
+)
+WORK_AND_RETIREMENT_NO_CARE = jnp.concatenate(
+    [RETIREMENT_NO_CARE, PART_TIME_NO_CARE, FULL_TIME_NO_CARE]
+)
+PART_TIME_AND_NO_WORK_NO_CARE = jnp.concatenate(
+    [PART_TIME_NO_CARE, NOT_WORKING_NO_CARE]
+)
+FULL_TIME_AND_NO_WORK_NO_CARE = jnp.concatenate(
+    [FULL_TIME_NO_CARE, NOT_WORKING_NO_CARE]
+)
+NO_RETIREMENT_NO_CARE = jnp.concatenate(
+    [UNEMPLOYED_NO_CARE, PART_TIME_NO_CARE, FULL_TIME_NO_CARE]
+)
+
+
+# NOT_WORKING = jnp.concatenate([UNEMPLOYED, RETIREMENT])
+# WORK = jnp.concatenate([PART_TIME, FULL_TIME])
+# WORK_AND_UNEMPLOYED = jnp.concatenate([UNEMPLOYED, PART_TIME, FULL_TIME])
+# WORK_AND_RETIREMENT = jnp.concatenate([RETIREMENT, PART_TIME, FULL_TIME])
+# PART_TIME_AND_NO_WORK = jnp.concatenate([PART_TIME, NOT_WORKING])
+# FULL_TIME_AND_NO_WORK = jnp.concatenate([FULL_TIME, NOT_WORKING])
+
+# NO_RETIREMENT = jnp.concatenate([UNEMPLOYED, PART_TIME, FULL_TIME])
 
 # ==============================================================================
 # Caregiving Choices
@@ -228,13 +319,12 @@ def is_child_age_7_to_9(age_youngest_child):
 # ==============================================================================
 
 
-# def is_no_care(lagged_choice):
-#     return jnp.any(lagged_choice == NO_CARE)
+def is_no_informal_care(choice):
+    return jnp.any(choice == NO_INFORMAL_CARE)
 
 
-# def is_informal_care(lagged_choice):
-#     # intensive only here
-#     return jnp.any(lagged_choice == INFORMAL_CARE)
+def is_informal_care(choice):
+    return jnp.any(choice == INFORMAL_CARE)
 
 
 # def is_pure_informal_care(lagged_choice):

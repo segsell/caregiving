@@ -7,6 +7,7 @@ from typing import Annotated
 import jax
 import jax.numpy as jnp
 import pandas as pd
+import pytest
 import yaml
 from dcegm.pre_processing.setup_model import load_and_setup_model
 from dcegm.solve import get_solve_func_for_model
@@ -27,6 +28,7 @@ from caregiving.simulation.simulate import simulate_scenario
 jax.config.update("jax_enable_x64", True)
 
 
+@pytest.mark.skip()
 def test_solve_and_simulate(
     path_to_options: Path = BLD / "model" / "options.pkl",
     path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",

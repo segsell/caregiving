@@ -15,7 +15,7 @@ from caregiving.data_management.soep.variables import (
     generate_working_hours,
     sum_experience_variables,
 )
-from caregiving.model.shared import N_MONTHS, N_WEEKS_IN_YEAR, WORK
+from caregiving.model.shared import N_MONTHS, N_WEEKS_IN_YEAR, WORK_CHOICES
 from caregiving.specs.derive_specs import read_and_derive_specs
 
 
@@ -50,7 +50,7 @@ def task_create_wage_sample(
     print(str(len(df)) + " observations after dropping invalid wage values.")
 
     # Drop retirees
-    df = df[df["choice"].isin(WORK.tolist())]
+    df = df[df["choice"].isin(WORK_CHOICES.tolist())]
     print(str(len(df)) + " observations after dropping non-working individuals.")
 
     # Hourly wage

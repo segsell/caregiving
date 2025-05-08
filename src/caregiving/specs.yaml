@@ -15,9 +15,9 @@ start_age_parents: 50
 start_age_msm: 40
 end_age_msm: 70
 end_age_children_in_household: 60
-# mother_age_difference: 26
 
 choice_labels: ["Retired", "Unemployed", "Part-time", "Full-time"]
+caregiving_labels: ["Formal Care", "Informal Care"]
 education_labels: ["Low Education", "High Education"]
 health_labels: ["Bad Health", "Good Health", "Death"]
 health_labels_three: ["Bad Health", "Medium Health", "Good Health", "Death"]
