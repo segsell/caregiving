@@ -10,6 +10,7 @@ import pandas as pd
 
 from caregiving.config import BLD
 from caregiving.model.shared import (
+    DEAD,
     FULL_TIME,
     FULL_TIME_CHOICES,
     PART_TIME,
@@ -269,6 +270,9 @@ def plot_caregiver_shares_by_age(
     age_min, age_max = specs["start_age"], specs["end_age_msm"]
     ages = np.arange(age_min, age_max + 1)
 
+    # Keep only alive individuals in the simulated data
+    df_sim = df_sim.loc[df_sim["health"] != DEAD].copy()
+
     sex = SEX  # scalar {0,1}; keep behaviour consistent with earlier functions
     if "sex" in df_emp:
         df_emp = df_emp.loc[df_emp["sex"] == sex].copy()
@@ -301,7 +305,59 @@ def plot_caregiver_shares_by_age(
     ax.set_xlabel("Age")
     ax.set_ylabel("Share of informal caregivers")
     ax.set_xlim(age_min, age_max)
-    ax.set_ylim(0, 0.2)
+    ax.set_ylim(0, 0.15)
+    ax.legend()
+
+    plt.tight_layout()
+    if path_to_save_plot:
+        plt.savefig(path_to_save_plot, dpi=300, transparent=False)
+
+
+def plot_simulated_care_demand_by_age(df_sim, specs, path_to_save_plot=None):
+    """
+    Plot the yearly share of individuals with care_demand == 1 in the simulated data.
+
+    Parameters
+    ----------
+    df_sim : pandas.DataFrame
+        Simulated micro data containing at least the columns
+        'age', 'care_demand', and (optionally) 'sex'.
+    specs : dict
+        Should include:
+            'start_age'   : int - lower bound of age range (inclusive)
+            'end_age_msm' : int - upper bound of age range (inclusive)
+    path_to_save_plot : str | pathlib.Path | None, optional
+        If provided, the figure is written to this file (PNG, 300 dpi).
+    """
+
+    # ---- 1. Setup ---------------------------------------------------------
+    age_min, age_max = specs["start_age"], specs["end_age_msm"]
+    age_max = 100
+    ages = np.arange(age_min, age_max + 1)
+
+    # Keep only alive individuals in the simulated data
+    df_sim = df_sim.loc[df_sim["health"] != DEAD].copy()
+
+    # Keep only the model-relevant sex if that convention is used elsewhere
+    if "sex" in df_sim.columns:
+        df_sim = df_sim.loc[df_sim["sex"] == SEX].copy()
+
+    # ---- 2. Compute share of care demand per age --------------------------
+    share_care = (
+        df_sim.groupby("age")["care_demand"]
+        .mean()  # mean of {0,1} → share
+        .reindex(ages)  # keep full age range, NaN if missing
+    )
+
+    # ---- 3. Plot ----------------------------------------------------------
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.plot(ages, share_care, label="Simulated", color="blue")
+
+    ax.set_xlabel("Age")
+    ax.set_ylabel("Share with care demand")
+    ax.set_xlim(age_min, age_max)
+    ax.set_ylim(0, 0.15)
+    ax.set_title("Prevalence of Care Demand by Age (Simulated)")
     ax.legend()
 
     plt.tight_layout()

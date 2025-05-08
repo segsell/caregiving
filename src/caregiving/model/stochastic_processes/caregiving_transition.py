@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 import numpy as np
 
-from caregiving.model.shared import MOTHER
+from caregiving.model.shared import MOTHER, PARENT_DEAD
 
 
 def health_transition_good_medium_bad(
@@ -26,7 +26,11 @@ def care_demand_transition(mother_health, period, has_sister, education, options
     prob_other_care_supply = exog_care_supply_mat[period, has_sister, education]
 
     # no_care_demand = prob_other_care * limitations_with_adl[0]
-    care_demand = (1 - prob_other_care_supply) * limitations_with_adl[1]
+    care_demand = (
+        (1 - prob_other_care_supply)
+        * limitations_with_adl[1]
+        * (mother_health != PARENT_DEAD)
+    )
 
     return jnp.array([1 - care_demand, care_demand])
 

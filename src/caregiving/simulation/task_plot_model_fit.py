@@ -15,7 +15,14 @@ from caregiving.estimation.estimation_setup import (
     load_and_prep_data,
     load_and_setup_full_model_for_solution,
 )
-from caregiving.model.shared import INFORMAL_CARE, NOT_WORKING, SEX, WORK, WORK_CHOICES
+from caregiving.model.shared import (
+    DEAD,
+    INFORMAL_CARE,
+    NOT_WORKING,
+    SEX,
+    WORK,
+    WORK_CHOICES,
+)
 from caregiving.simulation.plot_model_fit import (
     plot_average_savings_decision,
     plot_average_wealth,
@@ -24,6 +31,7 @@ from caregiving.simulation.plot_model_fit import (
     plot_choice_shares_by_education,
     plot_choice_shares_overall,
     plot_choice_shares_single,
+    plot_simulated_care_demand_by_age,
     plot_states,
     plot_transitions_by_age,
     plot_transitions_by_age_bins,
@@ -58,6 +66,10 @@ def task_plot_model_fit(
     / "plots"
     / "model_fit"
     / "share_caregivers_by_age.png",
+    path_to_save_care_demand_by_age_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "model_fit"
+    / "simulated_care_demand_by_age.png",
     path_to_save_work_transition_age_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "model_fit"
@@ -118,6 +130,32 @@ def task_plot_model_fit(
         choice_set=INFORMAL_CARE,
         path_to_save_plot=path_to_save_caregiver_share_by_age_plot,
     )
+    plot_simulated_care_demand_by_age(
+        df_sim,
+        specs,
+        path_to_save_plot=path_to_save_care_demand_by_age_plot,
+    )
+
+    age_focus = 75
+
+    # 1. Agents alive / observed at the focus age --------------------------
+    ids_at_age = df_sim.loc[
+        (df_sim["age"] == age_focus) & (df_sim["health"] != DEAD), "agent"
+    ].unique()
+
+    # 2. Keep their entire life histories ----------------------------------
+    sub = df_sim.loc[df_sim["agent"].isin(ids_at_age)].copy()
+
+    # 3. Flag caregiver years via choice ∈ INFORMAL_CARE -------------------
+    care_codes = np.asarray(INFORMAL_CARE).tolist()
+    sub["is_care"] = sub["choice"].isin(care_codes)
+
+    # 4. Person-level aggregates -------------------------------------------
+    agg = sub.groupby("agent")["is_care"].agg(
+        care_sum="sum", care_ever="any"  # years with is_care == True
+    )  # at least one caregiver year
+
+    _mean_care_years = agg.loc[agg["care_ever"], "care_sum"].mean()
 
     # plot_choice_shares(df_emp, df_sim, specs)
     # discrete_state_names = model_full["model_structure"]["discrete_states_names"]
