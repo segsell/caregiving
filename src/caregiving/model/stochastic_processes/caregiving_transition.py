@@ -23,10 +23,10 @@ def care_demand_transition(mother_health, period, has_sister, education, options
     limitations_with_adl = adl_mat[MOTHER, mother_age, mother_health, :]
 
     exog_care_supply_mat = options["exog_care_supply"]
-    prob_other_care = exog_care_supply_mat[period, has_sister, education]
+    prob_other_care_supply = exog_care_supply_mat[period, has_sister, education]
 
     # no_care_demand = prob_other_care * limitations_with_adl[0]
-    care_demand = (1 - prob_other_care) * limitations_with_adl[1]
+    care_demand = (1 - prob_other_care_supply) * limitations_with_adl[1]
 
     return jnp.array([1 - care_demand, care_demand])
 
