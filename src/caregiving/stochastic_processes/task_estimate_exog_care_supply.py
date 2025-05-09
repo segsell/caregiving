@@ -14,27 +14,28 @@ from caregiving.config import BLD, JET_COLOR_MAP, SRC
 from caregiving.specs.derive_specs import read_and_derive_specs
 from caregiving.utils import table
 
-SOEP_IS_FATHER = 1
-SOEP_IS_MOTHER = 2
-
 
 def task_estimate_exogenous_informal_care_supply(
+    path_to_specs: Path = SRC / "specs.yaml",
     path_to_sample: Path = BLD / "data" / "exog_care_estimation_sample.pkl",
     path_to_save: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
     / "exogenous_care_supply_transition_matrix.csv",
 ):
+    """Estimate probability of receiving informal care from other family members."""
+
+    specs = read_and_derive_specs(path_to_specs)
 
     df = pd.read_pickle(path_to_sample)
     df = df[df["female"] == 1].copy()
 
     # Create subsamples for mother and father
-    # est_sample = df[df["female"] == 1]
-    est_sample_mothers = df[df["ip03"] == SOEP_IS_MOTHER]
+    # est_sample_mothers = df[df["ip03"] == SOEP_IS_MOTHER]
+    est_sample_parents = df[df["parent_care_demand"] == 1]
 
     # First, drop any rows with missing values in the relevant variables
-    reg_data = est_sample_mothers[
+    reg_data = est_sample_parents[
         ["other_informal_care", "age", "has_sister", "education"]
     ].dropna()
     reg_data["age_squared"] = reg_data["age"] ** 2
@@ -47,7 +48,7 @@ def task_estimate_exogenous_informal_care_supply(
     print(model.summary())
 
     # Create prediction grid
-    ages = np.arange(30, 70 + 1)
+    ages = np.arange(specs["start_age"], specs["end_age_caregiving"] + 1)
     has_sister_vals = [0, 1]
     education_vals = [0, 1]
 

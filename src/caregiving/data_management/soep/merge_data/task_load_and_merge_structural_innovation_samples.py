@@ -78,6 +78,24 @@ def task_load_and_merge_exog_care_sample(
             "ip08a3",  # priv. Pflegedienst
             "ip08a5",  # sonst. regelm. Pflegehilfe
             "ip10",  # Informelle Pflege weitere Person
+            "ip02_2",  # Informelle Pflege Person 2
+            "ip03_2",  # Informelle Pflege Geschlecht 2
+            "ip05_2",  # Informelle Pflege Wohnort 2
+            "ip06_2",  # Informelle Pflege persönlich 2
+            "ip08a1_2",  # Angehörige 2
+            "ip08a4_2",  # Freunde/Bekannte/Nachbarn 2
+            "ip02_3",  # Informelle Pflege Person 3
+            "ip03_3",  # Informelle Pflege Geschlecht 3
+            "ip05_3",  # Informelle Pflege Wohnort 3
+            "ip06_3",  # Informelle Pflege persönlich 3
+            "ip08a1_3",  # Angehörige 3
+            "ip08a4_3",  # Freunde/Bekannte/Nachbarn 3
+            "ip02_4",  # Informelle Pflege Person 4
+            "ip03_4",  # Informelle Pflege Geschlecht 4
+            "ip05_4",  # Informelle Pflege Wohnort 4
+            "ip06_4",  # Informelle Pflege persönlich 4
+            "ip08a1_4",  # Angehörige 4
+            "ip08a4_4",  # Freunde/Bekannte/Nachbarn 4
         ],
         convert_categoricals=False,
     )

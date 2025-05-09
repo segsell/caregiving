@@ -90,7 +90,7 @@ def task_plot_model_fit(
 
     df_emp = pd.read_csv(path_to_empirical_data, index_col=[0])
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
-    df_sim["sex"] = 1
+    df_sim["sex"] = SEX
 
     df_emp_prep, _states_dict = load_and_prep_data(
         data_emp=df_emp,
@@ -136,11 +136,11 @@ def task_plot_model_fit(
         path_to_save_plot=path_to_save_care_demand_by_age_plot,
     )
 
-    age_focus = 75
+    AGE_FOCUS = 75
 
     # 1. Agents alive / observed at the focus age --------------------------
     ids_at_age = df_sim.loc[
-        (df_sim["age"] == age_focus) & (df_sim["health"] != DEAD), "agent"
+        (df_sim["age"] == AGE_FOCUS) & (df_sim["health"] != DEAD), "agent"
     ].unique()
 
     # 2. Keep their entire life histories ----------------------------------

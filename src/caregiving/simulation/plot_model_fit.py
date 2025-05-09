@@ -11,6 +11,7 @@ import pandas as pd
 from caregiving.config import BLD
 from caregiving.model.shared import (
     DEAD,
+    FILL_VALUE_MISSING,
     FULL_TIME,
     FULL_TIME_CHOICES,
     PART_TIME,
@@ -81,7 +82,7 @@ def plot_choice_shares_by_education(data_emp, data_sim, specs, path_to_save_plot
         3: FULL_TIME_CHOICES,
     }
 
-    data_sim = data_sim.copy()
+    data_sim = data_sim.loc[data_sim["health"] != DEAD].copy()
     data_emp = data_emp.copy()
 
     for agg_code, raw_codes in choice_groups_sim.items():
@@ -181,7 +182,7 @@ def plot_choice_shares_overall(data_emp, data_sim, specs, path_to_save_plot=None
         3: FULL_TIME_CHOICES,
     }
 
-    data_sim = data_sim.copy()
+    data_sim = data_sim.loc[data_sim["health"] != DEAD].copy()
     data_emp = data_emp.copy()
 
     for agg_code, raw_codes in choice_groups_sim.items():
@@ -439,7 +440,7 @@ def plot_transitions_by_age(
     """
     # add age
     emp = data_emp.copy()
-    sim = data_sim.copy()
+    sim = data_sim.loc[data_sim["health"] != DEAD].copy()
     # emp["age"] = emp["period"] + specs["start_age"]
     # sim["age"] = sim["period"] + specs["start_age"]
 
@@ -573,7 +574,8 @@ def plot_transitions_by_age_bins(
     """
     # copy & compute age
     emp = data_emp.copy()
-    sim = data_sim.copy()
+    sim = data_sim.loc[data_sim["health"] != DEAD].copy()
+
     emp["age"] = emp["period"] + specs["start_age"]
     sim["age"] = sim["period"] + specs["start_age"]
 

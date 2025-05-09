@@ -1,9 +1,11 @@
 """Shared model specifications and auxiliary functions."""
 
 import jax.numpy as jnp
+import numpy as np
 
+FILL_VALUE_MISSING = np.nan
 MISSING_VALUE = -99
-BASE_YEAR = 2015
+BASE_YEAR = 2010  # 2015
 
 N_PERIODS_SIM = 30
 
