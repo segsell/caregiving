@@ -19,6 +19,7 @@ from caregiving.model.shared import (
     DEAD,
     INFORMAL_CARE,
     NOT_WORKING,
+    PARENT_DEAD,
     SEX,
     WORK,
     WORK_CHOICES,
@@ -216,6 +217,25 @@ def task_plot_model_fit(
         one_way=True,
         path_to_save_plot=path_to_save_work_transition_age_bin_plot,
     )
+
+    # =================================================================================
+
+    df_sim["formal_care"] = np.nan
+
+    alive_and_demand = (
+        (df_sim["health"] != DEAD)
+        & (df_sim["mother_health"] != PARENT_DEAD)
+        & (df_sim["care_demand"] == 1)
+    )
+
+    df_sim.loc[
+        alive_and_demand & (~df_sim["choice"].isin(INFORMAL_CARE)), "formal_care"
+    ] = 1
+    df_sim.loc[
+        alive_and_demand & (df_sim["choice"].isin(INFORMAL_CARE)), "formal_care"
+    ] = 0
+
+    # =================================================================================
 
     data_emp = df_emp.copy()
     mask = (
