@@ -368,23 +368,26 @@ def utility_of_caregiving(period, choice, education, params, options):
     unemployed = is_unemployed(choice)
     working_part_time = is_part_time(choice)
     working_full_time = is_full_time(choice)
-    care = is_informal_care(choice)
+    informal_care = is_informal_care(choice)
 
-    util_unemployed_and_care_women = params["util_unemployed_and_care_women"] * care
-    util_pt_work_and_care_women = params["util_pt_work_and_care_women"] * care
-    util_ft_work_and_care_women = params["util_ft_work_and_care_women"] * care
-    util_no_informal_care = params["util_formal_care_women"] * (1 - care)
+    util_unemployed_and_care_women = params["util_unemployed_and_care_women"]
+    util_pt_work_and_care_women = params["util_pt_work_and_care_women"]
+    util_ft_work_and_care_women = params["util_ft_work_and_care_women"]
+    # util_no_informal_care = params["util_formal_care_women"]
 
-    factor_women = (
-        util_unemployed_and_care_women * unemployed
-        + util_pt_work_and_care_women * working_part_time
-        + util_ft_work_and_care_women * working_full_time
-        + util_no_informal_care
+    exp_factor = (
+        util_unemployed_and_care_women * unemployed * informal_care
+        + util_pt_work_and_care_women * working_part_time * informal_care
+        + util_ft_work_and_care_women * working_full_time * informal_care
+        # + util_no_informal_care * (1 - informal_care)
     )
+    util_educ = params["util_informal_care_high_women"] * education + params[
+        "util_informal_care_low_women"
+    ] * (1 - education)
 
     # compute zeta
-    # utility = jnp.exp(-exp_factor_women)
-    utility = factor_women
+    utility = informal_care * util_educ * jnp.exp(exp_factor)
+    # utility = exp_factor
 
     return utility
 

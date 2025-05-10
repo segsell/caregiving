@@ -112,6 +112,7 @@ def task_create_structural_estimation_sample(
 
     # Keep relevant columns (i.e. state variables) and set their minimal datatype
     type_dict = {
+        "syear": "int16",
         "gebjahr": "int16",
         "age": "int8",
         "period": "int8",
@@ -137,6 +138,7 @@ def task_create_structural_estimation_sample(
         "mother_alive": "float32",
         "father_alive": "float32",
     }
+    df = df.reset_index(level="syear")
     df = df[list(type_dict.keys())]
     df = df.astype(type_dict)
 

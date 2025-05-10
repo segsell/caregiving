@@ -1,13 +1,20 @@
 """Shared model specifications and auxiliary functions."""
 
 import jax.numpy as jnp
-import numpy as np
 
-FILL_VALUE_MISSING = np.nan
+FILL_VALUE = 0
 MISSING_VALUE = -99
 BASE_YEAR = 2010  # 2015
 
-N_PERIODS_SIM = 30
+PARENT_WEIGHTS_SHARE = {
+    "40_44": 0.303030,
+    "45_49": 0.303030,
+    "50_54": 0.467470,
+    "55_59": 0.467470,
+    "60_64": 0.336100,
+    "65_69": 0.336100,
+    "70_74": 0.021538,
+}
 
 MALE = 1
 FEMALE = 2

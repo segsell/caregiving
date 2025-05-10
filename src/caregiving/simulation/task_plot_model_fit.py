@@ -29,7 +29,9 @@ from caregiving.simulation.plot_model_fit import (
     plot_caregiver_shares_by_age,
     plot_choice_shares,
     plot_choice_shares_by_education,
+    plot_choice_shares_by_education_age_bins,
     plot_choice_shares_overall,
+    plot_choice_shares_overall_age_bins,
     plot_choice_shares_single,
     plot_simulated_care_demand_by_age,
     plot_states,
@@ -58,10 +60,20 @@ def task_plot_model_fit(
     / "plots"
     / "model_fit"
     / "labor_shares_by_educ_and_age.png",
-    path_to_save_labor_shares_caregivers_plot: Annotated[Path, Product] = BLD
+    path_to_save_labor_shares_caregivers_by_age: Annotated[Path, Product] = BLD
     / "plots"
     / "model_fit"
     / "labor_shares_caregivers_by_age.png",
+    path_to_save_labor_shares_caregivers_by_age_bin: Annotated[Path, Product] = BLD
+    / "plots"
+    / "model_fit"
+    / "labor_shares_caregivers_by_age_bin.png",
+    path_to_save_labor_shares_caregivers_by_educ_and_age_plot: Annotated[
+        Path, Product
+    ] = BLD
+    / "plots"
+    / "model_fit"
+    / "labor_shares_caregivers_by_educ_and_age.png",
     path_to_save_caregiver_share_by_age_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "model_fit"
@@ -120,7 +132,19 @@ def task_plot_model_fit(
         df_emp_caregivers,
         df_sim_caregivers,
         specs,
-        path_to_save_plot=path_to_save_labor_shares_caregivers_plot,
+        path_to_save_plot=path_to_save_labor_shares_caregivers_by_age,
+    )
+    plot_choice_shares_overall_age_bins(
+        df_emp_caregivers,
+        df_sim_caregivers,
+        specs,
+        path_to_save_plot=path_to_save_labor_shares_caregivers_by_age_bin,
+    )
+    plot_choice_shares_by_education(
+        df_emp_caregivers,
+        df_sim_caregivers,
+        specs,
+        path_to_save_plot=path_to_save_labor_shares_caregivers_by_educ_and_age_plot,
     )
 
     plot_caregiver_shares_by_age(
