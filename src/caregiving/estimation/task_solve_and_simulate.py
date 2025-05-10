@@ -54,7 +54,6 @@ def task_solve_and_simulate_start_params(
     )
 
     # 1) Solve
-
     solution_dict = {}
     (
         solution_dict["value"],
@@ -64,7 +63,6 @@ def task_solve_and_simulate_start_params(
     pickle.dump(solution_dict, path_to_save_solution.open("wb"))
 
     # 2) Simulate
-
     initial_states = pickle.load(path_to_discrete_states.open("rb"))
     wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
 

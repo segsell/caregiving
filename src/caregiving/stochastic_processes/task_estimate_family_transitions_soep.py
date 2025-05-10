@@ -275,3 +275,4 @@ def plot_age_of_youngest_child(
     ax.legend()
     plt.tight_layout()
     plt.show()
+    plt.close(fig)

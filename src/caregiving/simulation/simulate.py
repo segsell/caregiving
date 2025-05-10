@@ -1,10 +1,18 @@
 """Function that simulates the model for a given scenario."""
 
+import numpy as np
 import pandas as pd
 from dcegm.simulation.sim_utils import create_simulation_df
 from dcegm.simulation.simulate import simulate_all_periods
 
-from caregiving.model.shared import FULL_TIME, PART_TIME, SEX
+from caregiving.model.shared import (
+    DEAD,
+    FULL_TIME,
+    INFORMAL_CARE,
+    PARENT_DEAD,
+    PART_TIME,
+    SEX,
+)
 from caregiving.model.state_space import construct_experience_years
 from caregiving.utils import table
 
@@ -83,5 +91,22 @@ def simulate_scenario(
     # periodic savings and savings rate
     df["savings_dec"] = df["total_income"] - df["consumption"]
     df["savings_rate"] = df["savings_dec"] / df["total_income"]
+
+    # # Caregiving
+    # df["informal_care"] = np.nan
+    # df["formal_care"] = np.nan
+
+    # alive_and_demand = (
+    #     (df["health"] != DEAD)
+    #     & (df["mother_health"] != PARENT_DEAD)
+    #     & (df["care_demand"] == 1)
+    # )
+
+    # df.loc[alive_and_demand & (df["choice"].isin(INFORMAL_CARE)), "informal_care"] = 1
+    # df.loc[alive_and_demand & (~df["choice"].isin(INFORMAL_CARE)),
+    # "informal_care"] = 0
+
+    # df.loc[alive_and_demand & (~df["choice"].isin(INFORMAL_CARE)), "formal_care"] = 1
+    # df.loc[alive_and_demand & (df["choice"].isin(INFORMAL_CARE)), "formal_care"] = 0
 
     return df

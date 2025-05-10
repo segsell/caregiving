@@ -66,6 +66,7 @@ def task_estimate_wage_parameters(
     coefficients = regressors + [param + "_ser" for param in regressors]
 
     wage_data = pd.read_csv(path_to_data, index_col=0)
+
     # Modify
     wage_data["ln_wage"] = np.log(wage_data["hourly_wage"])
     wage_data["ln_exp"] = np.log(wage_data["experience"] + 1)
@@ -132,6 +133,7 @@ def task_estimate_wage_parameters(
         fig.savefig(
             BLD / "plots" / "stochastic_processes" / f"wages_{sex_label.lower()}.png"
         )
+        plt.close(fig)
 
     # Save results
     wage_parameters.to_csv(path_to_save_wage_params)
