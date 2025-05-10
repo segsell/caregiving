@@ -44,6 +44,7 @@ def task_plot_utility(
                 # sex=1,
                 health=1,
                 care_demand=0,
+                # care_supply=0,
                 education=education,
                 period=period,
                 choice=choice,

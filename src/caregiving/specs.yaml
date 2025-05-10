@@ -53,6 +53,9 @@ unemployment_wealth_thresh: 10_500
 monthly_child_benefits: 184
 monthly_min_wage: 1360
 
+informal_care_cash_benefits: 444 # 0.4239 * 316 + 0.2793 * 545 + 728 *0.1405 + 901 * 0.0617
+formal_care_costs: 600
+
 # Retirement parameters
 early_retirement_penalty: 0.036
 late_retirement_bonus: 0.06

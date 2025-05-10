@@ -45,8 +45,8 @@ util_informal_care_high_women: 1.0
 util_joint_informal_care_women: 0.0
 
 util_unemployed_and_care_women: -0.2
+util_pt_work_and_care_women: -0.8
 util_ft_work_and_care_women: -1.3
-util_pt_work_and_care_women: -1.3
 util_formal_care_women: -2
 util_formal_care_low_women: -2
 util_formal_care_high_women: -1.3

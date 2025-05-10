@@ -180,7 +180,18 @@ def task_plot_model_fit(
         care_sum="sum", care_ever="any"  # years with is_care == True
     )  # at least one caregiver year
 
-    _mean_care_years = agg.loc[agg["care_ever"], "care_sum"].mean()
+    mean_care_years = agg.loc[agg["care_ever"], "care_sum"].mean()
+    print(f"Avg. number of informal caregiving years: {mean_care_years}")
+
+    df_sim["informal_care"] = df_sim["choice"].isin(np.asarray(INFORMAL_CARE))
+    share_caregivers = df_sim.loc[df_sim["age"] < AGE_FOCUS, "informal_care"].mean()
+    print(f"Share of informal caregivers (unconditional): {share_caregivers}")
+
+    share_informal_care = df_sim.loc[df_sim["informal_care"] == 1, "care_demand"].mean()
+    _share_informal_care = df_sim.loc[
+        df_sim["care_demand"] == 1, "informal_care"
+    ].mean()
+    print(f"Share of informal caregivers (cond. on care demand): {share_informal_care}")
 
     # plot_choice_shares(df_emp, df_sim, specs)
     # discrete_state_names = model_full["model_structure"]["discrete_states_names"]
@@ -220,20 +231,22 @@ def task_plot_model_fit(
 
     # =================================================================================
 
-    df_sim["formal_care"] = np.nan
+    # df_sim["formal_care"] = np.nan
 
-    alive_and_demand = (
-        (df_sim["health"] != DEAD)
-        & (df_sim["mother_health"] != PARENT_DEAD)
-        & (df_sim["care_demand"] == 1)
-    )
+    # alive_and_demand = (
+    #     (df_sim["health"] != DEAD)
+    #     & (df_sim["mother_health"] != PARENT_DEAD)
+    #     & (df_sim["care_demand"] == 1)
+    # )
 
-    df_sim.loc[
-        alive_and_demand & (~df_sim["choice"].isin(INFORMAL_CARE)), "formal_care"
-    ] = 1
-    df_sim.loc[
-        alive_and_demand & (df_sim["choice"].isin(INFORMAL_CARE)), "formal_care"
-    ] = 0
+    # df_sim.loc[
+    #     alive_and_demand & (~df_sim["choice"].isin(INFORMAL_CARE)), "formal_care"
+    # ] = 1
+    # df_sim.loc[
+    #     alive_and_demand & (df_sim["choice"].isin(INFORMAL_CARE)), "formal_care"
+    # ] = 0
+
+    # print(f"Share of formal_care: {df_sim['formal_care'].mean()}")
 
     # =================================================================================
 

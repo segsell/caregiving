@@ -8,8 +8,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 from pytask import Product
 
 from caregiving.config import BLD, JET_COLOR_MAP, SRC
@@ -22,6 +20,8 @@ from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.simulation.task_generate_initial_conditions import (
     draw_start_wealth_dist,
 )
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 
 def task_plot_initial_wealth(
@@ -66,9 +66,10 @@ def task_plot_initial_wealth(
     states_dict = {
         name: start_period_data[name].values
         for name in model["model_structure"]["discrete_states_names"]
-        if name not in ("mother_health", "care_demand")
+        if name not in ("mother_health", "care_demand", "care_supply")
     }
 
+    states_dict["care_demand"] = np.zeros_like(start_period_data["wealth"])
     states_dict["wealth"] = start_period_data["wealth"].values / specs["wealth_unit"]
     states_dict["experience"] = start_period_data["experience"].values
     start_period_data.loc[:, "adjusted_wealth"] = adjust_observed_wealth(
