@@ -5,7 +5,7 @@
 quadrature_points_stochastic: 5
 n_experience_grid_points: 11
 # Fixed structural parameters, we will not estimate
-interest_rate: 0.03
+interest_rate: 0.04 # 0.03
 discount_factor: 0.97
 
 # economic model parameters

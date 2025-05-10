@@ -83,14 +83,14 @@ def task_create_soep_moments(
         age_range=age_range,
         label="high_education",
     )
-    # B2) Moments by age bin conditional on caregiving
-    moments, variances = compute_share_informal_care_by_age(
-        df,
-        moments=moments,
-        variances=variances,
-        age_range=age_range,
-    )
 
+    # B2) Moments by age bin conditional on caregiving
+    # moments, variances = compute_share_informal_care_by_age(
+    #     df,
+    #     moments=moments,
+    #     variances=variances,
+    #     age_range=age_range,
+    # )
     moments, variances = compute_share_informal_care_by_age_bin(
         df_year,
         moments=moments,
@@ -103,6 +103,12 @@ def task_create_soep_moments(
     # share_informal_care_55_60,0.06193384
     # share_informal_care_60_65,0.05304824
     # share_informal_care_65_70,0.03079298
+    moments["share_informal_care_high_educ"] = df.loc[
+        df["any_care"] == 1, "education"
+    ].mean()
+    variances["share_informal_care_high_educ"] = df.loc[
+        df["any_care"] == 1, "education"
+    ].var(ddof=DEGREES_OF_FREEDOM)
 
     moments, variances = compute_labor_shares_by_age_bin(
         df_caregivers,
@@ -494,9 +500,9 @@ def compute_labor_shares_by_age_bin(
     part_time_vars = part_time_vars.reindex(bin_labels, fill_value=np.nan)
     full_time_vars = full_time_vars.reindex(bin_labels, fill_value=np.nan)
 
-    for bin in bin_labels:
-        moments[f"share_retired{label}_age_bin_{bin}"] = retired_shares.loc[bin]
-        variances[f"share_retired{label}_age_bin_{bin}"] = retired_vars.loc[bin]
+    # for bin in bin_labels:
+    #     moments[f"share_retired{label}_age_bin_{bin}"] = retired_shares.loc[bin]
+    #     variances[f"share_retired{label}_age_bin_{bin}"] = retired_vars.loc[bin]
 
     for bin in bin_labels:
         moments[f"share_unemployed{label}_age_bin_{bin}"] = unemployed_shares.loc[bin]

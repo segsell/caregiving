@@ -187,12 +187,18 @@ def task_plot_model_fit(
     share_caregivers = df_sim.loc[df_sim["age"] < AGE_FOCUS, "informal_care"].mean()
     print(f"Share of informal caregivers (unconditional): {share_caregivers}")
 
-    share_informal_care = df_sim.loc[df_sim["informal_care"] == 1, "care_demand"].mean()
-    _share_informal_care = df_sim.loc[
-        df_sim["care_demand"] == 1, "informal_care"
-    ].mean()
+    # _share_informal_care = df_sim.loc[
+    #     df_sim["informal_care"] == 1, "care_demand"
+    # ].mean()
+    share_informal_care = df_sim.loc[df_sim["care_demand"] == 1, "informal_care"].mean()
     print(f"Share of informal caregivers (cond. on care demand): {share_informal_care}")
 
+    share_caregivers_high_edu = df_sim.loc[
+        (df_sim["informal_care"] == 1), "education"
+    ].mean()
+    print(
+        f"Share of high education (cond. on informal care): {share_caregivers_high_edu}"
+    )
     # plot_choice_shares(df_emp, df_sim, specs)
     # discrete_state_names = model_full["model_structure"]["discrete_states_names"]
     # plot_states(df_emp, df_sim, discrete_state_names, specs)
@@ -247,7 +253,6 @@ def task_plot_model_fit(
     # ] = 0
 
     # print(f"Share of formal_care: {df_sim['formal_care'].mean()}")
-
     # =================================================================================
 
     data_emp = df_emp.copy()

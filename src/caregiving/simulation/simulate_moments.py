@@ -37,6 +37,10 @@ def simulate_moments_pandas(
     end_age = model_params["end_age_msm"]
 
     age_range = range(start_age, end_age + 1)
+    age_bins = (
+        list(range(40, 75, 5)),  # [40, 45, … , 70]
+        [f"{s}_{s+4}" for s in range(40, 70, 5)],  # "40_44", …a
+    )
 
     df_low = df[df["education"] == 0]
     df_high = df[df["education"] == 1]
@@ -55,11 +59,15 @@ def simulate_moments_pandas(
         df_high, moments, age_range=age_range, label="high_education"
     )
 
-    moments = create_choice_shares_by_age_pandas(
-        df, moments, choice_set=INFORMAL_CARE, age_range=age_range
+    moments = create_choice_shares_by_age_bin_pandas(
+        df, moments, choice_set=INFORMAL_CARE, age_bins=age_bins
     )
+    moments["share_informal_care_high_educ"] = df.loc[
+        df["choice"].isin(np.atleast_1d(INFORMAL_CARE)), "education"
+    ].mean()
+
     moments = create_labor_share_moments_by_age_bin(
-        df_caregivers, moments, label="caregivers"
+        df_caregivers, moments, label="caregivers", age_bins=age_bins
     )
 
     # states = {
@@ -273,6 +281,74 @@ def create_choice_shares_by_age_pandas(
     return moments
 
 
+def create_choice_shares_by_age_bin_pandas(
+    df: pd.DataFrame,
+    moments: dict,
+    choice_set: jnp.ndarray,
+    age_bins: tuple[list[int], list[str]] | None = None,
+    label: str | None = None,
+):
+    """
+    Update *moments* in-place with the share of agents whose ``choice`` lies
+    in *choice_set*, computed separately for every *age-bin*.
+
+    Parameters
+    ----------
+    df : DataFrame
+        Must contain the columns ``age`` (int) and ``choice`` (categorical/int).
+    moments : dict
+        Updated **in-place** with the new statistics.
+    choice_set : jnp.ndarray
+        Set of codes/categories to be counted (e.g. INFORMAL_CARE choices).
+    age_bins : tuple[list[int], list[str]] | None
+        Optional ``(bin_edges, bin_labels)`` passed to ``pd.cut``.
+        Defaults to 5-year bins ``[40, 45, …, 70]`` with labels
+        ``["40_44", "45_49", …, "65_69"]``.
+    label : str | None
+        Extra label inserted in every key (prefixed with “_” if given).
+
+    Returns
+    -------
+    dict
+        The same *moments* dict (for convenience).
+    """
+    # -------- 1. Pre-processing ---------------------------------------------------
+    label = f"_{label}" if label else ""
+
+    if age_bins is None:
+        bin_edges = list(range(40, 75, 5))  # [40, 45, …, 70]
+        bin_labels = [f"{s}_{s + 4}" for s in bin_edges[:-1]]
+    else:
+        bin_edges, bin_labels = age_bins
+
+    # Work on a copy limited to the covered age range
+    df = df[df["age"].between(bin_edges[0], bin_edges[-1] - 1)].copy()
+
+    df["age_bin"] = pd.cut(
+        df["age"],
+        bins=bin_edges,
+        labels=bin_labels,
+        right=False,  # [40,45) ⇒ 40–44, etc.
+    )
+
+    age_groups = df.groupby("age_bin")
+
+    # -------- 2. Compute the statistic -------------------------------------------
+    share_by_bin = (
+        age_groups["choice"]
+        .apply(lambda x: x.isin(np.atleast_1d(choice_set)).mean())
+        .reindex(bin_labels, fill_value=np.nan)  # keep bins even if empty
+    )
+
+    # -------- 3. Write into *moments* --------------------------------------------
+    for age_bin in bin_labels:
+        moments[f"share_informal_care{label}_age_bin_{age_bin}"] = share_by_bin.loc[
+            age_bin
+        ]
+
+    return moments
+
+
 def compute_transition_moments_pandas_for_age_bins(
     df,
     moments,
@@ -449,9 +525,15 @@ def create_moments_jax(sim_df, min_age, max_age):
         arr_high_educ, ind=idx, choice=FULL_TIME, min_age=min_age, max_age=max_age
     )
 
-    share_caregivers_by_age = get_share_by_age(
-        arr, ind=idx, choice=INFORMAL_CARE, min_age=min_age, max_age=max_age
+    share_caregivers_by_age_bin = get_share_by_age_bin(
+        arr, ind=idx, choice=INFORMAL_CARE, bins=age_bins
     )
+    education_mask = arr[:, idx["education"]] == 1
+    care_type_mask = jnp.isin(arr[:, idx["choice"]], INFORMAL_CARE)
+    share_caregivers_high_educ = jnp.sum(education_mask & care_type_mask) / jnp.sum(
+        care_type_mask
+    )
+
     share_unemployed_by_age_bin_caregivers = get_share_by_age_bin(
         arr_caregivers, ind=idx, choice=UNEMPLOYED, bins=age_bins
     )
@@ -579,7 +661,8 @@ def create_moments_jax(sim_df, min_age, max_age):
         + share_working_part_time_by_age_high_educ
         + share_working_full_time_by_age_high_educ
         # caregivers
-        + share_caregivers_by_age
+        + share_caregivers_by_age_bin
+        + [share_caregivers_high_educ]
         + share_unemployed_by_age_bin_caregivers
         + share_working_part_time_by_age_bin_caregivers
         + share_working_full_time_by_age_bin_caregivers
@@ -607,6 +690,13 @@ def create_moments_jax(sim_df, min_age, max_age):
 # ==============================================================================
 # Auxiliary
 # ==============================================================================
+
+
+def get_static_share(df_arr, ind, choice):
+    """Compute static share of agents choosing one of the given choices."""
+    choice_mask = jnp.isin(df_arr[:, ind["choice"]], choice)
+    share = jnp.mean(choice_mask)
+    return share
 
 
 def get_share_by_age(df_arr, ind, choice, min_age, max_age):
