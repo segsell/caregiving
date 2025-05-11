@@ -27,21 +27,30 @@ rho: 1.5
 #disutil_working_bad: 0.3
 #disutil_not_retired_good: 1.0
 #disutil_working_good: 0.3
-disutil_ft_work_good_women: 1.3
-disutil_ft_work_bad_women: 1.3
-disutil_pt_work_good_women: 1.3
-disutil_pt_work_bad_women: 1.3
-disutil_unemployed_women: 1.0
-disutil_children_pt_work: 0.2
-disutil_children_ft_work_low: 0.2
-disutil_children_ft_work_high: 0.2
+# disutil_unemployed_women: 1.0
+# disutil_ft_work_bad_women: 1.3
+# disutil_ft_work_good_women: 1.3
+# disutil_pt_work_bad_women: 1.3
+# disutil_pt_work_good_women: 1.3
+# disutil_children_pt_work: 0.2
+# disutil_children_ft_work_low: 0.2
+# disutil_children_ft_work_high: 0.2
+
+disutil_unemployed_women: 2.6654188449619967
+disutil_ft_work_bad_women: 2.8504908655256718
+disutil_ft_work_good_women: 3.025827422033017
+disutil_pt_work_bad_women: 2.1338586697961457
+disutil_pt_work_good_women: 2.9558778528813034
+disutil_children_pt_work: 0.07961237417893248
+disutil_children_ft_work_high: 0.10108123507916474
+disutil_children_ft_work_low: 0.10800638346372522
 
 # caregiving
 # util_unemployed_and_care_women: 0.5
 # util_pt_work_and_care_women: 0.5
 # util_ft_work_and_care_women: -1.0
-util_informal_care_low_women: 2.0
-util_informal_care_high_women: 1.6
+util_informal_care_low_women: 2.3
+util_informal_care_high_women: 1.8
 # util_joint_informal_care_women: 0.0
 
 util_unemployed_and_care_women: -0.2

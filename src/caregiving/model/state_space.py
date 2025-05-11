@@ -47,7 +47,7 @@ def create_state_space_functions():
 
 
 def next_period_endogenous_state(period, choice, lagged_choice, already_retired):
-    is_already_retired = is_retired(lagged_choice)  # & is_retired(choice)
+    is_already_retired = is_retired(lagged_choice) & is_retired(choice)
 
     states_already_retired = {
         "period": period + 1,

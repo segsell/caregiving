@@ -250,7 +250,7 @@ def compute_labor_shares_by_age(df, moments, variances, age_range, label=None):
     else:
         label = "_" + label
 
-    age_groups = df.groupby("age")
+    age_groups = df.groupby("age", observed=False)
 
     # Compute the proportion for each status using vectorized operations
     retired_shares = age_groups["choice"].apply(
@@ -327,7 +327,7 @@ def compute_share_informal_care_by_age(
 
     label = f"_{label}" if label else ""
 
-    age_groups = df.groupby("age")
+    age_groups = df.groupby("age", observed=False)
 
     share_by_age = age_groups["any_care"].apply(
         lambda s: s.eq(1).sum() / s.notna().sum()
@@ -377,10 +377,14 @@ def compute_share_informal_care_by_age_bin(
         labels=bin_labels,
         right=False,  # left-closed / right-open ⇒ 40-44, 45-49, …
     )
-    _counts = df.groupby("age_bin").size().reindex(bin_labels, fill_value=np.nan)
+    _counts = (
+        df.groupby("age_bin", observed=False)
+        .size()
+        .reindex(bin_labels, fill_value=np.nan)
+    )
 
     # 3. Group by the new bins and compute shares & variances
-    age_groups = df.groupby("age_bin")
+    age_groups = df.groupby("age_bin", observed=False)
 
     share_by_age = age_groups["any_care"].apply(
         lambda s: s.eq(1).sum() / s.notna().sum()
@@ -458,7 +462,11 @@ def compute_labor_shares_by_age_bin(
         labels=bin_labels,
         right=False,  # left-closed / right-open ⇒ 40-44, 45-49, …
     )
-    _counts = df.groupby("age_bin").size().reindex(bin_labels, fill_value=np.nan)
+    _counts = (
+        df.groupby("age_bin", observed=False)
+        .size()
+        .reindex(bin_labels, fill_value=np.nan)
+    )
 
     # 3. Group by the new bins and compute shares & variances
     age_groups = df.groupby("age_bin")
@@ -1217,7 +1225,7 @@ def plot_wealth_by_age(df, start_age, end_age, educ_val=None):
         df_ages = df_ages[df_ages["education"] == educ_val]
 
     # 3) Group by age and compute mean wealth
-    grouped = df_ages.groupby("age")["wealth"].mean().sort_index()
+    grouped = df_ages.groupby("age", observed=False)["wealth"].mean().sort_index()
 
     # 4) Plot mean wealth by age
     plt.figure(figsize=(8, 5))
@@ -1284,7 +1292,9 @@ def plot_wealth_by_5yr_bins(df, start_age, end_age, educ_val=None):
     )
 
     # 5) Group by bin, compute mean wealth
-    grouped = df_filtered.groupby("age_bin")["wealth"].mean().reset_index()
+    grouped = (
+        df_filtered.groupby("age_bin", observed=False)["wealth"].mean().reset_index()
+    )
 
     # 6) Plot a line chart with textual interval labels on the x-axis
     plt.figure(figsize=(8, 5))

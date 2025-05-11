@@ -220,7 +220,7 @@ def create_labor_share_moments_by_age_bin(
         right=False,  # [40,45) ⇒ 40–44, etc.
     )
 
-    age_groups = df.groupby("age_bin")
+    age_groups = df.groupby("age_bin", observed=False)
 
     unemployed_shares = (
         age_groups["choice"]
@@ -331,7 +331,7 @@ def create_choice_shares_by_age_bin_pandas(
         right=False,  # [40,45) ⇒ 40–44, etc.
     )
 
-    age_groups = df.groupby("age_bin")
+    age_groups = df.groupby("age_bin", observed=False)
 
     # -------- 2. Compute the statistic -------------------------------------------
     share_by_bin = (
