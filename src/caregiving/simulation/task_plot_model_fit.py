@@ -255,7 +255,7 @@ def task_plot_model_fit(
     # print(f"Share of formal_care: {df_sim['formal_care'].mean()}")
     # =================================================================================
 
-    breakpoint()
+    # breakpoint()
 
     data_emp = df_emp.copy()
     mask = (
