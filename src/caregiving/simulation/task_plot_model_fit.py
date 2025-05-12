@@ -162,6 +162,8 @@ def task_plot_model_fit(
     )
 
     AGE_FOCUS = 75
+    # Drop invalid!?
+    # df_sim.loc[(df_sim["care_demand"] == 0) & (df_sim["informal_care"] == 1)]
 
     # 1. Agents alive / observed at the focus age --------------------------
     ids_at_age = df_sim.loc[

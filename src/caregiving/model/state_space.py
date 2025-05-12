@@ -41,6 +41,15 @@ def create_state_space_functions():
     }
 
 
+def create_state_space_functions_counterfactual():
+    return {
+        "state_specific_choice_set": state_specific_choice_set,
+        "next_period_endogenous_state": next_period_endogenous_state,
+        "next_period_experience": get_next_period_experience,
+        "sparsity_condition": sparsity_condition,
+    }
+
+
 # =====================================================================================
 # State transitions
 # =====================================================================================

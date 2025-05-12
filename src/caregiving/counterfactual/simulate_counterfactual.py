@@ -92,18 +92,19 @@ def simulate_counterfactual_npv(
     df["savings_dec"] = df["total_income"] - df["consumption"]
     df["savings_rate"] = df["savings_dec"] / df["total_income"]
 
-    # Caregiving
-    df["informal_care"] = df["choice"].isin(np.asarray(INFORMAL_CARE))
+    # # Caregiving
+    # df["informal_care"] = df["choice"].isin(np.asarray(INFORMAL_CARE))
 
-    # Care ever
-    df["care_ever"] = df.groupby("agent")["informal_care"].transform(
-        lambda x: x.cumsum().clip(upper=1)
-    )
+    # # Care ever
+    # df["care_ever"] = df.groupby("agent")["informal_care"].transform(
+    #     lambda x: x.cumsum().clip(upper=1)
+    # )
 
-    # Sum care
-    df["sum_informal_care"] = df.groupby("agent")["informal_care"].transform(
-        lambda x: x.cumsum()
-    )
+    # # Sum care
+    # df["sum_informal_care"] = df.groupby("agent")["informal_care"].transform(
+    #     lambda x: x.cumsum()
+    # )
+    df = create_care_flags(df)
 
     # 0. Flag care on the *full* df_sim first (only once is enough)
     df["is_care"] = df["choice"].isin(np.asarray(INFORMAL_CARE))
