@@ -146,8 +146,9 @@ def plot_choice_shares_by_education(
             ax.set_ylim(0, 1)
             ax.set_xlim(age_min, age_max)
 
-            if edu_var == n_edu - 1:
-                ax.set_xlabel("Age")
+            # if edu_var == n_edu - 1:
+            ax.set_xlabel("Age")
+            ax.tick_params(labelbottom=True)
             if choice_var == 0:
                 ax.set_ylabel(f"{edu_label}\nShare")
                 ax.legend()
