@@ -28,6 +28,7 @@ from caregiving.simulation.plot_model_fit import (
     plot_average_savings_decision,
     plot_average_wealth,
     plot_caregiver_shares_by_age,
+    plot_caregiver_shares_by_age_bins,
     plot_choice_shares,
     plot_choice_shares_by_education,
     plot_choice_shares_by_education_age_bins,
@@ -41,10 +42,11 @@ from caregiving.simulation.plot_model_fit import (
 )
 
 
-def task_plot_model_fit(
+def task_plot_model_fit(  # noqa: PLR0915
     path_to_options: Path = BLD / "model" / "options.pkl",
     path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
     path_to_start_params: Path = BLD / "model" / "params" / "start_params_model.yaml",
+    path_to_empirical_moments: Path = BLD / "moments" / "soep_moments.csv",
     path_to_empirical_data: Path = BLD
     / "data"
     / "soep_structural_estimation_sample.csv",
@@ -79,6 +81,10 @@ def task_plot_model_fit(
     / "plots"
     / "model_fit"
     / "share_caregivers_by_age.png",
+    path_to_save_caregiver_share_by_age_bin_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "model_fit"
+    / "share_caregivers_by_age_bin.png",
     path_to_save_care_demand_by_age_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "model_fit"
@@ -100,6 +106,8 @@ def task_plot_model_fit(
     model_full = load_and_setup_full_model_for_solution(
         options, path_to_model=path_to_solution_model
     )
+
+    emp_moms = pd.read_csv(path_to_empirical_moments, index_col=[0]).squeeze("columns")
 
     df_emp = pd.read_csv(path_to_empirical_data, index_col=[0])
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
@@ -155,9 +163,20 @@ def task_plot_model_fit(
         choice_set=INFORMAL_CARE,
         path_to_save_plot=path_to_save_caregiver_share_by_age_plot,
     )
+    plot_caregiver_shares_by_age_bins(
+        emp_moms,
+        df_sim,
+        specs,
+        choice_set=INFORMAL_CARE,
+        age_min=40,
+        age_max=75,
+        path_to_save_plot=path_to_save_caregiver_share_by_age_bin_plot,
+    )
     plot_simulated_care_demand_by_age(
         df_sim,
         specs,
+        age_min=40,
+        age_max=80,
         path_to_save_plot=path_to_save_care_demand_by_age_plot,
     )
 

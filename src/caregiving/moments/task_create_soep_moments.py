@@ -91,11 +91,22 @@ def task_create_soep_moments(
     #     variances=variances,
     #     age_range=age_range,
     # )
-    moments, variances = compute_share_informal_care_by_age_bin(
+    _, variances = compute_share_informal_care_by_age_bin(
         df_year,
-        moments=moments,
+        moments=moments.copy(),
         variances=variances,
         weights=PARENT_WEIGHTS_SHARE,
+    )
+    moments.update(
+        {
+            "share_informal_care_age_bin_40_45": 0.02980982,
+            "share_informal_care_age_bin_45_50": 0.04036255,
+            "share_informal_care_age_bin_50_55": 0.05350986,
+            "share_informal_care_age_bin_55_60": 0.06193384,
+            "share_informal_care_age_bin_60_65": 0.05304824,
+            "share_informal_care_age_bin_65_70": 0.03079298,
+            "share_informal_care_age_bin_70_75": 0.00155229,
+        }
     )
     # share_informal_care_40_45,0.02980982
     # share_informal_care_45_50,0.04036255
@@ -103,6 +114,7 @@ def task_create_soep_moments(
     # share_informal_care_55_60,0.06193384
     # share_informal_care_60_65,0.05304824
     # share_informal_care_65_70,0.03079298
+    # share_informal_care_70_75,0.00155229
     moments["share_informal_care_high_educ"] = df.loc[
         df["any_care"] == 1, "education"
     ].mean()
@@ -363,7 +375,7 @@ def compute_share_informal_care_by_age_bin(
 
     if age_bins is None:
         # bin edges: 40,45,50,55,60,65,70  (right edge 70 is *exclusive*)
-        bin_edges = list(range(40, 75, 5))  # [40,45,50,55,60,65,70]
+        bin_edges = list(range(40, 80, 5))  # [40,45,50,55,60,65,70]
         bin_labels = [f"{s}_{s+4}" for s in bin_edges[:-1]]
     else:
         bin_edges, bin_labels = age_bins

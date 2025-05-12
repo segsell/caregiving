@@ -137,7 +137,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
     # After the maximum retirement age, you must be retired.
     elif (age > max_ret_age) & (not is_retired(lagged_choice)) & (is_alive(health)):
         return False
-    elif (age > max_ret_age) & (already_retired != 1):
+    elif (age > max_ret_age + 1) & (already_retired != 1):
         return False
     else:
         # Now turn to the states, where it is decided by the value of an exogenous

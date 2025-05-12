@@ -36,24 +36,24 @@ rho: 1.5
 # disutil_children_ft_work_low: 0.2
 # disutil_children_ft_work_high: 0.2
 #
-disutil_unemployed_women: 0.96
-disutil_ft_work_bad_women: 1.85
-disutil_ft_work_good_women: 1.46
-disutil_pt_work_bad_women: 1.69
-disutil_pt_work_good_women: 1.28
-disutil_children_pt_work: 0
-disutil_children_ft_work_low: 0.21
-disutil_children_ft_work_high: 0.12
+# disutil_unemployed_women: 0.96
+# disutil_ft_work_bad_women: 1.85
+# disutil_ft_work_good_women: 1.46
+# disutil_pt_work_bad_women: 1.69
+# disutil_pt_work_good_women: 1.28
+# disutil_children_pt_work: 0
+# disutil_children_ft_work_low: 0.21
+# disutil_children_ft_work_high: 0.12
 
 
-# disutil_unemployed_women: 2.6654188449619967
-# disutil_ft_work_bad_women: 2.8504908655256718
-# disutil_ft_work_good_women: 3.025827422033017
-# disutil_pt_work_bad_women: 2.1338586697961457
-# disutil_pt_work_good_women: 2.9558778528813034
-# disutil_children_pt_work: 0.07961237417893248
-# disutil_children_ft_work_high: 0.10108123507916474
-# disutil_children_ft_work_low: 0.10800638346372522
+disutil_unemployed_women: 2.6654188449619967
+disutil_ft_work_bad_women: 3.025827422033017
+disutil_ft_work_good_women: 2.8504908655256718
+disutil_pt_work_bad_women: 2.9558778528813034
+disutil_pt_work_good_women: 2.1338586697961457
+disutil_children_pt_work: 0.07961237417893248
+disutil_children_ft_work_high: 0.10108123507916474
+disutil_children_ft_work_low: 0.10800638346372522
 
 # caregiving
 # util_unemployed_and_care_women: 0.5
