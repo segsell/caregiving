@@ -137,7 +137,7 @@ def task_plot_model_fit_for_slides(  # noqa: PLR0915
         df_sim_caregivers,
         specs,
         age_min=start_age_care,
-        age_max=end_age_care,
+        age_max=specs["end_age_msm"],
         path_to_save_plot=path_to_save_labor_shares_caregivers_by_age,
     )
 
@@ -146,7 +146,7 @@ def task_plot_model_fit_for_slides(  # noqa: PLR0915
         df_sim_caregivers,
         specs,
         age_min=start_age_care,
-        age_max=end_age_care,
+        age_max=specs["end_age_msm"],
         path_to_save_plot=path_to_save_labor_shares_caregivers_by_educ_and_age_plot,
     )
 
