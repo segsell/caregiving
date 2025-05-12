@@ -8,8 +8,6 @@ import jax.numpy as jnp
 import numpy as np
 import pandas as pd
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
@@ -34,6 +32,8 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.utils import table
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 
 def task_generate_start_states_for_solution(  # noqa: PLR0915
@@ -48,6 +48,14 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     path_to_options: Path = BLD / "model" / "options.pkl",
     path_to_model: Path = BLD / "model" / "model_for_solution.pkl",
     path_to_start_params: Path = BLD / "model" / "params" / "start_params_model.yaml",
+    path_to_save_health_by_age: Annotated[Path, Product] = BLD
+    / "model"
+    / "initial_conditions"
+    / "health_by_age.csv",
+    path_to_save_survival_by_age: Annotated[Path, Product] = BLD
+    / "model"
+    / "initial_conditions"
+    / "survival_by_age.csv",
     path_to_save_discrete_states: Annotated[Path, Product] = BLD
     / "model"
     / "initial_conditions"
@@ -184,6 +192,9 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     )
     health_prob_by_age.index = health_prob_by_age.index.astype(int)
     # health_prob_by_age.index.name = "mother_age"
+
+    survival_by_age.to_csv(path_to_save_survival_by_age, index=True)
+    health_prob_by_age.to_csv(path_to_save_health_by_age, index=True)
 
     # Generate containers
     wealth_agents = np.empty(n_agents, np.float64)

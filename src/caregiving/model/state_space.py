@@ -17,6 +17,9 @@ from caregiving.model.shared import (  # BAD_HEALTH,; CARE_AND_NO_CARE,; FORMAL_
     UNEMPLOYED,
     UNEMPLOYED_CARE,
     UNEMPLOYED_NO_CARE,
+    WORK_AND_RETIREMENT,
+    WORK_AND_RETIREMENT_CARE,
+    WORK_AND_RETIREMENT_NO_CARE,
     WORK_AND_UNEMPLOYED,
     WORK_AND_UNEMPLOYED_CARE,
     WORK_AND_UNEMPLOYED_NO_CARE,
@@ -25,6 +28,7 @@ from caregiving.model.shared import (  # BAD_HEALTH,; CARE_AND_NO_CARE,; FORMAL_
     is_full_time,
     is_part_time,
     is_retired,
+    is_unemployed,
 )
 from caregiving.model.wealth_and_budget.pensions import (
     calc_experience_for_total_pension_points,
@@ -126,12 +130,14 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
         return False
     elif (age <= min_ret_age_state_space + 1) & (already_retired == 1):
         return False
+    elif (age >= options["min_SRA"] + 1) & (is_unemployed(lagged_choice)):
+        return False
     elif (not is_retired(lagged_choice)) & (already_retired == 1):
         return False
     # After the maximum retirement age, you must be retired.
     elif (age > max_ret_age) & (not is_retired(lagged_choice)) & (is_alive(health)):
         return False
-    elif (age > max_ret_age + 1) & (already_retired != 1):
+    elif (age > max_ret_age) & (already_retired != 1):
         return False
     else:
         # Now turn to the states, where it is decided by the value of an exogenous
@@ -226,7 +232,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
             return True
 
 
-def state_specific_choice_set(  # noqa: PLR0911
+def state_specific_choice_set(  # noqa: PLR0911, PLR0912
     period, lagged_choice, job_offer, health, options
 ):
     age = period + options["start_age"]
@@ -247,17 +253,17 @@ def state_specific_choice_set(  # noqa: PLR0911
         return RETIREMENT_NO_CARE
     # Person is in the voluntary retirement range.
     else:
-        # if age >= SRA_pol_state:
-        #     if job_offer == 0:
-        #         return RETIREMENT
-        #     else:
-        #         return WORK_AND_RETIREMENT
-        # else:
-        if job_offer == 0:
-            # Choose unemployment or retirement
-            return NOT_WORKING_NO_CARE
+        if age >= options["min_SRA"]:
+            if job_offer == 0:
+                return RETIREMENT_NO_CARE
+            else:
+                return WORK_AND_RETIREMENT_NO_CARE
         else:
-            return ALL_NO_CARE
+            if job_offer == 0:
+                # Choose unemployment or retirement
+                return NOT_WORKING_NO_CARE
+            else:
+                return ALL_NO_CARE
 
 
 def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912
@@ -282,17 +288,17 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912
             return RETIREMENT_NO_CARE
         # Person is in the voluntary retirement range.
         else:
-            # if age >= SRA_pol_state:
-            #     if job_offer == 0:
-            #         return RETIREMENT
-            #     else:
-            #         return WORK_AND_RETIREMENT
-            # else:
-            if job_offer == 0:
-                # Choose unemployment or retirement
-                return NOT_WORKING_NO_CARE
+            if age >= options["min_SRA"]:
+                if job_offer == 0:
+                    return RETIREMENT_NO_CARE
+                else:
+                    return WORK_AND_RETIREMENT_NO_CARE
             else:
-                return ALL_NO_CARE
+                if job_offer == 0:
+                    # Choose unemployment or retirement
+                    return NOT_WORKING_NO_CARE
+                else:
+                    return ALL_NO_CARE
     elif care_demand == 1:
         if is_dead(health):
             return RETIREMENT
@@ -310,17 +316,17 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912
             return RETIREMENT
         # Person is in the voluntary retirement range.
         else:
-            # if age >= SRA_pol_state:
-            #     if job_offer == 0:
-            #         return RETIREMENT
-            #     else:
-            #         return WORK_AND_RETIREMENT
-            # else:
-            if job_offer == 0:
-                # Choose unemployment or retirement
-                return NOT_WORKING
+            if age >= options["min_SRA"]:
+                if job_offer == 0:
+                    return RETIREMENT
+                else:
+                    return WORK_AND_RETIREMENT
             else:
-                return ALL
+                if job_offer == 0:
+                    # Choose unemployment or retirement
+                    return NOT_WORKING
+                else:
+                    return ALL
     # elif (care_demand == 1) & (care_supply == 0):
     #     if is_dead(health):
     #         return RETIREMENT

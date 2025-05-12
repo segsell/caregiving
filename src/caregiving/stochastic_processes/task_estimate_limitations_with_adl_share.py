@@ -170,6 +170,14 @@ def task_plot_care_demand(
     / "estimation"
     / "stochastic_processes"
     / "health_death_transition_matrix_good_medium_bad.csv",
+    path_to_health_by_age: Path = BLD
+    / "model"
+    / "initial_conditions"
+    / "health_by_age.csv",
+    path_to_survival_by_age: Path = BLD
+    / "model"
+    / "initial_conditions"
+    / "survival_by_age.csv",
     path_to_health_death_transition_matrix_NEW: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
@@ -189,6 +197,10 @@ def task_plot_care_demand(
     )
     adl_transition_matrix = pd.read_csv(path_to_adl_mat, index_col=[0, 1, 2, 3])
 
+    # Read health and survival probabilities
+    health_prob_by_age = pd.read_csv(path_to_health_by_age, index_col=0)
+    survival_by_age = pd.read_csv(path_to_survival_by_age, index_col=0)
+
     hdeath_df = build_health_death_transition_matrix(
         specs, health_trans_mat, death_trans_mat
     )
@@ -199,13 +211,16 @@ def task_plot_care_demand(
     # save hdeath_df to csv in the same folder as the other transition matrices
     hdeath_df.to_csv(path_to_health_death_transition_matrix_NEW, index=False)
 
+    start_age = 50
     plot_care_demand_from_hdeath_matrix(
         specs=specs,
         adl_transition_df=adl_transition_matrix,
         # health_death_df=hdeath_df,
         health_death_df=health_death_trans_mat,
         path_to_save_plot=path_to_save_weighted_adl_transitions_by_age_plot,
-        start_age=66,
+        start_age=start_age,
+        initial_alive_share=survival_by_age.loc[start_age],
+        initial_health_shares_alive=health_prob_by_age.loc[start_age],
     )
 
 
@@ -222,6 +237,7 @@ def plot_care_demand_from_hdeath_matrix(
         "Medium Health": 0.743285,
         "Bad Health": 0.068707,
     },
+    male=False,
 ):
     """
     Simulate a cohort with a *combined* health-death transition matrix that is
@@ -232,11 +248,16 @@ def plot_care_demand_from_hdeath_matrix(
     specs : dict
         Model spec containing 'end_age', 'sex_labels', 'adl_labels', …
     adl_transition_df : pd.DataFrame
-        Multi-index (sex, age, health, adl_cat) – column 'transition_prob'.
+        Multi-index (sex, age, health, adl_cat) - column 'transition_prob'.
     health_death_df : pd.DataFrame
         Columns ['sex','age','health','lead_health','transition_prob']
         Row sums (across lead_health) are 1 and include 'Death'.
     """
+
+    if male:
+        sex_labels = specs["sex_labels"]
+    else:
+        sex_labels = ["Women"]
 
     # ───────────────────── labels & setup ────────────────────────────────
     health_states = ["Bad Health", "Medium Health", "Good Health", "Death"]
@@ -255,7 +276,7 @@ def plot_care_demand_from_hdeath_matrix(
 
     # ─────────────────── build {sex → {age → 4×4 P}} ─────────────────────
     P = {}
-    for sex in specs["sex_labels"]:
+    for sex in sex_labels:
         sex_block = health_death_df[health_death_df["sex"] == sex]
         mats = {}
         for age_key, grp in sex_block.groupby("age"):
@@ -273,21 +294,19 @@ def plot_care_demand_from_hdeath_matrix(
     # ───────────────── initial cohort vector  ────────────────────────────
     v0 = np.array(
         [
-            initial_alive_share * initial_health_shares_alive["Bad Health"],
-            initial_alive_share * initial_health_shares_alive["Medium Health"],
-            initial_alive_share * initial_health_shares_alive["Good Health"],
-            1.0 - initial_alive_share,
+            initial_alive_share[0] * initial_health_shares_alive[0],
+            initial_alive_share[0] * initial_health_shares_alive[1],
+            initial_alive_share[0] * initial_health_shares_alive[2],
+            1.0 - initial_alive_share[0],
         ]
     )
 
     # ───────────────── simulation containers ─────────────────────────────
     ages = np.arange(start_age, specs["end_age"] + 1)
-    demand = {
-        s: {lab: [] for lab in (care_labels + [any_label])} for s in specs["sex_labels"]
-    }
+    demand = {s: {lab: [] for lab in (care_labels + [any_label])} for s in sex_labels}
 
     # ───────────────── simulate Men / Women  ─────────────────────────────
-    for sex in specs["sex_labels"]:
+    for sex in sex_labels:
         v = v0.copy()
         for age in ages:
             # if we run beyond last available age, use the last matrix
@@ -310,37 +329,68 @@ def plot_care_demand_from_hdeath_matrix(
             )
 
     # ─────────────────────── plotting ────────────────────────────────────
-    fig, axes = plt.subplots(1, 2, figsize=(14, 6), sharey=True)
+    # fig, axes = plt.subplots(1, 2, figsize=(14, 6), sharey=True)
 
-    for idx, (ax, sex) in enumerate(zip(axes, specs["sex_labels"], strict=False)):
-        for lab in care_labels:
-            ax.plot(
-                ages, demand[sex][lab], label=lab, color=colour_map[lab], linewidth=2
-            )
+    # for idx, (ax, sex) in enumerate(zip(axes, sex_labels, strict=False)):
+    #     for lab in care_labels:
+    #         ax.plot(
+    #             ages, demand[sex][lab], label=lab, color=colour_map[lab], linewidth=2
+    #         )
+    #     ax.plot(
+    #         ages,
+    #         demand[sex][any_label],
+    #         label=any_label,
+    #         color=colour_map[any_label],
+    #         linewidth=2,
+    #         linestyle="--",
+    #     )
+
+    #     # cosmetics
+    #     ax.set_xlim(start_age, specs["end_age"])
+    #     ax.set_ylim(0, 0.15)
+    #     ax.set_xticks(np.arange(start_age, specs["end_age"] + 1, 5))
+
+    #     if idx == 0:  # left axis
+    #         ax.set_ylabel("Share of initial cohort")
+    #         ax.tick_params(labelleft=True, labelright=False)
+    #     else:  # right axis
+    #         ax.set_ylabel("Share of initial cohort")
+    #         ax.tick_params(labelleft=True, labelright=False)
+
+    #     ax.set_xlabel("Age")
+    #     ax.set_title(sex)
+    #     ax.legend(title="Care level", fontsize=9, title_fontsize=10, loc="upper left")
+
+    fig, ax = plt.subplots(figsize=(7, 6))  # one axis, one panel
+
+    sex = sex_labels[0]  # "Women" (the mother)
+
+    for lab in care_labels:
         ax.plot(
             ages,
-            demand[sex][any_label],
-            label=any_label,
-            color=colour_map[any_label],
+            demand[sex][lab],
+            label=lab,
+            color=colour_map[lab],
             linewidth=2,
-            linestyle="--",
         )
 
-        # cosmetics
-        ax.set_xlim(start_age, specs["end_age"])
-        ax.set_ylim(0, 0.15)
-        ax.set_xticks(np.arange(start_age, specs["end_age"] + 1, 5))
+    ax.plot(
+        ages,
+        demand[sex][any_label],
+        label=any_label,
+        color=colour_map[any_label],
+        linewidth=2,
+        linestyle="--",
+    )
 
-        if idx == 0:  # left axis
-            ax.set_ylabel("Share of initial cohort")
-            ax.tick_params(labelleft=True, labelright=False)
-        else:  # right axis
-            ax.set_ylabel("Share of initial cohort")
-            ax.tick_params(labelleft=True, labelright=False)
-
-        ax.set_xlabel("Age")
-        ax.set_title(sex)
-        ax.legend(title="Care level", fontsize=9, title_fontsize=10, loc="upper left")
+    # cosmetics
+    ax.set_xlim(start_age, specs["end_age"])
+    ax.set_ylim(0, 0.17)
+    ax.set_xticks(np.arange(start_age, specs["end_age"] + 1, 5))
+    ax.set_ylabel("Share of initial cohort")
+    ax.set_xlabel("Age")
+    ax.set_title("Women")
+    ax.legend(title="Care degree", fontsize=9, title_fontsize=10, loc="upper left")
 
     plt.tight_layout()
     plt.savefig(Path(path_to_save_plot), dpi=300)
