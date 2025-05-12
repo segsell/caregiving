@@ -16,8 +16,8 @@ lambda: 0.29
 rho: 1.5
 sigma: 0.1666109733061748
 util_formal_care_women: -2
-util_ft_work_and_care_women: -1.175
+util_ft_work_and_care_women: -1.2
 util_informal_care_high_women: 1.6
 util_informal_care_low_women: 2.0
-util_pt_work_and_care_women: -0.95
+util_pt_work_and_care_women: -1.0
 util_unemployed_and_care_women: -0.1

@@ -35,7 +35,7 @@ rho: 1.5
 # disutil_children_pt_work: 0.2
 # disutil_children_ft_work_low: 0.2
 # disutil_children_ft_work_high: 0.2
-#
+
 # disutil_unemployed_women: 0.96
 # disutil_ft_work_bad_women: 1.85
 # disutil_ft_work_good_women: 1.46
@@ -65,7 +65,7 @@ util_informal_care_high_women: 1.6 # 1.8
 
 util_unemployed_and_care_women: -0.1
 util_pt_work_and_care_women: -1.0
-util_ft_work_and_care_women: -1.175
+util_ft_work_and_care_women: -1.2
 util_formal_care_women: -2
 # util_formal_care_low_women: -2
 # util_formal_care_high_women: -1.3
