@@ -5,7 +5,7 @@ On SHARE parent-child sample.
 """
 
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated, Mapping, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -221,6 +221,12 @@ def task_plot_care_demand(
         start_age=start_age,
         initial_alive_share=survival_by_age.loc[start_age],
         initial_health_shares_alive=health_prob_by_age.loc[start_age],
+        legend_labels={
+            "ADL 1": "Care degree 2",
+            "ADL 2": "Care degree 3",
+            "ADL 3": "Care degree 4 or 5",
+            "Any ADL": "Care degree >= 2",
+        },
     )
 
 
@@ -238,6 +244,7 @@ def plot_care_demand_from_hdeath_matrix(
         "Bad Health": 0.068707,
     },
     male=False,
+    legend_labels: Mapping[str, str] | None = None,
 ):
     """
     Simulate a cohort with a *combined* health-death transition matrix that is
@@ -253,6 +260,7 @@ def plot_care_demand_from_hdeath_matrix(
         Columns ['sex','age','health','lead_health','transition_prob']
         Row sums (across lead_health) are 1 and include 'Death'.
     """
+    legend_map = legend_labels or {}
 
     if male:
         sex_labels = specs["sex_labels"]
@@ -369,7 +377,7 @@ def plot_care_demand_from_hdeath_matrix(
         ax.plot(
             ages,
             demand[sex][lab],
-            label=lab,
+            label=legend_map.get(lab, lab),  # custom label
             color=colour_map[lab],
             linewidth=2,
         )
@@ -377,7 +385,7 @@ def plot_care_demand_from_hdeath_matrix(
     ax.plot(
         ages,
         demand[sex][any_label],
-        label=any_label,
+        label=legend_map.get(any_label, any_label),  # custom label
         color=colour_map[any_label],
         linewidth=2,
         linestyle="--",
@@ -387,10 +395,11 @@ def plot_care_demand_from_hdeath_matrix(
     ax.set_xlim(start_age, specs["end_age"])
     ax.set_ylim(0, 0.17)
     ax.set_xticks(np.arange(start_age, specs["end_age"] + 1, 5))
-    ax.set_ylabel("Share of initial cohort")
-    ax.set_xlabel("Age")
-    ax.set_title("Women")
-    ax.legend(title="Care degree", fontsize=9, title_fontsize=10, loc="upper left")
+    ax.set_ylabel("Share")
+    # ax.set_ylabel("Share of initial cohort")
+    ax.set_xlabel("Mother's Age")
+    # ax.set_title("Women")
+    ax.legend(fontsize=9, title_fontsize=10, loc="upper left")
 
     plt.tight_layout()
     plt.savefig(Path(path_to_save_plot), dpi=300)

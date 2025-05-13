@@ -131,7 +131,8 @@ def task_estimate_wage_parameters(
         ax.legend(loc="upper left")
 
         fig.savefig(
-            BLD / "plots" / "stochastic_processes" / f"wages_{sex_label.lower()}.png"
+            BLD / "plots" / "stochastic_processes" / f"wages_{sex_label.lower()}.png",
+            dpi=300,
         )
         plt.close(fig)
 

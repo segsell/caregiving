@@ -136,6 +136,7 @@ def utility_func_alive(
         period,
         choice,
         education,
+        health=health,
         care_demand=care_demand,
         # care_supply=care_supply,
         params=params,
@@ -374,12 +375,17 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     return disutility
 
 
-def utility_of_caregiving(period, choice, education, care_demand, params, options):
+def utility_of_caregiving(
+    period, choice, education, health, care_demand, params, options
+):
     # choice booleans
     unemployed = is_unemployed(choice)
     working_part_time = is_part_time(choice)
     working_full_time = is_full_time(choice)
     informal_care = is_informal_care(choice)
+
+    bad_health = is_bad_health(health)
+    good_health = is_good_health(health)
 
     util_unemployed_and_care_women = params["util_unemployed_and_care_women"]
     util_pt_work_and_care_women = params["util_pt_work_and_care_women"]
@@ -388,7 +394,11 @@ def utility_of_caregiving(period, choice, education, care_demand, params, option
 
     # util_joint_care = params["util_joint_informal_care_women"]  # * care_supply
 
-    util_informal_by_educ = params[
+    util_informal_by_health = (
+        params["util_informal_care_bad_women"] * bad_health
+        + params["util_informal_care_good_women"] * good_health
+    )
+    util_informal_by_education = params[
         "util_informal_care_high_women"
     ] * education + params["util_informal_care_low_women"] * (1 - education)
     util_informal_and_work = (
@@ -397,7 +407,9 @@ def utility_of_caregiving(period, choice, education, care_demand, params, option
         + util_ft_work_and_care_women * working_full_time
     )
 
-    util_informal = (util_informal_by_educ + util_informal_and_work) * informal_care
+    util_informal = (
+        util_informal_by_health + util_informal_by_education + util_informal_and_work
+    ) * informal_care
     _util_formal = util_no_informal_care * (1 - informal_care)
 
     utility = util_informal  # + _util_formal

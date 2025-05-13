@@ -172,6 +172,7 @@ def task_plot_incomes(
     fig.suptitle("After ssc income")
     fig.tight_layout()
     fig.savefig(path_to_save, transparent=True, dpi=300)
+    plt.close(fig)
 
 
 def task_plot_total_household_income(
@@ -234,6 +235,7 @@ def task_plot_total_household_income(
 
     fig.tight_layout()
     fig.savefig(path_to_save, transparent=True, dpi=300)
+    plt.close(fig)
 
 
 def task_plot_partner_wage(
@@ -285,6 +287,7 @@ def task_plot_partner_wage(
     fig.suptitle("Partner wage")
     fig.tight_layout()
     fig.savefig(path_to_save, transparent=True, dpi=300)
+    plt.close(fig)
 
 
 def task_plot_child_benefits(
@@ -333,6 +336,7 @@ def task_plot_child_benefits(
 
     fig.tight_layout()
     fig.savefig(path_to_save, transparent=True, dpi=300)
+    plt.close(fig)
 
 
 # def plot_wages(path_dict):

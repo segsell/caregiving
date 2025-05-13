@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from matplotlib import colors as mcolors
 
-from caregiving.config import BLD
+from caregiving.config import BLD, JET_COLOR_MAP
 from caregiving.model.shared import (
     DEAD,
     FILL_VALUE,
@@ -746,26 +746,108 @@ def plot_caregiver_shares_by_age_bins(
     plt.close(fig)
 
 
+# def plot_simulated_care_demand_by_age(
+#     df_sim, specs, age_min=None, age_max=None, path_to_save_plot=None
+# ):
+#     """
+#     Plot the yearly share of individuals with care_demand == 1 in the simulated data.
+
+#     Parameters
+#     ----------
+#     df_sim : pandas.DataFrame
+#         Simulated micro data containing at least the columns
+#         'age', 'care_demand', and (optionally) 'sex'.
+#     specs : dict
+#         Should include:
+#             'start_age'   : int - lower bound of age range (inclusive)
+#             'end_age_msm' : int - upper bound of age range (inclusive)
+#     path_to_save_plot : str | pathlib.Path | None, optional
+#         If provided, the figure is written to this file (PNG, 300 dpi).
+#     """
+
+#     # ---- 1. Setup ---------------------------------------------------------
+#     if age_min is None:
+#         age_min = specs["start_age"]
+#     if age_max is None:
+#         age_max = 100
+
+#     ages = np.arange(age_min, age_max + 1)
+
+#     # Keep only alive individuals in the simulated data
+#     df_sim = df_sim.loc[df_sim["health"] != DEAD].copy()
+
+#     # Keep only the model-relevant sex if that convention is used elsewhere
+#     if "sex" in df_sim.columns:
+#         df_sim = df_sim.loc[df_sim["sex"] == SEX].copy()
+
+#     # # ---- 2. Compute share of care demand per age --------------------------
+#     # share_care = (
+#     #     df_sim.groupby("age")["care_demand"]
+#     #     .mean()  # mean of {0,1} → share
+#     #     .reindex(ages)  # keep full age range, NaN if missing
+#     # )
+
+#     # # ---- 3. Plot ----------------------------------------------------------
+#     # fig, ax = plt.subplots(figsize=(8, 4))
+#     # ax.plot(ages, share_care, label="Simulated", color="blue")
+
+#     # ax.set_xlabel("Age")
+#     # ax.set_ylabel("Share with care demand")
+#     # ax.set_xlim(age_min, age_max)
+#     # ax.set_ylim(0, 0.15)
+#     # ax.set_title("Prevalence of Care Demand by Age (Simulated)")
+#     # ax.legend()
+
+#     # plt.tight_layout()
+#     # if path_to_save_plot:
+#     #     plt.savefig(path_to_save_plot, dpi=300, transparent=False)
+
+#     # ---- 2. Compute share of care demand per age & education --------------
+#     share_care_low = (
+#         df_sim.loc[df_sim["education"] == 0]
+#         .groupby("age")["care_demand"]
+#         .mean()
+#         .reindex(ages)  # full grid, NaN if missing
+#     )
+
+#     share_care_high = (
+#         df_sim.loc[df_sim["education"] == 1]
+#         .groupby("age")["care_demand"]
+#         .mean()
+#         .reindex(ages)
+#     )
+
+#     # ---- 3. Plot -----------------------------------------------------------
+#     fig, ax = plt.subplots()
+#     # fig, ax = plt.subplots(figsize=(8, 4))
+
+#     ax.plot(ages, share_care_low, label="Low education", color="blue", lw=2)
+#     ax.plot(ages, share_care_high, label="High education", color="orange", lw=2)
+
+#     pad = 1
+#     ax.set_xlabel("Age")
+#     ax.set_ylabel("Share")
+#     ax.set_xlim(age_min - pad, age_max + pad)
+#     ax.set_ylim(0, 0.15)
+#     # ax.set_title("Prevalence of Care Demand by Age (Simulated)")
+#     ax.legend()
+
+#     plt.tight_layout()
+#     if path_to_save_plot:
+#         plt.savefig(path_to_save_plot, dpi=300, transparent=False)
+#     plt.close(fig)
+
+
 def plot_simulated_care_demand_by_age(
     df_sim, specs, age_min=None, age_max=None, path_to_save_plot=None
 ):
     """
-    Plot the yearly share of individuals with care_demand == 1 in the simulated data.
-
-    Parameters
-    ----------
-    df_sim : pandas.DataFrame
-        Simulated micro data containing at least the columns
-        'age', 'care_demand', and (optionally) 'sex'.
-    specs : dict
-        Should include:
-            'start_age'   : int - lower bound of age range (inclusive)
-            'end_age_msm' : int - upper bound of age range (inclusive)
-    path_to_save_plot : str | pathlib.Path | None, optional
-        If provided, the figure is written to this file (PNG, 300 dpi).
+    Plot the yearly share with care_demand == 1, broken out by
+    • education (0 = low, 1 = high) → colour
+    • has_sister (0 / 1)            → dashed / solid line
     """
 
-    # ---- 1. Setup ---------------------------------------------------------
+    # ---- 1. Setup
     if age_min is None:
         age_min = specs["start_age"]
     if age_max is None:
@@ -773,62 +855,48 @@ def plot_simulated_care_demand_by_age(
 
     ages = np.arange(age_min, age_max + 1)
 
-    # Keep only alive individuals in the simulated data
     df_sim = df_sim.loc[df_sim["health"] != DEAD].copy()
-
-    # Keep only the model-relevant sex if that convention is used elsewhere
     if "sex" in df_sim.columns:
         df_sim = df_sim.loc[df_sim["sex"] == SEX].copy()
 
-    # # ---- 2. Compute share of care demand per age --------------------------
-    # share_care = (
-    #     df_sim.groupby("age")["care_demand"]
-    #     .mean()  # mean of {0,1} → share
-    #     .reindex(ages)  # keep full age range, NaN if missing
-    # )
-
-    # # ---- 3. Plot ----------------------------------------------------------
-    # fig, ax = plt.subplots(figsize=(8, 4))
-    # ax.plot(ages, share_care, label="Simulated", color="blue")
-
-    # ax.set_xlabel("Age")
-    # ax.set_ylabel("Share with care demand")
-    # ax.set_xlim(age_min, age_max)
-    # ax.set_ylim(0, 0.15)
-    # ax.set_title("Prevalence of Care Demand by Age (Simulated)")
-    # ax.legend()
-
-    # plt.tight_layout()
-    # if path_to_save_plot:
-    #     plt.savefig(path_to_save_plot, dpi=300, transparent=False)
-
-    # ---- 2. Compute share of care demand per age & education --------------
-    share_care_low = (
-        df_sim.loc[df_sim["education"] == 0]
-        .groupby("age")["care_demand"]
+    # ---- 2. Share by (age, education, has_sister)
+    shares = (
+        df_sim.groupby(["age", "education", "has_sister"])["care_demand"]
         .mean()
-        .reindex(ages)  # full grid, NaN if missing
+        .reindex(ages, level="age")  # keep full age grid on level 0
     )
 
-    share_care_high = (
-        df_sim.loc[df_sim["education"] == 1]
-        .groupby("age")["care_demand"]
-        .mean()
-        .reindex(ages)
-    )
+    # ---- 3. Plot four lines (2 edu × 2 sister)
+    fig, ax = plt.subplots()
 
-    # ---- 3. Plot -----------------------------------------------------------
-    fig, ax = plt.subplots(figsize=(8, 4))
+    for has_sister in (0, 1):
+        linestyle = "--" if has_sister == 0 else "-"
+        sister_lbl = "No sister" if has_sister == 0 else "Has sister"
 
-    ax.plot(ages, share_care_low, label="Low education", color="blue", lw=2)
-    ax.plot(ages, share_care_high, label="High education", color="orange", lw=2)
+        for edu in (0, 1):
+            colour = JET_COLOR_MAP[edu]
+            edu_lbl = "Low education" if edu == 0 else "High education"
 
+            share_series = shares.xs(
+                (edu, has_sister), level=("education", "has_sister")
+            )
+
+            label = f"{sister_lbl}, {edu_lbl}"
+            ax.plot(
+                ages,
+                share_series,
+                label=label,
+                color=colour,
+                linestyle=linestyle,
+                # linewidth=2,
+            )
+
+    # ---- 4. Cosmetics
     pad = 1
     ax.set_xlabel("Age")
     ax.set_ylabel("Share")
     ax.set_xlim(age_min - pad, age_max + pad)
-    ax.set_ylim(0, 0.15)
-    # ax.set_title("Prevalence of Care Demand by Age (Simulated)")
+    ax.set_ylim(0, 0.17)
     ax.legend()
 
     plt.tight_layout()

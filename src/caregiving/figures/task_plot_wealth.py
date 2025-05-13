@@ -60,4 +60,5 @@ def task_plot_budget_of_unemployed(
             ax.set_title(f"Unemployment benefits {sex_label}; {edu_label}")
 
     plt.tight_layout()
-    plt.savefig(path_to_save)
+    plt.savefig(path_to_save, dpi=300)
+    plt.close(fig)

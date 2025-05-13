@@ -62,7 +62,7 @@ def task_plot_healthy_unhealthy(
     # Create the figure
     fig, axs = plt.subplots(
         ncols=len(sexes_to_plot),
-        figsize=(6 * len(sexes_to_plot), 8),
+        # figsize=(6 * len(sexes_to_plot), 8),
         squeeze=False,
     )
     axs = axs[0]  # flatten first (only one row)
@@ -124,24 +124,25 @@ def task_plot_healthy_unhealthy(
             x_ticks = np.arange(start_age, max_age_est_physical + 1, 10)
             ax.set_xticks(x_ticks)
             # Set font size for x-axis labels
-            ax.set_xticklabels(x_ticks, fontsize=12)
+            ax.set_xticklabels(x_ticks)
 
         # Set y-axis limits and ticks
         ax.set_ylim(0, 1)  # Set y-axis limits from 0 to 1
         ax.set_yticks(np.arange(0.0, 1.1, 0.1))
         # Set yticks labels and fontsize
-        ax.set_yticklabels([f"{i:.0%}" for i in np.arange(0.0, 1.1, 0.1)], fontsize=12)
+        ax.set_yticklabels([f"{i:.0%}" for i in np.arange(0.0, 1.1, 0.1)])
 
         # Add title and legend
         if male:
-            ax.set_title(str(sex_label), fontsize=14)
-        ax.set_xlabel("Age", fontsize=12)
-        ax.set_ylabel("Probability of being Healthy", fontsize=12)
+            ax.set_title(str(sex_label))
+        ax.set_xlabel("Age")
+        ax.set_ylabel("Probability of being Healthy")
     axs[0].legend()
 
     # Show the plot
     fig.tight_layout()
-    fig.savefig(path_to_save)
+    fig.savefig(path_to_save, dpi=300)
+    plt.close(fig)
 
 
 def _markov_simulator(initial_dist, trans_probs):
@@ -206,9 +207,8 @@ def task_plot_health_shock_prob(
                 label = specs["health_labels"][health_var_to]
                 ax.set_title(
                     f"Probability of {label} Shock (kernel-smoothed), bw={bandwidth}",
-                    fontsize=14,
                 )
-                ax.set_ylabel("Probability", fontsize=12)
+                ax.set_ylabel("Probability")
                 ax.legend(loc="upper right")
                 ax.set_ylim(0, 0.4)
                 ax.set_yticks(

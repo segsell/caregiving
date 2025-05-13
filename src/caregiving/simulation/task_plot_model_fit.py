@@ -276,8 +276,6 @@ def task_plot_model_fit(  # noqa: PLR0915
     # print(f"Share of formal_care: {df_sim['formal_care'].mean()}")
     # =================================================================================
 
-    # breakpoint()
-
     data_emp = df_emp.copy()
     mask = (
         data_emp["lagged_choice"].isin(WORK_CHOICES)

@@ -286,7 +286,7 @@ def task_plot_mortality(
     # Dynamic figure
     fig, axes = plt.subplots(
         ncols=len(sexes_to_plot),
-        figsize=(6 * len(sexes_to_plot), 8),
+        # figsize=(6 * len(sexes_to_plot), 8),
         squeeze=False,
     )
     axes = axes[0]  # flatten
@@ -323,7 +323,9 @@ def task_plot_mortality(
             ax.set_title(f"Estimated Survival Probability for {sex_label}")
 
     axes[0].legend(loc="lower left")
-    fig.savefig(path_to_save_plot)
+    fig.tight_layout()
+    fig.savefig(path_to_save_plot, dpi=300)
+    plt.close(fig)
 
 
 def _survival_function(age, health_factors, params):

@@ -108,26 +108,40 @@ def task_plot_exog_care_prob(
 
     exog_care_matrix = pd.read_csv(path_to_exog_care_matrix)
 
-    plt.figure(figsize=(10, 6))
+    # plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(7, 6))
 
     # Loop through the 4 combinations of education and has_sister
     for has_sister in (0, 1):
-        for education in (0, 1):
+        for edu_var in (0, 1):
             subset = exog_care_matrix[
                 (exog_care_matrix["has_sister"] == has_sister)
-                & (exog_care_matrix["education"] == education)
+                & (exog_care_matrix["education"] == edu_var)
             ]
-            label = f"has_sister={has_sister}, education={education}"
-            plt.plot(subset["age"], subset["exog_care_prob"], label=label)
+
+            # label = f"has_sister={has_sister}, education={education}"
+            # plt.plot(subset["age"], subset["exog_care_prob"], label=label)
+            linestyle = "--" if has_sister == 0 else "-"  # CHANGED
+            colour = JET_COLOR_MAP[edu_var]  # CHANGED
+            label = f"Has sister={has_sister}, Education={edu_var}"
+
+            plt.plot(
+                subset["age"],
+                subset["exog_care_prob"],
+                label=label,
+                color=colour,  # CHANGED
+                linestyle=linestyle,  # CHANGED
+            )
 
     plt.xlabel("Age")
-    plt.ylabel("Predicted Probability of Other Informal Care")
-    plt.title("Exogenous Informal Care Probability by Age")
-    plt.grid(True)
+    plt.ylabel("Share")
+    plt.xlim(40, 80)
+    # plt.ylabel("Predicted Probability of Other Informal Care")
+    # plt.title("Exogenous Informal Care Probability by Age")
     plt.legend()
-    plt.tight_layout()
+    # plt.tight_layout()
 
-    plt.savefig(path_to_save_plot)
+    plt.savefig(path_to_save_plot, dpi=300)
     plt.close()
 
 

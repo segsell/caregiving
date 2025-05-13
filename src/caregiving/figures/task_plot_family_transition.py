@@ -105,7 +105,9 @@ def task_plot_children(
         ax.set_xlim([start_age, end_age])
         ax.set_xticks(np.arange(start_age, end_age + 1, 10))
 
-    fig.savefig(path_to_save)
+    fig.tight_layout()
+    fig.savefig(path_to_save, dpi=300)
+    plt.close(fig)
 
 
 def task_plot_partner_transitions(
@@ -208,6 +210,8 @@ def task_plot_partner_transitions(
                     label=f"Obs. {edu_label}",
                 )
                 ax.set_ylim([0, 1])
+                ax.set_xlabel("Age")
+                ax.set_ylabel("Number")
 
             if male:
                 ax.set_title(f"{sex_label}, {partner_states[partner_state]}")
@@ -215,7 +219,9 @@ def task_plot_partner_transitions(
                 ax.set_title(str(partner_states[partner_state]))
 
     axs[0, 0].legend(loc="upper center")
-    fig.savefig(path_to_save)
+    fig.tight_layout()
+    fig.savefig(path_to_save, dpi=300)
+    plt.close(fig)
 
 
 def _markov_simulator(initial_dist, trans_probs, n_periods=None):
