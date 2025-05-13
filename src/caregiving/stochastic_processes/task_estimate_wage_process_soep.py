@@ -94,7 +94,7 @@ def task_estimate_wage_parameters(
     )
 
     for sex_val, sex_label in enumerate(sex_labels):
-        fig, ax = plt.subplots(figsize=(12, 8))
+        fig, ax = plt.subplots()
         for edu_val, edu_label in enumerate(edu_labels):
             wage_data_type = wage_data[
                 (wage_data["education"] == edu_val) & (wage_data["sex"] == sex_val)
@@ -125,7 +125,7 @@ def task_estimate_wage_parameters(
                 color=JET_COLOR_MAP[edu_val],
                 label=f"Est. {edu_label}",
             )
-        ax.set_title(sex_label)
+        # ax.set_title(sex_label)
         ax.set_xlabel("Age")
         ax.set_ylabel("Log hourly wage")
         ax.legend(loc="upper left")

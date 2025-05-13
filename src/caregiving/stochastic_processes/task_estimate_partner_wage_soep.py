@@ -106,7 +106,7 @@ def task_estimate_partner_wage_parameters(
             wage_parameters.loc[edu_label] = fitted_model.params
 
         ax.legend()
-        ax.set_title(f"Partner Wages of {sex_label}")
+        # ax.set_title(f"Partner Wages of {sex_label}")
         ax.set_xlabel("Age")
         ax.set_ylabel("Monthly Wage")
 

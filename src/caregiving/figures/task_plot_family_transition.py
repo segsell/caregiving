@@ -19,6 +19,7 @@ def task_plot_children(
     / "plots"
     / "stochastic_processes"
     / "children.png",
+    male: bool = False,
 ):
     """Plot the number of children by age.
 
@@ -45,15 +46,29 @@ def task_plot_children(
     nb_children_est = specs["children_by_state"]
     ages = np.arange(start_age, end_age + 1)
 
-    fig, axs = plt.subplots(ncols=4, figsize=(12, 8))
-    i = 0
-
-    sex_labels = ["Men", "Women"]
+    # fig, axs = plt.subplots(ncols=4, figsize=(12, 8))
+    # i = 0
+    # -----------------------------------------------------------------
     partner_labels = ["Single", "Partnered"]
-    for sex, sex_label in enumerate(sex_labels):
+    sexes_to_plot = [1] if not male else [0, 1]
+    sex_labels = ["Men", "Women"]
+
+    ncols = len(sexes_to_plot) * len(partner_labels)
+    fig, axs = plt.subplots(1, ncols, figsize=(4 * ncols, 6), squeeze=False)
+    axs = axs[0]  # flatten
+
+    plot_idx = 0
+
+    # sex_labels = ["Men", "Women"]
+    # partner_labels = ["Single", "Partnered"]
+    # for sex, sex_label in enumerate(sex_labels):
+    #     for has_partner, partner_label in enumerate(partner_labels):
+    #         ax = axs[i]
+    #         i += 1
+    for sex in sexes_to_plot:
         for has_partner, partner_label in enumerate(partner_labels):
-            ax = axs[i]
-            i += 1
+            ax = axs[plot_idx]
+            plot_idx += 1
             for edu, edu_label in enumerate(specs["education_labels"]):
                 nb_children_data_edu = nb_children_data.loc[
                     (sex, edu, has_partner, slice(None))
@@ -77,7 +92,12 @@ def task_plot_children(
                 )
 
             ax.set_ylim([0, 2.5])
-            ax.set_title(f"{sex_label}, {partner_label}")
+            # if male:
+            #     ax.set_title(f"{sex}, {partner_label}")
+            # else:
+            #     ax.set_title(f"{partner_label}")
+            title = partner_label if not male else f"{sex_labels[sex]}, {partner_label}"
+            ax.set_title(title)
 
     axs[0].legend()
 
@@ -95,6 +115,7 @@ def task_plot_partner_transitions(
     / "plots"
     / "stochastic_processes"
     / "partner.png",
+    male: bool = False,
 ):
     """Illustrate the partnership rates by age.
 
@@ -112,6 +133,8 @@ def task_plot_partner_transitions(
 
     start_age = specs["start_age"]
     end_age = specs["end_age"]
+    partner_states = specs["partner_labels"]
+    n_partner_states = specs["n_partner_states"]
 
     grouped_shares = df.groupby(["sex", "education", "age"])[
         "partner_state"
@@ -121,16 +144,41 @@ def task_plot_partner_transitions(
     ]
 
     ages = np.arange(start_age, end_age + 1 - 10)
-    initial_dist = np.zeros(specs["n_partner_states"])
+    initial_dist = np.zeros(n_partner_states)
 
-    fig, axs = plt.subplots(nrows=2, ncols=specs["n_partner_states"], figsize=(12, 8))
-    for partner_state, partner_label in enumerate(specs["partner_labels"]):
-        for sex_var, sex_label in enumerate(specs["sex_labels"]):
-            ax = axs[sex_var, partner_state]
+    # fig, axs = plt.subplots(nrows=2, ncols=specs["n_partner_states"], figsize=(12, 8))
+    # for partner_state, partner_label in enumerate(specs["partner_labels"]):
+    #     for sex_var, sex_label in enumerate(specs["sex_labels"]):
+    #         ax = axs[sex_var, partner_state]
+    #         for edu, edu_label in enumerate(specs["education_labels"]):
+    #             edu_shares_obs = partner_shares_obs.loc[
+    #                 (sex_var, edu, slice(None), partner_state)
+    #             ]
+    # -----------------------------------------------------------------
+    sexes_to_plot = [1] if not male else [0, 1]
+    nrows = len(sexes_to_plot)
+
+    fig, axs = plt.subplots(
+        nrows=nrows,
+        ncols=n_partner_states,
+        figsize=(4 * n_partner_states, 3.5 * nrows),
+        squeeze=False,
+    )
+
+    for row_idx, sex_var in enumerate(sexes_to_plot):
+        sex_label = specs["sex_labels"][sex_var]
+
+        for partner_state in range(n_partner_states):
+            ax = axs[row_idx, partner_state]
+
             for edu, edu_label in enumerate(specs["education_labels"]):
+                # ------- observed ----------------------------------------------------
                 edu_shares_obs = partner_shares_obs.loc[
                     (sex_var, edu, slice(None), partner_state)
-                ]
+                ]  # index collapses to 'age'
+                share_data_container = pd.Series(data=np.nan, index=ages, dtype=float)
+                share_data_container.update(edu_shares_obs)
+
                 # Assign only single and married shares at start
                 initial_dist[0] = partner_shares_obs.loc[(sex_var, edu, 30, 0)]
                 initial_dist[1] = 1 - initial_dist[0]
@@ -161,7 +209,10 @@ def task_plot_partner_transitions(
                 )
                 ax.set_ylim([0, 1])
 
-            ax.set_title(f"{sex_label}; {partner_label}")
+            if male:
+                ax.set_title(f"{sex_label}, {partner_states[partner_state]}")
+            else:
+                ax.set_title(str(partner_states[partner_state]))
 
     axs[0, 0].legend(loc="upper center")
     fig.savefig(path_to_save)

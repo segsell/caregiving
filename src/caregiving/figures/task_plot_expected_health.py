@@ -19,6 +19,7 @@ def task_plot_healthy_unhealthy(
     / "plots"
     / "stochastic_processes"
     / "health_transition.png",
+    male: bool = False,
 ):
     """Illustrate the health rates by age.
 
@@ -55,13 +56,27 @@ def task_plot_healthy_unhealthy(
     edu_shares_healthy = pd.DataFrame(index=full_index, columns=["health"], data=0.0)
     edu_shares_healthy.update(edu_shares_data)
 
+    # Which sex(es) to plot?  0 = men, 1 = women
+    sexes_to_plot = [1] if not male else [0, 1]
+
+    # Create the figure
+    fig, axs = plt.subplots(
+        ncols=len(sexes_to_plot),
+        figsize=(6 * len(sexes_to_plot), 8),
+        squeeze=False,
+    )
+    axs = axs[0]  # flatten first (only one row)
+
     # Initialize the distribution
     initial_dist = np.zeros(specs["n_health_states"])
 
     # Create the plot
-    fig, axs = plt.subplots(ncols=2, figsize=(12, 8))
-    for sex_var, sex_label in enumerate(specs["sex_labels"]):
-        ax = axs[sex_var]
+    # fig, axs = plt.subplots(ncols=2, figsize=(12, 8))
+    # for sex_var, sex_label in enumerate(specs["sex_labels"]):
+    #     ax = axs[sex_var]
+    for col_idx, sex_var in enumerate(sexes_to_plot):
+        ax = axs[col_idx]
+        sex_label = specs["sex_labels"][sex_var]
         for edu_var, edu_label in enumerate(specs["education_labels"]):
             # Set the initial distribution for the Markov simulation
             # and assume nobody is dead
@@ -118,7 +133,8 @@ def task_plot_healthy_unhealthy(
         ax.set_yticklabels([f"{i:.0%}" for i in np.arange(0.0, 1.1, 0.1)], fontsize=12)
 
         # Add title and legend
-        ax.set_title(str(sex_label), fontsize=14)
+        if male:
+            ax.set_title(str(sex_label), fontsize=14)
         ax.set_xlabel("Age", fontsize=12)
         ax.set_ylabel("Probability of being Healthy", fontsize=12)
     axs[0].legend()

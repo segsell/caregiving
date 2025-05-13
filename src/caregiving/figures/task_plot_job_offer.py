@@ -19,6 +19,7 @@ def task_plot_job_transitions(
     / "plots"
     / "stochastic_processes"
     / "job_separation.png",
+    male: bool = False,
 ):
     """Plot job separation probabilities."""
 
@@ -51,10 +52,27 @@ def task_plot_job_transitions(
     #     choice=1,
     # )[1]
 
-    fig, axs = plt.subplots(ncols=2, figsize=(12, 8))
-    for sex_var, sex_label in enumerate(specs["sex_labels"]):
-        ax = axs[sex_var]
+    # -----------------------------------------------------------------
+    sexes_to_plot = [1] if not male else [0, 1]
+    ncols = len(sexes_to_plot)
+
+    fig, axs = plt.subplots(
+        ncols=ncols,
+        figsize=(6 * ncols, 5),
+        squeeze=False,
+    )
+    axs = axs[0]  # flatten
+
+    # fig, axs = plt.subplots(ncols=2, figsize=(12, 8))
+    # for sex_var, sex_label in enumerate(specs["sex_labels"]):
+    #     ax = axs[sex_var]
+    #     for edu_var, edu_label in enumerate(specs["education_labels"]):
+    for col_idx, sex_var in enumerate(sexes_to_plot):
+        ax = axs[col_idx]
+        sex_label = specs["sex_labels"][sex_var]
+
         for edu_var, edu_label in enumerate(specs["education_labels"]):
+
             ax.plot(
                 working_ages,
                 specs["job_sep_probs"][sex_var, edu_var, :n_working_periods],
@@ -69,8 +87,10 @@ def task_plot_job_transitions(
                 color=JET_COLOR_MAP[edu_var],
             )
 
-        ax.set_title(str(sex_label))
+        if male:
+            ax.set_title(str(sex_label))
         ax.set_xlabel("Age")
+        ax.set_ylabel("Share")
         ax.set_ylim([0, 0.1])
 
     axs[0].legend(loc="upper left")
