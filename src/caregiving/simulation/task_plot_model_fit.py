@@ -39,6 +39,7 @@ from caregiving.simulation.plot_model_fit import (
     plot_states,
     plot_transitions_by_age,
     plot_transitions_by_age_bins,
+    plot_job_offer_share_by_age,
 )
 
 
@@ -122,107 +123,114 @@ def task_plot_model_fit(  # noqa: PLR0915
 
     specs = model_full["options"]["model_params"]
 
-    plot_average_wealth(df_emp_prep, df_sim, specs, path_to_save_wealth_plot)
-    plot_average_savings_decision(df_sim, path_to_save_savings_plot)
+    # plot_average_wealth(df_emp_prep, df_sim, specs, path_to_save_wealth_plot)
+    # plot_average_savings_decision(df_sim, path_to_save_savings_plot)
 
-    # plot_choice_shares_single(
-    #     df_emp, df_sim, specs, path_to_save_plot=path_to_save_single_choice_plot
-    # )
+    # # plot_choice_shares_single(
+    # #     df_emp, df_sim, specs, path_to_save_plot=path_to_save_single_choice_plot
+    # # )
     plot_choice_shares_by_education(
         df_emp, df_sim, specs, path_to_save_plot=path_to_save_labor_shares_by_educ_plot
     )
     test_choice_shares_sum_to_one(df_emp, df_sim, specs)
 
-    df_emp_caregivers = df_emp.loc[df_emp["any_care"] == 1].copy()
-    df_sim_caregivers = df_sim.loc[
-        df_sim["choice"].isin(np.asarray(INFORMAL_CARE).tolist())
-    ].copy()
-    plot_choice_shares_overall(
-        df_emp_caregivers,
-        df_sim_caregivers,
-        specs,
-        path_to_save_plot=path_to_save_labor_shares_caregivers_by_age,
-    )
-    plot_choice_shares_overall_age_bins(
-        df_emp_caregivers,
-        df_sim_caregivers,
-        specs,
-        path_to_save_plot=path_to_save_labor_shares_caregivers_by_age_bin,
-    )
-    plot_choice_shares_by_education(
-        df_emp_caregivers,
-        df_sim_caregivers,
-        specs,
-        path_to_save_plot=path_to_save_labor_shares_caregivers_by_educ_and_age_plot,
-    )
-
-    plot_caregiver_shares_by_age(
-        df_emp,
+    plot_job_offer_share_by_age(
         df_sim,
-        specs,
-        choice_set=INFORMAL_CARE,
-        path_to_save_plot=path_to_save_caregiver_share_by_age_plot,
-    )
-    plot_caregiver_shares_by_age_bins(
-        emp_moms,
-        df_sim,
-        specs,
-        choice_set=INFORMAL_CARE,
-        age_min=40,
-        age_max=75,
-        path_to_save_plot=path_to_save_caregiver_share_by_age_bin_plot,
-    )
-    plot_simulated_care_demand_by_age(
-        df_sim,
-        specs,
-        age_min=40,
-        age_max=80,
-        path_to_save_plot=path_to_save_care_demand_by_age_plot,
+        path_to_save_plot=BLD / "plots" / "model_fit" / "simulated_job_offer",
     )
 
-    AGE_FOCUS = 75
-    # Drop invalid!?
-    # df_sim.loc[(df_sim["care_demand"] == 0) & (df_sim["informal_care"] == 1)]
+    breakpoint()
 
-    # 1. Agents alive / observed at the focus age --------------------------
-    ids_at_age = df_sim.loc[
-        (df_sim["age"] == AGE_FOCUS) & (df_sim["health"] != DEAD), "agent"
-    ].unique()
+    # df_emp_caregivers = df_emp.loc[df_emp["any_care"] == 1].copy()
+    # df_sim_caregivers = df_sim.loc[
+    #     df_sim["choice"].isin(np.asarray(INFORMAL_CARE).tolist())
+    # ].copy()
+    # plot_choice_shares_overall(
+    #     df_emp_caregivers,
+    #     df_sim_caregivers,
+    #     specs,
+    #     path_to_save_plot=path_to_save_labor_shares_caregivers_by_age,
+    # )
+    # plot_choice_shares_overall_age_bins(
+    #     df_emp_caregivers,
+    #     df_sim_caregivers,
+    #     specs,
+    #     path_to_save_plot=path_to_save_labor_shares_caregivers_by_age_bin,
+    # )
+    # plot_choice_shares_by_education(
+    #     df_emp_caregivers,
+    #     df_sim_caregivers,
+    #     specs,
+    #     path_to_save_plot=path_to_save_labor_shares_caregivers_by_educ_and_age_plot,
+    # )
 
-    # 2. Keep their entire life histories ----------------------------------
-    sub = df_sim.loc[df_sim["agent"].isin(ids_at_age)].copy()
+    # plot_caregiver_shares_by_age(
+    #     df_emp,
+    #     df_sim,
+    #     specs,
+    #     choice_set=INFORMAL_CARE,
+    #     path_to_save_plot=path_to_save_caregiver_share_by_age_plot,
+    # )
+    # plot_caregiver_shares_by_age_bins(
+    #     emp_moms,
+    #     df_sim,
+    #     specs,
+    #     choice_set=INFORMAL_CARE,
+    #     age_min=40,
+    #     age_max=75,
+    #     path_to_save_plot=path_to_save_caregiver_share_by_age_bin_plot,
+    # )
+    # plot_simulated_care_demand_by_age(
+    #     df_sim,
+    #     specs,
+    #     age_min=40,
+    #     age_max=80,
+    #     path_to_save_plot=path_to_save_care_demand_by_age_plot,
+    # )
 
-    # 3. Flag caregiver years via choice ∈ INFORMAL_CARE -------------------
-    care_codes = np.asarray(INFORMAL_CARE).tolist()
-    sub["is_care"] = sub["choice"].isin(care_codes)
+    # AGE_FOCUS = 75
+    # # Drop invalid!?
+    # # df_sim.loc[(df_sim["care_demand"] == 0) & (df_sim["informal_care"] == 1)]
 
-    # 4. Person-level aggregates -------------------------------------------
-    agg = sub.groupby("agent")["is_care"].agg(
-        care_sum="sum", care_ever="any"  # years with is_care == True
-    )  # at least one caregiver year
+    # # 1. Agents alive / observed at the focus age --------------------------
+    # ids_at_age = df_sim.loc[
+    #     (df_sim["age"] == AGE_FOCUS) & (df_sim["health"] != DEAD), "agent"
+    # ].unique()
 
-    mean_care_years = agg.loc[agg["care_ever"], "care_sum"].mean()
-    print(f"Avg. number of informal caregiving years: {mean_care_years}")
+    # # 2. Keep their entire life histories ----------------------------------
+    # sub = df_sim.loc[df_sim["agent"].isin(ids_at_age)].copy()
 
-    df_sim["informal_care"] = df_sim["choice"].isin(np.asarray(INFORMAL_CARE))
-    share_caregivers = df_sim.loc[df_sim["age"] < AGE_FOCUS, "informal_care"].mean()
-    print(f"Share of informal caregivers (unconditional): {share_caregivers}")
+    # # 3. Flag caregiver years via choice ∈ INFORMAL_CARE -------------------
+    # care_codes = np.asarray(INFORMAL_CARE).tolist()
+    # sub["is_care"] = sub["choice"].isin(care_codes)
 
-    # _share_informal_care = df_sim.loc[
-    #     df_sim["informal_care"] == 1, "care_demand"
+    # # 4. Person-level aggregates -------------------------------------------
+    # agg = sub.groupby("agent")["is_care"].agg(
+    #     care_sum="sum", care_ever="any"  # years with is_care == True
+    # )  # at least one caregiver year
+
+    # mean_care_years = agg.loc[agg["care_ever"], "care_sum"].mean()
+    # print(f"Avg. number of informal caregiving years: {mean_care_years}")
+
+    # df_sim["informal_care"] = df_sim["choice"].isin(np.asarray(INFORMAL_CARE))
+    # share_caregivers = df_sim.loc[df_sim["age"] < AGE_FOCUS, "informal_care"].mean()
+    # print(f"Share of informal caregivers (unconditional): {share_caregivers}")
+
+    # # _share_informal_care = df_sim.loc[
+    # #     df_sim["informal_care"] == 1, "care_demand"
+    # # ].mean()
+    # share_informal_care = df_sim.loc[df_sim["care_demand"] == 1, "informal_care"].mean()
+    # print(f"Share of informal caregivers (cond. on care demand): {share_informal_care}")
+
+    # share_caregivers_high_edu = df_sim.loc[
+    #     (df_sim["informal_care"] == 1), "education"
     # ].mean()
-    share_informal_care = df_sim.loc[df_sim["care_demand"] == 1, "informal_care"].mean()
-    print(f"Share of informal caregivers (cond. on care demand): {share_informal_care}")
-
-    share_caregivers_high_edu = df_sim.loc[
-        (df_sim["informal_care"] == 1), "education"
-    ].mean()
-    print(
-        f"Share of high education (cond. on informal care): {share_caregivers_high_edu}"
-    )
-    # plot_choice_shares(df_emp, df_sim, specs)
-    # discrete_state_names = model_full["model_structure"]["discrete_states_names"]
-    # plot_states(df_emp, df_sim, discrete_state_names, specs)
+    # print(
+    #     f"Share of high education (cond. on informal care): {share_caregivers_high_edu}"
+    # )
+    # # plot_choice_shares(df_emp, df_sim, specs)
+    # # discrete_state_names = model_full["model_structure"]["discrete_states_names"]
+    # # plot_states(df_emp, df_sim, discrete_state_names, specs)
 
     states = {
         "not_working": NOT_WORKING,

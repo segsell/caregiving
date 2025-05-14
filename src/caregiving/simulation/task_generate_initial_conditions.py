@@ -258,11 +258,11 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
             "lagged_choice"
         ].value_counts(normalize=True)
         lagged_choice_probs = pd.Series(
-            index=np.arange(0, specs["n_choices"] // 2), data=0, dtype=float
+            index=np.arange(0, specs["n_choices"]), data=0, dtype=float
         )
         lagged_choice_probs.update(empirical_lagged_choice_probs)
         lagged_choice_edu = np.random.choice(
-            specs["n_choices"] // 2, size=n_agents_edu, p=lagged_choice_probs.values
+            specs["n_choices"], size=n_agents_edu, p=lagged_choice_probs.values
         )
         lagged_choice[type_mask] = lagged_choice_edu
 

@@ -38,7 +38,7 @@ from caregiving.model.wealth_and_budget.pensions import (
 
 def create_state_space_functions():
     return {
-        "state_specific_choice_set": state_specific_choice_set_with_caregiving,
+        "state_specific_choice_set": state_specific_choice_set,
         "next_period_endogenous_state": next_period_endogenous_state,
         "next_period_experience": get_next_period_experience,
         "sparsity_condition": sparsity_condition,
@@ -115,8 +115,8 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
     has_sister,
     health,
     partner_state,
-    mother_health,
-    care_demand,
+    # mother_health,
+    # care_demand,
     # care_supply,
     job_offer,
     options,
@@ -135,8 +135,8 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
         return False
     elif (age <= min_ret_age_state_space + 1) & (already_retired == 1):
         return False
-    elif (age >= options["min_SRA_baseline"] + 1) & (is_unemployed(lagged_choice)):
-        return False
+    # elif (age >= options["min_SRA_baseline"] + 1) & (is_unemployed(lagged_choice)):
+    #     return False
     elif (not is_retired(lagged_choice)) & (already_retired == 1):
         return False
     # After the maximum retirement age, you must be retired.
@@ -162,8 +162,8 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "has_sister": has_sister,
                 "health": health,
                 "partner_state": partner_state,
-                "mother_health": PARENT_DEAD,
-                "care_demand": 0,
+                # "mother_health": PARENT_DEAD,
+                # "care_demand": 0,
                 # "care_supply": 0,
                 "job_offer": 0,
             }
@@ -179,8 +179,8 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "has_sister": has_sister,
                 "health": health,
                 "partner_state": partner_state,
-                "mother_health": mother_health,
-                "care_demand": care_demand,
+                # "mother_health": mother_health,
+                # "care_demand": care_demand,
                 # "care_supply": care_supply,
                 "job_offer": 0,
             }
@@ -196,8 +196,8 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "has_sister": has_sister,
                 "health": health,
                 "partner_state": partner_state,
-                "mother_health": PARENT_DEAD,
-                "care_demand": care_demand,
+                # "mother_health": PARENT_DEAD,
+                # "care_demand": care_demand,
                 # "care_supply": care_supply,
                 "job_offer": 0,
             }
@@ -217,22 +217,22 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
         #         "job_offer": job_offer,
         #     }
         #     return state_proxy
-        elif mother_health == PARENT_DEAD:
-            # If mother is dead, no care demand and supply
-            state_proxy = {
-                "period": period,
-                "lagged_choice": lagged_choice,
-                "already_retired": already_retired,
-                "education": education,
-                "has_sister": has_sister,
-                "health": health,
-                "partner_state": partner_state,
-                "mother_health": mother_health,
-                "care_demand": 0,
-                # "care_supply": 0,
-                "job_offer": job_offer,
-            }
-            return state_proxy
+        # elif mother_health == PARENT_DEAD:
+        #     # If mother is dead, no care demand and supply
+        #     state_proxy = {
+        #         "period": period,
+        #         "lagged_choice": lagged_choice,
+        #         "already_retired": already_retired,
+        #         "education": education,
+        #         "has_sister": has_sister,
+        #         "health": health,
+        #         "partner_state": partner_state,
+        #         "mother_health": mother_health,
+        #         "care_demand": 0,
+        #         # "care_supply": 0,
+        #         "job_offer": job_offer,
+        #     }
+        #     return state_proxy
         else:
             return True
 
@@ -258,17 +258,17 @@ def state_specific_choice_set(  # noqa: PLR0911, PLR0912
         return RETIREMENT_NO_CARE
     # Person is in the voluntary retirement range.
     else:
-        if age >= options["min_SRA_baseline"]:
-            if job_offer == 0:
-                return RETIREMENT_NO_CARE
-            else:
-                return WORK_AND_RETIREMENT_NO_CARE
+        # if age >= options["min_SRA_baseline"]:
+        #     if job_offer == 0:
+        #         return RETIREMENT_NO_CARE
+        #     else:
+        #         return WORK_AND_RETIREMENT_NO_CARE
+        # else:
+        if job_offer == 0:
+            # Choose unemployment or retirement
+            return NOT_WORKING_NO_CARE
         else:
-            if job_offer == 0:
-                # Choose unemployment or retirement
-                return NOT_WORKING_NO_CARE
-            else:
-                return ALL_NO_CARE
+            return ALL_NO_CARE
 
 
 def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912

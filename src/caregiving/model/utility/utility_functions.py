@@ -39,7 +39,7 @@ def utility_func(
     period: int,
     education: int,
     health: int,
-    care_demand: int,
+    # care_demand: int,
     # care_supply: int,
     partner_state: int,
     params: dict,
@@ -81,7 +81,7 @@ def utility_func(
         partner_state=partner_state,
         education=education,
         health=health,
-        care_demand=care_demand,
+        # care_demand=care_demand,
         # care_supply=care_supply,
         period=period,
         choice=choice,
@@ -103,7 +103,7 @@ def utility_func_alive(
     partner_state,
     education,
     health,
-    care_demand,
+    # care_demand,
     # care_supply,
     period,
     choice,
@@ -132,16 +132,16 @@ def utility_func_alive(
         options=options,
     )
 
-    zeta = utility_of_caregiving(
-        period,
-        choice,
-        education,
-        health=health,
-        care_demand=care_demand,
-        # care_supply=care_supply,
-        params=params,
-        options=options,
-    )
+    # zeta = utility_of_caregiving(
+    #     period,
+    #     choice,
+    #     education,
+    #     health=health,
+    #     care_demand=care_demand,
+    #     # care_supply=care_supply,
+    #     params=params,
+    #     options=options,
+    # )
 
     # compute utility
     scaled_consumption = consumption * eta / cons_scale
@@ -152,7 +152,7 @@ def utility_func_alive(
         jnp.log(consumption * eta / cons_scale),
         utility_rho_not_one,
     )
-    return utility + zeta * care_demand
+    return utility  # + zeta * care_demand
 
 
 def _utility_func_alive(

@@ -1292,3 +1292,40 @@ def plot_average_savings_decision(data_sim, path_to_save_plot):
     ax.set_title("Average savings by age")
     ax.legend()
     fig.savefig(path_to_save_plot, transparent=True, dpi=300)
+
+
+# =====================================================================================
+# Debugging
+# =====================================================================================
+
+
+def plot_job_offer_share_by_age(df, min_age=30, max_age=75, path_to_save_plot=None):
+    """
+    Plots the share of positive job offers (job_offer == 1) by age within a specified range.
+
+    Parameters:
+    - df: pandas.DataFrame containing at least 'age' and 'job_offer' columns
+    - min_age: int, minimum age to include (inclusive)
+    - max_age: int, maximum age to include (inclusive)
+
+    Usage:
+    >>> plot_job_offer_share_by_age(df_sim)
+    """
+    # Filter the DataFrame for the desired age range
+    df_age = df[(df["age"] >= min_age) & (df["age"] <= max_age)]
+
+    # Calculate the share of positive job offers by age
+    share_by_age = df_age.groupby("age")["job_offer"].mean()
+
+    # Plotting
+    plt.figure(figsize=(10, 6))
+    plt.plot(share_by_age.index, share_by_age.values, marker="o")
+    plt.xlabel("Age")
+    plt.ylabel("Share of Positive Job Offers")
+    plt.title(f"Share of Positive Job Offers by Age ({min_age}-{max_age})")
+    plt.xticks(range(min_age, max_age + 1, 5))
+    plt.grid(True)
+    plt.tight_layout()
+    if path_to_save_plot:
+        plt.savefig(path_to_save_plot, transparent=False, dpi=300)
+    plt.close()
