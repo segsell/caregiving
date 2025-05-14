@@ -76,8 +76,8 @@ def estimate_logit_job_offer_params(df, specs):
     logit_vars = [
         "intercept",
         "age",
-        "age_squared",
-        "age_cubed",
+        # "age_squared",
+        # "age_cubed",
         "education",
     ]
 
@@ -96,8 +96,8 @@ def estimate_logit_job_offer_params(df, specs):
     gender_params = {
         f"job_finding_logit_const_{suffix}": params["intercept"],
         f"job_finding_logit_age_{suffix}": params["age"],
-        f"job_finding_logit_age_squared_{suffix}": params["age_squared"],
-        f"job_finding_logit_age_cubed_{suffix}": params["age_cubed"],
+        # f"job_finding_logit_age_squared_{suffix}": params["age_squared"],
+        # f"job_finding_logit_age_cubed_{suffix}": params["age_cubed"],
         # f"job_finding_logit_below_49_{suffix}": params["below_49"],
         # f"job_finding_logit_above_49_{suffix}": params["above_49"],
         f"job_finding_logit_high_educ_{suffix}": params["education"],

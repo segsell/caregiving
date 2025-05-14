@@ -225,7 +225,7 @@ def task_plot_care_demand(
             "ADL 1": "Care degree 2",
             "ADL 2": "Care degree 3",
             "ADL 3": "Care degree 4 or 5",
-            "Any ADL": "Care degree >= 2",
+            "Any ADL": "Care degree 2+",
         },
     )
 

@@ -384,8 +384,8 @@ def utility_of_caregiving(
     working_full_time = is_full_time(choice)
     informal_care = is_informal_care(choice)
 
-    bad_health = is_bad_health(health)
-    good_health = is_good_health(health)
+    # bad_health = is_bad_health(health)
+    # good_health = is_good_health(health)
 
     util_unemployed_and_care_women = params["util_unemployed_and_care_women"]
     util_pt_work_and_care_women = params["util_pt_work_and_care_women"]
@@ -394,10 +394,10 @@ def utility_of_caregiving(
 
     # util_joint_care = params["util_joint_informal_care_women"]  # * care_supply
 
-    util_informal_by_health = (
-        params["util_informal_care_bad_women"] * bad_health
-        + params["util_informal_care_good_women"] * good_health
-    )
+    # util_informal_by_health = (
+    #     params["util_informal_care_bad_women"] * bad_health
+    #     + params["util_informal_care_good_women"] * good_health
+    # )
     util_informal_by_education = params[
         "util_informal_care_high_women"
     ] * education + params["util_informal_care_low_women"] * (1 - education)
@@ -408,7 +408,7 @@ def utility_of_caregiving(
     )
 
     util_informal = (
-        util_informal_by_health + util_informal_by_education + util_informal_and_work
+        util_informal_by_education + util_informal_and_work
     ) * informal_care
     _util_formal = util_no_informal_care * (1 - informal_care)
 

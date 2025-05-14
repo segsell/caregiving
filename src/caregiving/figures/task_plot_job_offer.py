@@ -215,15 +215,15 @@ def _model_offer_prob(age, edu, params, sex_suffix):
     const = params[f"job_finding_logit_const_{sex_suffix}"]
     beta_age = params[f"job_finding_logit_age_{sex_suffix}"]
     # beta_age = params[f"job_finding_logit_below_49_{sex_suffix}"]
-    beta_age_squared = params[f"job_finding_logit_age_squared_{sex_suffix}"]
-    beta_age_cubed = params[f"job_finding_logit_age_cubed_{sex_suffix}"]
+    # beta_age_squared = params[f"job_finding_logit_age_squared_{sex_suffix}"]
+    # beta_age_cubed = params[f"job_finding_logit_age_cubed_{sex_suffix}"]
     # beta_age_above_49 = params[f"job_finding_logit_above_49_{sex_suffix}"]
     beta_edu = params[f"job_finding_logit_high_educ_{sex_suffix}"]
     x = (
         const
         + beta_age * age
-        + beta_age_squared * age**2
-        + beta_age_cubed * age**3
+        # + beta_age_squared * age**2
+        # + beta_age_cubed * age**3
         # + beta_age_above_49 * (age > 49).astype(int) * age  # * (age - 49)
         + beta_edu * edu
     )
