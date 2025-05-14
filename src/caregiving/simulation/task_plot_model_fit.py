@@ -35,11 +35,11 @@ from caregiving.simulation.plot_model_fit import (
     plot_choice_shares_overall,
     plot_choice_shares_overall_age_bins,
     plot_choice_shares_single,
+    plot_job_offer_share_by_age,
     plot_simulated_care_demand_by_age,
     plot_states,
     plot_transitions_by_age,
     plot_transitions_by_age_bins,
-    plot_job_offer_share_by_age,
 )
 
 

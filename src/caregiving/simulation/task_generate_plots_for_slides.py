@@ -41,7 +41,6 @@ from caregiving.simulation.plot_model_fit import (
 )
 from caregiving.simulation.task_plot_model_fit import test_choice_shares_sum_to_one
 
-
 # def task_plot_model_fit_for_slides(  # noqa: PLR0915
 #     path_to_options: Path = BLD / "model" / "options.pkl",
 #     path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
