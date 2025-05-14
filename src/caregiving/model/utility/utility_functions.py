@@ -12,6 +12,7 @@ from caregiving.model.shared import (
     is_dead,
     is_full_time,
     is_good_health,
+    is_informal_care,
     is_part_time,
     is_unemployed,
 )
@@ -38,6 +39,8 @@ def utility_func(
     period: int,
     education: int,
     health: int,
+    # care_demand: int,
+    # care_supply: int,
     partner_state: int,
     params: dict,
     options: dict,
@@ -78,6 +81,8 @@ def utility_func(
         partner_state=partner_state,
         education=education,
         health=health,
+        # care_demand=care_demand,
+        # care_supply=care_supply,
         period=period,
         choice=choice,
         params=params,
@@ -94,7 +99,16 @@ def utility_func(
 
 
 def utility_func_alive(
-    consumption, partner_state, education, health, period, choice, params, options
+    consumption,
+    partner_state,
+    education,
+    health,
+    # care_demand,
+    # care_supply,
+    period,
+    choice,
+    params,
+    options,
 ):
     """Calculate the choice specific cobb-douglas utility, i.e. u =
     ((c*eta/consumption_scale)^(1-rho))/(1-rho) ."""
@@ -117,6 +131,18 @@ def utility_func_alive(
         period=period,
         options=options,
     )
+
+    # zeta = utility_of_caregiving(
+    #     period,
+    #     choice,
+    #     education,
+    #     health=health,
+    #     care_demand=care_demand,
+    #     # care_supply=care_supply,
+    #     params=params,
+    #     options=options,
+    # )
+
     # compute utility
     scaled_consumption = consumption * eta / cons_scale
     utility_rho_not_one = (scaled_consumption ** (1 - rho) - 1) / (1 - rho)
@@ -126,7 +152,7 @@ def utility_func_alive(
         jnp.log(consumption * eta / cons_scale),
         utility_rho_not_one,
     )
-    return utility
+    return utility  # + zeta * care_demand
 
 
 def _utility_func_alive(
@@ -143,11 +169,11 @@ def _utility_func_alive(
     cons_scale = consumption_scale(has_partner, n_children)
     utility_consumption = ((consumption / cons_scale) ** (1 - rho) - 1) / (1 - rho)
 
-    eta = utility_of_labor_and_children(
+    eta = _utility_of_labor_and_children(
         choice=choice, education=education, n_children=n_children, params=params
     )
-    # zeta = utility_of_labor_and_caregiving(
-    #     choice, age_youngest_child, education, params
+    # zeta = utility_of_labor_and_elder_care(
+    #     choice, params
     # )
 
     utility_with_rho_not_one = utility_consumption * jnp.exp(eta)  # + jnp.exp(zeta)
@@ -349,7 +375,50 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     return disutility
 
 
-def utility_of_labor_and_children(choice, education, n_children, params):
+def utility_of_caregiving(
+    period, choice, education, health, care_demand, params, options
+):
+    # choice booleans
+    unemployed = is_unemployed(choice)
+    working_part_time = is_part_time(choice)
+    working_full_time = is_full_time(choice)
+    informal_care = is_informal_care(choice)
+
+    # bad_health = is_bad_health(health)
+    # good_health = is_good_health(health)
+
+    util_unemployed_and_care_women = params["util_unemployed_and_care_women"]
+    util_pt_work_and_care_women = params["util_pt_work_and_care_women"]
+    util_ft_work_and_care_women = params["util_ft_work_and_care_women"]
+    util_no_informal_care = params["util_formal_care_women"]
+
+    # util_joint_care = params["util_joint_informal_care_women"]  # * care_supply
+
+    # util_informal_by_health = (
+    #     params["util_informal_care_bad_women"] * bad_health
+    #     + params["util_informal_care_good_women"] * good_health
+    # )
+    util_informal_by_education = params[
+        "util_informal_care_high_women"
+    ] * education + params["util_informal_care_low_women"] * (1 - education)
+    util_informal_and_work = (
+        util_unemployed_and_care_women * unemployed
+        + util_pt_work_and_care_women * working_part_time
+        + util_ft_work_and_care_women * working_full_time
+    )
+
+    util_informal = (
+        util_informal_by_education + util_informal_and_work
+    ) * informal_care
+    _util_formal = util_no_informal_care * (1 - informal_care)
+
+    utility = util_informal  # + _util_formal
+    # + util_no_informal_care_educ * (1 - informal_care)
+
+    return utility
+
+
+def _utility_of_labor_and_children(choice, education, n_children, params):
     """Compute utility of labor.
 
     Interacted with utility of consumption above.
@@ -398,7 +467,7 @@ def utility_of_labor_and_children(choice, education, n_children, params):
     )
 
 
-def utility_of_labor_and_caregiving(choice, age_youngest_child, education, params):
+def _utility_of_labor_and_caregiving(choice, age_youngest_child, education, params):
     """Compute utility of labor and caregiving.
 
     Reference category is 'not working'.

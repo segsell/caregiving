@@ -66,7 +66,7 @@ def estimate_logit_by_sample(df_job, specs):
         (specs["n_sexes"], specs["n_education_types"], n_working_age), dtype=float
     )
 
-    max_age_labor = specs["max_est_age_labor"]
+    max_age_labor = specs["max_est_age_labor"] + 5
     max_period_labor = max_age_labor - specs["start_age"]
     df_job = df_job[df_job["age"] <= max_age_labor]
 

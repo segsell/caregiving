@@ -14,7 +14,9 @@ def read_and_derive_specs(spec_path):
     # Number of education types and choices from labels
     specs["n_education_types"] = len(specs["education_labels"])
     specs["n_sexes"] = len(specs["sex_labels"])
-    specs["n_choices"] = len(specs["choice_labels"])
+    specs["n_choices"] = len(
+        specs["choice_labels"]
+    )  # * len(specs["caregiving_labels"])
 
     # For health states, get number and var values for alive states
     specs["n_health_states"] = len(specs["health_labels"])
@@ -26,6 +28,7 @@ def read_and_derive_specs(spec_path):
     ][0]
 
     if "health_labels_three" in specs.keys():
+        specs["n_health_states_three"] = len(specs["health_labels_three"])
         specs["alive_health_vars_three"] = np.where(
             np.array(specs["health_labels_three"]) != "Death"
         )[0]

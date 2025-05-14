@@ -5,7 +5,7 @@ On SHARE parent-child sample.
 """
 
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated, Mapping, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,31 +21,17 @@ from caregiving.model.shared import (
     FEMALE,
     MALE,
     MIN_AGE_PARENTS,
-    STATE_GOOD_HEALTH,
-    STATE_MEDIUM_HEALTH,
+    PARENT_DEAD,
+    PARENT_GOOD_HEALTH,
+    PARENT_MEDIUM_HEALTH,
 )
 from caregiving.specs.derive_specs import read_and_derive_specs
+from caregiving.utils import table
 
 
-def task_estimate_adl_transitions_one_logit(
+def task_estimate_adl_transitions_one_logit(  # noqa: PLR0912
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_parent_child_sample: Path = BLD / "data" / "parent_child_data.csv",
-    path_to_health_transition_matrix: Path = BLD
-    / "estimation"
-    / "stochastic_processes"
-    / "health_transition_matrix_good_medium_bad.csv",
-    path_to_death_transition_matrix: Path = BLD
-    / "estimation"
-    / "stochastic_processes"
-    / "mortality_transition_matrix_logit_good_medium_bad.csv",
-    path_to_health_death_transition_matrix: Path = BLD
-    / "estimation"
-    / "stochastic_processes"
-    / "health_death_transition_matrix_good_medium_bad.csv",
-    path_to_health_death_transition_matrix_NEW: Annotated[Path, Product] = BLD
-    / "estimation"
-    / "stochastic_processes"
-    / "health_death_transition_matrix_good_medium_bad_NEW.csv",
     path_to_save_adl_probabilities: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
@@ -57,11 +43,7 @@ def task_estimate_adl_transitions_one_logit(
     path_to_save_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "stochastic_processes"
-    / "adl_transition_probs.png",
-    path_to_save_weighted_adl_transitions_by_age_plot: Annotated[Path, Product] = BLD
-    / "plots"
-    / "stochastic_processes"
-    / "weighted_adl_transitions_by_age.png",
+    / "adl_transitions.png",
 ):
     specs = read_and_derive_specs(path_to_specs)
 
@@ -74,12 +56,6 @@ def task_estimate_adl_transitions_one_logit(
     df_combined = pd.concat([df_men, df_women], ignore_index=True)
 
     df_combined.to_csv(path_to_save_adl_probabilities, index=False)
-
-    health_trans_mat = pd.read_csv(path_to_health_transition_matrix)
-    death_trans_mat = pd.read_csv(path_to_death_transition_matrix)
-    health_death_trans_mat = pd.read_csv(
-        path_to_health_death_transition_matrix, index_col=[0]
-    )
 
     # 1. Setup the index ranges
     ages = np.arange(specs["start_age_parents"], specs["end_age"] + 1)
@@ -136,15 +112,20 @@ def task_estimate_adl_transitions_one_logit(
                     if "age_sq" in row_params and not pd.isna(row_params["age_sq"]):
                         val += row_params["age_sq"] * (age**2)
 
+                    if "age_cubed" in row_params and not pd.isna(
+                        row_params["age_cubed"]
+                    ):
+                        val += row_params["age_cubed"] * (age**3)
+
                     if (
-                        h_idx == STATE_MEDIUM_HEALTH
+                        h_idx == PARENT_MEDIUM_HEALTH
                         and "medium_health" in row_params
                         and not pd.isna(row_params["medium_health"])
                     ):
                         val += row_params["medium_health"]
 
                     if (
-                        h_idx == STATE_GOOD_HEALTH
+                        h_idx == PARENT_GOOD_HEALTH
                         and "good_health" in row_params
                         and not pd.isna(row_params["good_health"])
                     ):
@@ -166,6 +147,60 @@ def task_estimate_adl_transitions_one_logit(
 
     adl_transition_matrix.to_csv(path_to_save)
 
+    plot_adl_probabilities_by_health(
+        df, adl_transition_matrix, specs, path_to_save_plot=path_to_save_plot
+    )
+
+
+def task_plot_care_demand(
+    path_to_specs: Path = SRC / "specs.yaml",
+    path_to_adl_mat: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "adl_transition_matrix.csv",
+    path_to_health_transition_matrix: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "health_transition_matrix_good_medium_bad.csv",
+    path_to_death_transition_matrix: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "mortality_transition_matrix_logit_good_medium_bad.csv",
+    path_to_health_death_transition_matrix: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "health_death_transition_matrix_good_medium_bad.csv",
+    path_to_health_by_age: Path = BLD
+    / "model"
+    / "initial_conditions"
+    / "health_by_age.csv",
+    path_to_survival_by_age: Path = BLD
+    / "model"
+    / "initial_conditions"
+    / "survival_by_age.csv",
+    path_to_health_death_transition_matrix_NEW: Annotated[Path, Product] = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "health_death_transition_matrix_good_medium_bad_NEW.csv",
+    path_to_save_weighted_adl_transitions_by_age_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "stochastic_processes"
+    / "weighted_adl_transitions_by_age.png",
+):
+
+    specs = read_and_derive_specs(path_to_specs)
+
+    health_trans_mat = pd.read_csv(path_to_health_transition_matrix)
+    death_trans_mat = pd.read_csv(path_to_death_transition_matrix)
+    health_death_trans_mat = pd.read_csv(
+        path_to_health_death_transition_matrix, index_col=[0]
+    )
+    adl_transition_matrix = pd.read_csv(path_to_adl_mat, index_col=[0, 1, 2, 3])
+
+    # Read health and survival probabilities
+    health_prob_by_age = pd.read_csv(path_to_health_by_age, index_col=0)
+    survival_by_age = pd.read_csv(path_to_survival_by_age, index_col=0)
+
     hdeath_df = build_health_death_transition_matrix(
         specs, health_trans_mat, death_trans_mat
     )
@@ -176,16 +211,22 @@ def task_estimate_adl_transitions_one_logit(
     # save hdeath_df to csv in the same folder as the other transition matrices
     hdeath_df.to_csv(path_to_health_death_transition_matrix_NEW, index=False)
 
+    start_age = 50
     plot_care_demand_from_hdeath_matrix(
         specs=specs,
         adl_transition_df=adl_transition_matrix,
         # health_death_df=hdeath_df,
         health_death_df=health_death_trans_mat,
-        path_to_save_plot=BLD
-        / "plots"
-        / "stochastic_processes"
-        / "care_demand_fom_one_mat_fixed.png",
-        start_age=66,
+        path_to_save_plot=path_to_save_weighted_adl_transitions_by_age_plot,
+        start_age=start_age,
+        initial_alive_share=survival_by_age.loc[start_age],
+        initial_health_shares_alive=health_prob_by_age.loc[start_age],
+        legend_labels={
+            "ADL 1": "Care degree 2",
+            "ADL 2": "Care degree 3",
+            "ADL 3": "Care degree 4 or 5",
+            "Any ADL": "Care degree 2+",
+        },
     )
 
 
@@ -202,6 +243,8 @@ def plot_care_demand_from_hdeath_matrix(
         "Medium Health": 0.743285,
         "Bad Health": 0.068707,
     },
+    male=False,
+    legend_labels: Mapping[str, str] | None = None,
 ):
     """
     Simulate a cohort with a *combined* health-death transition matrix that is
@@ -212,11 +255,17 @@ def plot_care_demand_from_hdeath_matrix(
     specs : dict
         Model spec containing 'end_age', 'sex_labels', 'adl_labels', …
     adl_transition_df : pd.DataFrame
-        Multi-index (sex, age, health, adl_cat) – column 'transition_prob'.
+        Multi-index (sex, age, health, adl_cat) - column 'transition_prob'.
     health_death_df : pd.DataFrame
         Columns ['sex','age','health','lead_health','transition_prob']
         Row sums (across lead_health) are 1 and include 'Death'.
     """
+    legend_map = legend_labels or {}
+
+    if male:
+        sex_labels = specs["sex_labels"]
+    else:
+        sex_labels = ["Women"]
 
     # ───────────────────── labels & setup ────────────────────────────────
     health_states = ["Bad Health", "Medium Health", "Good Health", "Death"]
@@ -235,7 +284,7 @@ def plot_care_demand_from_hdeath_matrix(
 
     # ─────────────────── build {sex → {age → 4×4 P}} ─────────────────────
     P = {}
-    for sex in specs["sex_labels"]:
+    for sex in sex_labels:
         sex_block = health_death_df[health_death_df["sex"] == sex]
         mats = {}
         for age_key, grp in sex_block.groupby("age"):
@@ -253,21 +302,19 @@ def plot_care_demand_from_hdeath_matrix(
     # ───────────────── initial cohort vector  ────────────────────────────
     v0 = np.array(
         [
-            initial_alive_share * initial_health_shares_alive["Bad Health"],
-            initial_alive_share * initial_health_shares_alive["Medium Health"],
-            initial_alive_share * initial_health_shares_alive["Good Health"],
-            1.0 - initial_alive_share,
+            initial_alive_share[0] * initial_health_shares_alive[0],
+            initial_alive_share[0] * initial_health_shares_alive[1],
+            initial_alive_share[0] * initial_health_shares_alive[2],
+            1.0 - initial_alive_share[0],
         ]
     )
 
     # ───────────────── simulation containers ─────────────────────────────
     ages = np.arange(start_age, specs["end_age"] + 1)
-    demand = {
-        s: {lab: [] for lab in (care_labels + [any_label])} for s in specs["sex_labels"]
-    }
+    demand = {s: {lab: [] for lab in (care_labels + [any_label])} for s in sex_labels}
 
     # ───────────────── simulate Men / Women  ─────────────────────────────
-    for sex in specs["sex_labels"]:
+    for sex in sex_labels:
         v = v0.copy()
         for age in ages:
             # if we run beyond last available age, use the last matrix
@@ -290,37 +337,69 @@ def plot_care_demand_from_hdeath_matrix(
             )
 
     # ─────────────────────── plotting ────────────────────────────────────
-    fig, axes = plt.subplots(1, 2, figsize=(14, 6), sharey=True)
+    # fig, axes = plt.subplots(1, 2, figsize=(14, 6), sharey=True)
 
-    for idx, (ax, sex) in enumerate(zip(axes, specs["sex_labels"], strict=False)):
-        for lab in care_labels:
-            ax.plot(
-                ages, demand[sex][lab], label=lab, color=colour_map[lab], linewidth=2
-            )
+    # for idx, (ax, sex) in enumerate(zip(axes, sex_labels, strict=False)):
+    #     for lab in care_labels:
+    #         ax.plot(
+    #             ages, demand[sex][lab], label=lab, color=colour_map[lab], linewidth=2
+    #         )
+    #     ax.plot(
+    #         ages,
+    #         demand[sex][any_label],
+    #         label=any_label,
+    #         color=colour_map[any_label],
+    #         linewidth=2,
+    #         linestyle="--",
+    #     )
+
+    #     # cosmetics
+    #     ax.set_xlim(start_age, specs["end_age"])
+    #     ax.set_ylim(0, 0.15)
+    #     ax.set_xticks(np.arange(start_age, specs["end_age"] + 1, 5))
+
+    #     if idx == 0:  # left axis
+    #         ax.set_ylabel("Share of initial cohort")
+    #         ax.tick_params(labelleft=True, labelright=False)
+    #     else:  # right axis
+    #         ax.set_ylabel("Share of initial cohort")
+    #         ax.tick_params(labelleft=True, labelright=False)
+
+    #     ax.set_xlabel("Age")
+    #     ax.set_title(sex)
+    #     ax.legend(title="Care level", fontsize=9, title_fontsize=10, loc="upper left")
+
+    fig, ax = plt.subplots(figsize=(7, 6))  # one axis, one panel
+
+    sex = sex_labels[0]  # "Women" (the mother)
+
+    for lab in care_labels:
         ax.plot(
             ages,
-            demand[sex][any_label],
-            label=any_label,
-            color=colour_map[any_label],
+            demand[sex][lab],
+            label=legend_map.get(lab, lab),  # custom label
+            color=colour_map[lab],
             linewidth=2,
-            linestyle="--",
         )
 
-        # cosmetics
-        ax.set_xlim(start_age, specs["end_age"])
-        ax.set_ylim(0, 0.15)
-        ax.set_xticks(np.arange(start_age, specs["end_age"] + 1, 5))
+    ax.plot(
+        ages,
+        demand[sex][any_label],
+        label=legend_map.get(any_label, any_label),  # custom label
+        color=colour_map[any_label],
+        linewidth=2,
+        linestyle="--",
+    )
 
-        if idx == 0:  # left axis
-            ax.set_ylabel("Share of initial cohort")
-            ax.tick_params(labelleft=True, labelright=False)
-        else:  # right axis
-            ax.set_ylabel("Share of initial cohort")
-            ax.tick_params(labelleft=True, labelright=False)
-
-        ax.set_xlabel("Age")
-        ax.set_title(sex)
-        ax.legend(title="Care level", fontsize=9, title_fontsize=10, loc="upper left")
+    # cosmetics
+    ax.set_xlim(start_age, specs["end_age"])
+    ax.set_ylim(0, 0.17)
+    ax.set_xticks(np.arange(start_age, specs["end_age"] + 1, 5))
+    ax.set_ylabel("Share")
+    # ax.set_ylabel("Share of initial cohort")
+    ax.set_xlabel("Mother's Age")
+    # ax.set_title("Women")
+    ax.legend(fontsize=9, title_fontsize=10, loc="upper left")
 
     plt.tight_layout()
     plt.savefig(Path(path_to_save_plot), dpi=300)
@@ -580,7 +659,8 @@ def estimate_multinomial_logit_by_gender(df):
     dat_men = df[df["gender"] == MALE].copy()
     dat_women = df[df["gender"] == FEMALE].copy()
 
-    formula = "adl_cat ~ age + I(age**2) + C(health)"
+    # formula = "adl_cat ~ age + I(age**2) + C(health)"
+    formula = "adl_cat ~ age + I(age**2)  + I(age**3) + C(health)"
 
     model_men = smf.mnlogit(formula, data=dat_men).fit()
     print("Results for men (gender == 1):")
@@ -604,6 +684,7 @@ def pivot_model_params(model, sex_label):
         "Intercept": "const",
         "age": "age",
         "I(age ** 2)": "age_sq",
+        "I(age ** 3)": "age_cubed",
         "C(health)[T.1.0]": "medium_health",
         "C(health)[T.2.0]": "good_health",
     }
@@ -622,6 +703,7 @@ def pivot_model_params(model, sex_label):
         "const",
         "age",
         "age_sq",
+        "age_cubed",
         "medium_health",
         "good_health",
     ]
@@ -1271,3 +1353,152 @@ def build_health_death_transition_matrix(
         raise ValueError("Row sums are not 1.0; check inputs.")
 
     return out
+
+
+def plot_adl_probabilities_by_health(
+    df_sample: pd.DataFrame,
+    adl_transition_matrix: pd.DataFrame,
+    specs: dict,
+    path_to_save_plot: Optional[str] = None,
+) -> plt.Figure:
+    """
+    2 x 3 grid:
+        ┌───────────────┬───────────────┬───────────────┐
+        │ Men / Good    │ Men / Medium  │ Men / Bad     │
+        ├───────────────┼───────────────┼───────────────┤
+        │ Women / Good  │ Women / Medium│ Women / Bad   │
+        └───────────────┴───────────────┴───────────────┘
+
+    • Solid lines  : probabilities predicted by the multinomial-logit
+    • Scatter dots : empirical probabilities in the estimation sample
+                     (conditional on being alive)
+
+    Parameters
+    ----------
+    df_sample
+        Estimation sample with columns
+        ['gender', 'age', 'health', 'adl_cat']
+        *gender*: 1 = Men, 2 = Women (constants MALE/FEMALE in your code)
+        *health*: 0 = Bad, 1 = Medium, 2 = Good
+        *adl_cat*: 0 = No ADL, 1 = ADL 1, 2 = ADL 2, 3 = ADL 3
+    adl_transition_matrix
+        DataFrame produced right after the prediction loop.
+        MultiIndex = (sex, age, health, adl_cat),
+        value column = 'transition_prob'.
+    specs
+        Full specification dictionary created by `read_and_derive_specs`.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+    """
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # 1.  String ↔ code mappings that appear in the file layout
+    # ──────────────────────────────────────────────────────────────────────────
+    gender_map = {1: "Men", 2: "Women"}
+    health_map_num_to_str = {
+        0: "Bad Health",
+        1: "Medium Health",
+        2: "Good Health",
+    }
+    adl_map_num_to_str = {
+        0: "No ADL",
+        1: "ADL 1",
+        2: "ADL 2",
+        3: "ADL 3",
+    }
+    adl_colors = {
+        "No ADL": "blue",
+        "ADL 1": "green",
+        "ADL 2": "orange",
+        "ADL 3": "red",
+    }
+
+    health_labels = specs["health_labels_three"][:-1]  # excludes "Death"
+    adl_order = specs["adl_labels"]  # ["No ADL", "ADL 1", "ADL 2", "ADL 3"]
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # 2.  Empirical (observed) probabilities
+    # ──────────────────────────────────────────────────────────────────────────
+    df_obs = df_sample.copy()
+    df_obs = df_obs[df_obs["health"] != PARENT_DEAD]  # drop death rows if present
+
+    df_obs["sex"] = df_obs["gender"].map(gender_map)
+    df_obs["health_str"] = df_obs["health"].map(health_map_num_to_str)
+    df_obs["adl_str"] = df_obs["adl_cat"].map(adl_map_num_to_str)
+
+    # counts per (sex, age, health, adl)
+    counts = (
+        df_obs.groupby(["sex", "age", "health_str", "adl_str"])
+        .size()
+        .rename("n")
+        .reset_index()
+    )
+    # alive totals per (sex, age, health)
+    totals = (
+        df_obs.groupby(["sex", "age", "health_str"])
+        .size()
+        .rename("total")
+        .reset_index()
+    )
+
+    df_emp = counts.merge(totals, on=["sex", "age", "health_str"])
+    df_emp["prob"] = df_emp["n"] / df_emp["total"]
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # 3.  Predicted probabilities
+    # ──────────────────────────────────────────────────────────────────────────
+    df_pred = adl_transition_matrix.reset_index().rename(
+        columns={"transition_prob": "prob"}
+    )
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # 4.  Plot
+    # ──────────────────────────────────────────────────────────────────────────
+    fig, axes = plt.subplots(
+        nrows=2,
+        ncols=3,
+        figsize=(14, 6),
+        sharex=True,
+        sharey=True,
+    )
+
+    for row, sex in enumerate(specs["sex_labels"]):  # ["Men", "Women"]
+        for col, hlth in enumerate(health_labels):
+            ax = axes[row, col]
+
+            # predicted ––– solid lines
+            for adl in adl_order:
+                dat = df_pred[
+                    (df_pred["sex"] == sex)
+                    & (df_pred["health"] == hlth)
+                    & (df_pred["adl_cat"] == adl)
+                ]
+                ax.plot(dat["age"], dat["prob"], label=adl, color=adl_colors[adl])
+
+            # observed ––– scatter points
+            for adl in adl_order:
+                dat = df_emp[
+                    (df_emp["sex"] == sex)
+                    & (df_emp["health_str"] == hlth)
+                    & (df_emp["adl_str"] == adl)
+                ]
+                ax.scatter(
+                    dat["age"], dat["prob"], s=12, alpha=1, color=adl_colors[adl]
+                )
+
+            # cosmetics
+            if row == 1:
+                ax.set_xlabel("Age")
+            if col == 0:
+                ax.set_ylabel("Probability")
+            ax.set_title(f"{sex} - {hlth.replace(' Health','')}")
+
+    # one legend for the whole figure
+    handles, labels = axes[0, 0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper center", ncol=len(adl_order))
+    fig.tight_layout(rect=[0, 0, 1, 0.93])
+
+    if path_to_save_plot:
+        fig.savefig(path_to_save_plot, dpi=300)

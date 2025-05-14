@@ -17,7 +17,7 @@ from caregiving.data_management.soep.variables import (
     create_education_type,
     generate_job_separation_var,
 )
-from caregiving.model.shared import PART_TIME, WORK
+from caregiving.model.shared import PART_TIME_CHOICES, WORK_CHOICES
 from caregiving.specs.derive_specs import read_and_derive_specs
 
 
@@ -47,7 +47,7 @@ def task_create_job_separation_sample(
     df = generate_job_separation_var(df)
 
     # Overwrite job separation when individuals choose working
-    work_values = np.asarray(WORK).ravel().tolist()
+    work_values = np.asarray(WORK_CHOICES).ravel().tolist()
     df.loc[df["choice"].isin(work_values), "job_sep"] = 0
 
     # education
@@ -57,7 +57,7 @@ def task_create_job_separation_sample(
     df = df[(df["lagged_choice"].isin(work_values)) | (df["plb0282_h"] == 1)]
 
     # Kick out men that worked part-time last period
-    part_time_values = np.asarray(PART_TIME).ravel().tolist()
+    part_time_values = np.asarray(PART_TIME_CHOICES).ravel().tolist()
     df = df[~((df["lagged_choice"].isin(part_time_values)) & (df["sex"] == 0))]
 
     # Create age at which one got fired and rename job separation column

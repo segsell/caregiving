@@ -10,7 +10,7 @@ import yaml
 from pytask import Product
 
 from caregiving.config import BLD, SRC
-from caregiving.model.shared import SEX, UNEMPLOYED, WORK
+from caregiving.model.shared import SEX, UNEMPLOYED_CHOICES, WORK_CHOICES
 
 
 def task_estimate_job_offer(
@@ -51,8 +51,8 @@ def task_estimate_job_offer(
 def estimate_logit_job_offer_params(df, specs):
     """Estimate job offer logit parameters."""
 
-    unemployed_values = np.asarray(UNEMPLOYED).ravel().tolist()
-    work_values = np.asarray(WORK).ravel().tolist()
+    unemployed_values = np.asarray(UNEMPLOYED_CHOICES).ravel().tolist()
+    work_values = np.asarray(WORK_CHOICES).ravel().tolist()
     sex_var = SEX
 
     # Filter for unemployed, because we only estimate job offer probs on them
@@ -67,16 +67,17 @@ def estimate_logit_job_offer_params(df, specs):
     # Filter for relevant columns
     logit_df = df_unemployed[["sex", "period", "education", "work_start"]].copy()
     logit_df["age"] = logit_df["period"] + specs["start_age"]
+    logit_df["age_squared"] = logit_df["age"] ** 2
+    logit_df["age_cubed"] = logit_df["age"] ** 3
 
-    # logit_df["above_49"] = 0
-    # logit_df.loc[logit_df["age"] > 49, "above_49"] = 1
-
-    logit_df = logit_df[logit_df["age"] < specs["min_SRA"]]  # 65
+    logit_df = logit_df[logit_df["age"] < specs["min_SRA"] + 5]  # 65
     logit_df["intercept"] = 1
 
     logit_vars = [
         "intercept",
         "age",
+        "age_squared",
+        "age_cubed",
         "education",
     ]
 
@@ -95,6 +96,10 @@ def estimate_logit_job_offer_params(df, specs):
     gender_params = {
         f"job_finding_logit_const_{suffix}": params["intercept"],
         f"job_finding_logit_age_{suffix}": params["age"],
+        f"job_finding_logit_age_squared_{suffix}": params["age_squared"],
+        f"job_finding_logit_age_cubed_{suffix}": params["age_cubed"],
+        # f"job_finding_logit_below_49_{suffix}": params["below_49"],
+        # f"job_finding_logit_above_49_{suffix}": params["above_49"],
         f"job_finding_logit_high_educ_{suffix}": params["education"],
     }
     job_offer_params = {**job_offer_params, **gender_params}

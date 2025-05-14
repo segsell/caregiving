@@ -43,6 +43,8 @@ def task_plot_utility(
                 partner_state=partner_state,
                 # sex=1,
                 health=1,
+                # care_demand=0,
+                # care_supply=0,
                 education=education,
                 period=period,
                 choice=choice,
@@ -61,6 +63,7 @@ def task_plot_utility(
 
     plt.tight_layout()
     plt.savefig(path_to_save)
+    plt.close(fig)
 
 
 def task_plot_bequest(
@@ -102,6 +105,7 @@ def task_plot_bequest(
 
     plt.tight_layout()
     plt.savefig(path_to_save)
+    plt.close(fig)
 
 
 def task_plot_cons_scale(
@@ -150,3 +154,4 @@ def task_plot_cons_scale(
 
     plt.tight_layout()
     plt.savefig(path_to_save)
+    plt.close(fig)

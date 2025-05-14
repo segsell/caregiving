@@ -46,6 +46,8 @@ def task_plot_budget_of_unemployed(
                 experience=0.01,
                 # sex=sex_var,
                 partner_state=np.array([1]),
+                # has_sister=np.array([0]),
+                # care_demand=np.array([0]),
                 savings_end_of_previous_period=savings,
                 income_shock_previous_period=0,
                 params=params,
@@ -58,4 +60,5 @@ def task_plot_budget_of_unemployed(
             ax.set_title(f"Unemployment benefits {sex_label}; {edu_label}")
 
     plt.tight_layout()
-    plt.savefig(path_to_save)
+    plt.savefig(path_to_save, dpi=300)
+    plt.close(fig)
