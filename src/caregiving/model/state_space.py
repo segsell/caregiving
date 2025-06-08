@@ -479,7 +479,7 @@ def calc_experience_years_for_pension_adjustment(
     actual_retirement_age = options["start_age"] + period - 1
     # SRA at retirement, difference to actual retirement age and boolean for early retirement
     # SRA_at_retirement = options["min_SRA"]
-    SRA_at_retirement = options["min_SRA_baseline"]
+    SRA_at_retirement = options["min_SRA"]
     retirement_age_difference = jnp.abs(SRA_at_retirement - actual_retirement_age)
     early_retired_bool = actual_retirement_age < SRA_at_retirement
 
