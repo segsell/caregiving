@@ -96,7 +96,6 @@ def task_specify_model(
                     "transition": health_transition,
                     "states": np.arange(specs["n_health_states"], dtype=int),
                 },
-                #
                 # "mother_health": {
                 #     "transition": health_transition_good_medium_bad,
                 #     "states": np.arange(specs["n_health_states_three"], dtype=int),

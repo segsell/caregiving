@@ -2,7 +2,14 @@
 
 import jax.numpy as jnp
 
-from caregiving.model.shared import SEX, UNEMPLOYED, WORK, is_unemployed, is_working
+from caregiving.model.shared import (
+    SEX,
+    UNEMPLOYED,
+    WORK,
+    is_unemployed,
+    is_working,
+    is_retired,
+)
 
 
 def job_offer_process_transition(params, options, education, period, choice):
@@ -14,6 +21,7 @@ def job_offer_process_transition(params, options, education, period, choice):
 
     """
 
+    retirement_choice = is_retired(choice)
     unemployment_choice = is_unemployed(choice)
     labor_choice = is_working(choice)
 
@@ -23,9 +31,9 @@ def job_offer_process_transition(params, options, education, period, choice):
 
     # Transition probability
     prob_no_job = (
-        0.05 * labor_choice
-        + (1 - 0.1) * unemployment_choice
-        # job_sep_prob * labor_choice + (1 - job_finding_prob) * unemployment_choice
+        job_sep_prob * labor_choice
+        + (1 - job_finding_prob) * unemployment_choice
+        + 1 * retirement_choice
     )
 
     return jnp.array([prob_no_job, 1 - prob_no_job])

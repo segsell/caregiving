@@ -28,7 +28,7 @@ partner_labels: ["Single","Working Partner", "Retired Partner"]
 
 # Belief process parameters
 SRA_grid_size: 0.25
-min_SRA_baseline: 65
+min_SRA_baseline: 67
 min_SRA: 65
 max_SRA: 72
 resolution_age: 63

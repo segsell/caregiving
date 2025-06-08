@@ -1317,6 +1317,15 @@ def plot_job_offer_share_by_age(df, min_age=30, max_age=75, path_to_save_plot=No
     # Calculate the share of positive job offers by age
     share_by_age = df_age.groupby("age")["job_offer"].mean()
 
+    # Debugging
+    # df_age_working = df_age[df_age["choice"] >= 2]
+    # df_age_ret = df_age[df_age["choice"] == 0]
+    # df_age_unemp = df_age[df_age["choice"] == 1]
+
+    # w = df_age_working.groupby("age")["job_offer"].mean()
+    # r = df_age_ret.groupby("age")["job_offer"].mean()
+    # u = df_age_unemp.groupby("age")["job_offer"].mean()
+
     # Plotting
     plt.figure(figsize=(10, 6))
     plt.plot(share_by_age.index, share_by_age.values, marker="o")

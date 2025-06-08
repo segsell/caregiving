@@ -118,7 +118,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
     # mother_health,
     # care_demand,
     # care_supply,
-    job_offer,
+    # job_offer,
     options,
 ):
     start_age = options["start_age"]
@@ -135,8 +135,8 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
         return False
     elif (age <= min_ret_age_state_space + 1) & (already_retired == 1):
         return False
-    # elif (age >= options["min_SRA_baseline"] + 1) & (is_unemployed(lagged_choice)):
-    #     return False
+    elif (age >= options["min_SRA_baseline"] + 1) & (is_unemployed(lagged_choice)):
+        return False
     elif (not is_retired(lagged_choice)) & (already_retired == 1):
         return False
     # After the maximum retirement age, you must be retired.
@@ -258,17 +258,17 @@ def state_specific_choice_set(  # noqa: PLR0911, PLR0912
         return RETIREMENT_NO_CARE
     # Person is in the voluntary retirement range.
     else:
-        # if age >= options["min_SRA_baseline"]:
-        #     if job_offer == 0:
-        #         return RETIREMENT_NO_CARE
-        #     else:
-        #         return WORK_AND_RETIREMENT_NO_CARE
-        # else:
-        if job_offer == 0:
-            # Choose unemployment or retirement
-            return NOT_WORKING_NO_CARE
+        if age >= options["min_SRA_baseline"]:
+            if job_offer == 0:
+                return RETIREMENT_NO_CARE
+            else:
+                return WORK_AND_RETIREMENT_NO_CARE
         else:
-            return ALL_NO_CARE
+            if job_offer == 0:
+                # Choose unemployment or retirement
+                return NOT_WORKING_NO_CARE
+            else:
+                return ALL_NO_CARE
 
 
 def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912
@@ -478,7 +478,8 @@ def calc_experience_years_for_pension_adjustment(
     # retirement age is last periods age
     actual_retirement_age = options["start_age"] + period - 1
     # SRA at retirement, difference to actual retirement age and boolean for early retirement
-    SRA_at_retirement = options["min_SRA"]
+    # SRA_at_retirement = options["min_SRA"]
+    SRA_at_retirement = options["min_SRA_baseline"]
     retirement_age_difference = jnp.abs(SRA_at_retirement - actual_retirement_age)
     early_retired_bool = actual_retirement_age < SRA_at_retirement
 
@@ -497,6 +498,7 @@ def calc_experience_years_for_pension_adjustment(
     pension_factor = jax.lax.select(
         early_retired_bool, early_retirement_penalty, late_retirement_bonus
     )
+    # pension_factor = late_retirement_bonus
 
     adjusted_pension_points = pension_factor * total_pension_points
     reduced_experience_years = calc_experience_for_total_pension_points(

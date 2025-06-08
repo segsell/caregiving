@@ -104,44 +104,44 @@ def simulate_counterfactual_npv(
     # df["sum_informal_care"] = df.groupby("agent")["informal_care"].transform(
     #     lambda x: x.cumsum()
     # )
-    df = create_care_flags(df)
+    # df = create_care_flags(df)
 
-    # 0. Flag care on the *full* df_sim first (only once is enough)
-    df["is_care"] = df["choice"].isin(np.asarray(INFORMAL_CARE))
+    # # 0. Flag care on the *full* df_sim first (only once is enough)
+    # df["is_care"] = df["choice"].isin(np.asarray(INFORMAL_CARE))
 
     # PARAMETERS
     AGE_FOCUS = 75
-    AGE_MIN, AGE_MAX = 30, 80
+    AGE_MIN, AGE_MAX = 40, 70
     beta = params["beta"]  # discount factor
 
-    # ---------------------------------------------------------------
-    # 1. Agents alive / observed at the focus age
-    alive_at_focus = (df["age"] == AGE_FOCUS) & (df["health"] != DEAD)
+    # # ---------------------------------------------------------------
+    # # 1. Agents alive / observed at the focus age
+    # alive_at_focus = (df["age"] == AGE_FOCUS) & (df["health"] != DEAD)
 
-    ids_at_age = df.index.get_level_values("agent")[alive_at_focus].unique()
+    # ids_at_age = df.index.get_level_values("agent")[alive_at_focus].unique()
 
-    # ---------------------------------------------------------------
-    # 2. Keep their entire life histories
-    mask = df.index.get_level_values("agent").isin(ids_at_age)
+    # # ---------------------------------------------------------------
+    # # 2. Keep their entire life histories
+    # mask = df.index.get_level_values("agent").isin(ids_at_age)
 
-    # ---------------------------------------------------------------
-    # 3. Person-level informal-care aggregates (written in place)
-    df.loc[mask, "care_sum"] = (
-        df.loc[mask]
-        .groupby(level="agent")["is_care"]
-        .transform("sum")  # total care years
-    )
+    # # ---------------------------------------------------------------
+    # # 3. Person-level informal-care aggregates (written in place)
+    # df.loc[mask, "care_sum"] = (
+    #     df.loc[mask]
+    #     .groupby(level="agent")["is_care"]
+    #     .transform("sum")  # total care years
+    # )
 
-    df.loc[mask, "care_ever"] = (
-        df.loc[mask]
-        .groupby(level="agent")["is_care"]
-        .transform("any")  # at least one care year
-        .astype(int)  # 1/0 instead of True/False
-    )
+    # df.loc[mask, "care_ever"] = (
+    #     df.loc[mask]
+    #     .groupby(level="agent")["is_care"]
+    #     .transform("any")  # at least one care year
+    #     .astype(int)  # 1/0 instead of True/False
+    # )
 
-    # ---------------------------------------------------------------
-    # 4. Fill rows for agents who died before AGE_FOCUS, etc.
-    df[["care_sum", "care_ever"]] = df[["care_sum", "care_ever"]].fillna(0).astype(int)
+    # # ---------------------------------------------------------------
+    # # 4. Fill rows for agents who died before AGE_FOCUS, etc.
+    # df[["care_sum", "care_ever"]] = df[["care_sum", "care_ever"]].fillna(0).astype(int)
 
     # ===============================================================
     # Net present value (NPV) of total income, ages 30-80

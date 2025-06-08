@@ -139,8 +139,6 @@ def task_plot_model_fit(  # noqa: PLR0915
         path_to_save_plot=BLD / "plots" / "model_fit" / "simulated_job_offer",
     )
 
-    breakpoint()
-
     # df_emp_caregivers = df_emp.loc[df_emp["any_care"] == 1].copy()
     # df_sim_caregivers = df_sim.loc[
     #     df_sim["choice"].isin(np.asarray(INFORMAL_CARE).tolist())

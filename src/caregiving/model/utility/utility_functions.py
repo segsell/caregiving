@@ -155,36 +155,158 @@ def utility_func_alive(
     return utility  # + zeta * care_demand
 
 
-def _utility_func_alive(
-    params, consumption, choice, education, partner_state, health, period, options
-):
-    rho = params["rho"]
+# def _utility_func_alive(
+#     params, consumption, choice, education, partner_state, health, period, options
+# ):
+#     rho = params["rho"]
 
-    has_partner = (partner_state > 0).astype(int)
-    n_children = options["children_by_state"][SEX, education, has_partner, period]
-    # age_youngest_child = options["age_youngest_child_by_state"][
-    #     SEX, education, has_partner, period
-    # ]
+#     has_partner = (partner_state > 0).astype(int)
+#     n_children = options["children_by_state"][SEX, education, has_partner, period]
+#     # age_youngest_child = options["age_youngest_child_by_state"][
+#     #     SEX, education, has_partner, period
+#     # ]
 
-    cons_scale = consumption_scale(has_partner, n_children)
-    utility_consumption = ((consumption / cons_scale) ** (1 - rho) - 1) / (1 - rho)
+#     cons_scale = consumption_scale(has_partner, n_children)
+#     utility_consumption = ((consumption / cons_scale) ** (1 - rho) - 1) / (1 - rho)
 
-    eta = _utility_of_labor_and_children(
-        choice=choice, education=education, n_children=n_children, params=params
+#     eta = _utility_of_labor_and_children(
+#         choice=choice, education=education, n_children=n_children, params=params
+#     )
+#     # zeta = utility_of_labor_and_elder_care(
+#     #     choice, params
+#     # )
+
+#     utility_with_rho_not_one = utility_consumption * jnp.exp(eta)  # + jnp.exp(zeta)
+
+#     utility = jax.lax.select(
+#         jnp.allclose(rho, 1),
+#         jnp.log(consumption * jnp.exp(eta) / cons_scale),
+#         utility_with_rho_not_one,
+#     )
+
+#     return utility
+
+
+def utility_func_adda(
+    consumption: jnp.array,
+    choice: int,
+    period: int,
+    education: int,
+    health: int,
+    # care_demand: int,
+    # care_supply: int,
+    partner_state: int,
+    params: dict,
+    options: dict,
+) -> jnp.array:
+    """Compute the per-period utility based on a CRRA utility function.
+
+    Args:
+        period (int): Current period.
+        consumption (jnp.array): Level of the agent's consumption.
+            Array of shape (i) (n_quad_stochastic * n_grid_wealth,)
+            when called by :func:`~dcgm.call_egm_step.map_exog_to_endog_grid`
+            and :func:`~dcgm.call_egm_step.get_next_period_value`, or
+            (ii) of shape (n_grid_wealth,) when called by
+            :func:`~dcgm.call_egm_step.get_current_period_value`.
+        choice (int): Choice of the agent, e.g. 0 = "retirement", 1 = "working".
+        mother_alive (int): Indicator for whether the mother is alive.
+            0 = mother is not alive, 1 = mother is alive.
+        father_alive (int): Indicator for whether the father is alive.
+            0 = father is not alive, 1 = father is alive.
+        mother_health (int): Health status of the mother. One of 0, 1, 2.
+            0 = good health, 1 = medium health, 2 = bad health.
+        father_health (int): Health status of the father. One of 0, 1, 2.
+            0 = good health, 1 = medium health, 2 = bad health.
+        has_sibling (int): Indicator for whether the agent has a sibling.
+            0 = no sibling, 1 = has sibling.
+        params (dict): Dictionary containing model parameters.
+            Relevant here is the CRRA coefficient theta.
+        options (dict): Dictionary containing model options.
+
+    Returns:
+        utility (jnp.array): Agent's utility. Array of shape
+            (n_quad_stochastic * n_grid_wealth,) or (n_grid_wealth,).
+
+    """
+    utility_alive = utility_func_alive(
+        consumption=consumption,
+        # sex=sex,
+        partner_state=partner_state,
+        education=education,
+        health=health,
+        # care_demand=care_demand,
+        # care_supply=care_supply,
+        period=period,
+        choice=choice,
+        params=params,
+        options=options,
     )
-    # zeta = utility_of_labor_and_elder_care(
-    #     choice, params
+    utility_death = utility_final_consume_all(
+        wealth=consumption,
+        params=params,
+    )
+    death_bool = is_dead(health)
+    utility = jax.lax.select(death_bool, utility_death, utility_alive)
+
+    return utility
+
+
+def utility_func_alive_adda(
+    consumption,
+    partner_state,
+    education,
+    health,
+    # care_demand,
+    # care_supply,
+    period,
+    choice,
+    params,
+    options,
+):
+    """Calculate the choice specific cobb-douglas utility, i.e. u =
+    ((c*eta/consumption_scale)^(1-rho))/(1-rho) ."""
+    # gather params
+    rho = params["rho"]
+    eta = disutility_work(
+        period=period,
+        choice=choice,
+        # sex=sex,
+        education=education,
+        partner_state=partner_state,
+        health=health,
+        params=params,
+        options=options,
+    )
+    cons_scale = consumption_scale(
+        partner_state=partner_state,
+        # sex=sex,
+        education=education,
+        period=period,
+        options=options,
+    )
+
+    # zeta = utility_of_caregiving(
+    #     period,
+    #     choice,
+    #     education,
+    #     health=health,
+    #     care_demand=care_demand,
+    #     # care_supply=care_supply,
+    #     params=params,
+    #     options=options,
     # )
 
-    utility_with_rho_not_one = utility_consumption * jnp.exp(eta)  # + jnp.exp(zeta)
+    # compute utility
+    scaled_consumption = consumption / cons_scale
+    utility_rho_not_one = (scaled_consumption ** (1 - rho) - 1) / (1 - rho)
 
     utility = jax.lax.select(
         jnp.allclose(rho, 1),
-        jnp.log(consumption * jnp.exp(eta) / cons_scale),
-        utility_with_rho_not_one,
+        jnp.log(consumption * eta / cons_scale),
+        utility_rho_not_one,
     )
-
-    return utility
+    return utility * eta  # + zeta * care_demand
 
 
 def marg_utility(
@@ -209,6 +331,38 @@ def marg_utility(
         options=options,
     )
     marg_util_rho_not_one = ((eta / cons_scale) ** (1 - rho)) * (consumption ** (-rho))
+
+    marg_util = jax.lax.select(
+        jnp.allclose(rho, 1),
+        1 / consumption,
+        marg_util_rho_not_one,
+    )
+
+    return marg_util
+
+
+def marg_utility_adda(
+    consumption, partner_state, education, health, period, choice, params, options
+):
+    cons_scale = consumption_scale(
+        partner_state=partner_state,
+        # sex=sex,
+        education=education,
+        period=period,
+        options=options,
+    )
+    rho = params["rho"]
+    eta = disutility_work(
+        period=period,
+        choice=choice,
+        # sex=sex,
+        education=education,
+        partner_state=partner_state,
+        health=health,
+        params=params,
+        options=options,
+    )
+    marg_util_rho_not_one = eta * (consumption / cons_scale) ** (-rho) / cons_scale
 
     marg_util = jax.lax.select(
         jnp.allclose(rho, 1),
@@ -249,6 +403,43 @@ def inverse_marginal(
     )
     consumption_rho_not_one = marginal_utility ** (-1 / rho) * (eta / cons_scale) ** (
         (1 - rho) / rho
+    )
+    consumption = jax.lax.select(
+        jnp.allclose(rho, 1), 1 / marginal_utility, consumption_rho_not_one
+    )
+    return consumption
+
+
+def inverse_marginal_adda(
+    marginal_utility,
+    partner_state,
+    education,
+    health,
+    period,
+    choice,
+    params,
+    options,
+):
+    cons_scale = consumption_scale(
+        partner_state=partner_state,
+        # sex=sex,
+        education=education,
+        period=period,
+        options=options,
+    )
+    rho = params["rho"]
+    eta = disutility_work(
+        period=period,
+        choice=choice,
+        # sex=sex,
+        education=education,
+        partner_state=partner_state,
+        health=health,
+        params=params,
+        options=options,
+    )
+    consumption_rho_not_one = cons_scale * ((marginal_utility * cons_scale) / eta) ** (
+        -1 / rho
     )
     consumption = jax.lax.select(
         jnp.allclose(rho, 1), 1 / marginal_utility, consumption_rho_not_one
