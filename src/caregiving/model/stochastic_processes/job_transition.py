@@ -6,9 +6,9 @@ from caregiving.model.shared import (
     SEX,
     UNEMPLOYED,
     WORK,
+    is_retired,
     is_unemployed,
     is_working,
-    is_retired,
 )
 
 
