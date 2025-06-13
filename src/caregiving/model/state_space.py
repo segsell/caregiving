@@ -135,7 +135,8 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
         return False
     elif (age <= min_ret_age_state_space + 1) & (already_retired == 1):
         return False
-    elif (age >= options["min_SRA_baseline"] + 1) & (is_unemployed(lagged_choice)):
+    # elif (age >= options["min_SRA_baseline"] + 1) & (is_unemployed(lagged_choice)):
+    elif (age >= options["min_SRA"] + 1) & (is_unemployed(lagged_choice)):
         return False
     elif (not is_retired(lagged_choice)) & (already_retired == 1):
         return False
@@ -258,7 +259,8 @@ def state_specific_choice_set(  # noqa: PLR0911, PLR0912
         return RETIREMENT_NO_CARE
     # Person is in the voluntary retirement range.
     else:
-        if age >= options["min_SRA_baseline"]:
+        # if age >= options["min_SRA_baseline"]:
+        if age >= options["min_SRA"]:
             if job_offer == 0:
                 return RETIREMENT_NO_CARE
             else:

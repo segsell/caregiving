@@ -160,28 +160,41 @@ def task_create_event_study_sample(
 
     df = pd.read_csv(path_to_raw)
 
+    syear_counts = df["syear"].value_counts().sort_index()
+    print("Number of observations per year in the raw data:\n" + str(syear_counts))
+
     df = create_choice_variable(df)
 
     df = generate_working_hours(df, include_actual_hours=True, drop_missing=False)
 
+    syear_counts1 = df["syear"].value_counts().sort_index()
     df = create_policy_state(df, specs)
     df = create_education_type(df)
-    df = create_health_var_good_bad(df, drop_missing=True)
+    df = create_health_var_good_bad(df, drop_missing=False)
     df = create_caregiving(df, filter_missing=False)
+
+    syear_counts2 = df["syear"].value_counts().sort_index()
 
     df = deflate_gross_labor_income(df, cpi_data=cpi, specs=specs)
     df = create_hourly_wage(df)
 
-    df = create_partner_state(df, filter_missing=True)
+    df = create_partner_state(df, filter_missing=False)
+
+    syear_counts3 = df.index.get_level_values("syear").value_counts().sort_index()
 
     df = create_parent_info(df, filter_missing=False)
     df = create_sibling_info(df, filter_missing=False)
 
     # filter data. Leave additional years in for lagging and leading.
     df = filter_data(df, specs, event_study=True)
+    syear_counts4 = df.index.get_level_values("syear").value_counts().sort_index()
 
     df = create_lagged_and_lead_variables(
-        df, specs, lead_job_sep=False, event_study=True
+        df,
+        specs,
+        lead_job_sep=False,
+        drop_missing_lagged_choice=False,
+        event_study=True,
     )
 
     df = create_experience_variable(df)
@@ -197,7 +210,8 @@ def task_create_event_study_sample(
         "age": "int8",
         "sex": "int8",
         "choice": "int8",
-        "partner_state": "int8",
+        "lagged_choice": "float32",
+        "partner_state": "float32",
         "experience": "int8",
         "education": "int8",
         "children": "int8",
@@ -235,10 +249,10 @@ def task_create_event_study_sample(
     df = df[list(type_dict.keys())]
     df = df.astype(type_dict)
 
-    df = df[df["syear"] <= specs["end_year_event_study"]]
+    # df = df[df["syear"] <= specs["end_year_event_study"]]
 
     # print_data_description(df)
-    # breakpoint()
+    #
 
     df.to_csv(path_to_save)
 

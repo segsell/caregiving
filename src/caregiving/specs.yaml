@@ -27,7 +27,7 @@ sex_labels: ["Men", "Women"]
 partner_labels: ["Single","Working Partner", "Retired Partner"]
 
 # Belief process parameters
-SRA_grid_size: 0.25
+SRA_grid_size: 1 # 0.25
 min_SRA_baseline: 67
 min_SRA: 65
 max_SRA: 72
@@ -101,8 +101,8 @@ end_age_mortality: 110
 life_table_max_age: 100
 ################################################
 # Event study
-start_age_event_study: 30
-start_year_event_study: 1995 # health variable from 1992 on
+start_age_event_study: 21
+start_year_event_study: 1985 # health variable from 1992 on
 end_year_event_study: 2019
 reference_year_event_study: 2015
 

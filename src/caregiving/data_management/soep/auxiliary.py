@@ -10,6 +10,12 @@ from caregiving.model.shared import RETIREMENT_CHOICES, UNEMPLOYED_CHOICES
 
 def filter_years(df, start_year, end_year):
     df = df.loc[(slice(None), range(start_year, end_year + 1)), :]
+
+    # df = df.loc[
+    #     (df.index.get_level_values("syear") >= start_year)
+    #     & (df.index.get_level_values("syear") <= end_year + 1),
+    # ]
+
     print(
         str(len(df))
         + " left after dropping people outside of estimation years "
@@ -64,6 +70,12 @@ def filter_data(merged_data, specs, lag_and_lead_buffer_years=True, event_study=
         end_year = end_year + 1
 
     merged_data = filter_years(merged_data, start_year, end_year)
+
+    syear_counts = (
+        merged_data.index.get_level_values("syear").value_counts().sort_index()
+    )
+    print("Number of observations per year in the sample:\n" + str(syear_counts))
+
     return merged_data
 
 
@@ -95,7 +107,11 @@ def span_dataframe(df, start_year, end_year):
 
 
 def create_lagged_and_lead_variables(
-    merged_data, specs, lead_job_sep=False, event_study=False
+    merged_data,
+    specs,
+    lead_job_sep=False,
+    drop_missing_lagged_choice=True,
+    event_study=False,
 ):
     """This function creates the lagged choice variable and drops missing lagged
     choices."""
@@ -116,7 +132,10 @@ def create_lagged_and_lead_variables(
             "job_sep"
         ].shift(-1)
 
-    merged_data = full_container[full_container["lagged_choice"].notna()]
+    if drop_missing_lagged_choice:
+        merged_data = full_container[full_container["lagged_choice"].notna()]
+    else:
+        merged_data = full_container.copy()
 
     if lead_job_sep:
         merged_data = merged_data[merged_data["job_sep_this_year"].notna()]

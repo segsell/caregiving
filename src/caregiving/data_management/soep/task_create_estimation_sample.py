@@ -117,8 +117,8 @@ def task_create_structural_estimation_sample(
         "age": "int8",
         "period": "int8",
         "choice": "int8",
+        "lagged_choice": "float32",  # can be na
         "already_retired": "int8",
-        "lagged_choice": "int8",
         "partner_state": "int8",
         "job_offer": "int8",
         "experience": "int8",
