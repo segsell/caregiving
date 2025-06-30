@@ -1308,7 +1308,7 @@ def plot_job_offer_share_by_age(df, min_age=30, max_age=75, path_to_save_plot=No
     - max_age: int, maximum age to include (inclusive)
 
     Usage:
-    >>> plot_job_offer_share_by_age(df_sim)
+    plot_job_offer_share_by_age(df_sim)
     """
     # Filter the DataFrame for the desired age range
     df_age = df[(df["age"] >= min_age) & (df["age"] <= max_age)]

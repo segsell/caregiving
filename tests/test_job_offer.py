@@ -42,6 +42,8 @@ def test_job_destruction(education, sex, period, logit_param, work_choice, load_
         f"job_finding_logit_const_{append}": logit_param,
         f"job_finding_logit_age_{append}": logit_param,
         f"job_finding_logit_high_educ_{append}": logit_param,
+        f"job_finding_logit_age_squared_{append}": logit_param,
+        f"job_finding_logit_age_cubed_{append}": logit_param,
     }
     params = {**params, **gender_params}
     job_dest_prob = options["job_sep_probs"][sex, education, period]
