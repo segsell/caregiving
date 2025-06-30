@@ -10,13 +10,15 @@ dependencies:
 
   # Package dependencies
   - jax
+  - linearmodels
+  - matplotlib
   - numpy
   - numba
-  - matplotlib
   - optimagic
   - pandas
   - pyyaml
   - scikit-learn
+  - seaborn
   - statsmodels
 
   # Testing infrastructure
@@ -27,8 +29,7 @@ dependencies:
   - pip:
       # Install package locally
       - -e ../
+      - -e ../dcegm
 
       # Development dependencies
       - git+https://github.com/OpenSourceEconomics/upper-envelope.git
-
-      - -e ../dcegm
