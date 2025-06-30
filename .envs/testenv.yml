@@ -12,8 +12,12 @@ dependencies:
   - jax
   - numpy
   - numba
+  - matplotlib
+  - optimagic
   - pandas
   - pyyaml
+  - scikit-learn
+  - statsmodels
 
   # Testing infrastructure
   - pytest
@@ -26,3 +30,5 @@ dependencies:
 
       # Development dependencies
       - git+https://github.com/OpenSourceEconomics/upper-envelope.git
+
+      - -e dcegm
