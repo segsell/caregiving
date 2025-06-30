@@ -31,4 +31,4 @@ dependencies:
       # Development dependencies
       - git+https://github.com/OpenSourceEconomics/upper-envelope.git
 
-      - -e dcegm
+      - -e ../dcegm
