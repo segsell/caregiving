@@ -51,7 +51,17 @@ def task_load_and_merge_event_study_sample(
 
     ppathl_data = pd.read_stata(
         soep_c38_ppathl,
-        columns=["pid", "hid", "syear", "sex", "gebjahr", "parid", "rv_id"],
+        columns=[
+            "pid",
+            "hid",
+            "syear",
+            "sex",
+            "gebjahr",
+            "parid",
+            "rv_id",
+            "birthregion_ew",
+            "migback",
+        ],
         convert_categoricals=False,
     )
     merged_data = pd.merge(

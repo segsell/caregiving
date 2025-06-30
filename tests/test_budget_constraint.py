@@ -9,6 +9,12 @@ import numpy as np
 import pytest
 
 from caregiving.config import BLD
+from caregiving.model.shared import (
+    FULL_TIME_NO_CARE,
+    PART_TIME_NO_CARE,
+    RETIREMENT_NO_CARE,
+    UNEMPLOYED_NO_CARE,
+)
 from caregiving.model.state_space import get_next_period_experience
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.model.wealth_and_budget.partner_income import (
@@ -79,9 +85,11 @@ def test_budget_unemployed(
         period=period,
         partner_state=partner_state,
         education=education,
-        lagged_choice=1,
+        lagged_choice=UNEMPLOYED_NO_CARE[0].item(),
         experience=exp_cont,
         # sex=sex,
+        # has_sister=0,
+        # care_demand=0,
         savings_end_of_previous_period=savings,
         income_shock_previous_period=0,
         params=params,
@@ -150,7 +158,7 @@ SAVINGS_GRID = np.linspace(8, 25, 3)
 GAMMA_GRID = np.linspace(0.1, 0.9, 3)
 EXP_GRID = np.linspace(10, 30, 3, dtype=int)
 INCOME_SHOCK_GRID = np.linspace(-0.5, 0.5, 2)
-WORKER_CHOICES = [2, 3]
+WORKER_CHOICES = [PART_TIME_NO_CARE[0].item(), FULL_TIME_NO_CARE[0].item()]
 
 
 @pytest.mark.parametrize(
@@ -209,6 +217,8 @@ def test_budget_worker(
         lagged_choice=working_choice,
         experience=exp_cont,
         # sex=sex,
+        # has_sister=0,
+        # care_demand=0,
         savings_end_of_previous_period=savings,
         income_shock_previous_period=income_shock,
         params=params,
@@ -221,7 +231,7 @@ def test_budget_worker(
         + gamma_array[sex, education] * np.log(experience + 1)
         + income_shock
     )
-    if working_choice == 2:  # noqa: PLR2004
+    if working_choice == PART_TIME_NO_CARE[0].item():  # noqa: PLR2004
         labor_income_year = (
             hourly_wage * specs_internal["av_annual_hours_pt"][sex, education]
         )
@@ -332,7 +342,7 @@ def test_retiree(
 
     exp_cont = get_next_period_experience(
         period=period,
-        lagged_choice=0,
+        lagged_choice=RETIREMENT_NO_CARE[0].item(),
         already_retired=1,
         # sex=sex,
         education=education,
@@ -347,9 +357,11 @@ def test_retiree(
         period=period,
         partner_state=partner_state,
         education=education,
-        lagged_choice=0,
+        lagged_choice=RETIREMENT_NO_CARE[0].item(),
         experience=exp_cont,
         # sex=sex,
+        # has_sister=0,
+        # care_demand=0,
         savings_end_of_previous_period=savings,
         income_shock_previous_period=0,
         params=params,
@@ -458,7 +470,7 @@ def test_fresh_retiree(
 
     exp_cont = get_next_period_experience(
         period=period,
-        lagged_choice=0,
+        lagged_choice=RETIREMENT_NO_CARE[0].item(),
         already_retired=0,
         # sex=sex,
         education=education,
@@ -470,9 +482,11 @@ def test_fresh_retiree(
         period=period,
         partner_state=partner_state,
         education=education,
-        lagged_choice=0,
+        lagged_choice=RETIREMENT_NO_CARE[0].item(),
         experience=exp_cont,
         # sex=sex,
+        # has_sister=0,
+        # care_demand=0,
         savings_end_of_previous_period=savings,
         income_shock_previous_period=0,
         params=params,

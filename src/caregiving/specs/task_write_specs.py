@@ -11,6 +11,12 @@ import pandas as pd
 from pytask import Product
 
 from caregiving.config import BLD, SRC
+from caregiving.specs.caregiving_specs import (
+    read_in_adl_transition_specs,
+    read_in_adl_transition_specs_binary,
+    read_in_care_supply_transition_specs,
+    read_in_mother_age_diff_specs,
+)
 from caregiving.specs.derive_specs import read_and_derive_specs
 from caregiving.specs.experience_specs import create_max_experience
 from caregiving.specs.family_specs import (
@@ -33,6 +39,7 @@ jax.config.update("jax_enable_x64", True)
 
 def task_write_specs(
     path_to_load_specs: Path = SRC / "specs.yaml",
+    path_to_sample: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
     path_to_wage_params: Path = BLD
     / "estimation"
     / "stochastic_processes"
@@ -81,6 +88,14 @@ def task_write_specs(
     / "estimation"
     / "stochastic_processes"
     / "mortality_transition_matrix_logit_good_medium_bad.csv",
+    path_to_limitations_with_adl_transition: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "adl_transition_matrix.csv",
+    path_to_exogenous_care_supply_transition: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "exogenous_care_supply_transition_matrix.csv",
     path_to_job_separation_probs: Path = BLD
     / "estimation"
     / "stochastic_processes"
@@ -116,6 +131,8 @@ def task_write_specs(
     / "specs_full.pkl",
 ) -> Dict[str, Any]:
     """Read in specs and add specs from first-step estimation."""
+
+    estimation_sample = pd.read_csv(path_to_sample, index_col=[0])
     specs = read_and_derive_specs(path_to_load_specs)
 
     # Add income specs
@@ -157,7 +174,7 @@ def task_write_specs(
         specs["n_partner_states"],
     ) = read_in_partner_transition_specs(partner_trans_prop, specs)
 
-    # Read in health transition matrix
+    # Read in health transition matrix including death probabilities
     health_trans_probs_df = pd.read_csv(
         path_to_health_transition_mat,
     )
@@ -165,6 +182,7 @@ def task_write_specs(
     specs["health_trans_mat"] = read_in_health_transition_specs(
         health_trans_probs_df, death_prob_df, specs
     )
+
     health_death_trans_mat = read_in_health_transition_specs_df(
         health_trans_probs_df=health_trans_probs_df,
         death_prob_df=death_prob_df,
@@ -178,6 +196,7 @@ def task_write_specs(
     )
 
     if "health_labels_three" in specs.keys():
+        # Read in health transition matrix including death probabilities
         health_trans_probs_df = pd.read_csv(
             path_to_health_transition_mat_good_medium_bad,
         )
@@ -187,19 +206,38 @@ def task_write_specs(
                 health_trans_probs_df, death_prob_df, specs
             )
         )
-        health_death_trans_mat = read_in_health_transition_specs_good_medium_bad_df(
-            health_trans_probs_df=health_trans_probs_df,
-            death_prob_df=death_prob_df,
-            specs=specs,
+
+        health_death_trans_mat_three = (
+            read_in_health_transition_specs_good_medium_bad_df(
+                health_trans_probs_df=health_trans_probs_df,
+                death_prob_df=death_prob_df,
+                specs=specs,
+            )
         )
-        health_death_trans_mat.to_csv(
+        health_death_trans_mat_three.to_csv(
             path_to_save_health_death_transition_matrix_good_medium_bad
         )
         plot_health_death_transitions_good_medium_bad(
             specs=specs,
-            df=health_death_trans_mat,
+            df=health_death_trans_mat_three,
             path_to_save_plot=path_to_save_health_death_transition_good_medium_bad,
         )
+
+    if "adl_labels" in specs.keys():
+        # adl_labels = ["No limitations", "Limitations"]
+        adl_transitions = pd.read_csv(path_to_limitations_with_adl_transition)
+        specs["limitations_with_adl_mat"] = read_in_adl_transition_specs_binary(
+            adl_transitions, specs
+        )
+
+        exogenous_care_supply = pd.read_csv(
+            path_to_exogenous_care_supply_transition,
+        )
+        specs["exog_care_supply"] = read_in_care_supply_transition_specs(
+            exogenous_care_supply, specs
+        )
+        # make sure output is uin8
+        specs["mother_age_diff"] = read_in_mother_age_diff_specs(estimation_sample)
 
     specs["job_sep_probs"] = jnp.asarray(
         pkl.load(path_to_job_separation_probs.open("rb"))

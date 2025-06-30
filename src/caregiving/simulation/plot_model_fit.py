@@ -7,9 +7,23 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib import colors as mcolors
 
-from caregiving.config import BLD
-from caregiving.model.shared import ALL, SEX
+from caregiving.config import BLD, JET_COLOR_MAP
+from caregiving.model.shared import (
+    DEAD,
+    FILL_VALUE,
+    FULL_TIME,
+    FULL_TIME_CHOICES,
+    PART_TIME,
+    PART_TIME_CHOICES,
+    RETIREMENT,
+    RETIREMENT_CHOICES,
+    SEX,
+    UNEMPLOYED,
+    UNEMPLOYED_CHOICES,
+)
+from caregiving.utils import table
 
 
 def plot_average_wealth(
@@ -51,77 +65,844 @@ def plot_average_wealth(
         fig.savefig(path_to_save_plot, transparent=True, dpi=300)
 
 
-def plot_choice_shares_by_education(data_emp, data_sim, specs, path_to_save_plot=None):
+def plot_choice_shares_by_education(
+    data_emp, data_sim, specs, age_min=None, age_max=None, path_to_save_plot=None
+):
     """Plot choice-specific shares by age and education, only over the
     age range [start_age, end_age_msm]."""
 
-    # Copy and compute age columns
-    # data_emp = data_emp.copy()
-    # data_sim = data_sim.copy()
-    # data_emp["age"] = data_emp["period"] + specs["start_age"]
-    # data_sim["age"] = data_sim["period"] + specs["start_age"]
+    # ---------- 1. Map raw codes → 4-way choice ----------------------------
+    choice_groups_sim = {
+        0: RETIREMENT,
+        1: UNEMPLOYED,
+        2: PART_TIME,
+        3: FULL_TIME,
+    }
+    choice_groups_emp = {
+        0: RETIREMENT_CHOICES,
+        1: UNEMPLOYED_CHOICES,
+        2: PART_TIME_CHOICES,
+        3: FULL_TIME_CHOICES,
+    }
 
-    # Define age bounds
-    age_min = specs["start_age"]
-    age_max = specs["end_age_msm"]
+    data_sim = data_sim.loc[data_sim["health"] != DEAD].copy()
+    data_emp = data_emp.copy()
 
-    sex = SEX
+    for agg_code, raw_codes in choice_groups_sim.items():
+        data_sim.loc[
+            data_sim["choice"].isin(np.asarray(raw_codes).tolist()), "choice_group"
+        ] = agg_code
 
-    # Prepare figure grid
+    for agg_code, raw_codes in choice_groups_emp.items():
+        data_emp.loc[
+            data_emp["choice"].isin(np.asarray(raw_codes).tolist()), "choice_group"
+        ] = agg_code
+
+    data_sim["choice_group"] = data_sim["choice_group"].astype(int)
+    data_emp["choice_group"] = data_emp["choice_group"].astype(int)
+
+    # ---------- 2. Plotting setup ------------------------------------------
+    if age_min is None:
+        age_min = specs["start_age"]
+    if age_max is None:
+        age_max = specs["end_age_msm"]
+    sex = SEX  # assumed scalar {0,1}
+
     n_edu = len(specs["education_labels"])
-    n_choices = specs["n_choices"]
+    n_choices = len(specs["choice_labels"])  # after aggregation
     fig, axs = plt.subplots(n_edu, n_choices, figsize=(16, 6), sharex=True, sharey=True)
 
-    # Loop over education groups and choices
+    # ---------- 3. Loop over education groups ------------------------------
     for edu_var, edu_label in enumerate(specs["education_labels"]):
-        # Filter by education
         emp_edu = data_emp[
             (data_emp["sex"] == sex) & (data_emp["education"] == edu_var)
         ]
-        sim_edu = data_sim[(data_sim["education"] == edu_var)]
+        sim_edu = data_sim[data_sim["education"] == edu_var]
 
-        # Compute choice‐by‐age shares
+        # shares by age × aggregated choice
         sim_shares = (
-            sim_edu.groupby("age")["choice"]
+            sim_edu.groupby("age")["choice_group"]
             .value_counts(normalize=True)
             .unstack(fill_value=0)
         )
         emp_shares = (
-            emp_edu.groupby("age")["choice"]
+            emp_edu.groupby("age")["choice_group"]
             .value_counts(normalize=True)
             .unstack(fill_value=0)
         )
 
-        # Loop through each choice
+        # ---------- 4. Plot each aggregated choice -------------------------
         for choice_var in range(n_choices):
             ax = axs[edu_var, choice_var]
 
-            # Select only ages within bounds
             ages = range(age_min, age_max + 1)
             vals_sim = sim_shares.reindex(ages, fill_value=0)[choice_var]
             vals_emp = emp_shares.reindex(ages, fill_value=0)[choice_var]
 
-            # Plot
             ax.plot(ages, vals_sim, label="Simulated")
             ax.plot(ages, vals_emp, ls="--", label="Observed")
 
-            # Styling
             ax.set_title(specs["choice_labels"][choice_var])
             ax.set_ylim(0, 1)
             ax.set_xlim(age_min, age_max)
-            if edu_var == n_edu - 1:
-                ax.set_xlabel("Age")
-            else:
-                ax.set_xlabel("")
+
+            # if edu_var == n_edu - 1:
+            ax.set_xlabel("Age")
+            ax.tick_params(labelbottom=True)
             if choice_var == 0:
                 ax.set_ylabel(f"{edu_label}\nShare")
                 ax.legend()
-            else:
-                ax.set_ylabel("")
 
     plt.tight_layout()
     if path_to_save_plot:
         plt.savefig(path_to_save_plot, dpi=300, transparent=False)
+
+
+def plot_choice_shares_overall(
+    data_emp, data_sim, specs, age_min=None, age_max=None, path_to_save_plot=None
+):
+    """
+    Plot choice-specific shares by age, unconditional on education level.
+
+    Parameters
+    ----------
+    data_emp : pandas.DataFrame
+        Observed micro data. Must contain columns: 'age', 'sex', 'education', 'choice'.
+    data_sim : pandas.DataFrame
+        Simulated data with the same columns as `data_emp`.
+    specs : dict
+        Model specification dictionary.
+    path_to_save_plot : str | pathlib.Path | None, optional
+        If given, the figure is saved to this location.
+    """
+
+    # ---------- 1. Map raw codes → 4-way aggregated choice -----------------
+    choice_groups_sim = {
+        0: RETIREMENT,
+        1: UNEMPLOYED,
+        2: PART_TIME,
+        3: FULL_TIME,
+    }
+    choice_groups_emp = {
+        0: RETIREMENT_CHOICES,
+        1: UNEMPLOYED_CHOICES,
+        2: PART_TIME_CHOICES,
+        3: FULL_TIME_CHOICES,
+    }
+
+    data_sim = data_sim.loc[data_sim["health"] != DEAD].copy()
+    data_emp = data_emp.copy()
+
+    for agg_code, raw_codes in choice_groups_sim.items():
+        data_sim.loc[
+            data_sim["choice"].isin(np.asarray(raw_codes).tolist()), "choice_group"
+        ] = agg_code
+    for agg_code, raw_codes in choice_groups_emp.items():
+        data_emp.loc[
+            data_emp["choice"].isin(np.asarray(raw_codes).tolist()), "choice_group"
+        ] = agg_code
+
+    data_sim["choice_group"] = data_sim["choice_group"].astype(int)
+    data_emp["choice_group"] = data_emp["choice_group"].astype(int)
+
+    # ---------- 2. Plotting setup ------------------------------------------
+    if age_min is None:
+        age_min = specs["start_age"]
+    if age_max is None:
+        age_max = specs["end_age_msm"]
+    sex = SEX  # assumed scalar {0,1}
+
+    n_choices = 4  # after aggregation
+    fig, axs = plt.subplots(1, n_choices, figsize=(16, 4), sharex=True, sharey=True)
+
+    # ---------- 3. Subset data (ignore education) ---------------------------
+    emp_all = data_emp[data_emp["sex"] == sex]
+    sim_all = data_sim  # simulated data already restricted to relevant sex earlier
+
+    # Pre-compute age × choice shares
+    sim_shares = (
+        sim_all.groupby("age")["choice_group"]
+        .value_counts(normalize=True)
+        .unstack(fill_value=0)
+    )
+    emp_shares = (
+        emp_all.groupby("age")["choice_group"]
+        .value_counts(normalize=True)
+        .unstack(fill_value=0)
+    )
+
+    # ---------- 4. Plot each aggregated choice ------------------------------
+    ages = range(age_min, age_max + 1)
+    for choice_var in range(n_choices):
+        ax = axs[choice_var]
+
+        vals_sim = sim_shares.reindex(ages, fill_value=0)[choice_var]
+        vals_emp = emp_shares.reindex(ages, fill_value=0)[choice_var]
+
+        ax.plot(ages, vals_sim, label="Simulated")
+        ax.plot(ages, vals_emp, ls="--", label="Observed")
+
+        ax.set_title(specs["choice_labels"][choice_var])
+        ax.set_ylim(0, 1)
+        ax.set_xlim(age_min, age_max)
+
+        ax.set_xlabel("Age")
+        if choice_var == 0:
+            ax.set_ylabel("Share")
+            ax.legend()
+
+    plt.tight_layout()
+    if path_to_save_plot:
+        plt.savefig(path_to_save_plot, dpi=300, transparent=False)
+
+
+def plot_choice_shares_by_education_age_bins(
+    data_emp,
+    data_sim,
+    specs,
+    age_min: Optional[int] = None,
+    age_max: Optional[int] = None,
+    bin_width: int = 5,
+    path_to_save_plot: str | None = None,
+):
+    """
+    Plot aggregated-choice shares by *age bins* and education.
+    Each panel contains one choice; rows are education groups.
+
+    New argument
+    ------------
+    bin_width : int, default 5
+        Width of the age bins (in years).  Bin [a,a+bin_width) is labelled by *a*.
+    """
+    choice_groups_sim = {0: RETIREMENT, 1: UNEMPLOYED, 2: PART_TIME, 3: FULL_TIME}
+    choice_groups_emp = {
+        0: RETIREMENT_CHOICES,
+        1: UNEMPLOYED_CHOICES,
+        2: PART_TIME_CHOICES,
+        3: FULL_TIME_CHOICES,
+    }
+
+    sim = data_sim.loc[data_sim["health"] != DEAD].copy()
+    emp = data_emp.copy()
+
+    for g, raw in choice_groups_sim.items():
+        sim.loc[sim["choice"].isin(np.atleast_1d(raw)), "choice_group"] = g
+    for g, raw in choice_groups_emp.items():
+        emp.loc[emp["choice"].isin(np.atleast_1d(raw)), "choice_group"] = g
+
+    sim["choice_group"] = sim["choice_group"].astype(int)
+    emp["choice_group"] = emp["choice_group"].astype(int)
+
+    # ── 2. Build age bins & plotting grid ─────────────────────────────────────
+    if age_min is None:
+        age_min = specs["start_age"]
+    if age_max is None:
+        age_max = specs["end_age_msm"]
+
+    edges = list(range(age_min, age_max + 1, bin_width))
+    if edges[-1] <= age_max:
+        edges.append(age_max + 1)
+    bin_starts = edges[:-1]  # x-axis
+
+    sex = SEX
+    edu_labels = specs["education_labels"]
+    choice_labels = specs["choice_labels"]
+    n_edu, n_choices = len(edu_labels), len(choice_labels)
+
+    fig, axs = plt.subplots(
+        n_edu, n_choices, figsize=(4 * n_choices, 3 * n_edu), sharex=True, sharey=True
+    )
+    axs = np.atleast_2d(axs)
+
+    # ── 3. Loop over education × choice bins ──────────────────────────────────
+    for i, edu_label in enumerate(edu_labels):
+        emp_sub = emp[(emp["sex"] == sex) & (emp["education"] == i)]
+        sim_sub = sim[sim["education"] == i]
+
+        for j in range(n_choices):
+            ax = axs[i, j]
+            emp_rates, sim_rates = [], []
+
+            for start, end in zip(edges[:-1], edges[1:], strict=False):
+                emp_bin = emp_sub[(emp_sub["age"] >= start) & (emp_sub["age"] < end)]
+                sim_bin = sim_sub[(sim_sub["age"] >= start) & (sim_sub["age"] < end)]
+
+                emp_rates.append(
+                    (emp_bin["choice_group"] == j).mean() if len(emp_bin) else np.nan
+                )
+                sim_rates.append(
+                    (sim_bin["choice_group"] == j).mean() if len(sim_bin) else np.nan
+                )
+
+            ax.plot(bin_starts, sim_rates, label="Simulated")
+            ax.plot(bin_starts, emp_rates, ls="--", label="Observed")
+            ax.set_title(choice_labels[j])
+            ax.set_ylim(0, 1)
+            ax.set_xticks(bin_starts)
+            ax.tick_params(labelbottom=True)
+
+            if i == n_edu - 1:
+                ax.set_xlabel("Age Bin (start year)")
+            if j == 0:
+                ax.set_ylabel(f"{edu_label}\nShare")
+                ax.legend()
+
+    plt.tight_layout()
+    if path_to_save_plot:
+        fig.savefig(path_to_save_plot, dpi=300)
+    plt.close(fig)
+
+
+def plot_choice_shares_overall_age_bins(
+    data_emp,
+    data_sim,
+    specs,
+    age_min: Optional[int] = None,
+    age_max: Optional[int] = None,
+    bin_width: int = 5,
+    path_to_save_plot: str | None = None,
+):
+    """
+    Same as `plot_choice_shares_overall`, but aggregates on *age bins*
+    instead of single-year ages.
+
+    Parameters
+    ----------
+    bin_width : int, default 5
+        Width of the age bins (in years).  Bin [a,a+bin_width) is labelled by *a*.
+    """
+    choice_groups_sim = {0: RETIREMENT, 1: UNEMPLOYED, 2: PART_TIME, 3: FULL_TIME}
+    choice_groups_emp = {
+        0: RETIREMENT_CHOICES,
+        1: UNEMPLOYED_CHOICES,
+        2: PART_TIME_CHOICES,
+        3: FULL_TIME_CHOICES,
+    }
+
+    sim = data_sim.loc[data_sim["health"] != DEAD].copy()
+    emp = data_emp.copy()
+
+    for g, raw in choice_groups_sim.items():
+        sim.loc[sim["choice"].isin(np.atleast_1d(raw)), "choice_group"] = g
+    for g, raw in choice_groups_emp.items():
+        emp.loc[emp["choice"].isin(np.atleast_1d(raw)), "choice_group"] = g
+
+    sim["choice_group"] = sim["choice_group"].astype(int)
+    emp["choice_group"] = emp["choice_group"].astype(int)
+
+    # ── 2. Build age bins & plotting grid ─────────────────────────────────────
+    if age_min is None:
+        age_min = specs["start_age"]
+    if age_max is None:
+        age_max = specs["end_age_msm"]
+
+    edges = list(range(age_min, age_max + 1, bin_width))
+    if edges[-1] <= age_max:
+        edges.append(age_max + 1)
+    bin_starts = edges[:-1]
+
+    sex = SEX
+    n_choices = 4
+    fig, axs = plt.subplots(1, n_choices, figsize=(4 * n_choices, 3), sharey=True)
+
+    emp_sub = emp[emp["sex"] == sex]
+    sim_sub = sim  # sex already restricted earlier
+
+    # ── 3. Compute & plot shares for each choice group ────────────────────────
+    for j in range(n_choices):
+        ax = axs[j]
+        emp_rates, sim_rates = [], []
+
+        for start, end in zip(edges[:-1], edges[1:], strict=False):
+            emp_bin = emp_sub[(emp_sub["age"] >= start) & (emp_sub["age"] < end)]
+            sim_bin = sim_sub[(sim_sub["age"] >= start) & (sim_sub["age"] < end)]
+
+            emp_rates.append(
+                (emp_bin["choice_group"] == j).mean() if len(emp_bin) else np.nan
+            )
+            sim_rates.append(
+                (sim_bin["choice_group"] == j).mean() if len(sim_bin) else np.nan
+            )
+
+        ax.plot(bin_starts, sim_rates, label="Simulated")
+        ax.plot(bin_starts, emp_rates, ls="--", label="Observed")
+        ax.set_title(specs["choice_labels"][j])
+        ax.set_ylim(0, 1)
+        ax.set_xticks(bin_starts)
+        ax.tick_params(labelbottom=True)
+
+        ax.set_xlabel("Age Bin (start year)")
+        if j == 0:
+            ax.set_ylabel("Share")
+            ax.legend()
+
+    plt.tight_layout()
+    if path_to_save_plot:
+        fig.savefig(path_to_save_plot, dpi=300)
+    plt.close(fig)
+
+
+# =====================================================================================
+# Caregiver shares and demand
+# =====================================================================================
+
+
+def plot_caregiver_shares_by_age(
+    df_emp,
+    df_sim,
+    specs,
+    choice_set,
+    age_min=None,
+    age_max=None,
+    path_to_save_plot=None,
+):
+    """
+    Plot the share of informal caregivers by single year of age.
+
+    * Empirical share  = (# obs with any_care == 1) / (# obs with any_care in {0,1})
+    * Simulated share  = (# obs with choice ∈ INFORMAL_CARE) / (total obs at that age)
+
+    Parameters
+    ----------
+    df_emp, df_sim : pandas.DataFrame
+        DataFrames that contain at least
+            'age', 'choice', 'any_care', 'sex'  (sex optional but recommended).
+    specs : dict
+        Needs the usual keys:
+            'start_age'   : int  (lower bound of plot, inclusive)
+            'end_age_msm' : int  (upper bound of plot, inclusive)
+    path_to_save_plot : str | pathlib.Path | None, optional
+        If provided, the figure is saved there (PNG, 300 dpi).
+    """
+
+    # -------- 1. Basic setup ------------------------------------------------
+    if age_min is None:
+        age_min = specs["start_age"]
+    if age_max is None:
+        age_max = specs["end_age_msm"]
+
+    ages = np.arange(age_min, age_max + 1)
+
+    # Keep only alive individuals in the simulated data
+    df_sim = df_sim.loc[df_sim["health"] != DEAD].copy()
+
+    sex = SEX  # scalar {0,1}; keep behaviour consistent with earlier functions
+    if "sex" in df_emp:
+        df_emp = df_emp.loc[df_emp["sex"] == sex].copy()
+    if "sex" in df_sim:
+        df_sim = df_sim.loc[df_sim["sex"] == sex].copy()
+
+    # -------- 2. Compute empirical caregiver share -------------------------
+    # pandas' mean() ignores NaNs → exactly the desired denominator logic
+    emp_share = (
+        df_emp.groupby("age")["any_care"]
+        .mean()  # share of ones among {0,1}
+        .reindex(ages)  # ensure full age range
+    )
+
+    # -------- 3. Compute simulated caregiver share -------------------------
+    care_codes = np.asarray(choice_set).tolist()
+    sim_share = (
+        df_sim.assign(is_care=df_sim["choice"].isin(care_codes))
+        .groupby("age")["is_care"]
+        .mean()  # mean of Boolean = share
+        .reindex(ages)
+    )
+
+    # -------- 4. Plot -------------------------------------------------------
+    fig, ax = plt.subplots(figsize=(8, 4))
+
+    ax.plot(ages, sim_share, label="Simulated")
+    ax.plot(ages, emp_share, ls="--", label="Observed")
+
+    ax.set_xlabel("Age")
+    ax.set_ylabel("Share of informal caregivers")
+    ax.set_xlim(age_min, age_max)
+    ax.set_ylim(0, 0.15)
+    ax.legend()
+
+    plt.tight_layout()
+    if path_to_save_plot:
+        plt.savefig(path_to_save_plot, dpi=300, transparent=False)
+
+
+def plot_caregiver_shares_by_age_bins(
+    # df_emp: pd.DataFrame,
+    emp_moments: pd.DataFrame,
+    df_sim: pd.DataFrame,
+    specs: dict,
+    choice_set,
+    *,
+    age_min: int | None = None,
+    age_max: int | None = None,
+    bin_width: int = 5,
+    path_to_save_plot: str | Path | None = None,
+):
+    """
+    Plot the share of informal caregivers by *age bins*.
+
+    Bin [a, a+bin_width) is labelled by its lower bound *a*.
+
+    Parameters
+    ----------
+    df_emp, df_sim : pandas.DataFrame
+        Must contain at least 'age', 'choice', 'any_care' and ideally 'sex'.
+    specs : dict
+        Needs 'start_age' and 'end_age_msm'.
+    choice_set : iterable
+        Codes in df_sim["choice"] that count as informal care.
+    bin_width : int, default 5
+        Width of the age bins.
+    path_to_save_plot : str | pathlib.Path | None
+        If given, the figure is stored as PNG (300 dpi).
+    """
+
+    # # ── 1. Basic setup ──────────────────────────────────────────────────
+    # if age_min is None:
+    #     age_min = specs["start_age"]
+    # if age_max is None:
+    #     age_max = specs["end_age_msm"]
+
+    # # define bin edges  [a, b, c, …]  with last edge > age_max
+    # edges = list(range(age_min, age_max + 1, bin_width))
+    # if edges[-1] <= age_max:
+    #     edges.append(age_max + 1)  # right-open interval
+    # bin_starts = edges[:-1]  # x-axis ticks / labels
+
+    # # restrict to alive individuals in the simulated data
+    # df_sim = df_sim.loc[df_sim["health"] != DEAD].copy()
+
+    # # choose sex if the column is present (mimics earlier behaviour)
+    # sex = SEX  # scalar {0,1}
+    # if "sex" in df_emp:
+    #     df_emp = df_emp.loc[df_emp["sex"] == sex].copy()
+    # if "sex" in df_sim:
+    #     df_sim = df_sim.loc[df_sim["sex"] == sex].copy()
+
+    # # ── 2. Compute bin-level caregiver shares ───────────────────────────
+    # care_codes = np.asarray(choice_set).tolist()
+
+    # emp_rates, sim_rates = [], []
+    # for start, end in zip(edges[:-1], edges[1:], strict=False):
+    #     # --- empirical --------------------------------------------------
+    #     emp_bin = df_emp[(df_emp["age"] >= start) & (df_emp["age"] < end)]
+    #     # mean() on 0/1/NaN implements (#1) / (#0 + #1)
+    #     emp_rates.append(emp_bin["any_care"].mean() if len(emp_bin) else np.nan)
+
+    #     # --- simulated --------------------------------------------------
+    #     sim_bin = df_sim[(df_sim["age"] >= start) & (df_sim["age"] < end)]
+    #     if len(sim_bin):
+    #         is_care = sim_bin["choice"].isin(care_codes)
+    #         sim_rates.append(is_care.mean())
+    #     else:
+    #         sim_rates.append(np.nan)
+
+    # # ── 3. Plot ─────────────────────────────────────────────────────────
+    # # fig, ax = plt.subplots(figsize=(8, 4))
+
+    # # ax.plot(bin_starts, sim_rates, label="Simulated")
+    # # ax.plot(bin_starts, emp_rates, ls="--", label="Observed")
+
+    # # ax.set_xlabel("Age bin (start year)")
+    # # ax.set_ylabel("Share of informal caregivers")
+    # # ax.set_xticks(bin_starts)
+    # # ax.set_xlim(bin_starts[0], bin_starts[-1])
+    # # ax.set_ylim(0, 0.15)
+    # # ax.legend()
+
+    # # plt.tight_layout()
+    # # if path_to_save_plot:
+    # #     plt.savefig(path_to_save_plot, dpi=300, transparent=False)
+    # # plt.close(fig)
+
+    # fig, ax = plt.subplots(figsize=(8, 4))
+
+    # bar_w = 0.4  # width of each bar
+    # x_emp = np.asarray(bin_starts) - bar_w / 2  # left bar (empirical)
+    # x_sim = np.asarray(bin_starts) + bar_w / 2  # right bar (simulated)
+
+    # ax.bar(x_emp, emp_rates, width=bar_w, label="Observed")
+    # ax.bar(x_sim, sim_rates, width=bar_w, label="Simulated")
+
+    # ax.set_xlabel("Age bin (start year)")
+    # ax.set_ylabel("Share of informal caregivers")
+    # ax.set_xticks(bin_starts)
+    # ax.set_xlim(bin_starts[0] - bar_w, bin_starts[-1] + bar_w)
+    # ax.set_ylim(0, 0.15)
+    # ax.legend()
+
+    # plt.tight_layout()
+    # if path_to_save_plot:
+    #     plt.savefig(path_to_save_plot, dpi=300, transparent=False)
+    # plt.close(fig)
+
+    # ── 1. Age grid & bin edges ─────────────────────────────────────────
+    if age_min is None:
+        age_min = specs["start_age"]
+    if age_max is None:
+        age_max = specs["end_age_msm"]
+
+    edges = list(range(age_min, age_max + 1, bin_width))
+    if edges[-1] <= age_max:
+        edges.append(age_max + 1)  # right-open
+    bin_starts = edges[:-1]
+
+    # ── 2. Simulated data (unchanged) ───────────────────────────────────
+    df_sim = df_sim.loc[df_sim["health"] != DEAD].copy()
+    if "sex" in df_sim:
+        df_sim = df_sim.loc[df_sim["sex"] == SEX].copy()
+
+    care_codes = np.asarray(choice_set).tolist()
+
+    # ── 3. Empirical lookup from *Series* ───────────────────────────────
+    emp_lookup = emp_moments.to_dict()  # key → value
+
+    # ── 4. Build vectors of rates ───────────────────────────────────────
+    emp_rates, sim_rates = [], []
+
+    for start, end in zip(edges[:-1], edges[1:], strict=False):
+        key = f"share_informal_care_age_bin_{start}_{end}"
+        emp_rates.append(emp_lookup.get(key, np.nan))
+
+        sim_bin = df_sim[(df_sim["age"] >= start) & (df_sim["age"] < end)]
+        sim_rates.append(
+            sim_bin["choice"].isin(care_codes).mean() if len(sim_bin) else np.nan
+        )
+
+    fig, ax = plt.subplots(figsize=(8, 4))
+
+    # --- 5a.  Filter out the 75–79 bin -----------------------------------
+    keep = [bs < 75 for bs in bin_starts]  # noqa: PLR2004
+    bin_starts = np.asarray(bin_starts)[keep]
+    emp_rates = np.asarray(emp_rates)[keep]
+    sim_rates = np.asarray(sim_rates)[keep]
+
+    # --- 5b.  Bar geometry & colours -------------------------------------
+    bar_w = 1.5  # width of each bar
+    gap = 0.10  # empty space BETWEEN the two bars
+    offset = bar_w / 2 + gap / 2
+
+    # x_emp = bin_starts - offset
+    # x_sim = bin_starts + offset
+
+    # ax.bar(x_emp, emp_rates, width=bar_w, color="tab:orange", label="Observed")
+    # ax.bar(x_sim, sim_rates, width=bar_w, color="tab:blue", label="Simulated")
+
+    # # --- 5c.  X-axis ticks & labels --------------------------------------
+    # xticks = bin_starts
+    # xticklabels = [
+    #     f"{start}\u2013{start + bin_width - 1}" for start in bin_starts
+    # ]  # u2013 = en-dash
+    # ax.set_xticks(xticks)
+    # ax.set_xticklabels(xticklabels)
+
+    # # --- 5d.  Remaining cosmetics ----------------------------------------
+    # ax.set_xlabel("Age group")
+    # ax.set_ylabel("Share of informal caregivers")
+    # ax.set_xlim(bin_starts[0] - bar_w - gap, bin_starts[-1] + bar_w + gap)
+    # ax.set_ylim(0, 0.12)
+    # ax.legend()
+
+    # plt.tight_layout()
+    # if path_to_save_plot:
+    #     plt.savefig(path_to_save_plot, dpi=300, transparent=False)
+    # plt.close(fig)
+    x_emp = bin_starts - offset
+
+    x_sim = bin_starts + offset
+
+    ax.bar(
+        x_emp,
+        emp_rates,
+        width=bar_w,
+        color=mcolors.to_rgba("orange", 1),
+        label="Observed",
+    )
+    ax.bar(
+        x_sim,
+        sim_rates,
+        width=bar_w,
+        color=mcolors.to_rgba("blue", 1),
+        label="Simulated",
+    )  # lighter blue
+
+    # --- 5c.  X-axis ticks & labels ---------------------------------------
+    xticks = bin_starts
+    xticklabels = [f"{start}\u2013{start + bin_width - 1}" for start in bin_starts]
+    ax.set_xticks(xticks)
+    ax.set_xticklabels(xticklabels)
+
+    # --- 5d.  Cosmetics & extra whitespace --------------------------------
+    pad = 2  # one age-unit padding on each side
+    ax.set_xlabel("Age Bin")
+    ax.set_ylabel("Share (percent)")
+    ax.set_xlim(bin_starts[0] - offset - pad, bin_starts[-1] + offset + pad)
+    ax.set_ylim(0, 0.1)
+    ax.legend()
+
+    plt.tight_layout()
+    if path_to_save_plot:
+        plt.savefig(path_to_save_plot, dpi=300, transparent=False)
+    plt.close(fig)
+
+
+# def plot_simulated_care_demand_by_age(
+#     df_sim, specs, age_min=None, age_max=None, path_to_save_plot=None
+# ):
+#     """
+#     Plot the yearly share of individuals with care_demand == 1 in the simulated data.
+
+#     Parameters
+#     ----------
+#     df_sim : pandas.DataFrame
+#         Simulated micro data containing at least the columns
+#         'age', 'care_demand', and (optionally) 'sex'.
+#     specs : dict
+#         Should include:
+#             'start_age'   : int - lower bound of age range (inclusive)
+#             'end_age_msm' : int - upper bound of age range (inclusive)
+#     path_to_save_plot : str | pathlib.Path | None, optional
+#         If provided, the figure is written to this file (PNG, 300 dpi).
+#     """
+
+#     # ---- 1. Setup ---------------------------------------------------------
+#     if age_min is None:
+#         age_min = specs["start_age"]
+#     if age_max is None:
+#         age_max = 100
+
+#     ages = np.arange(age_min, age_max + 1)
+
+#     # Keep only alive individuals in the simulated data
+#     df_sim = df_sim.loc[df_sim["health"] != DEAD].copy()
+
+#     # Keep only the model-relevant sex if that convention is used elsewhere
+#     if "sex" in df_sim.columns:
+#         df_sim = df_sim.loc[df_sim["sex"] == SEX].copy()
+
+#     # # ---- 2. Compute share of care demand per age --------------------------
+#     # share_care = (
+#     #     df_sim.groupby("age")["care_demand"]
+#     #     .mean()  # mean of {0,1} → share
+#     #     .reindex(ages)  # keep full age range, NaN if missing
+#     # )
+
+#     # # ---- 3. Plot ----------------------------------------------------------
+#     # fig, ax = plt.subplots(figsize=(8, 4))
+#     # ax.plot(ages, share_care, label="Simulated", color="blue")
+
+#     # ax.set_xlabel("Age")
+#     # ax.set_ylabel("Share with care demand")
+#     # ax.set_xlim(age_min, age_max)
+#     # ax.set_ylim(0, 0.15)
+#     # ax.set_title("Prevalence of Care Demand by Age (Simulated)")
+#     # ax.legend()
+
+#     # plt.tight_layout()
+#     # if path_to_save_plot:
+#     #     plt.savefig(path_to_save_plot, dpi=300, transparent=False)
+
+#     # ---- 2. Compute share of care demand per age & education --------------
+#     share_care_low = (
+#         df_sim.loc[df_sim["education"] == 0]
+#         .groupby("age")["care_demand"]
+#         .mean()
+#         .reindex(ages)  # full grid, NaN if missing
+#     )
+
+#     share_care_high = (
+#         df_sim.loc[df_sim["education"] == 1]
+#         .groupby("age")["care_demand"]
+#         .mean()
+#         .reindex(ages)
+#     )
+
+#     # ---- 3. Plot -----------------------------------------------------------
+#     fig, ax = plt.subplots()
+#     # fig, ax = plt.subplots(figsize=(8, 4))
+
+#     ax.plot(ages, share_care_low, label="Low education", color="blue", lw=2)
+#     ax.plot(ages, share_care_high, label="High education", color="orange", lw=2)
+
+#     pad = 1
+#     ax.set_xlabel("Age")
+#     ax.set_ylabel("Share")
+#     ax.set_xlim(age_min - pad, age_max + pad)
+#     ax.set_ylim(0, 0.15)
+#     # ax.set_title("Prevalence of Care Demand by Age (Simulated)")
+#     ax.legend()
+
+#     plt.tight_layout()
+#     if path_to_save_plot:
+#         plt.savefig(path_to_save_plot, dpi=300, transparent=False)
+#     plt.close(fig)
+
+
+def plot_simulated_care_demand_by_age(
+    df_sim, specs, age_min=None, age_max=None, path_to_save_plot=None
+):
+    """
+    Plot the yearly share with care_demand == 1, broken out by
+    • education (0 = low, 1 = high) → colour
+    • has_sister (0 / 1)            → dashed / solid line
+    """
+
+    # ---- 1. Setup
+    if age_min is None:
+        age_min = specs["start_age"]
+    if age_max is None:
+        age_max = 100
+
+    ages = np.arange(age_min, age_max + 1)
+
+    df_sim = df_sim.loc[df_sim["health"] != DEAD].copy()
+    if "sex" in df_sim.columns:
+        df_sim = df_sim.loc[df_sim["sex"] == SEX].copy()
+
+    # ---- 2. Share by (age, education, has_sister)
+    shares = (
+        df_sim.groupby(["age", "education", "has_sister"])["care_demand"]
+        .mean()
+        .reindex(ages, level="age")  # keep full age grid on level 0
+    )
+
+    # ---- 3. Plot four lines (2 edu × 2 sister)
+    fig, ax = plt.subplots()
+
+    for has_sister in (0, 1):
+        linestyle = "--" if has_sister == 0 else "-"
+        sister_lbl = "No sister" if has_sister == 0 else "Has sister"
+
+        for edu in (0, 1):
+            colour = JET_COLOR_MAP[edu]
+            edu_lbl = "Low education" if edu == 0 else "High education"
+
+            share_series = shares.xs(
+                (edu, has_sister), level=("education", "has_sister")
+            )
+
+            label = f"{sister_lbl}, {edu_lbl}"
+            ax.plot(
+                ages,
+                share_series,
+                label=label,
+                color=colour,
+                linestyle=linestyle,
+                # linewidth=2,
+            )
+
+    # ---- 4. Cosmetics
+    pad = 1
+    ax.set_xlabel("Age")
+    ax.set_ylabel("Share")
+    ax.set_xlim(age_min - pad, age_max + pad)
+    ax.set_ylim(0, 0.17)
+    ax.legend()
+
+    plt.tight_layout()
+    if path_to_save_plot:
+        plt.savefig(path_to_save_plot, dpi=300, transparent=False)
+    plt.close(fig)
 
 
 def plot_choice_shares_single(data_emp, data_sim, specs, path_to_save_plot):
@@ -152,7 +933,7 @@ def plot_choice_shares_single(data_emp, data_sim, specs, path_to_save_plot):
         )
         # if sex == 0:
         #     choice_range = all but part-time
-        choice_range = range(len(ALL))
+        choice_range = range(len(specs["choice_labels"]))
 
         for choice in choice_range:
             ax = axes[edu_var, choice]
@@ -180,12 +961,19 @@ def plot_choice_shares_single(data_emp, data_sim, specs, path_to_save_plot):
     )
 
 
+# =====================================================================================
+# Transitions
+# =====================================================================================
+
+
 def plot_transitions_by_age(
     data_emp,
     data_sim,
     specs,
     states,
     state_labels,
+    age_min=None,
+    age_max=None,
     one_way=False,
     path_to_save_plot=None,
 ):
@@ -198,7 +986,7 @@ def plot_transitions_by_age(
     """
     # add age
     emp = data_emp.copy()
-    sim = data_sim.copy()
+    sim = data_sim.loc[data_sim["health"] != DEAD].copy()
     # emp["age"] = emp["period"] + specs["start_age"]
     # sim["age"] = sim["period"] + specs["start_age"]
 
@@ -214,8 +1002,10 @@ def plot_transitions_by_age(
         transitions = list(product(from_states, to_states))
 
     # age grid
-    age_min = specs["start_age"]
-    age_max = specs["end_age_msm"]
+    if age_min is None:
+        age_min = specs["start_age"]
+    if age_max is None:
+        age_max = specs["end_age_msm"]
     all_ages = list(range(age_min, age_max + 1))
 
     fig, axes = plt.subplots(
@@ -303,6 +1093,8 @@ def plot_transitions_by_age_bins(
     specs,
     states,
     state_labels=None,
+    age_min: Optional[int] = None,
+    age_max: Optional[int] = None,
     one_way: bool = False,
     bin_width: int = 5,
     path_to_save_plot: str = None,
@@ -332,7 +1124,8 @@ def plot_transitions_by_age_bins(
     """
     # copy & compute age
     emp = data_emp.copy()
-    sim = data_sim.copy()
+    sim = data_sim.loc[data_sim["health"] != DEAD].copy()
+
     emp["age"] = emp["period"] + specs["start_age"]
     sim["age"] = sim["period"] + specs["start_age"]
 
@@ -351,8 +1144,11 @@ def plot_transitions_by_age_bins(
         transitions = list(product(from_states, to_states))
 
     # build age bins
-    age_min = specs["start_age"]
-    age_max = specs["end_age_msm"]
+    if age_min is None:
+        age_min = specs["start_age"]
+    if age_max is None:
+        age_max = specs["end_age_msm"]
+
     # edges: [start, start+bin_width, ..., last_edge]
     edges = list(range(age_min, age_max + 1, bin_width))
     if edges[-1] <= age_max:
@@ -496,3 +1292,48 @@ def plot_average_savings_decision(data_sim, path_to_save_plot):
     ax.set_title("Average savings by age")
     ax.legend()
     fig.savefig(path_to_save_plot, transparent=True, dpi=300)
+
+
+# =====================================================================================
+# Debugging
+# =====================================================================================
+
+
+def plot_job_offer_share_by_age(df, min_age=30, max_age=75, path_to_save_plot=None):
+    """Plot the share of positive job offers by age within a specified age range.
+
+    Parameters:
+    - df: pandas.DataFrame containing at least 'age' and 'job_offer' columns
+    - min_age: int, minimum age to include (inclusive)
+    - max_age: int, maximum age to include (inclusive)
+
+    Usage:
+    plot_job_offer_share_by_age(df_sim)
+    """
+    # Filter the DataFrame for the desired age range
+    df_age = df[(df["age"] >= min_age) & (df["age"] <= max_age)]
+
+    # Calculate the share of positive job offers by age
+    share_by_age = df_age.groupby("age")["job_offer"].mean()
+
+    # Debugging
+    # df_age_working = df_age[df_age["choice"] >= 2]
+    # df_age_ret = df_age[df_age["choice"] == 0]
+    # df_age_unemp = df_age[df_age["choice"] == 1]
+
+    # w = df_age_working.groupby("age")["job_offer"].mean()
+    # r = df_age_ret.groupby("age")["job_offer"].mean()
+    # u = df_age_unemp.groupby("age")["job_offer"].mean()
+
+    # Plotting
+    plt.figure(figsize=(10, 6))
+    plt.plot(share_by_age.index, share_by_age.values, marker="o")
+    plt.xlabel("Age")
+    plt.ylabel("Share of Positive Job Offers")
+    plt.title(f"Share of Positive Job Offers by Age ({min_age}-{max_age})")
+    plt.xticks(range(min_age, max_age + 1, 5))
+    plt.grid(True)
+    plt.tight_layout()
+    if path_to_save_plot:
+        plt.savefig(path_to_save_plot, transparent=False, dpi=300)
+    plt.close()

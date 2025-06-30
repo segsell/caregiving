@@ -5,28 +5,33 @@
 quadrature_points_stochastic: 5
 n_experience_grid_points: 11
 # Fixed structural parameters, we will not estimate
-interest_rate: 0.03
+interest_rate: 0.03 # 0.03
 discount_factor: 0.97
 
 # economic model parameters
 start_age: 30
 end_age: 100
-start_age_parents: 60
+start_age_parents: 50
 start_age_msm: 40
 end_age_msm: 70
 end_age_children_in_household: 60
+end_age_caregiving: 80
 
 choice_labels: ["Retired", "Unemployed", "Part-time", "Full-time"]
+caregiving_labels: ["Formal Care", "Informal Care"]
 education_labels: ["Low Education", "High Education"]
 health_labels: ["Bad Health", "Good Health", "Death"]
 health_labels_three: ["Bad Health", "Medium Health", "Good Health", "Death"]
 adl_labels: ["No ADL", "ADL 1", "ADL 2", "ADL 3"]
 sex_labels: ["Men", "Women"]
 partner_labels: ["Single","Working Partner", "Retired Partner"]
+
 # Belief process parameters
-SRA_grid_size: 0.25
+SRA_grid_size: 1 # 0.25
+# min_SRA_baseline: 67
 min_SRA: 65
 max_SRA: 72
+max_SRA_baseline: 67
 resolution_age: 63
 informed_threshhold: 5
 
@@ -50,6 +55,9 @@ unemployment_wealth_thresh: 10_500
 monthly_child_benefits: 184
 monthly_min_wage: 1360
 
+informal_care_cash_benefits: 444 # 0.4239 * 316 + 0.2793 * 545 + 728 *0.1405 + 901 * 0.0617
+formal_care_costs: 600
+
 # Retirement parameters
 early_retirement_penalty: 0.036
 late_retirement_bonus: 0.06
@@ -59,7 +67,7 @@ monthly_pension_point_value_east_2010: 24.13
 ###############################################################################
 # Data preparation
 ###############################################################################
-start_year: 2005 # start year of estimation sample
+start_year: 2010 # start year of estimation sample
 end_year: 2017 # end year of estimation sample
 # start_year: 2010 # start year of estimation sample
 # end_year: 2017 # end year of estimation sample
@@ -94,8 +102,8 @@ end_age_mortality: 110
 life_table_max_age: 100
 ################################################
 # Event study
-start_age_event_study: 30
-start_year_event_study: 1995 # health variable from 1992 on
+start_age_event_study: 21
+start_year_event_study: 1985 # health variable from 1992 on
 end_year_event_study: 2019
 reference_year_event_study: 2015
 

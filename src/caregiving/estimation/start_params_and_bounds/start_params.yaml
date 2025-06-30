@@ -21,20 +21,75 @@
 # disutil_children_ft_work_high: -0.2
 
 # Utility parameters
-rho: 1.5
+# rho: 1.5
+rho: 1.98
 
 #disutil_not_retired_bad: 1.0
 #disutil_working_bad: 0.3
 #disutil_not_retired_good: 1.0
 #disutil_working_good: 0.3
-disutil_ft_work_good_women: 1.3
+# disutil_unemployed_women: 1.0
+# disutil_ft_work_bad_women: 1.3
+# disutil_ft_work_good_women: 1.5
+# disutil_pt_work_bad_women: 1.3
+# disutil_pt_work_good_women: 1.3
+# disutil_children_pt_work: 0
+# disutil_children_ft_work_low: 0.2
+# disutil_children_ft_work_high: 0.3
+
+disutil_unemployed_low_women: 1.0
+disutil_unemployed_high_women: 1.0
 disutil_ft_work_bad_women: 1.3
-disutil_pt_work_good_women: 1.3
+disutil_ft_work_good_women: 1.3
 disutil_pt_work_bad_women: 1.3
-disutil_unemployed_women: 1.0
+disutil_pt_work_good_women: 1.3
 disutil_children_pt_work: 0.2
 disutil_children_ft_work_low: 0.2
 disutil_children_ft_work_high: 0.2
+
+# disutil_unemployed_women: 2.6654188449619967
+# disutil_ft_work_bad_women: 2.8504908655256718
+# disutil_ft_work_good_women: 3.025827422033017
+# disutil_pt_work_bad_women: 2.1338586697961457
+# disutil_pt_work_good_women: 2.9558778528813034
+# disutil_children_pt_work: 0.07961237417893248
+# disutil_children_ft_work_high: 0.10108123507916474
+# disutil_children_ft_work_low: 0.10800638346372522
+
+# caregiving
+# util_unemployed_and_care_women: 0.5
+# util_pt_work_and_care_women: 0.5
+# util_ft_work_and_care_women: -1.0
+# util_joint_informal_care_women: 0.0
+# util_informal_care_low_women: 2.0 # 2.3
+# util_informal_care_high_women: 1.6 # 1.8
+# util_informal_care_bad_women: -0.2 # 2.3
+# util_informal_care_good_women: 0.2 # 1.8
+
+# util_unemployed_and_care_women: 0
+# util_pt_work_and_care_women: -1.0
+# util_ft_work_and_care_women: -1.2
+# util_formal_care_women: -2
+# util_formal_care_low_women: -2
+# util_formal_care_high_women: -1.3
+
+# disutil_children_ft_work_high: 0.2
+# disutil_children_ft_work_low: 0.2
+# disutil_children_pt_work: 0
+# disutil_ft_work_bad_women: 1.8
+# disutil_ft_work_good_women: 1.4
+# disutil_pt_work_bad_women: 1.6
+# disutil_pt_work_good_women: 1.2
+# disutil_unemployed_women: 1.2
+
+util_formal_care_women: -0.4856233035613876
+util_ft_work_and_care_women: -0.8453716634375091
+util_informal_care_high_women: 0.5567180378318058
+util_informal_care_low_women: 0.9258340794582441
+util_pt_work_and_care_women: -0.7590591882035236
+util_unemployed_and_care_women: -0.12269554996567385
+
+
 
 # ------------------------------------------------------------------------
 # Parameters referenced in utility_of_labor_and_children
@@ -103,6 +158,6 @@ bequest_scale: 2.4
 # Job separation params are set internally driven by data
 
 # Taste shock scale
-lambda: 0.29
+lambda: 0.5
 #taste_shock_scale_men: 0.29
 #taste_shock_scale_women: 0.29

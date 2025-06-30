@@ -22,13 +22,16 @@ def test_choice_set_under_63(period, lagged_choice, job_offer):
     """Test choice set for ages under 63."""
     options = {
         "start_age": 25,
+        "min_SRA": 65,
         "min_ret_age": 63,
+        "ret_years_before_SRA": 4,
     }
     choice_set = state_specific_choice_set(
         period=period,
         lagged_choice=lagged_choice,
         job_offer=job_offer,
         health=1,
+        policy_state=0,
         options=options,
     )
     if job_offer == 1:
@@ -56,6 +59,7 @@ def test_choice_set_over_63_under_72(period, lagged_choice, job_offer):
         "min_SRA": 67,
         "min_ret_age": 63,
         "max_ret_age": 72,
+        "ret_years_before_SRA": 4,
     }
 
     choice_set = state_specific_choice_set(
@@ -63,6 +67,7 @@ def test_choice_set_over_63_under_72(period, lagged_choice, job_offer):
         lagged_choice=lagged_choice,
         job_offer=job_offer,
         health=1,
+        policy_state=0,
         options=options,
     )
     age = period + options["start_age"]
@@ -105,8 +110,10 @@ def test_choice_set_over_72(period, lagged_choice):
     """Test choice set for ages over 72."""
     options = {
         "start_age": 25,
+        "min_SRA": 65,
         "min_ret_age": 63,
         "max_ret_age": 72,
+        "ret_years_before_SRA": 4,
     }
 
     choice_set = state_specific_choice_set(
@@ -114,6 +121,7 @@ def test_choice_set_over_72(period, lagged_choice):
         lagged_choice=lagged_choice,
         job_offer=0,
         health=1,
+        policy_state=0,
         options=options,
     )
     assert np.all(choice_set == np.array([0]))

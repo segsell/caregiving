@@ -7,9 +7,22 @@ disutil_ft_work_bad_women: 5
 disutil_pt_work_good_women: 5
 disutil_pt_work_bad_women: 5
 disutil_unemployed_women: 5
+disutil_unemployed_low_women: 5
+disutil_unemployed_high_women: 5
 disutil_children_pt_work: 5
 disutil_children_ft_work_low: 5
 disutil_children_ft_work_high: 5
+
+util_informal_care_low_women: 5
+util_informal_care_high_women: 5
+
+util_informal_care_bad_women: 5
+util_informal_care_good_women: 5
+
+util_unemployed_and_care_women: 5
+util_pt_work_and_care_women: -1e-12
+util_ft_work_and_care_women: -1e-12
+util_formal_care_women: -1e-12
 
 # util_cons_unemployed_low_educ: -1e-12
 # util_cons_unemployed_high_educ: -1e-12
@@ -36,6 +49,8 @@ lambda: 2
 # Job finding
 job_finding_logit_const_women: 5
 job_finding_logit_age_women: 0.5
+job_finding_logit_age_squared_women: 0.5
+job_finding_logit_age_cubed_women: 0.5
 job_finding_logit_high_educ_women: 5
 
 
