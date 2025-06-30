@@ -33,7 +33,7 @@ jobs:
           git submodule init
           git submodule update
       - name: create build environment
-        uses: mamba-org/setup-micromamba@v4
+        uses: mamba-org/setup-micromamba@v1
         with:
           environment-file: ./envs/testenv.yml
           environment-name: caregiving
