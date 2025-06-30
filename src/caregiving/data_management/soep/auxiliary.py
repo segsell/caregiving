@@ -149,6 +149,7 @@ def create_lagged_and_lead_variables(
     merged_data = merged_data[merged_data["age"] >= specs["start_age"]]
 
     print(str(len(merged_data)) + " left after filtering missing lagged choices.")
+
     return merged_data
 
 
@@ -229,4 +230,5 @@ def enforce_model_choice_restriction(df, specs):
     # df.loc[mask4, "lagged_choice"] = 0
 
     print(str(len(df)) + " left after dropping people who come back from retirement.")
+
     return df

@@ -37,14 +37,14 @@ def simulate_moments_pandas(
     end_age = model_params["end_age_msm"]
 
     age_range = range(start_age, end_age + 1)
-    age_bins = (
-        list(range(40, 75, 5)),  # [40, 45, … , 70]
-        [f"{s}_{s+4}" for s in range(40, 70, 5)],  # "40_44", …a
-    )
-    age_bins_75 = (
-        list(range(40, 80, 5)),  # [40, 45, … , 70]
-        [f"{s}_{s+4}" for s in range(40, 75, 5)],  # "40_44", …a
-    )
+    # age_bins = (
+    #     list(range(40, 75, 5)),  # [40, 45, … , 70]
+    #     [f"{s}_{s+4}" for s in range(40, 70, 5)],  # "40_44", …a
+    # )
+    # age_bins_75 = (
+    #     list(range(40, 80, 5)),  # [40, 45, … , 70]
+    #     [f"{s}_{s+4}" for s in range(40, 75, 5)],  # "40_44", …a
+    # )
 
     df_low = df[df["education"] == 0]
     df_high = df[df["education"] == 1]
@@ -485,11 +485,12 @@ def create_moments_jax(sim_df, min_age, max_age):
     arr_low_educ = arr[arr[:, idx["education"]] == 0]
     arr_high_educ = arr[arr[:, idx["education"]] == 1]
 
-    _care_mask = jnp.isin(arr[:, idx["choice"]], INFORMAL_CARE)
-    arr_caregivers = arr[_care_mask]
+    # _care_mask = jnp.isin(arr[:, idx["choice"]], INFORMAL_CARE)
+    # arr_caregivers = arr[_care_mask]
 
-    age_bins = [(40, 45), (45, 50), (50, 55), (55, 60), (60, 65), (65, 70)]
-    age_bins_75 = [(40, 45), (45, 50), (50, 55), (55, 60), (60, 65), (65, 70), (70, 75)]
+    # age_bins = [(40, 45), (45, 50), (50, 55), (55, 60), (60, 65), (65, 70)]
+    # age_bins_75 = [(40, 45), (45, 50), (50, 55), (55, 60), (60, 65), (65, 70),
+    # (70, 75)]
 
     share_retired_by_age = get_share_by_age(
         arr, ind=idx, choice=RETIREMENT, min_age=min_age, max_age=max_age

@@ -1300,8 +1300,7 @@ def plot_average_savings_decision(data_sim, path_to_save_plot):
 
 
 def plot_job_offer_share_by_age(df, min_age=30, max_age=75, path_to_save_plot=None):
-    """
-    Plots the share of positive job offers (job_offer == 1) by age within a specified range.
+    """Plot the share of positive job offers by age within a specified age range.
 
     Parameters:
     - df: pandas.DataFrame containing at least 'age' and 'job_offer' columns

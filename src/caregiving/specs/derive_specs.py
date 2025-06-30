@@ -39,4 +39,18 @@ def read_and_derive_specs(spec_path):
     # Partner states
     specs["n_partner_states"] = len(specs["partner_labels"])
 
+    # you can retire from min retirement age until max retirement age
+    specs["n_policy_states"] = (
+        int(
+            ((specs["max_SRA_baseline"] - specs["min_SRA"]) / specs["SRA_grid_size"])
+            + 1
+        )
+        # + 1
+    )
+    specs["SRA_values_policy_states"] = np.arange(
+        specs["min_SRA"],
+        specs["max_SRA_baseline"] + specs["SRA_grid_size"],
+        specs["SRA_grid_size"],
+    )
+
     return specs

@@ -5,6 +5,7 @@ from typing import Annotated
 
 import numpy as np
 import pandas as pd
+import pytask
 from pytask import Product
 
 from caregiving.config import BLD, SRC
@@ -30,6 +31,7 @@ def table(df_col):
     return pd.crosstab(df_col, columns="Count")["Count"]
 
 
+@pytask.mark.skip()
 def task_create_event_study_sample(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
@@ -166,28 +168,41 @@ def task_create_event_study_sample(
     df = create_choice_variable(df)
 
     df = generate_working_hours(df, include_actual_hours=True, drop_missing=False)
+    _syear_counts1 = df["syear"].value_counts().sort_index()
+    print(
+        "Number of observations per year after generating working hours:\n"
+        + str(_syear_counts1)
+    )
 
-    syear_counts1 = df["syear"].value_counts().sort_index()
     df = create_policy_state(df, specs)
-    df = create_education_type(df)
+    df = create_education_type(df, drop_missing=False)
+
     df = create_health_var_good_bad(df, drop_missing=False)
     df = create_caregiving(df, filter_missing=False)
 
-    syear_counts2 = df["syear"].value_counts().sort_index()
+    _syear_counts2 = df["syear"].value_counts().sort_index()
+    print(
+        "Number of observations per year after creating care variables:\n"
+        + str(_syear_counts2)
+    )
 
     df = deflate_gross_labor_income(df, cpi_data=cpi, specs=specs)
     df = create_hourly_wage(df)
 
     df = create_partner_state(df, filter_missing=False)
-
-    syear_counts3 = df.index.get_level_values("syear").value_counts().sort_index()
+    _syear_counts3 = df.index.get_level_values("syear").value_counts().sort_index()
+    print(
+        "Number of observations per year after creating partner state:\n"
+        + str(_syear_counts3)
+    )
 
     df = create_parent_info(df, filter_missing=False)
     df = create_sibling_info(df, filter_missing=False)
 
     # filter data. Leave additional years in for lagging and leading.
     df = filter_data(df, specs, event_study=True)
-    syear_counts4 = df.index.get_level_values("syear").value_counts().sort_index()
+    _syear_counts4 = df.index.get_level_values("syear").value_counts().sort_index()
+    print("Number of observations per year after filtering:\n" + str(_syear_counts4))
 
     df = create_lagged_and_lead_variables(
         df,
@@ -197,7 +212,7 @@ def task_create_event_study_sample(
         event_study=True,
     )
 
-    df = create_experience_variable(df)
+    df = create_experience_variable(df, drop_invalid=False)
 
     # enforce choice restrictions based on model setup
     df = enforce_model_choice_restriction(df, specs)
@@ -212,8 +227,8 @@ def task_create_event_study_sample(
         "choice": "int8",
         "lagged_choice": "float32",
         "partner_state": "float32",
-        "experience": "int8",
-        "education": "int8",
+        "experience": "float32",
+        "education": "float16",
         "children": "int8",
         "health": "float16",
         "working_hours": "float32",
@@ -243,6 +258,9 @@ def task_create_event_study_sample(
         "pglabgro_deflated_p": "float32",
         "hourly_wage_p": "float32",
         "any_care_p": "float32",
+        # unprocessed
+        "birthregion_ew": "int8",
+        "migback": "int8",
     }
 
     df.reset_index(drop=False, inplace=True)
@@ -250,9 +268,13 @@ def task_create_event_study_sample(
     df = df.astype(type_dict)
 
     # df = df[df["syear"] <= specs["end_year_event_study"]]
-
     # print_data_description(df)
-    #
+
+    syear_counts_clean = df["syear"].value_counts().sort_index()
+    print(
+        "Number of observations per year in the cleaned data:\n"
+        + str(syear_counts_clean)
+    )
 
     df.to_csv(path_to_save)
 

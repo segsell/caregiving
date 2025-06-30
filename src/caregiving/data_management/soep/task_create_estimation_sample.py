@@ -118,6 +118,8 @@ def task_create_structural_estimation_sample(
         "period": "int8",
         "choice": "int8",
         "lagged_choice": "float32",  # can be na
+        "policy_state": "int8",
+        "policy_state_value": "int8",
         "already_retired": "int8",
         "partner_state": "int8",
         "job_offer": "int8",

@@ -46,14 +46,14 @@ def task_create_soep_moments(
     df = pd.read_csv(path_to_sample, index_col=[0])
     df = df[(df["sex"] == 1) & (df["age"] <= end_age)]  # women only
 
-    df_year = df[df["syear"] == 2012]  # 2016 # noqa: PLR2004
-    # df_year = df[df["syear"].between(2012, 2018)]
+    # df_year = df[df["syear"] == 2012]  # 2016 # noqa: PLR2004
+    # # df_year = df[df["syear"].between(2012, 2018)]
 
     df["kidage_youngest"] = df["kidage_youngest"] - 1
 
     df_low = df[df["education"] == 0]
     df_high = df[df["education"] == 1]
-    df_caregivers = df[df["any_care"] == 1]
+    # df_caregivers = df[df["any_care"] == 1]
     # _df_caregivers_low = df_low[df_low["any_care"] == 1]
     # _df_caregivers_high = df_high[df_high["any_care"] == 1]
 

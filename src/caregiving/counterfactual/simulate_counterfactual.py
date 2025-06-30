@@ -2,8 +2,6 @@
 
 import numpy as np
 import pandas as pd
-from dcegm.simulation.sim_utils import create_simulation_df
-from dcegm.simulation.simulate import simulate_all_periods
 
 from caregiving.model.shared import (
     DEAD,
@@ -15,6 +13,8 @@ from caregiving.model.shared import (
 )
 from caregiving.model.state_space import construct_experience_years
 from caregiving.utils import table
+from dcegm.simulation.sim_utils import create_simulation_df
+from dcegm.simulation.simulate import simulate_all_periods
 
 
 def simulate_counterfactual_npv(
@@ -110,7 +110,7 @@ def simulate_counterfactual_npv(
     # df["is_care"] = df["choice"].isin(np.asarray(INFORMAL_CARE))
 
     # PARAMETERS
-    AGE_FOCUS = 75
+    # AGE_FOCUS = 75
     AGE_MIN, AGE_MAX = 40, 70
     beta = params["beta"]  # discount factor
 
@@ -141,7 +141,9 @@ def simulate_counterfactual_npv(
 
     # # ---------------------------------------------------------------
     # # 4. Fill rows for agents who died before AGE_FOCUS, etc.
-    # df[["care_sum", "care_ever"]] = df[["care_sum", "care_ever"]].fillna(0).astype(int)
+    # df[["care_sum", "care_ever"]] = df[
+    # ["care_sum", "care_ever"]
+    # ].fillna(0).astype(int)
 
     # ===============================================================
     # Net present value (NPV) of total income, ages 30-80

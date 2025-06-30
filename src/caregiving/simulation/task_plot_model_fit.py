@@ -102,24 +102,26 @@ def task_plot_model_fit(  # noqa: PLR0915
     """Plot model fit between empirical and simulated data."""
 
     options = pickle.load(path_to_options.open("rb"))
-    params = yaml.safe_load(path_to_start_params.open("rb"))
+    # params = yaml.safe_load(path_to_start_params.open("rb"))
 
     model_full = load_and_setup_full_model_for_solution(
         options, path_to_model=path_to_solution_model
     )
 
-    emp_moms = pd.read_csv(path_to_empirical_moments, index_col=[0]).squeeze("columns")
+    # emp_moms = pd.read_csv(
+    # path_to_empirical_moments, index_col=[0]
+    # ).squeeze("columns")
 
     df_emp = pd.read_csv(path_to_empirical_data, index_col=[0])
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
     df_sim["sex"] = SEX
 
-    df_emp_prep, _states_dict = load_and_prep_data(
-        data_emp=df_emp,
-        model=model_full,
-        start_params=params,
-        drop_retirees=False,
-    )
+    # df_emp_prep, _states_dict = load_and_prep_data(
+    #     data_emp=df_emp,
+    #     model=model_full,
+    #     start_params=params,
+    #     drop_retirees=False,
+    # )
 
     specs = model_full["options"]["model_params"]
 
@@ -217,14 +219,16 @@ def task_plot_model_fit(  # noqa: PLR0915
     # # _share_informal_care = df_sim.loc[
     # #     df_sim["informal_care"] == 1, "care_demand"
     # # ].mean()
-    # share_informal_care = df_sim.loc[df_sim["care_demand"] == 1, "informal_care"].mean()
-    # print(f"Share of informal caregivers (cond. on care demand): {share_informal_care}")
+    # share_informal_care = df_sim.loc[
+    # df_sim["care_demand"] == 1, "informal_care"
+    # ].mean()
+    # print(f"Share informal caregivers (cond. on care demand): {share_informal_care}")
 
     # share_caregivers_high_edu = df_sim.loc[
     #     (df_sim["informal_care"] == 1), "education"
     # ].mean()
     # print(
-    #     f"Share of high education (cond. on informal care): {share_caregivers_high_edu}"
+    #     f"Share high education (cond. on informal care): {share_caregivers_high_edu}"
     # )
     # # plot_choice_shares(df_emp, df_sim, specs)
     # # discrete_state_names = model_full["model_structure"]["discrete_states_names"]

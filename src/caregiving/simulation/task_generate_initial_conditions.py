@@ -8,8 +8,6 @@ import jax.numpy as jnp
 import numpy as np
 import pandas as pd
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
@@ -34,6 +32,8 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.utils import table
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 
 def task_generate_start_states_for_solution(  # noqa: PLR0915
@@ -105,7 +105,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         & (sex_data["gebjahr"] <= INITIAL_CONDITIONS_COHORT_HIGH)
         & (sex_data["age"] >= INITIAL_CONDITIONS_AGE_LOW)
         & (sex_data["age"] <= INITIAL_CONDITIONS_AGE_HIGH)
-    ]
+    ].copy()
     # The fact that a woman has obtained higher education correlates with the
     # presence of a sister.
     sister_shares = (
@@ -195,6 +195,37 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
 
     survival_by_age.to_csv(path_to_save_survival_by_age, index=True)
     health_prob_by_age.to_csv(path_to_save_health_by_age, index=True)
+
+    # =================================================================================
+    # Generate policy_state values for synthetic agents based on empirical SRA shares
+
+    # 1. Get empirical distribution of policy_state (already created)
+    sra_counts = (
+        observed_data.loc[
+            (observed_data["gebjahr"] >= specs["min_birth_year"])
+            & (
+                observed_data["gebjahr"] < specs["end_year"] - specs["min_ret_age"] + 20
+            ),  # 1974
+            "policy_state",
+        ]
+        .value_counts(normalize=True)
+        .sort_index()
+    )
+
+    # 2. Sample SRA values for all agents
+    available_sras = sra_counts.index.to_numpy()
+    sra_probs = sra_counts.to_numpy()
+    drawn_sras = np.random.choice(available_sras, size=n_agents, p=sra_probs)
+
+    # 3. Map sampled SRA values to grid indices
+    sra_grid_size = options["model_params"]["SRA_grid_size"]
+    n_policy_states = options["model_params"]["n_policy_states"]
+
+    # Validate SRA range
+    assert drawn_sras.min() >= 0
+    assert drawn_sras.max() < n_policy_states * sra_grid_size
+
+    # =================================================================================
 
     # Generate containers
     wealth_agents = np.empty(n_agents, np.float64)
@@ -320,6 +351,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         "education": jnp.array(education_agents, dtype=jnp.uint8),
         "health": jnp.array(health_agents, dtype=jnp.uint8),
         "lagged_choice": jnp.array(lagged_choice, dtype=jnp.uint8),
+        "policy_state": jnp.array(drawn_sras, dtype=jnp.uint8),
         "already_retired": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
         "experience": jnp.array(exp_agents, dtype=jnp.float64),
         "job_offer": jnp.array(job_offer_agents, dtype=jnp.uint8),
