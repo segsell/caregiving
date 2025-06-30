@@ -35,7 +35,7 @@ jobs:
       - name: create build environment
         uses: mamba-org/setup-micromamba@v1
         with:
-          environment-file: ./envs/testenv.yml
+          environment-file: ./.envs/testenv.yml
           environment-name: caregiving
           create-args: |
             python=${{ matrix.python-version }}
