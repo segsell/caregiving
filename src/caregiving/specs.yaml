@@ -28,7 +28,7 @@ partner_labels: ["Single","Working Partner", "Retired Partner"]
 
 # Belief process parameters
 SRA_grid_size: 1 # 0.25
-# min_SRA_baseline: 67
+min_SRA_baseline: 67
 min_SRA: 65
 max_SRA: 72
 max_SRA_baseline: 67
@@ -67,10 +67,10 @@ monthly_pension_point_value_east_2010: 24.13
 ###############################################################################
 # Data preparation
 ###############################################################################
-start_year: 2001 # start year of estimation sample
-end_year: 2019 # end year of estimation sample
-# start_year: 2010 # start year of estimation sample
-# end_year: 2017 # end year of estimation sample
+# start_year: 2001 # start year of estimation sample
+# end_year: 2019 # end year of estimation sample
+start_year: 2010 # start year of estimation sample
+end_year: 2017 # end year of estimation sample
 reference_year: 2010  # reference year for monetary values, taxes, etc.
 ###############################################
 # Wage process estimation (uses same start and end year)

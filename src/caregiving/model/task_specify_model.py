@@ -7,7 +7,6 @@ from typing import Annotated
 import jax.numpy as jnp
 import numpy as np
 import yaml
-from dcegm.pre_processing.setup_model import setup_and_save_model
 from pytask import Product
 
 from caregiving.config import BLD
@@ -31,6 +30,7 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
+from dcegm.pre_processing.setup_model import setup_and_save_model
 
 
 def task_specify_model(
@@ -65,7 +65,7 @@ def task_specify_model(
     # Load specifications
     n_periods = specs["n_periods"]
     choices = np.arange(specs["n_choices"], dtype=int)
-    n_policy_states = specs["n_policy_states"]
+    # n_policy_states = specs["n_policy_states"]
 
     # Savings grid
     savings_grid = create_savings_grid()
@@ -83,7 +83,7 @@ def task_specify_model(
                 # "sex": np.arange(specs["n_sexes"], dtype=int),
                 "already_retired": np.arange(2, dtype=int),
                 "has_sister": np.arange(2, dtype=int),
-                "policy_state": np.arange(n_policy_states, dtype=int),
+                # "policy_state": np.arange(n_policy_states, dtype=int),
             },
             "exogenous_processes": {
                 "job_offer": {

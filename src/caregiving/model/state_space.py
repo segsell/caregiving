@@ -111,7 +111,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
     period,
     lagged_choice,
     already_retired,
-    policy_state,
+    # policy_state,
     education,
     has_sister,
     health,
@@ -126,7 +126,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
     max_ret_age = options["max_ret_age"]
     min_ret_age_state_space = options["min_ret_age"]
 
-    SRA_pol_state = options["min_SRA"] + policy_state
+    SRA_pol_state = options["min_SRA"]  # + policy_state
 
     # Generate last period, because only here are death states
     last_period = options["n_periods"] - 1
@@ -162,7 +162,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "period": last_period,
                 "lagged_choice": 0,
                 "already_retired": 1,
-                "policy_state": policy_state,
+                # "policy_state": policy_state,
                 "education": education,
                 "has_sister": has_sister,
                 "health": health,
@@ -180,7 +180,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "period": period,
                 "lagged_choice": lagged_choice,
                 "already_retired": already_retired,
-                "policy_state": policy_state,
+                # "policy_state": policy_state,
                 "education": education,
                 "has_sister": has_sister,
                 "health": health,
@@ -198,7 +198,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "period": period,
                 "lagged_choice": lagged_choice,
                 "already_retired": already_retired,
-                "policy_state": policy_state,
+                # "policy_state": policy_state,
                 "education": education,
                 "has_sister": has_sister,
                 "health": health,
@@ -245,10 +245,10 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
 
 
 def state_specific_choice_set(  # noqa: PLR0911, PLR0912
-    period, lagged_choice, job_offer, health, policy_state, options
+    period, lagged_choice, job_offer, health, options
 ):
     age = period + options["start_age"]
-    SRA_pol_state = options["min_SRA"] + policy_state  # * options["SRA_grid_size"]
+    SRA_pol_state = options["min_SRA"]  # + policy_state  # * options["SRA_grid_size"]
     min_ret_age_pol_state = apply_retirement_constraint_for_SRA(SRA_pol_state, options)
 
     if is_dead(health):
@@ -268,8 +268,8 @@ def state_specific_choice_set(  # noqa: PLR0911, PLR0912
         return RETIREMENT_NO_CARE
     # Person is in the voluntary retirement range.
     else:
+        # if age >= options["min_SRA"]:
         if age >= SRA_pol_state:
-            # if age >= options["min_SRA"]:
             if job_offer == 0:
                 return RETIREMENT_NO_CARE
             else:
