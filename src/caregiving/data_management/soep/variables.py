@@ -3,6 +3,8 @@
 import numpy as np
 import pandas as pd
 
+from caregiving.utils import table
+
 # from src.caregiving.model.shared import FULL_TIME, PART_TIME, UNEMPLOYED, RETIRED
 
 PGEMPLST_UNEMPLOYED = 5
@@ -28,27 +30,69 @@ MISSING_VALUE = -99
 
 
 def create_policy_state(df, specs):
-    df["policy_state"] = assign_policy_state_by_gebjahr(df["gebjahr"])
+    # df["policy_state"] = assign_policy_state_by_gebjahr_and_syear(df)
 
-    (
-        df["policy_state_value"],
-        df["policy_state"],
-    ) = modify_policy_state(df["policy_state"], specs)
+    # (
+    #     df["policy_state_value"],
+    #     df["policy_state"],
+    # ) = modify_policy_state(df["policy_state"], specs)
+
+    # Step 1: Assign SRA from year of birth and survey year
+    df["_policy_state_value"] = assign_policy_state_by_gebjahr_and_syear(
+        df
+    )  # e.g., 65, 66, 67
+
+    # Step 2: Map SRA values to grid (e.g., 65 → 0, 66 → 1, 67 → 2)
+    df["policy_state_value"], df["policy_state"] = modify_policy_state(
+        df["_policy_state_value"], specs
+    )
+
     return df
 
 
-def assign_policy_state_by_gebjahr(gebjahr):
-    """This function creates the policy state according to the 2007 reform."""
+def assign_policy_state_by_gebjahr_and_syear(df):
+    """Assigns statutory retirement age (SRA) by year of birth and survey year,
+    reflecting both pre- and post-2007 German pension rules.
 
-    # Default state is 67
-    policy_state = pd.Series(index=gebjahr.index, data=67, dtype=float)
-    # Create masks for everyone born before 1964
-    mask1 = (gebjahr <= 1964) & (gebjahr >= 1958)  # noqa: PLR2004
-    mask2 = (gebjahr <= 1958) & (gebjahr >= 1947)  # noqa: PLR2004
-    mask3 = gebjahr < 1947  # noqa: PLR2004
-    policy_state.loc[mask1] = 67 - 2 / 12 * (1964 - gebjahr[mask1])  # noqa: PLR2004
-    policy_state.loc[mask2] = 66 - 1 / 12 * (1958 - gebjahr[mask2])  # noqa: PLR2004
-    policy_state.loc[mask3] = 65
+    Returns integer SRAs: 65, 66, or 67.
+    Supports both MultiIndex and column-based 'syear'.
+    """
+
+    # Get syear from column or index
+    if "syear" in df.columns:
+        syear = df["syear"]
+    elif isinstance(df.index, pd.MultiIndex) and "syear" in df.index.names:
+        syear = df.index.get_level_values("syear")
+    else:
+        raise ValueError("'syear' must be a column or a MultiIndex level in df.")
+
+    gebjahr = df["gebjahr"]
+    policy_state = pd.Series(index=gebjahr.index, dtype=int)
+
+    # Case 1: Pre-2007 — SRA is 65
+    mask_pre = syear < 2007  # noqa: PLR2004
+    policy_state.loc[mask_pre] = 65
+
+    # Case 2: Post-2007 — apply cohort-specific changes
+    mask_post = ~mask_pre
+    geb_post = gebjahr[mask_post]
+    temp_state = pd.Series(index=geb_post.index, data=67.0)
+
+    # Gradual increase to 67 (1958–1964)
+    mask1 = (geb_post <= 1964) & (geb_post >= 1958)  # noqa: PLR2004
+    temp_state.loc[mask1] = 67 - 2 / 12 * (1964 - geb_post[mask1])
+
+    # Gradual increase to 66 (1947–1957)
+    mask2 = (geb_post < 1958) & (geb_post >= 1947)  # noqa: PLR2004
+    temp_state.loc[mask2] = 66 - 1 / 12 * (1958 - geb_post[mask2])
+
+    # Born before 1947
+    mask3 = geb_post < 1947  # noqa: PLR2004
+    temp_state.loc[mask3] = 65
+
+    # Round to nearest integer year
+    policy_state.loc[mask_post] = temp_state.round().astype(int)
+    # policy_state.loc[mask_post] = (temp_state + 0.5).astype(int)
 
     return policy_state
 
@@ -74,17 +118,21 @@ def modify_policy_state(policy_states, specs):
 # =====================================================================================
 
 
-def create_education_type(data):
+def create_education_type(data, drop_missing=True):
     """This function creates a education type from pgpsbil in soep-pgen.
 
     The function uses a two category split of the population, encoding 1 if an
     individual has at least Fachhochschulreife.
 
     """
-    data = data[data["pgpsbil"].notna()]
     data["education"] = 0
+    data.loc[data["pgpsbil"] < 0, "education"] = np.nan
+
     data.loc[data["pgpsbil"] == PGSBIL_FACHHOCHSCHULREIFE, "education"] = 1
     data.loc[data["pgpsbil"] == PGSBIL_ABITUR, "education"] = 1
+
+    if drop_missing:
+        data = data[data["education"].notna()]
 
     print(str(len(data)) + " left after dropping people with missing education values.")
 
@@ -110,14 +158,14 @@ def create_experience_variable_with_cap(data, exp_cap):
     return data
 
 
-def create_experience_variable(data):
+def create_experience_variable(data, drop_invalid=True):
     """This function creates an experience variable as the sum of full-time and 0.5
     weighted part-time experience and rounds the sum."""
-    data = sum_experience_variables(data)
+    data = sum_experience_variables(data, drop_invalid=drop_invalid)
     return data
 
 
-def sum_experience_variables(data):
+def sum_experience_variables(data, drop_invalid=True):
     """This function sums the experience variables pgexpft and pgexppt.
 
     Part time experience is weighted by 0.5. The function returns a new column
@@ -134,6 +182,7 @@ def sum_experience_variables(data):
     # (not allowed to work before)
     max_exp = data["age"] - 14
     exp_exceeding = ((data["pgexpft"] + data["pgexppt"]) - max_exp).clip(lower=0)
+
     # Deduct exceeding experience from part time experience.
     # Assume if worked both, you worked full
     data.loc[:, "pgexppt"] -= exp_exceeding
@@ -151,10 +200,14 @@ def sum_experience_variables(data):
         ~invalid_ft_exp & invalid_pt_exp, "pgexpft"
     ]
     # If both are invalid drop observations
-    data = data[data["experience"].notna()]
-    print(
-        str(len(data)) + " left after dropping people with invalid experience values."
-    )
+    if drop_invalid:
+        data = data[data["experience"].notna()]
+
+        print(
+            str(len(data))
+            + " left after dropping people with invalid experience values."
+        )
+
     return data
 
 

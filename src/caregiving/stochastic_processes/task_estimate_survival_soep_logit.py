@@ -362,6 +362,7 @@ def task_plot_mortality_good_bad(
 
     axes[0].legend(loc="lower left")
     fig.savefig(path_to_save_plot)
+    plt.close(fig)
 
 
 def task_plot_mortality_good_medium_bad(
@@ -447,6 +448,7 @@ def task_plot_mortality_good_medium_bad(
 
     axes[0].legend(loc="lower left")
     fig.savefig(path_to_save_plot)
+    plt.close(fig)
 
 
 def _survival_function(age, health_factors, params):

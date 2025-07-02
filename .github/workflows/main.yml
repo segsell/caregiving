@@ -26,7 +26,7 @@ jobs:
           # - '3.12'
     steps:
       # Checkout the repository
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       # Initialize submodules
       - name: Git Submodule Update
         run: |
@@ -35,7 +35,7 @@ jobs:
       - name: create build environment
         uses: mamba-org/setup-micromamba@v1
         with:
-          environment-file: environment.yml
+          environment-file: ./.envs/testenv.yml
           environment-name: caregiving
           create-args: |
             python=${{ matrix.python-version }}

@@ -66,6 +66,7 @@ def task_estimate_wage_parameters(
     coefficients = regressors + [param + "_ser" for param in regressors]
 
     wage_data = pd.read_csv(path_to_data, index_col=0)
+
     # Modify
     wage_data["ln_wage"] = np.log(wage_data["hourly_wage"])
     wage_data["ln_exp"] = np.log(wage_data["experience"] + 1)
@@ -93,7 +94,7 @@ def task_estimate_wage_parameters(
     )
 
     for sex_val, sex_label in enumerate(sex_labels):
-        fig, ax = plt.subplots(figsize=(12, 8))
+        fig, ax = plt.subplots()
         for edu_val, edu_label in enumerate(edu_labels):
             wage_data_type = wage_data[
                 (wage_data["education"] == edu_val) & (wage_data["sex"] == sex_val)
@@ -124,14 +125,16 @@ def task_estimate_wage_parameters(
                 color=JET_COLOR_MAP[edu_val],
                 label=f"Est. {edu_label}",
             )
-        ax.set_title(sex_label)
+        # ax.set_title(sex_label)
         ax.set_xlabel("Age")
         ax.set_ylabel("Log hourly wage")
         ax.legend(loc="upper left")
 
         fig.savefig(
-            BLD / "plots" / "stochastic_processes" / f"wages_{sex_label.lower()}.png"
+            BLD / "plots" / "stochastic_processes" / f"wages_{sex_label.lower()}.png",
+            dpi=300,
         )
+        plt.close(fig)
 
     # Save results
     wage_parameters.to_csv(path_to_save_wage_params)

@@ -15,23 +15,39 @@ from caregiving.estimation.estimation_setup import (
     load_and_prep_data,
     load_and_setup_full_model_for_solution,
 )
-from caregiving.model.shared import FULL_TIME, NOT_WORKING, PART_TIME, SEX, WORK
+from caregiving.model.shared import (
+    DEAD,
+    INFORMAL_CARE,
+    NOT_WORKING,
+    PARENT_DEAD,
+    SEX,
+    WORK,
+    WORK_CHOICES,
+)
 from caregiving.simulation.plot_model_fit import (
     plot_average_savings_decision,
     plot_average_wealth,
+    plot_caregiver_shares_by_age,
+    plot_caregiver_shares_by_age_bins,
     plot_choice_shares,
     plot_choice_shares_by_education,
+    plot_choice_shares_by_education_age_bins,
+    plot_choice_shares_overall,
+    plot_choice_shares_overall_age_bins,
     plot_choice_shares_single,
+    plot_job_offer_share_by_age,
+    plot_simulated_care_demand_by_age,
     plot_states,
     plot_transitions_by_age,
     plot_transitions_by_age_bins,
 )
 
 
-def task_plot_model_fit(
+def task_plot_model_fit(  # noqa: PLR0915
     path_to_options: Path = BLD / "model" / "options.pkl",
     path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
     path_to_start_params: Path = BLD / "model" / "params" / "start_params_model.yaml",
+    path_to_empirical_moments: Path = BLD / "moments" / "soep_moments.csv",
     path_to_empirical_data: Path = BLD
     / "data"
     / "soep_structural_estimation_sample.csv",
@@ -44,10 +60,36 @@ def task_plot_model_fit(
     / "plots"
     / "model_fit"
     / "average_savings.png",
-    path_to_save_single_choice_plot: Annotated[Path, Product] = BLD
+    path_to_save_labor_shares_by_educ_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "model_fit"
     / "labor_shares_by_educ_and_age.png",
+    path_to_save_labor_shares_caregivers_by_age: Annotated[Path, Product] = BLD
+    / "plots"
+    / "model_fit"
+    / "labor_shares_caregivers_by_age.png",
+    path_to_save_labor_shares_caregivers_by_age_bin: Annotated[Path, Product] = BLD
+    / "plots"
+    / "model_fit"
+    / "labor_shares_caregivers_by_age_bin.png",
+    path_to_save_labor_shares_caregivers_by_educ_and_age_plot: Annotated[
+        Path, Product
+    ] = BLD
+    / "plots"
+    / "model_fit"
+    / "labor_shares_caregivers_by_educ_and_age.png",
+    path_to_save_caregiver_share_by_age_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "model_fit"
+    / "share_caregivers_by_age.png",
+    path_to_save_caregiver_share_by_age_bin_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "model_fit"
+    / "share_caregivers_by_age_bin.png",
+    path_to_save_care_demand_by_age_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "model_fit"
+    / "simulated_care_demand_by_age.png",
     path_to_save_work_transition_age_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "model_fit"
@@ -60,39 +102,137 @@ def task_plot_model_fit(
     """Plot model fit between empirical and simulated data."""
 
     options = pickle.load(path_to_options.open("rb"))
-    params = yaml.safe_load(path_to_start_params.open("rb"))
+    # params = yaml.safe_load(path_to_start_params.open("rb"))
 
     model_full = load_and_setup_full_model_for_solution(
         options, path_to_model=path_to_solution_model
     )
 
+    # emp_moms = pd.read_csv(
+    # path_to_empirical_moments, index_col=[0]
+    # ).squeeze("columns")
+
     df_emp = pd.read_csv(path_to_empirical_data, index_col=[0])
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
-    df_sim["sex"] = 1
+    df_sim["sex"] = SEX
 
-    df_emp_prep, _states_dict = load_and_prep_data(
-        data_emp=df_emp,
-        model=model_full,
-        start_params=params,
-        drop_retirees=False,
-    )
+    # df_emp_prep, _states_dict = load_and_prep_data(
+    #     data_emp=df_emp,
+    #     model=model_full,
+    #     start_params=params,
+    #     drop_retirees=False,
+    # )
 
     specs = model_full["options"]["model_params"]
 
-    plot_average_wealth(df_emp_prep, df_sim, specs, path_to_save_wealth_plot)
-    plot_average_savings_decision(df_sim, path_to_save_savings_plot)
+    # plot_average_wealth(df_emp_prep, df_sim, specs, path_to_save_wealth_plot)
+    # plot_average_savings_decision(df_sim, path_to_save_savings_plot)
 
-    # plot_choice_shares_single(
-    #     df_emp, df_sim, specs, path_to_save_plot=path_to_save_single_choice_plot
-    # )
+    # # plot_choice_shares_single(
+    # #     df_emp, df_sim, specs, path_to_save_plot=path_to_save_single_choice_plot
+    # # )
     plot_choice_shares_by_education(
-        df_emp, df_sim, specs, path_to_save_plot=path_to_save_single_choice_plot
+        df_emp, df_sim, specs, path_to_save_plot=path_to_save_labor_shares_by_educ_plot
     )
     test_choice_shares_sum_to_one(df_emp, df_sim, specs)
 
-    # plot_choice_shares(df_emp, df_sim, specs)
-    # discrete_state_names = model_full["model_structure"]["discrete_states_names"]
-    # plot_states(df_emp, df_sim, discrete_state_names, specs)
+    plot_job_offer_share_by_age(
+        df_sim,
+        path_to_save_plot=BLD / "plots" / "model_fit" / "simulated_job_offer",
+    )
+
+    # df_emp_caregivers = df_emp.loc[df_emp["any_care"] == 1].copy()
+    # df_sim_caregivers = df_sim.loc[
+    #     df_sim["choice"].isin(np.asarray(INFORMAL_CARE).tolist())
+    # ].copy()
+    # plot_choice_shares_overall(
+    #     df_emp_caregivers,
+    #     df_sim_caregivers,
+    #     specs,
+    #     path_to_save_plot=path_to_save_labor_shares_caregivers_by_age,
+    # )
+    # plot_choice_shares_overall_age_bins(
+    #     df_emp_caregivers,
+    #     df_sim_caregivers,
+    #     specs,
+    #     path_to_save_plot=path_to_save_labor_shares_caregivers_by_age_bin,
+    # )
+    # plot_choice_shares_by_education(
+    #     df_emp_caregivers,
+    #     df_sim_caregivers,
+    #     specs,
+    #     path_to_save_plot=path_to_save_labor_shares_caregivers_by_educ_and_age_plot,
+    # )
+
+    # plot_caregiver_shares_by_age(
+    #     df_emp,
+    #     df_sim,
+    #     specs,
+    #     choice_set=INFORMAL_CARE,
+    #     path_to_save_plot=path_to_save_caregiver_share_by_age_plot,
+    # )
+    # plot_caregiver_shares_by_age_bins(
+    #     emp_moms,
+    #     df_sim,
+    #     specs,
+    #     choice_set=INFORMAL_CARE,
+    #     age_min=40,
+    #     age_max=75,
+    #     path_to_save_plot=path_to_save_caregiver_share_by_age_bin_plot,
+    # )
+    # plot_simulated_care_demand_by_age(
+    #     df_sim,
+    #     specs,
+    #     age_min=40,
+    #     age_max=80,
+    #     path_to_save_plot=path_to_save_care_demand_by_age_plot,
+    # )
+
+    # AGE_FOCUS = 75
+    # # Drop invalid!?
+    # # df_sim.loc[(df_sim["care_demand"] == 0) & (df_sim["informal_care"] == 1)]
+
+    # # 1. Agents alive / observed at the focus age --------------------------
+    # ids_at_age = df_sim.loc[
+    #     (df_sim["age"] == AGE_FOCUS) & (df_sim["health"] != DEAD), "agent"
+    # ].unique()
+
+    # # 2. Keep their entire life histories ----------------------------------
+    # sub = df_sim.loc[df_sim["agent"].isin(ids_at_age)].copy()
+
+    # # 3. Flag caregiver years via choice ∈ INFORMAL_CARE -------------------
+    # care_codes = np.asarray(INFORMAL_CARE).tolist()
+    # sub["is_care"] = sub["choice"].isin(care_codes)
+
+    # # 4. Person-level aggregates -------------------------------------------
+    # agg = sub.groupby("agent")["is_care"].agg(
+    #     care_sum="sum", care_ever="any"  # years with is_care == True
+    # )  # at least one caregiver year
+
+    # mean_care_years = agg.loc[agg["care_ever"], "care_sum"].mean()
+    # print(f"Avg. number of informal caregiving years: {mean_care_years}")
+
+    # df_sim["informal_care"] = df_sim["choice"].isin(np.asarray(INFORMAL_CARE))
+    # share_caregivers = df_sim.loc[df_sim["age"] < AGE_FOCUS, "informal_care"].mean()
+    # print(f"Share of informal caregivers (unconditional): {share_caregivers}")
+
+    # # _share_informal_care = df_sim.loc[
+    # #     df_sim["informal_care"] == 1, "care_demand"
+    # # ].mean()
+    # share_informal_care = df_sim.loc[
+    # df_sim["care_demand"] == 1, "informal_care"
+    # ].mean()
+    # print(f"Share informal caregivers (cond. on care demand): {share_informal_care}")
+
+    # share_caregivers_high_edu = df_sim.loc[
+    #     (df_sim["informal_care"] == 1), "education"
+    # ].mean()
+    # print(
+    #     f"Share high education (cond. on informal care): {share_caregivers_high_edu}"
+    # )
+    # # plot_choice_shares(df_emp, df_sim, specs)
+    # # discrete_state_names = model_full["model_structure"]["discrete_states_names"]
+    # # plot_states(df_emp, df_sim, discrete_state_names, specs)
 
     states = {
         "not_working": NOT_WORKING,
@@ -126,10 +266,30 @@ def task_plot_model_fit(
         path_to_save_plot=path_to_save_work_transition_age_bin_plot,
     )
 
+    # =================================================================================
+
+    # df_sim["formal_care"] = np.nan
+
+    # alive_and_demand = (
+    #     (df_sim["health"] != DEAD)
+    #     & (df_sim["mother_health"] != PARENT_DEAD)
+    #     & (df_sim["care_demand"] == 1)
+    # )
+
+    # df_sim.loc[
+    #     alive_and_demand & (~df_sim["choice"].isin(INFORMAL_CARE)), "formal_care"
+    # ] = 1
+    # df_sim.loc[
+    #     alive_and_demand & (df_sim["choice"].isin(INFORMAL_CARE)), "formal_care"
+    # ] = 0
+
+    # print(f"Share of formal_care: {df_sim['formal_care'].mean()}")
+    # =================================================================================
+
     data_emp = df_emp.copy()
     mask = (
-        data_emp["lagged_choice"].isin(WORK)
-        & data_emp["choice"].isin(WORK)
+        data_emp["lagged_choice"].isin(WORK_CHOICES)
+        & data_emp["choice"].isin(WORK_CHOICES)
         & data_emp["age"].between(60, 70)
     )
     df_60_70 = data_emp[mask]
@@ -142,8 +302,8 @@ def task_plot_model_fit(
     )
 
     mask2 = (
-        data_emp["lagged_choice"].isin(WORK)
-        # & data_emp["choice"].isin(WORK)
+        data_emp["lagged_choice"].isin(WORK_CHOICES)
+        # & data_emp["choice"].isin(WORK_CHOICES)
         & data_emp["age"].between(60, 70)
     )
     df_60_70_2 = data_emp[mask2]
@@ -157,7 +317,7 @@ def task_plot_model_fit(
 
     mask3 = (
         data_emp["age"].between(60, 70)
-        # & data_emp["choice"].isin(WORK)
+        # & data_emp["choice"].isin(WORK_CHOICES)
     )
     df_60_70_3 = data_emp[mask3]
     counts_3 = (  # noqa: F841

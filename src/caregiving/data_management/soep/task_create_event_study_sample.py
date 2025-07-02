@@ -5,6 +5,7 @@ from typing import Annotated
 
 import numpy as np
 import pandas as pd
+import pytask
 from pytask import Product
 
 from caregiving.config import BLD, SRC
@@ -30,6 +31,7 @@ def table(df_col):
     return pd.crosstab(df_col, columns="Count")["Count"]
 
 
+@pytask.mark.skip()
 def task_create_event_study_sample(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
@@ -160,31 +162,57 @@ def task_create_event_study_sample(
 
     df = pd.read_csv(path_to_raw)
 
+    syear_counts = df["syear"].value_counts().sort_index()
+    print("Number of observations per year in the raw data:\n" + str(syear_counts))
+
     df = create_choice_variable(df)
 
     df = generate_working_hours(df, include_actual_hours=True, drop_missing=False)
+    _syear_counts1 = df["syear"].value_counts().sort_index()
+    print(
+        "Number of observations per year after generating working hours:\n"
+        + str(_syear_counts1)
+    )
 
     df = create_policy_state(df, specs)
-    df = create_education_type(df)
-    df = create_health_var_good_bad(df, drop_missing=True)
+    df = create_education_type(df, drop_missing=False)
+
+    df = create_health_var_good_bad(df, drop_missing=False)
     df = create_caregiving(df, filter_missing=False)
+
+    _syear_counts2 = df["syear"].value_counts().sort_index()
+    print(
+        "Number of observations per year after creating care variables:\n"
+        + str(_syear_counts2)
+    )
 
     df = deflate_gross_labor_income(df, cpi_data=cpi, specs=specs)
     df = create_hourly_wage(df)
 
-    df = create_partner_state(df, filter_missing=True)
+    df = create_partner_state(df, filter_missing=False)
+    _syear_counts3 = df.index.get_level_values("syear").value_counts().sort_index()
+    print(
+        "Number of observations per year after creating partner state:\n"
+        + str(_syear_counts3)
+    )
 
     df = create_parent_info(df, filter_missing=False)
     df = create_sibling_info(df, filter_missing=False)
 
     # filter data. Leave additional years in for lagging and leading.
     df = filter_data(df, specs, event_study=True)
+    _syear_counts4 = df.index.get_level_values("syear").value_counts().sort_index()
+    print("Number of observations per year after filtering:\n" + str(_syear_counts4))
 
     df = create_lagged_and_lead_variables(
-        df, specs, lead_job_sep=False, event_study=True
+        df,
+        specs,
+        lead_job_sep=False,
+        drop_missing_lagged_choice=False,
+        event_study=True,
     )
 
-    df = create_experience_variable(df)
+    df = create_experience_variable(df, drop_invalid=False)
 
     # enforce choice restrictions based on model setup
     df = enforce_model_choice_restriction(df, specs)
@@ -197,9 +225,10 @@ def task_create_event_study_sample(
         "age": "int8",
         "sex": "int8",
         "choice": "int8",
-        "partner_state": "int8",
-        "experience": "int8",
-        "education": "int8",
+        "lagged_choice": "float32",
+        "partner_state": "float32",
+        "experience": "float32",
+        "education": "float16",
         "children": "int8",
         "health": "float16",
         "working_hours": "float32",
@@ -229,16 +258,23 @@ def task_create_event_study_sample(
         "pglabgro_deflated_p": "float32",
         "hourly_wage_p": "float32",
         "any_care_p": "float32",
+        # unprocessed
+        "birthregion_ew": "int8",
+        "migback": "int8",
     }
 
     df.reset_index(drop=False, inplace=True)
     df = df[list(type_dict.keys())]
     df = df.astype(type_dict)
 
-    df = df[df["syear"] <= specs["end_year_event_study"]]
-
+    # df = df[df["syear"] <= specs["end_year_event_study"]]
     # print_data_description(df)
-    # breakpoint()
+
+    syear_counts_clean = df["syear"].value_counts().sort_index()
+    print(
+        "Number of observations per year in the cleaned data:\n"
+        + str(syear_counts_clean)
+    )
 
     df.to_csv(path_to_save)
 
@@ -279,16 +315,14 @@ def create_hourly_wage(df):
     return df
 
 
-def create_parent_info(df, filter_missing=True):
+def create_parent_info(df, filter_missing=False):
     """Create parent age and alive status."""
-
     df = df.reset_index()
 
-    df.loc[df["mybirth"] < 0] = np.nan
-    df.loc[df["fybirth"] < 0] = np.nan
-
-    df.loc[df["mydeath"] < 0] = np.nan
-    df.loc[df["fydeath"] < 0] = np.nan
+    df.loc[df["mybirth"] < 0, "mybirth"] = np.nan
+    df.loc[df["fybirth"] < 0, "fybirth"] = np.nan
+    df.loc[df["mydeath"] < 0, "mydeath"] = np.nan
+    df.loc[df["fydeath"] < 0, "fydeath"] = np.nan
 
     for parent_var in ("mybirth", "fybirth"):
         dup_byear = df.dropna(subset=[parent_var]).groupby("pid")[parent_var].nunique()
@@ -312,19 +346,23 @@ def create_parent_info(df, filter_missing=True):
     df["mother_age"] = df["syear"] - df["mybirth"]
     df["father_age"] = df["syear"] - df["fybirth"]
 
-    _cond = (
+    _cond = [
+        df["mydeath"].isna(),
         (df["mybirth"].notna())
         & (df["mybirth"] <= df["syear"])
-        & (df["mydeath"].isna() | (df["syear"] < df["mydeath"]))
-    )
-    df["mother_alive"] = np.where(_cond, 1, 0)
+        & (df["syear"] < df["mydeath"]),
+        # & (df["mydeath"].isna() | (df["syear"] < df["mydeath"])),
+    ]
+    df["mother_alive"] = np.select(_cond, [np.nan, 1], default=0)
 
-    _cond = (
+    _cond = [
+        df["fydeath"].isna(),
         (df["fybirth"].notna())
         & (df["fybirth"] <= df["syear"])
-        & (df["fydeath"].isna() | (df["syear"] < df["fydeath"]))
-    )
-    df["father_alive"] = np.where(_cond, 1, 0)
+        & (df["syear"] < df["fydeath"]),
+        # & (df["fydeath"].isna() | (df["syear"] < df["fydeath"])),
+    ]
+    df["father_alive"] = np.select(_cond, [np.nan, 1], default=0)
 
     df_age = df.copy()
 
@@ -339,6 +377,7 @@ def create_parent_info(df, filter_missing=True):
     )
 
     df_age.set_index(["pid", "syear"], inplace=True)
+
     return df_age
 
 

@@ -123,10 +123,19 @@ def test_utility_func(
         "disutil_pt_work_bad_women": disutil_work,
         "disutil_ft_work_good_women": disutil_work + 1,
         "disutil_ft_work_bad_women": disutil_work,
-        "disutil_unemployed_women": disutil_unemployed,
+        "disutil_unemployed_low_women": disutil_unemployed,
+        "disutil_unemployed_high_women": disutil_unemployed,
+        "disutil_children_pt_work": 0,
+        # "disutil_children_pt_work_low": 0,
+        # "disutil_children_pt_work_high": 0,
         "disutil_children_ft_work_low": 0.1,
         "disutil_children_ft_work_high": 0.1,
         "bequest_scale": 2,
+        # caregiving
+        # "util_unemployed_and_care_women": 0,
+        # "util_ft_work_and_care_women": 0,
+        # "util_pt_work_and_care_women": 0,
+        # "util_formal_care_women": 0,
     }
 
     # has_partner = int(partner_state > 0)
@@ -149,7 +158,7 @@ def test_utility_func(
     # * (1 - education)
     # + np.exp(params["util_cons_unemployed_high_educ"]) * education
     # )
-    disutil_unemployment = np.exp(-params[f"disutil_unemployed_{sex_str}"])
+    disutil_unemployment = np.exp(-params[f"disutil_unemployed_low_{sex_str}"])
 
     # exp_factor_pt_work = params["util_cons_part_time_low_educ"] * (
     #     1 - education
@@ -207,6 +216,8 @@ def test_utility_func(
             partner_state=partner_state,
             education=education,
             health=health,
+            # care_demand=0,
+            # care_supply=0,
             # sex=sex,
             period=period,
             choice=1,
@@ -222,6 +233,8 @@ def test_utility_func(
             partner_state=partner_state,
             education=education,
             health=health,
+            # care_demand=0,
+            # care_supply=0,
             # sex=sex,
             period=period,
             choice=2,
@@ -237,6 +250,8 @@ def test_utility_func(
             partner_state=partner_state,
             education=education,
             health=health,
+            # care_demand=0,
+            # care_supply=0,
             # sex=sex,
             period=period,
             choice=3,
@@ -294,10 +309,17 @@ def test_marginal_utility(
         "disutil_pt_work_bad_women": disutil_work,
         "disutil_ft_work_good_women": disutil_work + 1,
         "disutil_ft_work_bad_women": disutil_work,
-        "disutil_unemployed_women": disutil_unemployed,
+        "disutil_unemployed_low_women": disutil_unemployed,
+        "disutil_unemployed_high_women": disutil_unemployed,
+        "disutil_children_pt_work": 0,
         "disutil_children_ft_work_low": 0.1,
         "disutil_children_ft_work_high": 0.1,
         "bequest_scale": 2,
+        # caregiving
+        "util_unemployed_and_care_women": 0,
+        "util_ft_work_and_care_women": 0,
+        "util_pt_work_and_care_women": 0,
+        "util_formal_care_women": 0,
     }
 
     random_choice = np.random.choice(np.array([0, 1, 2]))
@@ -307,6 +329,7 @@ def test_marginal_utility(
         period,
         education,
         health,
+        # 0,  # care_demand
         partner_state,
         params,
         options,
@@ -369,7 +392,9 @@ def test_inverse_marginal_utility(
         "disutil_pt_work_bad_women": disutil_work,
         "disutil_ft_work_good_women": disutil_work + 1,
         "disutil_ft_work_bad_women": disutil_work,
-        "disutil_unemployed_women": disutil_unemployed,
+        "disutil_unemployed_low_women": disutil_unemployed,
+        "disutil_unemployed_high_women": disutil_unemployed,
+        "disutil_children_pt_work": 0,
         "disutil_children_ft_work_low": 0.1,
         "disutil_children_ft_work_high": 0.1,
         "bequest_scale": 2,
