@@ -31,7 +31,7 @@ def test_choice_set_under_63(period, lagged_choice, job_offer):
         lagged_choice=lagged_choice,
         job_offer=job_offer,
         health=1,
-        policy_state=0,
+        # policy_state=0,
         options=options,
     )
     if job_offer == 1:
@@ -67,7 +67,7 @@ def test_choice_set_over_63_under_72(period, lagged_choice, job_offer):
         lagged_choice=lagged_choice,
         job_offer=job_offer,
         health=1,
-        policy_state=0,
+        # policy_state=0,
         options=options,
     )
     age = period + options["start_age"]
@@ -121,7 +121,7 @@ def test_choice_set_over_72(period, lagged_choice):
         lagged_choice=lagged_choice,
         job_offer=0,
         health=1,
-        policy_state=0,
+        # policy_state=0,
         options=options,
     )
     assert np.all(choice_set == np.array([0]))
