@@ -26,7 +26,7 @@ repos:
     # -   id: python-use-type-annotations
     -   id: text-unicode-replacement-char
 -   repo: https://github.com/asottile/pyupgrade
-    rev: v3.19.1
+    rev: v3.20.0
     hooks:
     -   id: pyupgrade
         args: [--py37-plus]
@@ -50,7 +50,7 @@ repos:
 #     -   id: docformatter
 #         args: [--in-place, --wrap-summaries, "88", --wrap-descriptions, "88", --blank]
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.7
+    rev: v0.12.1
     hooks:
     # Run the linter.
     -   id: ruff
@@ -65,7 +65,7 @@ repos:
     #     -   python
     #     -   pyi
 -   repo: https://github.com/dosisod/refurb
-    rev: v2.0.0
+    rev: v2.1.0
     hooks:
     -   id: refurb
         args: [--ignore, FURB126, --ignore, FURB184]

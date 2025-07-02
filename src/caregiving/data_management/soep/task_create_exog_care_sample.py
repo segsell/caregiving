@@ -10,6 +10,9 @@ from pytask import Product
 from caregiving.config import BLD
 
 SOEP_IS_ANSWER_NO = 2
+MOTHER_OR_FATHER = 2
+SOEP_IS_MALE = 1
+SOEP_IS_FEMALE = 2
 
 
 def task_create_exog_care_sample(
@@ -21,16 +24,56 @@ def task_create_exog_care_sample(
 
     df = pd.read_csv(path_to_raw_data, index_col=["pid"])
 
-    # Initialize dummies with -1
     df["other_informal_care"] = 0
+    df["_other_informal_care"] = 0
     df["formal_care"] = 0
+
+    # mask_parent_care = (
+    #     ((df["ip02"] == MOTHER_OR_FATHER) & (df["ip03"] == SOEP_IS_FEMALE))
+    #     | ((df["ip02_2"] == MOTHER_OR_FATHER) & (df["ip03_2"] == SOEP_IS_FEMALE))
+    #     | ((df["ip02_3"] == MOTHER_OR_FATHER) & (df["ip03_3"] == SOEP_IS_FEMALE))
+    #     | ((df["ip02_4"] == MOTHER_OR_FATHER) & (df["ip03_4"] == SOEP_IS_FEMALE))
+    # )
+    mask_parent_care = (
+        (df["ip02"] == MOTHER_OR_FATHER)
+        | (df["ip02_2"] == MOTHER_OR_FATHER)
+        | (df["ip02_3"] == MOTHER_OR_FATHER)
+        | (df["ip02_4"] == MOTHER_OR_FATHER)
+    )
+    df["parent_care_demand"] = np.where(mask_parent_care, 1, 0)
 
     # Assign 1 if conditions are met
     df.loc[
         (df["ip05"].isin([1, 2]))  # lives in private household
         & ((df["ip08a1"] == 1) | (df["ip08a4"] == 1)),
-        "other_informal_care",
+        "_other_informal_care",
     ] = 1
+
+    person_1 = (
+        df["ip05"].isin([1, 2])
+        & (df["ip02"] == MOTHER_OR_FATHER)
+        & ((df["ip08a1"] == 1) | (df["ip08a4"] == 1))
+    )
+    person_2 = (
+        df["ip05_2"].isin([1, 2])
+        & (df["ip02_2"] == MOTHER_OR_FATHER)
+        & ((df["ip08a1_2"] == 1) | (df["ip08a4_2"] == 1))
+    )
+    person_3 = (
+        df["ip05_3"].isin([1, 2])
+        & (df["ip02_3"] == MOTHER_OR_FATHER)
+        & ((df["ip08a1_3"] == 1) | (df["ip08a4_3"] == 1))
+    )
+    person_4 = (
+        df["ip05_4"].isin([1, 2])
+        & (df["ip02_4"] == MOTHER_OR_FATHER)
+        & ((df["ip08a1_4"] == 1) | (df["ip08a4_4"] == 1))
+    )
+    df["other_informal_care"] = np.select(
+        condlist=[person_1, person_2, person_3, person_4],
+        choicelist=[1, 1, 1, 1],
+        default=0,
+    )
 
     df.loc[
         (df["ip08a2"] == 1) | (df["ip08a3"] == 1) | (df["ip08a5"] == 1),
@@ -85,7 +128,7 @@ def task_create_exog_care_sample(
         "education",
         "has_sister",
         "n_siblings",
-        "ip03",
+        "parent_care_demand",
         "other_informal_care",
         "formal_care",
         "only_own_informal_care",

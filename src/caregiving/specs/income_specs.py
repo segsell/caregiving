@@ -72,8 +72,10 @@ def calc_annual_unemployment_benefits(specs):
 def add_average_population_hours(specs, pop_averages, mean_annual_wage):
     """Add average population hours to specs."""
 
-    part_time_values = np.asarray(PART_TIME).ravel().tolist()
-    full_time_values = np.asarray(FULL_TIME).ravel().tolist()
+    # part_time_values = np.asarray(PART_TIME).ravel().tolist()
+    # full_time_values = np.asarray(FULL_TIME).ravel().tolist()
+    part_time_values = [2]
+    full_time_values = [3]
 
     # Assign population averages
     av_annual_hours_pt = np.zeros(

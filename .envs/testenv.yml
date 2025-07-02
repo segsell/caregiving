@@ -1,0 +1,36 @@
+---
+name: caregiving
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - pip
+  - setuptools_scm
+  - toml
+
+  # Package dependencies
+  - jax
+  - linearmodels
+  - matplotlib
+  - numpy
+  - numba
+  - optimagic
+  - pandas
+  - pyyaml
+  - scikit-learn
+  - scipy<=1.11.4
+  - seaborn
+  - statsmodels
+
+  # Testing infrastructure
+  - pytest
+  - pytest-cov
+  - pytest-xdist
+
+  - pip:
+      # Install package locally
+      - -e ../
+      - -e ../dcegm
+
+      # Development dependencies
+      - git+https://github.com/OpenSourceEconomics/upper-envelope.git

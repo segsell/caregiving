@@ -1,17 +1,19 @@
 """Specify model for estimation."""
 
+import copy
 import pickle
 from pathlib import Path
 from typing import Annotated
 
 import jax.numpy as jnp
 import numpy as np
+import pytask
 import yaml
 from dcegm.pre_processing.setup_model import setup_and_save_model
 from pytask import Product
 
 from caregiving.config import BLD
-from caregiving.model.state_space import create_state_space_functions
+from caregiving.model.state_space import create_state_space_functions_counterfactual
 from caregiving.model.stochastic_processes.caregiving_transition import (
     care_demand_transition,
     care_demand_with_exog_supply_transition,
@@ -33,19 +35,18 @@ from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
 
 
+@pytask.mark.skip()
 def task_specify_model(
     # load_model=False,
     # model_type="solution",
     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_start_params: Path = BLD / "model" / "params" / "start_params_updated.yaml",
-    path_to_save_options: Annotated[Path, Product] = BLD / "model" / "options.pkl",
+    path_to_save_options: Annotated[Path, Product] = BLD
+    / "model"
+    / "options_counterfactual.pkl",
     path_to_save_model: Annotated[Path, Product] = BLD
     / "model"
-    / "model_for_solution.pkl",
-    path_to_save_start_params: Annotated[Path, Product] = BLD
-    / "model"
-    / "params"
-    / "start_params_model.yaml",
+    / "model_for_solution_counterfactual.pkl",
 ):
     """Generate model and options dictionaries."""
 
@@ -59,19 +60,18 @@ def task_specify_model(
     params["interest_rate"] = float(specs["interest_rate"])
     params["beta"] = float(specs["discount_factor"])
 
-    with path_to_save_start_params.open("w") as f:
-        yaml.dump(params, f)
-
     # Load specifications
     n_periods = specs["n_periods"]
     choices = np.arange(specs["n_choices"], dtype=int)
-    # n_policy_states = specs["n_policy_states"]
 
     # Savings grid
     savings_grid = create_savings_grid()
 
     # Experience grid
     experience_grid = jnp.linspace(0, 1, specs["n_experience_grid_points"])
+
+    specs = copy.deepcopy(specs)
+    specs["formal_care_costs"] = 0
 
     options = {
         "state_space": {
@@ -83,7 +83,6 @@ def task_specify_model(
                 # "sex": np.arange(specs["n_sexes"], dtype=int),
                 "already_retired": np.arange(2, dtype=int),
                 "has_sister": np.arange(2, dtype=int),
-                # "policy_state": np.arange(n_policy_states, dtype=int),
             },
             "exogenous_processes": {
                 "job_offer": {
@@ -98,14 +97,14 @@ def task_specify_model(
                     "transition": health_transition,
                     "states": np.arange(specs["n_health_states"], dtype=int),
                 },
-                # "mother_health": {
-                #     "transition": health_transition_good_medium_bad,
-                #     "states": np.arange(specs["n_health_states_three"], dtype=int),
-                # },
-                # "care_demand": {
-                #     "transition": care_demand_with_exog_supply_transition,
-                #     "states": np.arange(2, dtype=int),
-                # },
+                "mother_health": {
+                    "transition": health_transition_good_medium_bad,
+                    "states": np.arange(specs["n_health_states_three"], dtype=int),
+                },
+                "care_demand": {
+                    "transition": care_demand_with_exog_supply_transition,
+                    "states": np.arange(2, dtype=int),
+                },
                 # "care_demand": {
                 #     "transition": care_demand_transition,
                 #     "states": np.arange(2, dtype=int),
@@ -114,7 +113,6 @@ def task_specify_model(
                 #     "transition": exog_care_transition,
                 #     "states": np.arange(2, dtype=int),
                 # },
-                #
             },
             "continuous_states": {
                 "wealth": savings_grid,
@@ -127,7 +125,7 @@ def task_specify_model(
 
     model = setup_and_save_model(
         options=options,
-        state_space_functions=create_state_space_functions(),
+        state_space_functions=create_state_space_functions_counterfactual(),
         utility_functions=create_utility_functions(),
         utility_functions_final_period=create_final_period_utility_functions(),
         budget_constraint=budget_constraint,

@@ -13,6 +13,11 @@ from caregiving.data_management.soep.auxiliary import (
     enforce_model_choice_restriction,
     filter_data,
 )
+from caregiving.data_management.soep.task_create_event_study_sample import (
+    create_caregiving,
+    create_parent_info,
+    create_sibling_info,
+)
 from caregiving.data_management.soep.variables import (
     create_choice_variable,
     create_education_type,
@@ -24,7 +29,7 @@ from caregiving.data_management.soep.variables import (
     determine_observed_job_offers,
     generate_job_separation_var,
 )
-from caregiving.model.shared import PART_TIME, RETIREMENT, WORK
+from caregiving.model.shared import PART_TIME_CHOICES, RETIREMENT_CHOICES, WORK_CHOICES
 from caregiving.specs.task_write_specs import read_and_derive_specs
 
 
@@ -44,18 +49,25 @@ def task_create_structural_estimation_sample(
     specs = read_and_derive_specs(path_to_specs)
 
     # merged_data = pd.read_csv(path_to_raw, index_col=[0, 1])
-    df = pd.read_csv(path_to_raw)
+    df = pd.read_csv(path_to_raw, index_col=[0, 1])
 
     df = create_partner_state(df, filter_missing=True)
     df = create_kidage_youngest(df)
 
+    df = create_parent_info(df, filter_missing=False)
+    df = create_sibling_info(df, filter_missing=False)
+
     df = create_choice_variable(df)
+    df = create_caregiving(df, filter_missing=False)
 
     # filter data. Leave additional years in for lagging and leading.
     df = filter_data(df, specs)
 
     df = generate_job_separation_var(df)
-    df = create_lagged_and_lead_variables(df, specs, lead_job_sep=True)
+    df = create_lagged_and_lead_variables(
+        df, specs, lead_job_sep=True, drop_missing_lagged_choice=True
+    )
+    # df["lagged_care"] = df.groupby(["pid"])["any_care"].shift(1)
 
     df = create_alreay_retired_variable(df)
     # df = df.reset_index()
@@ -85,22 +97,32 @@ def task_create_structural_estimation_sample(
     # Construct job offer state
     was_fired_last_period = df["job_sep_this_year"] == 1
     df = determine_observed_job_offers(
-        df, working_choices=WORK, was_fired_last_period=was_fired_last_period
+        df, working_choices=WORK_CHOICES, was_fired_last_period=was_fired_last_period
     )
 
     # Filter out part-time men
-    part_time_values = np.asarray(PART_TIME).ravel().tolist()
+    part_time_values = np.asarray(PART_TIME_CHOICES).ravel().tolist()
     mask = df["sex"] == 0
     df = df.loc[~(mask & df["choice"].isin(part_time_values))]
     df = df.loc[~(mask & df["lagged_choice"].isin(part_time_values))]
 
+    df["has_sister"] = (df["n_sisters"] > 0).astype(int)
+    df["mother_age_diff"] = df["mother_age"] - df["age"]
+    df["father_age_diff"] = df["father_age"] - df["age"]
+
+    # _obs_per_pid = df.groupby("pid").size().rename("n_obs")
+
     # Keep relevant columns (i.e. state variables) and set their minimal datatype
     type_dict = {
+        "syear": "int16",
+        "gebjahr": "int16",
         "age": "int8",
         "period": "int8",
         "choice": "int8",
+        "lagged_choice": "float32",  # can be na
+        "policy_state": "int8",
+        "policy_state_value": "int8",
         "already_retired": "int8",
-        "lagged_choice": "int8",
         "partner_state": "int8",
         "job_offer": "int8",
         "experience": "int8",
@@ -110,11 +132,20 @@ def task_create_structural_estimation_sample(
         "sex": "int8",
         "children": "int8",
         "kidage_youngest": "int8",
+        # caregiving, contains nans
+        "any_care": "float32",
+        "light_care": "float32",
+        "intensive_care": "float32",
+        "has_sister": "float32",
+        "mother_age_diff": "float32",
+        "father_age_diff": "float32",
+        "mother_alive": "float32",
+        "father_alive": "float32",
     }
+    df = df.reset_index(level="syear")
     df = df[list(type_dict.keys())]
     df = df.astype(type_dict)
 
-    #
     # print_data_description(df)
 
     # Anonymize and save data
@@ -143,7 +174,7 @@ def create_alreay_retired_variable(data):
     data = data.reset_index()
     data = data.sort_values(["pid", "syear"])
 
-    retired_values = np.asarray(RETIREMENT).ravel().tolist()
+    retired_values = np.asarray(RETIREMENT_CHOICES).ravel().tolist()
     data["retire_flag"] = (
         data["lagged_choice"].isin(retired_values) & data["choice"].isin(retired_values)
     ).astype(int)
