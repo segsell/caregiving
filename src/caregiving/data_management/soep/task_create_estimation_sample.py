@@ -64,7 +64,9 @@ def task_create_structural_estimation_sample(
     df = filter_data(df, specs)
 
     df = generate_job_separation_var(df)
-    df = create_lagged_and_lead_variables(df, specs, lead_job_sep=True)
+    df = create_lagged_and_lead_variables(
+        df, specs, lead_job_sep=True, drop_missing_lagged_choice=False
+    )
     # df["lagged_care"] = df.groupby(["pid"])["any_care"].shift(1)
 
     df = create_alreay_retired_variable(df)
