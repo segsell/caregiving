@@ -31,7 +31,6 @@ def table(df_col):
     return pd.crosstab(df_col, columns="Count")["Count"]
 
 
-@pytask.mark.skip()
 def task_create_event_study_sample(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
@@ -200,7 +199,7 @@ def task_create_event_study_sample(
     df = create_sibling_info(df, filter_missing=False)
 
     # filter data. Leave additional years in for lagging and leading.
-    df = filter_data(df, specs, event_study=True)
+    df = filter_data(df, specs, lag_and_lead_buffer_years=False, event_study=True)
     _syear_counts4 = df.index.get_level_values("syear").value_counts().sort_index()
     print("Number of observations per year after filtering:\n" + str(_syear_counts4))
 

@@ -43,14 +43,14 @@ def _get_cols_biobirth():
 # Estimation sample
 # =====================================================================================
 def task_load_and_merge_estimation_sample(
-    soep_c38_pgen: Path = SRC / "data" / "soep" / "pgen.dta",
-    soep_c38_ppathl: Path = SRC / "data" / "soep" / "ppathl.dta",
-    soep_c38_pl: Path = SRC / "data" / "soep" / "pl.dta",
-    soep_c38_hl: Path = SRC / "data" / "soep" / "hl.dta",
-    soep_c38_pequiv: Path = SRC / "data" / "soep" / "pequiv.dta",
-    soep_c38_pflege: Path = SRC / "data" / "soep" / "pflege.dta",
-    soep_c38_bioparen: Path = SRC / "data" / "soep" / "bioparen.dta",
-    soep_c38_biobirth: Path = SRC / "data" / "soep" / "biobirth.dta",
+    soep_c40_pgen: Path = SRC / "data" / "soep_c40" / "pgen.dta",
+    soep_c40_ppathl: Path = SRC / "data" / "soep_c40" / "ppathl.dta",
+    soep_c40_pl: Path = SRC / "data" / "soep_c40" / "pl.dta",
+    soep_c40_hl: Path = SRC / "data" / "soep_c40" / "hl.dta",
+    soep_c40_pequiv: Path = SRC / "data" / "soep_c40" / "pequiv.dta",
+    soep_c40_pflege: Path = SRC / "data" / "soep_c40" / "pflege.dta",
+    soep_c40_bioparen: Path = SRC / "data" / "soep_c40" / "bioparen.dta",
+    soep_c40_biobirth: Path = SRC / "data" / "soep_c40" / "biobirth.dta",
     path_to_save: Annotated[Path, Product] = BLD
     / "data"
     / "soep_estimation_data_raw.csv",
@@ -62,7 +62,7 @@ def task_load_and_merge_estimation_sample(
 
     # Load SOEP core data
     pgen_data = pd.read_stata(
-        soep_c38_pgen,
+        soep_c40_pgen,
         columns=[
             "syear",
             "pid",
@@ -79,7 +79,7 @@ def task_load_and_merge_estimation_sample(
     )
 
     ppathl_data = pd.read_stata(
-        soep_c38_ppathl,
+        soep_c40_ppathl,
         columns=["pid", "hid", "syear", "sex", "gebjahr", "parid", "rv_id"],
         convert_categoricals=False,
     )
@@ -90,7 +90,7 @@ def task_load_and_merge_estimation_sample(
 
     # Add pl data
     pl_data_reader = pd.read_stata(
-        soep_c38_pl,
+        soep_c40_pl,
         columns=[
             "pid",
             "hid",
@@ -115,7 +115,7 @@ def task_load_and_merge_estimation_sample(
 
     # get household level data
     hl_data = pd.read_stata(
-        soep_c38_hl,
+        soep_c40_hl,
         columns=[
             "hid",
             "syear",
@@ -132,7 +132,7 @@ def task_load_and_merge_estimation_sample(
         # m11126: Self-Rated Health Status
         # m11124: Disability Status of Individual
         # m111050-m11123: Activities of Daily Living
-        soep_c38_pequiv,
+        soep_c40_pequiv,
         columns=["pid", "syear", "d11107", "d11101", "m11126", "m11124"],
         convert_categoricals=False,
     )
@@ -141,7 +141,7 @@ def task_load_and_merge_estimation_sample(
 
     # Parent information
     biparen = pd.read_stata(
-        soep_c38_bioparen,
+        soep_c40_bioparen,
         columns=[
             "pid",
             "mybirth",
@@ -156,7 +156,7 @@ def task_load_and_merge_estimation_sample(
     merged_data = pd.merge(merged_data, biparen, on="pid", how="left")
 
     # Pflege
-    # pflege = pd.read_stata(soep_c38_pflege, convert_categoricals=False)
+    # pflege = pd.read_stata(soep_c40_pflege, convert_categoricals=False)
     # pflege = pflege[pflege["pnrcare"] >= 0]
     # merged_data_with_pflege = pd.merge(
     #     merged_data,
@@ -170,27 +170,27 @@ def task_load_and_merge_estimation_sample(
     # Age of youngest child
     cols_biobirth = _get_cols_biobirth()
     biobirth = pd.read_stata(
-        soep_c38_biobirth, columns=cols_biobirth, convert_categoricals=False
+        soep_c40_biobirth, columns=cols_biobirth, convert_categoricals=False
     )
     merged_data = pd.merge(merged_data, biobirth, on="pid", how="left")
 
     # Set index
     merged_data["age"] = merged_data["d11101"].astype(int)
     merged_data.set_index(["pid", "syear"], inplace=True)
-    print(str(len(merged_data)) + " observations in SOEP C38 core.")
+    print(str(len(merged_data)) + " observations in SOEP C40 core.")
 
     merged_data.to_csv(path_to_save)
 
 
 @pytask.mark.skip(reason="Labor-only model")
 def _task_load_and_merge_estimation_sample(
-    soep_c38_pgen: Path = SRC / "data" / "soep" / "pgen.dta",
-    soep_c38_ppathl: Path = SRC / "data" / "soep" / "ppathl.dta",
-    soep_c38_pl: Path = SRC / "data" / "soep" / "pl.dta",
-    soep_c38_hl: Path = SRC / "data" / "soep" / "hl.dta",
-    soep_c38_pequiv: Path = SRC / "data" / "soep" / "pequiv.dta",
-    soep_c38_pflege: Path = SRC / "data" / "soep" / "pflege.dta",
-    soep_c38_biobirth: Path = SRC / "data" / "soep" / "biobirth.dta",
+    soep_c40_pgen: Path = SRC / "data" / "soep_c40" / "pgen.dta",
+    soep_c40_ppathl: Path = SRC / "data" / "soep_c40" / "ppathl.dta",
+    soep_c40_pl: Path = SRC / "data" / "soep_c40" / "pl.dta",
+    soep_c40_hl: Path = SRC / "data" / "soep_c40" / "hl.dta",
+    soep_c40_pequiv: Path = SRC / "data" / "soep_c40" / "pequiv.dta",
+    soep_c40_pflege: Path = SRC / "data" / "soep_c40" / "pflege.dta",
+    soep_c40_biobirth: Path = SRC / "data" / "soep_c40" / "biobirth.dta",
     path_to_save: Annotated[Path, Product] = BLD
     / "data"
     / "soep_estimation_data_raw.csv",
@@ -202,7 +202,7 @@ def _task_load_and_merge_estimation_sample(
 
     # Load SOEP core data
     pgen_data = pd.read_stata(
-        soep_c38_pgen,
+        soep_c40_pgen,
         columns=[
             "syear",
             "pid",
@@ -219,7 +219,7 @@ def _task_load_and_merge_estimation_sample(
     )
 
     ppathl_data = pd.read_stata(
-        soep_c38_ppathl,
+        soep_c40_ppathl,
         columns=["pid", "hid", "syear", "sex", "gebjahr", "parid", "rv_id"],
         convert_categoricals=False,
     )
@@ -230,7 +230,7 @@ def _task_load_and_merge_estimation_sample(
 
     # Add pl data
     pl_data_reader = pd.read_stata(
-        soep_c38_pl,
+        soep_c40_pl,
         columns=["pid", "hid", "syear", "plb0304_h"],
         chunksize=100000,
         convert_categoricals=False,
@@ -244,7 +244,7 @@ def _task_load_and_merge_estimation_sample(
 
     # get household level data
     hl_data = pd.read_stata(
-        soep_c38_hl,
+        soep_c40_hl,
         columns=["hid", "syear", "hlc0043"],
         convert_categoricals=False,
     )
@@ -255,7 +255,7 @@ def _task_load_and_merge_estimation_sample(
         # m11126: Self-Rated Health Status
         # m11124: Disability Status of Individual
         # m111050-m11123: Activities of Daily Living
-        soep_c38_pequiv,
+        soep_c40_pequiv,
         columns=["pid", "syear", "d11107", "d11101", "m11126", "m11124"],
         convert_categoricals=False,
     )
@@ -263,7 +263,7 @@ def _task_load_and_merge_estimation_sample(
     merged_data.rename(columns={"d11107": "children"}, inplace=True)
 
     # Pflege
-    pflege = pd.read_stata(soep_c38_pflege, convert_categoricals=False)
+    pflege = pd.read_stata(soep_c40_pflege, convert_categoricals=False)
     pflege = pflege[pflege["pnrcare"] >= 0]
     merged_data_with_pflege = pd.merge(
         merged_data,
@@ -277,14 +277,14 @@ def _task_load_and_merge_estimation_sample(
     # Age of youngest child
     cols_biobirth = _get_cols_biobirth()
     biobirth = pd.read_stata(
-        soep_c38_biobirth, columns=cols_biobirth, convert_categoricals=False
+        soep_c40_biobirth, columns=cols_biobirth, convert_categoricals=False
     )
     merged_data = pd.merge(merged_data, biobirth, on="pid", how="left")
 
     # Set index
     merged_data["age"] = merged_data["d11101"].astype(int)
     merged_data.set_index(["pid", "syear"], inplace=True)
-    print(str(len(merged_data)) + " observations in SOEP C38 core.")
+    print(str(len(merged_data)) + " observations in SOEP C40 core.")
 
     merged_data.to_csv(path_to_save)
 
@@ -295,10 +295,10 @@ def _task_load_and_merge_estimation_sample(
 
 
 def task_load_and_merge_partner_transition_sample(
-    soep_c38_pgen: Path = SRC / "data" / "soep" / "pgen.dta",
-    soep_c38_ppathl: Path = SRC / "data" / "soep" / "ppathl.dta",
-    soep_c38_pequiv: Path = SRC / "data" / "soep" / "pequiv.dta",
-    soep_c38_biobirth: Path = SRC / "data" / "soep" / "biobirth.dta",
+    soep_c40_pgen: Path = SRC / "data" / "soep_c40" / "pgen.dta",
+    soep_c40_ppathl: Path = SRC / "data" / "soep_c40" / "ppathl.dta",
+    soep_c40_pequiv: Path = SRC / "data" / "soep_c40" / "pequiv.dta",
+    soep_c40_biobirth: Path = SRC / "data" / "soep_c40" / "biobirth.dta",
     path_to_save: Annotated[Path, Product] = BLD
     / "data"
     / "soep_partner_transition_data_raw.csv",
@@ -307,7 +307,7 @@ def task_load_and_merge_partner_transition_sample(
 
     # Load SOEP core data
     pgen_data = pd.read_stata(
-        soep_c38_pgen,
+        soep_c40_pgen,
         columns=[
             "syear",
             "pid",
@@ -319,12 +319,12 @@ def task_load_and_merge_partner_transition_sample(
         convert_categoricals=False,
     )
     ppathl_data = pd.read_stata(
-        soep_c38_ppathl,
+        soep_c40_ppathl,
         columns=["syear", "pid", "hid", "sex", "parid", "gebjahr"],
         convert_categoricals=False,
     )
     pequiv_data = pd.read_stata(
-        soep_c38_pequiv,
+        soep_c40_pequiv,
         # d11107: number of children in household
         columns=["pid", "syear", "d11107"],
     )
@@ -336,14 +336,14 @@ def task_load_and_merge_partner_transition_sample(
     # Age of youngest child
     cols_biobirth = _get_cols_biobirth()
     biobirth = pd.read_stata(
-        soep_c38_biobirth, columns=cols_biobirth, convert_categoricals=False
+        soep_c40_biobirth, columns=cols_biobirth, convert_categoricals=False
     )
     merged_data = pd.merge(merged_data, biobirth, on="pid", how="left")
 
     merged_data.rename(columns={"d11107": "children"}, inplace=True)
     merged_data["age"] = merged_data["syear"] - merged_data["gebjahr"]
     merged_data.set_index(["pid", "syear"], inplace=True)
-    print(str(len(merged_data)) + " observations in SOEP C38 core.")
+    print(str(len(merged_data)) + " observations in SOEP C40 core.")
 
     merged_data.to_csv(path_to_save)
 
@@ -354,15 +354,15 @@ def task_load_and_merge_partner_transition_sample(
 
 
 def task_load_and_merge_wage_sample(
-    soep_c38_pgen: Path = SRC / "data" / "soep" / "pgen.dta",
-    soep_c38_ppathl: Path = SRC / "data" / "soep" / "ppathl.dta",
+    soep_c40_pgen: Path = SRC / "data" / "soep_c40" / "pgen.dta",
+    soep_c40_ppathl: Path = SRC / "data" / "soep_c40" / "ppathl.dta",
     path_to_save: Annotated[Path, Product] = BLD / "data" / "soep_wage_data_raw.csv",
 ) -> None:
     """Merge exogenous wage sample."""
 
     # Load SOEP core data
     pgen_data = pd.read_stata(
-        soep_c38_pgen,
+        soep_c40_pgen,
         columns=[
             "syear",
             "pid",
@@ -378,7 +378,7 @@ def task_load_and_merge_wage_sample(
         convert_categoricals=False,
     )
     pathl_data = pd.read_stata(
-        soep_c38_ppathl,
+        soep_c40_ppathl,
         columns=["pid", "hid", "syear", "sex", "gebjahr"],
         convert_categoricals=False,
     )
@@ -391,7 +391,7 @@ def task_load_and_merge_wage_sample(
     merged_data["age"] = merged_data["syear"] - merged_data["gebjahr"]
     del pgen_data, pathl_data
     merged_data.set_index(["pid", "syear"], inplace=True)
-    print(str(len(merged_data)) + " observations in SOEP C38 core.")
+    print(str(len(merged_data)) + " observations in SOEP C40 core.")
 
     merged_data.to_csv(path_to_save)
 
@@ -402,9 +402,9 @@ def task_load_and_merge_wage_sample(
 
 
 def task_load_and_merge_job_separation_sample(
-    soep_c38_pgen: Path = SRC / "data" / "soep" / "pgen.dta",
-    soep_c38_ppathl: Path = SRC / "data" / "soep" / "ppathl.dta",
-    soep_c38_pl: Path = SRC / "data" / "soep" / "pl.dta",
+    soep_c40_pgen: Path = SRC / "data" / "soep_c40" / "pgen.dta",
+    soep_c40_ppathl: Path = SRC / "data" / "soep_c40" / "ppathl.dta",
+    soep_c40_pl: Path = SRC / "data" / "soep_c40" / "pl.dta",
     path_to_save: Annotated[Path, Product] = BLD
     / "data"
     / "soep_job_separation_data_raw.csv",
@@ -412,7 +412,7 @@ def task_load_and_merge_job_separation_sample(
     """Merge stochastic job transition sample."""
     # Load SOEP core data
     pgen_data = pd.read_stata(
-        soep_c38_pgen,
+        soep_c40_pgen,
         columns=[
             "syear",
             "pid",
@@ -424,13 +424,13 @@ def task_load_and_merge_job_separation_sample(
         convert_categoricals=False,
     )
     pathl_data = pd.read_stata(
-        soep_c38_ppathl,
+        soep_c40_ppathl,
         columns=["pid", "hid", "syear", "sex", "gebjahr"],
         convert_categoricals=False,
     )
 
     pl_data_reader = pd.read_stata(
-        soep_c38_pl,
+        soep_c40_pl,
         columns=["pid", "hid", "syear", "plb0304_h", "plb0282_h"],
         chunksize=100000,
         convert_categoricals=False,
@@ -452,7 +452,7 @@ def task_load_and_merge_job_separation_sample(
     merged_data["age"] = merged_data["syear"] - merged_data["gebjahr"]
     del pgen_data, pathl_data
     merged_data.set_index(["pid", "syear"], inplace=True)
-    print(str(len(merged_data)) + " observations in SOEP C38 core.")
+    print(str(len(merged_data)) + " observations in SOEP C40 core.")
 
     merged_data.to_csv(path_to_save)
 
@@ -463,8 +463,8 @@ def task_load_and_merge_job_separation_sample(
 
 
 def task_load_and_merge_partner_wage_sample(
-    soep_c38_pgen: Path = SRC / "data" / "soep" / "pgen.dta",
-    soep_c38_ppathl: Path = SRC / "data" / "soep" / "ppathl.dta",
+    soep_c40_pgen: Path = SRC / "data" / "soep_c40" / "pgen.dta",
+    soep_c40_ppathl: Path = SRC / "data" / "soep_c40" / "ppathl.dta",
     path_to_save: Annotated[Path, Product] = BLD
     / "data"
     / "soep_partner_wage_data_raw.csv",
@@ -473,7 +473,7 @@ def task_load_and_merge_partner_wage_sample(
 
     # Load SOEP core data
     pgen_data = pd.read_stata(
-        soep_c38_pgen,
+        soep_c40_pgen,
         columns=[
             "syear",
             "pid",
@@ -489,7 +489,7 @@ def task_load_and_merge_partner_wage_sample(
         convert_categoricals=False,
     )
     pathl_data = pd.read_stata(
-        soep_c38_ppathl,
+        soep_c40_ppathl,
         columns=["pid", "hid", "parid", "syear", "sex", "gebjahr"],
         convert_categoricals=False,
     )
@@ -502,7 +502,7 @@ def task_load_and_merge_partner_wage_sample(
     merged_data["age"] = merged_data["syear"] - merged_data["gebjahr"]
     del pgen_data, pathl_data
     merged_data.set_index(["pid", "syear"], inplace=True)
-    print(str(len(merged_data)) + " observations in SOEP C38 core.")
+    print(str(len(merged_data)) + " observations in SOEP C40 core.")
 
     merged_data.to_csv(path_to_save)
 
@@ -513,16 +513,16 @@ def task_load_and_merge_partner_wage_sample(
 
 
 def task_load_and_merge_health_sample(
-    soep_c38_pgen: Path = SRC / "data" / "soep" / "pgen.dta",
-    soep_c38_ppathl: Path = SRC / "data" / "soep" / "ppathl.dta",
-    soep_c38_pequiv: Path = SRC / "data" / "soep" / "pequiv.dta",
+    soep_c40_pgen: Path = SRC / "data" / "soep_c40" / "pgen.dta",
+    soep_c40_ppathl: Path = SRC / "data" / "soep_c40" / "ppathl.dta",
+    soep_c40_pequiv: Path = SRC / "data" / "soep_c40" / "pequiv.dta",
     path_to_save: Annotated[Path, Product] = BLD / "data" / "soep_health_data_raw.csv",
 ):
     """Merge stochastic health transition sample."""
 
     # Load SOEP core data
     pgen_data = pd.read_stata(
-        soep_c38_pgen,
+        soep_c40_pgen,
         columns=[
             "syear",
             "pid",
@@ -534,14 +534,14 @@ def task_load_and_merge_health_sample(
         convert_categoricals=False,
     )
     ppathl_data = pd.read_stata(
-        soep_c38_ppathl,
+        soep_c40_ppathl,
         columns=["syear", "pid", "hid", "sex", "parid", "gebjahr"],
         convert_categoricals=False,
     )
     pequiv_data = pd.read_stata(
         # m11126: Self-Rated Health Status
         # m11124: Disability Status of Individual
-        soep_c38_pequiv,
+        soep_c40_pequiv,
         columns=["pid", "syear", "m11126", "m11124"],
         convert_categoricals=False,
     )
@@ -551,6 +551,6 @@ def task_load_and_merge_health_sample(
     merged_data = pd.merge(merged_data, pequiv_data, on=["pid", "syear"], how="inner")
     merged_data["age"] = merged_data["syear"] - merged_data["gebjahr"]
     merged_data.set_index(["pid", "syear"], inplace=True)
-    print(str(len(merged_data)) + " observations in SOEP C38 core.")
+    print(str(len(merged_data)) + " observations in SOEP C40 core.")
 
     merged_data.to_csv(path_to_save)
