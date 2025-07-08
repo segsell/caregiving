@@ -103,8 +103,8 @@ life_table_max_age: 100
 ################################################
 # Event study
 start_age_event_study: 21
-start_year_event_study: 1985 # health variable from 1992 on
-end_year_event_study: 2019
+start_year_event_study: 1984 # health variable from 1992 on
+end_year_event_study: 2023
 reference_year_event_study: 2015
 
 
