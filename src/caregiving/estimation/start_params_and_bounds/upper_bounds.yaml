@@ -9,7 +9,12 @@ disutil_pt_work_bad_women: 5
 disutil_unemployed_women: 5
 disutil_unemployed_low_women: 5
 disutil_unemployed_high_women: 5
-disutil_children_pt_work: 5
+disutil_pt_work_low_women: 5
+disutil_pt_work_high_women: 5
+disutil_ft_work_low_women: 5
+disutil_ft_work_high_women: 5
+disutil_children_pt_work_low: 5
+disutil_children_pt_work_high: 5
 disutil_children_ft_work_low: 5
 disutil_children_ft_work_high: 5
 

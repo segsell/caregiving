@@ -540,10 +540,14 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     disutil_ft_work_women = (
         params["disutil_ft_work_bad_women"] * bad_health
         + params["disutil_ft_work_good_women"] * good_health
+        + params["disutil_ft_work_low_women"] * (1 - education)
+        + params["disutil_ft_work_high_women"] * education
     )
     disutil_pt_work_women = (
         params["disutil_pt_work_bad_women"] * bad_health
         + params["disutil_pt_work_good_women"] * good_health
+        + params["disutil_pt_work_low_women"] * (1 - education)
+        + params["disutil_pt_work_high_women"] * education
     )
     disutil_unemployed_women = (
         params["disutil_unemployed_low_women"] * (1 - education)
@@ -553,12 +557,17 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     has_partner_int = (partner_state > 0).astype(int)
     nb_children = options["children_by_state"][SEX, education, has_partner_int, period]
 
-    disutil_children_high = params["disutil_children_ft_work_high"] * nb_children
-    disutil_children_low = params["disutil_children_ft_work_low"] * nb_children
+    disutil_children_ft_low = params["disutil_children_ft_work_low"] * nb_children
+    disutil_children_ft_high = params["disutil_children_ft_work_high"] * nb_children
 
-    disutil_children_pt = params["disutil_children_pt_work"] * nb_children
-    disutil_children_ft = disutil_children_high * education + disutil_children_low * (
-        1 - education
+    disutil_children_pt_low = params["disutil_children_pt_work_low"] * nb_children
+    disutil_children_pt_high = params["disutil_children_pt_work_high"] * nb_children
+
+    disutil_children_pt = (
+        disutil_children_pt_low * (1 - education) + disutil_children_pt_high * education
+    )
+    disutil_children_ft = (
+        disutil_children_ft_low * (1 - education) + disutil_children_ft_high * education
     )
 
     exp_factor_women = (
