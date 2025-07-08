@@ -123,11 +123,15 @@ def test_utility_func(
         "disutil_pt_work_bad_women": disutil_work,
         "disutil_ft_work_good_women": disutil_work + 1,
         "disutil_ft_work_bad_women": disutil_work,
+        "disutil_pt_work_low_women": disutil_work,
+        "disutil_pt_work_high_women": disutil_work,
+        "disutil_ft_work_low_women": disutil_work,
+        "disutil_ft_work_high_women": disutil_work,
         "disutil_unemployed_low_women": disutil_unemployed,
         "disutil_unemployed_high_women": disutil_unemployed,
-        "disutil_children_pt_work": 0,
-        # "disutil_children_pt_work_low": 0,
-        # "disutil_children_pt_work_high": 0,
+        # "disutil_children_pt_work": 0,
+        "disutil_children_pt_work_low": 0,
+        "disutil_children_pt_work_high": 0,
         "disutil_children_ft_work_low": 0.1,
         "disutil_children_ft_work_high": 0.1,
         "bequest_scale": 2,
@@ -150,6 +154,7 @@ def test_utility_func(
         # n_children=n_children,
     )
 
+    educ_str = "low" * (1 - education) + "high" * education
     health_str = "good" * health + "bad" * (1 - health)
     sex_str = "women"
 
@@ -176,8 +181,15 @@ def test_utility_func(
     #     + params["util_cons_children_full_time_high_educ"] * n_children * education
     # )
 
-    exp_factor_pt_work = params[f"disutil_pt_work_{health_str}_{sex_str}"]
-    exp_factor_ft_work = params[f"disutil_ft_work_{health_str}_{sex_str}"]
+    exp_factor_pt_work = (
+        params[f"disutil_pt_work_{health_str}_{sex_str}"]
+        + params[f"disutil_pt_work_{educ_str}_{sex_str}"]
+    )
+    exp_factor_ft_work = (
+        params[f"disutil_ft_work_{health_str}_{sex_str}"]
+        + params[f"disutil_ft_work_{educ_str}_{sex_str}"]
+    )
+
     # if sex == 1:
     has_partner_int = int(partner_state > 0)
     nb_children = options["children_by_state"][sex, education, has_partner_int, period]
@@ -309,9 +321,15 @@ def test_marginal_utility(
         "disutil_pt_work_bad_women": disutil_work,
         "disutil_ft_work_good_women": disutil_work + 1,
         "disutil_ft_work_bad_women": disutil_work,
+        "disutil_pt_work_low_women": disutil_work,
+        "disutil_pt_work_high_women": disutil_work,
+        "disutil_ft_work_low_women": disutil_work,
+        "disutil_ft_work_high_women": disutil_work,
         "disutil_unemployed_low_women": disutil_unemployed,
         "disutil_unemployed_high_women": disutil_unemployed,
-        "disutil_children_pt_work": 0,
+        # "disutil_children_pt_work": 0,
+        "disutil_children_pt_work_low": 0,
+        "disutil_children_pt_work_high": 0,
         "disutil_children_ft_work_low": 0.1,
         "disutil_children_ft_work_high": 0.1,
         "bequest_scale": 2,
@@ -392,9 +410,15 @@ def test_inverse_marginal_utility(
         "disutil_pt_work_bad_women": disutil_work,
         "disutil_ft_work_good_women": disutil_work + 1,
         "disutil_ft_work_bad_women": disutil_work,
+        "disutil_pt_work_low_women": disutil_work,
+        "disutil_pt_work_high_women": disutil_work,
+        "disutil_ft_work_low_women": disutil_work,
+        "disutil_ft_work_high_women": disutil_work,
         "disutil_unemployed_low_women": disutil_unemployed,
         "disutil_unemployed_high_women": disutil_unemployed,
-        "disutil_children_pt_work": 0,
+        # "disutil_children_pt_work": 0,
+        "disutil_children_pt_work_low": 0,
+        "disutil_children_pt_work_high": 0,
         "disutil_children_ft_work_low": 0.1,
         "disutil_children_ft_work_high": 0.1,
         "bequest_scale": 2,
