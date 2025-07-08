@@ -15,14 +15,15 @@ def table(df_col):
 
 
 def task_load_and_merge_event_study_sample(
-    soep_c38_pgen: Path = SRC / "data" / "soep" / "pgen.dta",
-    soep_c38_ppathl: Path = SRC / "data" / "soep" / "ppathl.dta",
-    soep_c38_pl: Path = SRC / "data" / "soep" / "pl.dta",
-    soep_c38_hl: Path = SRC / "data" / "soep" / "hl.dta",
-    soep_c38_pequiv: Path = SRC / "data" / "soep" / "pequiv.dta",
-    soep_c38_pflege: Path = SRC / "data" / "soep" / "pflege.dta",
-    soep_c38_bioparen: Path = SRC / "data" / "soep" / "bioparen.dta",
+    soep_c40_pgen: Path = SRC / "data" / "soep_c40" / "pgen.dta",
+    soep_c40_ppathl: Path = SRC / "data" / "soep_c40" / "ppathl.dta",
+    soep_c40_pl: Path = SRC / "data" / "soep_c40" / "pl.dta",
+    soep_c40_hl: Path = SRC / "data" / "soep_c40" / "hl.dta",
+    soep_c40_pequiv: Path = SRC / "data" / "soep_c40" / "pequiv.dta",
+    soep_c40_pflege: Path = SRC / "data" / "soep_c40" / "pflege.dta",
+    soep_c40_bioparen: Path = SRC / "data" / "soep_c40" / "bioparen.dta",
     path_to_save: Annotated[Path, Product] = BLD / "data" / "soep_event_study_raw.csv",
+    use_pequiv_age_var: bool = False,
 ) -> None:
     """Merge SOEP modules.
 
@@ -31,7 +32,7 @@ def task_load_and_merge_event_study_sample(
 
     # Load SOEP core data
     pgen_data = pd.read_stata(
-        soep_c38_pgen,
+        soep_c40_pgen,
         columns=[
             "syear",
             "pid",
@@ -50,7 +51,7 @@ def task_load_and_merge_event_study_sample(
     )
 
     ppathl_data = pd.read_stata(
-        soep_c38_ppathl,
+        soep_c40_ppathl,
         columns=[
             "pid",
             "hid",
@@ -70,7 +71,7 @@ def task_load_and_merge_event_study_sample(
 
     # Add pl data
     pl_data_reader = pd.read_stata(
-        soep_c38_pl,
+        soep_c40_pl,
         columns=[
             "pid",
             "hid",
@@ -94,7 +95,7 @@ def task_load_and_merge_event_study_sample(
 
     # get household level data
     hl_data = pd.read_stata(
-        soep_c38_hl,
+        soep_c40_hl,
         columns=[
             "hid",
             "syear",
@@ -112,7 +113,7 @@ def task_load_and_merge_event_study_sample(
         # m11126: Self-Rated Health Status
         # m11124: Disability Status of Individual
         # m111050-m11123: Activities of Daily Living
-        soep_c38_pequiv,
+        soep_c40_pequiv,
         columns=["pid", "syear", "d11107", "d11101", "m11126", "m11124"],
         convert_categoricals=False,
     )
@@ -121,7 +122,7 @@ def task_load_and_merge_event_study_sample(
 
     # Parent information
     biparen = pd.read_stata(
-        soep_c38_bioparen,
+        soep_c40_bioparen,
         columns=[
             "pid",
             "mybirth",
@@ -135,9 +136,13 @@ def task_load_and_merge_event_study_sample(
     # all unique pid, left joint
     merged_data = pd.merge(merged_data, biparen, on="pid", how="left")
 
+    if use_pequiv_age_var:
+        merged_data["age"] = merged_data["d11101"].astype(int)
+    else:
+        merged_data["age"] = (merged_data["syear"] - merged_data["gebjahr"]).astype(int)
+
     # Set index
-    merged_data["age"] = merged_data["d11101"].astype(int)
     merged_data.set_index(["pid", "syear"], inplace=True)
-    print(str(len(merged_data)) + " observations in SOEP C38 core.")
+    print(str(len(merged_data)) + " observations in SOEP C40 core.")
 
     merged_data.to_csv(path_to_save)
