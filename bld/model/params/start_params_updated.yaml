@@ -6,10 +6,10 @@ disutil_children_pt_work_low: 0.2
 disutil_ft_work_bad_women: 1.3
 disutil_ft_work_good_women: 1.3
 disutil_ft_work_high_women: 0
-disutil_ft_work_low_women: 0.5
+disutil_ft_work_low_women: 0
 disutil_pt_work_bad_women: 1.3
 disutil_pt_work_good_women: 1.3
-disutil_pt_work_high_women: 0.2
+disutil_pt_work_high_women: 0
 disutil_pt_work_low_women: 0
 disutil_unemployed_high_women: 1.0
 disutil_unemployed_low_women: 1.0
