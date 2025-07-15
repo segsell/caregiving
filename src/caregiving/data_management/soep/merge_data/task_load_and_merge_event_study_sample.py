@@ -8,10 +8,7 @@ import pandas as pd
 from pytask import Product
 
 from caregiving.config import BLD, SRC
-
-
-def table(df_col):
-    return pd.crosstab(df_col, columns="Count")["Count"]
+from caregiving.utils import table
 
 
 def task_load_and_merge_event_study_sample(
