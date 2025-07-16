@@ -542,7 +542,7 @@ def create_health_var_good_bad(data, drop_missing=True):
     Good health = 1, bad health = 0.
 
     Variables:
-    - m11126: Self-Rated Health Status (1–5 for valid responses)
+    - m11126: Self-Rated Health Status (1-5 for valid responses)
     - m11124: Disability Status of Individual (0 or 1 for valid responses)
 
     """
@@ -576,7 +576,7 @@ def create_health_var_good_medium_bad(data, drop_missing=True):
     Good health = 2, medium (satisfactory) health 1, bad health = 0.
 
     Variables:
-    - m11126: Self-Rated Health Status (1–5 for valid responses)
+    - m11126: Self-Rated Health Status (1-5 for valid responses)
     - m11124: Disability Status of Individual (0 or 1 for valid responses)
 
     """
