@@ -5,6 +5,7 @@ from typing import Annotated
 
 import numpy as np
 import pandas as pd
+import pytask
 from pytask import Product
 
 from caregiving.config import BLD, SRC
@@ -14,11 +15,11 @@ MONTHS_WORK_THRESHOLD = 6
 MONTHS_CARE_THRESHOLD = 6
 
 
-def task_create_soep_rv_sample(
+def task_create_rv_sample(
     path_to_rv_data: Path = BLD / "data" / "rv_raw.csv",
-    path_to_save: Annotated[Path, Product] = BLD / "data" / "soep_rv.csv",
+    path_to_save: Annotated[Path, Product] = BLD / "data" / "rv_sample.csv",
 ) -> None:
-    """Create SOEP RV sample."""
+    """Create RV sample."""
 
     # Load RV data
     rv_data = pd.read_csv(path_to_rv_data, index_col=[0])
@@ -237,3 +238,45 @@ def task_create_soep_rv_sample(
 
     # Save the filtered data
     rv_year.to_csv(path_to_save)
+
+
+def task_merge_soep_rv_sample(
+    path_to_soep_event_study_sample: Path = BLD
+    / "data"
+    / "soep_event_study_sample.csv",
+    path_to_rv_sample: Path = BLD / "data" / "rv_sample.csv",
+    path_to_save: Annotated[Path, Product] = BLD / "data" / "soep_rv.csv",
+) -> None:
+    """Create RV sample."""
+
+    soep = pd.read_csv(path_to_soep_event_study_sample, index_col=[0])
+    rv = pd.read_csv(path_to_rv_sample, index_col=[0])
+
+    print("Raw SOEP observations per year:")
+    print(soep["syear"].value_counts().sort_index())
+
+    # 1. RV columns to keep
+    base_cols = ["rv_id", "syear", "smooth", "GBJAVS", "rv_care_yearly"]
+    egp_cols = [c for c in rv.columns if c.startswith("EGP")]
+    cols_to_keep = [c for c in base_cols if c in rv.columns] + egp_cols
+    rv_keep = rv[cols_to_keep].copy()
+
+    # 2. Merge: keep every row from soep and match where possible
+    soep_rv = soep.merge(
+        rv_keep,  # right-hand table
+        how="left",
+        left_on=["rv_id", "syear"],  # soep keys
+        right_on=["rv_id", "syear"],  # JAHR is now renamed/dropped
+        suffixes=("", "_rv"),  # avoid name clashes
+        validate="m:1",  # each soep row ≤1 match in RV
+        indicator=True,  # optional: shows which rows matched
+    )
+
+    # 3. Sanity checks
+    assert len(soep_rv) == len(soep)  # size should be unchanged
+    print(soep_rv["_merge"].value_counts())  # see how many matched
+
+    print("Match status by survey year (syear):")
+    print(pd.crosstab(soep_rv["syear"], soep_rv["_merge"], dropna=False), "\n")
+
+    soep_rv.to_csv(path_to_save)
