@@ -8,10 +8,7 @@ import pandas as pd
 from pytask import Product
 
 from caregiving.config import BLD, SRC
-
-
-def table(df_col):
-    return pd.crosstab(df_col, columns="Count")["Count"]
+from caregiving.utils import table
 
 
 def task_load_and_merge_event_study_sample(
@@ -22,6 +19,7 @@ def task_load_and_merge_event_study_sample(
     soep_c40_pequiv: Path = SRC / "data" / "soep_c40" / "pequiv.dta",
     soep_c40_pflege: Path = SRC / "data" / "soep_c40" / "pflege.dta",
     soep_c40_bioparen: Path = SRC / "data" / "soep_c40" / "bioparen.dta",
+    soep_c40_bioagel: Path = SRC / "data" / "soep_c40" / "bioagel.dta",
     path_to_save: Annotated[Path, Product] = BLD / "data" / "soep_event_study_raw.csv",
     use_pequiv_age_var: bool = False,
 ) -> None:
@@ -106,6 +104,22 @@ def task_load_and_merge_event_study_sample(
         convert_categoricals=False,
     )
     merged_data = pd.merge(merged_data, hl_data, on=["hid", "syear"], how="left")
+
+    # Data from 2003 on (children's birth years from 2000)
+    # bioagel_data = pd.read_stata(
+    #     soep_c40_bioagel,
+    #     columns=[
+    #         "pid",  # child id
+    #         "pide",  # parent id
+    #         "hid",
+    #         "syear",
+    #         "birthy",  # Geburtsjahr des Kindes
+    #         "maincare",  # Mutter Hauptbetreuungsperson (1=ja; 2=Vater; 3=andere)
+    #         "ill0",  # Einschraenkungen (1=ja; 2=nein)j
+    #         "disord",  # Anhaltspunkte fuer Stoerungen (1,2=ja; 3=nein)
+    #     ],
+    #     convert_categoricals=False,
+    # )
 
     pequiv_data = pd.read_stata(
         # d11107: number of children in household

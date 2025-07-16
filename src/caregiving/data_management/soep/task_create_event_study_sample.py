@@ -218,6 +218,7 @@ def task_create_event_study_sample(
 
     # Keep relevant columns and set their minimal datatype
     type_dict = {
+        "rv_id": "int32",
         # own
         "pid": "int32",
         "syear": "int16",
