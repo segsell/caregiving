@@ -135,7 +135,14 @@ def task_create_soep_rv_sample(
     # ----------------------------------------------------------
     # 5.  yearly aggregates
     # ----------------------------------------------------------
-    for col in ("EGP_main", "EGP_main_and_side", "EGP_main_and_care", "EGP_all"):
+    EGP_vars = [
+        "EGP_main",
+        "EGP_main_and_side",
+        "EGP_main_and_care",
+        "EGP_all",
+    ]
+
+    for col in EGP_vars:
         rv_data[f"{col}_yearly"] = rv_data.groupby(["rv_id", "syear"])[col].transform(
             "sum"
         )
@@ -218,6 +225,15 @@ def task_create_soep_rv_sample(
     _non_caregivers_per_year = caregiver_status.groupby("syear")["is_caregiver"].apply(
         lambda x: (x == 0).sum()
     )
+
+    # ----------------------------------------------------------
+    # 6.  cumulative sums across years (per individual)
+    # ----------------------------------------------------------
+    # make sure data are in chronological order within each rv_id
+    rv_year.sort_values(["rv_id", "syear"], inplace=True)
+
+    for col in EGP_vars:
+        rv_year[f"{col}_yearly_cum"] = rv_year.groupby("rv_id")[col].cumsum()
 
     # Save the filtered data
     rv_year.to_csv(path_to_save)

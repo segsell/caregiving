@@ -19,6 +19,7 @@ def task_load_and_merge_event_study_sample(
     soep_c40_pequiv: Path = SRC / "data" / "soep_c40" / "pequiv.dta",
     soep_c40_pflege: Path = SRC / "data" / "soep_c40" / "pflege.dta",
     soep_c40_bioparen: Path = SRC / "data" / "soep_c40" / "bioparen.dta",
+    soep_c40_bioagel: Path = SRC / "data" / "soep_c40" / "bioparen.dta",
     path_to_save: Annotated[Path, Product] = BLD / "data" / "soep_event_study_raw.csv",
     use_pequiv_age_var: bool = False,
 ) -> None:
