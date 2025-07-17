@@ -434,4 +434,8 @@ def create_caregiving(df, filter_missing=False):
     _val = [np.nan, 0, 1]
     df["intensive_care"] = np.select(_cond, _val, default=np.nan)
 
+    df["person_needing_care_in_hh"] = np.nan
+    df.loc[df["hlf0291"] == 1, "person_needing_care_in_hh"] = 1  # noqa: PLR2004
+    df.loc[df["hlf0291"] == 2, "person_needing_care_in_hh"] = 0  # noqa: PLR2004
+
     return df
