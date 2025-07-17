@@ -218,6 +218,7 @@ def task_create_event_study_sample(
 
     # Keep relevant columns and set their minimal datatype
     type_dict = {
+        "rv_id": "int32",
         # own
         "pid": "int32",
         "syear": "int16",
@@ -432,5 +433,9 @@ def create_caregiving(df, filter_missing=False):
     )
     _val = [np.nan, 0, 1]
     df["intensive_care"] = np.select(_cond, _val, default=np.nan)
+
+    df["person_needing_care_in_hh"] = np.nan
+    df.loc[df["hlf0291"] == 1, "person_needing_care_in_hh"] = 1  # noqa: PLR2004
+    df.loc[df["hlf0291"] == 2, "person_needing_care_in_hh"] = 0  # noqa: PLR2004
 
     return df
