@@ -15,6 +15,7 @@ MISSING_VALUE = -9
 
 WAVE_7 = 7
 WAVE_8 = 8
+WAVE_9 = 9
 
 ALL_VARIABLES = {
     "cv_r": [
@@ -696,8 +697,9 @@ def process_wave(wave_number, data_modules):
     wave_data = {}
 
     for module in data_modules:
-        module_file = (
-            SRC / f"data/sharew{wave_number}/sharew{wave_number}_rel8-0-0_{module}.dta"
+        module_file = SRC / (
+            f"data/sharew{wave_number}_rel9-0-0_ALL_datasets_stata/"
+            f"sharew{wave_number}_rel9-0-0_{module}.dta"
         )
 
         # Read and filter
@@ -811,7 +813,11 @@ def process_wave(wave_number, data_modules):
 
 def process_gv_imputations(wave, args):
     module = "gv_imputations"
-    module_file = SRC / f"data/sharew{wave}/sharew{wave}_rel8-0-0_{module}.dta"
+    module_file = SRC / (
+        f"data/sharew{wave}_rel9-0-0_ALL_datasets_stata/"
+        f"sharew{wave}_rel9-0-0_{module}.dta"
+    )
+
     data = pd.read_stata(module_file, convert_categoricals=False)
 
     # Filter the data based on the "country" column
@@ -872,7 +878,10 @@ def filter_nested_dict(original_dict, keys_to_remove):
 
 def load_and_rename_wave_data(wave):
     module = "sp"
-    module_file = SRC / f"data/sharew{wave}/sharew{wave}_rel8-0-0_{module}.dta"
+    module_file = SRC / (
+        f"data/sharew{wave}_rel9-0-0_ALL_datasets_stata/"
+        f"sharew{wave}_rel9-0-0_{module}.dta"
+    )
 
     data = pd.read_stata(module_file, convert_categoricals=False)
     data.columns = [col.removesuffix("sp") for col in data.columns]
