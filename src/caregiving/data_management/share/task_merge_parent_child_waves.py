@@ -163,7 +163,7 @@ def table(df_col):
 def task_merge_parent_child_waves_and_modules(
     path_parent_child: Annotated[Path, Product] = BLD
     / "data"
-    / "data_parent_child_merged.csv",
+    / "share_data_parent_child_merged.csv",
 ) -> None:
     """Merge raw parent information."""
     child_suffixes = [str(i) for i in range(1, 21)]
@@ -186,6 +186,8 @@ def task_merge_parent_child_waves_and_modules(
     variables_wave8 = all_variables | {
         "gv_weights": ["dw_w8", "cchw_w8_main", "cciw_w8_main"],
     }
+    variables_wave7 = all_variables | {"gv_weights": ["dw_w7", "cchw_w7", "cciw_w7"]}
+    variables_wave9 = all_variables | {"gv_weights": ["dw_w9", "cchw_w9", "cciw_w9"]}
 
     wave1 = process_wave(wave=1, data_modules=variables_wave1)
     wave2 = process_wave(wave=2, data_modules=variables_wave2)
@@ -194,16 +196,18 @@ def task_merge_parent_child_waves_and_modules(
     wave6 = process_wave(wave=6, data_modules=variables_wave6)
     wave7 = process_wave(wave=7, data_modules=variables_wave7)
     wave8 = process_wave(wave=8, data_modules=variables_wave8)
+    wave9 = process_wave(wave=9, data_modules=variables_wave9)
 
-    waves_list = [wave1, wave2, wave4, wave5, wave6, wave7, wave8]
+    waves_list = [wave1, wave2, wave4, wave5, wave6, wave7, wave8, wave9]
     data = merge_wave_datasets(waves_list)
 
     vars_gv_children = [var + child for var in GV_CHILDREN for child in child_suffixes]
     gv_6 = process_gv_children(wave=6, args=vars_gv_children)
     gv_7 = process_gv_children(wave=7, args=vars_gv_children)
     gv_8 = process_gv_children(wave=8, args=vars_gv_children)
+    gv_9 = process_gv_children(wave=9, args=vars_gv_children)
 
-    gv_children_datasets = [gv_6, gv_7, gv_8]
+    gv_children_datasets = [gv_6, gv_7, gv_8, gv_9]
     gv_data = pd.concat(gv_children_datasets, axis=0, ignore_index=True)
     gv_data = gv_data.sort_values(by=["mergeid", "wave"])
 
@@ -216,6 +220,7 @@ def task_merge_parent_child_waves_and_modules(
     gv_wave6 = process_gv_imputations(wave=6, args=GV_VARS)
     gv_wave7 = process_gv_imputations(wave=7, args=GV_VARS)
     gv_wave8 = process_gv_imputations(wave=8, args=GV_VARS)
+    gv_wave9 = process_gv_imputations(wave=9, args=GV_VARS)
 
     gv_list = [
         gv_wave1,
@@ -225,6 +230,7 @@ def task_merge_parent_child_waves_and_modules(
         gv_wave6,
         gv_wave7,
         gv_wave8,
+        gv_wave9,
     ]
 
     stacked_gv_data = pd.concat(gv_list, axis=0, ignore_index=True)
@@ -246,12 +252,6 @@ def task_merge_parent_child_waves_and_modules(
     data_merged_gv = data_merged_gv.drop(columns=columns_to_drop)
 
     data_merged_gv.to_csv(path_parent_child, index=False)
-
-    # create moments of formal care by informal care from children
-    # (parent age brackets), (no informal care, light, intensive),
-    # (child close, child far away)
-    # and also age of caregiving child? (maybe later, too cumbersome now)
-    # later maybe also education type of children
 
 
 def process_wave(wave, data_modules):
@@ -292,7 +292,12 @@ def process_wave(wave, data_modules):
 
 def process_module(module, wave, args):
     """Process a single wave module."""
-    module_file = SRC / f"data/sharew{wave}/sharew{wave}_rel8-0-0_{module}.dta"
+    # module_file = SRC / f"data/sharew{wave}/sharew{wave}_rel9-0-0_{module}.dta"
+    module_file = SRC / (
+        f"data/sharew{wave}_rel9-0-0_ALL_datasets_stata/"
+        f"sharew{wave}_rel9-0-0_{module}.dta"
+    )
+
     data = pd.read_stata(module_file, convert_categoricals=False)
 
     data.columns = [col.removesuffix("sp") for col in data.columns]
@@ -404,7 +409,13 @@ def process_module(module, wave, args):
 def process_gv_children(wave, args):
     """Process single wave of the gv_children module."""
     module = "gv_children"
-    module_file = SRC / f"data/sharew{wave}/sharew{wave}_rel8-0-0_{module}.dta"
+
+    # module_file = SRC / f"data/sharew{wave}/sharew{wave}_rel9-0-0_{module}.dta"
+    module_file = SRC / (
+        f"data/sharew{wave}_rel9-0-0_ALL_datasets_stata/"
+        f"sharew{wave}_rel9-0-0_{module}.dta"
+    )
+
     data = pd.read_stata(module_file, convert_categoricals=False)
 
     # Filter the data based on the "country" column
@@ -439,7 +450,13 @@ def merge_wave_datasets(wave_datasets):
 
 def process_gv_imputations(wave, args):
     module = "gv_imputations"
-    module_file = SRC / f"data/sharew{wave}/sharew{wave}_rel8-0-0_{module}.dta"
+
+    # module_file = SRC / f"data/sharew{wave}/sharew{wave}_rel9-0-0_{module}.dta"
+    module_file = SRC / (
+        f"data/sharew{wave}_rel9-0-0_ALL_datasets_stata/"
+        f"sharew{wave}_rel9-0-0_{module}.dta"
+    )
+
     data = pd.read_stata(module_file, convert_categoricals=False)
 
     # Filter the data based on the "country" column

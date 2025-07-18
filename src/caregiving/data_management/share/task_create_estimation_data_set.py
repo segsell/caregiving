@@ -100,17 +100,17 @@ def table(df_col):
 
 
 def task_create_estimation_data(
-    path_to_raw_data: Path = BLD / "data" / "data_merged.csv",
-    path_to_main: Annotated[Path, Product] = BLD / "data" / "estimation_data.csv",
+    path_to_raw_data: Path = BLD / "data" / "share_data_merged.csv",
+    path_to_main: Annotated[Path, Product] = BLD / "data" / "share_estimation_data.csv",
     path_to_design_weight: Annotated[Path, Product] = BLD
     / "data"
-    / "estimation_data_design_weight.csv",
+    / "share_estimation_data_design_weight.csv",
     path_to_hh_weight: Annotated[Path, Product] = BLD
     / "data"
-    / "estimation_data_hh_weight.csv",
+    / "share_estimation_data_hh_weight.csv",
     path_to_ind_weight: Annotated[Path, Product] = BLD
     / "data"
-    / "estimation_data_ind_weight.csv",
+    / "share_estimation_data_ind_weight.csv",
 ) -> None:
     """Create the estimation data set.
 
