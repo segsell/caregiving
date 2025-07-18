@@ -557,18 +557,43 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     has_partner_int = (partner_state > 0).astype(int)
     nb_children = options["children_by_state"][SEX, education, has_partner_int, period]
 
+    # NEW: disutility of children squared by pt/ft work and education type
     disutil_children_ft_low = params["disutil_children_ft_work_low"] * nb_children
+    disutil_children_ft_squared_low = (
+        params["disutil_children_ft_work_squared_low"] * nb_children**2
+    )
     disutil_children_ft_high = params["disutil_children_ft_work_high"] * nb_children
+    disutil_children_ft_squared_high = (
+        params["disutil_children_ft_work_squared_high"] * nb_children**2
+    )
 
     disutil_children_pt_low = params["disutil_children_pt_work_low"] * nb_children
+    disutil_children_pt_squared_low = (
+        params["disutil_children_pt_work_squared_low"] * nb_children**2
+    )
     disutil_children_pt_high = params["disutil_children_pt_work_high"] * nb_children
+    disutil_children_pt_squared_high = (
+        params["disutil_children_pt_work_squared_high"] * nb_children**2
+    )
 
     disutil_children_pt = (
-        disutil_children_pt_low * (1 - education) + disutil_children_pt_high * education
-    )
+        disutil_children_pt_low + disutil_children_pt_squared_low
+    ) * (1 - education) + (
+        disutil_children_pt_high + disutil_children_pt_squared_high
+    ) * education
     disutil_children_ft = (
-        disutil_children_ft_low * (1 - education) + disutil_children_ft_high * education
-    )
+        disutil_children_ft_low + disutil_children_ft_squared_low
+    ) * (1 - education) + (
+        disutil_children_ft_high + disutil_children_ft_squared_high
+    ) * education
+    # disutil_children_pt = (
+    #     disutil_children_pt_low * (1 - education)
+    # + disutil_children_pt_high * education
+    # )
+    # disutil_children_ft = (
+    #     disutil_children_ft_low * (1 - education)
+    # + disutil_children_ft_high * education
+    # )
 
     exp_factor_women = (
         disutil_unemployed_women * unemployed
