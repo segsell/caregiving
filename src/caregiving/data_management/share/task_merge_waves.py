@@ -447,7 +447,7 @@ KEYS_TO_REMOVE_WAVE7 = {
     ],
 }
 
-KEYS_TO_REMOVE_WAVE8 = {
+KEYS_TO_REMOVE_WAVES_8_AND_9 = {
     "dn": [
         "dn012dno",
     ],
@@ -533,8 +533,8 @@ GV_VARS = [
 # =============================================================================
 
 
-def task_merge_waves_and_modules(
-    path: Annotated[Path, Product] = BLD / "data" / "data_merged.csv",
+def task_merge_waves_and_modules(  # noqa: PLR0915
+    path: Annotated[Path, Product] = BLD / "data" / "share_data_merged.csv",
 ) -> None:
     # Retrospective waves
     re_vars = (
@@ -592,6 +592,7 @@ def task_merge_waves_and_modules(
     _weights_w5 = {"gv_weights": ["dw_w5", "cchw_w5", "cciw_w5"]}
     _weights_w6 = {"gv_weights": ["dw_w6", "cchw_w6", "cciw_w6"]}
     _weights_w8 = {"gv_weights": ["dw_w8", "cchw_w8_main", "cciw_w8_main"]}
+    _weights_w9 = {"gv_weights": ["dw_w9", "cchw_w9", "cciw_w9"]}
 
     variables_wave1 = filter_nested_dict(
         ALL_VARIABLES | _weights_w1,
@@ -615,7 +616,11 @@ def task_merge_waves_and_modules(
     )
     variables_wave8 = filter_nested_dict(
         ALL_VARIABLES | _weights_w8,
-        KEYS_TO_REMOVE_WAVE8,
+        KEYS_TO_REMOVE_WAVES_8_AND_9,
+    )
+    variables_wave9 = filter_nested_dict(
+        ALL_VARIABLES | _weights_w9,
+        KEYS_TO_REMOVE_WAVES_8_AND_9,
     )
 
     wave1 = process_wave(wave_number=1, data_modules=variables_wave1)
@@ -626,8 +631,9 @@ def task_merge_waves_and_modules(
     wave6 = process_wave(wave_number=6, data_modules=variables_wave6)
     wave7 = process_wave(wave_number=7, data_modules=variables_wave7)
     wave8 = process_wave(wave_number=8, data_modules=variables_wave8)
+    wave9 = process_wave(wave_number=9, data_modules=variables_wave9)
 
-    waves_list = [wave1, wave2, wave3, wave4, wave5, wave6, wave7, wave8]
+    waves_list = [wave1, wave2, wave3, wave4, wave5, wave6, wave7, wave8, wave9]
 
     # Drop all nan rows
     for i, df in enumerate(waves_list):
@@ -643,6 +649,7 @@ def task_merge_waves_and_modules(
     gv_wave6 = process_gv_imputations(wave=6, args=GV_VARS)
     gv_wave7 = process_gv_imputations(wave=7, args=GV_VARS)
     gv_wave8 = process_gv_imputations(wave=8, args=GV_VARS)
+    gv_wave9 = process_gv_imputations(wave=9, args=GV_VARS)
 
     gv_wave_list = [
         gv_wave1,
@@ -652,6 +659,7 @@ def task_merge_waves_and_modules(
         gv_wave6,
         gv_wave7,
         gv_wave8,
+        gv_wave9,
     ]
 
     # Concatenate the DataFrames vertically
@@ -673,7 +681,7 @@ def task_merge_waves_and_modules(
     ]
     data_merged = data_merged.drop(columns=columns_to_drop)
 
-    # save data
+    # Save data
     data_merged.to_csv(path, index=False)
 
 
