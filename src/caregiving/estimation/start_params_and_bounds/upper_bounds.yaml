@@ -17,7 +17,13 @@ disutil_children_pt_work_low: 5
 disutil_children_pt_work_high: 5
 disutil_children_ft_work_low: 5
 disutil_children_ft_work_high: 5
+# NEW
+disutil_children_pt_work_squared_low: 5
+disutil_children_pt_work_squared_high: 5
+disutil_children_ft_work_squared_low: 5
+disutil_children_ft_work_squared_high: 5
 
+# Caregiving utility
 util_informal_care_low_women: 5
 util_informal_care_high_women: 5
 
