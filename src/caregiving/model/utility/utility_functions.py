@@ -237,7 +237,7 @@ def utility_func_adda(
             (n_quad_stochastic * n_grid_wealth,) or (n_grid_wealth,).
 
     """
-    utility_alive = utility_func_alive(
+    utility_alive = utility_func_alive_adda(
         consumption=consumption,
         # sex=sex,
         partner_state=partner_state,
