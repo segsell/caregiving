@@ -18,13 +18,21 @@ from caregiving.model.shared import (
 )
 from caregiving.model.utility.bequest_utility import utility_final_consume_all
 
+# def create_utility_functions():
+#     """Create dict of utility functions."""
+#     return {
+#         "utility": utility_func,
+#         "marginal_utility": marg_utility,
+#         "inverse_marginal_utility": inverse_marginal,
+#     }
+
 
 def create_utility_functions():
     """Create dict of utility functions."""
     return {
-        "utility": utility_func,
-        "marginal_utility": marg_utility,
-        "inverse_marginal_utility": inverse_marginal,
+        "utility": utility_func_adda,
+        "marginal_utility": marg_utility_adda,
+        "inverse_marginal_utility": inverse_marginal_adda,
     }
 
 
