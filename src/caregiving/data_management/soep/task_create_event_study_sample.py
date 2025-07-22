@@ -212,6 +212,8 @@ def task_create_event_study_sample(
     )
 
     df = create_experience_variable(df, drop_invalid=False)
+    df = create_voluntary_versus_involuntary_job_separation_var(df)
+    df = create_job_separation_fired(df)
 
     # enforce choice restrictions based on model setup
     df = enforce_model_choice_restriction(df, specs)
@@ -235,6 +237,8 @@ def task_create_event_study_sample(
         "working_hours_actual": "float32",
         "pglabgro_deflated": "float32",
         "hourly_wage": "float32",
+        "job_sep_fired": "int8",
+        "job_sep_voluntary_vs_fired": "float32",
         "pli0046": "int8",
         "any_care": "float32",
         "light_care": "float32",
@@ -261,6 +265,9 @@ def task_create_event_study_sample(
         # unprocessed
         "birthregion_ew": "int8",
         "migback": "int8",
+        "plb0282_h": "int16",  # job separation, since beginning of previous year
+        "plb0304_h": "int16",  # why job ended
+        "pgjobch": "int8",  # beruflicher Wechsel
     }
 
     df.reset_index(drop=False, inplace=True)
@@ -439,3 +446,52 @@ def create_caregiving(df, filter_missing=False):
     df.loc[df["hlf0291"] == 2, "person_needing_care_in_hh"] = 0  # noqa: PLR2004
 
     return df
+
+
+def create_voluntary_versus_involuntary_job_separation_var(data):
+    """This function generates a job separation variable.
+
+    The function creates a new column which is 1 if the individual got fired
+    from the last job. 0 if the separation was voluntary. Both conditional on
+    the previous job being terminated.
+    It uses plb0304_h from the soep pl data.
+
+    Drop 9 (End Ausbildung), 15 (End Arbeitserlaubnis),
+    13 (Sonstige), 14 (Mehrfachnennung) and negative answers.
+
+    https://paneldata.org/soep-core/datasets/pl/plb0304_h
+
+    """
+
+    voluntary = [2, 4, 6, 7, 8, 10, 12]  # worker-initiated exits
+    involuntary = [1, 3, 5, 11]  # employer / contract / legal
+    # unknown / multiple answers → default NaN (13, 14 or any other unexpected code)
+
+    data["job_sep_voluntary_vs_fired"] = np.where(
+        data["plb0304_h"].isin(voluntary),
+        1,
+        np.where(
+            data["plb0304_h"].isin(involuntary),
+            0,
+            np.nan,
+        ),
+    )
+
+    return data
+
+
+def create_job_separation_fired(data):
+    """This function generates a job separation variable.
+
+    The function creates a new column job_sep which is 1 if the individual got fired
+    from the last job. 0 if she left the job voluntarily or no job termination
+    occued.
+    It uses plb0304_h from the soep pl data.
+
+    https://paneldata.org/soep-core/datasets/pl/plb0304_h
+
+    """
+    data.loc[:, "job_sep_fired"] = 0
+    data.loc[data["plb0304_h"].isin([1, 3, 5]), "job_sep_fired"] = 1
+
+    return data

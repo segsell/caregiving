@@ -44,6 +44,8 @@ def task_load_and_merge_event_study_sample(
             "pgpsbil",
             "pgtatzeit",
             "pgvebzeit",
+            "pgjobch",  #  Beruflicher Wechsel
+            "pgjobend",  # Grund Beschäftigungsende
         ],
         convert_categoricals=False,
     )
@@ -66,6 +68,7 @@ def task_load_and_merge_event_study_sample(
     merged_data = pd.merge(
         pgen_data, ppathl_data, on=["pid", "hid", "syear"], how="inner"
     )
+    del pgen_data, ppathl_data
 
     # Add pl data
     pl_data_reader = pd.read_stata(
@@ -74,12 +77,13 @@ def task_load_and_merge_event_study_sample(
             "pid",
             "hid",
             "syear",
-            "plb0304_h",  # why job ended
             "pli0046",  # how many hours per weekday support persons in care
             "pld0030",  # number of sisters
             "pld0032",  # number of brothers
             "plj0118_h",  # distance to mother
             "plj0119_h",  # distance to father
+            "plb0282_h",  # job separation, since beginning of previous year
+            "plb0304_h",  # why job ended
         ],
         chunksize=100000,
         convert_categoricals=False,
@@ -90,6 +94,7 @@ def task_load_and_merge_event_study_sample(
     merged_data = pd.merge(
         merged_data, pl_data, on=["pid", "hid", "syear"], how="inner"
     )
+    del pl_data, pl_data_reader
 
     # get household level data
     hl_data = pd.read_stata(
@@ -105,6 +110,7 @@ def task_load_and_merge_event_study_sample(
         convert_categoricals=False,
     )
     merged_data = pd.merge(merged_data, hl_data, on=["hid", "syear"], how="left")
+    del hl_data
 
     # Data from 2003 on (children's birth years from 2000)
     # bioagel_data = pd.read_stata(
@@ -134,6 +140,7 @@ def task_load_and_merge_event_study_sample(
     )
     merged_data = pd.merge(merged_data, pequiv_data, on=["pid", "syear"], how="inner")
     merged_data.rename(columns={"d11107": "children"}, inplace=True)
+    del pequiv_data
 
     # Parent information
     biparen = pd.read_stata(
@@ -150,6 +157,7 @@ def task_load_and_merge_event_study_sample(
     )
     # all unique pid, left joint
     merged_data = pd.merge(merged_data, biparen, on="pid", how="left")
+    del biparen
 
     if use_pequiv_age_var:
         merged_data["age"] = merged_data["d11101"].astype(int)
