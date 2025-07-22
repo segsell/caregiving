@@ -72,30 +72,32 @@ def count(df_col):
 
 
 def task_create_parent_child_data(
-    path_to_raw_data: Path = BLD / "data" / "data_parent_child_merged.csv",
-    path_to_main: Annotated[Path, Product] = BLD / "data" / "parent_child_data.csv",
+    path_to_raw_data: Path = BLD / "data" / "share_data_parent_child_merged.csv",
+    path_to_main: Annotated[Path, Product] = BLD
+    / "data"
+    / "share_parent_child_data.csv",
     path_to_design_weight: Annotated[Path, Product] = BLD
     / "data"
-    / "parent_child_data_design_weight.csv",
+    / "share_parent_child_data_design_weight.csv",
     path_to_hh_weight: Annotated[Path, Product] = BLD
     / "data"
-    / "parent_child_data_hh_weight.csv",
+    / "share_parent_child_data_hh_weight.csv",
     path_to_ind_weight: Annotated[Path, Product] = BLD
     / "data"
-    / "parent_child_data_ind_weight.csv",
+    / "share_parent_child_data_ind_weight.csv",
     # parent couple - child
     path_to_main_couple: Annotated[Path, Product] = BLD
     / "data"
-    / "parent_child_data_couple.csv",
+    / "share_parent_child_data_couple.csv",
     path_to_design_weight_couple: Annotated[Path, Product] = BLD
     / "data"
-    / "parent_child_data_couple_design_weight.csv",
+    / "share_parent_child_data_couple_design_weight.csv",
     path_to_hh_weight_couple: Annotated[Path, Product] = BLD
     / "data"
-    / "parent_child_data_couple_hh_weight.csv",
+    / "share_parent_child_data_couple_hh_weight.csv",
     path_to_ind_weight_couple: Annotated[Path, Product] = BLD
     / "data"
-    / "parent_child_data_couple_ind_weight.csv",
+    / "share_parent_child_data_couple_ind_weight.csv",
 ) -> None:
     """Create the estimation data set."""
     dat = pd.read_csv(path_to_raw_data)
