@@ -24,6 +24,9 @@ WAVE_5 = 5
 WAVE_6 = 6
 WAVE_7 = 7
 WAVE_8 = 8
+WAVE_9 = 9
+
+DAILY = 1
 
 FIVE = 5
 THREE = 3
@@ -55,6 +58,9 @@ YES_PERMANENTLY = 3
 DUMMY_TRUE = 1
 AT_LEAST_TWO = 2
 
+# columns that record who gave help
+WHO_IS_CAREGIVER_EXTRA_HH = ["sp003_1", "sp003_2", "sp003_3"]
+
 
 def table(df_col):
     """Return frequency table."""
@@ -71,6 +77,10 @@ def count(df_col):
     return df_col.count()
 
 
+import pytask
+
+
+@pytask.mark.wip
 def task_create_parent_child_data(
     path_to_raw_data: Path = BLD / "data" / "share_data_parent_child_merged.csv",
     path_to_main: Annotated[Path, Product] = BLD
@@ -114,7 +124,7 @@ def task_create_parent_child_data(
         axis=1,
     )
 
-    dat = dat[(dat["age"] >= MIN_AGE_PARENTS) & (dat["age"] <= MAX_AGE_PARENTS)]
+    dat = dat[(dat["age"] >= MIN_AGE_PARENTS) & (dat["age"] <= MAX_AGE_PARENTS + 5)]
 
     dat = create_children_information(dat)
     dat = create_married_or_partner_alive(dat)
@@ -255,7 +265,7 @@ def multiply_rows_with_weight(dat, weight):  # noqa: PLR0915
     dat_weighted.insert(3, "age", dat["age"])
     dat_weighted.insert(4, weight, dat[weight])
     dat_weighted.insert(5, "only_informal", dat["only_informal"])
-    dat_weighted.insert(6, "combination_care", dat["combination_care"])
+    dat_weighted.insert(6, "combination_care_general", dat["combination_care_general"])
     dat_weighted.insert(7, "only_home_care", dat["only_home_care"])
     dat_weighted.insert(8, "informal_care_child", dat["informal_care_child"])
     dat_weighted.insert(9, "informal_care_general", dat["informal_care_general"])
@@ -318,6 +328,7 @@ def multiply_rows_with_weight(dat, weight):  # noqa: PLR0915
     )
     dat_weighted.insert(41, "has_daughter", dat["has_daughter"])
     dat_weighted.insert(42, "nursing_home", dat["nursing_home"])
+    dat_weighted.insert(43, "combination_care_child", dat["combination_care_child"])
 
     dat_weighted[f"{weight}_avg"] = dat_weighted.groupby("mergeid")[weight].transform(
         "mean",
@@ -415,7 +426,6 @@ def create_care_variables(dat):
     #     weight=weight,
     # )
 
-    # breakpoint()
     # # ===============================================================================
     # RENAME WAVES 1, 2 (3, 4 missing): hc127d1
 
@@ -428,20 +438,30 @@ def create_care_variables(dat):
         | (dat["hc127d3"] == 1)
         | (dat["hc127d4"] == 1),
         # | (dat["hc127dno"] == 0),
+        # (
+        #     dat["hc032d1"].isna()
+        #     & dat["hc032d2"].isna()
+        #     & dat["hc032d3"].isna()
+        #     & dat["hc032dno"].isna()
+        #     & dat["hc127d1"].isna()
+        #     & dat["hc127d2"].isna()
+        #     & dat["hc127d3"].isna()
+        #     & dat["hc127d4"].isna()
+        # ),
         (
-            dat["hc032d1"].isna()
-            & dat["hc032d2"].isna()
-            & dat["hc032d3"].isna()
-            & dat["hc032dno"].isna()
-            & dat["hc127d1"].isna()
-            & dat["hc127d2"].isna()
-            & dat["hc127d3"].isna()
-            & dat["hc127d4"].isna()
+            (dat["hc032d1"] == 0)
+            & (dat["hc032d2"] == 0)
+            & (dat["hc032d3"] == 0)
+            & (dat["hc032dno"] == 0)
+            & (dat["hc127d1"] == 0)
+            & (dat["hc127d2"] == 0)
+            & (dat["hc127d3"] == 0)
+            & (dat["hc127d4"] == 0)
         ),
         # & (dat["hc127dno"] == 1),
     ]
-    _val = [1, np.nan]
-    dat["home_care"] = np.select(_cond, _val, default=0)
+    _val = [1, 0]
+    dat["home_care"] = np.select(_cond, _val, default=np.nan)
 
     _cond = [
         (dat["nursing_home"] == 1) | (dat["home_care"] == 1),
@@ -472,7 +492,7 @@ def create_care_variables(dat):
             )
         )
         | (
-            (dat["wave"].isin([WAVE_6, WAVE_7, WAVE_8]))
+            (dat["wave"].isin([WAVE_6, WAVE_7, WAVE_8, WAVE_9]))
             & (
                 (
                     dat["sp003_1"]
@@ -503,18 +523,376 @@ def create_care_variables(dat):
 
     # informal care general
     _cond = [
-        (dat["sp021d20"] == 1) | (dat["sp002_"] == 1),
+        (dat["sp020_"] == 1)  # care from inside the household with personal care
+        | (
+            (
+                dat["sp002_"] == 1
+            )  # anyone from the outside the household given any type of help
+            & (
+                (dat["sp005_1"] == DAILY)
+                | (dat["sp005_2"] == DAILY)
+                | (dat["sp005_3"] == DAILY)
+            )
+        ),
+        # (dat["sp020_"].isna()) & (dat["sp002_"].isna()),
+        (dat["sp020_"] == ANSWER_NO) & (dat["sp002_"] == ANSWER_NO),
+    ]
+    # _val = [1, np.nan]
+    _val = [1, 0]
+    dat["informal_care"] = np.select(_cond, _val, default=np.nan)
+
+    # ================================================================================
+    # NEW
+    # ================================================================================
+
+    outside_daily_count = (
+        ((dat["sp003_1"] >= 1) & (dat["sp005_1"] == DAILY)).astype(int)
+        + ((dat["sp003_2"] >= 1) & (dat["sp005_2"] == DAILY)).astype(int)
+        + ((dat["sp003_3"] >= 1) & (dat["sp005_3"] == DAILY)).astype(int)
+    )
+    # inside_count = dat.filter(regex=r"^sp020_").eq(1).sum(axis=1)
+    inside_count = dat["sp020_"].eq(ANSWER_YES).astype(int)
+
+    _cond = [
+        # Case 1:  two or more informal caregivers in total
+        (inside_count + outside_daily_count) >= 1,
+        # Case 2:  explicitly no informal care at all
+        (dat["sp020_"] == ANSWER_NO) & (dat["sp002_"] == ANSWER_NO),
+        # (dat.filter(regex=r"^sp020_").eq(ANSWER_NO).all(axis=1))
+        # & (dat["sp002_"] == ANSWER_NO),
+    ]
+    _val = [1, 0]
+    dat["informal_care_daily"] = np.select(_cond, _val, default=np.nan)
+
+    _cond = [
+        # Case 1:  two or more informal caregivers in total
+        (inside_count + outside_daily_count) >= 2,
+        (inside_count + outside_daily_count) == 1,
+        # Case 2:  explicitly no informal care at all
+        # (dat["sp020_"] == ANSWER_NO) & (dat["sp002_"] == ANSWER_NO),
+    ]
+    _val = [1, 0]
+    dat["informal_care_daily_two"] = np.select(_cond, _val, default=np.nan)
+
+    # table(dat["informal_care_daily_two"])
+    # np.mean(dat["informal_care_daily_two"])
+    # np.float64(0.1617473435655254)
+    # np.var(dat["informal_care_daily_two"])
+    # np.float64(0.13558514041502123)
+    # np.std(dat["informal_care_daily_two"])
+    # np.float64(0.36821887569083317)
+
+    # ============================================================================
+    # Children from inside household
+    # ============================================================================
+    who_is_caregiver_w1_2_5 = [f"sp021d{n}" for n in range(10, 12)]
+    at_least_one_child_provides_care_from_inside_hh = (
+        # Waves 1, 2, 5  ─ any of sp021d10…19 equals 1
+        # (
+        #     dat["wave"].isin([WAVE_1, WAVE_2, WAVE_5])
+        #     & (dat[child_vars_w1_2_5].eq(1).any(axis=1))
+        # )
+        (
+            dat["wave"].isin([WAVE_1, WAVE_2, WAVE_5])
+            & (
+                (dat[who_is_caregiver_w1_2_5] >= CHILD_ONE_GAVE_HELP)
+                & (dat[who_is_caregiver_w1_2_5] <= OTHER_CHILD_GAVE_HELP)
+            ).sum(axis=1)
+            >= 1
+        )
+        |
+        # Wave 4  ─ special social-network logic
+        ((dat["wave"] == WAVE_4) & (dat.apply(_has_child_in_wave4, axis=1)))
+        |
+        # Waves 6-9  ─ sp021d10 equals 1
+        (dat["wave"].isin([WAVE_6, WAVE_7, WAVE_8, WAVE_9]) & (dat["sp021d10"] == 1))
+    )
+
+    # ============================================================================
+    # Children from outside household
+    # ============================================================================
+    at_least_one_child_provides_care_from_outside_hh = (
+        # Waves 1, 2, 5  ─ “child” is any value in [CHILD_ONE_GAVE_HELP, OTHER_CHILD_GAVE_HELP]
+        (
+            dat["wave"].isin([WAVE_1, WAVE_2, WAVE_5])
+            & (
+                (
+                    (dat[WHO_IS_CAREGIVER_EXTRA_HH] >= CHILD_ONE_GAVE_HELP)
+                    & (dat[WHO_IS_CAREGIVER_EXTRA_HH] <= OTHER_CHILD_GAVE_HELP)
+                ).sum(axis=1)
+                >= 1
+            )
+        )
+        |
+        # Wave 4  ─ special social-network coding
+        ((dat["wave"] == WAVE_4) & (dat.apply(_count_children_wave4, axis=1) >= 1))
+        |
+        # Waves 6-9  ─ “child” is exactly CHILD_ONE_GAVE_HELP
+        (
+            dat["wave"].isin([WAVE_6, WAVE_7, WAVE_8, WAVE_9])
+            & (dat[WHO_IS_CAREGIVER_EXTRA_HH].eq(CHILD_ONE_GAVE_HELP).sum(axis=1) >= 1)
+        )
+    )
+    at_least_two_children_provide_care_from_outside_hh = (
+        # Waves 1, 2, 5  ─ “child” is any value in [CHILD_ONE_GAVE_HELP, OTHER_CHILD_GAVE_HELP]
+        (
+            dat["wave"].isin([WAVE_1, WAVE_2, WAVE_5])
+            & (
+                (
+                    (dat[WHO_IS_CAREGIVER_EXTRA_HH] >= CHILD_ONE_GAVE_HELP)
+                    & (dat[WHO_IS_CAREGIVER_EXTRA_HH] <= OTHER_CHILD_GAVE_HELP)
+                ).sum(axis=1)
+                >= 2
+            )
+        )
+        |
+        # Wave 4  ─ special social-network coding
+        ((dat["wave"] == WAVE_4) & (dat.apply(_count_children_wave4, axis=1) >= 2))
+        |
+        # Waves 6-9  ─ “child” is exactly CHILD_ONE_GAVE_HELP
+        (
+            dat["wave"].isin([WAVE_6, WAVE_7, WAVE_8, WAVE_9])
+            & (dat[WHO_IS_CAREGIVER_EXTRA_HH].eq(CHILD_ONE_GAVE_HELP).sum(axis=1) >= 2)
+        )
+    )
+
+    # ============================================================================
+
+    # ------------------------------------------------------------------
+    # Helper: Is <code> a child in WAVE-4?
+    # keeps the naming pattern you fixed earlier (sp021d1sn … sp021d7sn)
+    # ------------------------------------------------------------------
+    def _is_child_wave4(who: int, row) -> bool:
+        if who == 19:  # direct child
+            return True
+        if 101 <= who <= 107:  # social-network person 1–7
+            return row.get(f"sn005_{who-100}", None) == 10
+        return False
+
+    # ------------------------------------------------------------------
+    # Helper: count *daily* child caregivers OUTSIDE the household
+    # across ALL waves (sp003_1…3 paired with sp005_1…3)
+    # ------------------------------------------------------------------
+    def _count_daily_children_outside(row) -> int:
+        cnt = 0
+        wave = row["wave"]
+
+        for idx in (1, 2, 3):
+            who = row.get(f"sp003_{idx}", np.nan)
+            freq = row.get(f"sp005_{idx}", np.nan)
+
+            # must give help *and* do so daily
+            if pd.isna(who) or pd.isna(freq) or freq != DAILY:
+                continue
+
+            # ----- Wave-specific child test --------------------------------
+            if wave in (WAVE_1, WAVE_2, WAVE_5):
+                if CHILD_ONE_GAVE_HELP <= who <= OTHER_CHILD_GAVE_HELP:
+                    cnt += 1
+
+            elif wave == WAVE_4:
+                if _is_child_wave4(who, row):
+                    cnt += 1
+
+            elif wave in (WAVE_6, WAVE_7, WAVE_8, WAVE_9):
+                if who == CHILD_ONE_GAVE_HELP:
+                    cnt += 1
+
+        return cnt
+
+    # vectorised Series with the per-row counts
+    daily_child_outside_cnt = dat.apply(_count_daily_children_outside, axis=1)
+
+    # ------------------------------------------------------------------
+    # NEW masks that include the DAILY condition
+    # ------------------------------------------------------------------
+    exactly_one_child_provides_care_from_inside_hh = (
+        at_least_one_child_provides_care_from_inside_hh & (inside_count == 1)
+    )
+    exactly_one_child_provides_care_from_outside_hh = (
+        at_least_one_child_provides_care_from_outside_hh
+        & (daily_child_outside_cnt == 1)
+    )
+
+    _exactly_one_child_provides_care_from_inside_hh = (
+        at_least_one_child_provides_care_from_inside_hh.copy()
+    )
+    _exactly_one_child_provides_care_from_outside_hh = daily_child_outside_cnt == 1
+
+    at_least_one_child_provides_care_from_outside_hh = daily_child_outside_cnt >= 1
+    at_least_two_children_provide_care_from_outside_hh = daily_child_outside_cnt >= 2
+
+    # =============================================================================
+
+    _cond = [
+        at_least_one_child_provides_care_from_inside_hh
+        | at_least_one_child_provides_care_from_outside_hh,
+        (inside_count + outside_daily_count) >= 1,
+    ]
+    _val = [1, 0]
+    dat["informal_care_daily_child"] = np.select(_cond, _val, default=np.nan)
+
+    _cond = [
+        at_least_two_children_provide_care_from_outside_hh
+        | (
+            (
+                at_least_one_child_provides_care_from_inside_hh
+                & at_least_one_child_provides_care_from_outside_hh
+            )
+        ),
+        (inside_count + outside_daily_count) >= 1,
+    ]
+    _val = [1, 0]
+    dat["informal_care_daily_two_children"] = np.select(_cond, _val, default=np.nan)
+
+    _cond = [
+        at_least_two_children_provide_care_from_outside_hh,
+        at_least_one_child_provides_care_from_inside_hh
+        & at_least_one_child_provides_care_from_outside_hh,
+        (
+            at_least_one_child_provides_care_from_inside_hh
+            | at_least_one_child_provides_care_from_outside_hh
+        ),
+    ]
+    _val = [1, 1, 0]
+    dat["informal_care_daily_two_children_versus_one"] = np.select(
+        _cond, _val, default=np.nan
+    )
+
+    # _cond = [
+    #     at_least_two_children_provide_care_from_outside_hh,
+    #     at_least_one_child_provides_care_from_inside_hh
+    #     & at_least_one_child_provides_care_from_outside_hh,
+    #     (inside_count + outside_daily_count) >= 1,
+    # ]
+    # _val = [1, 1, 0]
+    # dat["informal_care_daily_two_children_cond"] = np.select(
+    #     _cond, _val, default=np.nan
+    # )
+
+    at_least_one_child_provides_care = (
+        at_least_one_child_provides_care_from_inside_hh
+        | at_least_one_child_provides_care_from_outside_hh
+    )
+    at_least_two_children_provide_care = (
+        at_least_two_children_provide_care_from_outside_hh
+        | (
+            at_least_one_child_provides_care_from_inside_hh
+            & at_least_one_child_provides_care_from_outside_hh
+        )
+    )
+
+    # ────────────────────────────────────────────────────────────────
+    # 0 Baseline: receives any informal care (inside YES  OR  outside-daily ≥1)
+    # ────────────────────────────────────────────────────────────────
+    receives_informal_care = (inside_count + outside_daily_count) >= 1
+
+    # ────────────────────────────────────────────────────────────────
+    # 1 Has help from at least ONE child (inside OR outside)
+    # ────────────────────────────────────────────────────────────────
+    one_child_caregiver = (
+        at_least_one_child_provides_care_from_inside_hh
+        | at_least_one_child_provides_care_from_outside_hh
+    )
+
+    # ────────────────────────────────────────────────────────────────
+    # 2 Has help from at least TWO children  (inside + outside combined)
+    #     • any combination totalling ≥2 is accepted
+    #       – ≥2 children outside
+    #       – 1 inside  + 1 outside
+    #       – ≥2 children inside (possible in Waves 1,2,5)
+    # ────────────────────────────────────────────────────────────────
+    # ­--- 2.a  two children outside (mask already exists) ­---
+    two_children_outside = at_least_two_children_provide_care_from_outside_hh
+
+    # ­--- 2.b  one child inside  + one child outside ­---
+    one_in_one_out = (
+        at_least_one_child_provides_care_from_inside_hh
+        & at_least_one_child_provides_care_from_outside_hh
+    )
+
+    two_children_caregivers = two_children_outside | one_in_one_out
+
+    # ────────────────────────────────────────────────────────────────
+    # 3 Shares among everyone who receives informal care
+    # ────────────────────────────────────────────────────────────────
+    base_n = receives_informal_care.sum()
+
+    share_one_child = (
+        (receives_informal_care & one_child_caregiver).sum() / base_n
+    ) * 100
+    share_two_child = (
+        (receives_informal_care & two_children_caregivers).sum() / base_n
+    ) * 100
+
+    _cond = [
+        (dat["nursing_home"] == 1)
+        | (dat["home_care"] == 1)
+        | dat["informal_care_daily"]
+        == 1,
+        (dat["nursing_home"].isna())
+        & (dat["home_care"].isna())
+        & (dat["informal_care_daily"].isna()),
+    ]
+    _val = [1, np.nan]
+    dat["any_care_daily"] = np.select(_cond, _val, default=0)
+
+    _cond = [
+        (dat["nursing_home"] == 1)
+        | (dat["home_care"] == 1)
+        | dat["informal_care_daily"]
+        == 1,
+        (dat["nursing_home"].isna())
+        & (dat["home_care"].isna())
+        & (dat["informal_care_daily"].isna()),
+    ]
+    _val = [1, 0]
+    dat["any_care_daily_alt"] = np.select(_cond, _val, default=np.nan)
+
+    breakpoint()
+
+    # (Pdb++) dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1), "home_care"].sum() / dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1)].shape()
+    # *** TypeError: 'tuple' object is not callable
+    # (Pdb++) dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1), "home_care"].sum() / dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1)].shape(1)
+    # *** TypeError: 'tuple' object is not callable
+    # (Pdb++) dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1), "home_care"].sum() / dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1)].shape(0)
+    # *** TypeError: 'tuple' object is not callable
+    # (Pdb++) dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1), "home_care"].sum() / dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1)].shape[0]
+    # np.float64(0.6747787610619469)
+    # (Pdb++) dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 1) & (dat["sex"] == 1), "home_care"].sum() / dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1)].shape[0]
+    # np.float64(1.2057522123893805)
+    # (Pdb++) dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 1) & (dat["sex"] == 1), "home_care"].sum() / dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 1) & (dat["sex"] == 1)].shape[0]
+    # np.float64(0.7161629434954008)
+    # (Pdb++) dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 1) & (dat["sex"] == 1), "nursing_home"].sum() / dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 1) & (dat["sex"] == 1)].shape[0]
+    # np.float64(0.023653088042049936)
+    # (Pdb++) dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1), "nursing_home"].sum() / dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1)].shape[0]
+    # np.float64(0.011061946902654867)
+    # (Pdb++) dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1), "informal_care_daily_child"].sum() / dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1)].shape[0]
+    # np.float64(0.13053097345132744)
+    # (Pdb++) dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 1) & (dat["sex"] == 1), "informal_care_daily_child"].sum() / dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 1) & (dat["sex"] == 1)].shape[0]
+    # np.float64(0.18396846254927726)
+
+    # informal care from outside the household
+    _cond = [
+        (dat["sp021d10"] == 1) | (dat["sp002_"] == 1),
         (dat["sp021d20"].isna()) & (dat["sp002_"].isna()),
     ]
     _val = [1, np.nan]
-    dat["informal_care_general"] = np.select(_cond, _val, default=0)
+    dat["informal_care_outside"] = np.select(_cond, _val, default=0)
 
     _cond = [
-        (dat["formal_care"] == 1) & (dat["informal_care_child"] == 1),
-        (dat["formal_care"].isna()) & (dat["informal_care_child"].isna()),
+        (dat["home_care"] == 1) & (dat["informal_care_general"] == 1),
+        (dat["home_care"].isna()) & (dat["informal_care_general"].isna()),
     ]
     _val = [1, np.nan]
-    dat["combination_care"] = np.select(_cond, _val, default=0)
+    dat["combination_care_general"] = np.select(_cond, _val, default=0)
+
+    _cond = [
+        (dat["home_care"] == 1) & (dat["informal_care_child"] == 1),
+        (dat["home_care"].isna()) & (dat["informal_care_child"].isna()),
+    ]
+    _val = [1, np.nan]
+    dat["combination_care_child"] = np.select(_cond, _val, default=0)
 
     _cond = [
         (dat["home_care"] == 1) | (dat["informal_care_general"] == 1),
@@ -741,3 +1119,54 @@ def _process_negative_values(dat):
         dat[col] = np.where(dat[col] < 0, np.nan, dat[col])
 
     return dat
+
+
+def _count_children_wave4(row) -> int:
+    """Return the number (0-3) of sp003_* positions that are children in Wave 4."""
+    cnt = 0
+    for col in WHO_IS_CAREGIVER_EXTRA_HH:
+        v = row[col]
+
+        # direct code “child”
+        if v == 19:
+            cnt += 1
+
+        # social-network person 1-7  →  child if sn005_x == 10
+        elif 101 <= v <= 107:
+            sn_idx = v - 100  # 1 … 7
+            if row[f"sn005_{sn_idx}"] == 10:
+                cnt += 1
+    return cnt
+
+
+def _has_child_in_wave4(row) -> bool:
+    """Return True if at least one child in the household gave help (Wave 4 rules)."""
+    # direct “child” code
+    if row.get("sp021d19", 0) == 1:
+        return True
+
+    # social-network persons 1-7 (codes 1-7)
+    for idx in range(1, 8):
+        if (
+            row.get(f"sp021d{idx}sn", 0) == 1  # person gave help
+            and row.get(f"sn005_{idx}", None) == 10  # that person is a child
+        ):
+            return True
+
+    return False
+
+
+def _count_children_inside_hh_wave4(row) -> int:
+    """Return how many child caregivers (0-8) helped inside the HH in Wave 4."""
+    cnt = 0
+
+    # direct child
+    if row.get("sp021d19", 0) == 1:
+        cnt += 1
+
+    # social-network 1-7
+    for idx in range(1, 8):
+        if row.get(f"sp021d{idx}sn", 0) == 1 and row.get(f"sn005_{idx}", None) == 10:
+            cnt += 1
+
+    return cnt

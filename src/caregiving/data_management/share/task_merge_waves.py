@@ -490,6 +490,28 @@ KEYS_TO_REMOVE_WAVES_8_AND_9 = {
     ],
 }
 
+WAVE_4_SN_PERSONS_CARE = {
+    # Social network person: relationship (only waves 4, 6, 8, 9)
+    "sn": [
+        "sn005_1",
+        "sn005_2",
+        "sn005_3",
+        "sn005_4",
+        "sn005_5",
+        "sn005_6",
+        "sn005_7",
+    ],
+    "sp": [
+        "sp021d1sn",  # received help with personal care from social network person 1
+        "sp021d2sn",  # received help with personal care from social network person 2
+        "sp021d3sn",  # received help with personal care from social network person 3
+        "sp021d4sn",  # received help with personal care from social network person 4
+        "sp021d5sn",  # received help with personal care from social network person 5
+        "sp021d6sn",  # received help with personal care from social network person 6
+        "sp021d7sn",  # received help with personal care from social network person 7
+    ],
+}
+
 GV_VARS = [
     "gender",
     "age",  # Age of respondent (based on interview year)
@@ -603,7 +625,7 @@ def task_merge_waves_and_modules(  # noqa: PLR0915
         KEYS_TO_REMOVE_WAVE2,
     )
     variables_wave4 = filter_nested_dict(
-        ALL_VARIABLES | _weights_w4,
+        ALL_VARIABLES | WAVE_4_SN_PERSONS_CARE | _weights_w4,
         KEYS_TO_REMOVE_WAVE4,
     )
     variables_wave5 = filter_nested_dict(
