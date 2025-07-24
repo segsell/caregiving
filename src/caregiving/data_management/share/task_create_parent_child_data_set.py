@@ -438,30 +438,30 @@ def create_care_variables(dat):
         | (dat["hc127d3"] == 1)
         | (dat["hc127d4"] == 1),
         # | (dat["hc127dno"] == 0),
-        # (
-        #     dat["hc032d1"].isna()
-        #     & dat["hc032d2"].isna()
-        #     & dat["hc032d3"].isna()
-        #     & dat["hc032dno"].isna()
-        #     & dat["hc127d1"].isna()
-        #     & dat["hc127d2"].isna()
-        #     & dat["hc127d3"].isna()
-        #     & dat["hc127d4"].isna()
-        # ),
         (
-            (dat["hc032d1"] == 0)
-            & (dat["hc032d2"] == 0)
-            & (dat["hc032d3"] == 0)
-            & (dat["hc032dno"] == 0)
-            & (dat["hc127d1"] == 0)
-            & (dat["hc127d2"] == 0)
-            & (dat["hc127d3"] == 0)
-            & (dat["hc127d4"] == 0)
+            dat["hc032d1"].isna()
+            & dat["hc032d2"].isna()
+            & dat["hc032d3"].isna()
+            & dat["hc032dno"].isna()
+            & dat["hc127d1"].isna()
+            & dat["hc127d2"].isna()
+            & dat["hc127d3"].isna()
+            & dat["hc127d4"].isna()
         ),
+        # (
+        #     (dat["hc032d1"] == 0)
+        #     & (dat["hc032d2"] == 0)
+        #     & (dat["hc032d3"] == 0)
+        #     & (dat["hc032dno"] == 0)
+        #     & (dat["hc127d1"] == 0)
+        #     & (dat["hc127d2"] == 0)
+        #     & (dat["hc127d3"] == 0)
+        #     & (dat["hc127d4"] == 0)
+        # ),
         # & (dat["hc127dno"] == 1),
     ]
-    _val = [1, 0]
-    dat["home_care"] = np.select(_cond, _val, default=np.nan)
+    _val = [1, np.nan]
+    dat["home_care"] = np.select(_cond, _val, default=0)
 
     _cond = [
         (dat["nursing_home"] == 1) | (dat["home_care"] == 1),
@@ -525,21 +525,40 @@ def create_care_variables(dat):
     _cond = [
         (dat["sp020_"] == 1)  # care from inside the household with personal care
         | (
-            (
-                dat["sp002_"] == 1
-            )  # anyone from the outside the household given any type of help
-            & (
-                (dat["sp005_1"] == DAILY)
-                | (dat["sp005_2"] == DAILY)
-                | (dat["sp005_3"] == DAILY)
-            )
+            dat["sp002_"]
+            == 1
+            # anyone from the outside the household given any type of help
+            # & (
+            #     (dat["sp005_1"] == DAILY)
+            #     | (dat["sp005_2"] == DAILY)
+            #     | (dat["sp005_3"] == DAILY)
+            # )
         ),
-        # (dat["sp020_"].isna()) & (dat["sp002_"].isna()),
-        (dat["sp020_"] == ANSWER_NO) & (dat["sp002_"] == ANSWER_NO),
+        (dat["sp020_"].isna()) & (dat["sp002_"].isna()),
+        # (dat["sp020_"] == ANSWER_NO) & (dat["sp002_"] == ANSWER_NO),
     ]
+    _val = [1, np.nan]
+    # _val = [1, 0]
+    dat["informal_care_general"] = np.select(_cond, _val, default=0)
+
+    # _cond = [
+    #     (dat["sp020_"] == 1)  # care from inside the household with personal care
+    #     | (
+    #         (
+    #             dat["sp002_"] == 1
+    #         )  # anyone from the outside the household given any type of help
+    #         # & (
+    #         #     (dat["sp005_1"] == DAILY)
+    #         #     | (dat["sp005_2"] == DAILY)
+    #         #     | (dat["sp005_3"] == DAILY)
+    #         # )
+    #     ),
+    #     (dat["sp020_"].isna()) & (dat["sp002_"].isna()),
+    #     # (dat["sp020_"] == ANSWER_NO) & (dat["sp002_"] == ANSWER_NO),
+    # ]
     # _val = [1, np.nan]
-    _val = [1, 0]
-    dat["informal_care"] = np.select(_cond, _val, default=np.nan)
+    # # _val = [1, 0]
+    # dat["informal_care_general_alt"] = np.select(_cond, _val, default=0)
 
     # ================================================================================
     # NEW
@@ -735,10 +754,8 @@ def create_care_variables(dat):
     _cond = [
         at_least_two_children_provide_care_from_outside_hh
         | (
-            (
-                at_least_one_child_provides_care_from_inside_hh
-                & at_least_one_child_provides_care_from_outside_hh
-            )
+            at_least_one_child_provides_care_from_inside_hh
+            & at_least_one_child_provides_care_from_outside_hh
         ),
         (inside_count + outside_daily_count) >= 1,
     ]
@@ -849,8 +866,6 @@ def create_care_variables(dat):
     _val = [1, 0]
     dat["any_care_daily_alt"] = np.select(_cond, _val, default=np.nan)
 
-    breakpoint()
-
     # (Pdb++) dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1), "home_care"].sum() / dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1)].shape()
     # *** TypeError: 'tuple' object is not callable
     # (Pdb++) dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1), "home_care"].sum() / dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1)].shape(1)
@@ -901,6 +916,18 @@ def create_care_variables(dat):
     _val = [1, 0]
     dat["any_care"] = np.select(_cond, _val, default=np.nan)
 
+    _cond = [
+        (dat["home_care"] == 1) | (dat["informal_care_general"] == 1),
+        (dat["home_care"].isna())
+        & (dat["informal_care_general"].isna())
+        & (dat["nursing_home"].isna()),
+    ]
+    _val = [1, np.nan]
+    dat["any_care_no_nursing_home"] = np.select(_cond, _val, default=0)
+
+    # baseline = (dat["home_care"] >= 0) | (dat["nursing_home"] >= 0) | (dat["informal_care_general"] >= 0)
+    # breakpoint()
+
     # lagged care
     dat = dat.sort_values(by=["mergeid", "int_year"], ascending=[True, True])
 
@@ -916,7 +943,7 @@ def create_care_variables(dat):
     _val = [0, 1]
     dat["no_formal_care"] = np.select(_cond, _val, default=np.nan)
 
-    _cond = [dat["combination_care"] == 1, dat["combination_care"] == 0]
+    _cond = [dat["combination_care_general"] == 1, dat["combination_care_general"] == 0]
     _val = [0, 1]
     dat["no_combination_care"] = np.select(_cond, _val, default=np.nan)
 
@@ -931,6 +958,126 @@ def create_care_variables(dat):
     _val = [0, 1]
     dat["no_care"] = np.select(_cond, _val, default=np.nan)
 
+    # =============================================================================
+    # Care mix shares with common denominator
+    # =============================================================================
+
+    # ────────────────────────────────────────────────────────────────
+    # Pure-INFORMAL-care (no home care)
+    #     • 1  → informal_care_general == 1  AND  home_care != 1
+    #     • NA → both variables NA   (keeps your missing logic)
+    #     • 0  → everyone else
+    # ────────────────────────────────────────────────────────────────
+    _cond = [
+        (dat["informal_care_general"] == 1) & (dat["home_care"] != 1),
+        (dat["informal_care_general"].isna()) & (dat["home_care"].isna()),
+    ]
+    _val = [1, np.nan]
+    dat["pure_informal_care_general"] = np.select(_cond, _val, default=0)
+
+    # ────────────────────────────────────────────────────────────────
+    # Pure-HOME-care (no informal care)
+    # ────────────────────────────────────────────────────────────────
+    _cond = [
+        (dat["home_care"] == 1) & (dat["informal_care_general"] != 1),
+        (dat["home_care"].isna()) & (dat["informal_care_general"].isna()),
+    ]
+    _val = [1, np.nan]
+    dat["pure_home_care"] = np.select(_cond, _val, default=0)
+
+    # ────────────────────────────────────────────────────────────────
+    # Shares that add up to 1  (care-recipient mix)
+    #     Denominator = everyone who has ≥1 of the four care types
+    # ────────────────────────────────────────────────────────────────
+    care_cols = [
+        "pure_informal_care_general",
+        "pure_home_care",
+        "combination_care_general",
+        # "nursing_home",
+    ]
+
+    flags = dat[care_cols].fillna(0).astype(int)  # treat NA as 0
+
+    receives_any = flags.any(axis=1)  # baseline subset
+    denom = receives_any.sum()
+
+    shares = (flags[receives_any] == 1).sum() / denom
+    print(shares)
+    # Example output (sums to 1):
+    # pure_informal_care_general    0.65
+    # pure_home_care                0.20
+    # combination_care_general      0.13
+    # nursing_home                  0.02
+    # dtype: float64
+
+    # rows with ≥1 of the four flags
+    dat["receives_any_care"] = (
+        dat[care_cols].fillna(0).astype(int).any(axis=1).astype(int)
+    )
+
+    # simple age bands – edit to taste
+    age_bins = [0, 64, 74, 84, np.inf]
+    age_lbls = ["≤64", "65-74", "75-84", "85+"]
+    dat["age_group"] = pd.cut(dat["age"], bins=age_bins, labels=age_lbls, right=True)
+
+    # ───────────────────────────────────────────────────────────────
+    # 2.  Keep only care recipients, then compute shares
+    #     • group by sex (sex == 1) and age_group
+    #     • mean() of a 0/1 flag = share
+    # ───────────────────────────────────────────────────────────────
+    subset = dat[dat["receives_any_care"] == 1].copy()
+
+    shares_by_grp = subset.groupby(["sex", "age_group"], observed=True)[
+        care_cols
+    ].mean()  # observed=True → no empty rows  # mean of 0/1 flags = proportion
+
+    print(shares_by_grp.head())
+
+    # Survey weights
+
+    # 1. baseline subset: only care recipients
+    subset = dat.loc[
+        dat[care_cols].fillna(0).astype(int).any(axis=1),  # receives any care
+        care_cols + ["sex", "age", "hh_weight"],  # keep needed cols
+    ].copy()
+
+    # 2. add age bands (edit breaks to taste)
+    age_bins = [0, 64, 74, 84, np.inf]
+    subset["age_group"] = pd.cut(
+        subset["age"],
+        bins=age_bins,
+        labels=["≤64", "65-74", "75-84", "85+"],
+        right=True,
+    )
+
+    # 3. weighted shares: one custom lambda is enough
+    def wmean(col):
+        return (col * subset["hh_weight"]).sum() / subset["hh_weight"].sum()
+
+    shares_w = subset.groupby(["sex", "age_group"], observed=True).apply(
+        lambda g: (
+            g[care_cols].multiply(g["hh_weight"], axis=0).sum() / g["hh_weight"].sum()
+        )
+    )
+
+    print(shares_w.head())
+
+    shares_w_hh = weighted_shares_and_counts(
+        dat,
+        care_cols=care_cols,
+        weight_col="hh_weight",
+        group_cols=["sex", "age_group"],
+    )
+
+    shares_w_ind = weighted_shares_and_counts(
+        dat, care_cols, weight_col="ind_weight", group_cols=["sex", "age_group"]
+    )
+    shares_w_design = weighted_shares_and_counts(
+        dat, care_cols, weight_col="design_weight", group_cols=["sex", "age_group"]
+    )
+
+    # ===================================================================================
+
     dat = _create_lagged_var(dat, "no_care")
     dat = _create_lagged_var(dat, "home_care")
     dat = _create_lagged_var(dat, "formal_care")
@@ -942,6 +1089,104 @@ def create_care_variables(dat):
     dat = _create_lagged_var(dat, "no_formal_care")
     dat = _create_lagged_var(dat, "no_combination_care")
     return _create_lagged_var(dat, "no_home_care")
+
+
+def weighted_shares_and_counts(
+    df: pd.DataFrame,
+    care_cols,
+    weight_col: str,
+    group_cols,
+    *,
+    show_counts: bool = False,
+    show_vars: bool = False,
+) -> pd.DataFrame:
+    """
+    Compute weighted shares (and optionally counts & variances) of mutually
+    exclusive 0/1 care-type flags within sub-groups.
+
+    Parameters
+    ----------
+    df          : full DataFrame
+    care_cols   : list[str]
+                  column names of mutually-exclusive 0/1 flags
+    weight_col  : str
+                  name of the weight variable
+    group_cols  : list[str]
+                  columns to group by (e.g. ["sex", "age_band"])
+    show_counts : bool, default False
+                  include <flag>_count columns (raw # of 1s)
+    show_vars   : bool, default False
+                  include <flag>_var   columns (weighted variance)
+
+    Returns
+    -------
+    DataFrame indexed by *group_cols* with at least
+        <flag>_share  columns.
+    Additional columns appear depending on the switches.
+    """
+
+    def _agg(group: pd.DataFrame) -> pd.Series:
+        w = group[weight_col]
+        w_sum = w.sum()
+        w_sq_sum = (w**2).sum()
+        n_eff = (w_sum**2) / w_sq_sum if w_sq_sum > 0 else np.nan
+
+        out = {}
+
+        for col in care_cols:
+            share_num = (group[col] * w).sum()
+            share = share_num / w_sum if w_sum > 0 else np.nan
+            out[f"{col}_share"] = share
+
+            if show_counts:
+                out[f"{col}_count"] = group[col].sum()
+
+            if show_vars:
+                var = share * (1 - share) / n_eff if n_eff > 0 else np.nan
+                out[f"{col}_var"] = var
+
+        return pd.Series(out)
+
+    # keep only rows that receive any care (1 in at least one flag)
+    mask_any = df[care_cols].fillna(0).astype(int).any(axis=1)
+
+    return df.loc[mask_any].groupby(group_cols, observed=True).apply(_agg)
+
+
+# def weighted_shares_and_counts(
+#     df: pd.DataFrame, care_cols, weight_col: str, group_cols
+# ):
+#     """
+#     Parameters
+#     ----------
+#     df          : the full DataFrame
+#     care_cols   : list of 0/1 flags that are mutually exclusive
+#     weight_col  : name of the survey-weight column to use
+#     group_cols  : list of columns to group by (e.g. ["sex", "age_group"])
+
+#     Returns
+#     -------
+#     DataFrame indexed by group_cols.
+#     For every care flag `c` two columns are created:
+#         c + "_share"  – weighted share (sums to 1 within a group)
+#         c + "_count"  – un-weighted #rows with c == 1 in that group
+#     """
+
+#     def _agg(group):
+#         w = group[weight_col]
+#         weight_sum = w.sum()
+
+#         result = {}
+#         for c in care_cols:
+#             num = (group[c] * w).sum()  # weighted numerator
+#             share = num / weight_sum if weight_sum > 0 else np.nan
+#             result[f"{c}_share"] = share
+#             result[f"{c}_count"] = group[c].sum()  # simple count of 1-flags
+#         return pd.Series(result)
+
+#     # keep only rows that receive at least one type of care
+#     mask_any = df[care_cols].fillna(0).astype(int).any(axis=1)
+#     return df.loc[mask_any].groupby(group_cols, observed=True).apply(_agg)
 
 
 def create_care_combinations(dat, informal_care_var):
