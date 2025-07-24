@@ -86,28 +86,28 @@ def task_create_parent_child_data(
     path_to_main: Annotated[Path, Product] = BLD
     / "data"
     / "share_parent_child_data.csv",
-    path_to_design_weight: Annotated[Path, Product] = BLD
-    / "data"
-    / "share_parent_child_data_design_weight.csv",
-    path_to_hh_weight: Annotated[Path, Product] = BLD
-    / "data"
-    / "share_parent_child_data_hh_weight.csv",
-    path_to_ind_weight: Annotated[Path, Product] = BLD
-    / "data"
-    / "share_parent_child_data_ind_weight.csv",
+    # path_to_design_weight: Annotated[Path, Product] = BLD
+    # / "data"
+    # / "share_parent_child_data_design_weight.csv",
+    # path_to_hh_weight: Annotated[Path, Product] = BLD
+    # / "data"
+    # / "share_parent_child_data_hh_weight.csv",
+    # path_to_ind_weight: Annotated[Path, Product] = BLD
+    # / "data"
+    # / "share_parent_child_data_ind_weight.csv",
     # parent couple - child
     path_to_main_couple: Annotated[Path, Product] = BLD
     / "data"
     / "share_parent_child_data_couple.csv",
-    path_to_design_weight_couple: Annotated[Path, Product] = BLD
-    / "data"
-    / "share_parent_child_data_couple_design_weight.csv",
-    path_to_hh_weight_couple: Annotated[Path, Product] = BLD
-    / "data"
-    / "share_parent_child_data_couple_hh_weight.csv",
-    path_to_ind_weight_couple: Annotated[Path, Product] = BLD
-    / "data"
-    / "share_parent_child_data_couple_ind_weight.csv",
+    # path_to_design_weight_couple: Annotated[Path, Product] = BLD
+    # / "data"
+    # / "share_parent_child_data_couple_design_weight.csv",
+    # path_to_hh_weight_couple: Annotated[Path, Product] = BLD
+    # / "data"
+    # / "share_parent_child_data_couple_hh_weight.csv",
+    # path_to_ind_weight_couple: Annotated[Path, Product] = BLD
+    # / "data"
+    # / "share_parent_child_data_couple_ind_weight.csv",
 ) -> None:
     """Create the estimation data set."""
     dat = pd.read_csv(path_to_raw_data)
@@ -137,26 +137,26 @@ def task_create_parent_child_data(
     dat = create_care_combinations(dat, informal_care_var="informal_care_child")
 
     dat = dat.reset_index(drop=True)
-    dat_design_weight = multiply_rows_with_weight(dat, weight="design_weight")
-    dat_hh_weight = multiply_rows_with_weight(dat, weight="hh_weight")
-    dat_ind_weight = multiply_rows_with_weight(dat, weight="ind_weight")
+    # dat_design_weight = multiply_rows_with_weight(dat, weight="design_weight")
+    # dat_hh_weight = multiply_rows_with_weight(dat, weight="hh_weight")
+    # dat_ind_weight = multiply_rows_with_weight(dat, weight="ind_weight")
 
     # Create couple data
     dat_couple = create_couple_data(dat)
-    dat_couple_design_weight = create_couple_data(dat_design_weight)
-    dat_couple_hh_weight = create_couple_data(dat_hh_weight)
-    dat_couple_ind_weight = create_couple_data(dat_ind_weight)
+    # dat_couple_design_weight = create_couple_data(dat_design_weight)
+    # dat_couple_hh_weight = create_couple_data(dat_hh_weight)
+    # dat_couple_ind_weight = create_couple_data(dat_ind_weight)
 
     # Save
     dat.to_csv(path_to_main, index=False)
-    dat_design_weight.to_csv(path_to_design_weight, index=False)
-    dat_hh_weight.to_csv(path_to_hh_weight, index=False)
-    dat_ind_weight.to_csv(path_to_ind_weight, index=False)
+    # dat_design_weight.to_csv(path_to_design_weight, index=False)
+    # dat_hh_weight.to_csv(path_to_hh_weight, index=False)
+    # dat_ind_weight.to_csv(path_to_ind_weight, index=False)
 
     dat_couple.to_csv(path_to_main_couple, index=False)
-    dat_couple_design_weight.to_csv(path_to_design_weight_couple, index=False)
-    dat_couple_hh_weight.to_csv(path_to_hh_weight_couple, index=False)
-    dat_couple_ind_weight.to_csv(path_to_ind_weight_couple, index=False)
+    # dat_couple_design_weight.to_csv(path_to_design_weight_couple, index=False)
+    # dat_couple_hh_weight.to_csv(path_to_hh_weight_couple, index=False)
+    # dat_couple_ind_weight.to_csv(path_to_ind_weight_couple, index=False)
 
 
 def create_couple_data(data):
@@ -215,7 +215,7 @@ def multiply_rows_with_weight(dat, weight):  # noqa: PLR0915
         "only_informal",
         "only_formal",
         "only_home_care",
-        "combination_care",
+        "combination_care_general",
         "nursing_home",
         "informal_care_child",
         "informal_care_general",
@@ -234,7 +234,7 @@ def multiply_rows_with_weight(dat, weight):  # noqa: PLR0915
         "lagged_formal_care",
         "lagged_informal_care_general",
         "lagged_informal_care_child",
-        "lagged_combination_care",
+        "lagged_combination_care_general",
         "lagged_no_informal_care_child",
         "lagged_no_home_care",
         "lagged_no_formal_care",
@@ -925,9 +925,6 @@ def create_care_variables(dat):
     _val = [1, np.nan]
     dat["any_care_no_nursing_home"] = np.select(_cond, _val, default=0)
 
-    # baseline = (dat["home_care"] >= 0) | (dat["nursing_home"] >= 0) | (dat["informal_care_general"] >= 0)
-    # breakpoint()
-
     # lagged care
     dat = dat.sort_values(by=["mergeid", "int_year"], ascending=[True, True])
 
@@ -1083,7 +1080,7 @@ def create_care_variables(dat):
     dat = _create_lagged_var(dat, "formal_care")
     dat = _create_lagged_var(dat, "informal_care_general")
     dat = _create_lagged_var(dat, "informal_care_child")
-    dat = _create_lagged_var(dat, "combination_care")
+    dat = _create_lagged_var(dat, "combination_care_general")
     dat = _create_lagged_var(dat, "any_care")
     dat = _create_lagged_var(dat, "no_informal_care_child")
     dat = _create_lagged_var(dat, "no_formal_care")

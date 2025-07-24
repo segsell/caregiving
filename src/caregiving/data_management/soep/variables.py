@@ -633,3 +633,29 @@ def clean_health_create_states(data):
     data["lag_health"] = data.groupby(["pid"])["health"].shift(1)
 
     return data
+
+
+def create_nursing_home(data):
+    """Create nursing home variable.
+
+    https://paneldata.org/soep-core/datasets/hl/hlf0155_h
+
+    # 1 Schüler- / Jugendlichen- / Studentenwohnheim
+    # 2 Wohnheim für Berufstätige
+    # 3 Altenheim / Pflegeheim / Seniorenresidenz
+    # 4 Sonstiges Heim / Unterkunft
+    # 5 Nein
+
+    """
+
+    data["nursing_home"] = np.select(
+        [
+            data["hlf0155_h"].isin([3, 4]),
+            data["hlf0155_h"].isin([1, 2]),
+            data["hlf0155_h"] == 5,
+        ],
+        [1, np.nan, 0],
+        default=np.nan,
+    )
+
+    return data
