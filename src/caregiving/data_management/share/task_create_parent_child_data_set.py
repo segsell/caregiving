@@ -7,6 +7,9 @@ import numpy as np
 import pandas as pd
 from pytask import Product
 
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
+
 from caregiving.config import BLD
 from caregiving.model.shared import (
     MAX_AGE_PARENTS,
@@ -80,6 +83,7 @@ def count(df_col):
 import pytask
 
 
+# @pytask.mark.skip()
 @pytask.mark.wip
 def task_create_parent_child_data(
     path_to_raw_data: Path = BLD / "data" / "share_data_parent_child_merged.csv",
@@ -903,11 +907,25 @@ def create_care_variables(dat):
     dat["combination_care_general"] = np.select(_cond, _val, default=0)
 
     _cond = [
+        (dat["home_care"] == 1) & (dat["informal_care_daily"] == 1),
+        (dat["home_care"].isna()) & (dat["informal_care_daily"].isna()),
+    ]
+    _val = [1, np.nan]
+    dat["combination_care_daily"] = np.select(_cond, _val, default=0)
+
+    _cond = [
         (dat["home_care"] == 1) & (dat["informal_care_child"] == 1),
         (dat["home_care"].isna()) & (dat["informal_care_child"].isna()),
     ]
     _val = [1, np.nan]
     dat["combination_care_child"] = np.select(_cond, _val, default=0)
+
+    _cond = [
+        (dat["home_care"] == 1) & (dat["informal_care_daily_child"] == 1),
+        (dat["home_care"].isna()) & (dat["informal_care_daily_child"].isna()),
+    ]
+    _val = [1, np.nan]
+    dat["combination_care_daily_child"] = np.select(_cond, _val, default=0)
 
     _cond = [
         (dat["home_care"] == 1) | (dat["informal_care_general"] == 1),
@@ -972,6 +990,27 @@ def create_care_variables(dat):
     _val = [1, np.nan]
     dat["pure_informal_care_general"] = np.select(_cond, _val, default=0)
 
+    _cond = [
+        (dat["informal_care_daily"] == 1) & (dat["home_care"] != 1),
+        (dat["informal_care_daily"].isna()) & (dat["home_care"].isna()),
+    ]
+    _val = [1, np.nan]
+    dat["pure_informal_care_daily"] = np.select(_cond, _val, default=0)
+
+    _cond = [
+        (dat["informal_care_child"] == 1) & (dat["home_care"] != 1),
+        (dat["informal_care_child"].isna()) & (dat["home_care"].isna()),
+    ]
+    _val = [1, np.nan]
+    dat["pure_informal_care_child"] = np.select(_cond, _val, default=0)
+
+    _cond = [
+        (dat["informal_care_daily_child"] == 1) & (dat["home_care"] != 1),
+        (dat["informal_care_daily_child"].isna()) & (dat["home_care"].isna()),
+    ]
+    _val = [1, np.nan]
+    dat["pure_informal_care_daily_child"] = np.select(_cond, _val, default=0)
+
     # ────────────────────────────────────────────────────────────────
     # Pure-HOME-care (no informal care)
     # ────────────────────────────────────────────────────────────────
@@ -980,7 +1019,28 @@ def create_care_variables(dat):
         (dat["home_care"].isna()) & (dat["informal_care_general"].isna()),
     ]
     _val = [1, np.nan]
-    dat["pure_home_care"] = np.select(_cond, _val, default=0)
+    dat["pure_home_care_general"] = np.select(_cond, _val, default=0)
+
+    _cond = [
+        (dat["home_care"] == 1) & (dat["informal_care_daily"] != 1),
+        (dat["home_care"].isna()) & (dat["informal_care_daily"].isna()),
+    ]
+    _val = [1, np.nan]
+    dat["pure_home_care_daily"] = np.select(_cond, _val, default=0)
+
+    _cond = [
+        (dat["home_care"] == 1) & (dat["informal_care_child"] != 1),
+        (dat["home_care"].isna()) & (dat["informal_care_child"].isna()),
+    ]
+    _val = [1, np.nan]
+    dat["pure_home_care_child"] = np.select(_cond, _val, default=0)
+
+    _cond = [
+        (dat["home_care"] == 1) & (dat["informal_care_daily_child"] != 1),
+        (dat["home_care"].isna()) & (dat["informal_care_daily_child"].isna()),
+    ]
+    _val = [1, np.nan]
+    dat["pure_home_care_daily_child"] = np.select(_cond, _val, default=0)
 
     # ────────────────────────────────────────────────────────────────
     # Shares that add up to 1  (care-recipient mix)
@@ -988,9 +1048,29 @@ def create_care_variables(dat):
     # ────────────────────────────────────────────────────────────────
     care_cols = [
         "pure_informal_care_general",
+        "pure_home_care_general",
+        "combination_care_general",
+    ]
+    daily_care_cols = [
+        "pure_informal_care_daily",
+        "pure_home_care_daily",
+        "combination_care_daily",
+    ]
+    child_care_cols = [
+        "pure_informal_care_child",
+        "pure_home_care_child",
+        "combination_care_child",
+    ]
+    daily_child_care_cols = [
+        "pure_informal_care_daily_child",
+        "pure_home_care_daily_child",
+        "combination_care_daily_child",
+    ]
+    _care_cols_all = [
+        "pure_informal_care_general",
         "pure_home_care",
         "combination_care_general",
-        # "nursing_home",
+        "nursing_home",
     ]
 
     flags = dat[care_cols].fillna(0).astype(int)  # treat NA as 0
@@ -1064,16 +1144,283 @@ def create_care_variables(dat):
         care_cols=care_cols,
         weight_col="hh_weight",
         group_cols=["sex", "age_group"],
+        show_counts=True,
     )
 
     shares_w_ind = weighted_shares_and_counts(
-        dat, care_cols, weight_col="ind_weight", group_cols=["sex", "age_group"]
+        dat,
+        care_cols,
+        weight_col="ind_weight",
+        group_cols=["sex", "age_group"],
     )
     shares_w_design = weighted_shares_and_counts(
         dat, care_cols, weight_col="design_weight", group_cols=["sex", "age_group"]
     )
 
+    shares_daily_w_hh = weighted_shares_and_counts(
+        dat,
+        care_cols=daily_care_cols,
+        weight_col="hh_weight",
+        group_cols=["sex", "age_group"],
+        show_counts=True,
+    )
+    shares_daily_w_ind = weighted_shares_and_counts(
+        dat, daily_care_cols, weight_col="ind_weight", group_cols=["sex", "age_group"]
+    )
+    shares_daily_w_design = weighted_shares_and_counts(
+        dat,
+        daily_care_cols,
+        weight_col="design_weight",
+        group_cols=["sex", "age_group"],
+    )
+
+    shares_child_w_hh = weighted_shares_and_counts(
+        dat,
+        care_cols=child_care_cols,
+        weight_col="hh_weight",
+        group_cols=["sex", "age_group"],
+        show_counts=True,
+    )
+    shares_child_w_ind = weighted_shares_and_counts(
+        dat, child_care_cols, weight_col="ind_weight", group_cols=["sex", "age_group"]
+    )
+    shares_child_w_design = weighted_shares_and_counts(
+        dat,
+        child_care_cols,
+        weight_col="design_weight",
+        group_cols=["sex", "age_group"],
+    )
+
+    # shares_daily_child_w_hh = weighted_shares_and_counts(
+    #     dat,
+    #     care_cols=daily_child_care_cols,
+    #     weight_col="hh_weight",
+    #     group_cols=["sex", "age_group"],
+    #     show_counts=True,
+    # )
+    # shares_daily_child_w_ind = weighted_shares_and_counts(
+    #     dat,
+    #     daily_child_care_cols,
+    #     weight_col="ind_weight",
+    #     group_cols=["sex", "age_group"],
+    # )
+    # shares_daily_child_w_design = weighted_shares_and_counts(
+    #     dat,
+    #     daily_child_care_cols,
+    #     weight_col="design_weight",
+    #     group_cols=["sex", "age_group"],
+    # )
+
+    # # # ===================================================================================
+    # # # Multinomial Logit
+    # # # ===================================================================================
+
+    # # import statsmodels.api as sm
+
+    # # # 0/1 flags → a single categorical Series
+    # # care_mix = (
+    # #     dat[
+    # #         [
+    # #             "pure_informal_care_general",
+    # #             "pure_home_care_general",
+    # #             "combination_care_general",
+    # #         ]
+    # #     ]
+    # #     .idxmax(axis=1)  # first column with a 1
+    # #     .astype("category")
+    # # )
+
+    # # # check that every row has exactly one flag = 1
+    # # # assert (
+    # # #     dat[
+    # # #         [
+    # # #             "pure_informal_care_general",
+    # # #             "pure_home_care",
+    # # #             "combination_care_general",
+    # # #             "nursing_home",
+    # # #         ]
+    # # #     ].sum(axis=1)
+    # # #     == 1
+    # # # ).all(), "row with multiple flags!"
+
+    # # # design matrix
+    # # X = pd.DataFrame({"const": 1, "age": dat["age"], "age_sq": dat["age"] ** 2})
+
+    # # # response (convert to 0…3 integer codes)
+    # # y = care_mix.cat.codes
+
+    # # # Estimate
+    # # mnlogit_model = sm.MNLogit(endog=y, exog=X, freq_weights=dat["hh_weight"])
+    # # result = mnlogit_model.fit(method="newton", maxiter=100, disp=False)
+
+    # # print(result.summary())
+
+    # # # ===================================================================================
+    # # # Plotting
+    # # # ===================================================================================
+
+    # # # # Coefficients from your result.summary()
+    # # # coefs = {
+    # # #     0: {"const": -5.0600, "age": 0.1530, "age_sq": -0.0010},
+    # # #     1: {"const": -14.1785, "age": 0.5211, "age_sq": -0.0043},
+    # # #     2: {"const": -4.6224, "age": 0.1536, "age_sq": -0.0012},
+    # # #     3: {"const": -1.8750, "age": 0.2629, "age_sq": -0.0026},
+    # # # }
+
+    # # # # Age range for plotting
+    # # # ages = np.arange(50, 91, 1)
+    # # # age_sq = ages**2
+
+    # # # # Calculate the linear predictors for each category
+    # # # utilities = []
+    # # # for i in range(4):
+    # # #     c = coefs[i]
+    # # #     u = c["const"] + c["age"] * ages + c["age_sq"] * age_sq
+    # # #     utilities.append(u)
+    # # # utilities = np.array(utilities)  # Shape: (4, n_ages)
+
+    # # # # Calculate the softmax for each age
+    # # # def softmax(u):
+    # # #     e_u = np.exp(u - np.max(u, axis=0))  # for numerical stability
+    # # #     return e_u / e_u.sum(axis=0)
+
+    # # # probs = softmax(utilities)
+
+    # # # # Plotting
+    # # # plt.figure(figsize=(8, 6))
+    # # # for i in range(4):
+    # # #     plt.plot(ages, probs[i], label=f"P(y={i})")
+    # # # plt.xlabel("Age")
+    # # # plt.ylabel("Predicted Probability")
+    # # # plt.title("Multinomial Logit Probabilities by Age")
+    # # # plt.legend()
+    # # # plt.tight_layout()
+    # # # plt.show()
+
+    # # # Assuming care_mix and result are defined
+    # # categories = (
+    # #     care_mix.cat.categories
+    # # )  # e.g., Index(['pure_informal_care_general', ...])
+    # # n_classes = len(categories)  # e.g., 3
+
+    # # params = result.params  # shape (n_classes-1, n_features)
+    # # ages = np.arange(50, 91)
+    # # age_sq = ages**2
+    # # X_plot = pd.DataFrame({"const": 1, "age": ages, "age_sq": age_sq})
+
+    # # # Build utilities: base category (reference) is always zeros
+    # # utilities = np.zeros((n_classes, len(ages)))
+    # # for i in range(n_classes - 1):
+    # #     utilities[i + 1, :] = np.dot(X_plot, params.iloc[i].values)
+
+    # # def softmax(u):
+    # #     e_u = np.exp(u - np.max(u, axis=0))
+    # #     return e_u / e_u.sum(axis=0)
+
+    # # probs = softmax(utilities)
+
+    # # # Plotting: show only existing care types, labeled by name
+    # # plt.figure(figsize=(8, 6))
+    # # for i in range(n_classes):
+    # #     plt.plot(
+    # #         ages, probs[i], label=str(categories[i]).replace("_", " ").capitalize()
+    # #     )
+    # # plt.xlabel("Age")
+    # # plt.ylabel("Predicted Probability")
+    # # plt.title("Multinomial Logit Probabilities by Age")
+    # # plt.legend(title="Care Mix Type")
+    # # plt.tight_layout()
+    # # plt.show()
+
+    # # ---------------------------------------------------------------------------
+    # # 1. Sub‑sample: women only, who receive any type of care
+    # # ---------------------------------------------------------------------------
+    # care_cols = [
+    #     "pure_informal_care_general",
+    #     "pure_home_care_general",
+    #     "combination_care_general",
+    # ]
+
+    # women = dat.loc[dat["sex"] == 1].copy()  # keep ONLY women
+
+    # mask_any = women[care_cols].fillna(0).astype(int).any(axis=1)
+    # women = women.loc[mask_any].reset_index(drop=True)
+
+    # # ---------------------------------------------------------------------------
+    # # 2. Collapse the three flags → single categorical outcome
+    # #    priority: combination > home > informal
+    # # ---------------------------------------------------------------------------
+    # def care_type(row):
+    #     if row["combination_care_general"] == 1:
+    #         return "combination_care_general"
+    #     elif row["pure_home_care_general"] == 1:
+    #         return "pure_home_care_general"
+    #     elif row["pure_informal_care_general"] == 1:
+    #         return "pure_informal_care_general"
+    #     else:
+    #         return np.nan  # should not happen after mask_any
+
+    # women["care_type"] = women.apply(care_type, axis=1)
+
+    # # ---------------------------------------------------------------------------
+    # # 3. Design matrix: const, age, age²   (NO centring)
+    # # ---------------------------------------------------------------------------
+    # X = pd.DataFrame(
+    #     {
+    #         "const": 1.0,
+    #         "age": women["age"].astype(float),
+    #         "age_sq": women["age"].astype(float) ** 2,
+    #     }
+    # )
+
+    # y, class_labels = pd.factorize(women["care_type"])
+
+    # # ---------------------------------------------------------------------------
+    # # 4. Weighted multinomial logit
+    # # ---------------------------------------------------------------------------
+    # mnlogit = sm.MNLogit(y, X)
+    # res = mnlogit.fit(freq_weights=women["hh_weight"], method="newton")
+    # print(res.summary())
+
+    # # ---------------------------------------------------------------------------
+    # # 5. Predict probabilities across the observed age range (optional plot)
+    # # ---------------------------------------------------------------------------
+    # age_grid = np.arange(women["age"].min(), women["age"].max() + 1)
+    # ex_grid = pd.DataFrame(
+    #     {
+    #         "const": 1.0,
+    #         "age": age_grid,
+    #         "age_sq": age_grid**2,
+    #     }
+    # )[
+    #     X.columns
+    # ]  # same column order
+
+    # preds = pd.DataFrame(res.predict(ex_grid), columns=class_labels)
+    # preds["age"] = age_grid
+
+    # # quick sanity check – every row sums to 1
+    # # assert np.allclose(preds[class_labels].sum(axis=1), 1.0)
+
+    # # ---- simple line plot ------------------------------------------------------
+    # fig, ax = plt.subplots(figsize=(8, 5))
+    # for care in class_labels:
+    #     ax.plot(
+    #         preds["age"],
+    #         preds[care],
+    #         label=care.replace("_general", "").replace("_", " ").title(),
+    #     )
+
+    # ax.set_xlabel("Age")
+    # ax.set_ylabel("Predicted probability (Σ = 1)")
+    # ax.set_title("Predicted probability of care type by age (women only)")
+    # ax.set_ylim(0, 1)
+    # ax.legend(title="Care type")
+    # plt.tight_layout()
+    # plt.show()
+
     # ===================================================================================
+    breakpoint()
 
     dat = _create_lagged_var(dat, "no_care")
     dat = _create_lagged_var(dat, "home_care")

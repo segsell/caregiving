@@ -131,7 +131,6 @@ def task_create_nursing_home_sample(
 
     df.to_pickle(path_to_save)
 
-    #
     # # Filter data for age >= 65
     # filtered_data = df[(df["age"] >= 65) & (df["age"] <= 110)].copy()
 
@@ -167,7 +166,7 @@ def task_create_nursing_home_sample(
     # plt.show()
 
     # First model: full sample (age 65–110)
-    filtered_data = df[(df["age"] >= 65) & (df["age"] <= 105)].copy()
+    filtered_data = df[(df["age"] >= 65) & (df["age"] <= 105) & (df["sex"] == 1)].copy()
     filtered_data = filtered_data[["age", "nursing_home"]].dropna()
     filtered_data["age_squared"] = filtered_data["age"] ** 2
     X = sm.add_constant(filtered_data[["age", "age_squared"]])

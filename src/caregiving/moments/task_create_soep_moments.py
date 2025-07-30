@@ -44,7 +44,7 @@ def task_create_soep_moments(
     age_range = range(start_age, end_age + 1)
 
     df = pd.read_csv(path_to_sample, index_col=[0])
-    df = df[(df["sex"] == 1) & (df["age"] <= end_age)]  # women only
+    df = df[(df["sex"] == 1) & (df["age"] <= end_age + 10)]  # women only
 
     # df_year = df[df["syear"] == 2012]  # 2016 # noqa: PLR2004
     # # df_year = df[df["syear"].between(2012, 2018)]
