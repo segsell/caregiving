@@ -3,12 +3,11 @@
 from pathlib import Path
 from typing import Annotated
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from pytask import Product
-
 import statsmodels.api as sm
-import matplotlib.pyplot as plt
+from pytask import Product
 
 from caregiving.config import BLD
 from caregiving.model.shared import (
@@ -83,7 +82,7 @@ def count(df_col):
 import pytask
 
 
-# @pytask.mark.skip()
+@pytask.mark.skip()
 @pytask.mark.wip
 def task_create_parent_child_data(
     path_to_raw_data: Path = BLD / "data" / "share_data_parent_child_merged.csv",
@@ -1191,25 +1190,25 @@ def create_care_variables(dat):
         group_cols=["sex", "age_group"],
     )
 
-    # shares_daily_child_w_hh = weighted_shares_and_counts(
-    #     dat,
-    #     care_cols=daily_child_care_cols,
-    #     weight_col="hh_weight",
-    #     group_cols=["sex", "age_group"],
-    #     show_counts=True,
-    # )
-    # shares_daily_child_w_ind = weighted_shares_and_counts(
-    #     dat,
-    #     daily_child_care_cols,
-    #     weight_col="ind_weight",
-    #     group_cols=["sex", "age_group"],
-    # )
-    # shares_daily_child_w_design = weighted_shares_and_counts(
-    #     dat,
-    #     daily_child_care_cols,
-    #     weight_col="design_weight",
-    #     group_cols=["sex", "age_group"],
-    # )
+    shares_daily_child_w_hh = weighted_shares_and_counts(
+        dat,
+        care_cols=daily_child_care_cols,
+        weight_col="hh_weight",
+        group_cols=["sex", "age_group"],
+        show_counts=True,
+    )
+    shares_daily_child_w_ind = weighted_shares_and_counts(
+        dat,
+        daily_child_care_cols,
+        weight_col="ind_weight",
+        group_cols=["sex", "age_group"],
+    )
+    shares_daily_child_w_design = weighted_shares_and_counts(
+        dat,
+        daily_child_care_cols,
+        weight_col="design_weight",
+        group_cols=["sex", "age_group"],
+    )
 
     # # # ===================================================================================
     # # # Multinomial Logit
