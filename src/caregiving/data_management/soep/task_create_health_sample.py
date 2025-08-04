@@ -27,6 +27,9 @@ from caregiving.data_management.soep.variables import (
 from caregiving.specs.task_write_specs import read_and_derive_specs
 from caregiving.utils import table
 
+AGE_LOW = 65
+AGE_HIGH = 105
+
 
 def task_create_health_transition_sample_good_bad(
     path_to_specs: Path = SRC / "specs.yaml",
@@ -114,7 +117,7 @@ def task_create_nursing_home_sample(
     path_to_save: Annotated[Path, Product] = BLD / "data" / "nursing_home_sample.pkl",
 ):
 
-    specs = read_and_derive_specs(path_to_specs)
+    _specs = read_and_derive_specs(path_to_specs)
 
     df = pd.read_csv(path_to_raw_data, index_col=["pid", "syear"])
 
@@ -131,42 +134,10 @@ def task_create_nursing_home_sample(
 
     df.to_pickle(path_to_save)
 
-    # # Filter data for age >= 65
-    # filtered_data = df[(df["age"] >= 65) & (df["age"] <= 110)].copy()
-
-    # # Drop missing values
-    # filtered_data = filtered_data[["age", "nursing_home"]].dropna()
-
-    # # Estimate logit model: nursing_home ~ age + age^2
-    # filtered_data["age_squared"] = filtered_data["age"] ** 2
-    # X = sm.add_constant(filtered_data[["age", "age_squared"]])
-    # y = filtered_data["nursing_home"]
-
-    # logit_model = sm.Logit(y, X).fit()
-    # print(logit_model.summary())
-
-    # # Generate predicted probabilities
-    # age_range = np.arange(65, filtered_data["age"].max() + 1)
-    # X_pred = pd.DataFrame({"const": 1, "age": age_range, "age_squared": age_range**2})
-    # predicted_probs = logit_model.predict(X_pred)
-
-    # # Plot prediction over raw data
-    # plt.figure(figsize=(10, 6))
-    # plt.scatter(
-    #     filtered_data["age"], filtered_data["nursing_home"], alpha=0.2, label="Raw Data"
-    # )
-    # plt.plot(
-    #     age_range, predicted_probs, color="red", linewidth=2, label="Logit Prediction"
-    # )
-    # plt.xlabel("Age")
-    # plt.ylabel("Probability of Nursing Home")
-    # plt.title("Logit Model Fit: Nursing Home vs. Age")
-    # plt.grid(True)
-    # plt.legend()
-    # plt.show()
-
     # First model: full sample (age 65–110)
-    filtered_data = df[(df["age"] >= 65) & (df["age"] <= 105) & (df["sex"] == 1)].copy()
+    filtered_data = df[
+        (df["age"] >= AGE_LOW) & (df["age"] <= AGE_HIGH) & (df["sex"] == 1)
+    ].copy()
     filtered_data = filtered_data[["age", "nursing_home"]].dropna()
     filtered_data["age_squared"] = filtered_data["age"] ** 2
     X = sm.add_constant(filtered_data[["age", "age_squared"]])
@@ -176,13 +147,13 @@ def task_create_nursing_home_sample(
     print(logit_model.summary())
 
     # Predict over age range
-    age_range = np.arange(65, filtered_data["age"].max() + 1)
+    age_range = np.arange(AGE_LOW, filtered_data["age"].max() + 1)
     X_pred = pd.DataFrame({"const": 1, "age": age_range, "age_squared": age_range**2})
     predicted_probs_full = logit_model.predict(X_pred)
 
     # Second model: bad health only
     bad_health_data = df[
-        (df["age"] >= 65) & (df["age"] <= 110) & (df["health"] == 0)
+        (df["age"] >= AGE_LOW) & (df["age"] <= AGE_HIGH + 5) & (df["health"] == 0)
     ].copy()
     bad_health_data = bad_health_data[["age", "nursing_home"]].dropna()
     bad_health_data["age_squared"] = bad_health_data["age"] ** 2
