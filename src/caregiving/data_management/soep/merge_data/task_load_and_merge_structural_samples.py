@@ -123,6 +123,7 @@ def task_load_and_merge_estimation_sample(
             # "hlc0005_h",  # monthly net household income
             # "hlc0120_h",  # monthly amount of savings
             # "hlf0155_h",  # Unterkunftsart (Wohn)heim
+            "hlf0291",
         ],
         convert_categoricals=False,
     )
@@ -176,7 +177,8 @@ def task_load_and_merge_estimation_sample(
     merged_data = pd.merge(merged_data, biobirth, on="pid", how="left")
 
     # Set index
-    merged_data["age"] = merged_data["d11101"].astype(int)
+    # merged_data["age"] = merged_data["d11101"].astype(int)
+    merged_data["age"] = merged_data["syear"] - merged_data["gebjahr"]
     merged_data.set_index(["pid", "syear"], inplace=True)
     print(str(len(merged_data)) + " observations in SOEP C40 core.")
 

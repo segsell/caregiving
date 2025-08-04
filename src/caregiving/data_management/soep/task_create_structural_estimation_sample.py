@@ -8,14 +8,13 @@ import pandas as pd
 from pytask import Product
 
 from caregiving.config import BLD, SRC
-from caregiving.utils import table
 from caregiving.data_management.soep.auxiliary import (
     create_lagged_and_lead_variables,
     enforce_model_choice_restriction,
-    filter_data,
     filter_below_age,
-    recode_sex,
+    filter_data,
     filter_years,
+    recode_sex,
 )
 from caregiving.data_management.soep.task_create_event_study_sample import (
     create_caregiving,
@@ -35,6 +34,7 @@ from caregiving.data_management.soep.variables import (
 )
 from caregiving.model.shared import PART_TIME_CHOICES, RETIREMENT_CHOICES, WORK_CHOICES
 from caregiving.specs.task_write_specs import read_and_derive_specs
+from caregiving.utils import table
 
 
 def task_create_main_estimation_sample(

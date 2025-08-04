@@ -6,6 +6,7 @@ from typing import Annotated
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pytask
 import statsmodels.api as sm
 from pytask import Product
 
@@ -17,6 +18,7 @@ from caregiving.model.shared import (
     PARENT_GOOD_HEALTH,
     PARENT_MEDIUM_HEALTH,
 )
+from caregiving.utils import count, describe, table
 
 WAVE_1 = 1
 WAVE_2 = 2
@@ -50,6 +52,8 @@ RECEIVED_HELP_DAILY = 1
 CHILD_ONE_GAVE_HELP = 10
 STEP_CHILD_GAVE_HELP = 11
 OTHER_CHILD_GAVE_HELP = 19
+SN_PERSON_ONE = 101
+SN_PERSON_SEVEN = 107
 
 ANSWER_YES = 1
 ANSWER_NO = 5
@@ -64,26 +68,6 @@ AT_LEAST_TWO = 2
 WHO_IS_CAREGIVER_EXTRA_HH = ["sp003_1", "sp003_2", "sp003_3"]
 
 
-def table(df_col):
-    """Return frequency table."""
-    return pd.crosstab(df_col, columns="Count")["Count"]
-
-
-def describe(df_col):
-    """Return descriptive statistics."""
-    return df_col.describe()
-
-
-def count(df_col):
-    """Count the number of non-missing observations."""
-    return df_col.count()
-
-
-import pytask
-
-
-@pytask.mark.skip()
-@pytask.mark.wip
 def task_create_parent_child_data(
     path_to_raw_data: Path = BLD / "data" / "share_data_parent_child_merged.csv",
     path_to_main: Annotated[Path, Product] = BLD
@@ -394,7 +378,7 @@ def create_limitations_with_adl_categories(df):
     return df
 
 
-def create_care_variables(dat):
+def create_care_variables(dat):  # noqa: PLR0915
     """Create a dummy for formal care."""
     dat = _process_negative_values(dat)
 
@@ -588,7 +572,7 @@ def create_care_variables(dat):
 
     _cond = [
         # Case 1:  two or more informal caregivers in total
-        (inside_count + outside_daily_count) >= 2,
+        (inside_count + outside_daily_count) >= TWO,
         (inside_count + outside_daily_count) == 1,
         # Case 2:  explicitly no informal care at all
         # (dat["sp020_"] == ANSWER_NO) & (dat["sp002_"] == ANSWER_NO),
@@ -607,7 +591,9 @@ def create_care_variables(dat):
     # ============================================================================
     # Children from inside household
     # ============================================================================
-    who_is_caregiver_w1_2_5 = [f"sp021d{n}" for n in range(10, 12)]
+    who_is_caregiver_w1_2_5 = [
+        f"sp021d{n}" for n in range(CHILD_ONE_GAVE_HELP, CHILD_ONE_GAVE_HELP + 2)
+    ]
     at_least_one_child_provides_care_from_inside_hh = (
         # Waves 1, 2, 5  ─ any of sp021d10…19 equals 1
         # (
@@ -634,7 +620,8 @@ def create_care_variables(dat):
     # Children from outside household
     # ============================================================================
     at_least_one_child_provides_care_from_outside_hh = (
-        # Waves 1, 2, 5  ─ “child” is any value in [CHILD_ONE_GAVE_HELP, OTHER_CHILD_GAVE_HELP]
+        # Waves 1, 2, 5 : "child" is any value in
+        # [CHILD_ONE_GAVE_HELP, OTHER_CHILD_GAVE_HELP]
         (
             dat["wave"].isin([WAVE_1, WAVE_2, WAVE_5])
             & (
@@ -656,7 +643,8 @@ def create_care_variables(dat):
         )
     )
     at_least_two_children_provide_care_from_outside_hh = (
-        # Waves 1, 2, 5  ─ “child” is any value in [CHILD_ONE_GAVE_HELP, OTHER_CHILD_GAVE_HELP]
+        # Waves 1, 2, 5 : "child" is any value in
+        # [CHILD_ONE_GAVE_HELP, OTHER_CHILD_GAVE_HELP]
         (
             dat["wave"].isin([WAVE_1, WAVE_2, WAVE_5])
             & (
@@ -664,17 +652,20 @@ def create_care_variables(dat):
                     (dat[WHO_IS_CAREGIVER_EXTRA_HH] >= CHILD_ONE_GAVE_HELP)
                     & (dat[WHO_IS_CAREGIVER_EXTRA_HH] <= OTHER_CHILD_GAVE_HELP)
                 ).sum(axis=1)
-                >= 2
+                >= TWO
             )
         )
         |
         # Wave 4  ─ special social-network coding
-        ((dat["wave"] == WAVE_4) & (dat.apply(_count_children_wave4, axis=1) >= 2))
+        ((dat["wave"] == WAVE_4) & (dat.apply(_count_children_wave4, axis=1) >= TWO))
         |
         # Waves 6-9  ─ “child” is exactly CHILD_ONE_GAVE_HELP
         (
             dat["wave"].isin([WAVE_6, WAVE_7, WAVE_8, WAVE_9])
-            & (dat[WHO_IS_CAREGIVER_EXTRA_HH].eq(CHILD_ONE_GAVE_HELP).sum(axis=1) >= 2)
+            & (
+                dat[WHO_IS_CAREGIVER_EXTRA_HH].eq(CHILD_ONE_GAVE_HELP).sum(axis=1)
+                >= TWO
+            )
         )
     )
 
@@ -685,10 +676,10 @@ def create_care_variables(dat):
     # keeps the naming pattern you fixed earlier (sp021d1sn … sp021d7sn)
     # ------------------------------------------------------------------
     def _is_child_wave4(who: int, row) -> bool:
-        if who == 19:  # direct child
+        if who == OTHER_CHILD_GAVE_HELP:  # direct child
             return True
-        if 101 <= who <= 107:  # social-network person 1–7
-            return row.get(f"sn005_{who-100}", None) == 10
+        if SN_PERSON_ONE <= who <= SN_PERSON_SEVEN:  # social-network person 1–7
+            return row.get(f"sn005_{who-100}", None) == CHILD_ONE_GAVE_HELP
         return False
 
     # ------------------------------------------------------------------
@@ -728,10 +719,10 @@ def create_care_variables(dat):
     # ------------------------------------------------------------------
     # NEW masks that include the DAILY condition
     # ------------------------------------------------------------------
-    exactly_one_child_provides_care_from_inside_hh = (
+    _exactly_one_child_provides_care_from_inside_hh = (
         at_least_one_child_provides_care_from_inside_hh & (inside_count == 1)
     )
-    exactly_one_child_provides_care_from_outside_hh = (
+    _exactly_one_child_provides_care_from_outside_hh = (
         at_least_one_child_provides_care_from_outside_hh
         & (daily_child_outside_cnt == 1)
     )
@@ -742,7 +733,7 @@ def create_care_variables(dat):
     _exactly_one_child_provides_care_from_outside_hh = daily_child_outside_cnt == 1
 
     at_least_one_child_provides_care_from_outside_hh = daily_child_outside_cnt >= 1
-    at_least_two_children_provide_care_from_outside_hh = daily_child_outside_cnt >= 2
+    at_least_two_children_provide_care_from_outside_hh = daily_child_outside_cnt >= TWO
 
     # =============================================================================
 
@@ -790,11 +781,11 @@ def create_care_variables(dat):
     #     _cond, _val, default=np.nan
     # )
 
-    at_least_one_child_provides_care = (
+    _at_least_one_child_provides_care = (
         at_least_one_child_provides_care_from_inside_hh
         | at_least_one_child_provides_care_from_outside_hh
     )
-    at_least_two_children_provide_care = (
+    _at_least_two_children_provide_care = (
         at_least_two_children_provide_care_from_outside_hh
         | (
             at_least_one_child_provides_care_from_inside_hh
@@ -838,10 +829,10 @@ def create_care_variables(dat):
     # ────────────────────────────────────────────────────────────────
     base_n = receives_informal_care.sum()
 
-    share_one_child = (
+    _share_one_child = (
         (receives_informal_care & one_child_caregiver).sum() / base_n
     ) * 100
-    share_two_child = (
+    _share_two_child = (
         (receives_informal_care & two_children_caregivers).sum() / base_n
     ) * 100
 
@@ -868,27 +859,6 @@ def create_care_variables(dat):
     ]
     _val = [1, 0]
     dat["any_care_daily_alt"] = np.select(_cond, _val, default=np.nan)
-
-    # (Pdb++) dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1), "home_care"].sum() / dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1)].shape()
-    # *** TypeError: 'tuple' object is not callable
-    # (Pdb++) dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1), "home_care"].sum() / dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1)].shape(1)
-    # *** TypeError: 'tuple' object is not callable
-    # (Pdb++) dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1), "home_care"].sum() / dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1)].shape(0)
-    # *** TypeError: 'tuple' object is not callable
-    # (Pdb++) dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1), "home_care"].sum() / dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1)].shape[0]
-    # np.float64(0.6747787610619469)
-    # (Pdb++) dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 1) & (dat["sex"] == 1), "home_care"].sum() / dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1)].shape[0]
-    # np.float64(1.2057522123893805)
-    # (Pdb++) dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 1) & (dat["sex"] == 1), "home_care"].sum() / dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 1) & (dat["sex"] == 1)].shape[0]
-    # np.float64(0.7161629434954008)
-    # (Pdb++) dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 1) & (dat["sex"] == 1), "nursing_home"].sum() / dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 1) & (dat["sex"] == 1)].shape[0]
-    # np.float64(0.023653088042049936)
-    # (Pdb++) dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1), "nursing_home"].sum() / dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1)].shape[0]
-    # np.float64(0.011061946902654867)
-    # (Pdb++) dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1), "informal_care_daily_child"].sum() / dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 2) & (dat["sex"] == 1)].shape[0]
-    # np.float64(0.13053097345132744)
-    # (Pdb++) dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 1) & (dat["sex"] == 1), "informal_care_daily_child"].sum() / dat.loc[(dat["any_care_daily"] >= 1) & (dat["health"] == 1) & (dat["sex"] == 1)].shape[0]
-    # np.float64(0.18396846254927726)
 
     # informal care from outside the household
     _cond = [
@@ -1138,7 +1108,7 @@ def create_care_variables(dat):
 
     print(shares_w.head())
 
-    shares_w_hh = weighted_shares_and_counts(
+    _shares_w_hh = weighted_shares_and_counts(
         dat,
         care_cols=care_cols,
         weight_col="hh_weight",
@@ -1146,280 +1116,69 @@ def create_care_variables(dat):
         show_counts=True,
     )
 
-    shares_w_ind = weighted_shares_and_counts(
+    _shares_w_ind = weighted_shares_and_counts(
         dat,
         care_cols,
         weight_col="ind_weight",
         group_cols=["sex", "age_group"],
     )
-    shares_w_design = weighted_shares_and_counts(
+    _shares_w_design = weighted_shares_and_counts(
         dat, care_cols, weight_col="design_weight", group_cols=["sex", "age_group"]
     )
 
-    shares_daily_w_hh = weighted_shares_and_counts(
+    _shares_daily_w_hh = weighted_shares_and_counts(
         dat,
         care_cols=daily_care_cols,
         weight_col="hh_weight",
         group_cols=["sex", "age_group"],
         show_counts=True,
     )
-    shares_daily_w_ind = weighted_shares_and_counts(
+    _shares_daily_w_ind = weighted_shares_and_counts(
         dat, daily_care_cols, weight_col="ind_weight", group_cols=["sex", "age_group"]
     )
-    shares_daily_w_design = weighted_shares_and_counts(
+    _shares_daily_w_design = weighted_shares_and_counts(
         dat,
         daily_care_cols,
         weight_col="design_weight",
         group_cols=["sex", "age_group"],
     )
 
-    shares_child_w_hh = weighted_shares_and_counts(
+    _shares_child_w_hh = weighted_shares_and_counts(
         dat,
         care_cols=child_care_cols,
         weight_col="hh_weight",
         group_cols=["sex", "age_group"],
         show_counts=True,
     )
-    shares_child_w_ind = weighted_shares_and_counts(
+    _shares_child_w_ind = weighted_shares_and_counts(
         dat, child_care_cols, weight_col="ind_weight", group_cols=["sex", "age_group"]
     )
-    shares_child_w_design = weighted_shares_and_counts(
+    _shares_child_w_design = weighted_shares_and_counts(
         dat,
         child_care_cols,
         weight_col="design_weight",
         group_cols=["sex", "age_group"],
     )
 
-    shares_daily_child_w_hh = weighted_shares_and_counts(
+    _shares_daily_child_w_hh = weighted_shares_and_counts(
         dat,
         care_cols=daily_child_care_cols,
         weight_col="hh_weight",
         group_cols=["sex", "age_group"],
         show_counts=True,
     )
-    shares_daily_child_w_ind = weighted_shares_and_counts(
+    _shares_daily_child_w_ind = weighted_shares_and_counts(
         dat,
         daily_child_care_cols,
         weight_col="ind_weight",
         group_cols=["sex", "age_group"],
     )
-    shares_daily_child_w_design = weighted_shares_and_counts(
+    _shares_daily_child_w_design = weighted_shares_and_counts(
         dat,
         daily_child_care_cols,
         weight_col="design_weight",
         group_cols=["sex", "age_group"],
     )
-
-    # # # ===================================================================================
-    # # # Multinomial Logit
-    # # # ===================================================================================
-
-    # # import statsmodels.api as sm
-
-    # # # 0/1 flags → a single categorical Series
-    # # care_mix = (
-    # #     dat[
-    # #         [
-    # #             "pure_informal_care_general",
-    # #             "pure_home_care_general",
-    # #             "combination_care_general",
-    # #         ]
-    # #     ]
-    # #     .idxmax(axis=1)  # first column with a 1
-    # #     .astype("category")
-    # # )
-
-    # # # check that every row has exactly one flag = 1
-    # # # assert (
-    # # #     dat[
-    # # #         [
-    # # #             "pure_informal_care_general",
-    # # #             "pure_home_care",
-    # # #             "combination_care_general",
-    # # #             "nursing_home",
-    # # #         ]
-    # # #     ].sum(axis=1)
-    # # #     == 1
-    # # # ).all(), "row with multiple flags!"
-
-    # # # design matrix
-    # # X = pd.DataFrame({"const": 1, "age": dat["age"], "age_sq": dat["age"] ** 2})
-
-    # # # response (convert to 0…3 integer codes)
-    # # y = care_mix.cat.codes
-
-    # # # Estimate
-    # # mnlogit_model = sm.MNLogit(endog=y, exog=X, freq_weights=dat["hh_weight"])
-    # # result = mnlogit_model.fit(method="newton", maxiter=100, disp=False)
-
-    # # print(result.summary())
-
-    # # # ===================================================================================
-    # # # Plotting
-    # # # ===================================================================================
-
-    # # # # Coefficients from your result.summary()
-    # # # coefs = {
-    # # #     0: {"const": -5.0600, "age": 0.1530, "age_sq": -0.0010},
-    # # #     1: {"const": -14.1785, "age": 0.5211, "age_sq": -0.0043},
-    # # #     2: {"const": -4.6224, "age": 0.1536, "age_sq": -0.0012},
-    # # #     3: {"const": -1.8750, "age": 0.2629, "age_sq": -0.0026},
-    # # # }
-
-    # # # # Age range for plotting
-    # # # ages = np.arange(50, 91, 1)
-    # # # age_sq = ages**2
-
-    # # # # Calculate the linear predictors for each category
-    # # # utilities = []
-    # # # for i in range(4):
-    # # #     c = coefs[i]
-    # # #     u = c["const"] + c["age"] * ages + c["age_sq"] * age_sq
-    # # #     utilities.append(u)
-    # # # utilities = np.array(utilities)  # Shape: (4, n_ages)
-
-    # # # # Calculate the softmax for each age
-    # # # def softmax(u):
-    # # #     e_u = np.exp(u - np.max(u, axis=0))  # for numerical stability
-    # # #     return e_u / e_u.sum(axis=0)
-
-    # # # probs = softmax(utilities)
-
-    # # # # Plotting
-    # # # plt.figure(figsize=(8, 6))
-    # # # for i in range(4):
-    # # #     plt.plot(ages, probs[i], label=f"P(y={i})")
-    # # # plt.xlabel("Age")
-    # # # plt.ylabel("Predicted Probability")
-    # # # plt.title("Multinomial Logit Probabilities by Age")
-    # # # plt.legend()
-    # # # plt.tight_layout()
-    # # # plt.show()
-
-    # # # Assuming care_mix and result are defined
-    # # categories = (
-    # #     care_mix.cat.categories
-    # # )  # e.g., Index(['pure_informal_care_general', ...])
-    # # n_classes = len(categories)  # e.g., 3
-
-    # # params = result.params  # shape (n_classes-1, n_features)
-    # # ages = np.arange(50, 91)
-    # # age_sq = ages**2
-    # # X_plot = pd.DataFrame({"const": 1, "age": ages, "age_sq": age_sq})
-
-    # # # Build utilities: base category (reference) is always zeros
-    # # utilities = np.zeros((n_classes, len(ages)))
-    # # for i in range(n_classes - 1):
-    # #     utilities[i + 1, :] = np.dot(X_plot, params.iloc[i].values)
-
-    # # def softmax(u):
-    # #     e_u = np.exp(u - np.max(u, axis=0))
-    # #     return e_u / e_u.sum(axis=0)
-
-    # # probs = softmax(utilities)
-
-    # # # Plotting: show only existing care types, labeled by name
-    # # plt.figure(figsize=(8, 6))
-    # # for i in range(n_classes):
-    # #     plt.plot(
-    # #         ages, probs[i], label=str(categories[i]).replace("_", " ").capitalize()
-    # #     )
-    # # plt.xlabel("Age")
-    # # plt.ylabel("Predicted Probability")
-    # # plt.title("Multinomial Logit Probabilities by Age")
-    # # plt.legend(title="Care Mix Type")
-    # # plt.tight_layout()
-    # # plt.show()
-
-    # # ---------------------------------------------------------------------------
-    # # 1. Sub‑sample: women only, who receive any type of care
-    # # ---------------------------------------------------------------------------
-    # care_cols = [
-    #     "pure_informal_care_general",
-    #     "pure_home_care_general",
-    #     "combination_care_general",
-    # ]
-
-    # women = dat.loc[dat["sex"] == 1].copy()  # keep ONLY women
-
-    # mask_any = women[care_cols].fillna(0).astype(int).any(axis=1)
-    # women = women.loc[mask_any].reset_index(drop=True)
-
-    # # ---------------------------------------------------------------------------
-    # # 2. Collapse the three flags → single categorical outcome
-    # #    priority: combination > home > informal
-    # # ---------------------------------------------------------------------------
-    # def care_type(row):
-    #     if row["combination_care_general"] == 1:
-    #         return "combination_care_general"
-    #     elif row["pure_home_care_general"] == 1:
-    #         return "pure_home_care_general"
-    #     elif row["pure_informal_care_general"] == 1:
-    #         return "pure_informal_care_general"
-    #     else:
-    #         return np.nan  # should not happen after mask_any
-
-    # women["care_type"] = women.apply(care_type, axis=1)
-
-    # # ---------------------------------------------------------------------------
-    # # 3. Design matrix: const, age, age²   (NO centring)
-    # # ---------------------------------------------------------------------------
-    # X = pd.DataFrame(
-    #     {
-    #         "const": 1.0,
-    #         "age": women["age"].astype(float),
-    #         "age_sq": women["age"].astype(float) ** 2,
-    #     }
-    # )
-
-    # y, class_labels = pd.factorize(women["care_type"])
-
-    # # ---------------------------------------------------------------------------
-    # # 4. Weighted multinomial logit
-    # # ---------------------------------------------------------------------------
-    # mnlogit = sm.MNLogit(y, X)
-    # res = mnlogit.fit(freq_weights=women["hh_weight"], method="newton")
-    # print(res.summary())
-
-    # # ---------------------------------------------------------------------------
-    # # 5. Predict probabilities across the observed age range (optional plot)
-    # # ---------------------------------------------------------------------------
-    # age_grid = np.arange(women["age"].min(), women["age"].max() + 1)
-    # ex_grid = pd.DataFrame(
-    #     {
-    #         "const": 1.0,
-    #         "age": age_grid,
-    #         "age_sq": age_grid**2,
-    #     }
-    # )[
-    #     X.columns
-    # ]  # same column order
-
-    # preds = pd.DataFrame(res.predict(ex_grid), columns=class_labels)
-    # preds["age"] = age_grid
-
-    # # quick sanity check – every row sums to 1
-    # # assert np.allclose(preds[class_labels].sum(axis=1), 1.0)
-
-    # # ---- simple line plot ------------------------------------------------------
-    # fig, ax = plt.subplots(figsize=(8, 5))
-    # for care in class_labels:
-    #     ax.plot(
-    #         preds["age"],
-    #         preds[care],
-    #         label=care.replace("_general", "").replace("_", " ").title(),
-    #     )
-
-    # ax.set_xlabel("Age")
-    # ax.set_ylabel("Predicted probability (Σ = 1)")
-    # ax.set_title("Predicted probability of care type by age (women only)")
-    # ax.set_ylim(0, 1)
-    # ax.legend(title="Care type")
-    # plt.tight_layout()
-    # plt.show()
-
-    # ===================================================================================
-    breakpoint()
 
     dat = _create_lagged_var(dat, "no_care")
     dat = _create_lagged_var(dat, "home_care")
@@ -1716,13 +1475,13 @@ def _count_children_wave4(row) -> int:
         v = row[col]
 
         # direct code “child”
-        if v == 19:
+        if v == OTHER_CHILD_GAVE_HELP:
             cnt += 1
 
         # social-network person 1-7  →  child if sn005_x == 10
-        elif 101 <= v <= 107:
+        elif SN_PERSON_ONE <= v <= SN_PERSON_SEVEN:
             sn_idx = v - 100  # 1 … 7
-            if row[f"sn005_{sn_idx}"] == 10:
+            if row[f"sn005_{sn_idx}"] == CHILD_ONE_GAVE_HELP:
                 cnt += 1
     return cnt
 
@@ -1737,7 +1496,8 @@ def _has_child_in_wave4(row) -> bool:
     for idx in range(1, 8):
         if (
             row.get(f"sp021d{idx}sn", 0) == 1  # person gave help
-            and row.get(f"sn005_{idx}", None) == 10  # that person is a child
+            and row.get(f"sn005_{idx}", None)
+            == CHILD_ONE_GAVE_HELP  # that person is a child
         ):
             return True
 
@@ -1754,7 +1514,10 @@ def _count_children_inside_hh_wave4(row) -> int:
 
     # social-network 1-7
     for idx in range(1, 8):
-        if row.get(f"sp021d{idx}sn", 0) == 1 and row.get(f"sn005_{idx}", None) == 10:
+        if (
+            row.get(f"sp021d{idx}sn", 0) == 1
+            and row.get(f"sn005_{idx}", None) == CHILD_ONE_GAVE_HELP
+        ):
             cnt += 1
 
     return cnt
