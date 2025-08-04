@@ -212,7 +212,7 @@ def task_create_event_study_sample(
     )
 
     df = create_experience_variable(df, drop_invalid=False)
-    df = create_voluntary_versus_involuntary_job_separation_var(df)
+    df = create_involuntary_versus_voluntary_job_separation_var(df)
     df = create_job_separation_fired(df)
 
     # enforce choice restrictions based on model setup
@@ -237,8 +237,8 @@ def task_create_event_study_sample(
         "working_hours_actual": "float32",
         "pglabgro_deflated": "float32",
         "hourly_wage": "float32",
-        "job_sep_fired": "int8",
-        "job_sep_voluntary_vs_fired": "float32",
+        "job_sep_fired_vs_not": "int8",
+        "job_sep_fired_vs_voluntary": "float32",
         "pli0046": "int8",
         "any_care": "float32",
         "light_care": "float32",
@@ -448,7 +448,7 @@ def create_caregiving(df, filter_missing=False):
     return df
 
 
-def create_voluntary_versus_involuntary_job_separation_var(data):
+def create_involuntary_versus_voluntary_job_separation_var(data):
     """This function generates a job separation variable.
 
     The function creates a new column which is 1 if the individual got fired
@@ -456,8 +456,11 @@ def create_voluntary_versus_involuntary_job_separation_var(data):
     the previous job being terminated.
     It uses plb0304_h from the soep pl data.
 
-    Drop 9 (End Ausbildung), 15 (End Arbeitserlaubnis),
-    13 (Sonstige), 14 (Mehrfachnennung) and negative answers.
+    Drop:
+    - 9 (End Ausbildung)
+    - 13 (Sonstige)
+    - 14 (Mehrfachnennung)
+    - 15 (End Arbeitserlaubnis) and negative answers.
 
     https://paneldata.org/soep-core/datasets/pl/plb0304_h
 
@@ -467,11 +470,11 @@ def create_voluntary_versus_involuntary_job_separation_var(data):
     involuntary = [1, 3, 5, 11]  # employer / contract / legal
     # unknown / multiple answers → default NaN (13, 14 or any other unexpected code)
 
-    data["job_sep_voluntary_vs_fired"] = np.where(
-        data["plb0304_h"].isin(voluntary),
+    data["job_sep_fired_vs_voluntary"] = np.where(
+        data["plb0304_h"].isin(involuntary),
         1,
         np.where(
-            data["plb0304_h"].isin(involuntary),
+            data["plb0304_h"].isin(voluntary),
             0,
             np.nan,
         ),
@@ -491,7 +494,7 @@ def create_job_separation_fired(data):
     https://paneldata.org/soep-core/datasets/pl/plb0304_h
 
     """
-    data.loc[:, "job_sep_fired"] = 0
-    data.loc[data["plb0304_h"].isin([1, 3, 5]), "job_sep_fired"] = 1
+    data.loc[:, "job_sep_fired_vs_not"] = 0
+    data.loc[data["plb0304_h"].isin([1, 3, 5]), "job_sep_fired_vs_not"] = 1
 
     return data

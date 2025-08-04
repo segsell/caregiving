@@ -8,6 +8,7 @@ import pandas as pd
 from pytask import Product
 
 from caregiving.config import BLD, SRC
+from caregiving.utils import table
 
 GERMANY = 12
 MISSING_VALUE = -9
@@ -100,6 +101,29 @@ SOCIAL_SUPPORT = [
     "sp005_3",  # how often per week from this person
 ]
 
+
+WAVE_4_SN_PERSONS_CARE = {
+    # Social network person: relationship (only waves 4, 6, 8, 9)
+    "sn": [
+        "sn005_1",
+        "sn005_2",
+        "sn005_3",
+        "sn005_4",
+        "sn005_5",
+        "sn005_6",
+        "sn005_7",
+    ],
+    "sp": [
+        "sp021d1sn",  # received help with personal care from social network person 1
+        "sp021d2sn",  # received help with personal care from social network person 2
+        "sp021d3sn",  # received help with personal care from social network person 3
+        "sp021d4sn",  # received help with personal care from social network person 4
+        "sp021d5sn",  # received help with personal care from social network person 5
+        "sp021d6sn",  # received help with personal care from social network person 6
+        "sp021d7sn",  # received help with personal care from social network person 7
+    ],
+}
+
 GV_CHILDREN = [
     "ch_gender_",
     "ch_yrbirth_",
@@ -156,8 +180,6 @@ GV_VARS = [
 
 
 # =============================================================================
-def table(df_col):
-    return pd.crosstab(df_col, columns="Count")["Count"]
 
 
 def task_merge_parent_child_waves_and_modules(
@@ -179,7 +201,11 @@ def task_merge_parent_child_waves_and_modules(
 
     variables_wave1 = all_variables | {"gv_weights": ["dw_w1", "cchw_w1", "cciw_w1"]}
     variables_wave2 = all_variables | {"gv_weights": ["dw_w2", "cchw_w2", "cciw_w2"]}
-    variables_wave4 = all_variables | {"gv_weights": ["dw_w4", "cchw_w4", "cciw_w4"]}
+    variables_wave4 = (
+        all_variables
+        | WAVE_4_SN_PERSONS_CARE
+        | {"gv_weights": ["dw_w4", "cchw_w4", "cciw_w4"]}
+    )
     variables_wave5 = all_variables | {"gv_weights": ["dw_w5", "cchw_w5", "cciw_w5"]}
     variables_wave6 = all_variables | {"gv_weights": ["dw_w6", "cchw_w6", "cciw_w6"]}
     variables_wave7 = all_variables | {"gv_weights": ["dw_w7", "cchw_w7", "cciw_w7"]}
