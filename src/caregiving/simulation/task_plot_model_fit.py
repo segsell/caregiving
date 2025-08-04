@@ -345,7 +345,7 @@ def test_choice_shares_sum_to_one(data_emp, data_sim, specs):
     """
     for df, name in ((data_emp, "data_emp"), (data_sim, "data_sim")):
 
-        df_gender = df[df["sex"] == SEX]
+        df_gender = df[df["sex"] == SEX].copy()
         df_gender["age"] = df_gender["period"] + specs["start_age"]
 
         # compute normalized choice shares by age

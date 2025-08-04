@@ -204,10 +204,14 @@ def enforce_model_choice_restriction(df, specs):
     ]
 
     # # Filter out people who are unemployed after sra
-    post_sra = df["age"] - df["policy_state_value"]
+    df["post_sra"] = df["age"] - df["policy_state_value"]
 
-    df = df[~((post_sra >= 0) & (df["choice"].isin(unemployed_values)))]
-    df = df[~((post_sra >= 1) & (df["lagged_choice"].isin(unemployed_values)))]
+    df = df[~((df["post_sra"] >= 0) & (df["choice"].isin(unemployed_values)))]
+    df = df[~((df["post_sra"] >= 1) & (df["lagged_choice"].isin(unemployed_values)))]
+
+    # post_sra = df["age"] - df["policy_state_value"]
+    # df = df[~((post_sra >= 0) & (df["choice"].isin(unemployed_values)))]
+    # df = df[~((post_sra >= 1) & (df["lagged_choice"].isin(unemployed_values)))]
 
     print(str(len(df)) + " left after dropping people who come back from retirement.")
 

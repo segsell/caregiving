@@ -7,7 +7,18 @@ import pandas as pd
 
 
 def table(df_col):
+    """Return frequency table."""
     return pd.crosstab(df_col, columns="Count")["Count"]
+
+
+def describe(df_col):
+    """Return descriptive statistics."""
+    return df_col.describe()
+
+
+def count(df_col):
+    """Count the number of non-missing observations."""
+    return df_col.count()
 
 
 def statsmodels_params_to_dict(params, name_prefix, name_constant=None):
