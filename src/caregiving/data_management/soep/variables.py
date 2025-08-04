@@ -23,6 +23,8 @@ DOES_NOT_APPLY = -2
 
 MISSING_VALUE = -99
 
+ANSWER_NO = 5
+
 
 # =====================================================================================
 # Retirement
@@ -652,7 +654,7 @@ def create_nursing_home(data):
         [
             data["hlf0155_h"].isin([3, 4]),
             data["hlf0155_h"].isin([1, 2]),
-            data["hlf0155_h"] == 5,
+            data["hlf0155_h"] == ANSWER_NO,
         ],
         [1, np.nan, 0],
         default=np.nan,

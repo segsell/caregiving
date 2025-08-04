@@ -6,7 +6,7 @@ channels:
   - defaults
 
 dependencies:
-  - python>3.10
+  - python
   - pip
   - setuptools_scm
   - toml
@@ -22,7 +22,6 @@ dependencies:
   - linearmodels
   - numpy
   - numba
-  - pandas
   - networkx
   - pandas
   - plotly
