@@ -28,6 +28,7 @@ from caregiving.specs.task_write_specs import read_and_derive_specs
 from caregiving.utils import table
 
 
+@pytask.mark.skip()
 def task_create_event_study_sample(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
