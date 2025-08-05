@@ -67,7 +67,12 @@ def filter_data(merged_data, specs, lag_and_lead_buffer_years=True, event_study=
 
     if lag_and_lead_buffer_years:
         start_year = start_year - 1
-        end_year = end_year + 1
+
+        if end_year < MAX_SYEAR:
+            end_year = end_year + 1
+
+        # If we are at the maximum year, we do not add a year to the end_year.
+        # This is to avoid an empty sample.
 
     merged_data = filter_years(merged_data, start_year, end_year)
 
