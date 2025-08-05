@@ -32,6 +32,9 @@ def task_estimate_job_offer(
     # start_params_all = yaml.safe_load(open(path_to_start_params, "rb"))
 
     struct_est_sample = pd.read_csv(path_to_struct_estimation_sample, index_col=0)
+    # struct_est_sample = struct_est_sample[
+    #     (struct_est_sample["syear"] >= 2010) & (struct_est_sample["syear"] <= 2017)
+    # ]
 
     job_offer_params = estimate_logit_job_offer_params(struct_est_sample, specs)
 
@@ -76,9 +79,9 @@ def estimate_logit_job_offer_params(df, specs):
     logit_vars = [
         "intercept",
         "age",
+        "education",
         "age_squared",
         "age_cubed",
-        "education",
     ]
 
     # sex_append = ["men", "women"]

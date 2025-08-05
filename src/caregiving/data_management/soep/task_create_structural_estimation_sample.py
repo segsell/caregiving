@@ -68,7 +68,7 @@ def task_create_main_estimation_sample(
 
     df = generate_job_separation_var(df)
     df = create_lagged_and_lead_variables(
-        df, specs, lead_job_sep=True, drop_missing_lagged_choice=False
+        df, specs, lead_job_sep=True, drop_missing_lagged_choice=True
     )
     # df["lagged_care"] = df.groupby(["pid"])["any_care"].shift(1)
 
