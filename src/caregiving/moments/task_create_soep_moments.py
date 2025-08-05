@@ -28,13 +28,16 @@ DEGREES_OF_FREEDOM = 1
 
 def task_create_soep_moments(
     path_to_specs: Path = SRC / "specs.yaml",
-    path_to_sample: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
+    path_to_main_sample: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
+    path_to_caregivers_sample: Path = BLD
+    / "data"
+    / "soep_structural_caregivers_sample.csv",
     path_to_save_moments: Annotated[Path, Product] = BLD
     / "moments"
-    / "soep_moments.csv",
+    / "soep_moments_new.csv",
     path_to_save_variances: Annotated[Path, Product] = BLD
     / "moments"
-    / "soep_variances.csv",
+    / "soep_variances_new.csv",
 ) -> None:
     """Create moments for MSM estimation."""
 
@@ -43,8 +46,15 @@ def task_create_soep_moments(
     end_age = specs["end_age_msm"]
     age_range = range(start_age, end_age + 1)
 
-    df = pd.read_csv(path_to_sample, index_col=[0])
+    df = pd.read_csv(path_to_main_sample, index_col=[0])
     df = df[(df["sex"] == 1) & (df["age"] <= end_age + 10)]  # women only
+
+    df_caregivers = pd.read_csv(path_to_caregivers_sample, index_col=[0])
+    df_caregivers = df_caregivers[
+        (df_caregivers["sex"] == 1)
+        & (df_caregivers["age"] <= end_age + 10)
+        & (df_caregivers["any_care"] == 1)
+    ]
 
     # df_year = df[df["syear"] == 2012]  # 2016 # noqa: PLR2004
     # # df_year = df[df["syear"].between(2012, 2018)]

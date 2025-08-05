@@ -5,6 +5,7 @@ import jax.numpy as jnp
 FILL_VALUE = 0
 MISSING_VALUE = -99
 BASE_YEAR = 2010  # 2015
+MAX_SYEAR = 2023  # Maximum year in thhe SOEP
 
 PARENT_WEIGHTS_SHARE = {
     "40_44": 0.303030,
