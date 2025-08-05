@@ -157,7 +157,7 @@ def task_create_event_study_sample(
     cpi = pd.read_csv(path_to_cpi, index_col=0)
 
     df = pd.read_csv(path_to_raw)
-    df = df.drop(columns=["migback", "locchild1", "pgjobend", "pgjobch"])
+    df = df.drop(columns=["locchild1"])
 
     syear_counts = df["syear"].value_counts().sort_index()
     print("Number of observations per year in the raw data:\n" + str(syear_counts))

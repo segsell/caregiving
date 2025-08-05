@@ -139,9 +139,9 @@ def create_lagged_and_lead_variables(
     else:
         merged_data = full_container.copy()
 
-    # if dropp_missing_lead_job_sep:
+    # if lead_job_sep:
     #     merged_data = merged_data[merged_data["job_sep_this_year"].notna()]
-    if dropp_missing_lead_job_sep:
+    if lead_job_sep and dropp_missing_lead_job_sep:
         merged_data = merged_data[
             (merged_data["job_sep_this_year"].notna())
             | (merged_data.index.get_level_values("syear") == MAX_SYEAR)
