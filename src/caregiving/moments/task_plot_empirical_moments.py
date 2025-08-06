@@ -40,14 +40,34 @@ def task_plot_empirical_soep_moments(
     path_to_caregivers_sample: Path = BLD
     / "data"
     / "soep_structural_caregivers_sample.csv",
+    path_to_save_labor_supply_all_by_age: Annotated[Path, Product] = BLD
+    / "plots"
+    / "raw_moments"
+    / "labor_shares_by_age.png",
     path_to_save_labor_supply_caregivers_by_age: Annotated[Path, Product] = BLD
     / "plots"
     / "raw_moments"
     / "labor_shares_caregivers_by_age.png",
+    path_to_save_labor_supply_all_by_age_bins: Annotated[Path, Product] = BLD
+    / "plots"
+    / "raw_moments"
+    / "labor_shares_by_age_bins.png",
     path_to_save_labor_supply_caregivers_by_age_bins: Annotated[Path, Product] = BLD
     / "plots"
     / "raw_moments"
     / "labor_shares_caregivers_by_age_bins.png",
+    path_to_save_labor_supply_light_caregivers_by_age_bins: Annotated[
+        Path, Product
+    ] = BLD
+    / "plots"
+    / "raw_moments"
+    / "labor_shares_light_caregivers_by_age_bins.png",
+    path_to_save_labor_supply_intensive_caregivers_by_age_bins: Annotated[
+        Path, Product
+    ] = BLD
+    / "plots"
+    / "raw_moments"
+    / "labor_shares_intensive_caregivers_by_age_bins.png",
 ) -> None:
     """Create moments for MSM estimation."""
 
@@ -90,12 +110,29 @@ def task_plot_empirical_soep_moments(
     ]
 
     plot_choice_shares_by_education_emp(
+        data_emp=df,
+        specs=specs,
+        age_min=start_age,
+        age_max=end_age,
+        path_to_save_plot=path_to_save_labor_supply_all_by_age,
+    )
+    plot_choice_shares_by_education_emp(
         data_emp=df_caregivers,
         specs=specs,
         age_min=start_age,
         age_max=end_age,
         path_to_save_plot=path_to_save_labor_supply_caregivers_by_age,
     )
+
+    plot_choice_shares_by_education_age_bins_emp(
+        data_emp=df,
+        specs=specs,
+        age_min=start_age,
+        age_max=end_age,
+        bin_width=5,
+        path_to_save_plot=path_to_save_labor_supply_all_by_age_bins,
+    )
+
     plot_choice_shares_by_education_age_bins_emp(
         data_emp=df_caregivers,
         specs=specs,
@@ -103,6 +140,22 @@ def task_plot_empirical_soep_moments(
         age_max=end_age,
         bin_width=5,
         path_to_save_plot=path_to_save_labor_supply_caregivers_by_age_bins,
+    )
+    plot_choice_shares_by_education_age_bins_emp(
+        data_emp=df_light_caregivers,
+        specs=specs,
+        age_min=start_age,
+        age_max=end_age,
+        bin_width=5,
+        path_to_save_plot=path_to_save_labor_supply_light_caregivers_by_age_bins,
+    )
+    plot_choice_shares_by_education_age_bins_emp(
+        data_emp=df_intensive_caregivers,
+        specs=specs,
+        age_min=start_age,
+        age_max=end_age,
+        bin_width=5,
+        path_to_save_plot=path_to_save_labor_supply_intensive_caregivers_by_age_bins,
     )
 
 
