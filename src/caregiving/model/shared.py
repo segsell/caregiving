@@ -168,6 +168,8 @@ FULL_TIME_NO_CARE = jnp.array([3])
 WORK_AND_NO_WORK_NO_CARE = jnp.array([0, 1, 2, 3])
 
 INFORMAL_CARE = jnp.array([4, 5, 6, 7])
+LIGHT_INFORMAL_CARE = jnp.array([4, 5, 6, 7])
+INTENSIVE_INFORMAL_CARE = jnp.array([4, 5, 6, 7])
 NO_INFORMAL_CARE = jnp.array([0, 1, 2, 3])
 
 # Combine
