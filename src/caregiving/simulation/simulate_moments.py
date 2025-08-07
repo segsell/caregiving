@@ -12,8 +12,8 @@ import pandas as pd
 from caregiving.model.shared import (
     FULL_TIME,
     INFORMAL_CARE,
-    INTENSIVE_INFORMAL_CARE,
     LIGHT_INFORMAL_CARE,
+    INTENSIVE_INFORMAL_CARE,
     NOT_WORKING_CARE,
     PART_TIME,
     RETIREMENT,
@@ -613,6 +613,12 @@ def create_moments_jax(sim_df, min_age, max_age):
     share_caregivers_by_age_bin = get_share_by_age_bin(
         arr, ind=idx, choice=INFORMAL_CARE, bins=age_bins_75
     )
+    # share_caregivers_by_age_bin = get_share_by_age_bin(
+    #     arr, ind=idx, choice=LIGHT_INFORMAL_CARE, bins=age_bins_75
+    # )
+    # share_caregivers_by_age_bin = get_share_by_age_bin(
+    #     arr, ind=idx, choice=INFORMAL_CARE, bins=age_bins_75
+    # )
     education_mask = arr[:, idx["education"]] == 1
     care_type_mask = jnp.isin(arr[:, idx["choice"]], INFORMAL_CARE)
     share_caregivers_high_educ = jnp.sum(education_mask & care_type_mask) / jnp.sum(
