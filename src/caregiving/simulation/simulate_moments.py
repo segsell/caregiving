@@ -153,6 +153,28 @@ def simulate_moments_pandas(
     # label="high_education"
     # )
 
+    # states_informal_care = {
+    #     "no_informal_care": NOT_WORKING_CARE,
+    #     "informal_care": INFORMAL_CARE,
+    # }
+    # states_light_informal = {
+    #     "no_light_informal_care": NO_LIGHT_INFORMAL_CARE,
+    #     "light_informal_care": LIGHT_INFORMAL_CARE
+    # }
+    # states_intensive_informal = {
+    #     "no_intensive_informal_care": NO_INTENSIVE_INFORMAL_CARE,
+    #     "intensive_informal_care": INTENSIVE_INFORMAL_CARE
+    # }
+    # moments = compute_transition_moments_pandas_for_age_bins(
+    #     df, moments, age_range, states=states_informal_care
+    # )
+    # moments = compute_transition_moments_pandas_for_age_bins(
+    #     df, moments, age_range, states=states_light_informal_care
+    # )
+    # moments = compute_transition_moments_pandas_for_age_bins(
+    #     df, moments, age_range, states=states_intensive_informal_care
+    # )
+
     return pd.Series(moments)
 
 
@@ -863,6 +885,32 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
     #     ind=idx,
     #     lagged_choice=FULL_TIME,
     #     current_choice=FULL_TIME,
+    #     min_age=min_age,
+    #     max_age=max_age,
+    # )
+
+    # Caregiving transitions by age bin
+    # informal_to_informal_by_age_bin = get_transition_for_age_bins(
+    #     arr,
+    #     ind=idx,
+    #     lagged_choice=INFORMAL_CARE,
+    #     current_choice=INFORMAL_CARE,
+    #     min_age=min_age,
+    #     max_age=max_age,
+    # )
+    # light_informal_to_light_informal_by_age_bin = get_transition_for_age_bins(
+    #     arr,
+    #     ind=idx,
+    #     lagged_choice=LIGHT_INFORMAL_CARE,
+    #     current_choice=LIGHT_INFORMAL_CARE,
+    #     min_age=min_age,
+    #     max_age=max_age,
+    # )
+    # intensive_informal_to_intensive_informal_by_age_bin = get_transition_for_age_bins(
+    #     arr,
+    #     ind=idx,
+    #     lagged_choice=INTENSIVE_INFORMAL_CARE,
+    #     current_choice=INTENSIVE_INFORMAL_CARE,
     #     min_age=min_age,
     #     max_age=max_age,
     # )

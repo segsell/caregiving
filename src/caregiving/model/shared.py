@@ -171,6 +171,8 @@ INFORMAL_CARE = jnp.array([4, 5, 6, 7])
 LIGHT_INFORMAL_CARE = jnp.array([4, 5, 6, 7])
 INTENSIVE_INFORMAL_CARE = jnp.array([4, 5, 6, 7])
 NO_INFORMAL_CARE = jnp.array([0, 1, 2, 3])
+NO_LIGHT_INFORMAL_CARE = jnp.array([0, 1, 2, 3])
+NO_INTENSIVE_INFORMAL_CARE = jnp.array([0, 1, 2, 3])
 
 # Combine
 NOT_WORKING = jnp.concatenate([UNEMPLOYED, RETIREMENT])
