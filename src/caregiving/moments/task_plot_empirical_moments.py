@@ -74,7 +74,6 @@ def task_plot_empirical_soep_moments(
     specs = read_and_derive_specs(path_to_specs)
     start_age = specs["start_age"]
     end_age = specs["end_age_msm"]
-    age_range = range(start_age, end_age + 1)
 
     df = pd.read_csv(path_to_main_sample, index_col=[0])
     df = df[(df["sex"] == 1) & (df["age"] <= end_age + 10)]  # women only
@@ -88,26 +87,10 @@ def task_plot_empirical_soep_moments(
     df_light_caregivers = df_caregivers[df_caregivers["light_care"] == 1]
     df_intensive_caregivers = df_caregivers[df_caregivers["intensive_care"] == 1]
 
-    df_year = df[df["syear"] == 2012]  # 2016 # noqa: PLR2004
+    _df_year = df[df["syear"] == 2012]  # 2016 # noqa: PLR2004
     # # df_year = df[df["syear"].between(2012, 2018)]
 
     df["kidage_youngest"] = df["kidage_youngest"] - 1
-
-    df_low = df[df["education"] == 0]
-    df_high = df[df["education"] == 1]
-
-    df_caregivers_low = df_caregivers[df_caregivers["education"] == 0]
-    df_caregivers_high = df_caregivers[df_caregivers["education"] == 1]
-    df_light_caregivers_low = df_light_caregivers[df_light_caregivers["education"] == 0]
-    df_light_caregivers_high = df_light_caregivers[
-        df_light_caregivers["education"] == 1
-    ]
-    df_intensive_caregivers_low = df_intensive_caregivers[
-        df_intensive_caregivers["education"] == 0
-    ]
-    df_intensive_caregivers_high = df_intensive_caregivers[
-        df_intensive_caregivers["education"] == 1
-    ]
 
     plot_choice_shares_by_education_emp(
         data_emp=df,
@@ -246,7 +229,7 @@ def plot_choice_shares_by_education_emp(
         plt.savefig(path_to_save_plot, dpi=300, transparent=False)
 
 
-def plot_choice_shares_by_education_age_bins_emp(
+def plot_choice_shares_by_education_age_bins_emp(  # noqa: PLR0912, PLR0915
     data_emp,
     specs,
     age_min: Optional[int] = None,
