@@ -25,12 +25,10 @@ from caregiving.data_management.soep.variables import (
 )
 from caregiving.model.shared import N_MONTHS, N_WEEKS_IN_YEAR, PART_TIME, WORK
 from caregiving.specs.task_write_specs import read_and_derive_specs
+from caregiving.utils import table
 
 
-def table(df_col):
-    return pd.crosstab(df_col, columns="Count")["Count"]
-
-
+@pytask.mark.skip()
 def task_create_event_study_sample(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
@@ -160,6 +158,7 @@ def task_create_event_study_sample(
     cpi = pd.read_csv(path_to_cpi, index_col=0)
 
     df = pd.read_csv(path_to_raw)
+    df = df.drop(columns=["locchild1"])
 
     syear_counts = df["syear"].value_counts().sort_index()
     print("Number of observations per year in the raw data:\n" + str(syear_counts))
@@ -186,6 +185,7 @@ def task_create_event_study_sample(
     )
 
     df = deflate_gross_labor_income(df, cpi_data=cpi, specs=specs)
+
     df = create_hourly_wage(df)
 
     df = create_partner_state(df, filter_missing=False)

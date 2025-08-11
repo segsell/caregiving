@@ -5,6 +5,7 @@ from typing import Annotated
 
 import numpy as np
 import pandas as pd
+import pytask
 from pytask import Product
 
 from caregiving.config import BLD, SRC
@@ -47,6 +48,8 @@ def task_create_main_estimation_sample(
 ) -> None:
 
     specs = read_and_derive_specs(path_to_specs)
+    specs["start_year"] = 2001
+    specs["end_year"] = 2023
 
     # merged_data = pd.read_csv(path_to_raw, index_col=[0, 1])
     df = pd.read_csv(path_to_raw, index_col=[0, 1])
@@ -90,7 +93,8 @@ def task_create_main_estimation_sample(
     df = create_policy_state(df, specs)
     df = create_experience_variable(df)
     df = create_education_type(df)
-    df = create_health_var_good_bad(df)
+    # health variable not yet available for 2023
+    df = create_health_var_good_bad(df, drop_missing=False)
 
     df = enforce_model_choice_restriction(df, specs)
 
@@ -128,7 +132,7 @@ def task_create_main_estimation_sample(
         "experience": "int8",
         "wealth": "float32",
         "education": "int8",
-        "health": "int8",
+        "health": "float16",
         "sex": "int8",
         "children": "int8",
         "kidage_youngest": "int8",
@@ -186,7 +190,12 @@ def task_create_caregivers_sample(
 
     df = generate_job_separation_var(df)
     df = create_lagged_and_lead_variables(
-        df, specs, lead_job_sep=True, drop_missing_lagged_choice=False
+        df,
+        specs,
+        lead_job_sep=True,
+        drop_missing_lagged_choice=False,
+        start_year=2001,
+        end_year=2023,
     )
     # df["lagged_care"] = df.groupby(["pid"])["any_care"].shift(1)
 
@@ -211,7 +220,7 @@ def task_create_caregivers_sample(
     df = create_policy_state(df, specs)
     df = create_experience_variable(df)
     df = create_education_type(df)
-    df = create_health_var_good_bad(df)
+    df = create_health_var_good_bad(df, drop_missing=False)
 
     df = enforce_model_choice_restriction(df, specs)
 
@@ -249,7 +258,7 @@ def task_create_caregivers_sample(
         "experience": "int8",
         "wealth": "float32",
         "education": "int8",
-        "health": "int8",
+        "health": "float16",  # can be NA
         "sex": "int8",
         "children": "int8",
         "kidage_youngest": "int8",

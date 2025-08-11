@@ -5,6 +5,7 @@ import jax.numpy as jnp
 FILL_VALUE = 0
 MISSING_VALUE = -99
 BASE_YEAR = 2010  # 2015
+MAX_SYEAR = 2023  # Maximum year in thhe SOEP
 
 PARENT_WEIGHTS_SHARE = {
     "40_44": 0.303030,
@@ -167,7 +168,11 @@ FULL_TIME_NO_CARE = jnp.array([3])
 WORK_AND_NO_WORK_NO_CARE = jnp.array([0, 1, 2, 3])
 
 INFORMAL_CARE = jnp.array([4, 5, 6, 7])
+LIGHT_INFORMAL_CARE = jnp.array([4, 5, 6, 7])
+INTENSIVE_INFORMAL_CARE = jnp.array([4, 5, 6, 7])
 NO_INFORMAL_CARE = jnp.array([0, 1, 2, 3])
+NO_LIGHT_INFORMAL_CARE = jnp.array([0, 1, 2, 3])
+NO_INTENSIVE_INFORMAL_CARE = jnp.array([0, 1, 2, 3])
 
 # Combine
 NOT_WORKING = jnp.concatenate([UNEMPLOYED, RETIREMENT])
