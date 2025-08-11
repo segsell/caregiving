@@ -175,23 +175,6 @@ def estimate_model(
     #     }
     #     minimize_kwargs["scaling"] = so_opts
     if scaling:
-        # # Accept either a dict, an already-constructed ScalingOptions, or None
-        # if scaling_options is None:
-        #     so_opts = {
-        #         "method": "start_values",
-        #         "clipping_value": 0.1,
-        #         "magnitude": 1,
-        #     }
-        # elif isinstance(scaling_options, om.ScalingOptions):
-        #     so_opts = scaling_options
-        # elif isinstance(scaling_options, dict):
-        #     so_opts = om.ScalingOptions(**scaling_options)
-        # else:
-        #     raise TypeError(
-        #         "scaling_options must be None, dict, or ScalingOptions; "
-        #         f"got {type(scaling_options).__name__}"
-        #     )
-        # minimize_kwargs["scaling"] = so_opts
         minimize_kwargs["scaling"] = _set_scaling_options(scaling_options)
 
     # if multistart:
@@ -203,19 +186,6 @@ def estimate_model(
     #     )
     #     minimize_kwargs["multistart"] = ms_opts
     if multistart:
-        # # Accept either a dict or an already-constructed MultistartOptions
-        # if multistart_options is None:
-        #     ms_opts = om.MultistartOptions(n_samples=100, seed=0, n_cores=4)
-        # elif isinstance(multistart_options, om.MultistartOptions):
-        #     ms_opts = multistart_options
-        # elif isinstance(multistart_options, dict):
-        #     ms_opts = om.MultistartOptions(**multistart_options)
-        # else:
-        #     raise TypeError(
-        #         "multistart_options must be None, dict, or MultistartOptions; "
-        #         f"got {type(multistart_options).__name__}"
-        #     )
-        # minimize_kwargs["multistart"] = ms_opts
         minimize_kwargs["multistart"] = _set_multistart_options(multistart_options)
 
     result = om.minimize(**minimize_kwargs)
