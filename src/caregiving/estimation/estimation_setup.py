@@ -10,8 +10,6 @@ import numpy as np
 import optimagic as om
 import pandas as pd
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import RETIREMENT
@@ -28,6 +26,8 @@ from caregiving.simulation.simulate_moments import (
     simulate_moments_jax,
     simulate_moments_pandas,
 )
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 jax.config.update("jax_enable_x64", True)
 
@@ -166,23 +166,57 @@ def estimate_model(
         fixed_constraint = om.FixedConstraint(selector=select_fixed_params)
         minimize_kwargs["constraints"] = fixed_constraint
 
+    # if scaling:
+    #     # Either use user-supplied dict or fall back to your defaults
+    #     so_opts = scaling_options or {
+    #         "method": "start_values",
+    #         "clipping_value": 0.1,
+    #         "magnitude": 1,
+    #     }
+    #     minimize_kwargs["scaling"] = so_opts
     if scaling:
-        # Either use user-supplied dict or fall back to your defaults
-        so_opts = scaling_options or {
-            "method": "start_values",
-            "clipping_value": 0.1,
-            "magnitude": 1,
-        }
-        minimize_kwargs["scaling"] = so_opts
+        # # Accept either a dict, an already-constructed ScalingOptions, or None
+        # if scaling_options is None:
+        #     so_opts = {
+        #         "method": "start_values",
+        #         "clipping_value": 0.1,
+        #         "magnitude": 1,
+        #     }
+        # elif isinstance(scaling_options, om.ScalingOptions):
+        #     so_opts = scaling_options
+        # elif isinstance(scaling_options, dict):
+        #     so_opts = om.ScalingOptions(**scaling_options)
+        # else:
+        #     raise TypeError(
+        #         "scaling_options must be None, dict, or ScalingOptions; "
+        #         f"got {type(scaling_options).__name__}"
+        #     )
+        # minimize_kwargs["scaling"] = so_opts
+        minimize_kwargs["scaling"] = _set_scaling_options(scaling_options)
 
+    # if multistart:
+    #     # allow custom options or fall back to your defaults
+    #     ms_opts = (
+    #         om.MultistartOptions(**multistart_options)
+    #         if multistart_options is not None
+    #         else om.MultistartOptions(n_samples=100, seed=0, n_cores=4)
+    #     )
+    #     minimize_kwargs["multistart"] = ms_opts
     if multistart:
-        # allow custom options or fall back to your defaults
-        ms_opts = (
-            om.MultistartOptions(**multistart_options)
-            if multistart_options is not None
-            else om.MultistartOptions(n_samples=100, seed=0, n_cores=4)
-        )
-        minimize_kwargs["multistart"] = ms_opts
+        # # Accept either a dict or an already-constructed MultistartOptions
+        # if multistart_options is None:
+        #     ms_opts = om.MultistartOptions(n_samples=100, seed=0, n_cores=4)
+        # elif isinstance(multistart_options, om.MultistartOptions):
+        #     ms_opts = multistart_options
+        # elif isinstance(multistart_options, dict):
+        #     ms_opts = om.MultistartOptions(**multistart_options)
+        # else:
+        #     raise TypeError(
+        #         "multistart_options must be None, dict, or MultistartOptions; "
+        #         f"got {type(multistart_options).__name__}"
+        #     )
+        # minimize_kwargs["multistart"] = ms_opts
+        minimize_kwargs["multistart"] = _set_multistart_options(multistart_options)
 
     result = om.minimize(**minimize_kwargs)
 
@@ -195,6 +229,40 @@ def estimate_model(
     start_params_series.to_csv(path_to_save_estimation_params, header=True)
 
     return result
+
+
+def _set_scaling_options(
+    scaling_options: Optional[Dict[str, Any]] = None,
+) -> om.ScalingOptions:
+    """Set scaling options for the optimization."""
+    if scaling_options is None:
+        return om.ScalingOptions(method="start_values", clipping_value=0.1, magnitude=1)
+    elif isinstance(scaling_options, om.ScalingOptions):
+        return scaling_options
+    elif isinstance(scaling_options, dict):
+        return om.ScalingOptions(**scaling_options)
+    else:
+        raise TypeError(
+            "scaling_options must be None, dict, or ScalingOptions; "
+            f"got {type(scaling_options).__name__}"
+        )
+
+
+def _set_multistart_options(
+    multistart_options: Optional[Dict[str, Any]] = None,
+) -> om.MultistartOptions:
+    """Set multistart options for the optimization."""
+    if multistart_options is None:
+        return om.MultistartOptions(n_samples=100, seed=0, n_cores=4)
+    elif isinstance(multistart_options, om.MultistartOptions):
+        return multistart_options
+    elif isinstance(multistart_options, dict):
+        return om.MultistartOptions(**multistart_options)
+    else:
+        raise TypeError(
+            "multistart_options must be None, dict, or MultistartOptions; "
+            f"got {type(multistart_options).__name__}"
+        )
 
 
 # =====================================================================================
