@@ -566,11 +566,11 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     child_age_0_to_2 = is_child_age_0_to_2(age_youngest_child) * has_children
     child_age_3_to_5 = is_child_age_3_to_5(age_youngest_child) * has_children
 
-    disutil_children_ft_low = params["disutil_children_ft_work_low"] * nb_children
-    disutil_children_ft_high = params["disutil_children_ft_work_high"] * nb_children
+    # disutil_children_ft_low = params["disutil_children_ft_work_low"] * nb_children
+    # disutil_children_ft_high = params["disutil_children_ft_work_high"] * nb_children
 
-    disutil_children_pt_low = params["disutil_children_pt_work_low"] * nb_children
-    disutil_children_pt_high = params["disutil_children_pt_work_high"] * nb_children
+    # disutil_children_pt_low = params["disutil_children_pt_work_low"] * nb_children
+    # disutil_children_pt_high = params["disutil_children_pt_work_high"] * nb_children
 
     # Disutility of labor and age of youngest child
     disutil_child_0_to_2_ft_low = (
@@ -600,21 +600,21 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     )
 
     disutil_children_pt = (
-        disutil_children_pt_low
-        + disutil_child_0_to_2_pt_low
+        # disutil_children_pt_low
+        disutil_child_0_to_2_pt_low
         + disutil_child_3_to_5_pt_low
     ) * (1 - education) + (
-        disutil_children_pt_high
-        + disutil_child_0_to_2_pt_high
+        # disutil_children_pt_high
+        disutil_child_0_to_2_pt_high
         + disutil_child_3_to_5_pt_high
     ) * education
     disutil_children_ft = (
-        disutil_children_ft_low
-        + disutil_child_0_to_2_ft_low
+        # disutil_children_ft_low
+        disutil_child_0_to_2_ft_low
         + disutil_child_3_to_5_ft_low
     ) * (1 - education) + (
-        disutil_children_ft_high
-        + disutil_child_0_to_2_ft_high
+        # disutil_children_ft_high
+        disutil_child_0_to_2_ft_high
         + disutil_child_3_to_5_ft_high
     ) * education
 

@@ -73,8 +73,8 @@ def calc_job_finding_prob_women(period, education, params, options):
     exp_value = jnp.exp(
         params["job_finding_logit_const_women"]
         + params["job_finding_logit_age_women"] * age
-        # + params["job_finding_logit_age_squared_women"] * age**2
-        # + params["job_finding_logit_age_cubed_women"] * age**3
+        + params["job_finding_logit_age_squared_women"] * age**2
+        + params["job_finding_logit_age_cubed_women"] * age**3
         + params["job_finding_logit_high_educ_women"] * high_edu
     )
 
