@@ -5,14 +5,16 @@ from pathlib import Path
 from typing import Annotated
 
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
 import numpy as np
 import pandas as pd
 from pytask import Product
 
 from caregiving.config import BLD, JET_COLOR_MAP, SRC
+from caregiving.model.shared import MINIMUM_CHILDBEARING_AGE
 
 
-def task_plot_children(
+def task_plot_number_of_children(
     path_to_full_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_data: Path = BLD / "data" / "soep_partner_transition_data.csv",
     path_to_save: Annotated[Path, Product] = BLD
@@ -108,6 +110,138 @@ def task_plot_children(
     fig.tight_layout()
     fig.savefig(path_to_save, dpi=300)
     plt.close(fig)
+
+
+# def task_plot_age_youngest_child(
+#     path_to_full_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+#     path_to_data: Path = BLD / "data" / "soep_partner_transition_data.csv",
+#     path_to_save: Annotated[Path, Product] = BLD
+#     / "plots"
+#     / "stochastic_processes"
+#     / "age_youngest_child.png",
+#     male: bool = False,
+# ):
+#     """Plot age of the youngest child.
+
+#     Split by sex x education x presence of partner.
+
+#     """
+
+#     # --- Load specs + data
+#     with path_to_full_specs.open("rb") as file:
+#         specs = pkl.load(file)
+
+#     df = pd.read_csv(path_to_data, index_col=["pid", "syear"])
+
+#     start_age = specs["start_age"]
+#     # end_age = specs["end_age"]
+#     end_age = 50
+#     ages = np.arange(start_age, end_age + 1)
+
+#     df = df[df["age"] <= end_age].copy()
+#     df["has_partner"] = (df["partner_state"] > 0).astype(int)
+
+#     # Filter data. Keep only observations with children
+#     df = df.loc[df["kidage_youngest"] >= 0].copy()
+
+#     # Drop observations with a positive age of the youngest child
+#     # but no children in the household
+#     df = df[~((df["kidage_youngest"] >= 0) & (df["children"] == 0))]
+#     df = df.loc[
+#         (df["kidage_youngest"] <= df["age"] - MINIMUM_CHILDBEARING_AGE)
+#         # & (df["kidage_youngest"] + df["age"] >= MAXIMUM_CHILDBEARING_AGE)
+#     ]
+
+#     # --- Observed means by (sex, education, has_partner, age)
+#     cov_list = ["sex", "education", "has_partner", "age"]
+#     kidage_data = df.groupby(cov_list)["kidage_youngest"].mean()
+
+#     kidage_est = np.asarray(specs["child_age_youngest_by_state"])
+
+#     partner_labels = ["Single", "Partnered"]
+#     sex_labels = ["Men", "Women"]
+#     sexes_to_plot = [1] if not male else [0, 1]  # default: only Women unless male=True
+
+#     edu_labels = specs["education_labels"]
+
+#     ncols = len(sexes_to_plot) * len(partner_labels)
+#     fig, axs = plt.subplots(1, ncols, figsize=(4 * ncols, 6), squeeze=False)
+#     axs = axs[0]
+
+#     plot_idx = 0
+#     for sex in sexes_to_plot:
+#         for has_partner, partner_label in enumerate(partner_labels):
+#             ax = axs[plot_idx]
+#             plot_idx += 1
+
+#             # track ymax to set axis range per panel
+#             panel_ymax = 0.0
+
+#             for edu, edu_label in enumerate(edu_labels):
+#                 # Observed series on the full age grid (leave gaps as NaN)
+#                 obs_sel = (
+#                     kidage_data.loc[(sex, edu, has_partner, slice(None))]
+#                     if (sex, edu, has_partner)
+#                     in kidage_data.index.droplevel("age").unique()
+#                     else pd.Series(dtype=float)
+#                 )
+
+#                 obs_series = pd.Series(index=ages, dtype=float)  # NaN baseline
+#                 if len(obs_sel) > 0:
+#                     obs_series.update(obs_sel)
+
+#                 # Estimated series (convert jnp -> np if needed)
+#                 est_series = np.asarray(
+#                     kidage_est[sex, edu, has_partner, :], dtype=float
+#                 )
+#                 breakpoint()
+
+#                 ax.plot(
+#                     ages,
+#                     obs_series.values,
+#                     linestyle="--",
+#                     label=f"Obs. {edu_label}",
+#                     color=JET_COLOR_MAP[edu],
+#                 )
+#                 ax.plot(
+#                     ages,
+#                     est_series,
+#                     label=f"Est. {edu_label}",
+#                     color=JET_COLOR_MAP[edu],
+#                 )
+
+#                 # Update ymax, ignoring NaNs
+#                 panel_ymax = np.nanmax(
+#                     [panel_ymax, np.nanmax(obs_series.values), np.nanmax(est_series)]
+#                 )
+
+#             # Axis cosmetics
+#             title = partner_label if not male else f"{sex_labels[sex]}, {partner_label}"
+#             ax.set_title(title)
+#             ax.set_xlim([start_age, end_age])
+#             ax.set_xticks(np.arange(start_age, end_age + 1, 10))
+
+#             # y-limits: start at 0, go to next integer above max
+#             if np.isfinite(panel_ymax):
+#                 y_top = int(np.ceil(panel_ymax))
+#                 y_top = max(y_top, 1)  # at least 1
+#             else:
+#                 y_top = 1
+#             ax.set_ylim([0, y_top])
+
+#             # Integer y-ticks
+#             ax.yaxis.set_major_locator(mticker.MaxNLocator(integer=True))
+
+#             ax.set_xlabel("Age of agent")
+#             ax.set_ylabel("Age of youngest child")
+
+#     # Legend on first axis
+#     axs[0].legend(ncol=1, frameon=True)
+
+#     fig.tight_layout()
+#     fig.savefig(path_to_save, dpi=300, bbox_inches="tight")
+#     breakpoint()
+#     plt.close(fig)
 
 
 def task_plot_partner_transitions(

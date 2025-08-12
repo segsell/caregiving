@@ -18,7 +18,7 @@ import statsmodels.api as sm
 from pytask import Product
 
 from caregiving.config import BLD, SRC
-from caregiving.model.shared import MINIMUM_CHILDBEARING_AGE, MISSING_VALUE
+from caregiving.model.shared import MINIMUM_CHILDBEARING_AGE
 from caregiving.specs.derive_specs import read_and_derive_specs
 
 
@@ -202,92 +202,92 @@ def task_estimate_age_of_youngest_child(
                 estimates.loc[(sex, education, has_partner), columns] = model.params
 
     estimates.to_csv(path_to_save)
-    plot_age_of_youngest_child(df, estimates, sex=1, education=1, has_partner=1)
+    # plot_age_of_youngest_child(df, estimates, sex=1, education=1, has_partner=1)
 
 
-def plot_age_of_youngest_child(
-    df: pd.DataFrame,
-    estimates: pd.DataFrame,
-    sex: int,
-    education: int,
-    has_partner: int,
-):
-    """Plot raw and predicted kidage_youngest against age by subgroup."""
+# def plot_age_of_youngest_child(
+#     df: pd.DataFrame,
+#     estimates: pd.DataFrame,
+#     sex: int,
+#     education: int,
+#     has_partner: int,
+# ):
+#     """Plot raw and predicted kidage_youngest against age by subgroup."""
 
-    # 1. Filter the data for the desired subgroup
-    df_sub = df[
-        (df["sex"] == sex)
-        & (df["education"] == education)
-        & (df["has_partner"] == has_partner)
-    ].copy()
+#     # 1. Filter the data for the desired subgroup
+#     df_sub = df[
+#         (df["sex"] == sex)
+#         & (df["education"] == education)
+#         & (df["has_partner"] == has_partner)
+#     ].copy()
 
-    if df_sub.empty:
-        print(
-            f"No data for subgroup (sex={sex}, edu={education}, "
-            f"has_partner={has_partner})."
-        )
-        return
+#     if df_sub.empty:
+#         print(
+#             f"No data for subgroup (sex={sex}, edu={education}, "
+#             f"has_partner={has_partner})."
+#         )
+#         return
 
-    # 2. Group by 'age' to get the average observed kidage_youngest
-    df_grouped = df_sub.groupby("age", as_index=False).agg(
-        avg_kidage_youngest=("kidage_youngest", "mean")
-    )
+#     # 2. Group by 'age' to get the average observed kidage_youngest
+#     df_grouped = df_sub.groupby("age", as_index=False).agg(
+#         avg_kidage_youngest=("kidage_youngest", "mean")
+#     )
 
-    # 3. Retrieve the OLS coefficients for this subgroup
-    coeffs = estimates.loc[
-        # (sex, education, has_partner), ["const", "period", "period_sq"]
-        (sex, education, has_partner),
-        # ["const", "age", "age_sq"],
-        ["const", "period", "period_sq"],
-    ]
+#     # 3. Retrieve the OLS coefficients for this subgroup
+#     coeffs = estimates.loc[
+#         # (sex, education, has_partner), ["const", "period", "period_sq"]
+#         (sex, education, has_partner),
+#         # ["const", "age", "age_sq"],
+#         ["const", "period", "period_sq"],
+#     ]
 
-    # 4. Compute predicted values for each individual
-    #    predicted = const + age_coef * age + age_sq_coef * age_sq
-    df_sub["predicted_kidage_youngest"] = (
-        coeffs["const"]
-        # + coeffs["age"] * df_sub["age"]
-        # + coeffs["age_sq"] * df_sub["age_sq"]
-        + coeffs["period"] * df_sub["period"]
-        + coeffs["period_sq"] * df_sub["period_sq"]
-    )
+#     # 4. Compute predicted values for each individual
+#     #    predicted = const + age_coef * age + age_sq_coef * age_sq
+#     df_sub["predicted_kidage_youngest"] = (
+#         coeffs["const"]
+#         # + coeffs["age"] * df_sub["age"]
+#         # + coeffs["age_sq"] * df_sub["age_sq"]
+#         + coeffs["period"] * df_sub["period"]
+#         + coeffs["period_sq"] * df_sub["period_sq"]
+#     )
 
-    # 5. Group by 'age' to get the average predicted kidage_youngest
-    df_pred_grouped = df_sub.groupby("age", as_index=False).agg(
-        avg_predicted_kidage=("predicted_kidage_youngest", "mean")
-    )
+#     # 5. Group by 'age' to get the average predicted kidage_youngest
+#     df_pred_grouped = df_sub.groupby("age", as_index=False).agg(
+#         avg_predicted_kidage=("predicted_kidage_youngest", "mean")
+#     )
 
-    # 6. Merge the observed and predicted means by 'age' to plot on the same axis
-    df_plot = pd.merge(df_grouped, df_pred_grouped, on="age", how="inner")
+#     # 6. Merge the observed and predicted means by 'age' to plot on the same axis
+#     df_plot = pd.merge(df_grouped, df_pred_grouped, on="age", how="inner")
 
-    # 7. Create the plot
-    fig, ax = plt.subplots(figsize=(8, 5))
+#     # 7. Create the plot
+#     fig, ax = plt.subplots(figsize=(8, 5))
 
-    ax.plot(
-        df_plot["age"],
-        df_plot["avg_kidage_youngest"],
-        "o-",
-        label="Observed average youngest child age",
-    )
-    ax.plot(
-        df_plot["age"],
-        df_plot["avg_predicted_kidage"],
-        "s--",
-        label="Predicted youngest child age",
-    )
+#     ax.plot(
+#         df_plot["age"],
+#         df_plot["avg_kidage_youngest"],
+#         "o-",
+#         label="Observed average youngest child age",
+#     )
+#     ax.plot(
+#         df_plot["age"],
+#         df_plot["avg_predicted_kidage"],
+#         "s--",
+#         label="Predicted youngest child age",
+#     )
 
-    ax.set_xlabel("Age of parent")
-    ax.set_ylabel("Average age of youngest child")
-    ax.set_yticks(
-        range(
-            int(df_plot[["avg_kidage_youngest", "avg_predicted_kidage"]].min().min()),
-            int(df_plot[["avg_kidage_youngest", "avg_predicted_kidage"]].max().max())
-            + 1,
-        )
-    )
+#     ax.set_xlabel("Age of parent")
+#     ax.set_ylabel("Average age of youngest child")
+#     ax.set_yticks(
+#         range(
+#             int(df_plot[["avg_kidage_youngest", "avg_predicted_kidage"]].min().min()),
+#             int(df_plot[["avg_kidage_youngest", "avg_predicted_kidage"]].max().max())
+#             + 1,
+#         )
+#     )
 
-    ax.set_title(f"Subgroup: sex={sex}, edu={education}, partner={has_partner}")
-    ax.legend()
-    plt.tight_layout()
-    # plt.savefig(path_to_save, dpi=300, bbox_inches="tight")
-    plt.show()
-    plt.close(fig)
+#     ax.set_title(f"Subgroup: sex={sex}, edu={education}, partner={has_partner}")
+#     ax.legend()
+#     plt.tight_layout()
+#     # plt.savefig(path_to_save, dpi=300, bbox_inches="tight")
+#     plt.show()
+#     plt.close(fig)
