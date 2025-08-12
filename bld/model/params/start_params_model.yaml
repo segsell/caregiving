@@ -10,6 +10,14 @@ disutil_pt_work_bad_women: 1.3
 disutil_pt_work_good_women: 1.3
 disutil_unemployed_high_women: 1.0
 disutil_unemployed_low_women: 1.0
+disutil_youngest_child_0_to_2_ft_work_high: 0
+disutil_youngest_child_0_to_2_ft_work_low: 0
+disutil_youngest_child_0_to_2_pt_work_high: 0
+disutil_youngest_child_0_to_2_pt_work_low: 0
+disutil_youngest_child_3_to_5_ft_work_high: 0
+disutil_youngest_child_3_to_5_ft_work_low: 0
+disutil_youngest_child_3_to_5_pt_work_high: 0
+disutil_youngest_child_3_to_5_pt_work_low: 0
 interest_rate: 0.03
 job_finding_logit_age_women: -0.0469966582236421
 job_finding_logit_const_women: 0.485235416479457

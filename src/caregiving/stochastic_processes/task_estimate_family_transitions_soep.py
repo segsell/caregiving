@@ -106,8 +106,8 @@ def task_estimate_number_of_children_in_household(
     df["period"] = df["age"] - start_age
     df["period_sq"] = df["period"] ** 2
     df["has_partner"] = (df["partner_state"] > 0).astype(int)
-    # estimate OLS for each combination of sex, education and has_partner
 
+    # Estimate OLS for each combination of sex, education and has_partner
     edu_states = list(range(specs["n_education_types"]))
     sexes = [0, 1]
     partner_states = [0, 1]
@@ -146,7 +146,7 @@ def task_estimate_age_of_youngest_child(
     / "stochastic_processes"
     / "age_youngest_child_estimates.csv",
 ) -> None:
-    """Estimate the age of the youngest child via OLS."""
+    """Estimate the age of the youngest child conditional on having a child."""
 
     # Read specs and data; restrict to ages below end_age
     specs = read_and_derive_specs(path_to_specs)
@@ -157,7 +157,8 @@ def task_estimate_age_of_youngest_child(
 
     df = df.loc[(df["age"] >= start_age) & (df["age"] <= end_age)]
 
-    df = df.loc[df["kidage_youngest"] > MISSING_VALUE]
+    # Condition on having at least one child
+    df = df.loc[df["kidage_youngest"] >= 0].copy()
 
     # Drop observations with a positive age of the youngest child
     # but no children in the household
@@ -171,8 +172,7 @@ def task_estimate_age_of_youngest_child(
     df["period_sq"] = df["period"] ** 2
     df["has_partner"] = (df["partner_state"] > 0).astype(int)
 
-    # estimate OLS for each combination of sex, education and has_partner
-
+    # Estimate OLS for each combination of sex, education and has_partner
     edu_states = list(range(specs["n_education_types"]))
     sexes = [0, 1]
     partner_states = [0, 1]
@@ -185,6 +185,7 @@ def task_estimate_age_of_youngest_child(
     )
 
     columns = ["const", "period", "period_sq"]
+    # columns = ["const", "age", "age_sq"]
     estimates = pd.DataFrame(index=multiindex, columns=columns)
     for sex in sexes:
         for education in edu_states:
@@ -201,7 +202,7 @@ def task_estimate_age_of_youngest_child(
                 estimates.loc[(sex, education, has_partner), columns] = model.params
 
     estimates.to_csv(path_to_save)
-    # plot_age_of_youngest_child(df, estimates, sex=1, education=0, has_partner=1)
+    plot_age_of_youngest_child(df, estimates, sex=1, education=1, has_partner=1)
 
 
 def plot_age_of_youngest_child(
@@ -234,13 +235,18 @@ def plot_age_of_youngest_child(
 
     # 3. Retrieve the OLS coefficients for this subgroup
     coeffs = estimates.loc[
-        (sex, education, has_partner), ["const", "period", "period_sq"]
+        # (sex, education, has_partner), ["const", "period", "period_sq"]
+        (sex, education, has_partner),
+        # ["const", "age", "age_sq"],
+        ["const", "period", "period_sq"],
     ]
 
     # 4. Compute predicted values for each individual
-    #    predicted = const + period_coef * period + period_sq_coef * period_sq
+    #    predicted = const + age_coef * age + age_sq_coef * age_sq
     df_sub["predicted_kidage_youngest"] = (
         coeffs["const"]
+        # + coeffs["age"] * df_sub["age"]
+        # + coeffs["age_sq"] * df_sub["age_sq"]
         + coeffs["period"] * df_sub["period"]
         + coeffs["period_sq"] * df_sub["period_sq"]
     )
@@ -271,8 +277,17 @@ def plot_age_of_youngest_child(
 
     ax.set_xlabel("Age of parent")
     ax.set_ylabel("Average age of youngest child")
+    ax.set_yticks(
+        range(
+            int(df_plot[["avg_kidage_youngest", "avg_predicted_kidage"]].min().min()),
+            int(df_plot[["avg_kidage_youngest", "avg_predicted_kidage"]].max().max())
+            + 1,
+        )
+    )
+
     ax.set_title(f"Subgroup: sex={sex}, edu={education}, partner={has_partner}")
     ax.legend()
     plt.tight_layout()
+    # plt.savefig(path_to_save, dpi=300, bbox_inches="tight")
     plt.show()
     plt.close(fig)

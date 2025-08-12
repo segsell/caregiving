@@ -7,7 +7,7 @@ from jax import numpy as jnp
 FEMALE = 1
 
 
-def predict_children_by_state(params, specs):
+def predict_children_by_state(params, specs, path_to_save=None):
     """Predict the number of children in the household conditional on state.
 
     Produces array of shape
@@ -31,10 +31,26 @@ def predict_children_by_state(params, specs):
                         0, predicted_nb_children
                     )
 
+    if path_to_save is not None:
+        idx = pd.MultiIndex.from_product(
+            [
+                specs["sex_labels"],
+                specs["education_labels"][: specs["n_education_types"]],
+                specs["partner_labels"][:2],
+                range(n_periods),
+            ],
+            names=["sex", "education", "partner", "period"],
+        )
+        children_long = pd.DataFrame(
+            {"children": children.reshape(-1)}, index=idx
+        ).reset_index()
+
+        children_long.to_csv(path_to_save, index=False)
+
     return jnp.asarray(children)
 
 
-def predict_age_of_youngest_child_by_state(params, specs):
+def predict_age_of_youngest_child_by_state(params, specs, path_to_save=None):
     """Predict the age of the youngest child conditional on state.
 
     Produces array of shape
@@ -43,7 +59,7 @@ def predict_age_of_youngest_child_by_state(params, specs):
     """
     n_periods = specs["end_age"] - specs["start_age"] + 1
 
-    kidage_youngest = np.zeros((2, specs["n_education_types"], 2, n_periods))
+    kidage_youngest = np.full((2, specs["n_education_types"], 2, n_periods), np.nan)
 
     for sex in (0, 1):
         for edu in range(specs["n_education_types"]):
@@ -54,9 +70,30 @@ def predict_age_of_youngest_child_by_state(params, specs):
                         + params.loc[(sex, edu, has_partner), "period"] * period
                         + params.loc[(sex, edu, has_partner), "period_sq"] * period**2
                     )
+                    # kidage_youngest[sex, edu, has_partner, period] = np.where(
+                    #     predicted_kidage_youngest < 0,
+                    #     0,
+                    #     predicted_kidage_youngest,
+                    # )
                     kidage_youngest[sex, edu, has_partner, period] = np.maximum(
                         0, predicted_kidage_youngest
                     )
+
+    if path_to_save is not None:
+        idx = pd.MultiIndex.from_product(
+            [
+                specs["sex_labels"],
+                specs["education_labels"][: specs["n_education_types"]],
+                specs["partner_labels"][:2],
+                range(n_periods),
+            ],
+            names=["sex", "education", "partner", "period"],
+        )
+        kidage_youngest_long = pd.DataFrame(
+            {"kidage_youngest": kidage_youngest.reshape(-1)}, index=idx
+        ).reset_index()
+
+        kidage_youngest_long.to_csv(path_to_save, index=False)
 
     return jnp.asarray(kidage_youngest)
 

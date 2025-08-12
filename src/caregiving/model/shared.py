@@ -31,7 +31,9 @@ MIN_AGE_PARENTS = 50
 MAX_AGE_PARENTS = 100
 
 AGE_0 = 0
+AGE_3 = 3
 AGE_4 = 4
+AGE_6 = 6
 AGE_7 = 7
 AGE_10 = 10
 
@@ -278,7 +280,22 @@ def is_not_working(choice):
 
 
 # ==============================================================================
-# Age of youngest child
+# Age of youngest child (Blundell et al. 2016)
+# ==============================================================================
+
+
+def is_child_age_0_to_2(age):
+    age = jnp.asarray(age)
+    return jnp.logical_and(age >= AGE_0, age < AGE_3)
+
+
+def is_child_age_3_to_5(age):
+    age = jnp.asarray(age)
+    return jnp.logical_and(age >= AGE_3, age < AGE_6)
+
+
+# ==============================================================================
+# Age of youngest child (Adda et al. 2017)
 # ==============================================================================
 
 

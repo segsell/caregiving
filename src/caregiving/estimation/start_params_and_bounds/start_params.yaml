@@ -51,6 +51,15 @@ disutil_children_pt_work_low: 0.2
 disutil_children_pt_work_high: 0.2
 disutil_children_ft_work_low: 0.2
 disutil_children_ft_work_high: 0.2
+#
+disutil_youngest_child_0_to_2_pt_work_low: 0
+disutil_youngest_child_3_to_5_pt_work_low: 0
+disutil_youngest_child_0_to_2_pt_work_high: 0
+disutil_youngest_child_3_to_5_pt_work_high: 0
+disutil_youngest_child_0_to_2_ft_work_low: 0
+disutil_youngest_child_3_to_5_ft_work_low: 0
+disutil_youngest_child_0_to_2_ft_work_high: 0
+disutil_youngest_child_3_to_5_ft_work_high: 0
 
 # disutil_unemployed_women: 2.6654188449619967
 # disutil_ft_work_bad_women: 2.8504908655256718
