@@ -145,15 +145,15 @@ def utility_func_alive(
     #     params=params,
     #     options=options,
     # )
-    # disutil_children = disutility_of_children_and_work(
-    #     period=period,
-    #     choice=choice,
-    #     education=education,
-    #     partner_state=partner_state,
-    #     health=health,
-    #     params=params,
-    #     options=options,
-    # )
+    disutil_children = disutility_of_children_and_work(
+        period=period,
+        choice=choice,
+        education=education,
+        partner_state=partner_state,
+        health=health,
+        params=params,
+        options=options,
+    )
 
     # compute utility
     scaled_consumption = consumption * eta / cons_scale
@@ -164,7 +164,7 @@ def utility_func_alive(
         jnp.log(consumption * eta / cons_scale),
         utility_rho_not_one,
     )
-    return utility  # * disutil_children  # + zeta * care_demand
+    return utility * disutil_children  # + zeta * care_demand
 
 
 # def _utility_func_alive(
@@ -342,16 +342,16 @@ def marg_utility(
         params=params,
         options=options,
     )
-    # disutil_children = disutility_of_children_and_work(
-    #     period=period,
-    #     choice=choice,
-    #     education=education,
-    #     partner_state=partner_state,
-    #     health=health,
-    #     params=params,
-    #     options=options,
-    # )
-    disutil_children = 1
+    disutil_children = disutility_of_children_and_work(
+        period=period,
+        choice=choice,
+        education=education,
+        partner_state=partner_state,
+        health=health,
+        params=params,
+        options=options,
+    )
+    # disutil_children = 1
 
     marg_util_rho_not_one = ((eta / cons_scale) ** (1 - rho)) * (consumption ** (-rho))
 
@@ -425,16 +425,16 @@ def inverse_marginal(
         params=params,
         options=options,
     )
-    # disutil_children = disutility_of_children_and_work(
-    #     period=period,
-    #     choice=choice,
-    #     education=education,
-    #     partner_state=partner_state,
-    #     health=health,
-    #     params=params,
-    #     options=options,
-    # )
-    disutil_children = 1
+    disutil_children = disutility_of_children_and_work(
+        period=period,
+        choice=choice,
+        education=education,
+        partner_state=partner_state,
+        health=health,
+        params=params,
+        options=options,
+    )
+    # disutil_children = 1
 
     base = marginal_utility ** (-1.0 / rho) * (eta / cons_scale) ** ((1.0 - rho) / rho)
     # consumption_rho_not_one = marginal_utility ** (-1 / rho) * (eta / cons_scale) ** (
