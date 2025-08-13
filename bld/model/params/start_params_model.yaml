@@ -18,6 +18,10 @@ disutil_youngest_child_3_to_5_ft_work_high: 0.2
 disutil_youngest_child_3_to_5_ft_work_low: 0.2
 disutil_youngest_child_3_to_5_pt_work_high: 0.2
 disutil_youngest_child_3_to_5_pt_work_low: 0.2
+disutil_youngest_child_6_to_10_ft_work_high: 0.2
+disutil_youngest_child_6_to_10_ft_work_low: 0.2
+disutil_youngest_child_6_to_10_pt_work_high: 0.2
+disutil_youngest_child_6_to_10_pt_work_low: 0.2
 interest_rate: 0.03
 job_finding_logit_age_cubed_women: -3.1629822664407934e-05
 job_finding_logit_age_squared_women: 0.0016012387939283

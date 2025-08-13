@@ -20,12 +20,16 @@ disutil_children_ft_work_high: 1.0e-12
 #
 disutil_youngest_child_0_to_2_pt_work_low: 1.0e-12
 disutil_youngest_child_3_to_5_pt_work_low: 1.0e-12
+disutil_youngest_child_6_to_10_pt_work_low: 1.0e-12
 disutil_youngest_child_0_to_2_pt_work_high: 1.0e-12
 disutil_youngest_child_3_to_5_pt_work_high: 1.0e-12
+disutil_youngest_child_6_to_10_pt_work_high: 1.0e-12
 disutil_youngest_child_0_to_2_ft_work_low: 1.0e-12
 disutil_youngest_child_3_to_5_ft_work_low: 1.0e-12
+disutil_youngest_child_6_to_10_ft_work_low: 1.0e-12
 disutil_youngest_child_0_to_2_ft_work_high: 1.0e-12
 disutil_youngest_child_3_to_5_ft_work_high: 1.0e-12
+disutil_youngest_child_6_to_10_ft_work_high: 1.0e-12
 
 util_informal_care_low_women: -5
 util_informal_care_high_women: -5

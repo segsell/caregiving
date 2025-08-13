@@ -294,6 +294,11 @@ def is_child_age_3_to_5(age):
     return jnp.logical_and(age >= AGE_3, age < AGE_6)
 
 
+def is_child_age_6_to_10(age):
+    age = jnp.asarray(age)
+    return jnp.logical_and(age >= AGE_6, age <= AGE_10)
+
+
 # ==============================================================================
 # Age of youngest child (Adda et al. 2017)
 # ==============================================================================
