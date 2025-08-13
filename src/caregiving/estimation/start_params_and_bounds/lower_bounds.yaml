@@ -30,6 +30,11 @@ disutil_youngest_child_6_to_10_ft_work_low: -5
 disutil_youngest_child_0_to_2_ft_work_high: -5
 disutil_youngest_child_3_to_5_ft_work_high: -5
 disutil_youngest_child_6_to_10_ft_work_high: -5
+#
+disutil_age_youngest_child_pt_work_low: -5
+disutil_age_youngest_child_pt_work_high: -5
+disutil_age_youngest_child_ft_work_low: -5
+disutil_age_youngest_child_ft_work_high: -5
 
 util_informal_care_low_women: -5
 util_informal_care_high_women: -5
