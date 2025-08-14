@@ -246,6 +246,7 @@ def task_plot_model_fit(  # noqa: PLR0915
         # "part_time": "Part-time",
         # "full_time": "Full-time",
     }
+
     plot_transitions_by_age(
         df_emp,
         df_sim,
