@@ -600,7 +600,7 @@ def disutility_work(period, choice, education, partner_state, health, params, op
 
     has_partner = (partner_state > 0).astype(int)
     nb_children = options["children_by_state"][SEX, education, has_partner, period]
-    has_children = (nb_children > 0).astype(int)
+    # has_children = (nb_children > 0).astype(int)
 
     # age_youngest_child = options["child_age_youngest_by_state"][
     #     SEX, education, has_partner, period
@@ -816,22 +816,26 @@ def disutility_of_children_and_work(
     # ) * education
 
     disutil_age_youngest_child_pt_low = (
-        jnp.log(age_youngest_child + 1)
+        # jnp.log(age_youngest_child + 1)
+        _func_age_of_youngest_child(age_youngest_child)
         * has_children
         * params["disutil_age_youngest_child_pt_work_low"]
     )
     disutil_age_youngest_child_pt_high = (
-        jnp.log(age_youngest_child + 1)
+        # jnp.log(age_youngest_child + 1)
+        _func_age_of_youngest_child(age_youngest_child)
         * has_children
         * params["disutil_age_youngest_child_pt_work_high"]
     )
     disutil_age_youngest_child_ft_low = (
-        jnp.log(age_youngest_child + 1)
+        # jnp.log(age_youngest_child + 1)
+        _func_age_of_youngest_child(age_youngest_child)
         * has_children
         * params["disutil_age_youngest_child_ft_work_low"]
     )
     disutil_age_youngest_child_ft_high = (
-        jnp.log(age_youngest_child + 1)
+        # jnp.log(age_youngest_child + 1)
+        _func_age_of_youngest_child(age_youngest_child)
         * has_children
         * params["disutil_age_youngest_child_ft_work_high"]
     )
@@ -851,6 +855,12 @@ def disutility_of_children_and_work(
     )
 
     return jnp.exp(-exp_factor_women)
+
+
+def _func_age_of_youngest_child(age_youngest_child):
+    return age_youngest_child
+    # return 1 / jnp.log(age_youngest_child + 1)
+    # return jnp.log(age_youngest_child + 1)
 
 
 def utility_of_caregiving(
