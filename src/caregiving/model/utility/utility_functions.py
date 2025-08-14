@@ -598,9 +598,9 @@ def disutility_work(period, choice, education, partner_state, health, params, op
         + params["disutil_unemployed_high_women"] * education
     )
 
-    # has_partner = (partner_state > 0).astype(int)
-    # nb_children = options["children_by_state"][SEX, education, has_partner, period]
-    # has_children = (nb_children > 0).astype(int)
+    has_partner = (partner_state > 0).astype(int)
+    nb_children = options["children_by_state"][SEX, education, has_partner, period]
+    has_children = (nb_children > 0).astype(int)
 
     # age_youngest_child = options["child_age_youngest_by_state"][
     #     SEX, education, has_partner, period
@@ -610,11 +610,11 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     # child_age_3_to_5 = is_child_age_3_to_5(age_youngest_child) * has_children
     # child_age_6_to_10 = is_child_age_6_to_10(age_youngest_child) * has_children
 
-    # # disutil_children_ft_low = params["disutil_children_ft_work_low"] * nb_children
-    # # disutil_children_ft_high = params["disutil_children_ft_work_high"] * nb_children
+    disutil_children_ft_low = params["disutil_children_ft_work_low"] * nb_children
+    disutil_children_ft_high = params["disutil_children_ft_work_high"] * nb_children
 
-    # # disutil_children_pt_low = params["disutil_children_pt_work_low"] * nb_children
-    # # disutil_children_pt_high = params["disutil_children_pt_work_high"] * nb_children
+    disutil_children_pt_low = params["disutil_children_pt_work_low"] * nb_children
+    disutil_children_pt_high = params["disutil_children_pt_work_high"] * nb_children
 
     # # Disutility of labor and age of youngest child
     # disutil_child_0_to_2_ft_low = (
@@ -708,12 +708,19 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     #     + (disutil_age_youngest_child_ft_high) * education
     # )
 
+    disutil_children_pt = (
+        disutil_children_pt_low * (1 - education) + disutil_children_pt_high * education
+    )
+    disutil_children_ft = (
+        disutil_children_ft_low * (1 - education) + disutil_children_ft_high * education
+    )
+
     exp_factor_women = (
         disutil_unemployed_women * unemployed
-        # + (disutil_pt_work_women + disutil_children_pt) * working_part_time
-        # + (disutil_ft_work_women + disutil_children_ft) * working_full_time
-        + (disutil_pt_work_women) * working_part_time
-        + (disutil_ft_work_women) * working_full_time
+        + (disutil_pt_work_women + disutil_children_pt) * working_part_time
+        + (disutil_ft_work_women + disutil_children_ft) * working_full_time
+        # + (disutil_pt_work_women) * working_part_time
+        # + (disutil_ft_work_women) * working_full_time
     )
 
     # Compute eta
