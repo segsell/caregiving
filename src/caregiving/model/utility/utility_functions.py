@@ -610,11 +610,19 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     # child_age_3_to_5 = is_child_age_3_to_5(age_youngest_child) * has_children
     # child_age_6_to_10 = is_child_age_6_to_10(age_youngest_child) * has_children
 
-    disutil_children_ft_low = params["disutil_children_ft_work_low"] * nb_children
-    disutil_children_ft_high = params["disutil_children_ft_work_high"] * nb_children
+    disutil_children_ft_low = params[
+        "disutil_children_ft_work_low"
+    ] * _func_nb_children_in_hh(nb_children)
+    disutil_children_ft_high = params[
+        "disutil_children_ft_work_high"
+    ] * _func_nb_children_in_hh(nb_children)
 
-    disutil_children_pt_low = params["disutil_children_pt_work_low"] * nb_children
-    disutil_children_pt_high = params["disutil_children_pt_work_high"] * nb_children
+    disutil_children_pt_low = params[
+        "disutil_children_pt_work_low"
+    ] * _func_nb_children_in_hh(nb_children)
+    disutil_children_pt_high = params[
+        "disutil_children_pt_work_high"
+    ] * _func_nb_children_in_hh(nb_children)
 
     # # Disutility of labor and age of youngest child
     # disutil_child_0_to_2_ft_low = (
@@ -729,6 +737,10 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     return disutility
 
 
+def _func_nb_children_in_hh(nb_children):
+    return jnp.sqrt(nb_children)
+
+
 def disutility_of_children_and_work(
     period, choice, education, partner_state, health, params, options
 ):
@@ -817,25 +829,25 @@ def disutility_of_children_and_work(
 
     disutil_age_youngest_child_pt_low = (
         # jnp.log(age_youngest_child + 1)
-        _func_age_of_youngest_child(age_youngest_child)
+        _func_age_of_youngest_child(age_youngest_child, params)
         * has_children
         * params["disutil_age_youngest_child_pt_work_low"]
     )
     disutil_age_youngest_child_pt_high = (
         # jnp.log(age_youngest_child + 1)
-        _func_age_of_youngest_child(age_youngest_child)
+        _func_age_of_youngest_child(age_youngest_child, params)
         * has_children
         * params["disutil_age_youngest_child_pt_work_high"]
     )
     disutil_age_youngest_child_ft_low = (
         # jnp.log(age_youngest_child + 1)
-        _func_age_of_youngest_child(age_youngest_child)
+        _func_age_of_youngest_child(age_youngest_child, params)
         * has_children
         * params["disutil_age_youngest_child_ft_work_low"]
     )
     disutil_age_youngest_child_ft_high = (
         # jnp.log(age_youngest_child + 1)
-        _func_age_of_youngest_child(age_youngest_child)
+        _func_age_of_youngest_child(age_youngest_child, params)
         * has_children
         * params["disutil_age_youngest_child_ft_work_high"]
     )
@@ -857,10 +869,11 @@ def disutility_of_children_and_work(
     return jnp.exp(-exp_factor_women)
 
 
-def _func_age_of_youngest_child(age_youngest_child):
-    return age_youngest_child
+def _func_age_of_youngest_child(age_youngest_child, params):
+    # return age_youngest_child
     # return 1 / jnp.log(age_youngest_child + 1)
-    # return jnp.log(age_youngest_child + 1)
+    # return 1 / jnp.sqrt(age_youngest_child)
+    return jnp.log(params["age_of_youngest_child_curvature"] * age_youngest_child + 1)
 
 
 def utility_of_caregiving(
