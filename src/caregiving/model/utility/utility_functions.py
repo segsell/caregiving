@@ -21,6 +21,8 @@ from caregiving.model.shared import (
 )
 from caregiving.model.utility.bequest_utility import utility_final_consume_all
 
+EPS = 0.1
+
 
 def create_utility_functions():
     """Create dict of utility functions."""
@@ -584,14 +586,14 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     disutil_ft_work_women = (
         params["disutil_ft_work_bad_women"] * bad_health
         + params["disutil_ft_work_good_women"] * good_health
-        + params["disutil_ft_work_low_women"] * (1 - education)
-        + params["disutil_ft_work_high_women"] * education
+        # + params["disutil_ft_work_low_women"] * (1 - education)
+        # + params["disutil_ft_work_high_women"] * education
     )
     disutil_pt_work_women = (
         params["disutil_pt_work_bad_women"] * bad_health
         + params["disutil_pt_work_good_women"] * good_health
-        + params["disutil_pt_work_low_women"] * (1 - education)
-        + params["disutil_pt_work_high_women"] * education
+        # + params["disutil_pt_work_low_women"] * (1 - education)
+        # + params["disutil_pt_work_high_women"] * education
     )
     disutil_unemployed_women = (
         params["disutil_unemployed_low_women"] * (1 - education)
@@ -873,9 +875,11 @@ def disutility_of_children_and_work(
 def _func_age_of_youngest_child(age_youngest_child, params):
     # return age_youngest_child
     # return jnp.sqrt(age_youngest_child)
-    # return jnp.log(age_youngest_child + 1)
-    return 1 / jnp.sqrt(age_youngest_child)
-    # return jnp.log(params["age_of_youngest_child_curvature"] * age_youngest_child + 1)
+    return jnp.log(age_youngest_child + 1)
+    # return 1 / jnp.sqrt(age_youngest_child + EPS)
+    # return 1 / jnp.log(
+    #     params["age_of_youngest_child_curvature"] * age_youngest_child + 1 + EPS
+    # )
 
 
 def utility_of_caregiving(
