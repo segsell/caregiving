@@ -872,9 +872,9 @@ def disutility_of_children_and_work(
 
 def _func_age_of_youngest_child(age_youngest_child, params):
     # return age_youngest_child
-    return jnp.sqrt(age_youngest_child)
+    # return jnp.sqrt(age_youngest_child)
     # return jnp.log(age_youngest_child + 1)
-    # return 1 / jnp.sqrt(age_youngest_child)
+    return 1 / jnp.sqrt(age_youngest_child)
     # return jnp.log(params["age_of_youngest_child_curvature"] * age_youngest_child + 1)
 
 
