@@ -158,6 +158,101 @@ def plot_choice_shares_by_education(
         plt.savefig(path_to_save_plot, dpi=300, transparent=False)
 
 
+def plot_choice_shares_by_health(
+    data_emp, data_sim, specs, age_min=None, age_max=None, path_to_save_plot=None
+):
+    """Plot choice-specific shares by age and education, only over the
+    age range [start_age, end_age_msm]."""
+
+    # ---------- 1. Map raw codes → 4-way choice ----------------------------
+    choice_groups_sim = {
+        0: RETIREMENT,
+        1: UNEMPLOYED,
+        2: PART_TIME,
+        3: FULL_TIME,
+    }
+    choice_groups_emp = {
+        0: RETIREMENT_CHOICES,
+        1: UNEMPLOYED_CHOICES,
+        2: PART_TIME_CHOICES,
+        3: FULL_TIME_CHOICES,
+    }
+
+    data_sim = data_sim.loc[data_sim["health"] != DEAD].copy()
+    data_emp = data_emp.copy()
+
+    for agg_code, raw_codes in choice_groups_sim.items():
+        data_sim.loc[
+            data_sim["choice"].isin(np.asarray(raw_codes).tolist()), "choice_group"
+        ] = agg_code
+
+    for agg_code, raw_codes in choice_groups_emp.items():
+        data_emp.loc[
+            data_emp["choice"].isin(np.asarray(raw_codes).tolist()), "choice_group"
+        ] = agg_code
+
+    data_sim["choice_group"] = data_sim["choice_group"].astype(int)
+    data_emp["choice_group"] = data_emp["choice_group"].astype(int)
+
+    # ---------- 2. Plotting setup ------------------------------------------
+    if age_min is None:
+        age_min = specs["start_age"]
+    if age_max is None:
+        age_max = specs["end_age_msm"]
+    sex = SEX  # assumed scalar {0,1}
+
+    n_health = len(specs["health_labels"][:2])
+    n_choices = len(specs["choice_labels"])  # after aggregation
+    fig, axs = plt.subplots(
+        n_health, n_choices, figsize=(16, 6), sharex=True, sharey=True
+    )
+
+    # ---------- 3. Loop over health groups ------------------------------
+    for health_var, health_label in enumerate(specs["health_labels"][:2]):
+        emp_health = data_emp[
+            (data_emp["sex"] == sex) & (data_emp["health"] == health_var)
+        ]
+        sim_health = data_sim[data_sim["health"] == health_var]
+
+        # shares by age × aggregated choice
+        sim_shares = (
+            sim_health.groupby("age")["choice_group"]
+            .value_counts(normalize=True)
+            .unstack(fill_value=0)
+        )
+        emp_shares = (
+            emp_health.groupby("age")["choice_group"]
+            .value_counts(normalize=True)
+            .unstack(fill_value=0)
+        )
+
+        # ---------- 4. Plot each aggregated choice -------------------------
+        for choice_var in range(n_choices):
+            ax = axs[health_var, choice_var]
+
+            ages = range(age_min, age_max + 1)
+            vals_sim = sim_shares.reindex(ages, fill_value=0)[choice_var]
+            vals_emp = emp_shares.reindex(ages, fill_value=0)[choice_var]
+
+            ax.plot(ages, vals_sim, label="Simulated")
+            ax.plot(ages, vals_emp, ls="--", label="Observed")
+
+            ax.set_title(specs["choice_labels"][choice_var])
+            ax.set_ylim(0, 1)
+            ax.set_xlim(age_min, age_max)
+
+            # if edu_var == n_edu - 1:
+            ax.set_xlabel("Age")
+            ax.tick_params(labelbottom=True)
+            if choice_var == 0:
+                ax.set_ylabel(f"{health_label}\nShare")
+                ax.legend()
+
+    plt.tight_layout()
+    if path_to_save_plot:
+        plt.savefig(path_to_save_plot, dpi=300, transparent=False)
+
+
 def plot_choice_shares_overall(
     data_emp, data_sim, specs, age_min=None, age_max=None, path_to_save_plot=None
 ):
