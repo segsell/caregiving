@@ -53,8 +53,8 @@ def task_create_soep_moments(
 
     df_low = df[df["education"] == 0]
     df_high = df[df["education"] == 1]
-    df_bad = df[df["health"] == 0]
-    df_good = df[df["health"] == 1]
+    # df_bad = df[df["health"] == 0]
+    # df_good = df[df["health"] == 1]
 
     # df_caregivers = df[df["any_care"] == 1]
     # _df_caregivers_low = df_low[df_low["any_care"] == 1]
