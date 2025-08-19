@@ -3,15 +3,13 @@
 import pickle
 import time
 from functools import partial
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import jax
 import numpy as np
 import optimagic as om
 import pandas as pd
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import RETIREMENT
@@ -28,6 +26,8 @@ from caregiving.simulation.simulate_moments import (
     simulate_moments_jax,
     simulate_moments_pandas,
 )
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 jax.config.update("jax_enable_x64", True)
 
@@ -61,6 +61,9 @@ def estimate_model(
     path_to_save_estimation_params: str = BLD / "estimation" / "estimated_params.csv",
     # last_estimate: Optional[Dict[str, Any]] = None,
     select_fixed_params: Optional[Callable[[str, Any], bool]] = None,
+    constraints: Optional[
+        Union[om.constraints.Constraint, List[om.constraints.Constraint]]
+    ] = None,
     scaling: bool = False,
     scaling_options: Optional[Dict[str, Any]] = None,
     multistart: bool = False,
@@ -131,7 +134,8 @@ def estimate_model(
     upper_bounds = {name: upper_bounds_all[name] for name in start_params.keys()}
 
     bounds = om.Bounds(lower=lower_bounds, upper=upper_bounds)
-    fixed_constraint = om.FixedConstraint(selector=select_fixed_params)
+
+    combined_constraints = _combine_constraints(constraints, select_fixed_params)
 
     simulate_moments_given_params = partial(
         simulate_moments,
@@ -158,14 +162,14 @@ def estimate_model(
         "algorithm": algo,
         "algo_options": algo_options,
         "bounds": bounds,
-        "constraints": fixed_constraint,
+        "constraints": combined_constraints,
         "error_handling": error_handling,
     }
 
-    if select_fixed_params is not None:
-        fixed_constraint = om.FixedConstraint(selector=select_fixed_params)
-        minimize_kwargs["constraints"] = fixed_constraint
-
+    # if select_fixed_params is not None:
+    #     fixed_constraint = om.FixedConstraint(selector=select_fixed_params)
+    #     minimize_kwargs["constraints"] = fixed_constraint
+    #
     # if scaling:
     #     # Either use user-supplied dict or fall back to your defaults
     #     so_opts = scaling_options or {
@@ -199,6 +203,41 @@ def estimate_model(
     start_params_series.to_csv(path_to_save_estimation_params, header=True)
 
     return result
+
+
+def _combine_constraints(
+    constraints: Optional[Union[om.Constraint, List[om.Constraint]]],
+    select_fixed_params: Optional[Callable[[str, Any], bool]],
+) -> Optional[List[om.Constraint]]:
+    """Normalize user constraints and combine with a FixedConstraint if provided.
+
+    Returns a list of constraints or None.
+    """
+    # normalize user constraints into a list (or None)
+    if constraints is not None:
+        if isinstance(constraints, list):
+            user_constraints = constraints
+        else:
+            user_constraints = [constraints]
+    else:
+        user_constraints = None
+
+    # build fixed constraint if selector is given
+    fixed_constraint = (
+        om.FixedConstraint(selector=select_fixed_params)
+        if select_fixed_params is not None
+        else None
+    )
+
+    # combine
+    if (user_constraints is not None) and (fixed_constraint is not None):
+        return [fixed_constraint] + user_constraints
+    elif (user_constraints is not None) and (fixed_constraint is None):
+        return user_constraints
+    elif (user_constraints is None) and (fixed_constraint is not None):
+        return [fixed_constraint]  # ensure it's always a list
+    else:
+        return None
 
 
 def _set_scaling_options(
