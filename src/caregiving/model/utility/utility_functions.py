@@ -729,8 +729,8 @@ def disutility_work(period, choice, education, partner_state, health, params, op
         disutil_unemployed_women * unemployed
         + (disutil_pt_work_women + disutil_children_pt) * working_part_time
         + (disutil_ft_work_women + disutil_children_ft) * working_full_time
-        # + (disutil_pt_work_women) * working_part_time
-        # + (disutil_ft_work_women) * working_full_time
+        + (disutil_pt_work_women) * working_part_time
+        + (disutil_ft_work_women) * working_full_time
     )
 
     # Compute eta
@@ -875,11 +875,9 @@ def disutility_of_children_and_work(
 def _func_age_of_youngest_child(age_youngest_child, params):
     # return age_youngest_child
     # return jnp.sqrt(age_youngest_child)
-    return jnp.log(age_youngest_child + 1)
+    # return jnp.log(age_youngest_child + 1)
     # return 1 / jnp.sqrt(age_youngest_child + EPS)
-    # return 1 / jnp.log(
-    #     params["age_of_youngest_child_curvature"] * age_youngest_child + 1 + EPS
-    # )
+    return jnp.log(params["age_of_youngest_child_curvature"] * age_youngest_child + 1)
 
 
 def utility_of_caregiving(

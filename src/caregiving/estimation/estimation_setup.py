@@ -3,15 +3,14 @@
 import pickle
 import time
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Union
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 import jax
 import numpy as np
 import optimagic as om
 import pandas as pd
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import RETIREMENT
@@ -28,6 +27,8 @@ from caregiving.simulation.simulate_moments import (
     simulate_moments_jax,
     simulate_moments_pandas,
 )
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 jax.config.update("jax_enable_x64", True)
 
@@ -60,6 +61,8 @@ def estimate_model(
     path_to_save_estimation_result: str = BLD / "estimation" / "result.pkl",
     path_to_save_estimation_params: str = BLD / "estimation" / "estimated_params.csv",
     # last_estimate: Optional[Dict[str, Any]] = None,
+    lower_bounds: Optional[Dict[str, Any]] = None,
+    upper_bounds: Optional[Dict[str, Any]] = None,
     select_fixed_params: Optional[Callable[[str, Any], bool]] = None,
     constraints: Optional[
         Union[om.constraints.Constraint, List[om.constraints.Constraint]]
@@ -127,16 +130,28 @@ def estimate_model(
 
     # start_params = {name: start_params_all[name] for name in start_params.keys()}
 
-    lower_bounds_all = yaml.safe_load(open(path_to_lower_bounds, "rb"))
-    lower_bounds = {name: lower_bounds_all[name] for name in start_params.keys()}
+    # lower_bounds_all = yaml.safe_load(open(path_to_lower_bounds, "rb"))
+    # lower_bounds = {name: lower_bounds_all[name] for name in start_params.keys()}
 
-    upper_bounds_all = yaml.safe_load(open(path_to_upper_bounds, "rb"))
-    upper_bounds = {name: upper_bounds_all[name] for name in start_params.keys()}
+    # upper_bounds_all = yaml.safe_load(open(path_to_upper_bounds, "rb"))
+    # upper_bounds = {name: upper_bounds_all[name] for name in start_params.keys()}
 
-    bounds = om.Bounds(lower=lower_bounds, upper=upper_bounds)
+    # bounds = om.Bounds(lower=lower_bounds, upper=upper_bounds)
 
+    # 2) Bounds: use provided dicts if given; else load from YAML
+
+    bounds = _prepare_bounds(
+        start_params,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        path_to_lower_bounds=path_to_lower_bounds,
+        path_to_upper_bounds=path_to_upper_bounds,
+    )
+
+    # 3) Constraints
     combined_constraints = _combine_constraints(constraints, select_fixed_params)
 
+    # 4) Simulator and criterion
     simulate_moments_given_params = partial(
         simulate_moments,
         solve_func=solve_func,
@@ -203,6 +218,74 @@ def estimate_model(
     start_params_series.to_csv(path_to_save_estimation_params, header=True)
 
     return result
+
+
+def _prepare_bounds(
+    start_params: Mapping[str, Any],
+    *,
+    lower_bounds: Optional[Dict[str, Any]] = None,
+    upper_bounds: Optional[Dict[str, Any]] = None,
+    path_to_lower_bounds: Union[str, Path] = None,
+    path_to_upper_bounds: Union[str, Path] = None,
+):
+    """
+    Build an optimagic Bounds object for the given start_params.
+
+    If `lower_bounds` / `upper_bounds` dicts are provided, they are used directly.
+    Otherwise, YAML files are loaded from the given paths. Only keys present in
+    `start_params` are kept. Raises with a clear message if any keys are missing.
+    """
+    param_names = list(start_params.keys())
+
+    # Lower bounds
+    if lower_bounds is None:
+        if path_to_lower_bounds is None:
+            raise ValueError(
+                "Either `lower_bounds` or `path_to_lower_bounds` must be provided."
+            )
+        with open(path_to_lower_bounds, "rb") as f:
+            lower_all = yaml.safe_load(f)
+        if not isinstance(lower_all, dict):
+            raise TypeError("Loaded lower bounds YAML must be a mapping.")
+        missing = [k for k in param_names if k not in lower_all]
+        if missing:
+            raise KeyError(f"Lower bounds missing keys: {missing}")
+        lower_used = {name: lower_all[name] for name in param_names}
+    else:
+        if not isinstance(lower_bounds, dict):
+            raise TypeError(
+                "`lower_bounds` must be a dict mapping parameter names to values."
+            )
+        missing = [k for k in param_names if k not in lower_bounds]
+        if missing:
+            raise KeyError(f"Provided lower_bounds missing keys: {missing}")
+        lower_used = {name: lower_bounds[name] for name in param_names}
+
+    # Upper bounds
+    if upper_bounds is None:
+        if path_to_upper_bounds is None:
+            raise ValueError(
+                "Either `upper_bounds` or `path_to_upper_bounds` must be provided."
+            )
+        with open(path_to_upper_bounds, "rb") as f:
+            upper_all = yaml.safe_load(f)
+        if not isinstance(upper_all, dict):
+            raise TypeError("Loaded upper bounds YAML must be a mapping.")
+        missing = [k for k in param_names if k not in upper_all]
+        if missing:
+            raise KeyError(f"Upper bounds missing keys: {missing}")
+        upper_used = {name: upper_all[name] for name in param_names}
+    else:
+        if not isinstance(upper_bounds, dict):
+            raise TypeError(
+                "`upper_bounds` must be a dict mapping parameter names to values."
+            )
+        missing = [k for k in param_names if k not in upper_bounds]
+        if missing:
+            raise KeyError(f"Provided upper_bounds missing keys: {missing}")
+        upper_used = {name: upper_bounds[name] for name in param_names}
+
+    return om.Bounds(lower=lower_used, upper=upper_used)
 
 
 def _combine_constraints(

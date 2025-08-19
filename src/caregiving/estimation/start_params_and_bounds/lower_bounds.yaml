@@ -35,7 +35,7 @@ disutil_age_youngest_child_pt_work_low: -5
 disutil_age_youngest_child_pt_work_high: -5
 disutil_age_youngest_child_ft_work_low: -5
 disutil_age_youngest_child_ft_work_high: -5
-age_of_youngest_child_curvature: 1
+age_of_youngest_child_curvature: 1.0e-12
 
 util_informal_care_low_women: -5
 util_informal_care_high_women: -5

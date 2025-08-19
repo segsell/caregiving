@@ -103,35 +103,35 @@ def task_create_soep_moments(
     #     label="good_health",
     # )
 
-    moments, variances = compute_static_share(
-        df_bad,
-        moments,
-        variances,
-        choices=FULL_TIME,
-        label="full_time_share_bad_health",
-    )
-    moments, variances = compute_static_share(
-        df_good,
-        moments,
-        variances,
-        choices=FULL_TIME,
-        label="full_time_share_good_health",
-    )
+    # moments, variances = compute_static_share(
+    #     df_bad,
+    #     moments,
+    #     variances,
+    #     choices=FULL_TIME,
+    #     label="full_time_share_bad_health",
+    # )
+    # moments, variances = compute_static_share(
+    #     df_good,
+    #     moments,
+    #     variances,
+    #     choices=FULL_TIME,
+    #     label="full_time_share_good_health",
+    # )
 
-    moments, variances = compute_static_share(
-        df_low,
-        moments,
-        variances,
-        choices=FULL_TIME,
-        label="full_time_share_low_education",
-    )
-    moments, variances = compute_static_share(
-        df_high,
-        moments,
-        variances,
-        choices=FULL_TIME,
-        label="full_time_share_high_education",
-    )
+    # moments, variances = compute_static_share(
+    #     df_low,
+    #     moments,
+    #     variances,
+    #     choices=FULL_TIME,
+    #     label="full_time_share_low_education",
+    # )
+    # moments, variances = compute_static_share(
+    #     df_high,
+    #     moments,
+    #     variances,
+    #     choices=FULL_TIME,
+    #     label="full_time_share_high_education",
+    # )
 
     # Compute the share of people working full time who are in bad health
 
