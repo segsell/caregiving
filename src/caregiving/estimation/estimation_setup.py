@@ -206,9 +206,11 @@ def estimate_model(
 
 
 def _combine_constraints(
-    constraints: Optional[Union[om.Constraint, List[om.Constraint]]],
+    constraints: Optional[
+        Union[om.constraints.Constraint, List[om.constraints.Constraint]]
+    ],
     select_fixed_params: Optional[Callable[[str, Any], bool]],
-) -> Optional[List[om.Constraint]]:
+) -> Optional[List[om.constraints.Constraint]]:
     """Normalize user constraints and combine with a FixedConstraint if provided.
 
     Returns a list of constraints or None.

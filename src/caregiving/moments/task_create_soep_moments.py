@@ -88,20 +88,52 @@ def task_create_soep_moments(
     )
 
     # B1) Moments by age and health status
-    moments, variances = compute_labor_shares_by_age(
+    # moments, variances = compute_labor_shares_by_age(
+    #     df_bad,
+    #     moments=moments,
+    #     variances=variances,
+    #     age_range=age_range,
+    #     label="bad_health",
+    # )
+    # moments, variances = compute_labor_shares_by_age(
+    #     df_good,
+    #     moments=moments,
+    #     variances=variances,
+    #     age_range=age_range,
+    #     label="good_health",
+    # )
+
+    moments, variances = compute_static_share(
         df_bad,
-        moments=moments,
-        variances=variances,
-        age_range=age_range,
-        label="bad_health",
+        moments,
+        variances,
+        choices=FULL_TIME,
+        label="full_time_share_bad_health",
     )
-    moments, variances = compute_labor_shares_by_age(
+    moments, variances = compute_static_share(
         df_good,
-        moments=moments,
-        variances=variances,
-        age_range=age_range,
-        label="good_health",
+        moments,
+        variances,
+        choices=FULL_TIME,
+        label="full_time_share_good_health",
     )
+
+    moments, variances = compute_static_share(
+        df_low,
+        moments,
+        variances,
+        choices=FULL_TIME,
+        label="full_time_share_low_education",
+    )
+    moments, variances = compute_static_share(
+        df_high,
+        moments,
+        variances,
+        choices=FULL_TIME,
+        label="full_time_share_high_education",
+    )
+
+    # Compute the share of people working full time who are in bad health
 
     # B2) Moments by age bin conditional on caregiving
     # moments, variances = compute_share_informal_care_by_age(
@@ -272,6 +304,15 @@ def task_create_soep_moments(
 
     moments_df.to_csv(path_to_save_moments, index=True)
     variances_df.to_csv(path_to_save_variances, index=True)
+
+
+def compute_static_share(df, moments, variances, choices, label):
+    moments[label] = df["choice"].isin(np.atleast_1d(choices)).mean()
+    variances[label] = (
+        df["choice"].isin(np.atleast_1d(choices)).var(ddof=DEGREES_OF_FREEDOM)
+    )
+
+    return moments, variances
 
 
 def compute_labor_shares_by_age(df, moments, variances, age_range, label=None):
