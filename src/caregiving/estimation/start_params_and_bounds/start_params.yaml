@@ -21,8 +21,10 @@
 # disutil_children_ft_work_high: -0.2
 
 # Utility parameters
-# rho: 1.5
-rho: 1.98
+rho: 1.5
+rho_bequest_high: 1.5
+rho_bequest_low: 1.5
+# rho: 1.98
 
 #disutil_not_retired_bad: 1.0
 #disutil_working_bad: 0.3
@@ -37,20 +39,55 @@ rho: 1.98
 # disutil_children_ft_work_low: 0.2
 # disutil_children_ft_work_high: 0.3
 
-disutil_unemployed_low_women: 1.0
-disutil_unemployed_high_women: 1.0
-disutil_pt_work_bad_women: 1.3
-disutil_pt_work_good_women: 1.3
-disutil_ft_work_bad_women: 1.3
-disutil_ft_work_good_women: 1.3
-disutil_pt_work_low_women: 0.2
-disutil_pt_work_high_women: 0.2
-disutil_ft_work_low_women: 0.2
-disutil_ft_work_high_women: 0.2
-disutil_children_pt_work_low: 0.2
-disutil_children_pt_work_high: 0.2
+# disutil_unemployed_low_women: 1.0
+# disutil_unemployed_high_women: 1.0
+# disutil_pt_work_bad_women: 1.3
+# disutil_pt_work_good_women: 1.3
+# disutil_ft_work_bad_women: 1.3
+# disutil_ft_work_good_women: 1.3
+# disutil_pt_work_low_women: 0.2
+# disutil_pt_work_high_women: 0.2
+# disutil_ft_work_low_women: 0.2
+# disutil_ft_work_high_women: 0.2
+# disutil_children_pt_work_low: 0.2
+# disutil_children_pt_work_high: 0.2
+# disutil_children_ft_work_low: 0.2
+# disutil_children_ft_work_high: 0.2
+
+
+# disutil_unemployed_low_women: 0.96
+# disutil_unemployed_high_women: 0.96
+# disutil_pt_work_bad_women: 1.6879
+# disutil_pt_work_good_women: 1.2782
+# disutil_ft_work_bad_women: 1.8497
+# disutil_ft_work_good_women: 1.4565
+# disutil_pt_work_low_women: 0
+# disutil_pt_work_high_women: 0
+# disutil_ft_work_low_women: 0
+# disutil_ft_work_high_women: 0
+# disutil_children_pt_work_low: 0
+# disutil_children_pt_work_high: 0
+# disutil_children_ft_work_low: 0.2123
+# disutil_children_ft_work_high: 0.1197
+
+
+# Full time work dis-utility women
+disutil_ft_work_good_women: 1.0
+disutil_ft_work_bad_women: 1.0
+
+# Part time dis-utility men
+disutil_pt_work_good_women: 1.0
+disutil_pt_work_bad_women: 1.0
+
+# Unemployment dis-utility women
+disutil_unemployed_good_women: 0.5
+disutil_unemployed_bad_women: 0.5
+
+# Children dis-utility
 disutil_children_ft_work_low: 0.2
 disutil_children_ft_work_high: 0.2
+
+
 #
 # disutil_youngest_child_0_to_2_pt_work_low: 0.2
 # disutil_youngest_child_3_to_5_pt_work_low: 0.2
@@ -65,11 +102,11 @@ disutil_children_ft_work_high: 0.2
 # disutil_youngest_child_3_to_5_ft_work_high: 0.2
 # disutil_youngest_child_6_to_10_ft_work_high: 0.2
 #
-disutil_age_youngest_child_pt_work_low: -0.1
-disutil_age_youngest_child_pt_work_high: -0.1
-disutil_age_youngest_child_ft_work_low: -0.1
-disutil_age_youngest_child_ft_work_high: -0.1
-age_of_youngest_child_curvature: 1
+# disutil_age_youngest_child_pt_work_low: 0
+# disutil_age_youngest_child_pt_work_high: 0
+# disutil_age_youngest_child_ft_work_low: 0
+# disutil_age_youngest_child_ft_work_high: 0
+# age_of_youngest_child_curvature: 1
 
 # disutil_unemployed_women: 2.6654188449619967
 # disutil_ft_work_bad_women: 2.8504908655256718
@@ -182,6 +219,6 @@ bequest_scale: 2.4
 # Job separation params are set internally driven by data
 
 # Taste shock scale
-lambda: 0.5
+lambda: 0.29
 #taste_shock_scale_men: 0.29
 #taste_shock_scale_women: 0.29

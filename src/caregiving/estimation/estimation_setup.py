@@ -11,8 +11,6 @@ import numpy as np
 import optimagic as om
 import pandas as pd
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import RETIREMENT
@@ -29,6 +27,8 @@ from caregiving.simulation.simulate_moments import (
     simulate_moments_jax,
     simulate_moments_pandas,
 )
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 jax.config.update("jax_enable_x64", True)
 
@@ -64,9 +64,9 @@ def estimate_model(
     lower_bounds: Optional[Dict[str, Any]] = None,
     upper_bounds: Optional[Dict[str, Any]] = None,
     select_fixed_params: Optional[Callable[[str, Any], bool]] = None,
-    constraints: Optional[
-        Union[om.constraints.Constraint, List[om.constraints.Constraint]]
-    ] = None,
+    # constraints: Optional[
+    #     Union[om.constraints.Constraint, List[om.constraints.Constraint]]
+    # ] = None,
     scaling: bool = False,
     scaling_options: Optional[Dict[str, Any]] = None,
     multistart: bool = False,
@@ -149,7 +149,8 @@ def estimate_model(
     )
 
     # 3) Constraints
-    combined_constraints = _combine_constraints(constraints, select_fixed_params)
+    # combined_constraints = _combine_constraints(constraints, select_fixed_params)
+    # fixed_constraint = om.FixedConstraint(selector=select_fixed_params)
 
     # 4) Simulator and criterion
     simulate_moments_given_params = partial(
@@ -177,14 +178,14 @@ def estimate_model(
         "algorithm": algo,
         "algo_options": algo_options,
         "bounds": bounds,
-        "constraints": combined_constraints,
+        # "constraints": fixed_constraint,
         "error_handling": error_handling,
     }
 
-    # if select_fixed_params is not None:
-    #     fixed_constraint = om.FixedConstraint(selector=select_fixed_params)
-    #     minimize_kwargs["constraints"] = fixed_constraint
-    #
+    if select_fixed_params is not None:
+        fixed_constraint = om.FixedConstraint(selector=select_fixed_params)
+        minimize_kwargs["constraints"] = fixed_constraint
+
     # if scaling:
     #     # Either use user-supplied dict or fall back to your defaults
     #     so_opts = scaling_options or {
@@ -220,7 +221,7 @@ def estimate_model(
     return result
 
 
-def _prepare_bounds(
+def _prepare_bounds(  # noqa: PLR0912
     start_params: Mapping[str, Any],
     *,
     lower_bounds: Optional[Dict[str, Any]] = None,

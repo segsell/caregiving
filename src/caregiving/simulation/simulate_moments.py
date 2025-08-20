@@ -49,8 +49,8 @@ def simulate_moments_pandas(
     df_low = df[df["education"] == 0]
     df_high = df[df["education"] == 1]
 
-    df_bad = df[df["health"] == 0]
-    df_good = df[df["health"] == 1]
+    # df_bad = df[df["health"] == 0]
+    # df_good = df[df["health"] == 1]
 
     # df_caregivers = df[df["choice"].isin(np.asarray(INFORMAL_CARE))]
     # df_caregivers_low = df_caregivers[df_caregivers["education"] == 0]
@@ -509,8 +509,8 @@ def create_moments_jax(sim_df, min_age, max_age):
     arr_low_educ = arr[arr[:, idx["education"]] == 0]
     arr_high_educ = arr[arr[:, idx["education"]] == 1]
 
-    arr_bad_health = arr[arr[:, idx["health"]] == 0]
-    arr_good_health = arr[arr[:, idx["health"]] == 1]
+    # arr_bad_health = arr[arr[:, idx["health"]] == 0]
+    # arr_good_health = arr[arr[:, idx["health"]] == 1]
 
     # _care_mask = jnp.isin(arr[:, idx["choice"]], INFORMAL_CARE)
     # arr_caregivers = arr[_care_mask]
@@ -566,8 +566,8 @@ def create_moments_jax(sim_df, min_age, max_age):
     #     arr_good_health, idx, FULL_TIME
     # )
 
-    # share_working_full_time_low_educ = get_static_share(arr_low_educ, idx, FULL_TIME)
-    # share_working_full_time_high_educ = get_static_share(arr_high_educ, idx, FULL_TIME)
+    # share_working_full_time_low_edu = get_static_share(arr_low_educ, idx, FULL_TIME)
+    # share_working_full_time_high_edu = get_static_share(arr_high_educ, idx, FULL_TIME)
 
     # share_retired_by_age_bad_health = get_share_by_age(
     #     arr_bad_health, ind=idx, choice=RETIREMENT, min_age=min_age, max_age=max_age
@@ -733,8 +733,8 @@ def create_moments_jax(sim_df, min_age, max_age):
         # flat shares
         # + [share_working_full_time_bad_health]
         # + [share_working_full_time_good_health]
-        # + [share_working_full_time_low_educ]
-        # + [share_working_full_time_high_educ]
+        # + [share_working_full_time_low_edu]
+        # + [share_working_full_time_high_edu]
         # # bad/good health
         # + share_retired_by_age_bad_health
         # + share_unemployed_by_age_bad_health

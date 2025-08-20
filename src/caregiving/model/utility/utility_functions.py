@@ -19,7 +19,10 @@ from caregiving.model.shared import (
     is_part_time,
     is_unemployed,
 )
-from caregiving.model.utility.bequest_utility import utility_final_consume_all
+from caregiving.model.utility.bequest_utility import (
+    marginal_utility_final_consume_all,
+    utility_final_consume_all,
+)
 
 EPS = 0.1
 
@@ -95,6 +98,7 @@ def utility_func(
     )
     utility_death = utility_final_consume_all(
         wealth=consumption,
+        education=education,
         params=params,
     )
     death_bool = is_dead(health)
@@ -137,25 +141,15 @@ def utility_func_alive(
         options=options,
     )
 
-    # zeta = utility_of_caregiving(
-    #     period,
-    #     choice,
-    #     education,
+    # disutil_children = disutility_of_children_and_work(
+    #     period=period,
+    #     choice=choice,
+    #     education=education,
+    #     partner_state=partner_state,
     #     health=health,
-    #     care_demand=care_demand,
-    #     # care_supply=care_supply,
     #     params=params,
     #     options=options,
     # )
-    disutil_children = disutility_of_children_and_work(
-        period=period,
-        choice=choice,
-        education=education,
-        partner_state=partner_state,
-        health=health,
-        params=params,
-        options=options,
-    )
 
     # compute utility
     scaled_consumption = consumption * eta / cons_scale
@@ -166,39 +160,7 @@ def utility_func_alive(
         jnp.log(consumption * eta / cons_scale),
         utility_rho_not_one,
     )
-    return utility + disutil_children  # + zeta * care_demand
-
-
-# def _utility_func_alive(
-#     params, consumption, choice, education, partner_state, health, period, options
-# ):
-#     rho = params["rho"]
-
-#     has_partner = (partner_state > 0).astype(int)
-#     n_children = options["children_by_state"][SEX, education, has_partner, period]
-#     # age_youngest_child = options["age_youngest_child_by_state"][
-#     #     SEX, education, has_partner, period
-#     # ]
-
-#     cons_scale = consumption_scale(has_partner, n_children)
-#     utility_consumption = ((consumption / cons_scale) ** (1 - rho) - 1) / (1 - rho)
-
-#     eta = _utility_of_labor_and_children(
-#         choice=choice, education=education, n_children=n_children, params=params
-#     )
-#     # zeta = utility_of_labor_and_elder_care(
-#     #     choice, params
-#     # )
-
-#     utility_with_rho_not_one = utility_consumption * jnp.exp(eta)  # + jnp.exp(zeta)
-
-#     utility = jax.lax.select(
-#         jnp.allclose(rho, 1),
-#         jnp.log(consumption * jnp.exp(eta) / cons_scale),
-#         utility_with_rho_not_one,
-#     )
-
-#     return utility
+    return utility  # + disutil_children  # + zeta * care_demand
 
 
 def utility_func_adda(
@@ -258,6 +220,7 @@ def utility_func_adda(
     )
     utility_death = utility_final_consume_all(
         wealth=consumption,
+        education=education,
         params=params,
     )
     death_bool = is_dead(health)
@@ -324,6 +287,38 @@ def utility_func_alive_adda(
 
 
 def marg_utility(
+    consumption,
+    partner_state,
+    education,
+    health,
+    period,
+    choice,
+    params,
+    options,
+):
+    marginal_utility_alive = marginal_utility_function_alive(
+        consumption=consumption,
+        partner_state=partner_state,
+        education=education,
+        health=health,
+        period=period,
+        choice=choice,
+        params=params,
+        options=options,
+    )
+    marginal_utility_death = marginal_utility_final_consume_all(
+        wealth=consumption,
+        education=education,
+        params=params,
+    )
+    death_bool = health == options["death_health_var"]
+    marginal_utility = jax.lax.select(
+        death_bool, marginal_utility_death, marginal_utility_alive
+    )
+    return marginal_utility
+
+
+def marginal_utility_function_alive(
     consumption, partner_state, education, health, period, choice, params, options
 ):
     cons_scale = consumption_scale(
@@ -583,21 +578,30 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     #     # + partner_retired * disutil_only_partner_retired
     # )
 
+    # disutil_ft_work_women = (
+    #     params["disutil_ft_work_bad_women"] * bad_health
+    #     + params["disutil_ft_work_good_women"] * good_health
+    #     + params["disutil_ft_work_low_women"] * (1 - education)
+    #     + params["disutil_ft_work_high_women"] * education
+    # )
+    # disutil_pt_work_women = (
+    #     params["disutil_pt_work_bad_women"] * bad_health
+    #     + params["disutil_pt_work_good_women"] * good_health
+    #     + params["disutil_pt_work_low_women"] * (1 - education)
+    #     + params["disutil_pt_work_high_women"] * education
+    # )
+
     disutil_ft_work_women = (
-        params["disutil_ft_work_bad_women"] * bad_health
+        params["disutil_ft_work_bad_women"] * bad_health  # (1 - good_health)
         + params["disutil_ft_work_good_women"] * good_health
-        + params["disutil_ft_work_low_women"] * (1 - education)
-        + params["disutil_ft_work_high_women"] * education
     )
     disutil_pt_work_women = (
-        params["disutil_pt_work_bad_women"] * bad_health
+        params["disutil_pt_work_bad_women"] * bad_health  # (1 - good_health)
         + params["disutil_pt_work_good_women"] * good_health
-        + params["disutil_pt_work_low_women"] * (1 - education)
-        + params["disutil_pt_work_high_women"] * education
     )
     disutil_unemployed_women = (
-        params["disutil_unemployed_low_women"] * (1 - education)
-        + params["disutil_unemployed_high_women"] * education
+        params["disutil_unemployed_bad_women"] * bad_health
+        + params["disutil_unemployed_good_women"] * good_health
     )
 
     has_partner = (partner_state > 0).astype(int)
@@ -612,19 +616,19 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     # child_age_3_to_5 = is_child_age_3_to_5(age_youngest_child) * has_children
     # child_age_6_to_10 = is_child_age_6_to_10(age_youngest_child) * has_children
 
-    disutil_children_ft_low = params[
-        "disutil_children_ft_work_low"
-    ] * _func_nb_children_in_hh(nb_children)
-    disutil_children_ft_high = params[
-        "disutil_children_ft_work_high"
-    ] * _func_nb_children_in_hh(nb_children)
+    # disutil_children_ft_low = params[
+    #     "disutil_children_ft_work_low"
+    # ] * _func_nb_children_in_hh(nb_children)
+    # disutil_children_ft_high = params[
+    #     "disutil_children_ft_work_high"
+    # ] * _func_nb_children_in_hh(nb_children)
 
-    disutil_children_pt_low = params[
-        "disutil_children_pt_work_low"
-    ] * _func_nb_children_in_hh(nb_children)
-    disutil_children_pt_high = params[
-        "disutil_children_pt_work_high"
-    ] * _func_nb_children_in_hh(nb_children)
+    # disutil_children_pt_low = params[
+    #     "disutil_children_pt_work_low"
+    # ] * _func_nb_children_in_hh(nb_children)
+    # disutil_children_pt_high = params[
+    #     "disutil_children_pt_work_high"
+    # ] * _func_nb_children_in_hh(nb_children)
 
     # # Disutility of labor and age of youngest child
     # disutil_child_0_to_2_ft_low = (
@@ -718,23 +722,37 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     #     + (disutil_age_youngest_child_ft_high) * education
     # )
 
-    disutil_children_pt = (
-        disutil_children_pt_low * (1 - education) + disutil_children_pt_high * education
-    )
-    disutil_children_ft = (
-        disutil_children_ft_low * (1 - education) + disutil_children_ft_high * education
+    # disutil_children_pt = (
+    # disutil_children_pt_low * (1 - education) + disutil_children_pt_high * education
+    # )
+    # disutil_children_ft = (
+    # disutil_children_ft_low * (1 - education) + disutil_children_ft_high * education
+    # )
+    # exp_factor_women = (
+    #     disutil_unemployed_women * unemployed
+    #     + (disutil_pt_work_women + disutil_children_pt) * working_part_time
+    #     + (disutil_ft_work_women + disutil_children_ft) * working_full_time
+    #     + (disutil_pt_work_women) * working_part_time
+    #     + (disutil_ft_work_women) * working_full_time
+    # )
+
+    disutil_children = params["disutil_children_ft_work_high"] * education + params[
+        "disutil_children_ft_work_low"
+    ] * (1 - education)
+    disutil_children_ft = disutil_children * nb_children
+
+    disutil_unemployed_women = (
+        params["disutil_unemployed_good_women"] * good_health
+        + params["disutil_unemployed_bad_women"] * bad_health
     )
 
-    exp_factor_women = (
+    disutil_sum_women = (
         disutil_unemployed_women * unemployed
-        + (disutil_pt_work_women + disutil_children_pt) * working_part_time
+        + disutil_pt_work_women * working_part_time
         + (disutil_ft_work_women + disutil_children_ft) * working_full_time
-        + (disutil_pt_work_women) * working_part_time
-        + (disutil_ft_work_women) * working_full_time
     )
 
-    # Compute eta
-    disutility = jnp.exp(-exp_factor_women)
+    disutility = jnp.exp(-disutil_sum_women)
 
     return disutility
 
