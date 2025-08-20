@@ -47,6 +47,13 @@ util_ft_work_and_care_women: -5
 
 util_formal_care_women: -5
 
+
+disutil_unemployed_bad_women: 1.0e-12
+disutil_unemployed_good_women: 1.0e-12
+rho_bequest_high: 1
+rho_bequest_low: 1
+
+
 # util_cons_unemployed_low_educ: -5
 # util_cons_unemployed_high_educ: -5
 # util_cons_part_time_low_educ: -5
