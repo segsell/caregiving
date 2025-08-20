@@ -16,7 +16,10 @@ from caregiving.model.shared import (
     is_part_time,
     is_unemployed,
 )
-from caregiving.model.utility.bequest_utility import utility_final_consume_all
+from caregiving.model.utility.bequest_utility import (
+    marginal_utility_final_consume_all,
+    utility_final_consume_all,
+)
 
 
 def create_utility_functions():
@@ -310,6 +313,40 @@ def utility_func_alive_adda(
 
 
 def marg_utility(
+    consumption,
+    partner_state,
+    education,
+    health,
+    period,
+    choice,
+    params,
+    options,
+):
+    marginal_utility_alive = marginal_utility_function_alive(
+        consumption=consumption,
+        partner_state=partner_state,
+        education=education,
+        health=health,
+        period=period,
+        choice=choice,
+        params=params,
+        options=options,
+    )
+    marginal_utility_death = marginal_utility_final_consume_all(
+        wealth=consumption,
+        # education=education,
+        params=params,
+    )
+
+    death_bool = is_dead(health)
+    marginal_utility = jax.lax.select(
+        death_bool, marginal_utility_death, marginal_utility_alive
+    )
+
+    return marginal_utility
+
+
+def marginal_utility_function_alive(
     consumption, partner_state, education, health, period, choice, params, options
 ):
     cons_scale = consumption_scale(

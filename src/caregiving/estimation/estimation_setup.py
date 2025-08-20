@@ -10,8 +10,6 @@ import numpy as np
 import optimagic as om
 import pandas as pd
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import RETIREMENT
@@ -28,6 +26,8 @@ from caregiving.simulation.simulate_moments import (
     simulate_moments_jax,
     simulate_moments_pandas,
 )
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 jax.config.update("jax_enable_x64", True)
 
@@ -180,7 +180,9 @@ def estimate_model(
         ms_opts = (
             om.MultistartOptions(**multistart_options)
             if multistart_options is not None
-            else om.MultistartOptions(n_samples=100, seed=0, n_cores=4)
+            else om.MultistartOptions(
+                n_samples=15, stopping_maxopt=10, convergence_max_discoveries=10
+            )
         )
         minimize_kwargs["multistart"] = ms_opts
 

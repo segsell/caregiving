@@ -16,6 +16,7 @@ job_finding_logit_const_women: -2.0352474213085414
 job_finding_logit_high_educ_women: 0.6955095961575368
 lambda: 0.5
 rho: 1.98
+rho_bequest: 1.98
 util_formal_care_women: -0.4856233035613876
 util_ft_work_and_care_women: -0.8453716634375091
 util_informal_care_high_women: 0.5567180378318058
