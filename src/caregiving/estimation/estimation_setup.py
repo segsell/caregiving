@@ -66,6 +66,7 @@ def estimate_model(
     multistart: bool = False,
     multistart_options: Optional[Dict[str, Any]] = None,
     random_seed: bool = False,
+    relative_deviations: bool = False,
     error_handling: str = "continue",
 ) -> None:
     """Estimate the model based on empirical data and starting parameters."""
@@ -148,6 +149,7 @@ def estimate_model(
         simulate_moments=simulate_moments_given_params,
         empirical_moments=empirical_moments,
         weights=weights,
+        relative_deviations=relative_deviations,
     )
 
     minimize_kwargs = {
@@ -178,7 +180,9 @@ def estimate_model(
         ms_opts = (
             om.MultistartOptions(**multistart_options)
             if multistart_options is not None
-            else om.MultistartOptions(n_samples=100, seed=0, n_cores=4)
+            else om.MultistartOptions(
+                n_samples=15, stopping_maxopt=10, convergence_max_discoveries=10
+            )
         )
         minimize_kwargs["multistart"] = ms_opts
 
@@ -258,6 +262,7 @@ def get_msm_optimization_function(
     simulate_moments: callable,
     empirical_moments: np.ndarray,
     weights: np.ndarray,
+    relative_deviations: bool,
 ) -> np.ndarray:
 
     chol_weights = np.linalg.cholesky(weights)
@@ -268,6 +273,7 @@ def get_msm_optimization_function(
             simulate_moments=simulate_moments,
             flat_empirical_moments=empirical_moments,
             chol_weights=chol_weights,
+            relative_deviations=relative_deviations,
         )
     )
 
@@ -279,12 +285,16 @@ def msm_criterion(
     simulate_moments: callable,
     flat_empirical_moments: np.ndarray,
     chol_weights: np.ndarray,
+    relative_deviations: bool,
 ) -> np.ndarray:
-    """Calculate the raw criterion based on simulated and empirical moments."""
+    """Compute the MSM residuals based on simulated and empirical moments."""
 
     simulated_flat = simulate_moments(params)
 
     deviations = simulated_flat - flat_empirical_moments
+    if relative_deviations:
+        deviations /= flat_empirical_moments
+
     residuals = deviations @ chol_weights
 
     return residuals

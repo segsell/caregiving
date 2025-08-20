@@ -16,7 +16,10 @@ from caregiving.model.shared import (
     is_part_time,
     is_unemployed,
 )
-from caregiving.model.utility.bequest_utility import utility_final_consume_all
+from caregiving.model.utility.bequest_utility import (
+    marginal_utility_final_consume_all,
+    utility_final_consume_all,
+)
 
 
 def create_utility_functions():
@@ -310,6 +313,40 @@ def utility_func_alive_adda(
 
 
 def marg_utility(
+    consumption,
+    partner_state,
+    education,
+    health,
+    period,
+    choice,
+    params,
+    options,
+):
+    marginal_utility_alive = marginal_utility_function_alive(
+        consumption=consumption,
+        partner_state=partner_state,
+        education=education,
+        health=health,
+        period=period,
+        choice=choice,
+        params=params,
+        options=options,
+    )
+    marginal_utility_death = marginal_utility_final_consume_all(
+        wealth=consumption,
+        # education=education,
+        params=params,
+    )
+
+    death_bool = is_dead(health)
+    marginal_utility = jax.lax.select(
+        death_bool, marginal_utility_death, marginal_utility_alive
+    )
+
+    return marginal_utility
+
+
+def marginal_utility_function_alive(
     consumption, partner_state, education, health, period, choice, params, options
 ):
     cons_scale = consumption_scale(
@@ -540,14 +577,14 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     disutil_ft_work_women = (
         params["disutil_ft_work_bad_women"] * bad_health
         + params["disutil_ft_work_good_women"] * good_health
-        + params["disutil_ft_work_low_women"] * (1 - education)
-        + params["disutil_ft_work_high_women"] * education
+        # + params["disutil_ft_work_low_women"] * (1 - education)
+        # + params["disutil_ft_work_high_women"] * education
     )
     disutil_pt_work_women = (
         params["disutil_pt_work_bad_women"] * bad_health
         + params["disutil_pt_work_good_women"] * good_health
-        + params["disutil_pt_work_low_women"] * (1 - education)
-        + params["disutil_pt_work_high_women"] * education
+        # + params["disutil_pt_work_low_women"] * (1 - education)
+        # + params["disutil_pt_work_high_women"] * education
     )
     disutil_unemployed_women = (
         params["disutil_unemployed_low_women"] * (1 - education)
@@ -576,7 +613,7 @@ def disutility_work(period, choice, education, partner_state, health, params, op
         + (disutil_ft_work_women + disutil_children_ft) * working_full_time
     )
 
-    # compute eta
+    # Compute eta
     disutility = jnp.exp(-exp_factor_women)
 
     return disutility
