@@ -31,6 +31,7 @@ def table(df_col):
     return pd.crosstab(df_col, columns="Count")["Count"]
 
 
+@pytask.mark.skip()
 def task_create_event_study_sample(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",

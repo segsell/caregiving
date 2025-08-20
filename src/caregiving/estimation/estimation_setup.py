@@ -3,7 +3,8 @@
 import pickle
 import time
 from functools import partial
-from typing import Any, Callable, Dict, Optional
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 import jax
 import numpy as np
@@ -60,12 +61,18 @@ def estimate_model(
     path_to_save_estimation_result: str = BLD / "estimation" / "result.pkl",
     path_to_save_estimation_params: str = BLD / "estimation" / "estimated_params.csv",
     # last_estimate: Optional[Dict[str, Any]] = None,
+    lower_bounds: Optional[Dict[str, Any]] = None,
+    upper_bounds: Optional[Dict[str, Any]] = None,
     select_fixed_params: Optional[Callable[[str, Any], bool]] = None,
+    # constraints: Optional[
+    #     Union[om.constraints.Constraint, List[om.constraints.Constraint]]
+    # ] = None,
     scaling: bool = False,
     scaling_options: Optional[Dict[str, Any]] = None,
     multistart: bool = False,
     multistart_options: Optional[Dict[str, Any]] = None,
     random_seed: bool = False,
+    relative_deviations: bool = False,
     error_handling: str = "continue",
 ) -> None:
     """Estimate the model based on empirical data and starting parameters."""
@@ -123,15 +130,29 @@ def estimate_model(
 
     # start_params = {name: start_params_all[name] for name in start_params.keys()}
 
-    lower_bounds_all = yaml.safe_load(open(path_to_lower_bounds, "rb"))
-    lower_bounds = {name: lower_bounds_all[name] for name in start_params.keys()}
+    # lower_bounds_all = yaml.safe_load(open(path_to_lower_bounds, "rb"))
+    # lower_bounds = {name: lower_bounds_all[name] for name in start_params.keys()}
 
-    upper_bounds_all = yaml.safe_load(open(path_to_upper_bounds, "rb"))
-    upper_bounds = {name: upper_bounds_all[name] for name in start_params.keys()}
+    # upper_bounds_all = yaml.safe_load(open(path_to_upper_bounds, "rb"))
+    # upper_bounds = {name: upper_bounds_all[name] for name in start_params.keys()}
 
-    bounds = om.Bounds(lower=lower_bounds, upper=upper_bounds)
-    fixed_constraint = om.FixedConstraint(selector=select_fixed_params)
+    # bounds = om.Bounds(lower=lower_bounds, upper=upper_bounds)
 
+    # 2) Bounds: use provided dicts if given; else load from YAML
+
+    bounds = _prepare_bounds(
+        start_params,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        path_to_lower_bounds=path_to_lower_bounds,
+        path_to_upper_bounds=path_to_upper_bounds,
+    )
+
+    # 3) Constraints
+    # combined_constraints = _combine_constraints(constraints, select_fixed_params)
+    # fixed_constraint = om.FixedConstraint(selector=select_fixed_params)
+
+    # 4) Simulator and criterion
     simulate_moments_given_params = partial(
         simulate_moments,
         solve_func=solve_func,
@@ -148,6 +169,7 @@ def estimate_model(
         simulate_moments=simulate_moments_given_params,
         empirical_moments=empirical_moments,
         weights=weights,
+        relative_deviations=relative_deviations,
     )
 
     minimize_kwargs = {
@@ -156,7 +178,7 @@ def estimate_model(
         "algorithm": algo,
         "algo_options": algo_options,
         "bounds": bounds,
-        "constraints": fixed_constraint,
+        # "constraints": fixed_constraint,
         "error_handling": error_handling,
     }
 
@@ -164,23 +186,27 @@ def estimate_model(
         fixed_constraint = om.FixedConstraint(selector=select_fixed_params)
         minimize_kwargs["constraints"] = fixed_constraint
 
+    # if scaling:
+    #     # Either use user-supplied dict or fall back to your defaults
+    #     so_opts = scaling_options or {
+    #         "method": "start_values",
+    #         "clipping_value": 0.1,
+    #         "magnitude": 1,
+    #     }
+    #     minimize_kwargs["scaling"] = so_opts
     if scaling:
-        # Either use user-supplied dict or fall back to your defaults
-        so_opts = scaling_options or {
-            "method": "start_values",
-            "clipping_value": 0.1,
-            "magnitude": 1,
-        }
-        minimize_kwargs["scaling"] = so_opts
+        minimize_kwargs["scaling"] = _set_scaling_options(scaling_options)
 
+    # if multistart:
+    #     # allow custom options or fall back to your defaults
+    #     ms_opts = (
+    #         om.MultistartOptions(**multistart_options)
+    #         if multistart_options is not None
+    #         else om.MultistartOptions(n_samples=100, seed=0, n_cores=4)
+    #     )
+    #     minimize_kwargs["multistart"] = ms_opts
     if multistart:
-        # allow custom options or fall back to your defaults
-        ms_opts = (
-            om.MultistartOptions(**multistart_options)
-            if multistart_options is not None
-            else om.MultistartOptions(n_samples=100, seed=0, n_cores=4)
-        )
-        minimize_kwargs["multistart"] = ms_opts
+        minimize_kwargs["multistart"] = _set_multistart_options(multistart_options)
 
     result = om.minimize(**minimize_kwargs)
 
@@ -193,6 +219,145 @@ def estimate_model(
     start_params_series.to_csv(path_to_save_estimation_params, header=True)
 
     return result
+
+
+def _prepare_bounds(  # noqa: PLR0912
+    start_params: Mapping[str, Any],
+    *,
+    lower_bounds: Optional[Dict[str, Any]] = None,
+    upper_bounds: Optional[Dict[str, Any]] = None,
+    path_to_lower_bounds: Union[str, Path] = None,
+    path_to_upper_bounds: Union[str, Path] = None,
+):
+    """
+    Build an optimagic Bounds object for the given start_params.
+
+    If `lower_bounds` / `upper_bounds` dicts are provided, they are used directly.
+    Otherwise, YAML files are loaded from the given paths. Only keys present in
+    `start_params` are kept. Raises with a clear message if any keys are missing.
+    """
+    param_names = list(start_params.keys())
+
+    # Lower bounds
+    if lower_bounds is None:
+        if path_to_lower_bounds is None:
+            raise ValueError(
+                "Either `lower_bounds` or `path_to_lower_bounds` must be provided."
+            )
+        with open(path_to_lower_bounds, "rb") as f:
+            lower_all = yaml.safe_load(f)
+        if not isinstance(lower_all, dict):
+            raise TypeError("Loaded lower bounds YAML must be a mapping.")
+        missing = [k for k in param_names if k not in lower_all]
+        if missing:
+            raise KeyError(f"Lower bounds missing keys: {missing}")
+        lower_used = {name: lower_all[name] for name in param_names}
+    else:
+        if not isinstance(lower_bounds, dict):
+            raise TypeError(
+                "`lower_bounds` must be a dict mapping parameter names to values."
+            )
+        missing = [k for k in param_names if k not in lower_bounds]
+        if missing:
+            raise KeyError(f"Provided lower_bounds missing keys: {missing}")
+        lower_used = {name: lower_bounds[name] for name in param_names}
+
+    # Upper bounds
+    if upper_bounds is None:
+        if path_to_upper_bounds is None:
+            raise ValueError(
+                "Either `upper_bounds` or `path_to_upper_bounds` must be provided."
+            )
+        with open(path_to_upper_bounds, "rb") as f:
+            upper_all = yaml.safe_load(f)
+        if not isinstance(upper_all, dict):
+            raise TypeError("Loaded upper bounds YAML must be a mapping.")
+        missing = [k for k in param_names if k not in upper_all]
+        if missing:
+            raise KeyError(f"Upper bounds missing keys: {missing}")
+        upper_used = {name: upper_all[name] for name in param_names}
+    else:
+        if not isinstance(upper_bounds, dict):
+            raise TypeError(
+                "`upper_bounds` must be a dict mapping parameter names to values."
+            )
+        missing = [k for k in param_names if k not in upper_bounds]
+        if missing:
+            raise KeyError(f"Provided upper_bounds missing keys: {missing}")
+        upper_used = {name: upper_bounds[name] for name in param_names}
+
+    return om.Bounds(lower=lower_used, upper=upper_used)
+
+
+def _combine_constraints(
+    constraints: Optional[
+        Union[om.constraints.Constraint, List[om.constraints.Constraint]]
+    ],
+    select_fixed_params: Optional[Callable[[str, Any], bool]],
+) -> Optional[List[om.constraints.Constraint]]:
+    """Normalize user constraints and combine with a FixedConstraint if provided.
+
+    Returns a list of constraints or None.
+    """
+    # normalize user constraints into a list (or None)
+    if constraints is not None:
+        if isinstance(constraints, list):
+            user_constraints = constraints
+        else:
+            user_constraints = [constraints]
+    else:
+        user_constraints = None
+
+    # build fixed constraint if selector is given
+    fixed_constraint = (
+        om.FixedConstraint(selector=select_fixed_params)
+        if select_fixed_params is not None
+        else None
+    )
+
+    # combine
+    if (user_constraints is not None) and (fixed_constraint is not None):
+        return [fixed_constraint] + user_constraints
+    elif (user_constraints is not None) and (fixed_constraint is None):
+        return user_constraints
+    elif (user_constraints is None) and (fixed_constraint is not None):
+        return [fixed_constraint]  # ensure it's always a list
+    else:
+        return None
+
+
+def _set_scaling_options(
+    scaling_options: Optional[Dict[str, Any]] = None,
+) -> om.ScalingOptions:
+    """Set scaling options for the optimization."""
+    if scaling_options is None:
+        return om.ScalingOptions(method="start_values", clipping_value=0.1, magnitude=1)
+    elif isinstance(scaling_options, om.ScalingOptions):
+        return scaling_options
+    elif isinstance(scaling_options, dict):
+        return om.ScalingOptions(**scaling_options)
+    else:
+        raise TypeError(
+            "scaling_options must be None, dict, or ScalingOptions; "
+            f"got {type(scaling_options).__name__}"
+        )
+
+
+def _set_multistart_options(
+    multistart_options: Optional[Dict[str, Any]] = None,
+) -> om.MultistartOptions:
+    """Set multistart options for the optimization."""
+    if multistart_options is None:
+        return om.MultistartOptions(n_samples=100, seed=0, n_cores=4)
+    elif isinstance(multistart_options, om.MultistartOptions):
+        return multistart_options
+    elif isinstance(multistart_options, dict):
+        return om.MultistartOptions(**multistart_options)
+    else:
+        raise TypeError(
+            "multistart_options must be None, dict, or MultistartOptions; "
+            f"got {type(multistart_options).__name__}"
+        )
 
 
 # =====================================================================================
@@ -258,6 +423,7 @@ def get_msm_optimization_function(
     simulate_moments: callable,
     empirical_moments: np.ndarray,
     weights: np.ndarray,
+    relative_deviations: bool,
 ) -> np.ndarray:
 
     chol_weights = np.linalg.cholesky(weights)
@@ -268,6 +434,7 @@ def get_msm_optimization_function(
             simulate_moments=simulate_moments,
             flat_empirical_moments=empirical_moments,
             chol_weights=chol_weights,
+            relative_deviations=relative_deviations,
         )
     )
 
@@ -279,12 +446,16 @@ def msm_criterion(
     simulate_moments: callable,
     flat_empirical_moments: np.ndarray,
     chol_weights: np.ndarray,
+    relative_deviations: bool,
 ) -> np.ndarray:
-    """Calculate the raw criterion based on simulated and empirical moments."""
+    """Compute the MSM residuals based on simulated and empirical moments."""
 
     simulated_flat = simulate_moments(params)
 
     deviations = simulated_flat - flat_empirical_moments
+    if relative_deviations:
+        deviations /= flat_empirical_moments
+
     residuals = deviations @ chol_weights
 
     return residuals

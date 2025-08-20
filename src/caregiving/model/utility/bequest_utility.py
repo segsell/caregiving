@@ -16,11 +16,16 @@ def create_final_period_utility_functions():
 
 def utility_final_consume_all(
     wealth: jnp.array,
+    education: jnp.array,
     params: dict[str, float],
     # options: dict[str, Any],
 ):
     """Compute the utility in the final period including bequest."""
-    rho = params["rho"]
+
+    rho = jax.lax.select(
+        education == 0, params["rho_bequest_low"], params["rho_bequest_high"]
+    )
+
     bequest_scale = params["bequest_scale"]
 
     bequest_unscaled_with_rho_not_one = (wealth ** (1 - rho) - 1) / (1 - rho)
@@ -36,11 +41,16 @@ def utility_final_consume_all(
 
 def marginal_utility_final_consume_all(
     wealth: jnp.array,
+    education: jnp.array,
     params: dict[str, float],
     # options: dict[str, Any],
 ) -> jnp.array:
     """Compute marginal utility in the final period."""
-    rho = params["rho"]
+
+    rho = jax.lax.select(
+        education == 0, params["rho_bequest_low"], params["rho_bequest_high"]
+    )
+
     bequest_scale = params["bequest_scale"]
 
     return bequest_scale * (wealth ** (-rho))

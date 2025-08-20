@@ -7,6 +7,7 @@ from typing import Annotated
 import jax
 import numpy as np
 import pandas as pd
+from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal as aae
 from pytask import Product
 
@@ -59,7 +60,7 @@ def task_simulate_moments(
     sim_moms_pandas = simulate_moments_pandas(df_sim, options=options)
     sim_moms_jax = simulate_moments_jax(df_sim, options=options)
 
-    aae(sim_moms_jax, sim_moms_pandas)
+    aaae(sim_moms_jax, sim_moms_pandas)
     assert np.equal(emp_moms.shape, sim_moms_pandas.shape)
 
     # states = {

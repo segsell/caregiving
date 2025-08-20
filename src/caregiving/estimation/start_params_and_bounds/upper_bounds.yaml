@@ -17,6 +17,25 @@ disutil_children_pt_work_low: 5
 disutil_children_pt_work_high: 5
 disutil_children_ft_work_low: 5
 disutil_children_ft_work_high: 5
+#
+disutil_youngest_child_0_to_2_pt_work_low: 5
+disutil_youngest_child_3_to_5_pt_work_low: 5
+disutil_youngest_child_6_to_10_pt_work_low: 5
+disutil_youngest_child_0_to_2_pt_work_high: 5
+disutil_youngest_child_3_to_5_pt_work_high: 5
+disutil_youngest_child_6_to_10_pt_work_high: 5
+disutil_youngest_child_0_to_2_ft_work_low: 5
+disutil_youngest_child_3_to_5_ft_work_low: 5
+disutil_youngest_child_6_to_10_ft_work_low: 5
+disutil_youngest_child_0_to_2_ft_work_high: 5
+disutil_youngest_child_3_to_5_ft_work_high: 5
+disutil_youngest_child_6_to_10_ft_work_high: 5
+#
+disutil_age_youngest_child_pt_work_low: 5
+disutil_age_youngest_child_pt_work_high: 5
+disutil_age_youngest_child_ft_work_low: 5
+disutil_age_youngest_child_ft_work_high: 5
+# age_of_youngest_child_curvature: 100
 
 util_informal_care_low_women: 5
 util_informal_care_high_women: 5
@@ -28,6 +47,12 @@ util_unemployed_and_care_women: 5
 util_pt_work_and_care_women: -1e-12
 util_ft_work_and_care_women: -1e-12
 util_formal_care_women: -1e-12
+
+disutil_unemployed_bad_women: 5
+disutil_unemployed_good_women: 5
+rho_bequest_high: 2
+rho_bequest_low: 2
+
 
 # util_cons_unemployed_low_educ: -1e-12
 # util_cons_unemployed_high_educ: -1e-12

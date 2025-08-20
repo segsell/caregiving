@@ -103,6 +103,14 @@ def task_write_specs(
     path_to_struct_estimation_sample: Path = BLD
     / "data"
     / "soep_structural_estimation_sample.csv",
+    path_to_save_number_of_children: Annotated[Path, Product] = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "number_of_children_matrix.csv",
+    path_to_save_age_youngest_child: Annotated[Path, Product] = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "age_youngest_child_matrix.csv",
     path_to_save_health_death_transition_matrix_good_bad: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
@@ -153,16 +161,18 @@ def task_write_specs(
 
     # family transitions
     children_params = pd.read_csv(path_to_nb_child_params, index_col=[0, 1, 2])
-
     age_youngest_child_params = pd.read_csv(
         path_to_age_youngest_child_params, index_col=[0, 1, 2]
     )
 
     # Matches Bruno's & Max's result
-    specs["children_by_state"] = predict_children_by_state(children_params, specs)
+    specs["children_by_state"] = predict_children_by_state(
+        children_params, specs, path_to_save_number_of_children
+    )
     specs["child_age_youngest_by_state"] = predict_age_of_youngest_child_by_state(
         age_youngest_child_params,
         specs,
+        path_to_save_age_youngest_child,
     )
 
     # Read in family transitions

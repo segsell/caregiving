@@ -49,6 +49,9 @@ def simulate_moments_pandas(
     df_low = df[df["education"] == 0]
     df_high = df[df["education"] == 1]
 
+    # df_bad = df[df["health"] == 0]
+    # df_good = df[df["health"] == 1]
+
     # df_caregivers = df[df["choice"].isin(np.asarray(INFORMAL_CARE))]
     # df_caregivers_low = df_caregivers[df_caregivers["education"] == 0]
     # df_caregivers_high = df_caregivers[df_caregivers["education"] == 1]
@@ -62,6 +65,27 @@ def simulate_moments_pandas(
     moments = create_labor_share_moments_pandas(
         df_high, moments, age_range=age_range, label="high_education"
     )
+
+    # moments = create_labor_share_moments_pandas(
+    #     df_bad, moments, age_range=age_range, label="bad_health"
+    # )
+    # moments = create_labor_share_moments_pandas(
+    #     df_good, moments, age_range=age_range, label="good_health"
+    # )
+
+    # # Flat shares. Not by age
+    # moments["share_working_full_time_bad_health"] = (
+    #     df_bad["choice"].isin(np.atleast_1d(FULL_TIME)).mean()
+    # )
+    # moments["share_working_full_time_good_health"] = (
+    #     df_good["choice"].isin(np.atleast_1d(FULL_TIME)).mean()
+    # )
+    # moments["share_working_full_time_low_educ"] = (
+    #     df_low["choice"].isin(np.atleast_1d(FULL_TIME)).mean()
+    # )
+    # moments["share_working_full_time_high_educ"] = (
+    #     df_high["choice"].isin(np.atleast_1d(FULL_TIME)).mean()
+    # )
 
     # moments = create_choice_shares_by_age_bin_pandas(
     #     df, moments, choice_set=INFORMAL_CARE, age_bins=age_bins_75
@@ -158,7 +182,7 @@ def create_labor_share_moments_pandas(df, moments, age_range, label=None):
 
     # Reindex to ensure that every age between start_age and end_age is included;
     # missing ages will be filled with NaN
-    # retired_shares = retired_shares.reindex(age_range, fill_value=np.nan)
+    retired_shares = retired_shares.reindex(age_range, fill_value=np.nan)
     unemployed_shares = unemployed_shares.reindex(age_range, fill_value=np.nan)
     part_time_shares = part_time_shares.reindex(age_range, fill_value=np.nan)
     full_time_shares = full_time_shares.reindex(age_range, fill_value=np.nan)
@@ -485,6 +509,9 @@ def create_moments_jax(sim_df, min_age, max_age):
     arr_low_educ = arr[arr[:, idx["education"]] == 0]
     arr_high_educ = arr[arr[:, idx["education"]] == 1]
 
+    # arr_bad_health = arr[arr[:, idx["health"]] == 0]
+    # arr_good_health = arr[arr[:, idx["health"]] == 1]
+
     # _care_mask = jnp.isin(arr[:, idx["choice"]], INFORMAL_CARE)
     # arr_caregivers = arr[_care_mask]
 
@@ -530,6 +557,43 @@ def create_moments_jax(sim_df, min_age, max_age):
     share_working_full_time_by_age_high_educ = get_share_by_age(
         arr_high_educ, ind=idx, choice=FULL_TIME, min_age=min_age, max_age=max_age
     )
+
+    # Flat shares. Not by age but overall
+    # share_working_full_time_bad_health = get_static_share(
+    #     arr_bad_health, idx, FULL_TIME
+    # )
+    # share_working_full_time_good_health = get_static_share(
+    #     arr_good_health, idx, FULL_TIME
+    # )
+
+    # share_working_full_time_low_edu = get_static_share(arr_low_educ, idx, FULL_TIME)
+    # share_working_full_time_high_edu = get_static_share(arr_high_educ, idx, FULL_TIME)
+
+    # share_retired_by_age_bad_health = get_share_by_age(
+    #     arr_bad_health, ind=idx, choice=RETIREMENT, min_age=min_age, max_age=max_age
+    # )
+    # share_unemployed_by_age_bad_health = get_share_by_age(
+    #     arr_bad_health, ind=idx, choice=UNEMPLOYED, min_age=min_age, max_age=max_age
+    # )
+    # share_working_part_time_by_age_bad_health = get_share_by_age(
+    #     arr_bad_health, ind=idx, choice=PART_TIME, min_age=min_age, max_age=max_age
+    # )
+    # share_working_full_time_by_age_bad_health = get_share_by_age(
+    #     arr_bad_health, ind=idx, choice=FULL_TIME, min_age=min_age, max_age=max_age
+    # )
+
+    # share_retired_by_age_good_health = get_share_by_age(
+    #     arr_good_health, ind=idx, choice=RETIREMENT, min_age=min_age, max_age=max_age
+    # )
+    # share_unemployed_by_age_good_health = get_share_by_age(
+    #     arr_good_health, ind=idx, choice=UNEMPLOYED, min_age=min_age, max_age=max_age
+    # )
+    # share_working_part_time_by_age_good_health = get_share_by_age(
+    #     arr_good_health, ind=idx, choice=PART_TIME, min_age=min_age, max_age=max_age
+    # )
+    # share_working_full_time_by_age_good_health = get_share_by_age(
+    #     arr_good_health, ind=idx, choice=FULL_TIME, min_age=min_age, max_age=max_age
+    # )
 
     # share_caregivers_by_age_bin = get_share_by_age_bin(
     #     arr, ind=idx, choice=INFORMAL_CARE, bins=age_bins_75
@@ -666,6 +730,20 @@ def create_moments_jax(sim_df, min_age, max_age):
         + share_unemployed_by_age_high_educ
         + share_working_part_time_by_age_high_educ
         + share_working_full_time_by_age_high_educ
+        # flat shares
+        # + [share_working_full_time_bad_health]
+        # + [share_working_full_time_good_health]
+        # + [share_working_full_time_low_edu]
+        # + [share_working_full_time_high_edu]
+        # # bad/good health
+        # + share_retired_by_age_bad_health
+        # + share_unemployed_by_age_bad_health
+        # + share_working_part_time_by_age_bad_health
+        # + share_working_full_time_by_age_bad_health
+        # + share_retired_by_age_good_health
+        # + share_unemployed_by_age_good_health
+        # + share_working_part_time_by_age_good_health
+        # + share_working_full_time_by_age_good_health
         # caregivers
         # + share_caregivers_by_age_bin
         # + [share_caregivers_high_educ]

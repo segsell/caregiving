@@ -125,8 +125,8 @@ def test_utility_func(
         "disutil_ft_work_bad_women": disutil_work,
         "disutil_pt_work_low_women": disutil_work,
         "disutil_pt_work_high_women": disutil_work,
-        "disutil_ft_work_low_women": disutil_work,
-        "disutil_ft_work_high_women": disutil_work,
+        # "disutil_ft_work_low_women": disutil_work,
+        # "disutil_ft_work_high_women": disutil_work,
         "disutil_unemployed_low_women": disutil_unemployed,
         "disutil_unemployed_high_women": disutil_unemployed,
         # "disutil_children_pt_work": 0,
@@ -154,7 +154,7 @@ def test_utility_func(
         # n_children=n_children,
     )
 
-    educ_str = "low" * (1 - education) + "high" * education
+    # educ_str = "low" * (1 - education) + "high" * education
     health_str = "good" * health + "bad" * (1 - health)
     sex_str = "women"
 
@@ -183,11 +183,11 @@ def test_utility_func(
 
     exp_factor_pt_work = (
         params[f"disutil_pt_work_{health_str}_{sex_str}"]
-        + params[f"disutil_pt_work_{educ_str}_{sex_str}"]
+        # + params[f"disutil_pt_work_{educ_str}_{sex_str}"]
     )
     exp_factor_ft_work = (
         params[f"disutil_ft_work_{health_str}_{sex_str}"]
-        + params[f"disutil_ft_work_{educ_str}_{sex_str}"]
+        # + params[f"disutil_ft_work_{educ_str}_{sex_str}"]
     )
 
     # if sex == 1:
@@ -323,8 +323,8 @@ def test_marginal_utility(
         "disutil_ft_work_bad_women": disutil_work,
         "disutil_pt_work_low_women": disutil_work,
         "disutil_pt_work_high_women": disutil_work,
-        "disutil_ft_work_low_women": disutil_work,
-        "disutil_ft_work_high_women": disutil_work,
+        # "disutil_ft_work_low_women": disutil_work,
+        # "disutil_ft_work_high_women": disutil_work,
         "disutil_unemployed_low_women": disutil_unemployed,
         "disutil_unemployed_high_women": disutil_unemployed,
         # "disutil_children_pt_work": 0,
@@ -412,8 +412,8 @@ def test_inverse_marginal_utility(
         "disutil_ft_work_bad_women": disutil_work,
         "disutil_pt_work_low_women": disutil_work,
         "disutil_pt_work_high_women": disutil_work,
-        "disutil_ft_work_low_women": disutil_work,
-        "disutil_ft_work_high_women": disutil_work,
+        # "disutil_ft_work_low_women": disutil_work,
+        # "disutil_ft_work_high_women": disutil_work,
         "disutil_unemployed_low_women": disutil_unemployed,
         "disutil_unemployed_high_women": disutil_unemployed,
         # "disutil_children_pt_work": 0,

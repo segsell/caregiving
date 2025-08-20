@@ -20,6 +20,7 @@ from caregiving.data_management.soep.variables import (
     create_partner_state,
 )
 from caregiving.specs.derive_specs import read_and_derive_specs
+from caregiving.utils import table
 
 
 def task_create_partner_transition_sample(

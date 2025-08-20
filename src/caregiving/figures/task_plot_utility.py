@@ -91,6 +91,7 @@ def task_plot_bequest(
         for i, w in enumerate(wealth):
             bequests[i] = utility_final_consume_all(
                 wealth=w,
+                education=0,
                 params=params,
             )
         ax.plot(

@@ -5,6 +5,7 @@ from typing import Annotated
 
 import numpy as np
 import pandas as pd
+import pytask
 from pytask import Product
 
 from caregiving.config import BLD, SRC
@@ -153,6 +154,7 @@ def task_create_main_estimation_sample(
     df.to_csv(path_to_save)
 
 
+@pytask.mark.skip()
 def task_create_caregivers_sample(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_raw: Path = BLD / "data" / "soep_estimation_data_raw.csv",

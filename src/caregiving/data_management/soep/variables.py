@@ -485,9 +485,15 @@ def create_kidage_youngest(df):
         df["kidage_youngest"],
     )
 
+    # Print distribution of kidage_youngest sorted by value counts and show only
+    # non-negative values
     print(
-        "Distribution of kidage youngest:"
-        + str(df["kidage_youngest"].value_counts(dropna=False))
+        "Distribution of kidage_youngest:"
+        + str(
+            df.loc[df["kidage_youngest"] >= 0, "kidage_youngest"]
+            .value_counts(dropna=False)
+            .sort_index()
+        )
     )
 
     # Clean up
