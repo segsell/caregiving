@@ -332,18 +332,18 @@ def marg_utility(
         params=params,
         options=options,
     )
-    marginal_utility_death = marginal_utility_final_consume_all(
-        wealth=consumption,
-        # education=education,
-        params=params,
-    )
+    # marginal_utility_death = marginal_utility_final_consume_all(
+    #     wealth=consumption,
+    #     # education=education,
+    #     params=params,
+    # )
 
-    death_bool = is_dead(health)
-    marginal_utility = jax.lax.select(
-        death_bool, marginal_utility_death, marginal_utility_alive
-    )
+    # death_bool = is_dead(health)
+    # marginal_utility = jax.lax.select(
+    #     death_bool, marginal_utility_death, marginal_utility_alive
+    # )
 
-    return marginal_utility
+    return marginal_utility_alive
 
 
 def marginal_utility_function_alive(

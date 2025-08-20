@@ -1,5 +1,6 @@
 # Utility parameters
 rho: 1
+rho_bequest: 1
 beta: 0.9
 
 disutil_ft_work_good_women: 1.0e-12
