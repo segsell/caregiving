@@ -13,10 +13,10 @@ disutil_pt_work_low_women: 1.0e-12
 disutil_pt_work_high_women: 1.0e-12
 disutil_ft_work_low_women: 1.0e-12
 disutil_ft_work_high_women: 1.0e-12
-disutil_children_pt_work_low: 1.0e-12
-disutil_children_pt_work_high: 1.0e-12
-disutil_children_ft_work_low: 1.0e-12
-disutil_children_ft_work_high: 1.0e-12
+disutil_children_pt_work_low: -5
+disutil_children_pt_work_high: -5
+disutil_children_ft_work_low: -5
+disutil_children_ft_work_high: -5
 #
 disutil_youngest_child_0_to_2_pt_work_low: -5
 disutil_youngest_child_3_to_5_pt_work_low: -5
