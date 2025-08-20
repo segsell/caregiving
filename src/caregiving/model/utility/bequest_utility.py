@@ -20,7 +20,7 @@ def utility_final_consume_all(
     # options: dict[str, Any],
 ):
     """Compute the utility in the final period including bequest."""
-    rho = params["rho"]
+    rho = params["rho_bequest"]
     bequest_scale = params["bequest_scale"]
 
     bequest_unscaled_with_rho_not_one = (wealth ** (1 - rho) - 1) / (1 - rho)
@@ -40,7 +40,7 @@ def marginal_utility_final_consume_all(
     # options: dict[str, Any],
 ) -> jnp.array:
     """Compute marginal utility in the final period."""
-    rho = params["rho"]
+    rho = params["rho_bequest"]
     bequest_scale = params["bequest_scale"]
 
     return bequest_scale * (wealth ** (-rho))

@@ -23,6 +23,7 @@
 # Utility parameters
 # rho: 1.5
 rho: 1.98
+rho_bequest: 1.98
 
 #disutil_not_retired_bad: 1.0
 #disutil_working_bad: 0.3
