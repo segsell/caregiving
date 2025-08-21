@@ -522,8 +522,8 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     working_part_time = is_part_time(choice)
     working_full_time = is_full_time(choice)
     # partner_retired = partner_state == 0
-    # bad_health = is_bad_health(health)
-    # good_health = is_good_health(health)
+    bad_health = is_bad_health(health)
+    good_health = is_good_health(health)
 
     # # reading parameters
     # disutil_ft_work_men = (
@@ -538,16 +538,16 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     # )
 
     disutil_ft_work_women = (
-        # params["disutil_ft_work_bad_women"] * bad_health
-        # + params["disutil_ft_work_good_women"] * good_health
-        params["disutil_ft_work_low_women"] * (1 - education)
-        + params["disutil_ft_work_high_women"] * education
+        params["disutil_ft_work_bad_women"] * bad_health
+        + params["disutil_ft_work_good_women"] * good_health
+        # params["disutil_ft_work_low_women"] * (1 - education)
+        # + params["disutil_ft_work_high_women"] * education
     )
     disutil_pt_work_women = (
-        # params["disutil_pt_work_bad_women"] * bad_health
-        # + params["disutil_pt_work_good_women"] * good_health
-        params["disutil_pt_work_low_women"] * (1 - education)
-        + params["disutil_pt_work_high_women"] * education
+        params["disutil_pt_work_bad_women"] * bad_health
+        + params["disutil_pt_work_good_women"] * good_health
+        # params["disutil_pt_work_low_women"] * (1 - education)
+        # + params["disutil_pt_work_high_women"] * education
     )
     disutil_unemployed_women = (
         # params["disutil_unemployed_bad_women"] * bad_health
@@ -562,19 +562,20 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     disutil_children_ft_low = params["disutil_children_ft_work_low"] * nb_children
     disutil_children_ft_high = params["disutil_children_ft_work_high"] * nb_children
 
-    disutil_children_pt_low = params["disutil_children_pt_work_low"] * nb_children
-    disutil_children_pt_high = params["disutil_children_pt_work_high"] * nb_children
+    # disutil_children_pt_low = params["disutil_children_pt_work_low"] * nb_children
+    # disutil_children_pt_high = params["disutil_children_pt_work_high"] * nb_children
 
-    disutil_children_pt = (
-        disutil_children_pt_low * (1 - education) + disutil_children_pt_high * education
-    )
+    # disutil_children_pt = (
+    #     disutil_children_pt_low * (1 - education) + disutil_children_pt_high * education
+    # )
     disutil_children_ft = (
         disutil_children_ft_low * (1 - education) + disutil_children_ft_high * education
     )
 
     exp_factor_women = (
         disutil_unemployed_women * unemployed
-        + (disutil_pt_work_women + disutil_children_pt) * working_part_time
+        # + (disutil_pt_work_women + disutil_children_pt) * working_part_time
+        + (disutil_pt_work_women) * working_part_time
         + (disutil_ft_work_women + disutil_children_ft) * working_full_time
     )
 
