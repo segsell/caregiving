@@ -550,8 +550,10 @@ def disutility_work(period, choice, education, partner_state, health, params, op
         # + params["disutil_pt_work_high_women"] * education
     )
     disutil_unemployed_women = (
-        params["disutil_unemployed_low_women"] * (1 - education)
-        + params["disutil_unemployed_high_women"] * education
+        params["disutil_unemployed_bad_women"] * bad_health
+        + params["disutil_unemployed_good_women"] * good_health
+        # + params["disutil_unemployed_low_women"] * (1 - education)
+        # + params["disutil_unemployed_high_women"] * education
     )
 
     has_partner_int = (partner_state > 0).astype(int)

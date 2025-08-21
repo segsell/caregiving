@@ -6,7 +6,9 @@ disutil_ft_work_good_women: 1.0e-12
 disutil_ft_work_bad_women: 1.0e-12
 disutil_pt_work_good_women: 1.0e-12
 disutil_pt_work_bad_women: 1.0e-12
-disutil_unemployed_women: 1.0e-12
+disutil_unemployed_bad_women: 1.0e-12
+disutil_unemployed_good_women: 1.0e-12
+
 disutil_unemployed_low_women: 1.0e-12
 disutil_unemployed_high_women: 1.0e-12
 disutil_pt_work_low_women: 1.0e-12
