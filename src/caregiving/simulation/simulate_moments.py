@@ -189,6 +189,17 @@ def simulate_moments_pandas(
     # )
 
     # # Care mix by parent age
+
+    # TO-DO: nursing home
+    # moments = create_choice_shares_by_age_bin_pandas(
+    #     df_care_demand,
+    #     moments,
+    #     choice_set=NURSING_HOME,
+    #     age_bins_and_labels=age_bins_parents_to_agent,
+    #     label="nursing_home",
+    #     age_var="mother_age",
+    # )
+
     # age_bins_parents_to_agent = (AGE_BINS_PARENTS, AGE_LABELS_PARENTS)
     # moments = create_choice_shares_by_age_bin_pandas(
     #     df_domestic_care,
@@ -212,16 +223,6 @@ def simulate_moments_pandas(
     #     choice_set=COMBINATION_CARE,
     #     age_bins_and_labels=age_bins_parents_to_agent,
     #     label="combination_care",
-    #     age_var="mother_age",
-    # )
-
-    # TO-DO: nursing home
-    # moments = create_choice_shares_by_age_bin_pandas(
-    #     df_care_demand,
-    #     moments,
-    #     choice_set=NURSING_HOME,
-    #     age_bins_and_labels=age_bins_parents_to_agent,
-    #     label="nursing_home",
     #     age_var="mother_age",
     # )
 
@@ -967,9 +968,17 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
     # )
 
     # # Care mix
+    # arr_nursing_home = arr[jnp.isin(arr[:, idx["choice"]], NURSING_HOME)]
     # _care_mask = jnp.isin(arr[:, idx["choice"]], DOMESTIC_CARE)
     # arr_domestic_care = arr[_care_mask]
-    # arr_nursing_home = arr[jnp.isin(arr[:, idx["choice"]], NURSING_HOME)]
+
+    # share_nursing_home_by_parent_age_bin = get_share_by_age_bin(
+    #     arr_bad_health,
+    #     ind=idx,
+    #     choice=NURSING_HOME,
+    #     bins=AGE_BINS_PARENTS,
+    #     age_var="mother_age",
+    # )
 
     # share_pure_informal_care_by_parent_age_bin = get_share_by_age_bin(
     #     arr_domestic_care,
@@ -989,13 +998,6 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
     #     arr_domestic_care,
     #     ind=idx,
     #     choice=COMBINATION_CARE,
-    #     bins=AGE_BINS_PARENTS,
-    #     age_var="mother_age",
-    # )
-    # share_nursing_home_by_parent_age_bin = get_share_by_age_bin(
-    #     arr_bad_health,
-    #     ind=idx,
-    #     choice=NURSING_HOME,
     #     bins=AGE_BINS_PARENTS,
     #     age_var="mother_age",
     # )
