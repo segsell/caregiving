@@ -9,6 +9,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from caregiving.data_management.share.task_create_parent_child_data_set import (
+    AGE_BINS_PARENTS,
+    AGE_LABELS_PARENTS,
+)
 from caregiving.model.shared import (
     FULL_TIME,
     INFORMAL_CARE,
@@ -67,6 +71,8 @@ def simulate_moments_pandas(
         df_caregivers["education"] == 1
     ]
 
+    # df_domestic_care = df[df["choice"].isin(np.asarray(DOMESTIC_CARE))]
+
     moments = {}
 
     moments = create_labor_share_moments_pandas(df, moments, age_range=age_range)
@@ -78,7 +84,11 @@ def simulate_moments_pandas(
     )
 
     moments = create_choice_shares_by_age_bin_pandas(
-        df, moments, choice_set=INFORMAL_CARE, age_bins=age_bins_75
+        df,
+        moments,
+        choice_set=INFORMAL_CARE,
+        age_bins_and_labels=age_bins_75,
+        label="informal_care",
     )
     # moments = create_choice_shares_by_age_bin_pandas(
     #     df, moments, choice_set=LIGHT_INFORMAL_CARE, age_bins=age_bins_75
@@ -174,6 +184,35 @@ def simulate_moments_pandas(
     # moments = compute_transition_moments_pandas_for_age_bins(
     #     df, moments, age_range, states=states_intensive_informal_care
     # )
+
+    # # Care mix by parent age
+    # age_bins_parents_to_agent = (AGE_BINS_PARENTS, AGE_LABELS_PARENTS)
+    # moments = create_choice_shares_by_age_bin_pandas(
+    #     df_domestic_care,
+    #     moments,
+    #     choice_set=INFORMAL_CARE_OR_OTHER_CARE,
+    #     age_bins_and_labels=age_bins_parents_to_agent,
+    #     label="informal_care",
+    #     age_var="mother_age",
+    # )
+    # moments = create_choice_shares_by_age_bin_pandas(
+    #     df_domestic_care,
+    #     moments,
+    #     choice_set=PURE_FORMAL_CARE,
+    #     age_bins_and_labels=age_bins_parents_to_agent,
+    #     label="pure_formal_care",
+    #     age_var="mother_age",
+    # )
+    # moments = create_choice_shares_by_age_bin_pandas(
+    #     df_domestic_care,
+    #     moments,
+    #     choice_set=COMBINATION_CARE,
+    #     age_bins_and_labels=age_bins_parents_to_agent,
+    #     label="combination_care",
+    #     age_var="mother_age",
+    # )
+
+    # TO-DO: nursing home
 
     return pd.Series(moments)
 
@@ -374,9 +413,11 @@ def create_choice_shares_by_age_pandas(
 def create_choice_shares_by_age_bin_pandas(
     df: pd.DataFrame,
     moments: dict,
+    *,
     choice_set: jnp.ndarray,
-    age_bins: tuple[list[int], list[str]] | None = None,
+    age_bins_and_labels: tuple[list[int], list[str]] | None = None,
     label: str | None = None,
+    age_var: str | None = None,
 ):
     """
     Update *moments* in-place with the share of agents whose ``choice`` lies
@@ -404,18 +445,19 @@ def create_choice_shares_by_age_bin_pandas(
     """
     # -------- 1. Pre-processing ---------------------------------------------------
     label = f"_{label}" if label else ""
+    age_var = age_var or "age"
 
-    if age_bins is None:
+    if age_bins_and_labels is None:
         bin_edges = list(range(40, 75, 5))  # [40, 45, …, 70]
         bin_labels = [f"{s}_{s + 4}" for s in bin_edges[:-1]]
     else:
-        bin_edges, bin_labels = age_bins
+        bin_edges, bin_labels = age_bins_and_labels
 
     # Work on a copy limited to the covered age range
-    df = df[df["age"].between(bin_edges[0], bin_edges[-1] - 1)].copy()
+    df = df[df[age_var].between(bin_edges[0], bin_edges[-1] - 1)].copy()
 
     df["age_bin"] = pd.cut(
-        df["age"],
+        df[age_var],
         bins=bin_edges,
         labels=bin_labels,
         right=False,  # [40,45) ⇒ 40–44, etc.
@@ -432,9 +474,7 @@ def create_choice_shares_by_age_bin_pandas(
 
     # -------- 3. Write into *moments* --------------------------------------------
     for age_bin in bin_labels:
-        moments[f"share_informal_care{label}_age_bin_{age_bin}"] = share_by_bin.loc[
-            age_bin
-        ]
+        moments[f"share_{label}_age_bin_{age_bin}"] = share_by_bin.loc[age_bin]
 
     return moments
 
@@ -915,6 +955,32 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
     #     max_age=max_age,
     # )
 
+    # # Care mix
+    # _care_mask = jnp.isin(arr[:, idx["choice"]], DOMESTIC_CARE)
+    # arr_domestic_care = arr[_care_mask]
+
+    # share_pure_informal_care_by_parent_age_bin = get_share_by_age_bin(
+    #     arr_domestic_care,
+    #     ind=idx,
+    #     choice=INFORMAL_CARE_OR_OTHER,
+    #     bins=AGE_BINS_PARENTS,
+    #     age_var="mother_age",
+    # )
+    # share_pure_formal_care_by_parent_age_bin = get_share_by_age_bin(
+    #     arr_domestic_care,
+    #     ind=idx,
+    #     choice=PURE_FORMAL_CARE,
+    #     bins=AGE_BINS_PARENTS,
+    #     age_var="mother_age",
+    # )
+    # share_combination_care_by_parent_age_bin = get_share_by_age_bin(
+    #     arr_domestic_care,
+    #     ind=idx,
+    #     choice=COMBINATION_CARE,
+    #     bins=AGE_BINS_PARENTS,
+    #     age_var="mother_age",
+    # )
+
     return jnp.asarray(
         # labor shares all
         share_retired_by_age
@@ -1028,9 +1094,10 @@ def get_share_by_age(df_arr, ind, choice, min_age, max_age):
     return shares
 
 
-def get_share_by_age_bin(df_arr, ind, choice, bins):
+def get_share_by_age_bin(df_arr, ind, choice, bins, age_var=None):
     """Get share of agents choosing choice by age bin."""
-    age_col = df_arr[:, ind["age"]]
+    age_var = age_var or "age"
+    age_col = df_arr[:, ind[age_var]]
     choice_mask = jnp.isin(df_arr[:, ind["choice"]], choice)
 
     shares: list[jnp.ndarray] = []
