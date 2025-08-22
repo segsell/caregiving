@@ -28,6 +28,7 @@ from caregiving.data_management.soep.variables import (
     create_experience_variable,
     create_health_var_good_bad,
     create_kidage_youngest,
+    create_nursing_home,
     create_partner_state,
     create_policy_state,
     determine_observed_job_offers,
@@ -95,6 +96,7 @@ def task_create_main_estimation_sample(
     df = create_education_type(df)
     # health variable not yet available for 2023
     df = create_health_var_good_bad(df, drop_missing=False)
+    df = create_nursing_home(df)
 
     df = enforce_model_choice_restriction(df, specs)
 
@@ -133,6 +135,7 @@ def task_create_main_estimation_sample(
         "wealth": "float32",
         "education": "int8",
         "health": "float16",
+        "nursing_home": "float16",
         "sex": "int8",
         "children": "int8",
         "kidage_youngest": "int8",
@@ -221,6 +224,7 @@ def task_create_caregivers_sample(
     df = create_experience_variable(df)
     df = create_education_type(df)
     df = create_health_var_good_bad(df, drop_missing=False)
+    df = create_nursing_home(df)
 
     df = enforce_model_choice_restriction(df, specs)
 
@@ -259,6 +263,7 @@ def task_create_caregivers_sample(
         "wealth": "float32",
         "education": "int8",
         "health": "float16",  # can be NA
+        "nursing_home": "float16",
         "sex": "int8",
         "children": "int8",
         "kidage_youngest": "int8",

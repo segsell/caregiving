@@ -19,6 +19,7 @@ from caregiving.model.shared import (
     INTENSIVE_INFORMAL_CARE,
     LIGHT_INFORMAL_CARE,
     NOT_WORKING_CARE,
+    PARENT_BAD_HEALTH,
     PART_TIME,
     RETIREMENT,
     UNEMPLOYED,
@@ -72,6 +73,8 @@ def simulate_moments_pandas(
     ]
 
     # df_domestic_care = df[df["choice"].isin(np.asarray(DOMESTIC_CARE))]
+    # df_nursing_home = df[df["care_demand"] == 1]
+    # df_nursing_home = df[df["mother_health"] == PARENT_BAD_HEALTH]
 
     moments = {}
 
@@ -213,6 +216,14 @@ def simulate_moments_pandas(
     # )
 
     # TO-DO: nursing home
+    # moments = create_choice_shares_by_age_bin_pandas(
+    #     df_care_demand,
+    #     moments,
+    #     choice_set=NURSING_HOME,
+    #     age_bins_and_labels=age_bins_parents_to_agent,
+    #     label="nursing_home",
+    #     age_var="mother_age",
+    # )
 
     return pd.Series(moments)
 
@@ -958,6 +969,7 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
     # # Care mix
     # _care_mask = jnp.isin(arr[:, idx["choice"]], DOMESTIC_CARE)
     # arr_domestic_care = arr[_care_mask]
+    # arr_nursing_home = arr[jnp.isin(arr[:, idx["choice"]], NURSING_HOME)]
 
     # share_pure_informal_care_by_parent_age_bin = get_share_by_age_bin(
     #     arr_domestic_care,
@@ -977,6 +989,13 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
     #     arr_domestic_care,
     #     ind=idx,
     #     choice=COMBINATION_CARE,
+    #     bins=AGE_BINS_PARENTS,
+    #     age_var="mother_age",
+    # )
+    # share_nursing_home_by_parent_age_bin = get_share_by_age_bin(
+    #     arr_bad_health,
+    #     ind=idx,
+    #     choice=NURSING_HOME,
     #     bins=AGE_BINS_PARENTS,
     #     age_var="mother_age",
     # )

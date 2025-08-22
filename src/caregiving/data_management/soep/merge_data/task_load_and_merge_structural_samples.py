@@ -122,7 +122,7 @@ def task_load_and_merge_estimation_sample(
             "hlc0043",  # Kindergeld für wie viele Kinder
             # "hlc0005_h",  # monthly net household income
             # "hlc0120_h",  # monthly amount of savings
-            # "hlf0155_h",  # Unterkunftsart (Wohn)heim
+            "hlf0155_h",  # Unterkunftsart (Wohn)heim
             "hlf0291",
         ],
         convert_categoricals=False,

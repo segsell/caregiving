@@ -67,8 +67,8 @@ AT_LEAST_TWO = 2
 # columns that record who gave help
 WHO_IS_CAREGIVER_EXTRA_HH = ["sp003_1", "sp003_2", "sp003_3"]
 
-AGE_BINS_PARENTS = [64, 74, 84, np.inf]
-AGE_LABELS_PARENTS = ["65_74", "75_84", "85_plus"]
+AGE_BINS_PARENTS = [65, 70, 75, 80, 85, 90, np.inf]
+AGE_LABELS_PARENTS = ["65_69", "70_74", "75_79", "80_84", "85_89", "90_plus"]
 
 CARE_COLS = [
     "pure_informal_care_general",
@@ -98,6 +98,7 @@ _CARE_COLS_ALL = [
 ]
 
 
+@pytask.mark.wip
 def task_create_parent_child_data(
     path_to_raw_data: Path = BLD / "data" / "share_data_parent_child_merged.csv",
     path_to_save_main: Annotated[Path, Product] = BLD
@@ -1067,7 +1068,7 @@ def create_care_variables(dat):  # noqa: PLR0915
 
     # simple age bands – edit to taste
     dat["age_group"] = pd.cut(
-        dat["age"], bins=AGE_BINS_PARENTS, labels=AGE_LABELS_PARENTS, right=True
+        dat["age"], bins=AGE_BINS_PARENTS, labels=AGE_LABELS_PARENTS, right=False
     )
 
     # ───────────────────────────────────────────────────────────────
@@ -1097,7 +1098,7 @@ def create_care_variables(dat):  # noqa: PLR0915
         subset["age"],
         bins=AGE_BINS_PARENTS,
         labels=AGE_LABELS_PARENTS,
-        right=True,
+        right=False,
     )
 
     # 3. weighted shares: one custom lambda is enough
@@ -1244,14 +1245,14 @@ def weighted_shares_and_counts(
             share = share_num / w_sum if w_sum > 0 else np.nan
 
             if not show_variances:
-                out[f"share_{col}"] = share
+                out[f"share_parents_{col}"] = share
 
             if show_counts:
-                out[f"count_{col}"] = group[col].sum()
+                out[f"count_parents_{col}"] = group[col].sum()
 
             if show_variances:
                 var = share * (1 - share) / n_eff if n_eff > 0 else np.nan
-                out[f"share_{col}"] = var
+                out[f"share_parents_{col}"] = var
 
         return pd.Series(out)
 

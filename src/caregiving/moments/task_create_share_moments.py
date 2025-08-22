@@ -44,10 +44,10 @@ def task_add_share_moments(
     path_to_soep_variances: Path = BLD / "moments" / "soep_variances_new.csv",
     path_to_save_full_moments: Annotated[Path, Product] = BLD
     / "moments"
-    / "soep_moments_full.csv",
+    / "moments_full.csv",
     path_to_save_full_variances: Annotated[Path, Product] = BLD
     / "moments"
-    / "soep_variances_full.csv",
+    / "variances_full.csv",
 ) -> None:
     """Create moments for MSM estimation."""
 
@@ -61,7 +61,7 @@ def task_add_share_moments(
     dat = dat[dat["sex"] == 1].copy()  # Mothers only
 
     dat["age_group"] = pd.cut(
-        dat["age"], bins=AGE_BINS_PARENTS, labels=AGE_LABELS_PARENTS, right=True
+        dat["age"], bins=AGE_BINS_PARENTS, labels=AGE_LABELS_PARENTS, right=False
     )
 
     shares_weighted_hh = weighted_shares_and_counts(
@@ -109,12 +109,12 @@ def task_add_share_moments(
     for col in shares_weighted_hh.columns:
         for age_group, val in shares_weighted_hh[col].items():
             col_stripped = col.replace(_strip_suffix, "")
-            share_moments[f"{col_stripped}_{age_group}"] = val
+            share_moments[f"{col_stripped}_age_bin_{age_group}"] = val
 
     for col in variances_weighted_hh.columns:
         for age_group, val in variances_weighted_hh[col].items():
             col_stripped = col.replace(_strip_suffix, "")
-            share_variances[f"{col_stripped}_{age_group}"] = val
+            share_variances[f"{col_stripped}_age_bin_{age_group}"] = val
 
     moments = pd.concat(
         [soep_moments, pd.Series(share_moments, name="value").to_frame()]
