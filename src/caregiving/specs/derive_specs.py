@@ -14,9 +14,7 @@ def read_and_derive_specs(spec_path):
     # Number of education types and choices from labels
     specs["n_education_types"] = len(specs["education_labels"])
     specs["n_sexes"] = len(specs["sex_labels"])
-    specs["n_choices"] = len(
-        specs["choice_labels"]
-    )  # * len(specs["caregiving_labels"])
+    specs["n_choices"] = len(specs["choice_labels"]) * len(specs["caregiving_labels"])
 
     # For health states, get number and var values for alive states
     specs["n_health_states"] = len(specs["health_labels"])

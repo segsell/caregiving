@@ -14,11 +14,15 @@ from caregiving.data_management.share.task_create_parent_child_data_set import (
     AGE_LABELS_PARENTS,
 )
 from caregiving.model.shared import (
-    FULL_TIME,
+    FORMAL_HOME_CARE,
+    FULL_TIME_CHOICES,
     INFORMAL_CARE,
+    INFORMAL_CARE_OR_OTHER_CARE,
     INTENSIVE_INFORMAL_CARE,
     LIGHT_INFORMAL_CARE,
+    NO_NURSING_HOME_CARE,
     NOT_WORKING_CARE,
+    NURSING_HOME_CARE,
     PARENT_BAD_HEALTH,
     PART_TIME,
     RETIREMENT,
@@ -72,9 +76,10 @@ def simulate_moments_pandas(
         df_caregivers["education"] == 1
     ]
 
-    # df_domestic_care = df[df["choice"].isin(np.asarray(DOMESTIC_CARE))]
-    # df_nursing_home = df[df["care_demand"] == 1]
-    # df_nursing_home = df[df["mother_health"] == PARENT_BAD_HEALTH]
+    df_domestic_care = df.loc[
+        (df["choice"].isin(np.asarray(NO_NURSING_HOME_CARE))) & (df["care_demand"] == 1)
+    ]  # includes "no care", which means other informaly care if positive care demand
+    df_parent_bad_health = df[df["mother_health"] == PARENT_BAD_HEALTH]
 
     moments = {}
 
@@ -109,38 +114,47 @@ def simulate_moments_pandas(
         df_caregivers, moments, label="caregivers", age_bins=age_bins
     )
     moments = create_labor_share_moments_by_age_bin_pandas(
-        df_caregivers_low, moments, label="caregivers", age_bins=age_bins
+        df_caregivers_low, moments, label="caregivers_low_education", age_bins=age_bins
     )
     moments = create_labor_share_moments_by_age_bin_pandas(
-        df_caregivers_high, moments, label="caregivers", age_bins=age_bins
+        df_caregivers_high,
+        moments,
+        label="caregivers_high_education",
+        age_bins=age_bins,
     )
 
     moments = create_labor_share_moments_by_age_bin_pandas(
-        df_light_caregivers, moments, label="light caregivers", age_bins=age_bins
+        df_light_caregivers, moments, label="light_caregivers", age_bins=age_bins
     )
     moments = create_labor_share_moments_by_age_bin_pandas(
-        df_light_caregivers_low, moments, label="light caregivers", age_bins=age_bins
+        df_light_caregivers_low,
+        moments,
+        label="light_caregivers_low_education",
+        age_bins=age_bins,
     )
     moments = create_labor_share_moments_by_age_bin_pandas(
-        df_light_caregivers_high, moments, label="light caregivers", age_bins=age_bins
+        df_light_caregivers_high,
+        moments,
+        label="light_caregivers_high_education",
+        age_bins=age_bins,
     )
 
     moments = create_labor_share_moments_by_age_bin_pandas(
         df_intensive_caregivers,
         moments,
-        label="intensive caregivers",
+        label="intensive_caregivers",
         age_bins=age_bins,
     )
     moments = create_labor_share_moments_by_age_bin_pandas(
         df_intensive_caregivers_low,
         moments,
-        label="intensive caregivers",
+        label="intensive_caregivers_low_education",
         age_bins=age_bins,
     )
     moments = create_labor_share_moments_by_age_bin_pandas(
         df_intensive_caregivers_high,
         moments,
-        label="intensive caregivers",
+        label="intensive_caregivers_high_education",
         age_bins=age_bins,
     )
 
@@ -188,43 +202,43 @@ def simulate_moments_pandas(
     #     df, moments, age_range, states=states_intensive_informal_care
     # )
 
-    # # Care mix by parent age
+    # Care mix by parent age
 
     # TO-DO: nursing home
-    # moments = create_choice_shares_by_age_bin_pandas(
-    #     df_care_demand,
-    #     moments,
-    #     choice_set=NURSING_HOME,
-    #     age_bins_and_labels=age_bins_parents_to_agent,
-    #     label="nursing_home",
-    #     age_var="mother_age",
-    # )
+    moments = create_choice_shares_by_age_bin_pandas(
+        df_parent_bad_health,
+        moments,
+        choice_set=NURSING_HOME_CARE,
+        age_bins_and_labels=age_bins_parents_to_agent,
+        label="nursing_home",
+        age_var="mother_age",
+    )
 
-    # age_bins_parents_to_agent = (AGE_BINS_PARENTS, AGE_LABELS_PARENTS)
-    # moments = create_choice_shares_by_age_bin_pandas(
-    #     df_domestic_care,
-    #     moments,
-    #     choice_set=INFORMAL_CARE_OR_OTHER_CARE,
-    #     age_bins_and_labels=age_bins_parents_to_agent,
-    #     label="informal_care",
-    #     age_var="mother_age",
-    # )
-    # moments = create_choice_shares_by_age_bin_pandas(
-    #     df_domestic_care,
-    #     moments,
-    #     choice_set=PURE_FORMAL_CARE,
-    #     age_bins_and_labels=age_bins_parents_to_agent,
-    #     label="pure_formal_care",
-    #     age_var="mother_age",
-    # )
-    # moments = create_choice_shares_by_age_bin_pandas(
-    #     df_domestic_care,
-    #     moments,
-    #     choice_set=COMBINATION_CARE,
-    #     age_bins_and_labels=age_bins_parents_to_agent,
-    #     label="combination_care",
-    #     age_var="mother_age",
-    # )
+    age_bins_parents_to_agent = (AGE_BINS_PARENTS, AGE_LABELS_PARENTS)
+    moments = create_choice_shares_by_age_bin_pandas(
+        df_domestic_care,
+        moments,
+        choice_set=INFORMAL_CARE_OR_OTHER_CARE,
+        age_bins_and_labels=age_bins_parents_to_agent,
+        label="informal_care_or_other_care",
+        age_var="mother_age",
+    )
+    moments = create_choice_shares_by_age_bin_pandas(
+        df_domestic_care,
+        moments,
+        choice_set=LIGHT_INFORMAL_CARE,
+        age_bins_and_labels=age_bins_parents_to_agent,
+        label="light_informal_care",  # := combination care
+        age_var="mother_age",
+    )
+    moments = create_choice_shares_by_age_bin_pandas(
+        df_domestic_care,
+        moments,
+        choice_set=FORMAL_HOME_CARE,
+        age_bins_and_labels=age_bins_parents_to_agent,
+        label="formal_home_care",
+        age_var="mother_age",
+    )
 
     return pd.Series(moments)
 
@@ -283,7 +297,7 @@ def create_labor_share_moments_pandas(df, moments, age_range, label=None):
         lambda x: x.isin(np.atleast_1d(PART_TIME)).mean()
     )
     full_time_shares = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(FULL_TIME)).mean()
+        lambda x: x.isin(np.atleast_1d(FULL_TIME_CHOICES)).mean()
     )
 
     # Reindex to ensure that every age between start_age and end_age is included;
@@ -373,7 +387,7 @@ def create_labor_share_moments_by_age_bin_pandas(
     )
     full_time_shares = (
         age_groups["choice"]
-        .apply(lambda x: x.isin(np.atleast_1d(FULL_TIME)).mean())
+        .apply(lambda x: x.isin(np.atleast_1d(FULL_TIME_CHOICES)).mean())
         .reindex(bin_labels, fill_value=np.nan)
     )
 
@@ -661,7 +675,7 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
         arr, ind=idx, choice=PART_TIME, min_age=min_age, max_age=max_age
     )
     share_working_full_time_by_age = get_share_by_age(
-        arr, ind=idx, choice=FULL_TIME, min_age=min_age, max_age=max_age
+        arr, ind=idx, choice=FULL_TIME_CHOICES, min_age=min_age, max_age=max_age
     )
 
     share_retired_by_age_low_educ = get_share_by_age(
@@ -674,7 +688,11 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
         arr_low_educ, ind=idx, choice=PART_TIME, min_age=min_age, max_age=max_age
     )
     share_working_full_time_by_age_low_educ = get_share_by_age(
-        arr_low_educ, ind=idx, choice=FULL_TIME, min_age=min_age, max_age=max_age
+        arr_low_educ,
+        ind=idx,
+        choice=FULL_TIME_CHOICES,
+        min_age=min_age,
+        max_age=max_age,
     )
 
     share_retired_by_age_high_educ = get_share_by_age(
@@ -687,7 +705,11 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
         arr_high_educ, ind=idx, choice=PART_TIME, min_age=min_age, max_age=max_age
     )
     share_working_full_time_by_age_high_educ = get_share_by_age(
-        arr_high_educ, ind=idx, choice=FULL_TIME, min_age=min_age, max_age=max_age
+        arr_high_educ,
+        ind=idx,
+        choice=FULL_TIME_CHOICES,
+        min_age=min_age,
+        max_age=max_age,
     )
 
     # Caregivers labor shares by education and age bin
@@ -717,7 +739,7 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
         arr_caregivers, ind=idx, choice=PART_TIME, bins=age_bins
     )
     share_working_full_time_by_age_bin_caregivers = get_share_by_age_bin(
-        arr_caregivers, ind=idx, choice=FULL_TIME, bins=age_bins
+        arr_caregivers, ind=idx, choice=FULL_TIME_CHOICES, bins=age_bins
     )
 
     # Caregivers by education
@@ -731,7 +753,7 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
         arr_caregivers_low_educ, ind=idx, choice=PART_TIME, bins=age_bins
     )
     share_working_full_time_by_age_bin_caregivers_low_educ = get_share_by_age_bin(
-        arr_caregivers_low_educ, ind=idx, choice=FULL_TIME, bins=age_bins
+        arr_caregivers_low_educ, ind=idx, choice=FULL_TIME_CHOICES, bins=age_bins
     )
     share_retired_by_age_bin_caregivers_high_educ = get_share_by_age_bin(
         arr_caregivers_high_educ, ind=idx, choice=RETIREMENT, bins=age_bins
@@ -743,7 +765,7 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
         arr_caregivers_high_educ, ind=idx, choice=PART_TIME, bins=age_bins
     )
     share_working_full_time_by_age_bin_caregivers_high_educ = get_share_by_age_bin(
-        arr_caregivers_high_educ, ind=idx, choice=FULL_TIME, bins=age_bins
+        arr_caregivers_high_educ, ind=idx, choice=FULL_TIME_CHOICES, bins=age_bins
     )
 
     # Light caregivers
@@ -757,7 +779,7 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
         arr_light_caregivers, ind=idx, choice=PART_TIME, bins=age_bins
     )
     share_working_full_time_by_age_bin_light_caregivers = get_share_by_age_bin(
-        arr_light_caregivers, ind=idx, choice=FULL_TIME, bins=age_bins
+        arr_light_caregivers, ind=idx, choice=FULL_TIME_CHOICES, bins=age_bins
     )
 
     share_retired_by_age_bin_light_caregivers_low_educ = get_share_by_age_bin(
@@ -770,7 +792,7 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
         arr_light_caregivers_low_educ, ind=idx, choice=PART_TIME, bins=age_bins
     )
     share_working_full_time_by_age_bin_light_caregivers_low_educ = get_share_by_age_bin(
-        arr_light_caregivers_low_educ, ind=idx, choice=FULL_TIME, bins=age_bins
+        arr_light_caregivers_low_educ, ind=idx, choice=FULL_TIME_CHOICES, bins=age_bins
     )
 
     share_retired_by_age_bin_light_caregivers_high_educ = get_share_by_age_bin(
@@ -786,7 +808,10 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
     )
     share_working_full_time_by_age_bin_light_caregivers_high_educ = (
         get_share_by_age_bin(
-            arr_light_caregivers_high_educ, ind=idx, choice=FULL_TIME, bins=age_bins
+            arr_light_caregivers_high_educ,
+            ind=idx,
+            choice=FULL_TIME_CHOICES,
+            bins=age_bins,
         )
     )
 
@@ -801,7 +826,7 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
         arr_intensive_caregivers, ind=idx, choice=PART_TIME, bins=age_bins
     )
     share_working_full_time_by_age_bin_intensive_caregivers = get_share_by_age_bin(
-        arr_intensive_caregivers, ind=idx, choice=FULL_TIME, bins=age_bins
+        arr_intensive_caregivers, ind=idx, choice=FULL_TIME_CHOICES, bins=age_bins
     )
 
     share_retired_by_age_bin_intensive_caregivers_low_educ = get_share_by_age_bin(
@@ -817,7 +842,10 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
     )
     share_working_full_time_by_age_bin_intensive_caregivers_low_educ = (
         get_share_by_age_bin(
-            arr_intensive_caregivers_low_educ, ind=idx, choice=FULL_TIME, bins=age_bins
+            arr_intensive_caregivers_low_educ,
+            ind=idx,
+            choice=FULL_TIME_CHOICES,
+            bins=age_bins,
         )
     )
 
@@ -834,7 +862,10 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
     )
     share_working_full_time_by_age_bin_intensive_caregivers_high_educ = (
         get_share_by_age_bin(
-            arr_intensive_caregivers_high_educ, ind=idx, choice=FULL_TIME, bins=age_bins
+            arr_intensive_caregivers_high_educ,
+            ind=idx,
+            choice=FULL_TIME_CHOICES,
+            bins=age_bins,
         )
     )
 
@@ -967,40 +998,43 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
     #     max_age=max_age,
     # )
 
-    # # Care mix
-    # arr_nursing_home = arr[jnp.isin(arr[:, idx["choice"]], NURSING_HOME)]
-    # _care_mask = jnp.isin(arr[:, idx["choice"]], DOMESTIC_CARE)
-    # arr_domestic_care = arr[_care_mask]
+    # Care mix
+    arr_parent_bad_health = arr[
+        arr[:, idx["parent_health_status"]] == PARENT_BAD_HEALTH
+    ]
+    _mask_no_nursing = jnp.isin(arr[:, idx["choice"]], NO_NURSING_HOME_CARE)
+    _mask_demand = arr[:, idx["care_demand"]] == 1
+    arr_domestic_care = arr[_mask_no_nursing & _mask_demand]
 
-    # share_nursing_home_by_parent_age_bin = get_share_by_age_bin(
-    #     arr_bad_health,
-    #     ind=idx,
-    #     choice=NURSING_HOME,
-    #     bins=AGE_BINS_PARENTS,
-    #     age_var="mother_age",
-    # )
+    share_nursing_home_by_parent_age_bin = get_share_by_age_bin(
+        arr_parent_bad_health,
+        ind=idx,
+        choice=NURSING_HOME_CARE,
+        bins=AGE_BINS_PARENTS,
+        age_var="mother_age",
+    )
 
-    # share_pure_informal_care_by_parent_age_bin = get_share_by_age_bin(
-    #     arr_domestic_care,
-    #     ind=idx,
-    #     choice=INFORMAL_CARE_OR_OTHER,
-    #     bins=AGE_BINS_PARENTS,
-    #     age_var="mother_age",
-    # )
-    # share_pure_formal_care_by_parent_age_bin = get_share_by_age_bin(
-    #     arr_domestic_care,
-    #     ind=idx,
-    #     choice=PURE_FORMAL_CARE,
-    #     bins=AGE_BINS_PARENTS,
-    #     age_var="mother_age",
-    # )
-    # share_combination_care_by_parent_age_bin = get_share_by_age_bin(
-    #     arr_domestic_care,
-    #     ind=idx,
-    #     choice=COMBINATION_CARE,
-    #     bins=AGE_BINS_PARENTS,
-    #     age_var="mother_age",
-    # )
+    share_pure_informal_care_by_parent_age_bin = get_share_by_age_bin(
+        arr_domestic_care,
+        ind=idx,
+        choice=INFORMAL_CARE_OR_OTHER_CARE,
+        bins=AGE_BINS_PARENTS,
+        age_var="mother_age",
+    )
+    share_combination_care_by_parent_age_bin = get_share_by_age_bin(
+        arr_domestic_care,
+        ind=idx,
+        choice=LIGHT_INFORMAL_CARE,
+        bins=AGE_BINS_PARENTS,
+        age_var="mother_age",
+    )
+    share_pure_formal_care_by_parent_age_bin = get_share_by_age_bin(
+        arr_domestic_care,
+        ind=idx,
+        choice=FORMAL_HOME_CARE,
+        bins=AGE_BINS_PARENTS,
+        age_var="mother_age",
+    )
 
     return jnp.asarray(
         # labor shares all
@@ -1086,6 +1120,10 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
         # + full_time_to_no_work
         # + full_time_to_part_time
         # + full_time_to_full_time
+        + share_nursing_home_by_parent_age_bin
+        + share_pure_informal_care_by_parent_age_bin
+        + share_combination_care_by_parent_age_bin
+        + share_pure_formal_care_by_parent_age_bin
     )
 
 

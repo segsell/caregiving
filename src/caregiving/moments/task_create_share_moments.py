@@ -20,7 +20,7 @@ from caregiving.data_management.share.task_create_parent_child_data_set import (
     weighted_shares_and_counts,
 )
 from caregiving.model.shared import (
-    FULL_TIME,
+    FULL_TIME_CHOICES,
     NOT_WORKING,
     PARENT_WEIGHTS_SHARE,
     PART_TIME,

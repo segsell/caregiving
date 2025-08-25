@@ -12,7 +12,7 @@ from pytask import Product
 
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import (
-    FULL_TIME,
+    FULL_TIME_CHOICES,
     NOT_WORKING,
     PART_TIME,
     WORK,
@@ -33,7 +33,7 @@ jax.config.update("jax_enable_x64", True)
 def task_simulate_moments(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_options: Path = BLD / "model" / "options.pkl",
-    path_to_empirical_moments: Path = BLD / "moments" / "soep_moments.csv",
+    path_to_empirical_moments: Path = BLD / "moments" / "moments_full.csv",
     path_to_simulated_data: Path = BLD / "solve_and_simulate" / "simulated_data.pkl",
     path_to_save_labor_shares_pandas: Annotated[Path, Product] = BLD
     / "plots"

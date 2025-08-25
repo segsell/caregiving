@@ -13,7 +13,6 @@ from caregiving.config import BLD, JET_COLOR_MAP
 from caregiving.model.shared import (
     DEAD,
     FILL_VALUE,
-    FULL_TIME,
     FULL_TIME_CHOICES,
     PART_TIME,
     PART_TIME_CHOICES,
@@ -76,7 +75,7 @@ def plot_choice_shares_by_education(
         0: RETIREMENT,
         1: UNEMPLOYED,
         2: PART_TIME,
-        3: FULL_TIME,
+        3: FULL_TIME_CHOICES,
     }
     choice_groups_emp = {
         0: RETIREMENT_CHOICES,
@@ -181,7 +180,7 @@ def plot_choice_shares_overall(
         0: RETIREMENT,
         1: UNEMPLOYED,
         2: PART_TIME,
-        3: FULL_TIME,
+        3: FULL_TIME_CHOICES,
     }
     choice_groups_emp = {
         0: RETIREMENT_CHOICES,
@@ -274,7 +273,12 @@ def plot_choice_shares_by_education_age_bins(
     bin_width : int, default 5
         Width of the age bins (in years).  Bin [a,a+bin_width) is labelled by *a*.
     """
-    choice_groups_sim = {0: RETIREMENT, 1: UNEMPLOYED, 2: PART_TIME, 3: FULL_TIME}
+    choice_groups_sim = {
+        0: RETIREMENT,
+        1: UNEMPLOYED,
+        2: PART_TIME,
+        3: FULL_TIME_CHOICES,
+    }
     choice_groups_emp = {
         0: RETIREMENT_CHOICES,
         1: UNEMPLOYED_CHOICES,
@@ -371,7 +375,12 @@ def plot_choice_shares_overall_age_bins(
     bin_width : int, default 5
         Width of the age bins (in years).  Bin [a,a+bin_width) is labelled by *a*.
     """
-    choice_groups_sim = {0: RETIREMENT, 1: UNEMPLOYED, 2: PART_TIME, 3: FULL_TIME}
+    choice_groups_sim = {
+        0: RETIREMENT,
+        1: UNEMPLOYED,
+        2: PART_TIME,
+        3: FULL_TIME_CHOICES,
+    }
     choice_groups_emp = {
         0: RETIREMENT_CHOICES,
         1: UNEMPLOYED_CHOICES,

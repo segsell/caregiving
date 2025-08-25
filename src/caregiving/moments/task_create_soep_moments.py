@@ -18,13 +18,13 @@ from caregiving.data_management.share.task_create_parent_child_data_set import (
 )
 from caregiving.model.shared import (
     BAD_HEALTH,
-    FULL_TIME,
+    FULL_TIME_CHOICES,
     NOT_WORKING,
     PARENT_BAD_HEALTH,
     PARENT_WEIGHTS_SHARE,
-    PART_TIME,
-    RETIREMENT,
-    UNEMPLOYED,
+    PART_TIME_CHOICES,
+    RETIREMENT_CHOICES,
+    UNEMPLOYED_CHOICES,
     WORK,
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
@@ -151,6 +151,7 @@ def task_create_soep_moments(
         df["any_care"] == 1, "education"
     ].var(ddof=DEGREES_OF_FREEDOM)
 
+    # Caregiving
     moments, variances = compute_labor_shares_by_age_bin(
         df_caregivers,
         moments=moments,
@@ -264,14 +265,14 @@ def task_create_soep_moments(
     # states = {
     #     "not_working": NOT_WORKING,
     #     "part_time": PART_TIME,
-    #     "full_time": FULL_TIME,
+    #     "full_time": FULL_TIME_CHOICES,
     # }
     # trans_moments, trans_variances = compute_transition_moments_and_variances(
     #     df,
     #     min_age=start_age + 1,
     #     max_age=end_age + 1,
     #     states=states,
-    #     full_time=FULL_TIME,
+    #     full_time=FULL_TIME_CHOICES,
     #     part_time=PART_TIME,
     #     not_working=NOT_WORKING,
     # )
@@ -349,29 +350,29 @@ def compute_labor_shares_by_age(df, moments, variances, age_range, label=None):
 
     # Compute the proportion for each status using vectorized operations
     retired_shares = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(RETIREMENT)).mean()
+        lambda x: x.isin(np.atleast_1d(RETIREMENT_CHOICES)).mean()
     )
     unemployed_shares = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(UNEMPLOYED)).mean()
+        lambda x: x.isin(np.atleast_1d(UNEMPLOYED_CHOICES)).mean()
     )
     part_time_shares = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(PART_TIME)).mean()
+        lambda x: x.isin(np.atleast_1d(PART_TIME_CHOICES)).mean()
     )
     full_time_shares = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(FULL_TIME)).mean()
+        lambda x: x.isin(np.atleast_1d(FULL_TIME_CHOICES)).mean()
     )
 
     retired_vars = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(RETIREMENT)).var(ddof=DEGREES_OF_FREEDOM)
+        lambda x: x.isin(np.atleast_1d(RETIREMENT_CHOICES)).var(ddof=DEGREES_OF_FREEDOM)
     )
     unemployed_vars = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(UNEMPLOYED)).var(ddof=DEGREES_OF_FREEDOM)
+        lambda x: x.isin(np.atleast_1d(UNEMPLOYED_CHOICES)).var(ddof=DEGREES_OF_FREEDOM)
     )
     part_time_vars = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(PART_TIME)).var(ddof=DEGREES_OF_FREEDOM)
+        lambda x: x.isin(np.atleast_1d(PART_TIME_CHOICES)).var(ddof=DEGREES_OF_FREEDOM)
     )
     full_time_vars = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(FULL_TIME)).var(ddof=DEGREES_OF_FREEDOM)
+        lambda x: x.isin(np.atleast_1d(FULL_TIME_CHOICES)).var(ddof=DEGREES_OF_FREEDOM)
     )
 
     # Reindex to ensure that every age between start_age and end_age is included;
@@ -520,22 +521,22 @@ def compute_labor_shares_by_age_bin(
     Parameters
     ----------
     df : DataFrame
-        Must contain the columns ``age`` (int) and ``choice`` (categorical / int).
+            Must contain the columns ``age`` (int) and ``choice`` (categorical / int).
     moments, variances : dict
-        Dictionaries updated **in-place** with the new statistics.
+            Dictionaries updated **in-place** with the new statistics.
     age_bins : tuple[list[int], list[str]] | None
-        Optional ``(bin_edges, bin_labels)``.
-        *bin_edges* must include the left edge of the first bin and the right
-        edge of the last bin, exactly as required by ``pd.cut``.
-        If *None*, the default edges ``[40, 45, 50, 55, 60, 65, 70]`` and the
-        labels ``["40_44", "45_49", … , "65_69"]`` are used.
+            Optional ``(bin_edges, bin_labels)``.
+            *bin_edges* must include the left edge of the first bin and the right
+            edge of the last bin, exactly as required by ``pd.cut``.
+            If *None*, the default edges ``[40, 45, 50, 55, 60, 65, 70]`` and the
+            labels ``["40_44", "45_49", … , "65_69"]`` are used.
     label : str | None
-        Optional extra label inserted in every key (prefixed with “_” if given).
+            Optional extra label inserted in every key (prefixed with “_” if given).
 
     Returns
     -------
     moments, variances : dict
-        The same objects that were passed in, for convenience.
+            The same objects that were passed in, for convenience.
     """
 
     # 1. Prepare labels and default bin specification
@@ -567,29 +568,29 @@ def compute_labor_shares_by_age_bin(
     age_groups = df.groupby("age_bin")
 
     retired_shares = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(RETIREMENT)).mean()
+        lambda x: x.isin(np.atleast_1d(RETIREMENT_CHOICES)).mean()
     )
     unemployed_shares = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(UNEMPLOYED)).mean()
+        lambda x: x.isin(np.atleast_1d(UNEMPLOYED_CHOICES)).mean()
     )
     part_time_shares = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(PART_TIME)).mean()
+        lambda x: x.isin(np.atleast_1d(PART_TIME_CHOICES)).mean()
     )
     full_time_shares = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(FULL_TIME)).mean()
+        lambda x: x.isin(np.atleast_1d(FULL_TIME_CHOICES)).mean()
     )
 
     retired_vars = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(RETIREMENT)).var(ddof=DEGREES_OF_FREEDOM)
+        lambda x: x.isin(np.atleast_1d(RETIREMENT_CHOICES)).var(ddof=DEGREES_OF_FREEDOM)
     )
     unemployed_vars = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(UNEMPLOYED)).var(ddof=DEGREES_OF_FREEDOM)
+        lambda x: x.isin(np.atleast_1d(UNEMPLOYED_CHOICES)).var(ddof=DEGREES_OF_FREEDOM)
     )
     part_time_vars = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(PART_TIME)).var(ddof=DEGREES_OF_FREEDOM)
+        lambda x: x.isin(np.atleast_1d(PART_TIME_CHOICES)).var(ddof=DEGREES_OF_FREEDOM)
     )
     full_time_vars = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(FULL_TIME)).var(ddof=DEGREES_OF_FREEDOM)
+        lambda x: x.isin(np.atleast_1d(FULL_TIME_CHOICES)).var(ddof=DEGREES_OF_FREEDOM)
     )
 
     # Re-index so every bin is present even if it appears nowhere in the data
@@ -636,24 +637,24 @@ def compute_shares_by_age_bin(
     Parameters
     ----------
     df : DataFrame
-        Must contain columns ``age`` (int) and the indicator column given by *variable*.
-        (Indicator should be boolean or 0/1; non-missing values are used in mean/var.)
+            Must contain columns ``age`` (int) and the indicator column given by *variable*.
+            (Indicator should be boolean or 0/1; non-missing values are used in mean/var.)
     moments, variances : dict
-        Dictionaries updated **in-place** with the new statistics.
+            Dictionaries updated **in-place** with the new statistics.
     variable : str
-        Name of the indicator column in `df` (e.g., "nursing_home").
+            Name of the indicator column in `df` (e.g., "nursing_home").
     age_bins : tuple[list[int], list[str]] | None
-        Optional ``(bin_edges, bin_labels)``. If *None*, defaults to:
-        edges ``[40, 45, 50, 55, 60, 65, 70]`` and labels ``["40_44", …, "65_69"]``.
-        *bin_edges* must include the left edge of the first bin and the right edge
-        of the last bin, exactly as required by ``pd.cut``.
+            Optional ``(bin_edges, bin_labels)``. If *None*, defaults to:
+            edges ``[40, 45, 50, 55, 60, 65, 70]`` and labels ``["40_44", …, "65_69"]``.
+            *bin_edges* must include the left edge of the first bin and the right edge
+            of the last bin, exactly as required by ``pd.cut``.
     label : str | None
-        Optional extra label inserted in every key (prefixed with “_” if given).
+            Optional extra label inserted in every key (prefixed with “_” if given).
 
     Returns
     -------
     moments, variances : dict
-        The same objects that were passed in, for convenience.
+            The same objects that were passed in, for convenience.
     """
     # 1. Prepare labels and default bin specification
     label = f"_{label}" if label else ""
@@ -708,30 +709,30 @@ def compute_transition_moments_and_variances_for_age_bins(
     Parameters
     ----------
     df : pd.DataFrame
-        Must contain columns for age, lagged_choice, and choice.
+            Must contain columns for age, lagged_choice, and choice.
     states : dict
-        Mapping of state labels to their codes in the data.
+            Mapping of state labels to their codes in the data.
     min_age : int
-        Minimum age for binning (inclusive).
+            Minimum age for binning (inclusive).
     max_age : int
-        Maximum age for binning (inclusive).
+            Maximum age for binning (inclusive).
     choice : str, default "choice"
-        Column name for current year's labor supply choice.
+            Column name for current year's labor supply choice.
     lagged_choice : str, default "lagged_choice"
-        Column name for previous year's labor supply choice.
+            Column name for previous year's labor supply choice.
     label : str, optional
-        Suffix label for keys (e.g. education level).
+            Suffix label for keys (e.g. education level).
     bin_width : int, default 5
-        Width of each age bin (in years).
+            Width of each age bin (in years).
 
     Returns
     -------
     moments : dict
-        Keys like 'trans_working_to_working_low_education_age_30_34',
-        values are probabilities.
+            Keys like 'trans_working_to_working_low_education_age_30_34',
+            values are probabilities.
     variances : dict
-        Keys like 'var_trans_working_to_working_low_education_age_30_34',
-        values are variances.
+            Keys like 'var_trans_working_to_working_low_education_age_30_34',
+            values are variances.
     """
 
     # Prepare label suffix
@@ -787,26 +788,26 @@ def compute_transition_moments_and_variances(
     Parameters
     ----------
     df : pd.DataFrame
-        Must contain the columns specified by lagged_col and current_col.
-    FULL_TIME : array-like
-        Codes representing full-time in the 'choice' columns.
-    PART_TIME : array-like
-        Codes representing part-time in the 'choice' columns.
+            Must contain the columns specified by lagged_col and current_col.
+    FULL_TIME_CHOICES : array-like
+            Codes representing full-time in the 'choice' columns.
+    PART_TIME_CHOICE : array-like
+            Codes representing part-time in the 'choice' columns.
     NOT_WORKING : array-like
-        Codes representing not-working states in the 'choice' columns.
+            Codes representing not-working states in the 'choice' columns.
     lagged_col : str, default "lagged_choice"
-        The column in df representing last year's labor supply choice.
+            The column in df representing last year's labor supply choice.
     current_col : str, default "choice"
-        The column in df representing current year's labor supply choice.
+            The column in df representing current year's labor supply choice.
 
     Returns
     -------
     moments : dict
-        Keys like 'transition_full_time_to_part_time',
-        values are transition probabilities.
+            Keys like 'transition_full_time_to_part_time',
+            values are transition probabilities.
     variances : dict
-        Keys like 'var_transition_full_time_to_part_time',
-        values are the corresponding variances of those probabilities.
+            Keys like 'var_transition_full_time_to_part_time',
+            values are the corresponding variances of those probabilities.
     """
 
     if label is None:
@@ -1016,20 +1017,20 @@ def compute_wealth_moments_by_five_year_age_bins(df, edu_level, start_age, end_a
     Parameters
     ----------
     df : pd.DataFrame
-        Must have columns 'age' and 'wealth'.
+            Must have columns 'age' and 'wealth'.
     edu_level : int
-        Education level to filter on (0=low, 1=high).
+            Education level to filter on (0=low, 1=high).
     start_age : int
-        Lower bound (inclusive) of the age range.
+            Lower bound (inclusive) of the age range.
     end_age : int
-        Upper bound (inclusive) of the age range.
+            Upper bound (inclusive) of the age range.
 
     Returns
     -------
     moments : dict
-        Dictionary of mean wealth by bin, with keys like 'wealth_[30,35)'.
+            Dictionary of mean wealth by bin, with keys like 'wealth_[30,35)'.
     variances : dict
-        Dictionary of variance of wealth by bin, matching the same keys.
+            Dictionary of variance of wealth by bin, matching the same keys.
     """
 
     # 1) Restrict to specified age range and education level
@@ -1238,8 +1239,8 @@ def bootstrap_transition_variances(df, choice_map, n_bootstrap=1000):
 
     Returns:
       A dictionary where keys are transition moment names
-        (e.g., 'transition_full_time_to_part_time')
-        and the values are the bootstrap variance estimates.
+            (e.g., 'transition_full_time_to_part_time')
+            and the values are the bootstrap variance estimates.
 
     """
 
@@ -1367,14 +1368,14 @@ def plot_wealth_by_age(df, start_age, end_age, educ_val=None):
     Parameters
     ----------
     df : pd.DataFrame
-        Data containing at least the columns 'age', 'education', and 'wealth'.
+            Data containing at least the columns 'age', 'education', and 'wealth'.
     start_age : int
-        Lower bound (inclusive) of the age range.
+            Lower bound (inclusive) of the age range.
     end_age : int
-        Upper bound (inclusive) of the age range.
+            Upper bound (inclusive) of the age range.
     educ_val : {0, 1, None}, optional
-        If 0 or 1, filter the data to only rows where 'education' == educ_val.
-        If None (default), use all education levels (unconditional).
+            If 0 or 1, filter the data to only rows where 'education' == educ_val.
+            If None (default), use all education levels (unconditional).
 
     """
 
@@ -1417,14 +1418,14 @@ def plot_wealth_by_5yr_bins(df, start_age, end_age, educ_val=None):
     Parameters
     ----------
     df : pd.DataFrame
-        Must contain 'age', 'wealth', and 'education' columns.
+            Must contain 'age', 'wealth', and 'education' columns.
     start_age : int
-        Lower bound (inclusive) of the age range to plot.
+            Lower bound (inclusive) of the age range to plot.
     end_age : int
-        Upper bound (inclusive) of the age range to plot.
+            Upper bound (inclusive) of the age range to plot.
     educ_val : {0, 1, None}, optional
-        If 0 or 1, keep only rows where 'education' == edu_val.
-        If None (default), use all education levels.
+            If 0 or 1, keep only rows where 'education' == edu_val.
+            If None (default), use all education levels.
 
     """
 

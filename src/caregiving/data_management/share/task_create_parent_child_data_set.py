@@ -72,29 +72,29 @@ AGE_LABELS_PARENTS = ["65_69", "70_74", "75_79", "80_84", "85_89", "90_plus"]
 
 CARE_COLS = [
     "pure_informal_care_general",
-    "pure_home_care_general",
     "combination_care_general",
+    "pure_home_care_general",
 ]
 DAILY_CARE_COLS = [
     "pure_informal_care_daily",
-    "pure_home_care_daily",
     "combination_care_daily",
+    "pure_home_care_daily",
 ]
 CHILD_CARE_COLS = [
     "pure_informal_care_child",
-    "pure_home_care_child",
     "combination_care_child",
+    "pure_home_care_child",
 ]
 DAILY_CHILD_CARE_COLS = [
     "pure_informal_care_daily_child",
-    "pure_home_care_daily_child",
     "combination_care_daily_child",
+    "pure_home_care_daily_child",
 ]
 _CARE_COLS_ALL = [
-    "pure_informal_care_general",
-    "pure_home_care",
-    "combination_care_general",
     "nursing_home",
+    "pure_informal_care_general",
+    "combination_care_general",
+    "pure_home_care",
 ]
 
 

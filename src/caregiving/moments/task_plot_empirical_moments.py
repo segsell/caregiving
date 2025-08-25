@@ -15,7 +15,6 @@ from caregiving.config import BLD, SRC
 from caregiving.model.shared import (
     DEAD,
     FILL_VALUE,
-    FULL_TIME,
     FULL_TIME_CHOICES,
     NOT_WORKING,
     PARENT_WEIGHTS_SHARE,
