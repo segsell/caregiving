@@ -8,14 +8,13 @@ import jax.numpy as jnp
 import numpy as np
 import pandas as pd
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
 
 from caregiving.config import BLD
 from caregiving.model.shared import (
+    ALL_NO_CARE,
     INITIAL_CONDITIONS_AGE_HIGH,
     INITIAL_CONDITIONS_AGE_LOW,
     INITIAL_CONDITIONS_COHORT_HIGH,
@@ -34,6 +33,8 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.utils import table
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 
 def task_generate_start_states_for_solution(  # noqa: PLR0915
@@ -284,18 +285,36 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
             exp_max_edu + 1, size=n_agents_edu, p=exp_probs.values
         )
 
+        # ============================================================================
         # Generate type specific initial lagged choice distribution
-        empirical_lagged_choice_probs = start_period_data_edu[
-            "lagged_choice"
-        ].value_counts(normalize=True)
-        lagged_choice_probs = pd.Series(
-            index=np.arange(0, specs["n_choices"]), data=0, dtype=float
-        )
-        lagged_choice_probs.update(empirical_lagged_choice_probs)
+        # empirical_lagged_choice_probs = start_period_data_edu[
+        #     "lagged_choice"
+        # ].value_counts(normalize=True)
+        # lagged_choice_probs = pd.Series(
+        #     index=np.arange(0, specs["n_choices"]), data=0, dtype=float
+        # )
+        # lagged_choice_probs.update(empirical_lagged_choice_probs)
+        # lagged_choice_edu = np.random.choice(
+        #     specs["n_choices"], size=n_agents_edu, p=lagged_choice_probs.values
+        # )
+
+        # Map empirical labels to model labels
+        emp_probs = start_period_data_edu["lagged_choice"].value_counts(normalize=True)
+        p4 = emp_probs.reindex([0, 1, 2, 3], fill_value=0.0).to_numpy()
+
+        # Build full-length prob vector over model choices and place mass on {0,4,8,12}
+        lagged_choice_probs = np.zeros(specs["n_choices"], dtype=float)
+        targets = np.array(ALL_NO_CARE)
+        lagged_choice_probs[targets] = p4
+
+        # Sample on the full support 0..n_choices-1 using the remapped probabilities
         lagged_choice_edu = np.random.choice(
-            specs["n_choices"], size=n_agents_edu, p=lagged_choice_probs.values
+            specs["n_choices"], size=n_agents_edu, p=lagged_choice_probs
         )
+
         lagged_choice[type_mask] = lagged_choice_edu
+
+        # ============================================================================
 
         # Generate job offer probabilities
         job_offer_probs = job_offer_process_transition_initial_conditions(
@@ -360,7 +379,6 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         # "has_sister": jnp.array(has_sister_agents, dtype=jnp.uint8),
         "mother_health": jnp.array(mother_health_agents, dtype=jnp.uint8),
         "care_demand": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
-        "care_supply": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
     }
 
     # Save initial discrete states and wealth

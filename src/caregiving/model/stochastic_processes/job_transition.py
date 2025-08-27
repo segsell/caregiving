@@ -5,7 +5,9 @@ import jax.numpy as jnp
 from caregiving.model.shared import (
     SEX,
     UNEMPLOYED,
+    UNEMPLOYED_CHOICES,
     WORK,
+    WORK_CHOICES,
     is_retired,
     is_unemployed,
     is_working,

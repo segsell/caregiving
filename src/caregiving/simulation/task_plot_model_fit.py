@@ -18,7 +18,10 @@ from caregiving.estimation.estimation_setup import (
 from caregiving.model.shared import (
     DEAD,
     INFORMAL_CARE,
+    INTENSIVE_INFORMAL_CARE,
+    LIGHT_INFORMAL_CARE,
     NOT_WORKING,
+    NOT_WORKING_CHOICES,
     PARENT_DEAD,
     SEX,
     WORK,
@@ -72,12 +75,22 @@ def task_plot_model_fit(  # noqa: PLR0915
     / "plots"
     / "model_fit"
     / "labor_shares_caregivers_by_age_bin.png",
-    path_to_save_labor_shares_caregivers_by_educ_and_age_plot: Annotated[
+    save_labor_shares_caregivers_by_educ_and_age_bin: Annotated[Path, Product] = BLD
+    / "plots"
+    / "model_fit"
+    / "labor_shares_caregivers_by_educ_and_age_bin.png",
+    save_labor_shares_light_caregivers_by_educ_and_age_bin: Annotated[
         Path, Product
     ] = BLD
     / "plots"
     / "model_fit"
-    / "labor_shares_caregivers_by_educ_and_age.png",
+    / "labor_shares_light_caregivers_by_educ_and_age_bin.png",
+    save_labor_shares_intensive_caregivers_by_educ_and_age_bin: Annotated[
+        Path, Product
+    ] = BLD
+    / "plots"
+    / "model_fit"
+    / "labor_shares_intensive_caregivers_by_educ_and_age_bin.png",
     path_to_save_caregiver_share_by_age_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "model_fit"
@@ -108,13 +121,30 @@ def task_plot_model_fit(  # noqa: PLR0915
         options, path_to_model=path_to_solution_model
     )
 
-    # emp_moms = pd.read_csv(
-    # path_to_empirical_moments, index_col=[0]
-    # ).squeeze("columns")
+    emp_moms = pd.read_csv(path_to_empirical_moments, index_col=[0]).squeeze("columns")
 
     df_emp = pd.read_csv(path_to_empirical_data, index_col=[0])
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
     df_sim["sex"] = SEX
+
+    # Subsets empirical
+    df_emp_caregivers = df_emp.loc[df_emp["any_care"] == 1].copy()
+    df_emp_light_caregivers = df_emp_caregivers.loc[
+        df_emp_caregivers["light_care"] == 1
+    ]
+    df_emp_intensive_caregivers = df_emp_caregivers.loc[
+        df_emp_caregivers["intensive_care"] == 1
+    ]
+
+    df_sim_caregivers = df_sim.loc[
+        df_sim["choice"].isin(np.asarray(INFORMAL_CARE).tolist())
+    ]
+    df_sim_light_caregivers = df_sim.loc[
+        df_sim["choice"].isin(np.asarray(LIGHT_INFORMAL_CARE).tolist())
+    ]
+    df_sim_intensive_caregivers = df_sim.loc[
+        df_sim["choice"].isin(np.asarray(INTENSIVE_INFORMAL_CARE).tolist())
+    ]
 
     # df_emp_prep, _states_dict = load_and_prep_data(
     #     data_emp=df_emp,
@@ -131,6 +161,7 @@ def task_plot_model_fit(  # noqa: PLR0915
     # # plot_choice_shares_single(
     # #     df_emp, df_sim, specs, path_to_save_plot=path_to_save_single_choice_plot
     # # )
+
     plot_choice_shares_by_education(
         df_emp, df_sim, specs, path_to_save_plot=path_to_save_labor_shares_by_educ_plot
     )
@@ -139,6 +170,25 @@ def task_plot_model_fit(  # noqa: PLR0915
     plot_job_offer_share_by_age(
         df_sim,
         path_to_save_plot=BLD / "plots" / "model_fit" / "simulated_job_offer",
+    )
+
+    plot_choice_shares_by_education_age_bins(
+        df_emp_caregivers,
+        df_sim_caregivers,
+        specs,
+        path_to_save_plot=save_labor_shares_caregivers_by_educ_and_age_bin,
+    )
+    plot_choice_shares_by_education_age_bins(
+        df_emp_light_caregivers,
+        df_sim_light_caregivers,
+        specs,
+        path_to_save_plot=save_labor_shares_light_caregivers_by_educ_and_age_bin,
+    )
+    plot_choice_shares_by_education_age_bins(
+        df_emp_intensive_caregivers,
+        df_sim_intensive_caregivers,
+        specs,
+        path_to_save_plot=save_labor_shares_intensive_caregivers_by_educ_and_age_bin,
     )
 
     # df_emp_caregivers = df_emp.loc[df_emp["any_care"] == 1].copy()
@@ -171,15 +221,15 @@ def task_plot_model_fit(  # noqa: PLR0915
     #     choice_set=INFORMAL_CARE,
     #     path_to_save_plot=path_to_save_caregiver_share_by_age_plot,
     # )
-    # plot_caregiver_shares_by_age_bins(
-    #     emp_moms,
-    #     df_sim,
-    #     specs,
-    #     choice_set=INFORMAL_CARE,
-    #     age_min=40,
-    #     age_max=75,
-    #     path_to_save_plot=path_to_save_caregiver_share_by_age_bin_plot,
-    # )
+    plot_caregiver_shares_by_age_bins(
+        emp_moms,
+        df_sim,
+        specs,
+        choice_set=INFORMAL_CARE,
+        age_min=40,
+        age_max=75,
+        path_to_save_plot=path_to_save_caregiver_share_by_age_bin_plot,
+    )
     # plot_simulated_care_demand_by_age(
     #     df_sim,
     #     specs,
@@ -234,9 +284,15 @@ def task_plot_model_fit(  # noqa: PLR0915
     # # discrete_state_names = model_full["model_structure"]["discrete_states_names"]
     # # plot_states(df_emp, df_sim, discrete_state_names, specs)
 
-    states = {
+    states_sim = {
         "not_working": NOT_WORKING,
         "working": WORK,
+        # "part_time": PART_TIME,
+        # "full_time": FULL_TIME,
+    }
+    states_emp = {
+        "not_working": NOT_WORKING_CHOICES,
+        "working": WORK_CHOICES,
         # "part_time": PART_TIME,
         # "full_time": FULL_TIME,
     }
@@ -250,8 +306,9 @@ def task_plot_model_fit(  # noqa: PLR0915
         df_emp,
         df_sim,
         specs,
-        states,
         state_labels,
+        states_emp=states_emp,
+        states_sim=states_sim,
         one_way=True,
         path_to_save_plot=path_to_save_work_transition_age_plot,
     )
@@ -259,8 +316,9 @@ def task_plot_model_fit(  # noqa: PLR0915
         df_emp,
         df_sim,
         specs,
-        states,
         state_labels,
+        states_emp=states_emp,
+        states_sim=states_sim,
         bin_width=10,
         one_way=True,
         path_to_save_plot=path_to_save_work_transition_age_bin_plot,
