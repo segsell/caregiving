@@ -47,7 +47,7 @@ def task_plot_model_fit(  # noqa: PLR0915
     path_to_options: Path = BLD / "model" / "options.pkl",
     path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
     path_to_start_params: Path = BLD / "model" / "params" / "start_params_model.yaml",
-    path_to_empirical_moments: Path = BLD / "moments" / "soep_moments.csv",
+    path_to_empirical_moments: Path = BLD / "moments" / "moments_full.csv",
     path_to_empirical_data: Path = BLD
     / "data"
     / "soep_structural_estimation_sample.csv",

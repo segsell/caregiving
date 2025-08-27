@@ -604,9 +604,9 @@ def compute_labor_shares_by_age_bin(
     part_time_vars = part_time_vars.reindex(bin_labels, fill_value=np.nan)
     full_time_vars = full_time_vars.reindex(bin_labels, fill_value=np.nan)
 
-    # for bin in bin_labels:
-    #     moments[f"share_retired{label}_age_bin_{bin}"] = retired_shares.loc[bin]
-    #     variances[f"share_retired{label}_age_bin_{bin}"] = retired_vars.loc[bin]
+    for bin in bin_labels:
+        moments[f"share_retired{label}_age_bin_{bin}"] = retired_shares.loc[bin]
+        variances[f"share_retired{label}_age_bin_{bin}"] = retired_vars.loc[bin]
 
     for bin in bin_labels:
         moments[f"share_unemployed{label}_age_bin_{bin}"] = unemployed_shares.loc[bin]

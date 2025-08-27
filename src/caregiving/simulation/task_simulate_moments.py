@@ -35,6 +35,12 @@ def task_simulate_moments(
     path_to_options: Path = BLD / "model" / "options.pkl",
     path_to_empirical_moments: Path = BLD / "moments" / "moments_full.csv",
     path_to_simulated_data: Path = BLD / "solve_and_simulate" / "simulated_data.pkl",
+    path_to_save_pandas_moments: Annotated[Path, Product] = BLD
+    / "moments"
+    / "simulated_moments_pandas.csv",
+    path_to_save_jax_moments: Annotated[Path, Product] = BLD
+    / "moments"
+    / "simulated_moments_jax.csv",
     path_to_save_labor_shares_pandas: Annotated[Path, Product] = BLD
     / "plots"
     / "model_fit"
@@ -58,6 +64,10 @@ def task_simulate_moments(
 
     sim_moms_pandas = simulate_moments_pandas(df_sim, options=options)
     sim_moms_jax = simulate_moments_jax(df_sim, options=options)
+
+    # Save moments
+    sim_moms_pandas.to_csv(path_to_save_pandas_moments)
+    np.savetxt(path_to_save_jax_moments, sim_moms_jax, delimiter=",")
 
     aae(sim_moms_jax, sim_moms_pandas)
     assert np.equal(emp_moms.shape, sim_moms_pandas.shape)

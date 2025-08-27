@@ -111,4 +111,11 @@ def simulate_scenario(
     # df.loc[alive_and_demand & (~df["choice"].isin(INFORMAL_CARE)), "formal_care"] = 1
     # df.loc[alive_and_demand & (df["choice"].isin(INFORMAL_CARE)), "formal_care"] = 0
 
+    df["mother_age"] = (
+        df["age"].to_numpy()
+        + model_params["mother_age_diff"][
+            df["has_sister"].to_numpy(), df["education"].to_numpy()
+        ]
+    )
+
     return df

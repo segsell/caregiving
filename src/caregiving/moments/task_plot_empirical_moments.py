@@ -353,4 +353,3 @@ def plot_choice_shares_by_education_age_bins_emp(  # noqa: PLR0912, PLR0915
 
     if path_to_save_plot:
         fig.savefig(path_to_save_plot, dpi=300)
-    plt.close(fig)
