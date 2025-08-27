@@ -12,8 +12,7 @@ from pytask import Product
 from caregiving.config import BLD
 from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.stochastic_processes.caregiving_transition import (
-    care_demand_transition,
-    exog_care_supply_transition,
+    care_demand_and_supply_transition,
     health_transition_good_medium_bad,
 )
 from caregiving.model.stochastic_processes.health_transition import (
@@ -100,13 +99,13 @@ def task_specify_model(
                     "states": np.arange(specs["n_health_states_three"], dtype=int),
                 },
                 "care_demand": {
-                    "transition": care_demand_transition,
-                    "states": np.arange(2, dtype=int),
+                    "transition": care_demand_and_supply_transition,
+                    "states": np.arange(3, dtype=int),
                 },
-                "care_supply": {
-                    "transition": exog_care_supply_transition,
-                    "states": np.arange(2, dtype=int),
-                },
+                # "care_supply": {
+                #     "transition": exog_care_supply_transition,
+                #     "states": np.arange(2, dtype=int),
+                # },
             },
             "continuous_states": {
                 "wealth": savings_grid,

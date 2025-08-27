@@ -14,12 +14,13 @@ from caregiving.data_management.share.task_create_parent_child_data_set import (
     AGE_LABELS_PARENTS,
 )
 from caregiving.model.shared import (
-    FORMAL_HOME_CARE,
     FULL_TIME_CHOICES,
     INFORMAL_CARE,
     INFORMAL_CARE_OR_OTHER_CARE,
     INTENSIVE_INFORMAL_CARE,
     LIGHT_INFORMAL_CARE,
+    NO_CARE,
+    NO_INFORMAL_CARE,
     NO_NURSING_HOME_CARE,
     NOT_WORKING_CARE,
     NURSING_HOME_CARE,
@@ -76,9 +77,11 @@ def simulate_moments_pandas(
         df_caregivers["education"] == 1
     ]
 
+    # includes "no care", which means other informal care if positive care demand
+    # if other care_supply == 0 and no personal care provided --> formal home care (implicit)
     df_domestic_care = df.loc[
         (df["choice"].isin(np.asarray(NO_NURSING_HOME_CARE))) & (df["care_demand"] == 1)
-    ]  # includes "no care", which means other informaly care if positive care demand
+    ]
     df_parent_bad_health = df[df["mother_health"] == PARENT_BAD_HEALTH]
 
     moments = {}
@@ -215,30 +218,79 @@ def simulate_moments_pandas(
     )
 
     age_bins_parents_to_agent = (AGE_BINS_PARENTS, AGE_LABELS_PARENTS)
-    moments = create_choice_shares_by_age_bin_pandas(
-        df_domestic_care,
-        moments,
-        choice_set=INFORMAL_CARE_OR_OTHER_CARE,
-        age_bins_and_labels=age_bins_parents_to_agent,
-        label="informal_care_or_other_care",
-        age_var="mother_age",
+    # moments = create_choice_shares_by_age_bin_pandas(
+    #     df_domestic_care,
+    #     moments,
+    #     choice_set=INFORMAL_CARE_OR_OTHER_CARE,
+    #     age_bins_and_labels=age_bins_parents_to_agent,
+    #     label="informal_care_or_other_care",
+    #     age_var="mother_age",
+    # )
+    # moments = create_choice_shares_by_age_bin_pandas(
+    #     df_domestic_care,
+    #     moments,
+    #     choice_set=LIGHT_INFORMAL_CARE,
+    #     age_bins_and_labels=age_bins_parents_to_agent,
+    #     label="light_informal_care",  # := combination care
+    #     age_var="mother_age",
+    # )
+    # moments = create_choice_shares_by_age_bin_pandas(
+    #     df_domestic_care,
+    #     moments,
+    #     choice_set=NO_INFORMAL_CARE,
+    #     age_bins_and_labels=age_bins_parents_to_agent,
+    #     label="formal_home_care",
+    #     age_var="mother_age",
+    # )
+
+    # 1) (REPLACED) informal_care_or_other_care: custom because it depends on care_supply
+    #    Definition: INFORMAL_CARE  OR  (NO_CARE AND care_supply==1)
+    #    We compute shares per age bin and write keys consistent with the helper.
+    df_domestic_care["age_bin"] = pd.cut(
+        df_domestic_care["mother_age"],
+        bins=AGE_BINS_PARENTS,
+        labels=AGE_LABELS_PARENTS,
+        right=False,
     )
+
+    is_informal = df_domestic_care["choice"].isin(np.asarray(INFORMAL_CARE))
+    is_no_care = df_domestic_care["choice"].isin(np.asarray(NO_CARE))
+    supply1 = df_domestic_care["care_supply"] == 1
+    supply0 = df_domestic_care["care_supply"] == 0
+
+    df_domestic_grouped = df_domestic_care.groupby("age_bin", observed=True)
+
+    share_informal_or_other = df_domestic_grouped.apply(
+        lambda x: (
+            is_informal.loc[x.index] | (is_no_care.loc[x.index] & supply1.loc[x.index])
+        ).mean()
+    )
+
+    for age_bin in AGE_LABELS_PARENTS:
+        moments[f"share__informal_care_or_other_care_age_bin_{age_bin}"] = (
+            share_informal_or_other.get(age_bin, np.nan)
+        )
+
+    # 2) (UNCHANGED) light_informal_care: still a pure choice-set moment
     moments = create_choice_shares_by_age_bin_pandas(
         df_domestic_care,
         moments,
         choice_set=LIGHT_INFORMAL_CARE,
         age_bins_and_labels=age_bins_parents_to_agent,
-        label="light_informal_care",  # := combination care
+        label="light_informal_care",
         age_var="mother_age",
     )
-    moments = create_choice_shares_by_age_bin_pandas(
-        df_domestic_care,
-        moments,
-        choice_set=FORMAL_HOME_CARE,
-        age_bins_and_labels=age_bins_parents_to_agent,
-        label="formal_home_care",
-        age_var="mother_age",
+
+    # 3) (REPLACED) formal_home_care: custom because it depends on care_supply
+    #    Definition: (NO_CARE AND care_supply==0)
+    share_formal_home = df_domestic_grouped.apply(
+        lambda x: (is_no_care.loc[x.index] & supply0.loc[x.index]).mean()
     )
+
+    for age_bin in AGE_LABELS_PARENTS:
+        moments[f"share__formal_home_care_age_bin_{age_bin}"] = share_formal_home.get(
+            age_bin, np.nan
+        )
 
     return pd.Series(moments)
 
@@ -1002,10 +1054,46 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
     arr_parent_bad_health = arr[
         arr[:, idx["parent_health_status"]] == PARENT_BAD_HEALTH
     ]
+    # _mask_no_nursing = jnp.isin(arr[:, idx["choice"]], NO_NURSING_HOME_CARE)
+    # _mask_demand = arr[:, idx["care_demand"]] == 1
+    # arr_domestic_care = arr[_mask_no_nursing & _mask_demand]
+
+    # share_nursing_home_by_parent_age_bin = get_share_by_age_bin(
+    #     arr_parent_bad_health,
+    #     ind=idx,
+    #     choice=NURSING_HOME_CARE,
+    #     bins=AGE_BINS_PARENTS,
+    #     age_var="mother_age",
+    # )
+
+    # share_pure_informal_care_by_parent_age_bin = get_share_by_age_bin(
+    #     arr_domestic_care,
+    #     ind=idx,
+    #     choice=INFORMAL_CARE_OR_OTHER_CARE,
+    #     bins=AGE_BINS_PARENTS,
+    #     age_var="mother_age",
+    # )
+    # share_combination_care_by_parent_age_bin = get_share_by_age_bin(
+    #     arr_domestic_care,
+    #     ind=idx,
+    #     choice=LIGHT_INFORMAL_CARE,
+    #     bins=AGE_BINS_PARENTS,
+    #     age_var="mother_age",
+    # )
+    # share_pure_formal_care_by_parent_age_bin = get_share_by_age_bin(
+    #     arr_domestic_care,
+    #     ind=idx,
+    #     choice=FORMAL_HOME_CARE,
+    #     bins=AGE_BINS_PARENTS,
+    #     age_var="mother_age",
+    # )
+
+    # Subset for domestic care
     _mask_no_nursing = jnp.isin(arr[:, idx["choice"]], NO_NURSING_HOME_CARE)
     _mask_demand = arr[:, idx["care_demand"]] == 1
     arr_domestic_care = arr[_mask_no_nursing & _mask_demand]
 
+    # 1) Nursing home (unchanged, uses choice only, different denominator arr_parent_bad_health)
     share_nursing_home_by_parent_age_bin = get_share_by_age_bin(
         arr_parent_bad_health,
         ind=idx,
@@ -1014,13 +1102,29 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
         age_var="mother_age",
     )
 
-    share_pure_informal_care_by_parent_age_bin = get_share_by_age_bin(
+    # Build masks on the domestic subset
+    choice_domestic = arr_domestic_care[:, idx["choice"]]
+    supply_domestic = arr_domestic_care[:, idx["care_supply"]]
+    is_informal_domestic = jnp.isin(choice_domestic, INFORMAL_CARE)
+    is_no_care_domestic = jnp.isin(choice_domestic, NO_CARE)
+    is_supply_domestic = supply_domestic == 1
+
+    mask_informal_or_other = is_informal_domestic | (
+        is_no_care_domestic & is_supply_domestic
+    )
+    mask_pure_formal = is_no_care_domestic & ~is_supply_domestic
+
+    # 2) informal_care_or_other_care  (REPLACED: use extra_mask)
+    share_pure_informal_care_by_parent_age_bin = get_share_by_age_bin_with_extra_mask(
         arr_domestic_care,
         ind=idx,
-        choice=INFORMAL_CARE_OR_OTHER_CARE,
+        choice=None,  # <= we drive it via the mask
         bins=AGE_BINS_PARENTS,
+        extra_mask=mask_informal_or_other,
         age_var="mother_age",
     )
+
+    # 3) light_informal_care (UNCHANGED: pure choice set)
     share_combination_care_by_parent_age_bin = get_share_by_age_bin(
         arr_domestic_care,
         ind=idx,
@@ -1028,11 +1132,14 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
         bins=AGE_BINS_PARENTS,
         age_var="mother_age",
     )
-    share_pure_formal_care_by_parent_age_bin = get_share_by_age_bin(
+
+    # 4) formal_home_care (REPLACED: use extra_mask for NO_CARE & supply==0)
+    share_pure_formal_care_by_parent_age_bin = get_share_by_age_bin_with_extra_mask(
         arr_domestic_care,
         ind=idx,
-        choice=FORMAL_HOME_CARE,
+        choice=None,
         bins=AGE_BINS_PARENTS,
+        extra_mask=mask_pure_formal,
         age_var="mother_age",
     )
 
@@ -1157,12 +1264,35 @@ def get_share_by_age_bin(df_arr, ind, choice, bins, age_var=None):
     """Get share of agents choosing choice by age bin."""
     age_var = age_var or "age"
     age_col = df_arr[:, ind[age_var]]
+
     choice_mask = jnp.isin(df_arr[:, ind["choice"]], choice)
 
     shares: list[jnp.ndarray] = []
     for bin_start, bin_end in bins:
         age_mask = (age_col >= bin_start) & (age_col < bin_end)
         share = jnp.sum(age_mask & choice_mask) / jnp.sum(age_mask)
+        shares.append(share)
+
+    return shares
+
+
+def get_share_by_age_bin_with_extra_mask(
+    df_arr, ind, choice, bins, extra_mask, age_var=None
+):
+    """Get share of agents choosing choice by age bin."""
+    age_var = age_var or "age"
+    age_col = df_arr[:, ind[age_var]]
+
+    choice_mask = jnp.isin(df_arr[:, ind["choice"]], choice)
+    base_mask = choice_mask & extra_mask
+
+    shares: list[jnp.ndarray] = []
+    for bin_start, bin_end in bins:
+        age_mask = (age_col >= bin_start) & (age_col < bin_end)
+        # denom = jnp.sum(age_mask)
+        # num   = jnp.sum(age_mask & base_mask)
+        # share = jnp.where(denom > 0, num / denom, jnp.nan)
+        share = jnp.sum(age_mask & base_mask) / jnp.sum(age_mask)
         shares.append(share)
 
     return shares

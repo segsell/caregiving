@@ -19,7 +19,9 @@ from dcegm.simulation.simulate import simulate_all_periods
 
 def simulate_scenario(
     model,
-    solution,
+    solution_endog_grid,
+    solution_value,
+    solution_policy,
     initial_states,
     wealth_agents,
     params,
@@ -34,9 +36,9 @@ def simulate_scenario(
         n_periods=options["model_params"]["n_periods"],
         params=params,
         seed=seed,
-        endog_grid_solved=solution["endog_grid"],
-        value_solved=solution["value"],
-        policy_solved=solution["policy"],
+        endog_grid_solved=solution_endog_grid,
+        value_solved=solution_value,
+        policy_solved=solution_policy,
         model=model,
         model_sim=model,
     )

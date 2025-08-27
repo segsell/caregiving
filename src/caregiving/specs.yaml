@@ -18,7 +18,7 @@ end_age_children_in_household: 60
 end_age_caregiving: 80
 
 choice_labels: ["Retired", "Unemployed", "Part-time", "Full-time"]
-caregiving_labels: ["No Care", "Light Informal Care", "Intensive Informal Care", "Formal Home Care", "Nursing Home Care"]
+caregiving_labels: ["No Care", "Light Informal Care", "Intensive Informal Care", "Nursing Home Care"]
 education_labels: ["Low Education", "High Education"]
 health_labels: ["Bad Health", "Good Health", "Death"]
 health_labels_three: ["Bad Health", "Medium Health", "Good Health", "Death"]

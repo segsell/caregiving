@@ -7,6 +7,8 @@ from caregiving.model.shared import (  # BAD_HEALTH,; CARE_AND_NO_CARE,; FORMAL_
     ALL_CARE,
     ALL_NO_CARE,
     ALL_NO_FORMAL_CARE,
+    CARE_DEMAND_AND_NO_OTHER_SUPPLY,
+    CARE_DEMAND_AND_OTHER_SUPPLY,
     NOT_WORKING,
     NOT_WORKING_CARE,
     NOT_WORKING_NO_CARE,
@@ -123,7 +125,6 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
     partner_state,
     mother_health,
     care_demand,
-    care_supply,
     job_offer,
     options,
 ):
@@ -173,7 +174,6 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "partner_state": partner_state,
                 "mother_health": PARENT_DEAD,
                 "care_demand": 0,
-                "care_supply": 0,
                 "job_offer": 0,
             }
             return state_proxy
@@ -190,7 +190,6 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "partner_state": partner_state,
                 "mother_health": mother_health,
                 "care_demand": care_demand,
-                "care_supply": care_supply,
                 "job_offer": 0,
             }
             return state_proxy
@@ -207,10 +206,24 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "partner_state": partner_state,
                 "mother_health": PARENT_DEAD,
                 "care_demand": care_demand,
-                "care_supply": care_supply,
                 "job_offer": 0,
             }
             return state_proxy
+        # elif period < 10:
+        #     # If agent before age 40, no care demand and supply
+        #     state_proxy = {
+        #         "period": period,
+        #         "lagged_choice": lagged_choice,
+        #         "already_retired": already_retired,
+        #         "education": education,
+        #         "has_sister": has_sister,
+        #         "health": health,
+        #         "partner_state": partner_state,
+        #         "mother_health": mother_health,
+        #         "care_demand": 0,
+        #         "job_offer": job_offer,
+        #     }
+        #     return state_proxy
         elif mother_health == PARENT_DEAD:
             # If mother is dead, no care demand and supply
             state_proxy = {
@@ -223,10 +236,10 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "partner_state": partner_state,
                 "mother_health": mother_health,
                 "care_demand": 0,
-                "care_supply": 0,
                 "job_offer": job_offer,
             }
             return state_proxy
+
         else:
             return True
 
@@ -250,7 +263,7 @@ def _state_specific_choice_set(  # noqa: PLR0911, PLR0912
             return UNEMPLOYED_NO_CARE
         else:
             return WORK_AND_UNEMPLOYED_NO_CARE
-    # Persom must retired
+    # Person must be retired
     elif age >= options["max_ret_age"]:
         return RETIREMENT_NO_CARE
     # Person is in the voluntary retirement range.
@@ -273,7 +286,7 @@ def apply_retirement_constraint_for_SRA(SRA, options):
 
 
 def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912
-    period, lagged_choice, job_offer, health, care_demand, care_supply, options
+    period, lagged_choice, job_offer, health, care_demand, options
 ):
     age = period + options["start_age"]
     SRA_pol_state = options["min_SRA"]  # + policy_state  # * options["SRA_grid_size"]
@@ -307,7 +320,8 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912
                     return NOT_WORKING_NO_CARE
                 else:
                     return ALL_NO_CARE
-    elif (care_demand == 1) & (care_supply == 1):
+    elif care_demand == CARE_DEMAND_AND_OTHER_SUPPLY:
+        # & ( care_supply == 1):  # & (age >= 40):
         # Other family member (also) provides care
         if is_dead(health):
             return RETIREMENT_NO_FORMAL_CARE
@@ -336,7 +350,8 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912
                     return NOT_WORKING_NO_FORMAL_CARE
                 else:
                     return ALL_NO_FORMAL_CARE
-    elif (care_demand == 1) & (care_supply == 0):
+    elif care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY:  # & (age >= 40):
+        # elif (care_demand == 1) & (care_supply == 0):  # & (age >= 40):
         # Care must be provided informally or organized formally
         if is_dead(health):
             return RETIREMENT_CARE
