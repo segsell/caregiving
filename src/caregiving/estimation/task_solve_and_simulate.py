@@ -33,7 +33,10 @@ from dcegm.solve import get_solve_func_for_model
 
 jax.config.update("jax_enable_x64", True)
 
+import pytask
 
+
+@pytask.mark.wichtig
 def task_solve_and_simulate_start_params(
     path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
     path_to_options: Path = BLD / "model" / "options.pkl",

@@ -664,13 +664,22 @@ def utility_of_caregiving(
         + util_joint_care * (care_demand == CARE_DEMAND_AND_OTHER_SUPPLY)
         + disutil_informal_and_work
     )
+
+    # util_nursing_home = (
+    #     params["util_nursing_home_low"] * (1 - education) * nursing_home
+    #     + params["util_nursing_home_high"] * education * nursing_home
+    # )
+    # util_formal_home_care = (
+    #     params["util_home_care_low"] * (1 - education) * formal_home_care
+    #     + params["util_home_care_high"] * education * formal_home_care
+    # )
     util_nursing_home = (
-        params["util_nursing_home_low"] * (1 - education) * nursing_home
-        + params["util_nursing_home_high"] * education * nursing_home
+        params["util_nursing_home_bad"] * bad_health * nursing_home
+        + params["util_nursing_home_good"] * good_health * nursing_home
     )
     util_formal_home_care = (
-        params["util_home_care_low"] * (1 - education) * formal_home_care
-        + params["util_home_care_high"] * education * formal_home_care
+        params["util_home_care_bad"] * bad_health * formal_home_care
+        + params["util_home_care_good"] * good_health * formal_home_care
     )
 
     util_relative_to_only_other_family_provide_care = (

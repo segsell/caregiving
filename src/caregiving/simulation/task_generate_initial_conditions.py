@@ -367,6 +367,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     exp_zero_mask = exp_agents == 0
     lagged_choice[exp_zero_mask] = 1
 
+    #
     n_care = len(ALL_NO_CARE)
     lagged_choice_model = lagged_choice * n_care
 

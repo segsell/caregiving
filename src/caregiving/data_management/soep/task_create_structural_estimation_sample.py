@@ -49,8 +49,8 @@ def task_create_main_estimation_sample(
 ) -> None:
 
     specs = read_and_derive_specs(path_to_specs)
-    specs["start_year"] = 2001
-    specs["end_year"] = 2023
+    # specs["start_year"] = 2001
+    # specs["end_year"] = 2023
 
     # merged_data = pd.read_csv(path_to_raw, index_col=[0, 1])
     df = pd.read_csv(path_to_raw, index_col=[0, 1])
@@ -95,7 +95,8 @@ def task_create_main_estimation_sample(
     df = create_experience_variable(df)
     df = create_education_type(df)
     # health variable not yet available for 2023
-    df = create_health_var_good_bad(df, drop_missing=False)
+    # df = create_health_var_good_bad(df, drop_missing=False)
+    df = create_health_var_good_bad(df, drop_missing=True)
     df = create_nursing_home(df)
 
     df = enforce_model_choice_restriction(df, specs)

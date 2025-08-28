@@ -23,10 +23,14 @@ util_intensive_informal_care_low: 5
 util_light_informal_care_low: 5
 util_intensive_informal_care_high: 5
 util_light_informal_care_high: 5
-util_nursing_home_low: 5
-util_nursing_home_high: 5
-util_home_care_low: 5
-util_home_care_high: 5
+# util_nursing_home_low: 5
+# util_nursing_home_high: 5
+# util_home_care_low: 5
+# util_home_care_high: 5
+util_nursing_home_bad: 5
+util_nursing_home_good: 5
+util_home_care_bad: 5
+util_home_care_good: 5
 
 util_joint_informal_care_low: 5
 util_joint_informal_care_high: 5
