@@ -22,6 +22,7 @@ from caregiving.model.shared import (
     MOTHER,
     PARENT_DEAD,
     SEX,
+    WORK_AND_UNEMPLOYED_NO_CARE,
 )
 from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.stochastic_processes.job_transition import (
@@ -287,32 +288,33 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
 
         # ============================================================================
         # Generate type specific initial lagged choice distribution
-        # empirical_lagged_choice_probs = start_period_data_edu[
-        #     "lagged_choice"
-        # ].value_counts(normalize=True)
-        # lagged_choice_probs = pd.Series(
-        #     index=np.arange(0, specs["n_choices"]), data=0, dtype=float
-        # )
-        # lagged_choice_probs.update(empirical_lagged_choice_probs)
-        # lagged_choice_edu = np.random.choice(
-        #     specs["n_choices"], size=n_agents_edu, p=lagged_choice_probs.values
-        # )
-
-        # Map empirical labels to model labels
-        emp_probs = start_period_data_edu["lagged_choice"].value_counts(normalize=True)
-        p4 = emp_probs.reindex([0, 1, 2, 3], fill_value=0.0).to_numpy()
-
-        # Build full-length prob vector over model choices and place mass on {0,4,8,12}
-        lagged_choice_probs = np.zeros(specs["n_choices"], dtype=float)
-        targets = np.array(ALL_NO_CARE)
-        lagged_choice_probs[targets] = p4
-
-        # Sample on the full support 0..n_choices-1 using the remapped probabilities
-        lagged_choice_edu = np.random.choice(
-            specs["n_choices"], size=n_agents_edu, p=lagged_choice_probs
+        empirical_lagged_choice_probs = start_period_data_edu[
+            "lagged_choice"
+        ].value_counts(normalize=True)
+        lagged_choice_probs = pd.Series(
+            index=np.arange(0, specs["n_choices"]), data=0, dtype=float
         )
-
+        lagged_choice_probs.update(empirical_lagged_choice_probs)
+        lagged_choice_edu = np.random.choice(
+            specs["n_choices"], size=n_agents_edu, p=lagged_choice_probs.values
+        )
         lagged_choice[type_mask] = lagged_choice_edu
+
+        # # Map empirical labels to model labels
+        # emp_probs = start_period_data_edu["lagged_choice"].value_counts(normalize=True)
+        # p4 = emp_probs.reindex([0, 1, 2, 3], fill_value=0.0).to_numpy()
+
+        # # Build full-length prob vector over model choices and place mass on {0,4,8,12}
+        # lagged_choice_probs = np.zeros(specs["n_choices"], dtype=float)
+        # targets = np.array(ALL_NO_CARE)
+        # lagged_choice_probs[targets] = p4
+
+        # # Sample on the full support 0..n_choices-1 using the remapped probabilities
+        # lagged_choice_edu = np.random.choice(
+        #     specs["n_choices"], size=n_agents_edu, p=lagged_choice_probs
+        # )
+
+        # lagged_choice[type_mask] = lagged_choice_edu
 
         # ============================================================================
 
@@ -365,18 +367,21 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     exp_zero_mask = exp_agents == 0
     lagged_choice[exp_zero_mask] = 1
 
+    n_care = len(ALL_NO_CARE)
+    lagged_choice_model = lagged_choice * n_care
+
     states = {
         "period": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
         "education": jnp.array(education_agents, dtype=jnp.uint8),
         "health": jnp.array(health_agents, dtype=jnp.uint8),
-        "lagged_choice": jnp.array(lagged_choice, dtype=jnp.uint8),
+        "lagged_choice": jnp.array(lagged_choice_model, dtype=jnp.uint8),
         # "policy_state": jnp.array(drawn_sras, dtype=jnp.uint8),
         "already_retired": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
         "experience": jnp.array(exp_agents, dtype=jnp.float64),
         "job_offer": jnp.array(job_offer_agents, dtype=jnp.uint8),
         "partner_state": jnp.array(partner_states, dtype=jnp.uint8),
-        "has_sister": jnp.zeros_like(has_sister_agents, dtype=jnp.uint8),
-        # "has_sister": jnp.array(has_sister_agents, dtype=jnp.uint8),
+        # "has_sister": jnp.zeros_like(has_sister_agents, dtype=jnp.uint8),
+        "has_sister": jnp.array(has_sister_agents, dtype=jnp.uint8),
         "mother_health": jnp.array(mother_health_agents, dtype=jnp.uint8),
         "care_demand": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
     }

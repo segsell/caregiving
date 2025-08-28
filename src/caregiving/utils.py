@@ -3,12 +3,16 @@
 import pickle
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 
 def table(df_col):
     """Return frequency table."""
-    return pd.crosstab(df_col, columns="Count")["Count"]
+    if isinstance(df_col, np.ndarray):
+        return pd.Series(df_col).value_counts().sort_index()
+    else:
+        return pd.crosstab(df_col, columns="Count")["Count"]
 
 
 def describe(df_col):

@@ -79,8 +79,8 @@ def task_specify_model(
             "endogenous_states": {
                 "education": np.arange(specs["n_education_types"], dtype=int),
                 "already_retired": np.arange(2, dtype=int),
-                "has_sister": np.arange(1, dtype=int),
-                # "has_sister": np.arange(2, dtype=int),
+                # "has_sister": np.arange(1, dtype=int),
+                "has_sister": np.arange(2, dtype=int),
             },
             "exogenous_processes": {
                 "job_offer": {
@@ -101,7 +101,7 @@ def task_specify_model(
                 },
                 "care_demand": {
                     "transition": care_demand_and_supply_transition,
-                    "states": np.arange(3, dtype=int),
+                    "states": np.arange(1, dtype=int),
                 },
                 # "care_supply": {
                 #     "transition": exog_care_supply_transition,
