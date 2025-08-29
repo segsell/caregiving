@@ -191,7 +191,6 @@ PART_TIME_NO_CARE = jnp.array([8])
 FULL_TIME_NO_CARE = jnp.array([12])
 ALL_NO_CARE = NO_CARE.copy()
 
-WORK_AND_UNEMPLOYED_NO_CARE = jnp.array([4, 8, 12])
 WORK_AND_NO_WORK_NO_CARE = NO_CARE.copy()
 
 # If other family member provides care informally, no formal care services

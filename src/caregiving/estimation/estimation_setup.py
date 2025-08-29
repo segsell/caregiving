@@ -41,7 +41,7 @@ def estimate_model(
     algo_options: Dict[str, Any],
     weighting_method: str = "identity",
     use_cholesky_weights: bool = False,
-    relative_difference: bool = False,
+    relative_deviations: bool = False,
     *,
     path_to_discrete_states: str = BLD / "model" / "initial_conditions" / "states.pkl",
     path_to_wealth: str = BLD / "model" / "initial_conditions" / "wealth.csv",
@@ -68,7 +68,6 @@ def estimate_model(
     multistart: bool = False,
     multistart_options: Optional[Dict[str, Any]] = None,
     random_seed: bool = False,
-    relative_deviations: bool = False,
     error_handling: str = "continue",
 ) -> None:
     """Estimate the model based on empirical data and starting parameters."""
@@ -158,7 +157,7 @@ def estimate_model(
         empirical_moments=empirical_moments,
         weights=weights,
         cholesky=use_cholesky_weights,
-        relative_difference=relative_difference,
+        relative_deviations=relative_deviations,
     )
 
     minimize_kwargs = {
@@ -270,7 +269,7 @@ def get_msm_optimization_function(
     empirical_moments: np.ndarray,
     weights: np.ndarray,
     cholesky: bool = True,
-    relative_difference: bool = False,
+    relative_deviations: bool = False,
 ) -> np.ndarray:
 
     if cholesky:
@@ -284,7 +283,7 @@ def get_msm_optimization_function(
             simulate_moments=simulate_moments,
             flat_empirical_moments=empirical_moments,
             chol_weights=chol_weights,
-            relative_difference=relative_difference,
+            relative_difference=relative_deviations,
         )
     )
 
@@ -296,7 +295,7 @@ def msm_criterion(
     simulate_moments: callable,
     flat_empirical_moments: np.ndarray,
     chol_weights: np.ndarray,
-    relative_difference: bool = False,
+    relative_deviations: bool = False,
 ) -> np.ndarray:
     """Compute the MSM residuals based on simulated and empirical moments."""
 
@@ -304,7 +303,7 @@ def msm_criterion(
 
     deviations = simulated_flat - flat_empirical_moments
 
-    if relative_difference:
+    if relative_deviations:
         with np.errstate(divide="ignore", invalid="ignore"):
             rel = deviations / flat_empirical_moments
             invalid = ~np.isfinite(rel)

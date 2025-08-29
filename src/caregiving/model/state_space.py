@@ -55,7 +55,7 @@ def create_state_space_functions():
 
 def create_state_space_functions_counterfactual():
     return {
-        "state_specific_choice_set": _state_specific_choice_set,
+        "state_specific_choice_set": state_specific_choice_set,
         "next_period_endogenous_state": next_period_endogenous_state,
         "next_period_experience": get_next_period_experience,
         "sparsity_condition": sparsity_condition,
@@ -244,7 +244,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
             return True
 
 
-def _state_specific_choice_set(  # noqa: PLR0911, PLR0912
+def state_specific_choice_set(  # noqa: PLR0911, PLR0912
     period, lagged_choice, job_offer, health, options
 ):
     age = period + options["start_age"]
