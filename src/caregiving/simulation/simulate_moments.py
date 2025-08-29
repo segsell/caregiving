@@ -92,8 +92,8 @@ def simulate_moments_pandas(
     # if other care_supply == 0 and no personal care provided --> formal home care (implicit)
     df_domestic = df.loc[
         (df["choice"].isin(np.asarray(NO_NURSING_HOME_CARE))) & (df["care_demand"] >= 1)
-    ]
-    df_parent_bad_health = df[df["mother_health"] == PARENT_BAD_HEALTH]
+    ].copy()
+    df_parent_bad_health = df[df["mother_health"] == PARENT_BAD_HEALTH].copy()
 
     moments = {}
 
