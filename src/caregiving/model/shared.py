@@ -2,6 +2,8 @@
 
 import jax.numpy as jnp
 
+MACHINE_ZERO = 1e-12
+
 FILL_VALUE = 0
 MISSING_VALUE = -99
 BASE_YEAR = 2010  # 2015
