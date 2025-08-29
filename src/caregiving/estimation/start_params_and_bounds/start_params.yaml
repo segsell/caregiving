@@ -70,10 +70,10 @@ util_home_care_good: 0
 util_joint_informal_care_low: 0
 util_joint_informal_care_high: 0
 
-util_ft_work_informal_care_bad: 0
-util_ft_work_informal_care_good: 0
-util_pt_work_informal_care_bad: 0
-util_pt_work_informal_care_good: 0
+util_ft_work_informal_care_bad: -1
+util_ft_work_informal_care_good: -1
+util_pt_work_informal_care_bad: -1
+util_pt_work_informal_care_good: -1
 
 # disutil_unemployed_women: 2.6654188449619967
 # disutil_ft_work_bad_women: 2.8504908655256718

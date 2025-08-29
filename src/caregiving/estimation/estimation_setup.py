@@ -43,8 +43,8 @@ def estimate_model(
     *,
     path_to_discrete_states: str = BLD / "model" / "initial_conditions" / "states.pkl",
     path_to_wealth: str = BLD / "model" / "initial_conditions" / "wealth.csv",
-    path_to_empirical_moments: str = BLD / "moments" / "soep_moments.csv",
-    path_to_empirical_variance: str = BLD / "moments" / "soep_variances.csv",
+    path_to_empirical_moments: str = BLD / "moments" / "moments_full.csv",
+    path_to_empirical_variance: str = BLD / "moments" / "variances_full.csv",
     # path_to_updated_start_params: str = BLD
     # / "model"
     # / "params"

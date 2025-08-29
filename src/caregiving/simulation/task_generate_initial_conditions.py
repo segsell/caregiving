@@ -36,6 +36,7 @@ from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.utils import table
 from dcegm.pre_processing.setup_model import load_and_setup_model
 from dcegm.wealth_correction import adjust_observed_wealth
+import pytask
 
 
 def task_generate_start_states_for_solution(  # noqa: PLR0915
@@ -381,7 +382,6 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         "experience": jnp.array(exp_agents, dtype=jnp.float64),
         "job_offer": jnp.array(job_offer_agents, dtype=jnp.uint8),
         "partner_state": jnp.array(partner_states, dtype=jnp.uint8),
-        # "has_sister": jnp.zeros_like(has_sister_agents, dtype=jnp.uint8),
         "has_sister": jnp.array(has_sister_agents, dtype=jnp.uint8),
         "mother_health": jnp.array(mother_health_agents, dtype=jnp.uint8),
         "care_demand": jnp.zeros_like(exp_agents, dtype=jnp.uint8),

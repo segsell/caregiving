@@ -23,8 +23,8 @@ job_finding_logit_high_educ_women: 0.6955095961575429
 lambda: 0.5
 rho: 1.98
 sigma: 0.16471062648214
-util_ft_work_informal_care_bad: 0
-util_ft_work_informal_care_good: 0
+util_ft_work_informal_care_bad: -1
+util_ft_work_informal_care_good: -1
 util_home_care_bad: 0
 util_home_care_good: 0
 util_intensive_informal_care_high: 0
@@ -35,5 +35,5 @@ util_light_informal_care_high: 0
 util_light_informal_care_low: 0
 util_nursing_home_bad: 0
 util_nursing_home_good: 0
-util_pt_work_informal_care_bad: 0
-util_pt_work_informal_care_good: 0
+util_pt_work_informal_care_bad: -1
+util_pt_work_informal_care_good: -1

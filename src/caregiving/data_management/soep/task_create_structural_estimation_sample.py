@@ -161,6 +161,10 @@ def task_create_main_estimation_sample(
     df.to_csv(path_to_save)
 
 
+import pytask
+
+
+@pytask.mark.check
 def task_create_caregivers_sample(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_raw: Path = BLD / "data" / "soep_estimation_data_raw.csv",
@@ -278,6 +282,25 @@ def task_create_caregivers_sample(
         "mother_alive": "float32",
         "father_alive": "float32",
     }
+
+    # #
+    # df = df.reset_index(level=["syear", "pid"])
+    # df["age_at_first_care"] = (
+    #     df.loc[df["any_care"] == 1].groupby("pid")["age"].transform("min")
+    # )
+
+    # first_care = df.loc[df["any_care"] == 1].groupby("pid")["age"].min()
+    # df["_age_at_first_care"] = df["pid"].map(first_care)
+
+    # mean_first_care_age = (
+    #     df.query("any_care == 1")
+    #     .groupby("pid")["age"]
+    #     .min()  # one value per pid
+    #     .mean()  # sample mean over those who ever provided care
+    # )
+    # _mean_first_care_age = df.drop_duplicates("pid")["age_at_first_care"].mean()
+    # #
+
     df = df.reset_index(level="syear")
     df = df[list(type_dict.keys())]
     df = df.astype(type_dict)
