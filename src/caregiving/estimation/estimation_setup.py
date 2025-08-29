@@ -68,6 +68,7 @@ def estimate_model(
     multistart: bool = False,
     multistart_options: Optional[Dict[str, Any]] = None,
     random_seed: bool = False,
+    relative_deviations: bool = False,
     error_handling: str = "continue",
 ) -> None:
     """Estimate the model based on empirical data and starting parameters."""
@@ -297,7 +298,7 @@ def msm_criterion(
     chol_weights: np.ndarray,
     relative_difference: bool = False,
 ) -> np.ndarray:
-    """Calculate the raw criterion based on simulated and empirical moments."""
+    """Compute the MSM residuals based on simulated and empirical moments."""
 
     simulated_flat = simulate_moments(params)
 

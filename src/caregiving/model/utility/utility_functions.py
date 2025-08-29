@@ -538,14 +538,14 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     disutil_ft_work_women = (
         params["disutil_ft_work_bad_women"] * bad_health
         + params["disutil_ft_work_good_women"] * good_health
-        + params["disutil_ft_work_low_women"] * (1 - education)
-        + params["disutil_ft_work_high_women"] * education
+        # + params["disutil_ft_work_low_women"] * (1 - education)
+        # + params["disutil_ft_work_high_women"] * education
     )
     disutil_pt_work_women = (
         params["disutil_pt_work_bad_women"] * bad_health
         + params["disutil_pt_work_good_women"] * good_health
-        + params["disutil_pt_work_low_women"] * (1 - education)
-        + params["disutil_pt_work_high_women"] * education
+        # + params["disutil_pt_work_low_women"] * (1 - education)
+        # + params["disutil_pt_work_high_women"] * education
     )
     disutil_unemployed_women = (
         params["disutil_unemployed_low_women"] * (1 - education)
@@ -574,7 +574,7 @@ def disutility_work(period, choice, education, partner_state, health, params, op
         + (disutil_ft_work_women + disutil_children_ft) * working_full_time
     )
 
-    # compute eta
+    # Compute eta
     disutility = jnp.exp(-exp_factor_women)
 
     return disutility
