@@ -8,6 +8,11 @@ import numpy as np
 import pytest
 
 from caregiving.config import BLD
+from caregiving.model.shared import (
+    FULL_TIME_NO_CARE,
+    PART_TIME_NO_CARE,
+    UNEMPLOYED_NO_CARE,
+)
 from caregiving.model.utility.bequest_utility import (
     marginal_utility_final_consume_all,
     utility_final_consume_all,
@@ -109,6 +114,7 @@ def test_utility_func(
     options = load_specs
     params = {
         "rho": rho,
+        "bequest_scale": 2,
         # "util_cons_unemployed_low_educ": util_unemployed,
         # "util_cons_unemployed_high_educ": util_unemployed,
         # "util_cons_part_time_low_educ": util_work,
@@ -134,12 +140,25 @@ def test_utility_func(
         "disutil_children_pt_work_high": 0,
         "disutil_children_ft_work_low": 0.1,
         "disutil_children_ft_work_high": 0.1,
-        "bequest_scale": 2,
         # caregiving
         # "util_unemployed_and_care_women": 0,
         # "util_ft_work_and_care_women": 0,
         # "util_pt_work_and_care_women": 0,
         # "util_formal_care_women": 0,
+        "util_intensive_informal_care_low": 0,
+        "util_light_informal_care_low": 0,
+        "util_intensive_informal_care_high": 0,
+        "util_light_informal_care_high": 0,
+        "util_nursing_home_bad": 0,
+        "util_nursing_home_good": 0,
+        "util_home_care_bad": 0,
+        "util_home_care_good": 0,
+        "util_joint_informal_care_low": 0,
+        "util_joint_informal_care_high": 0,
+        "util_ft_work_informal_care_bad": -1,
+        "util_ft_work_informal_care_good": -1,
+        "util_pt_work_informal_care_bad": -1,
+        "util_pt_work_informal_care_good": -1,
     }
 
     # has_partner = int(partner_state > 0)
@@ -228,11 +247,10 @@ def test_utility_func(
             partner_state=partner_state,
             education=education,
             health=health,
-            # care_demand=0,
-            # care_supply=0,
+            care_demand=0,
             # sex=sex,
             period=period,
-            choice=1,
+            choice=UNEMPLOYED_NO_CARE,
             params=params,
             options=options,
         ),
@@ -245,11 +263,10 @@ def test_utility_func(
             partner_state=partner_state,
             education=education,
             health=health,
-            # care_demand=0,
-            # care_supply=0,
+            care_demand=0,
             # sex=sex,
             period=period,
-            choice=2,
+            choice=PART_TIME_NO_CARE,
             params=params,
             options=options,
         ),
@@ -262,11 +279,10 @@ def test_utility_func(
             partner_state=partner_state,
             education=education,
             health=health,
-            # care_demand=0,
-            # care_supply=0,
+            care_demand=0,
             # sex=sex,
             period=period,
-            choice=3,
+            choice=FULL_TIME_NO_CARE,
             params=params,
             options=options,
         ),
@@ -307,6 +323,7 @@ def test_marginal_utility(
     options = load_specs
     params = {
         "rho": rho,
+        "bequest_scale": 2,
         # "util_cons_unemployed_low_educ": util_unemployed,
         # "util_cons_unemployed_high_educ": util_unemployed,
         # "util_cons_part_time_low_educ": util_work,
@@ -332,12 +349,25 @@ def test_marginal_utility(
         "disutil_children_pt_work_high": 0,
         "disutil_children_ft_work_low": 0.1,
         "disutil_children_ft_work_high": 0.1,
-        "bequest_scale": 2,
         # caregiving
-        "util_unemployed_and_care_women": 0,
-        "util_ft_work_and_care_women": 0,
-        "util_pt_work_and_care_women": 0,
-        "util_formal_care_women": 0,
+        # "util_unemployed_and_care_women": 0,
+        # "util_ft_work_and_care_women": 0,
+        # "util_pt_work_and_care_women": 0,
+        # "util_formal_care_women": 0,
+        "util_intensive_informal_care_low": 0,
+        "util_light_informal_care_low": 0,
+        "util_intensive_informal_care_high": 0,
+        "util_light_informal_care_high": 0,
+        "util_nursing_home_bad": 0,
+        "util_nursing_home_good": 0,
+        "util_home_care_bad": 0,
+        "util_home_care_good": 0,
+        "util_joint_informal_care_low": 0,
+        "util_joint_informal_care_high": 0,
+        "util_ft_work_informal_care_bad": -1,
+        "util_ft_work_informal_care_good": -1,
+        "util_pt_work_informal_care_bad": -1,
+        "util_pt_work_informal_care_good": -1,
     }
 
     random_choice = np.random.choice(np.array([0, 1, 2]))
@@ -347,7 +377,7 @@ def test_marginal_utility(
         period,
         education,
         health,
-        # 0,  # care_demand
+        0,  # care_demand
         partner_state,
         params,
         options,
@@ -396,6 +426,7 @@ def test_inverse_marginal_utility(
     options = load_specs
     params = {
         "rho": rho,
+        "bequest_scale": 2,
         # "util_cons_unemployed_low_educ": util_unemployed,
         # "util_cons_unemployed_high_educ": util_unemployed,
         # "util_cons_part_time_low_educ": util_work,
@@ -421,7 +452,21 @@ def test_inverse_marginal_utility(
         "disutil_children_pt_work_high": 0,
         "disutil_children_ft_work_low": 0.1,
         "disutil_children_ft_work_high": 0.1,
-        "bequest_scale": 2,
+        # caregiving
+        "util_intensive_informal_care_low": 0,
+        "util_light_informal_care_low": 0,
+        "util_intensive_informal_care_high": 0,
+        "util_light_informal_care_high": 0,
+        "util_nursing_home_bad": 0,
+        "util_nursing_home_good": 0,
+        "util_home_care_bad": 0,
+        "util_home_care_good": 0,
+        "util_joint_informal_care_low": 0,
+        "util_joint_informal_care_high": 0,
+        "util_ft_work_informal_care_bad": -1,
+        "util_ft_work_informal_care_good": -1,
+        "util_pt_work_informal_care_bad": -1,
+        "util_pt_work_informal_care_good": -1,
     }
 
     random_choice = np.random.choice(np.array([0, 1, 2]))

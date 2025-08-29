@@ -26,7 +26,8 @@
 # from caregiving.model.stochastic_processes.job_transition import (
 #     job_offer_process_transition,
 # )
-# from caregiving.model.stochastic_processes.partner_transition import partner_transition
+# from caregiving.model.stochastic_processes.partner_transition
+# import partner_transition
 # from caregiving.model.utility.bequest_utility import (
 #     create_final_period_utility_functions,
 # )
@@ -40,7 +41,8 @@
 #     # load_model=False,
 #     # model_type="solution",
 #     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
-#     path_to_start_params: Path = BLD / "model" / "params" / "start_params_updated.yaml",
+#     path_to_start_params: Path =
+# BLD / "model" / "params" / "start_params_updated.yaml",
 #     path_to_save_options: Annotated[Path, Product] = BLD
 #     / "model"
 #     / "options_counterfactual.pkl",

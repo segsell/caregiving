@@ -7,6 +7,7 @@ from typing import Annotated
 import jax.numpy as jnp
 import numpy as np
 import pandas as pd
+import pytask
 import yaml
 from pytask import Product
 from scipy import stats
@@ -36,7 +37,6 @@ from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.utils import table
 from dcegm.pre_processing.setup_model import load_and_setup_model
 from dcegm.wealth_correction import adjust_observed_wealth
-import pytask
 
 
 def task_generate_start_states_for_solution(  # noqa: PLR0915
@@ -287,7 +287,6 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
             exp_max_edu + 1, size=n_agents_edu, p=exp_probs.values
         )
 
-        # ============================================================================
         # Generate type specific initial lagged choice distribution
         empirical_lagged_choice_probs = start_period_data_edu[
             "lagged_choice"
@@ -300,24 +299,6 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
             specs["n_choices"], size=n_agents_edu, p=lagged_choice_probs.values
         )
         lagged_choice[type_mask] = lagged_choice_edu
-
-        # # Map empirical labels to model labels
-        # emp_probs = start_period_data_edu["lagged_choice"].value_counts(normalize=True)
-        # p4 = emp_probs.reindex([0, 1, 2, 3], fill_value=0.0).to_numpy()
-
-        # # Build full-length prob vector over model choices and place mass on {0,4,8,12}
-        # lagged_choice_probs = np.zeros(specs["n_choices"], dtype=float)
-        # targets = np.array(ALL_NO_CARE)
-        # lagged_choice_probs[targets] = p4
-
-        # # Sample on the full support 0..n_choices-1 using the remapped probabilities
-        # lagged_choice_edu = np.random.choice(
-        #     specs["n_choices"], size=n_agents_edu, p=lagged_choice_probs
-        # )
-
-        # lagged_choice[type_mask] = lagged_choice_edu
-
-        # ============================================================================
 
         # Generate job offer probabilities
         job_offer_probs = job_offer_process_transition_initial_conditions(
@@ -368,7 +349,6 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     exp_zero_mask = exp_agents == 0
     lagged_choice[exp_zero_mask] = 1
 
-    #
     n_care = len(ALL_NO_CARE)
     lagged_choice_model = lagged_choice * n_care
 

@@ -266,7 +266,7 @@ def plot_choice_shares_by_education_age_bins(  # noqa: PLR0912, PLR0915
     path_to_save_plot: str | None = None,
 ):
     """
-    Plot observed (empirical) and simulated aggregated-choice shares by *age bins* and education.
+    Plot observed and simulated choice shares by age bins and education.
     Each panel contains one aggregated choice; rows are education groups.
 
     X-axis labels are range-style (e.g., "55-59"), rotated 45°, and shown at the bottom
@@ -902,7 +902,6 @@ def plot_caregiver_shares_by_age_bins(
     plt.tight_layout()
     if path_to_save_plot:
         plt.savefig(path_to_save_plot, dpi=300, transparent=False)
-    plt.close(fig)
 
 
 # def plot_simulated_care_demand_by_age(
@@ -1387,7 +1386,7 @@ def _plot_transitions_by_age_bins(
     plt.close(fig)
 
 
-def plot_transitions_by_age(
+def plot_transitions_by_age(  # noqa: PLR0912, PLR0915
     data_emp,
     data_sim,
     specs,
@@ -1447,7 +1446,7 @@ def plot_transitions_by_age(
     y_pad = 0.03  # little whitespace below 0 and above 1
     x_pad_default = 0.5  # fallback if we can't infer a step from data
 
-    if len(edu_labels) == 1 and len(transitions) == 1:
+    if len(edu_labels) == len(transitions) == 1:
         axes = np.array([[axes]])
     elif len(edu_labels) == 1:
         axes = axes[np.newaxis, :]
@@ -1538,7 +1537,7 @@ def plot_transitions_by_age(
     plt.close(fig)
 
 
-def plot_transitions_by_age_bins(
+def plot_transitions_by_age_bins(  # noqa: PLR0912, PLR0915
     data_emp,
     data_sim,
     specs,

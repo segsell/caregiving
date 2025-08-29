@@ -31,9 +31,18 @@ def task_estimate_job_offer(
     specs = yaml.safe_load(path_to_load_specs.open())
     # start_params_all = yaml.safe_load(open(path_to_start_params, "rb"))
 
+    # Check if job_offer_start_year exists in specs
+    if "job_offer_start_year" not in specs or "job_offer_end_year" not in specs:
+        start_year = specs["start_year"]
+        end_year = specs["end_year"]
+    else:
+        start_year = specs["job_offer_start_year"]
+        end_year = specs["job_offer_end_year"]
+
     struct_est_sample = pd.read_csv(path_to_struct_estimation_sample, index_col=0)
     struct_est_sample = struct_est_sample[
-        (struct_est_sample["syear"] >= 2010) & (struct_est_sample["syear"] <= 2017)
+        (struct_est_sample["syear"] >= start_year)
+        & (struct_est_sample["syear"] <= end_year)
     ].copy()
 
     job_offer_params = estimate_logit_job_offer_params(struct_est_sample, specs)

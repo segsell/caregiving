@@ -161,9 +161,6 @@ def task_create_main_estimation_sample(
     df.to_csv(path_to_save)
 
 
-import pytask
-
-
 @pytask.mark.check
 def task_create_caregivers_sample(
     path_to_specs: Path = SRC / "specs.yaml",

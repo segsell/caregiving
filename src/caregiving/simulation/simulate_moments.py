@@ -40,7 +40,7 @@ SEX = 1
 # =====================================================================================
 
 
-def simulate_moments_pandas(
+def simulate_moments_pandas(  # noqa: PLR0915
     df,
     options,
 ) -> pd.DataFrame:
@@ -89,7 +89,8 @@ def simulate_moments_pandas(
     ]
 
     # includes "no care", which means other informal care if positive care demand
-    # if other care_supply == 0 and no personal care provided --> formal home care (implicit)
+    # if other care_supply == 0 and no personal care provided
+    # --> formal home care (implicit)
     df_domestic = df.loc[
         (df["choice"].isin(np.asarray(NO_NURSING_HOME_CARE))) & (df["care_demand"] >= 1)
     ].copy()
@@ -270,7 +271,7 @@ def simulate_moments_pandas(
 
     # supply flags from care_demand coding (same as in JAX)
     is_supply = df_domestic["care_demand"].eq(CARE_DEMAND_AND_OTHER_SUPPLY)
-    no_other_supply = df_domestic["care_demand"].eq(CARE_DEMAND_AND_NO_OTHER_SUPPLY)
+    # no_other_supply = df_domestic["care_demand"].eq(CARE_DEMAND_AND_NO_OTHER_SUPPLY)
 
     # (2) informal_care_or_other_care  == intensive_informal  OR  (no_care & supply)
     df_domestic["m_informal_or_other"] = is_intensive_informal | (
@@ -1105,7 +1106,7 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
     _mask_demand = arr[:, idx["care_demand"]] >= 1
     arr_domestic_care = arr[_mask_no_nursing & _mask_demand]
 
-    # 1) Nursing home (unchanged, uses choice only, different denominator arr_parent_bad_health)
+    # 1) Nursing home
     share_nursing_home_by_parent_age_bin = get_share_by_age_bin(
         arr_parent_bad_health,
         ind=idx,

@@ -584,7 +584,7 @@ def utility_of_caregiving(
     period, choice, education, health, care_demand, params, options
 ):
     # choice booleans
-    unemployed = is_unemployed(choice)
+    _unemployed = is_unemployed(choice)
     working_part_time = is_part_time(choice)
     working_full_time = is_full_time(choice)
 
@@ -601,12 +601,12 @@ def utility_of_caregiving(
     good_health = is_good_health(health)
 
     # disutil_unemployed_and_care = (
-    #     params["disutil_unemployed_informal_care_low"] * (1 - education) * informal_care
-    #     + params["disutil_unemployed_informal_care_high"] * education * informal_care
+    # params["disutil_unemployed_informal_care_low"] * (1 - education) * informal_care
+    # + params["disutil_unemployed_informal_care_high"] * education * informal_care
     # )
 
     # disutil_ft_work_informal_care_by_health = (
-    #     params["disutil_ft_work_light_informal_care_bad"] * bad_health * light_informal
+    # params["disutil_ft_work_light_informal_care_bad"] * bad_health * light_informal
     #     + params["disutil_ft_work_light_informal_care_good"]
     #     * good_health
     #     * light_informal
@@ -619,7 +619,7 @@ def utility_of_caregiving(
     # )
 
     # disutil_pt_work_informal_care_by_health = (
-    #     params["disutil_pt_work_light_informal_care_bad"] * bad_health * light_informal
+    # params["disutil_pt_work_light_informal_care_bad"] * bad_health * light_informal
     #     + params["disutil_pt_work_light_informal_care_good"]
     #     * good_health
     #     * light_informal

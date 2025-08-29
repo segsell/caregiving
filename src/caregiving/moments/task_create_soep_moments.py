@@ -637,19 +637,19 @@ def compute_shares_by_age_bin(
     Parameters
     ----------
     df : DataFrame
-            Must contain columns ``age`` (int) and the indicator column given by *variable*.
-            (Indicator should be boolean or 0/1; non-missing values are used in mean/var.)
+        Must contain columns ``age`` (int) and the indicator column given by *variable*.
+        Indicator should be boolean or 0/1.
     moments, variances : dict
-            Dictionaries updated **in-place** with the new statistics.
+        Dictionaries updated **in-place** with the new statistics.
     variable : str
-            Name of the indicator column in `df` (e.g., "nursing_home").
+        Name of the indicator column in `df` (e.g., "nursing_home").
     age_bins : tuple[list[int], list[str]] | None
-            Optional ``(bin_edges, bin_labels)``. If *None*, defaults to:
-            edges ``[40, 45, 50, 55, 60, 65, 70]`` and labels ``["40_44", …, "65_69"]``.
-            *bin_edges* must include the left edge of the first bin and the right edge
-            of the last bin, exactly as required by ``pd.cut``.
+        Optional ``(bin_edges, bin_labels)``. If *None*, defaults to:
+        edges ``[40, 45, 50, 55, 60, 65, 70]`` and labels ``["40_44", …, "65_69"]``.
+        *bin_edges* must include the left edge of the first bin and the right edge
+        of the last bin, exactly as required by ``pd.cut``.
     label : str | None
-            Optional extra label inserted in every key (prefixed with “_” if given).
+        Optional extra label inserted in every key (prefixed with “_” if given).
 
     Returns
     -------
