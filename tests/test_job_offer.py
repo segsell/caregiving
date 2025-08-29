@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 
 from caregiving.config import BLD
+from caregiving.model.shared import WORK_NO_CARE
 from caregiving.model.stochastic_processes.job_transition import (
     job_offer_process_transition,
 )
@@ -12,7 +13,7 @@ from caregiving.model.stochastic_processes.job_transition import (
 EDU_GRID = [0, 1]
 PERIOD_GRID = np.arange(0, 20, 2, dtype=int)
 LOGIT_PARAM_GRID = np.arange(0.1, 0.9, 0.2)
-WORK_CHOICE_GRID = [2, 3]
+WORK_CHOICE_GRID = WORK_NO_CARE
 SEX_GRID = [1]
 
 
