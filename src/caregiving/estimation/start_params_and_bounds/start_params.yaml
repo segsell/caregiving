@@ -52,6 +52,29 @@ disutil_children_pt_work_high: 0.2
 disutil_children_ft_work_low: 0.2
 disutil_children_ft_work_high: 0.2
 
+# Caregiving
+util_intensive_informal_care_low: 0
+util_light_informal_care_low: 0
+util_intensive_informal_care_high: 0
+util_light_informal_care_high: 0
+# util_nursing_home_low: 0
+# util_nursing_home_high: 0
+# util_home_care_low: 0
+# util_home_care_high: 0
+util_nursing_home_bad: 0
+util_nursing_home_good: 0
+util_home_care_bad: 0
+util_home_care_good: 0
+
+
+util_joint_informal_care_low: 0
+util_joint_informal_care_high: 0
+
+util_ft_work_informal_care_bad: -1
+util_ft_work_informal_care_good: -1
+util_pt_work_informal_care_bad: -1
+util_pt_work_informal_care_good: -1
+
 # disutil_unemployed_women: 2.6654188449619967
 # disutil_ft_work_bad_women: 2.8504908655256718
 # disutil_ft_work_good_women: 3.025827422033017
@@ -86,15 +109,6 @@ disutil_children_ft_work_high: 0.2
 # disutil_pt_work_bad_women: 1.6
 # disutil_pt_work_good_women: 1.2
 # disutil_unemployed_women: 1.2
-
-util_formal_care_women: -0.4856233035613876
-util_ft_work_and_care_women: -0.8453716634375091
-util_informal_care_high_women: 0.5567180378318058
-util_informal_care_low_women: 0.9258340794582441
-util_pt_work_and_care_women: -0.7590591882035236
-util_unemployed_and_care_women: -0.12269554996567385
-
-
 
 # ------------------------------------------------------------------------
 # Parameters referenced in utility_of_labor_and_children

@@ -7,6 +7,7 @@ from typing import Annotated
 import jax.numpy as jnp
 import numpy as np
 import pandas as pd
+import pytask
 import yaml
 from dcegm.pre_processing.setup_model import load_and_setup_model
 from dcegm.wealth_correction import adjust_observed_wealth
@@ -16,6 +17,7 @@ from sklearn.neighbors import KernelDensity
 
 from caregiving.config import BLD
 from caregiving.model.shared import (
+    ALL_NO_CARE,
     INITIAL_CONDITIONS_AGE_HIGH,
     INITIAL_CONDITIONS_AGE_LOW,
     INITIAL_CONDITIONS_COHORT_HIGH,
@@ -23,6 +25,7 @@ from caregiving.model.shared import (
     MOTHER,
     PARENT_DEAD,
     SEX,
+    WORK_AND_UNEMPLOYED_NO_CARE,
 )
 from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.stochastic_processes.job_transition import (
@@ -346,11 +349,14 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     exp_zero_mask = exp_agents == 0
     lagged_choice[exp_zero_mask] = 1
 
+    n_care = len(ALL_NO_CARE)
+    lagged_choice_model = lagged_choice * n_care
+
     states = {
         "period": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
         "education": jnp.array(education_agents, dtype=jnp.uint8),
         "health": jnp.array(health_agents, dtype=jnp.uint8),
-        "lagged_choice": jnp.array(lagged_choice, dtype=jnp.uint8),
+        "lagged_choice": jnp.array(lagged_choice_model, dtype=jnp.uint8),
         # "policy_state": jnp.array(drawn_sras, dtype=jnp.uint8),
         "already_retired": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
         "experience": jnp.array(exp_agents, dtype=jnp.float64),
@@ -359,7 +365,6 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         "has_sister": jnp.array(has_sister_agents, dtype=jnp.uint8),
         "mother_health": jnp.array(mother_health_agents, dtype=jnp.uint8),
         "care_demand": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
-        "care_supply": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
     }
 
     # Save initial discrete states and wealth

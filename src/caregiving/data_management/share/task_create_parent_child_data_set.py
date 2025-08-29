@@ -67,10 +67,41 @@ AT_LEAST_TWO = 2
 # columns that record who gave help
 WHO_IS_CAREGIVER_EXTRA_HH = ["sp003_1", "sp003_2", "sp003_3"]
 
+AGE_BINS_PARENTS = [65, 70, 75, 80, 85, 90, np.inf]
+AGE_LABELS_PARENTS = ["65_69", "70_74", "75_79", "80_84", "85_89", "90_plus"]
 
+CARE_COLS = [
+    "pure_informal_care_general",
+    "combination_care_general",
+    "pure_home_care_general",
+]
+DAILY_CARE_COLS = [
+    "pure_informal_care_daily",
+    "combination_care_daily",
+    "pure_home_care_daily",
+]
+CHILD_CARE_COLS = [
+    "pure_informal_care_child",
+    "combination_care_child",
+    "pure_home_care_child",
+]
+DAILY_CHILD_CARE_COLS = [
+    "pure_informal_care_daily_child",
+    "combination_care_daily_child",
+    "pure_home_care_daily_child",
+]
+_CARE_COLS_ALL = [
+    "nursing_home",
+    "pure_informal_care_general",
+    "combination_care_general",
+    "pure_home_care",
+]
+
+
+@pytask.mark.wip
 def task_create_parent_child_data(
     path_to_raw_data: Path = BLD / "data" / "share_data_parent_child_merged.csv",
-    path_to_main: Annotated[Path, Product] = BLD
+    path_to_save_main: Annotated[Path, Product] = BLD
     / "data"
     / "share_parent_child_data.csv",
     # path_to_design_weight: Annotated[Path, Product] = BLD
@@ -83,7 +114,7 @@ def task_create_parent_child_data(
     # / "data"
     # / "share_parent_child_data_ind_weight.csv",
     # parent couple - child
-    path_to_main_couple: Annotated[Path, Product] = BLD
+    path_to_save_couple: Annotated[Path, Product] = BLD
     / "data"
     / "share_parent_child_data_couple.csv",
     # path_to_design_weight_couple: Annotated[Path, Product] = BLD
@@ -135,12 +166,12 @@ def task_create_parent_child_data(
     # dat_couple_ind_weight = create_couple_data(dat_ind_weight)
 
     # Save
-    dat.to_csv(path_to_main, index=False)
+    dat.to_csv(path_to_save_main, index=False)
     # dat_design_weight.to_csv(path_to_design_weight, index=False)
     # dat_hh_weight.to_csv(path_to_hh_weight, index=False)
     # dat_ind_weight.to_csv(path_to_ind_weight, index=False)
 
-    dat_couple.to_csv(path_to_main_couple, index=False)
+    dat_couple.to_csv(path_to_save_couple, index=False)
     # dat_couple_design_weight.to_csv(path_to_design_weight_couple, index=False)
     # dat_couple_hh_weight.to_csv(path_to_hh_weight_couple, index=False)
     # dat_couple_ind_weight.to_csv(path_to_ind_weight_couple, index=False)
@@ -1015,34 +1046,8 @@ def create_care_variables(dat):  # noqa: PLR0915
     # Shares that add up to 1  (care-recipient mix)
     #     Denominator = everyone who has ≥1 of the four care types
     # ────────────────────────────────────────────────────────────────
-    care_cols = [
-        "pure_informal_care_general",
-        "pure_home_care_general",
-        "combination_care_general",
-    ]
-    daily_care_cols = [
-        "pure_informal_care_daily",
-        "pure_home_care_daily",
-        "combination_care_daily",
-    ]
-    child_care_cols = [
-        "pure_informal_care_child",
-        "pure_home_care_child",
-        "combination_care_child",
-    ]
-    daily_child_care_cols = [
-        "pure_informal_care_daily_child",
-        "pure_home_care_daily_child",
-        "combination_care_daily_child",
-    ]
-    _care_cols_all = [
-        "pure_informal_care_general",
-        "pure_home_care",
-        "combination_care_general",
-        "nursing_home",
-    ]
 
-    flags = dat[care_cols].fillna(0).astype(int)  # treat NA as 0
+    flags = dat[CARE_COLS].fillna(0).astype(int)  # treat NA as 0
 
     receives_any = flags.any(axis=1)  # baseline subset
     denom = receives_any.sum()
@@ -1058,13 +1063,13 @@ def create_care_variables(dat):  # noqa: PLR0915
 
     # rows with ≥1 of the four flags
     dat["receives_any_care"] = (
-        dat[care_cols].fillna(0).astype(int).any(axis=1).astype(int)
+        dat[CARE_COLS].fillna(0).astype(int).any(axis=1).astype(int)
     )
 
     # simple age bands – edit to taste
-    age_bins = [0, 64, 74, 84, np.inf]
-    age_lbls = ["≤64", "65-74", "75-84", "85+"]
-    dat["age_group"] = pd.cut(dat["age"], bins=age_bins, labels=age_lbls, right=True)
+    dat["age_group"] = pd.cut(
+        dat["age"], bins=AGE_BINS_PARENTS, labels=AGE_LABELS_PARENTS, right=False
+    )
 
     # ───────────────────────────────────────────────────────────────
     # 2.  Keep only care recipients, then compute shares
@@ -1074,7 +1079,7 @@ def create_care_variables(dat):  # noqa: PLR0915
     subset = dat[dat["receives_any_care"] == 1].copy()
 
     shares_by_grp = subset.groupby(["sex", "age_group"], observed=True)[
-        care_cols
+        CARE_COLS
     ].mean()  # observed=True → no empty rows  # mean of 0/1 flags = proportion
 
     print(shares_by_grp.head())
@@ -1083,17 +1088,17 @@ def create_care_variables(dat):  # noqa: PLR0915
 
     # 1. baseline subset: only care recipients
     subset = dat.loc[
-        dat[care_cols].fillna(0).astype(int).any(axis=1),  # receives any care
-        care_cols + ["sex", "age", "hh_weight"],  # keep needed cols
+        dat[CARE_COLS].fillna(0).astype(int).any(axis=1),  # receives any care
+        CARE_COLS + ["sex", "age", "hh_weight"],  # keep needed cols
     ].copy()
 
     # 2. add age bands (edit breaks to taste)
-    age_bins = [0, 64, 74, 84, np.inf]
+    # AGE_BINS_PARENTS = [0, 64, 74, 84, np.inf]
     subset["age_group"] = pd.cut(
         subset["age"],
-        bins=age_bins,
-        labels=["≤64", "65-74", "75-84", "85+"],
-        right=True,
+        bins=AGE_BINS_PARENTS,
+        labels=AGE_LABELS_PARENTS,
+        right=False,
     )
 
     # 3. weighted shares: one custom lambda is enough
@@ -1102,7 +1107,7 @@ def create_care_variables(dat):  # noqa: PLR0915
 
     shares_w = subset.groupby(["sex", "age_group"], observed=True).apply(
         lambda g: (
-            g[care_cols].multiply(g["hh_weight"], axis=0).sum() / g["hh_weight"].sum()
+            g[CARE_COLS].multiply(g["hh_weight"], axis=0).sum() / g["hh_weight"].sum()
         )
     )
 
@@ -1110,7 +1115,7 @@ def create_care_variables(dat):  # noqa: PLR0915
 
     _shares_w_hh = weighted_shares_and_counts(
         dat,
-        care_cols=care_cols,
+        care_cols=CARE_COLS,
         weight_col="hh_weight",
         group_cols=["sex", "age_group"],
         show_counts=True,
@@ -1118,64 +1123,64 @@ def create_care_variables(dat):  # noqa: PLR0915
 
     _shares_w_ind = weighted_shares_and_counts(
         dat,
-        care_cols,
+        CARE_COLS,
         weight_col="ind_weight",
         group_cols=["sex", "age_group"],
     )
     _shares_w_design = weighted_shares_and_counts(
-        dat, care_cols, weight_col="design_weight", group_cols=["sex", "age_group"]
+        dat, CARE_COLS, weight_col="design_weight", group_cols=["sex", "age_group"]
     )
 
     _shares_daily_w_hh = weighted_shares_and_counts(
         dat,
-        care_cols=daily_care_cols,
+        care_cols=DAILY_CARE_COLS,
         weight_col="hh_weight",
         group_cols=["sex", "age_group"],
         show_counts=True,
     )
     _shares_daily_w_ind = weighted_shares_and_counts(
-        dat, daily_care_cols, weight_col="ind_weight", group_cols=["sex", "age_group"]
+        dat, DAILY_CARE_COLS, weight_col="ind_weight", group_cols=["sex", "age_group"]
     )
     _shares_daily_w_design = weighted_shares_and_counts(
         dat,
-        daily_care_cols,
+        DAILY_CARE_COLS,
         weight_col="design_weight",
         group_cols=["sex", "age_group"],
     )
 
     _shares_child_w_hh = weighted_shares_and_counts(
         dat,
-        care_cols=child_care_cols,
+        care_cols=CHILD_CARE_COLS,
         weight_col="hh_weight",
         group_cols=["sex", "age_group"],
         show_counts=True,
     )
     _shares_child_w_ind = weighted_shares_and_counts(
-        dat, child_care_cols, weight_col="ind_weight", group_cols=["sex", "age_group"]
+        dat, CHILD_CARE_COLS, weight_col="ind_weight", group_cols=["sex", "age_group"]
     )
     _shares_child_w_design = weighted_shares_and_counts(
         dat,
-        child_care_cols,
+        CHILD_CARE_COLS,
         weight_col="design_weight",
         group_cols=["sex", "age_group"],
     )
 
     _shares_daily_child_w_hh = weighted_shares_and_counts(
         dat,
-        care_cols=daily_child_care_cols,
+        care_cols=DAILY_CHILD_CARE_COLS,
         weight_col="hh_weight",
         group_cols=["sex", "age_group"],
         show_counts=True,
     )
     _shares_daily_child_w_ind = weighted_shares_and_counts(
         dat,
-        daily_child_care_cols,
+        DAILY_CHILD_CARE_COLS,
         weight_col="ind_weight",
         group_cols=["sex", "age_group"],
     )
     _shares_daily_child_w_design = weighted_shares_and_counts(
         dat,
-        daily_child_care_cols,
+        DAILY_CHILD_CARE_COLS,
         weight_col="design_weight",
         group_cols=["sex", "age_group"],
     )
@@ -1200,7 +1205,7 @@ def weighted_shares_and_counts(
     group_cols,
     *,
     show_counts: bool = False,
-    show_vars: bool = False,
+    show_variances: bool = False,
 ) -> pd.DataFrame:
     """
     Compute weighted shares (and optionally counts & variances) of mutually
@@ -1238,14 +1243,16 @@ def weighted_shares_and_counts(
         for col in care_cols:
             share_num = (group[col] * w).sum()
             share = share_num / w_sum if w_sum > 0 else np.nan
-            out[f"{col}_share"] = share
+
+            if not show_variances:
+                out[f"share_parents_{col}"] = share
 
             if show_counts:
-                out[f"{col}_count"] = group[col].sum()
+                out[f"count_parents_{col}"] = group[col].sum()
 
-            if show_vars:
+            if show_variances:
                 var = share * (1 - share) / n_eff if n_eff > 0 else np.nan
-                out[f"{col}_var"] = var
+                out[f"share_parents_{col}"] = var
 
         return pd.Series(out)
 

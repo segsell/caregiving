@@ -2,16 +2,26 @@
 
 from itertools import product
 
+import jax
 import numpy as np
 import pytest
 
+from caregiving.model.shared import (
+    ALL_NO_CARE,
+    NOT_WORKING_NO_CARE,
+    RETIREMENT_NO_CARE,
+    UNEMPLOYED_NO_CARE,
+    WORK_AND_UNEMPLOYED_NO_CARE,
+)
 from caregiving.model.state_space import state_specific_choice_set
+
+jax.config.update("jax_enable_x64", True)
 
 # tests of choice set
 PERIOD_GRID = np.linspace(10, 30, 3)
-LAGGED_CHOICE_SET_WORKING_LIFE = np.array([1, 2, 3])
+CHOICE_SET = WORK_AND_UNEMPLOYED_NO_CARE
+LAGGED_CHOICE_SET_WORKING_LIFE = WORK_AND_UNEMPLOYED_NO_CARE
 JOB_OFFER_GRID = np.array([0, 1], dtype=int)
-CHOICE_SET = np.array([0, 1, 2])
 
 
 @pytest.mark.parametrize(
@@ -38,13 +48,13 @@ def test_choice_set_under_63(period, lagged_choice, job_offer):
         # if sex == 0:
         #     assert np.all(choice_set == np.array([1, 3]))
         # else:
-        assert np.all(choice_set == np.array([1, 2, 3]))
+        assert np.all(choice_set == WORK_AND_UNEMPLOYED_NO_CARE)
     else:
-        assert np.all(choice_set == np.array([1]))
+        assert np.all(choice_set == UNEMPLOYED_NO_CARE)
 
 
 PERIOD_GRID = np.linspace(25, 45, 2)
-FULL_CHOICE_SET = np.array([0, 1, 2, 3])
+FULL_CHOICE_SET = ALL_NO_CARE
 JOB_OFFER_GRID = np.array([0, 1], dtype=int)
 
 
@@ -73,8 +83,8 @@ def test_choice_set_over_63_under_72(period, lagged_choice, job_offer):
     age = period + options["start_age"]
     min_ret_age = options["min_ret_age"]
 
-    if lagged_choice == 0:
-        assert np.all(choice_set == np.array([0]))
+    if lagged_choice == RETIREMENT_NO_CARE:
+        assert np.all(choice_set == RETIREMENT_NO_CARE)
     else:
         if age < min_ret_age:
             # Not old enough to retire. Check if job is offered
@@ -82,24 +92,24 @@ def test_choice_set_over_63_under_72(period, lagged_choice, job_offer):
                 # if sex == 0:
                 #     assert np.all(choice_set == np.array([1, 3]))
                 # else:
-                assert np.all(choice_set == np.array([1, 2, 3]))
+                assert np.all(choice_set == WORK_AND_UNEMPLOYED_NO_CARE)
             else:
-                assert np.all(choice_set == np.array([1]))
+                assert np.all(choice_set == UNEMPLOYED_NO_CARE)
         else:
             if age < options["max_ret_age"]:
                 if job_offer == 1:
                     # if sex == 0:
                     #     assert np.all(choice_set == np.array([0, 1, 3]))
                     # else:
-                    assert np.all(choice_set == np.array([0, 1, 2, 3]))
+                    assert np.all(choice_set == ALL_NO_CARE)
                 else:
-                    assert np.all(choice_set == np.array([0, 1]))
+                    assert np.all(choice_set == NOT_WORKING_NO_CARE)
             else:
-                assert np.all(choice_set == np.array([0]))
+                assert np.all(choice_set == RETIREMENT_NO_CARE)
 
 
 PERIOD_GRID = np.linspace(47, 55, 1)
-LAGGED_CHOICE_SET = np.array([0, 1, 2, 3])
+LAGGED_CHOICE_SET = ALL_NO_CARE
 
 
 @pytest.mark.parametrize(
@@ -124,4 +134,4 @@ def test_choice_set_over_72(period, lagged_choice):
         # policy_state=0,
         options=options,
     )
-    assert np.all(choice_set == np.array([0]))
+    assert np.all(choice_set == RETIREMENT_NO_CARE)

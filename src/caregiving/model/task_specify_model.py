@@ -13,9 +13,7 @@ from pytask import Product
 from caregiving.config import BLD
 from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.stochastic_processes.caregiving_transition import (
-    care_demand_transition,
-    care_demand_with_exog_supply_transition,
-    exog_care_transition,
+    care_demand_and_supply_transition,
     health_transition_good_medium_bad,
 )
 from caregiving.model.stochastic_processes.health_transition import (
@@ -80,10 +78,8 @@ def task_specify_model(
             "choices": choices,
             "endogenous_states": {
                 "education": np.arange(specs["n_education_types"], dtype=int),
-                # "sex": np.arange(specs["n_sexes"], dtype=int),
                 "already_retired": np.arange(2, dtype=int),
                 "has_sister": np.arange(2, dtype=int),
-                # "policy_state": np.arange(n_policy_states, dtype=int),
             },
             "exogenous_processes": {
                 "job_offer": {
@@ -98,20 +94,16 @@ def task_specify_model(
                     "transition": health_transition,
                     "states": np.arange(specs["n_health_states"], dtype=int),
                 },
-                # "mother_health": {
-                #     "transition": health_transition_good_medium_bad,
-                #     "states": np.arange(specs["n_health_states_three"], dtype=int),
-                # },
-                # "care_demand": {
-                #     "transition": care_demand_with_exog_supply_transition,
-                #     "states": np.arange(2, dtype=int),
-                # },
-                # "care_demand": {
-                #     "transition": care_demand_transition,
-                #     "states": np.arange(2, dtype=int),
-                # },
+                "mother_health": {
+                    "transition": health_transition_good_medium_bad,
+                    "states": np.arange(specs["n_health_states_three"], dtype=int),
+                },
+                "care_demand": {
+                    "transition": care_demand_and_supply_transition,
+                    "states": np.arange(3, dtype=int),
+                },
                 # "care_supply": {
-                #     "transition": exog_care_transition,
+                #     "transition": exog_care_supply_transition,
                 #     "states": np.arange(2, dtype=int),
                 # },
             },

@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from caregiving.model.shared import RETIREMENT_CHOICES, UNEMPLOYED_CHOICES
+from caregiving.model.shared import MAX_SYEAR, RETIREMENT_CHOICES, UNEMPLOYED_CHOICES
 
 # =====================================================================================
 # Filter Data
@@ -67,7 +67,12 @@ def filter_data(merged_data, specs, lag_and_lead_buffer_years=True, event_study=
 
     if lag_and_lead_buffer_years:
         start_year = start_year - 1
-        end_year = end_year + 1
+
+        if end_year < MAX_SYEAR:
+            end_year = end_year + 1
+
+        # If we are at the maximum year, we do not add a year to the end_year.
+        # This is to avoid an empty sample.
 
     merged_data = filter_years(merged_data, start_year, end_year)
 
@@ -111,15 +116,17 @@ def create_lagged_and_lead_variables(
     specs,
     lead_job_sep=False,
     drop_missing_lagged_choice=True,
+    dropp_missing_lead_job_sep=True,
     event_study=False,
+    start_year=None,
+    end_year=None,
 ):
-    """This function creates the lagged choice variable and drops missing lagged
-    choices."""
+    """Create the lagged choice variable and drop missing lagged choices."""
 
     if event_study:
         start_year = specs["start_year_event_study"]
         end_year = specs["end_year_event_study"]
-    else:
+    elif start_year is None or end_year is None:
         start_year = specs["start_year"]
         end_year = specs["end_year"]
 
@@ -137,8 +144,13 @@ def create_lagged_and_lead_variables(
     else:
         merged_data = full_container.copy()
 
-    if lead_job_sep:
-        merged_data = merged_data[merged_data["job_sep_this_year"].notna()]
+    # if lead_job_sep:
+    #     merged_data = merged_data[merged_data["job_sep_this_year"].notna()]
+    if lead_job_sep and dropp_missing_lead_job_sep:
+        merged_data = merged_data[
+            (merged_data["job_sep_this_year"].notna())
+            | (merged_data.index.get_level_values("syear") == MAX_SYEAR)
+        ]
 
     # We now have observations with a valid lagged or lead variable but not with
     # actual valid state variables. Delete those by looking at the choice variable.

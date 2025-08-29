@@ -5,6 +5,7 @@ from typing import Annotated
 
 import numpy as np
 import pandas as pd
+import pytask
 from pytask import Product
 
 from caregiving.config import BLD, SRC
@@ -27,6 +28,7 @@ from caregiving.data_management.soep.variables import (
     create_experience_variable,
     create_health_var_good_bad,
     create_kidage_youngest,
+    create_nursing_home,
     create_partner_state,
     create_policy_state,
     determine_observed_job_offers,
@@ -47,6 +49,8 @@ def task_create_main_estimation_sample(
 ) -> None:
 
     specs = read_and_derive_specs(path_to_specs)
+    # specs["start_year"] = 2001
+    # specs["end_year"] = 2023
 
     # merged_data = pd.read_csv(path_to_raw, index_col=[0, 1])
     df = pd.read_csv(path_to_raw, index_col=[0, 1])
@@ -90,7 +94,10 @@ def task_create_main_estimation_sample(
     df = create_policy_state(df, specs)
     df = create_experience_variable(df)
     df = create_education_type(df)
-    df = create_health_var_good_bad(df)
+    # health variable not yet available for 2023
+    # df = create_health_var_good_bad(df, drop_missing=False)
+    df = create_health_var_good_bad(df, drop_missing=True)
+    df = create_nursing_home(df)
 
     df = enforce_model_choice_restriction(df, specs)
 
@@ -128,7 +135,8 @@ def task_create_main_estimation_sample(
         "experience": "int8",
         "wealth": "float32",
         "education": "int8",
-        "health": "int8",
+        "health": "float16",
+        "nursing_home": "float16",
         "sex": "int8",
         "children": "int8",
         "kidage_youngest": "int8",
@@ -153,6 +161,7 @@ def task_create_main_estimation_sample(
     df.to_csv(path_to_save)
 
 
+@pytask.mark.check
 def task_create_caregivers_sample(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_raw: Path = BLD / "data" / "soep_estimation_data_raw.csv",
@@ -186,7 +195,12 @@ def task_create_caregivers_sample(
 
     df = generate_job_separation_var(df)
     df = create_lagged_and_lead_variables(
-        df, specs, lead_job_sep=True, drop_missing_lagged_choice=False
+        df,
+        specs,
+        lead_job_sep=True,
+        drop_missing_lagged_choice=False,
+        start_year=2001,
+        end_year=2023,
     )
     # df["lagged_care"] = df.groupby(["pid"])["any_care"].shift(1)
 
@@ -211,7 +225,8 @@ def task_create_caregivers_sample(
     df = create_policy_state(df, specs)
     df = create_experience_variable(df)
     df = create_education_type(df)
-    df = create_health_var_good_bad(df)
+    df = create_health_var_good_bad(df, drop_missing=False)
+    df = create_nursing_home(df)
 
     df = enforce_model_choice_restriction(df, specs)
 
@@ -249,7 +264,8 @@ def task_create_caregivers_sample(
         "experience": "int8",
         "wealth": "float32",
         "education": "int8",
-        "health": "int8",
+        "health": "float16",  # can be NA
+        "nursing_home": "float16",
         "sex": "int8",
         "children": "int8",
         "kidage_youngest": "int8",
@@ -263,6 +279,25 @@ def task_create_caregivers_sample(
         "mother_alive": "float32",
         "father_alive": "float32",
     }
+
+    # #
+    # df = df.reset_index(level=["syear", "pid"])
+    # df["age_at_first_care"] = (
+    #     df.loc[df["any_care"] == 1].groupby("pid")["age"].transform("min")
+    # )
+
+    # first_care = df.loc[df["any_care"] == 1].groupby("pid")["age"].min()
+    # df["_age_at_first_care"] = df["pid"].map(first_care)
+
+    # mean_first_care_age = (
+    #     df.query("any_care == 1")
+    #     .groupby("pid")["age"]
+    #     .min()  # one value per pid
+    #     .mean()  # sample mean over those who ever provided care
+    # )
+    # _mean_first_care_age = df.drop_duplicates("pid")["age_at_first_care"].mean()
+    # #
+
     df = df.reset_index(level="syear")
     df = df[list(type_dict.keys())]
     df = df.astype(type_dict)

@@ -14,7 +14,7 @@ from dcegm.pre_processing.setup_model import load_and_setup_model
 from dcegm.wealth_correction import adjust_observed_wealth
 
 from caregiving.config import BLD, SRC
-from caregiving.model.shared import RETIREMENT
+from caregiving.model.shared import MACHINE_ZERO, RETIREMENT
 from caregiving.model.state_space import (
     create_state_space_functions,
 )
@@ -40,11 +40,13 @@ def estimate_model(
     algo: str,
     algo_options: Dict[str, Any],
     weighting_method: str = "identity",
+    use_cholesky_weights: bool = False,
+    relative_deviations: bool = False,
     *,
     path_to_discrete_states: str = BLD / "model" / "initial_conditions" / "states.pkl",
     path_to_wealth: str = BLD / "model" / "initial_conditions" / "wealth.csv",
-    path_to_empirical_moments: str = BLD / "moments" / "soep_moments.csv",
-    path_to_empirical_variance: str = BLD / "moments" / "soep_variances.csv",
+    path_to_empirical_moments: str = BLD / "moments" / "moments_full.csv",
+    path_to_empirical_variance: str = BLD / "moments" / "variances_full.csv",
     # path_to_updated_start_params: str = BLD
     # / "model"
     # / "params"
@@ -66,7 +68,6 @@ def estimate_model(
     multistart: bool = False,
     multistart_options: Optional[Dict[str, Any]] = None,
     random_seed: bool = False,
-    relative_deviations: bool = False,
     error_handling: str = "continue",
 ) -> None:
     """Estimate the model based on empirical data and starting parameters."""
@@ -93,8 +94,14 @@ def estimate_model(
     if weighting_method == "identity":
         weights = np.identity(empirical_moments.shape[0])
     elif weighting_method == "diagonal":
-        empirical_variances_reg = np.maximum(empirical_variances, 1e-4)
-        weights = np.diag(1 / empirical_variances_reg)
+        # empirical_variances_reg = np.maximum(empirical_variances, 1e-4)
+        # weights = np.diag(1 / empirical_variances_reg)
+        empirical_variances_reg = empirical_variances
+        close_to_zero = empirical_variances_reg < MACHINE_ZERO
+        weight_elements = 1 / empirical_variances_reg
+        weight_elements[close_to_zero] = 0.0
+        weight_elements = np.sqrt(weight_elements)
+        weights = np.diag(weight_elements)
     else:
         raise ValueError(f"Unknown weighting method: {weighting_method}")
 
@@ -149,6 +156,7 @@ def estimate_model(
         simulate_moments=simulate_moments_given_params,
         empirical_moments=empirical_moments,
         weights=weights,
+        cholesky=use_cholesky_weights,
         relative_deviations=relative_deviations,
     )
 
@@ -260,10 +268,14 @@ def get_msm_optimization_function(
     simulate_moments: callable,
     empirical_moments: np.ndarray,
     weights: np.ndarray,
-    relative_deviations: bool,
+    cholesky: bool = True,
+    relative_deviations: bool = False,
 ) -> np.ndarray:
 
-    chol_weights = np.linalg.cholesky(weights)
+    if cholesky:
+        chol_weights = np.linalg.cholesky(weights)
+    else:
+        chol_weights = weights
 
     criterion = om.mark.least_squares(
         partial(
@@ -271,7 +283,7 @@ def get_msm_optimization_function(
             simulate_moments=simulate_moments,
             flat_empirical_moments=empirical_moments,
             chol_weights=chol_weights,
-            relative_deviations=relative_deviations,
+            relative_difference=relative_deviations,
         )
     )
 
@@ -283,25 +295,22 @@ def msm_criterion(
     simulate_moments: callable,
     flat_empirical_moments: np.ndarray,
     chol_weights: np.ndarray,
-    relative_deviations: bool,
+    relative_deviations: bool = False,
 ) -> np.ndarray:
     """Compute the MSM residuals based on simulated and empirical moments."""
 
     simulated_flat = simulate_moments(params)
 
     deviations = simulated_flat - flat_empirical_moments
+
     if relative_deviations:
-        deviations /= flat_empirical_moments
+        with np.errstate(divide="ignore", invalid="ignore"):
+            rel = deviations / flat_empirical_moments
+            invalid = ~np.isfinite(rel)
+            rel[invalid] = deviations[invalid]
 
-    residuals = deviations @ chol_weights
+        deviations = rel
 
-    return residuals
-
-
-def get_msm_residuals(simulated_flat, flat_empirical_moments, weights):
-    chol_weights = np.linalg.cholesky(weights)
-
-    deviations = simulated_flat - flat_empirical_moments
     residuals = deviations @ chol_weights
 
     return residuals

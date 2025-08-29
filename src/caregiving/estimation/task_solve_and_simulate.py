@@ -2,7 +2,7 @@
 
 import pickle
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any, Dict, List, Tuple
 
 import jax
 import jax.numpy as jnp
@@ -63,6 +63,8 @@ def task_solve_and_simulate_start_params(
         solution_dict["policy"],
         solution_dict["endog_grid"],
     ) = get_solve_func_for_model(model_for_solution)(params)
+    # value, policy, endog_grid = get_solve_func_for_model(model_for_solution)(params)
+
     pickle.dump(solution_dict, path_to_save_solution.open("wb"))
 
     # 2) Simulate
@@ -82,13 +84,16 @@ def task_solve_and_simulate_start_params(
 
     sim_df = simulate_scenario(
         model_for_simulation,
-        solution=solution_dict,
+        solution_endog_grid=solution_dict["endog_grid"],
+        solution_value=solution_dict["value"],
+        solution_policy=solution_dict["policy"],
         initial_states=initial_states,
         wealth_agents=wealth_agents,
         params=params,
         options=options,
         seed=options["model_params"]["seed"],
     )
+
     # sim_df.to_csv(path_to_save_simulated_data, index=True)
     sim_df.to_pickle(path_to_save_simulated_data)
 

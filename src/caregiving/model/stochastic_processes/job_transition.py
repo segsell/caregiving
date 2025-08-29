@@ -5,7 +5,9 @@ import jax.numpy as jnp
 from caregiving.model.shared import (
     SEX,
     UNEMPLOYED,
+    UNEMPLOYED_CHOICES,
     WORK,
+    WORK_CHOICES,
     is_retired,
     is_unemployed,
     is_working,
@@ -50,8 +52,8 @@ def job_offer_process_transition_initial_conditions(
 
     """
 
-    unemployment_choice = jnp.isin(choice, UNEMPLOYED)
-    labor_choice = jnp.isin(choice, WORK)
+    unemployment_choice = jnp.isin(choice, UNEMPLOYED_CHOICES)
+    labor_choice = jnp.isin(choice, WORK_CHOICES)
 
     job_sep_prob = options["job_sep_probs"][SEX, education, period]
 

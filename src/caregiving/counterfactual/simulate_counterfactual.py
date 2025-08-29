@@ -7,7 +7,7 @@ from dcegm.simulation.simulate import simulate_all_periods
 
 from caregiving.model.shared import (
     DEAD,
-    FULL_TIME,
+    FULL_TIME_CHOICES,
     INFORMAL_CARE,
     PARENT_DEAD,
     PART_TIME,
@@ -57,7 +57,7 @@ def simulate_counterfactual_npv(
     df["working_hours"] = 0.0
 
     part_time_values = PART_TIME.ravel().tolist()
-    full_time_values = FULL_TIME.ravel().tolist()
+    full_time_values = FULL_TIME_CHOICES.ravel().tolist()
 
     sex_var = SEX
 

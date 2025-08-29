@@ -7,7 +7,7 @@ from dcegm.simulation.simulate import simulate_all_periods
 
 from caregiving.model.shared import (
     DEAD,
-    FULL_TIME,
+    FULL_TIME_CHOICES,
     INFORMAL_CARE,
     PARENT_DEAD,
     PART_TIME,
@@ -19,6 +19,9 @@ from caregiving.utils import table
 
 def simulate_scenario(
     model,
+    # solution_endog_grid,
+    # solution_value,
+    # solution_policy,
     solution,
     initial_states,
     wealth_agents,
@@ -57,7 +60,7 @@ def simulate_scenario(
     df["working_hours"] = 0.0
 
     part_time_values = PART_TIME.ravel().tolist()
-    full_time_values = FULL_TIME.ravel().tolist()
+    full_time_values = FULL_TIME_CHOICES.ravel().tolist()
 
     sex_var = SEX
 
@@ -108,5 +111,12 @@ def simulate_scenario(
 
     # df.loc[alive_and_demand & (~df["choice"].isin(INFORMAL_CARE)), "formal_care"] = 1
     # df.loc[alive_and_demand & (df["choice"].isin(INFORMAL_CARE)), "formal_care"] = 0
+
+    df["mother_age"] = (
+        df["age"].to_numpy()
+        + model_params["mother_age_diff"][
+            df["has_sister"].to_numpy(), df["education"].to_numpy()
+        ]
+    )
 
     return df
