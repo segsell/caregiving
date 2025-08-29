@@ -2,6 +2,7 @@
 
 from itertools import product
 
+import jax
 import numpy as np
 import pytest
 
@@ -13,6 +14,8 @@ from caregiving.model.shared import (
     WORK_AND_UNEMPLOYED_NO_CARE,
 )
 from caregiving.model.state_space import state_specific_choice_set
+
+jax.config.update("jax_enable_x64", True)
 
 # tests of choice set
 PERIOD_GRID = np.linspace(10, 30, 3)
