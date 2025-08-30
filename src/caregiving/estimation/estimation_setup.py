@@ -283,7 +283,7 @@ def get_msm_optimization_function(
             simulate_moments=simulate_moments,
             flat_empirical_moments=empirical_moments,
             chol_weights=chol_weights,
-            relative_difference=relative_deviations,
+            relative_deviations=relative_deviations,
         )
     )
 

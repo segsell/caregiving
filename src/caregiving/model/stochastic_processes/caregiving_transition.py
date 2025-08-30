@@ -42,7 +42,7 @@ def care_demand_and_supply_transition(
     prob_vector = jnp.array(
         [
             1 - care_demand,  # no care demand
-            care_demand * prob_other_care_supply,  # care demand an others supply care
+            care_demand * prob_other_care_supply,  # care demand and others supply care
             care_demand * (1 - prob_other_care_supply),  # care demand and not other
         ]
     )

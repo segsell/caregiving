@@ -154,7 +154,7 @@ def utility_func_alive(
         jnp.log(consumption * eta / cons_scale),
         utility_rho_not_one,
     )
-    return utility + zeta * (care_demand > 1)
+    return utility + zeta * (care_demand >= 1)
 
 
 # def _utility_func_alive(
@@ -584,13 +584,14 @@ def utility_of_caregiving(
     period, choice, education, health, care_demand, params, options
 ):
     # choice booleans
-    _unemployed = is_unemployed(choice)
+    unemployed = is_unemployed(choice)
     working_part_time = is_part_time(choice)
     working_full_time = is_full_time(choice)
 
     informal_care = is_informal_care(choice)
-    light_informal = is_light_informal_care(choice)
-    intensive_informal = is_intensive_informal_care(choice)
+
+    # light_informal = is_light_informal_care(choice)
+    # intensive_informal = is_intensive_informal_care(choice)
     nursing_home = is_nursing_home_care(choice)
 
     formal_home_care = is_no_care(choice) & (
@@ -599,6 +600,11 @@ def utility_of_caregiving(
 
     bad_health = is_bad_health(health)
     good_health = is_good_health(health)
+
+    util_unemployed_and_informal_care = params["util_unemployed_and_informal_care"]
+    util_pt_work_and_informal_care = params["util_pt_work_and_informal_care"]
+    util_ft_work_and_informal_care = params["util_ft_work_and_informal_care"]
+    # util_no_informal_care = params["util_formal_care"]
 
     # disutil_unemployed_and_care = (
     # params["disutil_unemployed_informal_care_low"] * (1 - education) * informal_care
@@ -631,39 +637,50 @@ def utility_of_caregiving(
     #     * intensive_informal
     # )
 
-    util_informal_by_education = (
-        params["util_light_informal_care_high"] * education * light_informal
-        + params["util_intensive_informal_care_high"] * education * intensive_informal
-        + params["util_light_informal_care_low"] * (1 - education) * light_informal
-        + params["util_intensive_informal_care_low"]
-        * (1 - education)
-        * intensive_informal
+    # util_informal_by_education = (
+    #     params["util_light_informal_care_high"] * education * light_informal
+    #     + params["util_intensive_informal_care_high"] * education * intensive_informal
+    #     + params["util_light_informal_care_low"] * (1 - education) * light_informal
+    #     + params["util_intensive_informal_care_low"]
+    #     * (1 - education)
+    #     * intensive_informal
+    # )
+
+    util_informal_care_by_health = (
+        params["util_informal_care_bad"] * bad_health
+        + params["util_informal_care_good"] * good_health
     )
+
+    util_informal_by_education = params["util_informal_care_high"] * education + params[
+        "util_informal_care_low"
+    ] * (1 - education)
 
     util_joint_care = (
-        params["util_joint_informal_care_low"] * (1 - education) * informal_care
-        + params["util_joint_informal_care_high"] * education * informal_care
+        params["util_joint_informal_care_low"] * (1 - education)
+        + params["util_joint_informal_care_high"] * education
     )
 
-    disutil_ft_work_informal_care_by_health = (
-        params["util_ft_work_informal_care_bad"] * bad_health * informal_care
-        + params["util_ft_work_informal_care_good"] * good_health * informal_care
-    )
-    disutil_pt_work_informal_care_by_health = (
-        params["util_pt_work_informal_care_bad"] * bad_health * informal_care
-        + params["util_pt_work_informal_care_good"] * good_health * informal_care
-    )
-    disutil_informal_and_work = (
-        # disutil_unemployed_and_care * unemployed
-        disutil_pt_work_informal_care_by_health * working_part_time
-        + disutil_ft_work_informal_care_by_health * working_full_time
+    # util_ft_work_informal_care_by_health = (
+    #     params["util_ft_work_informal_care_bad"] * bad_health * informal_care
+    #     + params["util_ft_work_informal_care_good"] * good_health * informal_care
+    # )
+    # util_pt_work_informal_care_by_health = (
+    #     params["util_pt_work_informal_care_bad"] * bad_health * informal_care
+    #     + params["util_pt_work_informal_care_good"] * good_health * informal_care
+    # )
+
+    util_informal_and_work = (
+        util_unemployed_and_informal_care * unemployed
+        + util_pt_work_and_informal_care * working_part_time
+        + util_ft_work_and_informal_care * working_full_time
     )
 
     util_informal = (
         util_informal_by_education
+        + util_informal_care_by_health
+        + util_informal_and_work
         + util_joint_care * (care_demand == CARE_DEMAND_AND_OTHER_SUPPLY)
-        + disutil_informal_and_work
-    )
+    ) * informal_care
 
     # util_nursing_home = (
     #     params["util_nursing_home_low"] * (1 - education) * nursing_home
@@ -686,7 +703,7 @@ def utility_of_caregiving(
         util_informal + util_nursing_home + util_formal_home_care
     )
 
-    return util_relative_to_only_other_family_provide_care
+    return jnp.exp(util_relative_to_only_other_family_provide_care)
 
 
 def _utility_of_labor_and_children(choice, education, n_children, params):
