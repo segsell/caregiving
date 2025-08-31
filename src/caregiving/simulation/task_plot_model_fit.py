@@ -269,20 +269,16 @@ def task_plot_model_fit(  # noqa: PLR0915
     # # _share_informal_care = df_sim.loc[
     # #     df_sim["informal_care"] == 1, "care_demand"
     # # ].mean()
-    # share_informal_care = df_sim.loc[
-    # df_sim["care_demand"] == 1, "informal_care"
-    # ].mean()
+    # share_informal_care = df_sim.loc[df_sim["care_demand"] == 1, "informal_care"].mean()
     # print(f"Share informal caregivers (cond. on care demand): {share_informal_care}")
 
     # share_caregivers_high_edu = df_sim.loc[
     #     (df_sim["informal_care"] == 1), "education"
     # ].mean()
-    # print(
-    #     f"Share high education (cond. on informal care): {share_caregivers_high_edu}"
-    # )
-    # # plot_choice_shares(df_emp, df_sim, specs)
-    # # discrete_state_names = model_full["model_structure"]["discrete_states_names"]
-    # # plot_states(df_emp, df_sim, discrete_state_names, specs)
+    # print(f"Share high education (cond. on informal care): {share_caregivers_high_edu}")
+    # plot_choice_shares(df_emp, df_sim, specs)
+    # discrete_state_names = model_full["model_structure"]["discrete_states_names"]
+    # plot_states(df_emp, df_sim, discrete_state_names, specs)
 
     states_sim = {
         "not_working": NOT_WORKING,

@@ -703,7 +703,7 @@ def utility_of_caregiving(
         util_informal + util_nursing_home + util_formal_home_care
     )
 
-    return jnp.exp(util_relative_to_only_other_family_provide_care)
+    return util_relative_to_only_other_family_provide_care
 
 
 def _utility_of_labor_and_children(choice, education, n_children, params):

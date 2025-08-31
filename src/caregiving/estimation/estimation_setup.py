@@ -40,7 +40,7 @@ def estimate_model(
     algo: str,
     algo_options: Dict[str, Any],
     weighting_method: str = "identity",
-    use_cholesky_weights: bool = False,
+    use_cholesky_weights: bool = True,
     relative_deviations: bool = False,
     *,
     path_to_discrete_states: str = BLD / "model" / "initial_conditions" / "states.pkl",
