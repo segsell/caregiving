@@ -18,7 +18,7 @@ from caregiving.model.shared import (
     is_intensive_informal_care,
     is_light_informal_care,
     is_no_care,
-    is_nursing_home_care,
+    # is_nursing_home_care,
     is_part_time,
     is_unemployed,
 )
@@ -592,18 +592,26 @@ def utility_of_caregiving(
 
     # light_informal = is_light_informal_care(choice)
     # intensive_informal = is_intensive_informal_care(choice)
-    nursing_home = is_nursing_home_care(choice)
+    # nursing_home = is_nursing_home_care(choice)
 
-    formal_home_care = is_no_care(choice) & (
-        care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY
-    )
+    # formal home care and nursing home
+    formal_care = is_no_care(choice) & (care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
 
     bad_health = is_bad_health(health)
     good_health = is_good_health(health)
 
-    util_unemployed_and_informal_care = params["util_unemployed_and_informal_care"]
-    util_pt_work_and_informal_care = params["util_pt_work_and_informal_care"]
-    util_ft_work_and_informal_care = params["util_ft_work_and_informal_care"]
+    util_unemployed_and_informal_care = (
+        params["util_unemployed_and_informal_care_good"] * good_health
+        + params["util_unemployed_and_informal_care_bad"] * bad_health
+    )
+    util_pt_work_and_informal_care = (
+        params["util_pt_work_and_informal_care_good"] * good_health
+        + params["util_pt_work_and_informal_care_bad"] * bad_health
+    )
+    util_ft_work_and_informal_care = (
+        params["util_ft_work_and_informal_care_good"] * good_health
+        + params["util_ft_work_and_informal_care_bad"] * bad_health
+    )
     # util_no_informal_care = params["util_formal_care"]
 
     # disutil_unemployed_and_care = (
@@ -646,10 +654,10 @@ def utility_of_caregiving(
     #     * intensive_informal
     # )
 
-    util_informal_care_by_health = (
-        params["util_informal_care_bad"] * bad_health
-        + params["util_informal_care_good"] * good_health
-    )
+    # util_informal_care_by_health = (
+    #     params["util_informal_care_bad"] * bad_health
+    #     + params["util_informal_care_good"] * good_health
+    # )
 
     util_informal_by_education = params["util_informal_care_high"] * education + params[
         "util_informal_care_low"
@@ -669,7 +677,7 @@ def utility_of_caregiving(
     #     + params["util_pt_work_informal_care_good"] * good_health * informal_care
     # )
 
-    util_informal_and_work = (
+    util_informal_and_work_by_health = (
         util_unemployed_and_informal_care * unemployed
         + util_pt_work_and_informal_care * working_part_time
         + util_ft_work_and_informal_care * working_full_time
@@ -677,8 +685,7 @@ def utility_of_caregiving(
 
     util_informal = (
         util_informal_by_education
-        + util_informal_care_by_health
-        + util_informal_and_work
+        + util_informal_and_work_by_health
         + util_joint_care * (care_demand == CARE_DEMAND_AND_OTHER_SUPPLY)
     ) * informal_care
 
@@ -690,18 +697,16 @@ def utility_of_caregiving(
     #     params["util_home_care_low"] * (1 - education) * formal_home_care
     #     + params["util_home_care_high"] * education * formal_home_care
     # )
-    util_nursing_home = (
-        params["util_nursing_home_bad"] * bad_health * nursing_home
-        + params["util_nursing_home_good"] * good_health * nursing_home
-    )
-    util_formal_home_care = (
-        params["util_home_care_bad"] * bad_health * formal_home_care
-        + params["util_home_care_good"] * good_health * formal_home_care
+    # util_nursing_home = (
+    #     params["util_nursing_home_bad"] * bad_health * nursing_home
+    #     + params["util_nursing_home_good"] * good_health * nursing_home
+    # )
+    util_formal_care = (
+        params["util_formal_care_bad"] * bad_health * formal_care
+        + params["util_formal_care_good"] * good_health * formal_care
     )
 
-    util_relative_to_only_other_family_provide_care = (
-        util_informal + util_nursing_home + util_formal_home_care
-    )
+    util_relative_to_only_other_family_provide_care = util_informal + util_formal_care
 
     return util_relative_to_only_other_family_provide_care
 

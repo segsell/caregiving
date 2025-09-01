@@ -62,7 +62,7 @@ def task_specify_model(
 
     # Load specifications
     n_periods = specs["n_periods"]
-    choices = np.arange(specs["n_choices"], dtype=int)
+    n_choices = np.arange(specs["n_choices"], dtype=int)
     # n_policy_states = specs["n_policy_states"]
 
     # Savings grid
@@ -75,7 +75,7 @@ def task_specify_model(
         "state_space": {
             "min_period_batch_segments": [33, 44],
             "n_periods": n_periods,
-            "choices": choices,
+            "choices": n_choices,
             "endogenous_states": {
                 "education": np.arange(specs["n_education_types"], dtype=int),
                 "already_retired": np.arange(2, dtype=int),
@@ -106,6 +106,7 @@ def task_specify_model(
                 #     "transition": exog_care_supply_transition,
                 #     "states": np.arange(2, dtype=int),
                 # },
+                #
             },
             "continuous_states": {
                 "wealth": savings_grid,

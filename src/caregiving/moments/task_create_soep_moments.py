@@ -315,19 +315,21 @@ def task_create_soep_moments(
     # plot_wealth_by_age(df, start_age=30, end_age=70, educ_val=1)
     # plot_wealth_by_5yr_bins(df, start_age=30, end_age=70, educ_val=1)
 
-    df_bad_health = df_caregivers_full.loc[
-        (df_caregivers_full["health"] == BAD_HEALTH)
-        & (df_caregivers_full["age"] > AGE_BINS_PARENTS[0])
-    ].copy()
+    # ===================================================================================
+    # df_bad_health = df_caregivers_full.loc[
+    #     (df_caregivers_full["health"] == BAD_HEALTH)
+    #     & (df_caregivers_full["age"] > AGE_BINS_PARENTS[0])
+    # ].copy()
 
-    moments, variances = compute_shares_by_age_bin(
-        df_bad_health,
-        moments,
-        variances,
-        variable="nursing_home",
-        age_bins=(AGE_BINS_PARENTS, AGE_LABELS_PARENTS),
-        label="parents_nursing_home",
-    )
+    # moments, variances = compute_shares_by_age_bin(
+    #     df_bad_health,
+    #     moments,
+    #     variances,
+    #     variable="nursing_home",
+    #     age_bins=(AGE_BINS_PARENTS, AGE_LABELS_PARENTS),
+    #     label="parents_nursing_home",
+    # )
+    # ===================================================================================
 
     moments_df = pd.DataFrame({"value": pd.Series(moments)})
     moments_df.index.name = "moment"
