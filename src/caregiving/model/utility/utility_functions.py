@@ -664,8 +664,10 @@ def utility_of_caregiving(
     ] * (1 - education)
 
     util_joint_care = (
-        params["util_joint_informal_care_low"] * (1 - education)
-        + params["util_joint_informal_care_high"] * education
+        # params["util_joint_informal_care_low"] * (1 - education)
+        # + params["util_joint_informal_care_high"] * education
+        params["util_joint_informal_care_bad"] * bad_health
+        + params["util_joint_informal_care_good"] * good_health
     )
 
     # util_ft_work_informal_care_by_health = (

@@ -53,6 +53,8 @@ util_informal_care_high: -5
 util_informal_care_low: -5
 util_joint_informal_care_low: -5
 util_joint_informal_care_high: -5
+util_joint_informal_care_bad: -5
+util_joint_informal_care_good: -5
 
 util_unemployed_and_informal_care_bad: -5
 util_unemployed_and_informal_care_good: -5

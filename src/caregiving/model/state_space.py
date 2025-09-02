@@ -182,6 +182,21 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "job_offer": 0,
             }
             return state_proxy
+        elif mother_health == PARENT_DEAD:
+            # If mother is dead, no care demand and supply
+            state_proxy = {
+                "period": period,
+                "lagged_choice": lagged_choice,
+                "already_retired": already_retired,
+                "education": education,
+                "has_sister": has_sister,
+                "health": health,
+                "partner_state": partner_state,
+                "mother_health": mother_health,
+                "care_demand": 0,
+                "job_offer": job_offer,
+            }
+            return state_proxy
         elif (age <= max_ret_age + 1) and is_retired(lagged_choice):
             # If retirement is already chosen we proxy all states to job offer 0.
             # Until age max_ret_age + 1 the individual could also be freshly retired
@@ -210,7 +225,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "health": health,
                 "partner_state": partner_state,
                 "mother_health": PARENT_DEAD,
-                "care_demand": care_demand,
+                "care_demand": 0,  #
                 "job_offer": 0,
             }
             return state_proxy
@@ -229,21 +244,6 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
         #         "job_offer": job_offer,
         #     }
         #     return state_proxy
-        elif mother_health == PARENT_DEAD:
-            # If mother is dead, no care demand and supply
-            state_proxy = {
-                "period": period,
-                "lagged_choice": lagged_choice,
-                "already_retired": already_retired,
-                "education": education,
-                "has_sister": has_sister,
-                "health": health,
-                "partner_state": partner_state,
-                "mother_health": mother_health,
-                "care_demand": 0,
-                "job_offer": job_offer,
-            }
-            return state_proxy
 
         else:
             return True
