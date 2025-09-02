@@ -62,7 +62,7 @@ def task_specify_model(
 
     # Load specifications
     n_periods = specs["n_periods"]
-    n_choices = np.arange(specs["n_choices"], dtype=int)
+    choices = np.arange(specs["n_choices"], dtype=int)
     # n_policy_states = specs["n_policy_states"]
 
     # Savings grid
@@ -75,7 +75,7 @@ def task_specify_model(
         "state_space": {
             "min_period_batch_segments": [33, 44],
             "n_periods": n_periods,
-            "choices": n_choices,
+            "choices": choices,
             "endogenous_states": {
                 "education": np.arange(specs["n_education_types"], dtype=int),
                 "already_retired": np.arange(2, dtype=int),

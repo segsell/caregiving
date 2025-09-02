@@ -44,8 +44,8 @@ disutil_children_ft_work_high: -5
 # util_nursing_home_good: -5
 # util_home_care_bad: -5
 # util_home_care_good: -5
-util_formal_care_bad: 5
-util_formal_care_good: 5
+util_formal_care_bad: -5
+util_formal_care_good: -5
 
 # util_informal_care_bad: -5
 # util_informal_care_good: -5
