@@ -84,9 +84,10 @@ def task_solve_and_simulate_start_params(
 
     sim_df = simulate_scenario(
         model_for_simulation,
-        solution_endog_grid=solution_dict["endog_grid"],
-        solution_value=solution_dict["value"],
-        solution_policy=solution_dict["policy"],
+        solution=solution_dict,
+        # solution_endog_grid=solution_dict["endog_grid"],
+        # solution_value=solution_dict["value"],
+        # solution_policy=solution_dict["policy"],
         initial_states=initial_states,
         wealth_agents=wealth_agents,
         params=params,
