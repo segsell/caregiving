@@ -3,7 +3,7 @@
 import jax
 import jax.numpy as jnp
 
-from caregiving.model.shared import (
+from caregiving.model.shared import (  # is_nursing_home_care,
     CARE_DEMAND_AND_NO_OTHER_SUPPLY,
     CARE_DEMAND_AND_OTHER_SUPPLY,
     SEX,
@@ -18,7 +18,6 @@ from caregiving.model.shared import (
     is_intensive_informal_care,
     is_light_informal_care,
     is_no_care,
-    # is_nursing_home_care,
     is_part_time,
     is_unemployed,
 )
@@ -654,14 +653,13 @@ def utility_of_caregiving(
     #     * intensive_informal
     # )
 
-    # util_informal_care_by_health = (
-    #     params["util_informal_care_bad"] * bad_health
-    #     + params["util_informal_care_good"] * good_health
-    # )
-
-    util_informal_by_education = params["util_informal_care_high"] * education + params[
-        "util_informal_care_low"
-    ] * (1 - education)
+    util_informal_care_by_health = (
+        params["util_informal_care_bad"] * bad_health
+        + params["util_informal_care_good"] * good_health
+    )
+    util_informal_care_by_education = params[
+        "util_informal_care_high"
+    ] * education + params["util_informal_care_low"] * (1 - education)
 
     util_joint_care = (
         # params["util_joint_informal_care_low"] * (1 - education)
@@ -686,7 +684,8 @@ def utility_of_caregiving(
     )
 
     util_informal = (
-        util_informal_by_education
+        util_informal_care_by_education
+        + util_informal_care_by_health
         + util_informal_and_work_by_health
         + util_joint_care * (care_demand == CARE_DEMAND_AND_OTHER_SUPPLY)
     ) * informal_care

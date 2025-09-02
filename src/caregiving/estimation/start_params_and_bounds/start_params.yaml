@@ -69,8 +69,8 @@ disutil_children_ft_work_high: 0.2
 util_formal_care_bad: 0
 util_formal_care_good: 0
 
-# util_informal_care_bad: 0
-# util_informal_care_good: 0
+util_informal_care_bad: 0
+util_informal_care_good: 0
 util_informal_care_high: 0
 util_informal_care_low: 0
 # util_joint_informal_care_low: 0
@@ -78,12 +78,12 @@ util_informal_care_low: 0
 util_joint_informal_care_bad: 0
 util_joint_informal_care_good: 0
 
-util_unemployed_and_informal_care_bad: 0
-util_unemployed_and_informal_care_good: 0
-util_pt_work_and_informal_care_bad: 0
-util_pt_work_and_informal_care_good: 0
-util_ft_work_and_informal_care_bad: 0
-util_ft_work_and_informal_care_good: 0
+util_unemployed_and_informal_care_bad: -0.1
+util_unemployed_and_informal_care_good: -0.1
+util_pt_work_and_informal_care_bad: -0.1
+util_pt_work_and_informal_care_good: -0.1
+util_ft_work_and_informal_care_bad: -0.1
+util_ft_work_and_informal_care_good: -0.1
 
 # util_ft_work_informal_care_bad: -1
 # util_ft_work_informal_care_good: -1

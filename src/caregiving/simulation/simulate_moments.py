@@ -13,7 +13,7 @@ from caregiving.data_management.share.task_create_parent_child_data_set import (
     AGE_BINS_PARENTS,
     AGE_LABELS_PARENTS,
 )
-from caregiving.model.shared import (
+from caregiving.model.shared import (  # NURSING_HOME_CARE,
     CARE_DEMAND_AND_NO_OTHER_SUPPLY,
     CARE_DEMAND_AND_OTHER_SUPPLY,
     FULL_TIME,
@@ -25,7 +25,6 @@ from caregiving.model.shared import (
     NO_INFORMAL_CARE,
     NO_NURSING_HOME_CARE,
     NOT_WORKING_CARE,
-    # NURSING_HOME_CARE,
     PARENT_BAD_HEALTH,
     PART_TIME,
     RETIREMENT,
@@ -122,9 +121,11 @@ def simulate_moments_pandas(  # noqa: PLR0915
     #     df, moments, choice_set=INTENSIVE_INFORMAL_CARE, age_bins=age_bins_75
     # )
 
-    moments["share_informal_care_high_educ"] = df.loc[
-        df["choice"].isin(np.atleast_1d(INFORMAL_CARE)), "education"
-    ].mean()
+    # ================================================================================
+    # moments["share_informal_care_high_educ"] = df.loc[
+    #     df["choice"].isin(np.atleast_1d(INFORMAL_CARE)), "education"
+    # ].mean()
+    # ================================================================================
 
     # Caregivers labor shares by age bin
     moments = create_labor_share_moments_by_age_bin_pandas(
@@ -795,11 +796,14 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
     # share_caregivers_by_age_bin = get_share_by_age_bin(
     #     arr, ind=idx, choice=INFORMAL_CARE, bins=age_bins_75
     # )
-    education_mask = arr[:, idx["education"]] == 1
-    care_type_mask = jnp.isin(arr[:, idx["choice"]], INFORMAL_CARE)
-    share_caregivers_high_educ = jnp.sum(education_mask & care_type_mask) / jnp.sum(
-        care_type_mask
-    )
+
+    # ================================================================================
+    # education_mask = arr[:, idx["education"]] == 1
+    # care_type_mask = jnp.isin(arr[:, idx["choice"]], INFORMAL_CARE)
+    # share_caregivers_high_educ = jnp.sum(education_mask & care_type_mask) / jnp.sum(
+    #     care_type_mask
+    # )
+    # ================================================================================
 
     # All informal caregivers
     share_retired_by_age_bin_caregivers = get_share_by_age_bin(
@@ -1182,7 +1186,7 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
         #
         # caregivers
         + share_caregivers_by_age_bin
-        + [share_caregivers_high_educ]
+        # + [share_caregivers_high_educ]
         + share_retired_by_age_bin_caregivers
         + share_unemployed_by_age_bin_caregivers
         + share_working_part_time_by_age_bin_caregivers
