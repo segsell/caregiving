@@ -3,7 +3,7 @@
 import jax
 import jax.numpy as jnp
 
-from caregiving.model.shared import (
+from caregiving.model.shared import (  # is_nursing_home_care,
     CARE_DEMAND_AND_NO_OTHER_SUPPLY,
     CARE_DEMAND_AND_OTHER_SUPPLY,
     SEX,
@@ -18,7 +18,6 @@ from caregiving.model.shared import (
     is_intensive_informal_care,
     is_light_informal_care,
     is_no_care,
-    # is_nursing_home_care,
     is_part_time,
     is_unemployed,
 )

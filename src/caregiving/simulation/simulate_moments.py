@@ -13,7 +13,7 @@ from caregiving.data_management.share.task_create_parent_child_data_set import (
     AGE_BINS_PARENTS,
     AGE_LABELS_PARENTS,
 )
-from caregiving.model.shared import (
+from caregiving.model.shared import (  # NURSING_HOME_CARE,
     CARE_DEMAND_AND_NO_OTHER_SUPPLY,
     CARE_DEMAND_AND_OTHER_SUPPLY,
     FULL_TIME,
@@ -25,7 +25,6 @@ from caregiving.model.shared import (
     NO_INFORMAL_CARE,
     NO_NURSING_HOME_CARE,
     NOT_WORKING_CARE,
-    # NURSING_HOME_CARE,
     PARENT_BAD_HEALTH,
     PART_TIME,
     RETIREMENT,
