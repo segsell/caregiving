@@ -32,12 +32,12 @@ from caregiving.model.shared import (  # BAD_HEALTH,; CARE_AND_NO_CARE,; FORMAL_
     WORK_AND_UNEMPLOYED_NO_CARE,
     WORK_AND_UNEMPLOYED_NO_FORMAL_CARE,
     is_alive,
+    is_caregiving,
     is_dead,
     is_full_time,
     is_part_time,
     is_retired,
     is_unemployed,
-    is_caregiving,
 )
 from caregiving.model.wealth_and_budget.pensions import (
     calc_experience_for_total_pension_points,
@@ -225,7 +225,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "health": health,
                 "partner_state": partner_state,
                 "mother_health": PARENT_DEAD,
-                "care_demand": 0,  #
+                "care_demand": 0,
                 "job_offer": 0,
             }
             return state_proxy
