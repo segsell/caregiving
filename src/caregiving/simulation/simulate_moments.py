@@ -69,9 +69,9 @@ def simulate_moments_pandas(  # noqa: PLR0915
     df_low = df[df["education"] == 0]
     df_high = df[df["education"] == 1]
 
-    df_caregivers = df[df["choice"].isin(np.asarray(INFORMAL_CARE))]
-    df_caregivers_low = df_caregivers[df_caregivers["education"] == 0]
-    df_caregivers_high = df_caregivers[df_caregivers["education"] == 1]
+    # df_caregivers = df[df["choice"].isin(np.asarray(INFORMAL_CARE))]
+    # df_caregivers_low = df_caregivers[df_caregivers["education"] == 0]
+    # df_caregivers_high = df_caregivers[df_caregivers["education"] == 1]
 
     # =================================================================================
     # df_light_caregivers = df[df["choice"].isin(np.asarray(LIGHT_INFORMAL_CARE))]
@@ -111,7 +111,7 @@ def simulate_moments_pandas(  # noqa: PLR0915
         df,
         moments,
         choice_set=INFORMAL_CARE,
-        age_bins_and_labels=age_bins_75,
+        age_bins_and_labels=age_bins,
         label="informal_care",
     )
     # moments = create_choice_shares_by_age_bin_pandas(
@@ -127,19 +127,19 @@ def simulate_moments_pandas(  # noqa: PLR0915
     # ].mean()
     # ================================================================================
 
-    # Caregivers labor shares by age bin
-    moments = create_labor_share_moments_by_age_bin_pandas(
-        df_caregivers, moments, label="caregivers", age_bins=age_bins
-    )
-    moments = create_labor_share_moments_by_age_bin_pandas(
-        df_caregivers_low, moments, label="caregivers_low_education", age_bins=age_bins
-    )
-    moments = create_labor_share_moments_by_age_bin_pandas(
-        df_caregivers_high,
-        moments,
-        label="caregivers_high_education",
-        age_bins=age_bins,
-    )
+    # # Caregivers labor shares by age bin
+    # moments = create_labor_share_moments_by_age_bin_pandas(
+    #     df_caregivers, moments, label="caregivers", age_bins=age_bins
+    # )
+    # moments = create_labor_share_moments_by_age_bin_pandas(
+    #     df_caregivers_low, moments, label="caregivers_low_education", age_bins=age_bins
+    # )
+    # moments = create_labor_share_moments_by_age_bin_pandas(
+    #     df_caregivers_high,
+    #     moments,
+    #     label="caregivers_high_education",
+    #     age_bins=age_bins,
+    # )
 
     # moments = create_labor_share_moments_by_age_bin_pandas(
     #     df_light_caregivers, moments, label="light_caregivers", age_bins=age_bins
@@ -788,7 +788,7 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
 
     # Caregivers labor shares by education and age bin
     share_caregivers_by_age_bin = get_share_by_age_bin(
-        arr, ind=idx, choice=INFORMAL_CARE, bins=age_bins_75
+        arr, ind=idx, choice=INFORMAL_CARE, bins=age_bins
     )
     # share_caregivers_by_age_bin = get_share_by_age_bin(
     #     arr, ind=idx, choice=LIGHT_INFORMAL_CARE, bins=age_bins_75
@@ -805,45 +805,45 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
     # )
     # ================================================================================
 
-    # All informal caregivers
-    share_retired_by_age_bin_caregivers = get_share_by_age_bin(
-        arr_caregivers, ind=idx, choice=RETIREMENT, bins=age_bins
-    )
-    share_unemployed_by_age_bin_caregivers = get_share_by_age_bin(
-        arr_caregivers, ind=idx, choice=UNEMPLOYED, bins=age_bins
-    )
-    share_working_part_time_by_age_bin_caregivers = get_share_by_age_bin(
-        arr_caregivers, ind=idx, choice=PART_TIME, bins=age_bins
-    )
-    share_working_full_time_by_age_bin_caregivers = get_share_by_age_bin(
-        arr_caregivers, ind=idx, choice=FULL_TIME, bins=age_bins
-    )
+    # # All informal caregivers
+    # share_retired_by_age_bin_caregivers = get_share_by_age_bin(
+    #     arr_caregivers, ind=idx, choice=RETIREMENT, bins=age_bins
+    # )
+    # share_unemployed_by_age_bin_caregivers = get_share_by_age_bin(
+    #     arr_caregivers, ind=idx, choice=UNEMPLOYED, bins=age_bins
+    # )
+    # share_working_part_time_by_age_bin_caregivers = get_share_by_age_bin(
+    #     arr_caregivers, ind=idx, choice=PART_TIME, bins=age_bins
+    # )
+    # share_working_full_time_by_age_bin_caregivers = get_share_by_age_bin(
+    #     arr_caregivers, ind=idx, choice=FULL_TIME, bins=age_bins
+    # )
 
-    # Caregivers by education
-    share_retired_by_age_bin_caregivers_low_educ = get_share_by_age_bin(
-        arr_caregivers_low_educ, ind=idx, choice=RETIREMENT, bins=age_bins
-    )
-    share_unemployed_by_age_bin_caregivers_low_educ = get_share_by_age_bin(
-        arr_caregivers_low_educ, ind=idx, choice=UNEMPLOYED, bins=age_bins
-    )
-    share_working_part_time_by_age_bin_caregivers_low_educ = get_share_by_age_bin(
-        arr_caregivers_low_educ, ind=idx, choice=PART_TIME, bins=age_bins
-    )
-    share_working_full_time_by_age_bin_caregivers_low_educ = get_share_by_age_bin(
-        arr_caregivers_low_educ, ind=idx, choice=FULL_TIME, bins=age_bins
-    )
-    share_retired_by_age_bin_caregivers_high_educ = get_share_by_age_bin(
-        arr_caregivers_high_educ, ind=idx, choice=RETIREMENT, bins=age_bins
-    )
-    share_unemployed_by_age_bin_caregivers_high_educ = get_share_by_age_bin(
-        arr_caregivers_high_educ, ind=idx, choice=UNEMPLOYED, bins=age_bins
-    )
-    share_working_part_time_by_age_bin_caregivers_high_educ = get_share_by_age_bin(
-        arr_caregivers_high_educ, ind=idx, choice=PART_TIME, bins=age_bins
-    )
-    share_working_full_time_by_age_bin_caregivers_high_educ = get_share_by_age_bin(
-        arr_caregivers_high_educ, ind=idx, choice=FULL_TIME, bins=age_bins
-    )
+    # # Caregivers by education
+    # share_retired_by_age_bin_caregivers_low_educ = get_share_by_age_bin(
+    #     arr_caregivers_low_educ, ind=idx, choice=RETIREMENT, bins=age_bins
+    # )
+    # share_unemployed_by_age_bin_caregivers_low_educ = get_share_by_age_bin(
+    #     arr_caregivers_low_educ, ind=idx, choice=UNEMPLOYED, bins=age_bins
+    # )
+    # share_working_part_time_by_age_bin_caregivers_low_educ = get_share_by_age_bin(
+    #     arr_caregivers_low_educ, ind=idx, choice=PART_TIME, bins=age_bins
+    # )
+    # share_working_full_time_by_age_bin_caregivers_low_educ = get_share_by_age_bin(
+    #     arr_caregivers_low_educ, ind=idx, choice=FULL_TIME, bins=age_bins
+    # )
+    # share_retired_by_age_bin_caregivers_high_educ = get_share_by_age_bin(
+    #     arr_caregivers_high_educ, ind=idx, choice=RETIREMENT, bins=age_bins
+    # )
+    # share_unemployed_by_age_bin_caregivers_high_educ = get_share_by_age_bin(
+    #     arr_caregivers_high_educ, ind=idx, choice=UNEMPLOYED, bins=age_bins
+    # )
+    # share_working_part_time_by_age_bin_caregivers_high_educ = get_share_by_age_bin(
+    #     arr_caregivers_high_educ, ind=idx, choice=PART_TIME, bins=age_bins
+    # )
+    # share_working_full_time_by_age_bin_caregivers_high_educ = get_share_by_age_bin(
+    #     arr_caregivers_high_educ, ind=idx, choice=FULL_TIME, bins=age_bins
+    # )
 
     # # Light caregivers
     # share_retired_by_age_bin_light_caregivers = get_share_by_age_bin(
@@ -1187,18 +1187,18 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
         # caregivers
         + share_caregivers_by_age_bin
         # + [share_caregivers_high_educ]
-        + share_retired_by_age_bin_caregivers
-        + share_unemployed_by_age_bin_caregivers
-        + share_working_part_time_by_age_bin_caregivers
-        + share_working_full_time_by_age_bin_caregivers
-        + share_retired_by_age_bin_caregivers_low_educ
-        + share_unemployed_by_age_bin_caregivers_low_educ
-        + share_working_part_time_by_age_bin_caregivers_low_educ
-        + share_working_full_time_by_age_bin_caregivers_low_educ
-        + share_retired_by_age_bin_caregivers_high_educ
-        + share_unemployed_by_age_bin_caregivers_high_educ
-        + share_working_part_time_by_age_bin_caregivers_high_educ
-        + share_working_full_time_by_age_bin_caregivers_high_educ
+        # + share_retired_by_age_bin_caregivers
+        # + share_unemployed_by_age_bin_caregivers
+        # + share_working_part_time_by_age_bin_caregivers
+        # + share_working_full_time_by_age_bin_caregivers
+        # + share_retired_by_age_bin_caregivers_low_educ
+        # + share_unemployed_by_age_bin_caregivers_low_educ
+        # + share_working_part_time_by_age_bin_caregivers_low_educ
+        # + share_working_full_time_by_age_bin_caregivers_low_educ
+        # + share_retired_by_age_bin_caregivers_high_educ
+        # + share_unemployed_by_age_bin_caregivers_high_educ
+        # + share_working_part_time_by_age_bin_caregivers_high_educ
+        # + share_working_full_time_by_age_bin_caregivers_high_educ
         #
         # # light caregivers
         # + share_retired_by_age_bin_light_caregivers

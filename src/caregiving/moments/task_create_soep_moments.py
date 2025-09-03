@@ -134,7 +134,7 @@ def task_create_soep_moments(
             "share_informal_care_age_bin_55_60": 0.06193384,
             "share_informal_care_age_bin_60_65": 0.05304824,
             "share_informal_care_age_bin_65_70": 0.03079298,
-            "share_informal_care_age_bin_70_75": 0.00155229,
+            # "share_informal_care_age_bin_70_75": 0.00155229,
         }
     )
     # share_informal_care_40_45, 0.02980982
@@ -151,25 +151,25 @@ def task_create_soep_moments(
     #     df["any_care"] == 1, "education"
     # ].var(ddof=DEGREES_OF_FREEDOM)
 
-    # Caregiving
-    moments, variances = compute_labor_shares_by_age_bin(
-        df_caregivers,
-        moments=moments,
-        variances=variances,
-        label="caregivers",
-    )
-    moments, variances = compute_labor_shares_by_age_bin(
-        df_caregivers_low,
-        moments=moments,
-        variances=variances,
-        label="caregivers_low_education",
-    )
-    moments, variances = compute_labor_shares_by_age_bin(
-        df_caregivers_high,
-        moments=moments,
-        variances=variances,
-        label="caregivers_high_education",
-    )
+    # # Caregiving
+    # moments, variances = compute_labor_shares_by_age_bin(
+    #     df_caregivers,
+    #     moments=moments,
+    #     variances=variances,
+    #     label="caregivers",
+    # )
+    # moments, variances = compute_labor_shares_by_age_bin(
+    #     df_caregivers_low,
+    #     moments=moments,
+    #     variances=variances,
+    #     label="caregivers_low_education",
+    # )
+    # moments, variances = compute_labor_shares_by_age_bin(
+    #     df_caregivers_high,
+    #     moments=moments,
+    #     variances=variances,
+    #     label="caregivers_high_education",
+    # )
 
     # # B2.2) Light caregiving
     # moments, variances = compute_labor_shares_by_age_bin(
@@ -461,7 +461,7 @@ def compute_share_informal_care_by_age_bin(
 
     if age_bins is None:
         # bin edges: 40,45,50,55,60,65,70  (right edge 70 is *exclusive*)
-        bin_edges = list(range(40, 80, 5))  # [40,45,50,55,60,65,70]
+        bin_edges = list(range(40, 75, 5))  # [40,45,50,55,60,65,70]
         bin_labels = [f"{s}_{s+4}" for s in bin_edges[:-1]]
     else:
         bin_edges, bin_labels = age_bins
