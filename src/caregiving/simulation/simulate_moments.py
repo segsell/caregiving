@@ -28,6 +28,7 @@ from caregiving.model.shared import (  # NURSING_HOME_CARE,
     PARENT_BAD_HEALTH,
     PART_TIME,
     RETIREMENT,
+    SCALE_CAREGIVER_SHARE,
     UNEMPLOYED,
     WORK,
 )
@@ -113,6 +114,7 @@ def simulate_moments_pandas(  # noqa: PLR0915
         choice_set=INFORMAL_CARE,
         age_bins_and_labels=age_bins,
         label="informal_care",
+        scale=SCALE_CAREGIVER_SHARE,
     )
     # moments = create_choice_shares_by_age_bin_pandas(
     #     df, moments, choice_set=LIGHT_INFORMAL_CARE, age_bins=age_bins_75
@@ -517,7 +519,8 @@ def create_choice_shares_by_age_bin_pandas(
     choice_set: jnp.ndarray,
     age_bins_and_labels: tuple[list[int], list[str]] | None = None,
     label: str | None = None,
-    age_var: str | None = None,
+    age_var: str = "age",
+    scale: float = 1.0,
 ):
     """
     Update *moments* in-place with the share of agents whose ``choice`` lies
@@ -545,7 +548,7 @@ def create_choice_shares_by_age_bin_pandas(
     """
     # -------- 1. Pre-processing ---------------------------------------------------
     label = f"_{label}" if label else ""
-    age_var = age_var or "age"
+    # age_var = age_var or "age"
 
     if age_bins_and_labels is None:
         bin_edges = list(range(40, 75, 5))  # [40, 45, …, 70]
@@ -574,7 +577,7 @@ def create_choice_shares_by_age_bin_pandas(
 
     # -------- 3. Write into *moments* --------------------------------------------
     for age_bin in bin_labels:
-        moments[f"share{label}_age_bin_{age_bin}"] = share_by_bin.loc[age_bin]
+        moments[f"share{label}_age_bin_{age_bin}"] = share_by_bin.loc[age_bin] * scale
 
     return moments
 
@@ -788,7 +791,7 @@ def create_moments_jax(sim_df, min_age, max_age):  # noqa: PLR0915
 
     # Caregivers labor shares by education and age bin
     share_caregivers_by_age_bin = get_share_by_age_bin(
-        arr, ind=idx, choice=INFORMAL_CARE, bins=age_bins
+        arr, ind=idx, choice=INFORMAL_CARE, bins=age_bins, scale=SCALE_CAREGIVER_SHARE
     )
     # share_caregivers_by_age_bin = get_share_by_age_bin(
     #     arr, ind=idx, choice=LIGHT_INFORMAL_CARE, bins=age_bins_75
@@ -1286,7 +1289,7 @@ def get_share_by_age(df_arr, ind, choice, min_age, max_age):
     return shares
 
 
-def get_share_by_age_bin(df_arr, ind, choice, bins, age_var=None):
+def get_share_by_age_bin(df_arr, ind, choice, bins, age_var=None, scale=1.0):
     """Get share of agents choosing choice by age bin."""
     age_var = age_var or "age"
     age_col = df_arr[:, ind[age_var]]
@@ -1297,7 +1300,7 @@ def get_share_by_age_bin(df_arr, ind, choice, bins, age_var=None):
     for bin_start, bin_end in bins:
         age_mask = (age_col >= bin_start) & (age_col < bin_end)
         share = jnp.sum(age_mask & choice_mask) / jnp.sum(age_mask)
-        shares.append(share)
+        shares.append(share * scale)
 
     return shares
 

@@ -24,6 +24,7 @@ from caregiving.model.shared import (
     PARENT_WEIGHTS_SHARE,
     PART_TIME_CHOICES,
     RETIREMENT_CHOICES,
+    SCALE_CAREGIVER_SHARE,
     UNEMPLOYED_CHOICES,
     WORK,
 )
@@ -125,18 +126,21 @@ def task_create_soep_moments(
         moments=moments.copy(),
         variances=variances,
         weights=PARENT_WEIGHTS_SHARE,
+        scale=SCALE_CAREGIVER_SHARE,
     )
-    moments.update(
-        {
-            "share_informal_care_age_bin_40_45": 0.02980982,
-            "share_informal_care_age_bin_45_50": 0.04036255,
-            "share_informal_care_age_bin_50_55": 0.05350986,
-            "share_informal_care_age_bin_55_60": 0.06193384,
-            "share_informal_care_age_bin_60_65": 0.05304824,
-            "share_informal_care_age_bin_65_70": 0.03079298,
-            # "share_informal_care_age_bin_70_75": 0.00155229,
-        }
-    )
+    caregiver_shares = {
+        "share_informal_care_age_bin_40_45": 0.02980982,
+        "share_informal_care_age_bin_45_50": 0.04036255,
+        "share_informal_care_age_bin_50_55": 0.05350986,
+        "share_informal_care_age_bin_55_60": 0.06193384,
+        "share_informal_care_age_bin_60_65": 0.05304824,
+        "share_informal_care_age_bin_65_70": 0.03079298,
+        # "share_informal_care_age_bin_70_75": 0.00155229,
+    }
+    scaled_caregiver_shares = {
+        k: v * SCALE_CAREGIVER_SHARE for k, v in caregiver_shares.items()
+    }
+    moments.update(scaled_caregiver_shares)
     # share_informal_care_40_45, 0.02980982
     # share_informal_care_45_50, 0.04036255
     # share_informal_care_50_55, 0.05350986
@@ -448,6 +452,7 @@ def compute_share_informal_care_by_age_bin(
     age_bins: tuple | None = None,
     weights: dict | None = None,
     label: str | None = None,
+    scale: float = 1.0,
 ):
     """
     Update *moments* in=place with the share of agents whose “choice”
@@ -490,6 +495,9 @@ def compute_share_informal_care_by_age_bin(
     variance_by_age = age_groups["any_care"].apply(
         lambda s: s.eq(1).astype(int).var(ddof=DEGREES_OF_FREEDOM)
     )
+    # variance_by_age = age_groups["any_care"].apply(
+    #     lambda x: x.astype(int).var(ddof=DEGREES_OF_FREEDOM)
+    # )
 
     if weights is None:
         adjusted_share_by_age = share_by_age
@@ -501,7 +509,7 @@ def compute_share_informal_care_by_age_bin(
 
     for age in bin_labels:
         moments[f"share_informal_care{label}_age_bin_{age}"] = (
-            adjusted_share_by_age.loc[age]
+            adjusted_share_by_age.loc[age] * scale
         )
         variances[f"variance_informal_care{label}_age_bin_{age}"] = variance_by_age.loc[
             age

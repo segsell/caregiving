@@ -134,6 +134,8 @@ INITIAL_CONDITIONS_COHORT_HIGH = 1960
 INITIAL_CONDITIONS_AGE_LOW = 50
 INITIAL_CONDITIONS_AGE_HIGH = 60
 
+SCALE_CAREGIVER_SHARE = 10
+
 # ==============================================================================
 # Empirical Labor Choices
 # ==============================================================================

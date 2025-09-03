@@ -653,27 +653,34 @@ def utility_of_caregiving(
     #     * intensive_informal
     # )
 
-    # util_informal_care_by_health = (
-    #     params["util_informal_care_bad"] * bad_health
-    #     + params["util_informal_care_good"] * good_health
-    # )
-    util_informal_care_by_education = params[
-        "util_informal_care_high"
-    ] * education + params["util_informal_care_low"] * (1 - education)
+    util_informal_care_by_health = (
+        params["util_informal_care_bad"] * bad_health
+        + params["util_informal_care_good"] * good_health
+    )
+    # util_informal_care_by_education = params[
+    #     "util_informal_care_high"
+    # ] * education + params["util_informal_care_low"] * (1 - education)
     util_informal_care_by_period = (
         params["util_informal_care_period"] * period
         + params["util_informal_care_period_squared"] * period**2
+        + params["util_informal_care_period_cubic"] * period**3
     )
 
-    util_joint_care = (
-        params["util_joint_informal_care_low"] * (1 - education)
-        + params["util_joint_informal_care_high"] * education
-        # params["util_joint_informal_care_bad"] * bad_health
-        # + params["util_joint_informal_care_good"] * good_health
+    # util_joint_care = (
+    #     params["util_joint_informal_care_low"] * (1 - education)
+    #     + params["util_joint_informal_care_high"] * education
+    #     # params["util_joint_informal_care_bad"] * bad_health
+    #     # + params["util_joint_informal_care_good"] * good_health
+    # )
+
+    util_joint_care_by_health = (
+        params["util_joint_informal_care_bad"] * bad_health
+        + params["util_joint_informal_care_good"] * good_health
     )
     util_joint_care_by_period = (
         params["util_joint_informal_care_period"] * period
         + params["util_joint_informal_care_period_squared"] * period**2
+        + params["util_joint_informal_care_period_cubic"] * period**3
     )
 
     # util_ft_work_informal_care_by_health = (
@@ -692,12 +699,12 @@ def utility_of_caregiving(
     # )
 
     util_informal = (
-        util_informal_care_by_education
+        # util_informal_care_by_education +
+        util_informal_care_by_health
         + util_informal_care_by_period
-        # + util_informal_care_by_health
         # + util_informal_and_work_by_health
-        + (util_joint_care + util_joint_care_by_period)
-        * (care_demand == CARE_DEMAND_AND_OTHER_SUPPLY)
+        + (util_joint_care_by_health) * (care_demand == CARE_DEMAND_AND_OTHER_SUPPLY)
+        + (util_joint_care_by_period) * (care_demand == CARE_DEMAND_AND_OTHER_SUPPLY)
     ) * informal_care
 
     # util_nursing_home = (

@@ -10,8 +10,6 @@ import numpy as np
 import optimagic as om
 import pandas as pd
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import MACHINE_ZERO, RETIREMENT
@@ -28,6 +26,8 @@ from caregiving.simulation.simulate_moments import (
     simulate_moments_jax,
     simulate_moments_pandas,
 )
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 jax.config.update("jax_enable_x64", True)
 
@@ -303,13 +303,20 @@ def msm_criterion(
 
     deviations = simulated_flat - flat_empirical_moments
 
-    if relative_deviations:
-        with np.errstate(divide="ignore", invalid="ignore"):
-            rel = deviations / flat_empirical_moments
-            invalid = ~np.isfinite(rel)
-            rel[invalid] = deviations[invalid]
+    # if relative_deviations:
+    #     # with np.errstate(divide="ignore", invalid="ignore"):
+    #     #     rel = deviations / flat_empirical_moments
+    #     #     invalid = ~np.isfinite(rel)
+    #     #     rel[invalid] = deviations[invalid]
+    #     deviations /= flat_empirical_moments
 
-        deviations = rel
+    if relative_deviations:
+        np.divide(
+            deviations,
+            flat_empirical_moments,
+            out=deviations,
+            where=flat_empirical_moments != 0,
+        )
 
     residuals = deviations @ chol_weights
 

@@ -23,6 +23,7 @@ from caregiving.model.shared import (
     NOT_WORKING,
     NOT_WORKING_CHOICES,
     PARENT_DEAD,
+    SCALE_CAREGIVER_SHARE,
     SEX,
     WORK,
     WORK_CHOICES,
@@ -221,6 +222,7 @@ def task_plot_model_fit(  # noqa: PLR0915
     #     choice_set=INFORMAL_CARE,
     #     path_to_save_plot=path_to_save_caregiver_share_by_age_plot,
     # )
+
     plot_caregiver_shares_by_age_bins(
         emp_moms,
         df_sim,
@@ -228,6 +230,7 @@ def task_plot_model_fit(  # noqa: PLR0915
         choice_set=INFORMAL_CARE,
         age_min=40,
         age_max=75,
+        scale=SCALE_CAREGIVER_SHARE,
         path_to_save_plot=path_to_save_caregiver_share_by_age_bin_plot,
     )
     # plot_simulated_care_demand_by_age(
