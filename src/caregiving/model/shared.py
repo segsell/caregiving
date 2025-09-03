@@ -12,7 +12,7 @@ MAX_SYEAR = 2023  # Maximum year in thhe SOEP
 START_PERIOD_CAREGIVING = 10
 
 PARENT_WEIGHTS_SHARE = {
-    "40_44": 0.303030,
+    "40_44": 0.303030,  # make smaller
     "45_49": 0.303030,
     "50_54": 0.467470,
     "55_59": 0.467470,

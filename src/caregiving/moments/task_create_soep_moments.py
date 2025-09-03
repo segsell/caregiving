@@ -18,7 +18,9 @@ from caregiving.data_management.share.task_create_parent_child_data_set import (
 )
 from caregiving.model.shared import (
     BAD_HEALTH,
+    DEAD,
     FULL_TIME_CHOICES,
+    GOOD_HEALTH,
     NOT_WORKING,
     PARENT_BAD_HEALTH,
     PARENT_WEIGHTS_SHARE,
@@ -54,8 +56,16 @@ def task_create_soep_moments(
     end_age = specs["end_age_msm"]
     age_range = range(start_age, end_age + 1)
 
+    age_bins_75 = (
+        list(range(40, 80, 5)),  # [40, 45, … , 70]
+        [f"{s}_{s+4}" for s in range(40, 75, 5)],  # "40_44", …a
+    )
+
     df_full = pd.read_csv(path_to_main_sample, index_col=[0])
     df = df_full[(df_full["sex"] == 1) & (df_full["age"] <= end_age + 10)]  # women only
+    df_alive = df[df["health"] != DEAD].copy()
+    df_good_health = df[df["health"] == GOOD_HEALTH].copy()
+    df_bad_health = df[df["health"] == BAD_HEALTH].copy()
 
     df_caregivers_full = pd.read_csv(path_to_caregivers_sample, index_col=[0])
     df_caregivers = df_caregivers_full[
@@ -63,11 +73,19 @@ def task_create_soep_moments(
         & (df_caregivers_full["age"] <= end_age + 10)
         & (df_caregivers_full["any_care"] == 1)
     ]
+    df_caregivers_alive = df_caregivers[df_caregivers["health"] != DEAD].copy()
+
     df_light_caregivers = df_caregivers[df_caregivers["light_care"] == 1]
     df_intensive_caregivers = df_caregivers[df_caregivers["intensive_care"] == 1]
 
-    df_year = df[df["syear"] == 2012]  # 2016 # noqa: PLR2004
+    df_year = df[df["syear"] == 2012]  # 2012, 2016 # noqa: PLR2004
+    df_year_caregivers = df_year[
+        (df_year["any_care"] == 1) & (df_year["health"] != DEAD)
+    ].copy()
+    df_year_alive = df_year[df_year["health"] != DEAD].copy()
     # # df_year = df[df["syear"].between(2012, 2018)]
+    df_year_bad_health = df_year[df_year["health"] == BAD_HEALTH]
+    df_year_good_health = df_year[df_year["health"] == GOOD_HEALTH]
 
     df["kidage_youngest"] = df["kidage_youngest"] - 1
 
@@ -114,6 +132,30 @@ def task_create_soep_moments(
         label="high_education",
     )
 
+    # # B) Health
+    # # moments, variances = compute_shares_by_age_bin(
+    # #     df_alive,
+    # #     moments,
+    # #     variances,
+    # #     age_bins=age_bins_75,
+    # #     variable="health",
+    # #     label="good_health",
+    # # )
+    # moments, variances = compute_labor_shares_by_age(
+    #     df_good_health,
+    #     moments=moments,
+    #     variances=variances,
+    #     age_range=age_range,
+    #     label="good_health",
+    # )
+    # moments, variances = compute_labor_shares_by_age(
+    #     df_bad_health,
+    #     moments=moments,
+    #     variances=variances,
+    #     age_range=age_range,
+    #     label="bad_health",
+    # )
+
     # B2) Moments by age bin conditional on caregiving
     # moments, variances = compute_share_informal_care_by_age(
     #     df,
@@ -128,6 +170,23 @@ def task_create_soep_moments(
         weights=PARENT_WEIGHTS_SHARE,
         scale=SCALE_CAREGIVER_SHARE,
     )
+    # t, variances = compute_share_informal_care_by_age_bin(
+    #     df_year_good_health,
+    #     moments=t,
+    #     variances=variances,
+    #     weights=PARENT_WEIGHTS_SHARE,
+    #     scale=SCALE_CAREGIVER_SHARE,
+    #     label="good_health",
+    # )
+    # t, variances = compute_share_informal_care_by_age_bin(
+    #     df_year_bad_health,
+    #     moments=t,
+    #     variances=variances,
+    #     weights=PARENT_WEIGHTS_SHARE,
+    #     scale=SCALE_CAREGIVER_SHARE,
+    #     label="bad_health",
+    # )
+
     caregiver_shares = {
         "share_informal_care_age_bin_40_45": 0.02980982,
         "share_informal_care_age_bin_45_50": 0.04036255,
@@ -141,6 +200,15 @@ def task_create_soep_moments(
         k: v * SCALE_CAREGIVER_SHARE for k, v in caregiver_shares.items()
     }
     moments.update(scaled_caregiver_shares)
+
+    # moments, variances = compute_shares_by_age_bin(
+    #     df_caregivers_alive,
+    #     moments,
+    #     variances,
+    #     variable="health",
+    #     label="caregivers_good_health",
+    # )
+
     # share_informal_care_40_45, 0.02980982
     # share_informal_care_45_50, 0.04036255
     # share_informal_care_50_55, 0.05350986

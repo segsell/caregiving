@@ -68,23 +68,26 @@ disutil_children_ft_work_high: 0.2
 # util_home_care_good: 0
 # util_informal_care_high: 0
 # util_informal_care_low: 0
-util_informal_care_period: 0
-util_informal_care_period_squared: 0
-util_informal_care_period_cubic: 0
+# util_informal_care_period: 0
+# util_informal_care_period_squared: 0
+# util_informal_care_period_cubic: 0
 
 # util_joint_informal_care_low: 0
 # util_joint_informal_care_high: 0
 util_joint_informal_care_bad: 0
 util_joint_informal_care_good: 0
-util_joint_informal_care_period: 0
-util_joint_informal_care_period_squared: 0
-util_joint_informal_care_period_cubic: 0
+# util_joint_informal_care_period: 0
+# util_joint_informal_care_period_squared: 0
+# util_joint_informal_care_period_cubic: 0
 
 # util_formal_care_bad: 0
 # util_formal_care_good: 0
 
 util_informal_care_bad: 0
 util_informal_care_good: 0
+util_informal_care_mother_good: 0
+util_informal_care_mother_medium: 0
+util_informal_care_mother_bad: 0
 # # util_joint_informal_care_low: 0
 # # util_joint_informal_care_high: 0
 

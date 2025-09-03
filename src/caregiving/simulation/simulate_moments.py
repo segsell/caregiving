@@ -55,10 +55,10 @@ def simulate_moments_pandas(  # noqa: PLR0915
         list(range(40, 75, 5)),  # [40, 45, … , 70]
         [f"{s}_{s+4}" for s in range(40, 70, 5)],  # "40_44", …a
     )
-    age_bins_75 = (
-        list(range(40, 80, 5)),  # [40, 45, … , 70]
-        [f"{s}_{s+4}" for s in range(40, 75, 5)],  # "40_44", …a
-    )
+    # age_bins_75 = (
+    #     list(range(40, 80, 5)),  # [40, 45, … , 70]
+    #     [f"{s}_{s+4}" for s in range(40, 75, 5)],  # "40_44", …a
+    # )
 
     df["mother_age"] = (
         df["age"].to_numpy()

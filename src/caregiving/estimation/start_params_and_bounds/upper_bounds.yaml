@@ -66,6 +66,9 @@ util_joint_informal_care_period_cubic: 5
 
 util_informal_care_bad: 5
 util_informal_care_good: 5
+util_informal_care_mother_good: 5
+util_informal_care_mother_medium: 5
+util_informal_care_mother_bad: 5
 # util_informal_care_high: 5
 # util_informal_care_low: 5
 # util_joint_informal_care_low: 5

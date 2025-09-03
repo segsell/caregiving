@@ -13,9 +13,11 @@ from pytask import Product
 
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import (
+    BAD_HEALTH,
     DEAD,
     FILL_VALUE,
     FULL_TIME_CHOICES,
+    GOOD_HEALTH,
     NOT_WORKING,
     PARENT_WEIGHTS_SHARE,
     PART_TIME,
@@ -43,6 +45,14 @@ def task_plot_empirical_soep_moments(
     / "plots"
     / "raw_moments"
     / "labor_shares_by_age.png",
+    path_to_save_labor_supply_good_health_by_age: Annotated[Path, Product] = BLD
+    / "plots"
+    / "raw_moments"
+    / "labor_shares_good_health_by_age.png",
+    path_to_save_labor_supply_bad_health_by_age: Annotated[Path, Product] = BLD
+    / "plots"
+    / "raw_moments"
+    / "labor_shares_bad_health_by_age.png",
     path_to_save_labor_supply_caregivers_by_age: Annotated[Path, Product] = BLD
     / "plots"
     / "raw_moments"
@@ -75,7 +85,9 @@ def task_plot_empirical_soep_moments(
     end_age = specs["end_age_msm"]
 
     df = pd.read_csv(path_to_main_sample, index_col=[0])
-    df = df[(df["sex"] == 1) & (df["age"] <= end_age + 10)]  # women only
+    df = df[(df["sex"] == 1) & (df["age"] <= end_age + 10)].copy()  # women only
+    df_good_health = df[df["health"] == GOOD_HEALTH].copy()
+    df_bad_health = df[df["health"] == BAD_HEALTH].copy()
 
     df_caregivers = pd.read_csv(path_to_caregivers_sample, index_col=[0])
     df_caregivers = df_caregivers[
@@ -104,6 +116,22 @@ def task_plot_empirical_soep_moments(
         age_min=start_age,
         age_max=end_age,
         path_to_save_plot=path_to_save_labor_supply_caregivers_by_age,
+    )
+
+    # Health
+    plot_choice_shares_by_education_emp(
+        data_emp=df_good_health,
+        specs=specs,
+        age_min=start_age,
+        age_max=end_age,
+        path_to_save_plot=path_to_save_labor_supply_good_health_by_age,
+    )
+    plot_choice_shares_by_education_emp(
+        data_emp=df_bad_health,
+        specs=specs,
+        age_min=start_age,
+        age_max=end_age,
+        path_to_save_plot=path_to_save_labor_supply_bad_health_by_age,
     )
 
     plot_choice_shares_by_education_age_bins_emp(

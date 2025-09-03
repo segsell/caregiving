@@ -21,11 +21,8 @@ rho: 1.98
 sigma: 0.16471062648214
 util_informal_care_bad: 0
 util_informal_care_good: 0
-util_informal_care_period: 0
-util_informal_care_period_cubic: 0
-util_informal_care_period_squared: 0
+util_informal_care_mother_bad: 0
+util_informal_care_mother_good: 0
+util_informal_care_mother_medium: 0
 util_joint_informal_care_bad: 0
 util_joint_informal_care_good: 0
-util_joint_informal_care_period: 0
-util_joint_informal_care_period_cubic: 0
-util_joint_informal_care_period_squared: 0
