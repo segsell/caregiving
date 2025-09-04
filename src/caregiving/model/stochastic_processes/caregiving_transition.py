@@ -7,7 +7,7 @@ from caregiving.model.shared import (
     START_PERIOD_CAREGIVING,
 )
 
-AGE_OFFSET = 0  # 3
+AGE_OFFSET = 3
 
 
 def health_transition_good_medium_bad(

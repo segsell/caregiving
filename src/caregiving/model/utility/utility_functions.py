@@ -676,6 +676,10 @@ def utility_of_caregiving(
         + params["util_informal_care_mother_medium"] * mother_medium_health
         + params["util_informal_care_mother_bad"] * mother_bad_health
     )
+    # util_informal_care_by_period = (
+    #     params["util_informal_care_period"] * period
+    #     + params["util_informal_care_period_squared"] * period**2
+    # )
 
     # util_joint_care = (
     #     params["util_joint_informal_care_low"] * (1 - education)
@@ -713,6 +717,7 @@ def utility_of_caregiving(
         # util_informal_care_by_education +
         util_informal_care_by_health
         + util_informal_care_by_mother_health
+        # + util_informal_care_by_period
         # + util_informal_and_work_by_health
         + (util_joint_care_by_health) * (care_demand == CARE_DEMAND_AND_OTHER_SUPPLY)
     ) * informal_care
