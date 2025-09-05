@@ -21,6 +21,7 @@ from caregiving.model.shared import (
     FEMALE,
     MALE,
     MIN_AGE_PARENTS,
+    END_YEAR_PARENT_GENERATION,
     PARENT_DEAD,
     PARENT_GOOD_HEALTH,
     PARENT_MEDIUM_HEALTH,
@@ -28,10 +29,13 @@ from caregiving.model.shared import (
 from caregiving.specs.derive_specs import read_and_derive_specs
 from caregiving.utils import table
 
+import pytask
 
+
+@pytask.mark.dip
 def task_estimate_adl_transitions_one_logit(  # noqa: PLR0912
     path_to_specs: Path = SRC / "specs.yaml",
-    path_to_parent_child_sample: Path = BLD / "data" / "parent_child_data.csv",
+    path_to_parent_child_sample: Path = BLD / "data" / "share_parent_child_data.csv",
     path_to_save_adl_probabilities: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
@@ -48,6 +52,7 @@ def task_estimate_adl_transitions_one_logit(  # noqa: PLR0912
     specs = read_and_derive_specs(path_to_specs)
 
     df = pd.read_csv(path_to_parent_child_sample)
+    df = df[df["yrbirth"] < END_YEAR_PARENT_GENERATION].copy()
 
     model_men, model_women = estimate_multinomial_logit_by_gender(df)
 
@@ -152,6 +157,7 @@ def task_estimate_adl_transitions_one_logit(  # noqa: PLR0912
     )
 
 
+@pytask.mark.cip
 def task_plot_care_demand(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_adl_mat: Path = BLD

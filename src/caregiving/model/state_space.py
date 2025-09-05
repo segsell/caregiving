@@ -151,7 +151,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
     elif (not is_retired(lagged_choice)) & (already_retired == 1):
         return False
     # ================================================================================
-    elif (age > options["end_age_msm"]) & is_caregiving(lagged_choice):
+    elif (age > options["end_age_msm"] + 1) & is_caregiving(lagged_choice):
         return False
     # ================================================================================
     # After the maximum retirement age, you must be retired.
@@ -325,7 +325,7 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912
     #         else:
     #             return ALL
 
-    if (care_demand == 0) | (options["end_age_msm"] <= age):
+    if (care_demand == 0) | (age > options["end_age_msm"]):
         if is_dead(health):
             return RETIREMENT_NO_CARE
         # Retirement is absorbing
@@ -353,7 +353,9 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912
                     return NOT_WORKING_NO_CARE
                 else:
                     return ALL_NO_CARE
-    elif (care_demand == CARE_DEMAND_AND_OTHER_SUPPLY) & (age < options["end_age_msm"]):
+    elif (care_demand == CARE_DEMAND_AND_OTHER_SUPPLY) & (
+        age <= options["end_age_msm"]
+    ):
         # & ( care_supply == 1):  # & (age >= 40):
         # Other family member (also) provides care
         if is_dead(health):
@@ -384,7 +386,7 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912
                 else:
                     return ALL_NO_FORMAL_CARE
     elif (care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY) & (
-        age < options["end_age_msm"]
+        age <= options["end_age_msm"]
     ):  # & (age >= 40):
         # elif (care_demand == 1) & (care_supply == 0):  # & (age >= 40):
         # Care must be provided informally or organized formally

@@ -8,6 +8,7 @@ from caregiving.model.shared import (
 )
 
 AGE_OFFSET = 3
+SCALE_DOWN_DEMAND = 0.9
 
 
 def health_transition_good_medium_bad(
@@ -41,9 +42,9 @@ def care_demand_and_supply_transition(
     care_demand = (
         limitations_with_adl[1]
         * (mother_health != PARENT_DEAD)
-        * (period >= START_PERIOD_CAREGIVING)
+        * (period >= START_PERIOD_CAREGIVING - 1)
         * (period < end_age_caregiving)
-    )
+    ) * SCALE_DOWN_DEMAND
 
     prob_vector = jnp.array(
         [
@@ -67,7 +68,7 @@ def care_demand_transition(mother_health, period, has_sister, education, options
     care_demand = (
         limitations_with_adl[1]
         * (mother_health != PARENT_DEAD)
-        * (period >= START_PERIOD_CAREGIVING)
+        * (period >= START_PERIOD_CAREGIVING - 1)
     )
 
     return jnp.array([1 - care_demand, care_demand])

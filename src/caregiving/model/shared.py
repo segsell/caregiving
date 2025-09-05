@@ -136,6 +136,8 @@ INITIAL_CONDITIONS_AGE_HIGH = 60
 
 SCALE_CAREGIVER_SHARE = 10
 
+END_YEAR_PARENT_GENERATION = 1960
+
 # ==============================================================================
 # Empirical Labor Choices
 # ==============================================================================

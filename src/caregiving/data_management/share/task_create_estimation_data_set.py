@@ -1251,6 +1251,7 @@ def create_caregving(dat):
     )
 
     dat = _create_intensive_parental_care(dat)
+    dat = _create_intensive_care_parents_versus_other(dat)
     dat = _create_intensive_care_general(dat)
     dat = _create_intensive_parental_care_with_in_laws_and_step_parents(dat)
     dat = _create_intensive_parental_care_without_any_other_care(dat)
@@ -1281,6 +1282,43 @@ def create_caregving(dat):
     _val = [dat["year_diff"], dat["year_diff"]]
     dat["care_exp_crosssect"] = np.select(_cond, _val, default=0)
     dat["care_experience"] = dat.groupby("mergeid")["care_exp_crosssect"].cumsum()
+
+    return dat
+
+
+def _create_intensive_care_parents_versus_other(dat):
+    # Daily extra-household care given to anyone (any of up to three recipients)
+    daily_any = (
+        (dat["sp011_1"] == GIVEN_HELP_DAILY)
+        | (dat["sp011_2"] == GIVEN_HELP_DAILY)
+        | (dat["sp011_3"] == GIVEN_HELP_DAILY)
+    )
+
+    # Daily extra-household care given specifically to mother or father
+    daily_parent = (
+        ((dat["sp011_1"] == GIVEN_HELP_DAILY) & dat["sp009_1"].isin([MOTHER, FATHER]))
+        | ((dat["sp011_2"] == GIVEN_HELP_DAILY) & dat["sp009_2"].isin([MOTHER, FATHER]))
+        | ((dat["sp011_3"] == GIVEN_HELP_DAILY) & dat["sp009_3"].isin([MOTHER, FATHER]))
+    )
+
+    # Intensive care inside household (personal care)
+    hh_any = dat["sp018_"] == 1
+
+    # Intensive care inside household for mother or father
+    hh_parent = (dat["sp018_"] == 1) & ((dat["sp019d2"] == 1) | (dat["sp019d3"] == 1))
+
+    # Combine masks
+    intensive_any = daily_any | hh_any
+    intensive_parent = daily_parent | hh_parent
+
+    # 1 = intensive care to mother/father
+    # 0 = intensive care, but not to mother/father
+    # NaN = no intensive care
+    dat["intensive_care_parents_versus_other"] = np.select(
+        [intensive_parent, intensive_any],
+        [1, 0],
+        default=np.nan,
+    )
 
     return dat
 

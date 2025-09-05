@@ -72,17 +72,17 @@ def plot_choice_shares_by_education(
     age range [start_age, end_age_msm]."""
 
     # ---------- 1. Map raw codes → 4-way choice ----------------------------
-    choice_groups_sim = {
-        0: RETIREMENT,
-        1: UNEMPLOYED,
-        2: PART_TIME,
-        3: FULL_TIME,
-    }
     choice_groups_emp = {
         0: RETIREMENT_CHOICES,
         1: UNEMPLOYED_CHOICES,
         2: PART_TIME_CHOICES,
         3: FULL_TIME_CHOICES,
+    }
+    choice_groups_sim = {
+        0: RETIREMENT,
+        1: UNEMPLOYED,
+        2: PART_TIME,
+        3: FULL_TIME,
     }
 
     data_sim = data_sim.loc[data_sim["health"] != DEAD].copy()

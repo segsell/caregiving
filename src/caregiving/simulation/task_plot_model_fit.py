@@ -147,6 +147,26 @@ def task_plot_model_fit(  # noqa: PLR0915
         df_sim["choice"].isin(np.asarray(INTENSIVE_INFORMAL_CARE).tolist())
     ]
 
+    a = (
+        df_sim_caregivers.loc[
+            (df_sim_caregivers["education"] == 0) & (df_sim_caregivers["age"] == 41),
+            "choice",
+        ]
+        .value_counts(normalize=True)
+        .sort_index()
+    )
+    b = (
+        df_sim_caregivers.loc[
+            (df_sim_caregivers["education"] == 1) & (df_sim_caregivers["age"] == 41),
+            "choice",
+        ]
+        .value_counts(normalize=True)
+        .sort_index()
+    )
+    # df_emp.loc[
+    #     (df_emp["education"] == 1) & (df_emp["age"] == 41), "choice"
+    # ].value_counts(normalize=True).sort_index()
+
     # df_emp_prep, _states_dict = load_and_prep_data(
     #     data_emp=df_emp,
     #     model=model_full,
@@ -171,6 +191,13 @@ def task_plot_model_fit(  # noqa: PLR0915
     plot_job_offer_share_by_age(
         df_sim,
         path_to_save_plot=BLD / "plots" / "model_fit" / "simulated_job_offer",
+    )
+
+    plot_choice_shares_by_education(
+        df_emp_caregivers,
+        df_sim_caregivers,
+        specs,
+        path_to_save_plot=path_to_save_labor_shares_caregivers_by_age,
     )
 
     plot_choice_shares_by_education_age_bins(

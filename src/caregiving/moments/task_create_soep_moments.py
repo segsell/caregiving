@@ -53,8 +53,11 @@ def task_create_soep_moments(
 
     specs = read_and_derive_specs(path_to_specs)
     start_age = specs["start_age"]
+    start_age_caregivers = specs["start_age_msm"]
     end_age = specs["end_age_msm"]
+
     age_range = range(start_age, end_age + 1)
+    age_range_caregivers = range(start_age_caregivers, end_age + 1)
 
     age_bins_75 = (
         list(range(40, 80, 5)),  # [40, 45, … , 70]
@@ -223,7 +226,28 @@ def task_create_soep_moments(
     #     df["any_care"] == 1, "education"
     # ].var(ddof=DEGREES_OF_FREEDOM)
 
-    # # Caregiving
+    # Caregiving
+    moments, variances = compute_labor_shares_by_age(
+        df_caregivers,
+        moments=moments,
+        variances=variances,
+        age_range=age_range_caregivers,
+        label="caregivers",
+    )
+    moments, variances = compute_labor_shares_by_age(
+        df_caregivers_low,
+        moments=moments,
+        variances=variances,
+        age_range=age_range_caregivers,
+        label="caregivers_low_education",
+    )
+    moments, variances = compute_labor_shares_by_age(
+        df_caregivers_high,
+        moments=moments,
+        variances=variances,
+        age_range=age_range_caregivers,
+        label="caregivers_high_education",
+    )
     # moments, variances = compute_labor_shares_by_age_bin(
     #     df_caregivers,
     #     moments=moments,
