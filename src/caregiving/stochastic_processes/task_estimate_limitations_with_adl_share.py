@@ -10,6 +10,7 @@ from typing import Annotated, Mapping, Optional
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pytask
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 import yaml
@@ -18,18 +19,16 @@ from pytask import Product
 
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import (
+    END_YEAR_PARENT_GENERATION,
     FEMALE,
     MALE,
     MIN_AGE_PARENTS,
-    END_YEAR_PARENT_GENERATION,
     PARENT_DEAD,
     PARENT_GOOD_HEALTH,
     PARENT_MEDIUM_HEALTH,
 )
 from caregiving.specs.derive_specs import read_and_derive_specs
 from caregiving.utils import table
-
-import pytask
 
 
 @pytask.mark.dip
