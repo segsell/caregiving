@@ -84,6 +84,9 @@ util_pt_work_and_informal_care_bad: -1e-12
 util_ft_work_and_informal_care_good: -1e-12
 util_ft_work_and_informal_care_bad: -1e-12
 
+util_pt_work_and_informal_care: -1e-12
+util_ft_work_and_informal_care: -1e-12
+
 # util_unemployed_and_informal_care_bad: 1e-12
 # util_unemployed_and_informal_care_good: 1e-12
 # util_pt_work_and_informal_care_bad: 1e-12
