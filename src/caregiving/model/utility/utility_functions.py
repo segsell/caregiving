@@ -611,8 +611,12 @@ def utility_of_caregiving(
     # mother_bad_health = mother_health == PARENT_BAD_HEALTH
 
     util_unemployed_and_informal_care = params["util_unemployed_and_informal_care"]
-    util_pt_work_and_informal_care = params["util_pt_work_and_informal_care"]
-    util_ft_work_and_informal_care = params["util_ft_work_and_informal_care"]
+    # util_pt_work_and_informal_care = params["util_pt_work_and_informal_care"]
+    # util_ft_work_and_informal_care = params["util_ft_work_and_informal_care"]
+    util_pt_work_and_informal_care_good = params["util_pt_work_and_informal_care_good"]
+    util_pt_work_and_informal_care_bad = params["util_pt_work_and_informal_care_bad"]
+    util_ft_work_and_informal_care_good = params["util_ft_work_and_informal_care_good"]
+    util_ft_work_and_informal_care_bad = params["util_ft_work_and_informal_care_bad"]
 
     # util_unemployed_and_informal_care = (
     #     params["util_unemployed_and_informal_care_good"] * good_health
@@ -723,8 +727,10 @@ def utility_of_caregiving(
 
     util_informal_care_and_work = (
         util_unemployed_and_informal_care * unemployed
-        + util_pt_work_and_informal_care * working_part_time
-        + util_ft_work_and_informal_care * working_full_time
+        + (util_pt_work_and_informal_care_good + util_pt_work_and_informal_care_bad)
+        * working_part_time
+        + (util_ft_work_and_informal_care_good + util_ft_work_and_informal_care_bad)
+        * working_full_time
     )
 
     util_informal = (
@@ -747,10 +753,11 @@ def utility_of_caregiving(
     #     params["util_nursing_home_bad"] * bad_health * nursing_home
     #     + params["util_nursing_home_good"] * good_health * nursing_home
     # )
-    util_formal_care = (
-        params["util_formal_care_bad"] * bad_health * formal_care
-        + params["util_formal_care_good"] * good_health * formal_care
-    )
+    # util_formal_care = (
+    #     params["util_formal_care_bad"] * bad_health * formal_care
+    #     + params["util_formal_care_good"] * good_health * formal_care
+    # )
+    util_formal_care = params["util_formal_care"] * formal_care
 
     util_relative_to_only_other_family_provide_care = util_informal + util_formal_care
 

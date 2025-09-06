@@ -83,8 +83,9 @@ util_joint_informal_care_good: 0
 # util_joint_informal_care_period_squared: 0
 # util_joint_informal_care_period_cubic: 0
 
-util_formal_care_bad: 0
-util_formal_care_good: 0
+# util_formal_care_bad: 0
+# util_formal_care_good: 0
+util_formal_care: 0
 
 # util_solo_informal_care_bad: 0
 # util_solo_informal_care_good: 0
@@ -94,9 +95,11 @@ util_formal_care_good: 0
 # util_joint_informal_care_low: 0
 # util_joint_informal_care_high: 0
 
-util_unemployed_and_informal_care: 2
-util_pt_work_and_informal_care: 0
-util_ft_work_and_informal_care: 0
+util_unemployed_and_informal_care: 0.2
+util_pt_work_and_informal_care_good: -0.2
+util_pt_work_and_informal_care_bad: -0.2
+util_ft_work_and_informal_care_good: -0.3
+util_ft_work_and_informal_care_bad: -0.3
 
 # util_unemployed_and_informal_care_bad: -0.1
 # util_unemployed_and_informal_care_good: -0.1
