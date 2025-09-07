@@ -161,15 +161,16 @@ def utility_func_alive(
     )
 
     # compute utility
-    scaled_consumption = consumption * eta / cons_scale
+    _eta = 1
+    scaled_consumption = consumption * _eta / cons_scale
     utility_rho_not_one = (scaled_consumption ** (1 - rho) - 1) / (1 - rho)
 
     utility = jax.lax.select(
         jnp.allclose(rho, 1),
-        jnp.log(consumption * eta / cons_scale),
+        jnp.log(consumption * _eta / cons_scale),
         utility_rho_not_one,
     )
-    return utility * util_labor_and_caregiving + util_caregiving
+    return utility * eta * util_labor_and_caregiving + util_caregiving
 
 
 # def _utility_func_alive(
@@ -316,7 +317,7 @@ def utility_func_alive_adda(
 
     utility = jax.lax.select(
         jnp.allclose(rho, 1),
-        jnp.log(consumption * eta / cons_scale),
+        jnp.log(consumption / cons_scale),
         utility_rho_not_one,
     )
     return utility * eta  # + zeta * care_demand
@@ -361,9 +362,10 @@ def marg_utility(
         params=params,
         options=options,
     )
-    base_marg_util_rho_not_one = ((disutil_labor / cons_scale) ** (1 - rho)) * (
-        consumption ** (-rho)
-    )
+    # base_marg_util_rho_not_one = ((disutil_labor / cons_scale) ** (1 - rho)) * (
+    #     consumption ** (-rho)
+    # )
+    base_marg_util_rho_not_one = (1 / cons_scale) ** (1 - rho) * (consumption ** (-rho))
 
     marg_util = jax.lax.select(
         jnp.allclose(rho, 1),
@@ -371,7 +373,7 @@ def marg_utility(
         base_marg_util_rho_not_one,
     )
 
-    return marg_util * A
+    return marg_util * A * disutil_labor
 
 
 def marg_utility_adda(
@@ -458,9 +460,12 @@ def inverse_marginal(
     #     consumption_rho_not_one,
     # )
 
-    marginal_utility = jnp.maximum(marginal_utility, 1e-12)  # optional safety
-    base = A * (eta / cons_scale) ** (1.0 - rho) / marginal_utility
-    consumption = base ** (1.0 / rho)
+    # marginal_utility = jnp.maximum(marginal_utility, 1e-12)  # optional safety
+
+    # base = A * (eta / cons_scale) ** (1.0 - rho) / marginal_utility
+    # consumption = base ** (1.0 / rho)
+    base = (eta * A) / (marginal_utility * cons_scale)
+    consumption = cons_scale * (base ** (1.0 / rho))
 
     return consumption
 
@@ -687,7 +692,7 @@ def utility_of_labor_and_caregiving(
     )
 
     exp_factor_work_and_care = (
-        util_informal_care_and_work * informal_care * (care_demand >= 1)
+        util_informal_care_and_work * informal_care  # * (care_demand >= 1)
     )
 
     return jnp.exp(exp_factor_work_and_care)
@@ -868,7 +873,7 @@ def utility_of_caregiving(
 
     util_relative_to_only_other_family_provide_care = util_informal + util_formal_care
 
-    return util_relative_to_only_other_family_provide_care * (care_demand >= 1)
+    return util_relative_to_only_other_family_provide_care  # * (care_demand >= 1)
 
 
 def _utility_of_labor_and_children(choice, education, n_children, params):
