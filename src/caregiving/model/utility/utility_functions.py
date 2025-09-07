@@ -170,7 +170,7 @@ def utility_func_alive(
         jnp.log(consumption * _eta / cons_scale),
         utility_rho_not_one,
     )
-    return utility * eta * util_labor_and_caregiving + util_caregiving
+    return utility + eta + util_labor_and_caregiving + util_caregiving
 
 
 # def _utility_func_alive(
@@ -343,25 +343,25 @@ def marg_utility(
     )
     rho = params["rho"]
 
-    disutil_labor = disutility_work(
-        period=period,
-        choice=choice,
-        # sex=sex,
-        education=education,
-        partner_state=partner_state,
-        health=health,
-        params=params,
-        options=options,
-    )
-    A = utility_of_labor_and_caregiving(
-        period=period,
-        choice=choice,
-        education=education,
-        health=health,
-        care_demand=care_demand,
-        params=params,
-        options=options,
-    )
+    # disutil_labor = disutility_work(
+    #     period=period,
+    #     choice=choice,
+    #     # sex=sex,
+    #     education=education,
+    #     partner_state=partner_state,
+    #     health=health,
+    #     params=params,
+    #     options=options,
+    # )
+    # A = utility_of_labor_and_caregiving(
+    #     period=period,
+    #     choice=choice,
+    #     education=education,
+    #     health=health,
+    #     care_demand=care_demand,
+    #     params=params,
+    #     options=options,
+    # )
     # base_marg_util_rho_not_one = ((disutil_labor / cons_scale) ** (1 - rho)) * (
     #     consumption ** (-rho)
     # )
@@ -373,7 +373,7 @@ def marg_utility(
         base_marg_util_rho_not_one,
     )
 
-    return marg_util * A * disutil_labor
+    return marg_util  # * A * disutil_labor
 
 
 def marg_utility_adda(
@@ -428,25 +428,25 @@ def inverse_marginal(
     )
     rho = params["rho"]
 
-    eta = disutility_work(
-        period=period,
-        choice=choice,
-        # sex=sex,
-        education=education,
-        partner_state=partner_state,
-        health=health,
-        params=params,
-        options=options,
-    )
-    A = utility_of_labor_and_caregiving(
-        period=period,
-        choice=choice,
-        education=education,
-        health=health,
-        care_demand=care_demand,
-        params=params,
-        options=options,
-    )
+    # eta = disutility_work(
+    #     period=period,
+    #     choice=choice,
+    #     # sex=sex,
+    #     education=education,
+    #     partner_state=partner_state,
+    #     health=health,
+    #     params=params,
+    #     options=options,
+    # )
+    # A = utility_of_labor_and_caregiving(
+    #     period=period,
+    #     choice=choice,
+    #     education=education,
+    #     health=health,
+    #     care_demand=care_demand,
+    #     params=params,
+    #     options=options,
+    # )
 
     # _consumption_rho_not_one = (
     #     A * (eta / cons_scale) ** (1 - rho) / marginal_utility
@@ -464,7 +464,8 @@ def inverse_marginal(
 
     # base = A * (eta / cons_scale) ** (1.0 - rho) / marginal_utility
     # consumption = base ** (1.0 / rho)
-    base = (eta * A) / (marginal_utility * cons_scale)
+    # base = (eta * A) / (marginal_utility * cons_scale)
+    base = 1 / (marginal_utility * cons_scale)
     consumption = cons_scale * (base ** (1.0 / rho))
 
     return consumption
@@ -657,7 +658,7 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     )
 
     # Compute eta
-    disutility = jnp.exp(-exp_factor_work)
+    disutility = -exp_factor_work
 
     return disutility
 
@@ -677,7 +678,10 @@ def utility_of_labor_and_caregiving(
 
     informal_care = is_informal_care(choice)
 
-    util_unemployed_and_informal_care = params["util_unemployed_and_informal_care"]
+    util_unemployed_and_informal_care = (
+        params["util_unemployed_and_informal_care_low"] * (1 - education)
+        + params["util_unemployed_and_informal_care_high"] * education
+    )
     util_pt_work_and_informal_care = params["util_pt_work_and_informal_care"]
     util_ft_work_and_informal_care = params["util_ft_work_and_informal_care"]
     # util_pt_work_and_informal_care_good = params["util_pt_work_and_informal_care_good"]
@@ -695,7 +699,7 @@ def utility_of_labor_and_caregiving(
         util_informal_care_and_work * informal_care  # * (care_demand >= 1)
     )
 
-    return jnp.exp(exp_factor_work_and_care)
+    return exp_factor_work_and_care
 
 
 def utility_of_caregiving(
@@ -715,8 +719,8 @@ def utility_of_caregiving(
     # formal home care and nursing home
     formal_care = is_no_care(choice) & (care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
 
-    bad_health = is_bad_health(health)
-    good_health = is_good_health(health)
+    # bad_health = is_bad_health(health)
+    # good_health = is_good_health(health)
 
     # mother_good_health = mother_health == PARENT_GOOD_HEALTH
     # mother_medium_health = mother_health == PARENT_MEDIUM_HEALTH
@@ -813,10 +817,10 @@ def utility_of_caregiving(
     #     # + params["util_joint_informal_care_good"] * good_health
     # )
 
-    util_joint_care_by_health = (
-        params["util_joint_informal_care_bad"] * bad_health
-        + params["util_joint_informal_care_good"] * good_health
-    )
+    # util_joint_care_by_health = (
+    #     params["util_joint_informal_care_bad"] * bad_health
+    #     + params["util_joint_informal_care_good"] * good_health
+    # )
     # util_joint_care_by_mother_health = (
     #     params["util_joint_informal_care_mother_good"] * mother_good_health
     #     + params["util_joint_informal_care_mother_medium"] * mother_medium_health
@@ -850,7 +854,8 @@ def utility_of_caregiving(
         # + util_informal_care_and_work
         # + util_solo_informal_care_by_health)
         # + util_informal_and_work_by_health
-        + util_joint_care_by_health * (care_demand == CARE_DEMAND_AND_OTHER_SUPPLY)
+        + params["util_joint_informal_care"]
+        * (care_demand == CARE_DEMAND_AND_OTHER_SUPPLY)
     ) * informal_care
 
     # util_nursing_home = (

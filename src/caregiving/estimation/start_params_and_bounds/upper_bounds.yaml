@@ -55,6 +55,7 @@ util_joint_informal_care_mother_good: 5
 util_joint_informal_care_mother_medium: 5
 util_joint_informal_care_mother_bad: 5
 
+util_joint_informal_care: 5
 util_joint_informal_care_period: 5
 util_joint_informal_care_period_squared: 5
 util_joint_informal_care_period_cubic: 5
@@ -79,6 +80,8 @@ util_solo_informal_care_mother_bad: 5
 
 
 util_unemployed_and_informal_care: 5
+util_unemployed_and_informal_care_low: 5
+util_unemployed_and_informal_care_high: 5
 util_pt_work_and_informal_care_good: -1e-12
 util_pt_work_and_informal_care_bad: -1e-12
 util_ft_work_and_informal_care_good: -1e-12
