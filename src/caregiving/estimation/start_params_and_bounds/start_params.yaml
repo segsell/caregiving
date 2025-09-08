@@ -39,10 +39,10 @@ rho: 1.5 # 1.5
 
 disutil_unemployed_low_women: 1.0
 disutil_unemployed_high_women: 1.0
-disutil_pt_work_bad_women: 1.0
-disutil_pt_work_good_women: 1.0
-disutil_ft_work_bad_women: 1.0
-disutil_ft_work_good_women: 1.0
+disutil_pt_work_bad_women: 1.3
+disutil_pt_work_good_women: 1.3
+disutil_ft_work_bad_women: 1.3
+disutil_ft_work_good_women: 1.3
 # disutil_pt_work_low_women: 0
 # disutil_pt_work_high_women: 0
 # disutil_ft_work_low_women: 0
@@ -66,8 +66,10 @@ disutil_children_ft_work_high: 0.2
 # util_nursing_home_good: 0
 # util_home_care_bad: 0
 # util_home_care_good: 0
-util_informal_care_high: 0
-util_informal_care_low: 0
+
+# util_informal_care_high: 0
+# util_informal_care_low: 0
+
 # util_informal_care_period: 0
 # util_informal_care_period_squared: 0
 # util_informal_care_period_cubic: 0
@@ -76,7 +78,9 @@ util_informal_care_low: 0
 # util_joint_informal_care_high: 0
 # util_joint_informal_care_bad: 0
 # util_joint_informal_care_good: 0
-util_joint_informal_care: 0
+
+# util_joint_informal_care: 0
+
 # util_joint_informal_care_mother_good: 0
 # util_joint_informal_care_mother_medium: 0
 # util_joint_informal_care_mother_bad: 0
@@ -86,7 +90,8 @@ util_joint_informal_care: 0
 
 # util_formal_care_bad: 0
 # util_formal_care_good: 0
-util_formal_care: 0
+
+# util_formal_care: 0
 
 # util_solo_informal_care_bad: 0
 # util_solo_informal_care_good: 0
@@ -97,14 +102,14 @@ util_formal_care: 0
 # util_joint_informal_care_high: 0
 
 # util_unemployed_and_informal_care: -1.0
-util_unemployed_and_informal_care_low: -0.5
-util_unemployed_and_informal_care_high: -0.5
+util_unemployed_and_informal_care_low: 0.5
+util_unemployed_and_informal_care_high: 0.5
 # util_pt_work_and_informal_care_good: -0.2
 # util_pt_work_and_informal_care_bad: -0.2
 # util_ft_work_and_informal_care_good: -0.3
 # util_ft_work_and_informal_care_bad: -0.3
-util_pt_work_and_informal_care: -1.3
-util_ft_work_and_informal_care: -1.3
+util_pt_work_and_informal_care: 1.3
+util_ft_work_and_informal_care: 1.3
 
 # util_unemployed_and_informal_care_bad: -0.1
 # util_unemployed_and_informal_care_good: -0.1

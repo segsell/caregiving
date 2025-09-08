@@ -7,6 +7,7 @@ from typing import Annotated
 import jax
 import numpy as np
 import pandas as pd
+import pytask
 from numpy.testing import assert_array_equal as aae
 from pytask import Product
 
@@ -28,8 +29,6 @@ from caregiving.simulation.simulate_moments import (
 from caregiving.specs.task_write_specs import read_and_derive_specs
 
 jax.config.update("jax_enable_x64", True)
-
-import pytask
 
 
 @pytask.mark.sim

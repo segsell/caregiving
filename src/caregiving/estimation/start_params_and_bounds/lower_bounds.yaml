@@ -1,5 +1,5 @@
 # Utility parameters
-rho: 1
+rho: 1.0e-12
 beta: 0.9
 
 disutil_ft_work_good_women: 1.0e-12
@@ -86,13 +86,13 @@ util_solo_informal_care_mother_bad: -5
 util_unemployed_and_informal_care: -5
 util_unemployed_and_informal_care_low: -5
 util_unemployed_and_informal_care_high: -5
-util_pt_work_and_informal_care_good: -5
-util_pt_work_and_informal_care_bad: -5
-util_ft_work_and_informal_care_good: -5
-util_ft_work_and_informal_care_bad: -5
+util_pt_work_and_informal_care_good: 1.0e-12
+util_pt_work_and_informal_care_bad: 1.0e-12
+util_ft_work_and_informal_care_good: 1.0e-12
+util_ft_work_and_informal_care_bad: 1.0e-12
 
-util_pt_work_and_informal_care: -5
-util_ft_work_and_informal_care: -5
+util_pt_work_and_informal_care: 1.0e-12
+util_ft_work_and_informal_care: 1.0e-12
 
 
 # util_unemployed_and_informal_care_bad: -5

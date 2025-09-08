@@ -195,7 +195,6 @@ def read_in_mother_age_diff_specs(sample):
         & (sample["age"] >= INITIAL_CONDITIONS_AGE_LOW)
         & (sample["age"] <= INITIAL_CONDITIONS_AGE_HIGH)
     ]
-    _mother_cohort = sample.loc[(sample["syear"] == 2010)]
     mother_age_diff_means = (
         mother_cohort.groupby(["has_sister", "education"])["mother_age_diff"]
         .mean()  # mean within each (education, has_sister) cell
@@ -204,15 +203,17 @@ def read_in_mother_age_diff_specs(sample):
         # .sort_idex()  # optional: sort education levels
         .reindex(index=[0, 1], columns=[0, 1])
     )
-    _mother_age_diff_means = (
-        _mother_cohort.groupby(["has_sister", "education"])["mother_age_diff"]
-        .mean()  # mean within each (education, has_sister) cell
-        .unstack()  # 2×2 matrix: rows → education, cols → has_sister
-        # .rename(columns={0: "no_sister", 1: "has_sister"})
-        # .sort_idex()  # optional: sort education levels
-        .reindex(index=[0, 1], columns=[0, 1])
-    )
+    # _mother_cohort = sample.loc[(sample["syear"] == 2010)]
+    # _mother_age_diff_means = (
+    #     _mother_cohort.groupby(["has_sister", "education"])["mother_age_diff"]
+    #     .mean()  # mean within each (education, has_sister) cell
+    #     .unstack()  # 2×2 matrix: rows → education, cols → has_sister
+    #     # .rename(columns={0: "no_sister", 1: "has_sister"})
+    #     # .sort_idex()  # optional: sort education levels
+    #     .reindex(index=[0, 1], columns=[0, 1])
+    # )
+    # b = jnp.asarray(_mother_age_diff_means.values).astype(jnp.uint8)
+
     a = jnp.asarray(mother_age_diff_means.values).astype(jnp.uint8)
-    b = jnp.asarray(_mother_age_diff_means.values).astype(jnp.uint8)
 
     return a

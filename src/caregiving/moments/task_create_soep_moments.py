@@ -59,18 +59,18 @@ def task_create_soep_moments(
     end_age = specs["end_age_msm"]
 
     age_range = range(start_age, end_age + 1)
-    age_range_caregivers = range(start_age_caregivers, end_age + 1)
+    _age_range_caregivers = range(start_age_caregivers, end_age + 1)
 
-    age_bins_75 = (
+    _age_bins_75 = (
         list(range(40, 80, 5)),  # [40, 45, … , 70]
         [f"{s}_{s+4}" for s in range(40, 75, 5)],  # "40_44", …a
     )
 
     df_full = pd.read_csv(path_to_main_sample, index_col=[0])
     df = df_full[(df_full["sex"] == 1) & (df_full["age"] <= end_age + 10)]  # women only
-    df_alive = df[df["health"] != DEAD].copy()
-    df_good_health = df[df["health"] == GOOD_HEALTH].copy()
-    df_bad_health = df[df["health"] == BAD_HEALTH].copy()
+    _df_alive = df[df["health"] != DEAD].copy()
+    _df_good_health = df[df["health"] == GOOD_HEALTH].copy()
+    _df_bad_health = df[df["health"] == BAD_HEALTH].copy()
 
     df_caregivers_full = pd.read_csv(path_to_caregivers_sample, index_col=[0])
     df_caregivers = df_caregivers_full[
@@ -78,19 +78,19 @@ def task_create_soep_moments(
         & (df_caregivers_full["age"] <= end_age + 10)
         & (df_caregivers_full["any_care"] == 1)
     ]
-    df_caregivers_alive = df_caregivers[df_caregivers["health"] != DEAD].copy()
+    _df_caregivers_alive = df_caregivers[df_caregivers["health"] != DEAD].copy()
 
     df_light_caregivers = df_caregivers[df_caregivers["light_care"] == 1]
     df_intensive_caregivers = df_caregivers[df_caregivers["intensive_care"] == 1]
 
     df_year = df[df["syear"] == 2012]  # 2012, 2016 # noqa: PLR2004
-    df_year_caregivers = df_year[
+    _df_year_caregivers = df_year[
         (df_year["any_care"] == 1) & (df_year["health"] != DEAD)
     ].copy()
-    df_year_alive = df_year[df_year["health"] != DEAD].copy()
+    _df_year_alive = df_year[df_year["health"] != DEAD].copy()
     # # df_year = df[df["syear"].between(2012, 2018)]
-    df_year_bad_health = df_year[df_year["health"] == BAD_HEALTH]
-    df_year_good_health = df_year[df_year["health"] == GOOD_HEALTH]
+    _df_year_bad_health = df_year[df_year["health"] == BAD_HEALTH]
+    _df_year_good_health = df_year[df_year["health"] == GOOD_HEALTH]
 
     df["kidage_youngest"] = df["kidage_youngest"] - 1
 
@@ -99,14 +99,16 @@ def task_create_soep_moments(
 
     df_caregivers_low = df_caregivers[df_caregivers["education"] == 0]
     df_caregivers_high = df_caregivers[df_caregivers["education"] == 1]
-    df_light_caregivers_low = df_light_caregivers[df_light_caregivers["education"] == 0]
-    df_light_caregivers_high = df_light_caregivers[
+    _df_light_caregivers_low = df_light_caregivers[
+        df_light_caregivers["education"] == 0
+    ]
+    _df_light_caregivers_high = df_light_caregivers[
         df_light_caregivers["education"] == 1
     ]
-    df_intensive_caregivers_low = df_intensive_caregivers[
+    _df_intensive_caregivers_low = df_intensive_caregivers[
         df_intensive_caregivers["education"] == 0
     ]
-    df_intensive_caregivers_high = df_intensive_caregivers[
+    _df_intensive_caregivers_high = df_intensive_caregivers[
         df_intensive_caregivers["education"] == 1
     ]
 
@@ -237,45 +239,45 @@ def task_create_soep_moments(
     # ].var(ddof=DEGREES_OF_FREEDOM)
 
     # Caregiving
-    moments, variances = compute_labor_shares_by_age(
-        df_caregivers,
-        moments=moments,
-        variances=variances,
-        age_range=age_range_caregivers,
-        label="caregivers",
-    )
-    moments, variances = compute_labor_shares_by_age(
-        df_caregivers_low,
-        moments=moments,
-        variances=variances,
-        age_range=age_range_caregivers,
-        label="caregivers_low_education",
-    )
-    moments, variances = compute_labor_shares_by_age(
-        df_caregivers_high,
-        moments=moments,
-        variances=variances,
-        age_range=age_range_caregivers,
-        label="caregivers_high_education",
-    )
-    # moments, variances = compute_labor_shares_by_age_bin(
+    # moments, variances = compute_labor_shares_by_age(
     #     df_caregivers,
     #     moments=moments,
     #     variances=variances,
+    #     age_range=age_range_caregivers,
     #     label="caregivers",
     # )
-    # moments, variances = compute_labor_shares_by_age_bin(
+    # moments, variances = compute_labor_shares_by_age(
     #     df_caregivers_low,
     #     moments=moments,
     #     variances=variances,
+    #     age_range=age_range_caregivers,
     #     label="caregivers_low_education",
     # )
-    # moments, variances = compute_labor_shares_by_age_bin(
+    # moments, variances = compute_labor_shares_by_age(
     #     df_caregivers_high,
     #     moments=moments,
     #     variances=variances,
+    #     age_range=age_range_caregivers,
     #     label="caregivers_high_education",
     # )
+    moments, variances = compute_labor_shares_by_age_bin(
+        df_caregivers,
+        moments=moments,
+        variances=variances,
+        label="caregivers",
+    )
+    moments, variances = compute_labor_shares_by_age_bin(
+        df_caregivers_low,
+        moments=moments,
+        variances=variances,
+        label="caregivers_low_education",
+    )
+    moments, variances = compute_labor_shares_by_age_bin(
+        df_caregivers_high,
+        moments=moments,
+        variances=variances,
+        label="caregivers_high_education",
+    )
 
     # # B2.2) Light caregiving
     # moments, variances = compute_labor_shares_by_age_bin(
@@ -421,7 +423,7 @@ def task_create_soep_moments(
     # plot_wealth_by_age(df, start_age=30, end_age=70, educ_val=1)
     # plot_wealth_by_5yr_bins(df, start_age=30, end_age=70, educ_val=1)
 
-    # ===================================================================================
+    # =================================================================================
     # df_bad_health = df_caregivers_full.loc[
     #     (df_caregivers_full["health"] == BAD_HEALTH)
     #     & (df_caregivers_full["age"] > AGE_BINS_PARENTS[0])
@@ -435,7 +437,7 @@ def task_create_soep_moments(
     #     age_bins=(AGE_BINS_PARENTS, AGE_LABELS_PARENTS),
     #     label="parents_nursing_home",
     # )
-    # ===================================================================================
+    # =================================================================================
 
     moments_df = pd.DataFrame({"value": pd.Series(moments)})
     moments_df.index.name = "moment"

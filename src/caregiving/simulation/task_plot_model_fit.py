@@ -147,22 +147,6 @@ def task_plot_model_fit(  # noqa: PLR0915
         df_sim["choice"].isin(np.asarray(INTENSIVE_INFORMAL_CARE).tolist())
     ]
 
-    a = (
-        df_sim_caregivers.loc[
-            (df_sim_caregivers["education"] == 0) & (df_sim_caregivers["age"] == 41),
-            "choice",
-        ]
-        .value_counts(normalize=True)
-        .sort_index()
-    )
-    b = (
-        df_sim_caregivers.loc[
-            (df_sim_caregivers["education"] == 1) & (df_sim_caregivers["age"] == 41),
-            "choice",
-        ]
-        .value_counts(normalize=True)
-        .sort_index()
-    )
     # df_emp.loc[
     #     (df_emp["education"] == 1) & (df_emp["age"] == 41), "choice"
     # ].value_counts(normalize=True).sort_index()
@@ -299,13 +283,13 @@ def task_plot_model_fit(  # noqa: PLR0915
     # # _share_informal_care = df_sim.loc[
     # #     df_sim["informal_care"] == 1, "care_demand"
     # # ].mean()
-    # share_informal_care = df_sim.loc[df_sim["care_demand"] == 1, "informal_care"].mean()
-    # print(f"Share informal caregivers (cond. on care demand): {share_informal_care}")
+    share_informal_care = df_sim.loc[df_sim["care_demand"] == 1, "informal_care"].mean()
+    print(f"Share informal caregivers (cond. on care demand): {share_informal_care}")
 
-    # share_caregivers_high_edu = df_sim.loc[
-    #     (df_sim["informal_care"] == 1), "education"
-    # ].mean()
-    # print(f"Share high education (cond. on informal care): {share_caregivers_high_edu}")
+    share_caregivers_high_edu = df_sim.loc[
+        (df_sim["informal_care"] == 1), "education"
+    ].mean()
+    print(f"Share high education (cond. on informal care): {share_caregivers_high_edu}")
     # plot_choice_shares(df_emp, df_sim, specs)
     # discrete_state_names = model_full["model_structure"]["discrete_states_names"]
     # plot_states(df_emp, df_sim, discrete_state_names, specs)
