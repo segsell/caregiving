@@ -2,8 +2,8 @@
 rho: 2
 beta: 0.999999999999
 
-disutil_ft_work_good_women: 5
-disutil_ft_work_bad_women: 5
+# disutil_ft_work_good_women: 5
+# disutil_ft_work_bad_women: 5
 disutil_pt_work_good_women: 5
 disutil_pt_work_bad_women: 5
 disutil_unemployed_women: 5
@@ -82,6 +82,12 @@ util_solo_informal_care_mother_bad: 5
 util_unemployed_and_informal_care: 5
 util_unemployed_and_informal_care_low: 5
 util_unemployed_and_informal_care_high: 5
+util_pt_work_and_informal_care_low: 5
+util_pt_work_and_informal_care_high: 5
+util_ft_work_and_informal_care_low: 5
+util_ft_work_and_informal_care_high: 5
+
+
 util_pt_work_and_informal_care_good: 5
 util_pt_work_and_informal_care_bad: 5
 util_ft_work_and_informal_care_good: 5

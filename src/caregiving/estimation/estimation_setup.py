@@ -3,7 +3,7 @@
 import pickle
 import time
 from functools import partial
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import jax
 import numpy as np
@@ -51,18 +51,13 @@ def estimate_model(
     # / "model"
     # / "params"
     # / "start_params_model.yaml",
-    path_to_lower_bounds: str = SRC
-    / "estimation"
-    / "start_params_and_bounds"
-    / "lower_bounds.yaml",
-    path_to_upper_bounds: str = SRC
-    / "estimation"
-    / "start_params_and_bounds"
-    / "upper_bounds.yaml",
+    lower_bounds: Dict[str, float] = {},
+    upper_bounds: Dict[str, float] = {},
     path_to_save_estimation_result: str = BLD / "estimation" / "result.pkl",
     path_to_save_estimation_params: str = BLD / "estimation" / "estimated_params.csv",
     # last_estimate: Optional[Dict[str, Any]] = None,
     select_fixed_params: Optional[Callable[[str, Any], bool]] = None,
+    other_constraint: Optional[om.constraints.Constraint] = None,
     scaling: bool = False,
     scaling_options: Optional[Dict[str, Any]] = None,
     multistart: bool = False,
@@ -131,14 +126,13 @@ def estimate_model(
 
     # start_params = {name: start_params_all[name] for name in start_params.keys()}
 
-    lower_bounds_all = yaml.safe_load(open(path_to_lower_bounds, "rb"))
-    lower_bounds = {name: lower_bounds_all[name] for name in start_params.keys()}
+    # lower_bounds_all = yaml.safe_load(open(path_to_lower_bounds, "rb"))
+    # lower_bounds = {name: lower_bounds_all[name] for name in start_params.keys()}
 
-    upper_bounds_all = yaml.safe_load(open(path_to_upper_bounds, "rb"))
-    upper_bounds = {name: upper_bounds_all[name] for name in start_params.keys()}
+    # upper_bounds_all = yaml.safe_load(open(path_to_upper_bounds, "rb"))
+    # upper_bounds = {name: upper_bounds_all[name] for name in start_params.keys()}
 
     bounds = om.Bounds(lower=lower_bounds, upper=upper_bounds)
-    fixed_constraint = om.FixedConstraint(selector=select_fixed_params)
 
     simulate_moments_given_params = partial(
         simulate_moments,
@@ -160,19 +154,34 @@ def estimate_model(
         relative_deviations=relative_deviations,
     )
 
+    # --- Build constraints list (NEW) ------------------------------------------
+    constraints_list: List[Any] = []
+    if select_fixed_params is not None:
+        constraints_list.append(om.FixedConstraint(selector=select_fixed_params))
+
+    if other_constraint is not None:
+        if isinstance(other_constraint, (list, tuple)):
+            constraints_list.extend(other_constraint)
+        else:
+            constraints_list.append(other_constraint)
+    # --------------------------------------------------------------------------
+
     minimize_kwargs = {
         "fun": criterion_func,
         "params": start_params,
         "algorithm": algo,
         "algo_options": algo_options,
         "bounds": bounds,
-        "constraints": fixed_constraint,
         "error_handling": error_handling,
     }
 
-    if select_fixed_params is not None:
-        fixed_constraint = om.FixedConstraint(selector=select_fixed_params)
-        minimize_kwargs["constraints"] = fixed_constraint
+    # if select_fixed_params is not None:
+    #     fixed_constraint = om.FixedConstraint(selector=select_fixed_params)
+    #     minimize_kwargs["constraints"] = [fixed_constraint]
+    # if other_constraint:
+    #     minimize_kwargs["constraints"] = other_constraint
+    if constraints_list:
+        minimize_kwargs["constraints"] = constraints_list
 
     if scaling:
         # Either use user-supplied dict or fall back to your defaults

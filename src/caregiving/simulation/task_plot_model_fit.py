@@ -244,6 +244,7 @@ def task_plot_model_fit(  # noqa: PLR0915
         scale=SCALE_CAREGIVER_SHARE,
         path_to_save_plot=path_to_save_caregiver_share_by_age_bin_plot,
     )
+
     # plot_simulated_care_demand_by_age(
     #     df_sim,
     #     specs,
@@ -276,7 +277,7 @@ def task_plot_model_fit(  # noqa: PLR0915
     # mean_care_years = agg.loc[agg["care_ever"], "care_sum"].mean()
     # print(f"Avg. number of informal caregiving years: {mean_care_years}")
 
-    # df_sim["informal_care"] = df_sim["choice"].isin(np.asarray(INFORMAL_CARE))
+    df_sim["informal_care"] = df_sim["choice"].isin(np.asarray(INFORMAL_CARE))
     # share_caregivers = df_sim.loc[df_sim["age"] < AGE_FOCUS, "informal_care"].mean()
     # print(f"Share of informal caregivers (unconditional): {share_caregivers}")
 

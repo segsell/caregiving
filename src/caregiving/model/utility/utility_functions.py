@@ -665,8 +665,14 @@ def disutility_work(period, choice, education, partner_state, health, params, op
         params["util_unemployed_and_informal_care_low"] * (1 - education)
         + params["util_unemployed_and_informal_care_high"] * education
     )
-    util_pt_work_and_informal_care = params["util_pt_work_and_informal_care"]
-    util_ft_work_and_informal_care = params["util_ft_work_and_informal_care"]
+    util_pt_work_and_informal_care = (
+        params["util_pt_work_and_informal_care_low"] * (1 - education)
+        + params["util_pt_work_and_informal_care_high"] * education
+    )
+    util_ft_work_and_informal_care = (
+        params["util_ft_work_and_informal_care_low"] * (1 - education)
+        + params["util_ft_work_and_informal_care_high"] * education
+    )
 
     util_informal_care_and_work = (
         util_unemployed_and_informal_care * unemployed
