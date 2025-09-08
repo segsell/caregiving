@@ -27,6 +27,7 @@ from caregiving.model.shared import (
     PART_TIME_CHOICES,
     RETIREMENT_CHOICES,
     SCALE_CAREGIVER_SHARE,
+    START_PERIOD_CAREGIVING,
     UNEMPLOYED_CHOICES,
     WORK,
 )
@@ -54,7 +55,7 @@ def task_create_soep_moments(
     specs = read_and_derive_specs(path_to_specs)
 
     start_age = specs["start_age"]
-    start_age_caregivers = 45  # specs["start_age_msm"]
+    start_age_caregivers = start_age + START_PERIOD_CAREGIVING
     end_age = specs["end_age_msm"]
 
     age_range = range(start_age, end_age + 1)

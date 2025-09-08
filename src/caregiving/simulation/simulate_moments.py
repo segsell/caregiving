@@ -29,6 +29,7 @@ from caregiving.model.shared import (  # NURSING_HOME_CARE,
     PART_TIME,
     RETIREMENT,
     SCALE_CAREGIVER_SHARE,
+    START_PERIOD_CAREGIVING,
     UNEMPLOYED,
     WORK,
 )
@@ -48,7 +49,7 @@ def simulate_moments_pandas(  # noqa: PLR0915
 
     model_params = options["model_params"]
     start_age = model_params["start_age"]
-    start_age_caregivers = 45  # model_params["start_age_msm"]
+    start_age_caregivers = start_age + START_PERIOD_CAREGIVING
     end_age = model_params["end_age_msm"]
 
     age_range = range(start_age, end_age + 1)
@@ -730,7 +731,7 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
     idx = column_indices.copy()
     arr = jnp.asarray(sim_df)
 
-    min_age_caregivers = 45  # model_params["start_age_msm"]
+    min_age_caregivers = min_age + START_PERIOD_CAREGIVING
 
     # df_low_educ = sim_df.loc[sim_df["education"] == 0]
     # df_high_educ = sim_df.loc[sim_df["education"] == 1]
