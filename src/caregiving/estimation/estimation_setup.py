@@ -132,6 +132,40 @@ def estimate_model(
     # upper_bounds_all = yaml.safe_load(open(path_to_upper_bounds, "rb"))
     # upper_bounds = {name: upper_bounds_all[name] for name in start_params.keys()}
 
+    # # --- Build constraints list (NEW) ------------------------------------------
+    # constraints_list: List[Any] = []
+    # if select_fixed_params is not None:
+    #     constraints_list.append(om.FixedConstraint(selector=select_fixed_params))
+
+    # if other_constraint is not None:
+    #     if isinstance(other_constraint, (list, tuple)):
+    #         constraints_list.extend(other_constraint)
+    #     else:
+    #         constraints_list.append(other_constraint)
+    # # --------------------------------------------------------------------------
+
+    # --- Adjust bounds if other_constraint is present --------------------------
+    constraints_list: List[Any] = []
+    if select_fixed_params is not None:
+        constraints_list.append(om.FixedConstraint(selector=select_fixed_params))
+
+    if other_constraint is not None:
+        if isinstance(other_constraint, (list, tuple)):
+            constraints_to_apply = other_constraint
+        else:
+            constraints_to_apply = [other_constraint]
+
+        # set bounds of selected params to (-inf, inf)
+        for constr in constraints_to_apply:
+            if hasattr(constr, "selector") and callable(constr.selector):
+                selected = constr.selector(start_params)
+                for pname in selected.keys():
+                    lower_bounds[pname] = -np.inf
+                    upper_bounds[pname] = np.inf
+
+        constraints_list.extend(constraints_to_apply)
+    # --------------------------------------------------------------------------
+
     bounds = om.Bounds(lower=lower_bounds, upper=upper_bounds)
 
     simulate_moments_given_params = partial(
@@ -153,18 +187,6 @@ def estimate_model(
         cholesky=use_cholesky_weights,
         relative_deviations=relative_deviations,
     )
-
-    # --- Build constraints list (NEW) ------------------------------------------
-    constraints_list: List[Any] = []
-    if select_fixed_params is not None:
-        constraints_list.append(om.FixedConstraint(selector=select_fixed_params))
-
-    if other_constraint is not None:
-        if isinstance(other_constraint, (list, tuple)):
-            constraints_list.extend(other_constraint)
-        else:
-            constraints_list.append(other_constraint)
-    # --------------------------------------------------------------------------
 
     minimize_kwargs = {
         "fun": criterion_func,

@@ -174,13 +174,13 @@ def task_create_soep_moments(
     # )
 
     # =================================================================================
-    _, variances = compute_share_informal_care_by_age_bin(
-        df_year,
-        moments=moments.copy(),
-        variances=variances,
-        weights=PARENT_WEIGHTS_SHARE,
-        scale=SCALE_CAREGIVER_SHARE,
-    )
+    # _, variances = compute_share_informal_care_by_age_bin(
+    #     df_year,
+    #     moments=moments.copy(),
+    #     variances=variances,
+    #     weights=PARENT_WEIGHTS_SHARE,
+    #     scale=SCALE_CAREGIVER_SHARE,
+    # )
     # =================================================================================
 
     # t, variances = compute_share_informal_care_by_age_bin(
@@ -246,20 +246,21 @@ def task_create_soep_moments(
         age_range=age_range_caregivers,
         label="caregivers",
     )
-    moments, variances = compute_labor_shares_by_age(
-        df_caregivers_low,
-        moments=moments,
-        variances=variances,
-        age_range=age_range_caregivers,
-        label="caregivers_low_education",
-    )
-    moments, variances = compute_labor_shares_by_age(
-        df_caregivers_high,
-        moments=moments,
-        variances=variances,
-        age_range=age_range_caregivers,
-        label="caregivers_high_education",
-    )
+    # moments, variances = compute_labor_shares_by_age(
+    #     df_caregivers_low,
+    #     moments=moments,
+    #     variances=variances,
+    #     age_range=age_range_caregivers,
+    #     label="caregivers_low_education",
+    # )
+    # moments, variances = compute_labor_shares_by_age(
+    #     df_caregivers_high,
+    #     moments=moments,
+    #     variances=variances,
+    #     age_range=age_range_caregivers,
+    #     label="caregivers_high_education",
+    # )
+
     # moments, variances = compute_labor_shares_by_age_bin(
     #     df_caregivers,
     #     moments=moments,
