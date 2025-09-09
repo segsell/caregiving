@@ -55,6 +55,9 @@ def task_plot_model_fit(  # noqa: PLR0915
     path_to_empirical_data: Path = BLD
     / "data"
     / "soep_structural_estimation_sample.csv",
+    path_to_caregivers_sample: Path = BLD
+    / "data"
+    / "soep_structural_caregivers_sample.csv",
     path_to_simulated_data: Path = BLD / "solve_and_simulate" / "simulated_data.pkl",
     path_to_save_wealth_plot: Annotated[Path, Product] = BLD
     / "plots"
@@ -125,11 +128,13 @@ def task_plot_model_fit(  # noqa: PLR0915
     emp_moms = pd.read_csv(path_to_empirical_moments, index_col=[0]).squeeze("columns")
 
     df_emp = pd.read_csv(path_to_empirical_data, index_col=[0])
+    df_caregivers = pd.read_csv(path_to_caregivers_sample, index_col=[0])
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
     df_sim["sex"] = SEX
 
     # Subsets empirical
-    df_emp_caregivers = df_emp.loc[df_emp["any_care"] == 1].copy()
+    df_emp_caregivers = df_caregivers.loc[df_caregivers["any_care"] == 1].copy()
+
     df_emp_light_caregivers = df_emp_caregivers.loc[
         df_emp_caregivers["light_care"] == 1
     ]

@@ -2,21 +2,32 @@
 rho: 1.0e-12
 beta: 0.9
 
-# disutil_ft_work_good_women: 1.0e-12
-# disutil_ft_work_bad_women: 1.0e-12
+disutil_unemployed_low_women: 1.0e-12
+disutil_unemployed_high_women: 1.0e-12
+disutil_ft_work_good_women: 1.0e-12
+disutil_ft_work_bad_women: 1.0e-12
 disutil_pt_work_good_women: 1.0e-12
 disutil_pt_work_bad_women: 1.0e-12
 disutil_unemployed_women: 1.0e-12
-disutil_unemployed_low_women: 1.0e-12
-disutil_unemployed_high_women: 1.0e-12
+
 disutil_pt_work_low_women: 1.0e-12
 disutil_pt_work_high_women: 1.0e-12
 disutil_ft_work_low_women: 1.0e-12
 disutil_ft_work_high_women: 1.0e-12
+
 disutil_children_pt_work_low: -5
 disutil_children_pt_work_high: -5
 disutil_children_ft_work_low: -5
 disutil_children_ft_work_high: -5
+
+disutil_pt_work_low_age: 1.0e-12
+disutil_pt_work_low_age_squared: -5
+disutil_pt_work_high_age: 1.0e-12
+disutil_pt_work_high_age_squared: -5
+disutil_ft_work_low_age: 1.0e-12
+disutil_ft_work_low_age_squared: -5
+disutil_ft_work_high_age: 1.0e-12
+disutil_ft_work_high_age_squared: -5
 
 # Caregiving
 # util_intensive_informal_care_low: -5

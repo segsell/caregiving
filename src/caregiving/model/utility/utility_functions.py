@@ -10,6 +10,7 @@ from caregiving.model.shared import (  # is_nursing_home_care,
     PARENT_GOOD_HEALTH,
     PARENT_MEDIUM_HEALTH,
     SEX,
+    PERIOD_SCALE,
     is_bad_health,
     is_child_age_0_to_3,
     is_child_age_4_to_6,
@@ -584,10 +585,12 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     working_part_time = is_part_time(choice)
     working_full_time = is_full_time(choice)
     # partner_retired = partner_state == 0
-    bad_health = is_bad_health(health)
-    good_health = is_good_health(health)
+    # bad_health = is_bad_health(health)
+    # good_health = is_good_health(health)
 
     informal_care = is_informal_care(choice)
+
+    t = period / PERIOD_SCALE
 
     # # reading parameters
     # disutil_ft_work_men = (
@@ -601,43 +604,101 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     #     # + partner_retired * disutil_only_partner_retired
     # )
 
-    disutil_ft_work_women = (
-        params["disutil_ft_work_bad_women"] * bad_health
-        + params["disutil_ft_work_good_women"] * good_health
-        # + params["disutil_ft_work_low_women"] * (1 - education)
-        # + params["disutil_ft_work_high_women"] * education
-    )
-    disutil_pt_work_women = (
-        params["disutil_pt_work_bad_women"] * bad_health
-        + params["disutil_pt_work_good_women"] * good_health
-        # + params["disutil_pt_work_low_women"] * (1 - education)
-        # + params["disutil_pt_work_high_women"] * education
-    )
+    # disutil_ft_work_women = (
+    #     # params["disutil_ft_work_bad_women"] * bad_health
+    #     # + params["disutil_ft_work_good_women"] * good_health
+    #     +params["disutil_ft_work_low_women"] * (1 - education)
+    #     + params["disutil_ft_work_high_women"] * education
+    # )
+    # disutil_pt_work_women = (
+    #     # params["disutil_pt_work_bad_women"] * bad_health
+    #     # + params["disutil_pt_work_good_women"] * good_health
+    #     +params["disutil_pt_work_low_women"] * (1 - education)
+    #     + params["disutil_pt_work_high_women"] * education
+    # )
     disutil_unemployed_women = (
         params["disutil_unemployed_low_women"] * (1 - education)
         + params["disutil_unemployed_high_women"] * education
     )
 
-    has_partner_int = (partner_state > 0).astype(int)
-    nb_children = options["children_by_state"][SEX, education, has_partner_int, period]
+    # has_partner_int = (partner_state > 0).astype(int)
+    # nb_children = options["children_by_state"][SEX, education, has_partner_int, period]
 
-    disutil_children_ft_low = params["disutil_children_ft_work_low"] * nb_children
-    disutil_children_ft_high = params["disutil_children_ft_work_high"] * nb_children
+    # disutil_children_ft_low = params["disutil_children_ft_work_low"] * nb_children
+    # disutil_children_ft_high = params["disutil_children_ft_work_high"] * nb_children
 
-    disutil_children_pt_low = params["disutil_children_pt_work_low"] * nb_children
-    disutil_children_pt_high = params["disutil_children_pt_work_high"] * nb_children
+    # disutil_children_pt_low = params["disutil_children_pt_work_low"] * nb_children
+    # disutil_children_pt_high = params["disutil_children_pt_work_high"] * nb_children
 
-    disutil_children_pt = (
-        disutil_children_pt_low * (1 - education) + disutil_children_pt_high * education
+    # disutil_children_pt = (
+    #     disutil_children_pt_low * (1 - education) + disutil_children_pt_high * education
+    # )
+    # disutil_children_ft = (
+    #     disutil_children_ft_low * (1 - education) + disutil_children_ft_high * education
+    # )
+
+    # disutil_pt_work_age = (
+    #     params["disutil_pt_work_low_women"] * (1 - education)
+    #     + params["disutil_pt_work_high_women"] * education
+    #     + (
+    #         params["disutil_pt_work_low_age"] * (1 - education)
+    #         + params["disutil_pt_work_high_age"] * education
+    #     )
+    #     * period
+    #     + (
+    #         params["disutil_pt_work_low_age_squared"] * (1 - education)
+    #         + params["disutil_pt_work_high_age_squared"] * education
+    #     )
+    #     * (period**2)
+    # )
+
+    # disutil_ft_work_age = (
+    #     params["disutil_ft_work_low_women"] * (1 - education)
+    #     + params["disutil_ft_work_high_women"] * education
+    #     + params["disutil_ft_work_low_age"] * (1 - education)
+    #     + params["disutil_ft_work_high_age"] * education
+    # ) * period + (
+    #     params["disutil_ft_work_low_age_squared"] * (1 - education)
+    #     + params["disutil_ft_work_high_age_squared"] * education
+    # ) * (
+    #     period**2
+    # )
+
+    pt_int = (
+        params["disutil_pt_work_low_women"] * (1 - education)
+        + params["disutil_pt_work_high_women"] * education
     )
-    disutil_children_ft = (
-        disutil_children_ft_low * (1 - education) + disutil_children_ft_high * education
+    pt_lin = (
+        params["disutil_pt_work_low_age"] * (1 - education)
+        + params["disutil_pt_work_high_age"] * education
     )
+    pt_quad = (
+        params["disutil_pt_work_low_age_squared"] * (1 - education)
+        + params["disutil_pt_work_high_age_squared"] * education
+    )
+
+    ft_int = (
+        params["disutil_ft_work_low_women"] * (1 - education)
+        + params["disutil_ft_work_high_women"] * education
+    )
+    ft_lin = (
+        params["disutil_ft_work_low_age"] * (1 - education)
+        + params["disutil_ft_work_high_age"] * education
+    )
+    ft_quad = (
+        params["disutil_ft_work_low_age_squared"] * (1 - education)
+        + params["disutil_ft_work_high_age_squared"] * education
+    )
+
+    disutil_pt_work = pt_int + pt_lin * t + pt_quad * t**2
+    disutil_ft_work = ft_int + ft_lin * t + ft_quad * t**2
 
     exp_factor_work = (
         disutil_unemployed_women * unemployed
-        + (disutil_pt_work_women + disutil_children_pt) * working_part_time
-        + (disutil_ft_work_women + disutil_children_ft) * working_full_time
+        # + (disutil_pt_work_women + disutil_children_pt) * working_part_time
+        # + (disutil_ft_work_women + disutil_children_ft) * working_full_time
+        + (disutil_pt_work) * working_part_time
+        + (disutil_ft_work) * working_full_time
     )
 
     # =================================================================================
@@ -686,9 +747,9 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     # =================================================================================
 
     # Compute eta
-    disutility = jnp.exp(-exp_factor_work - exp_factor_work_and_care)
+    disutility = -exp_factor_work - exp_factor_work_and_care
 
-    return disutility
+    return jnp.exp(disutility)
 
 
 def utility_of_labor_and_caregiving(
