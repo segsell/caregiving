@@ -1,5 +1,10 @@
 # Utility parameters
 rho: 2
+rho_low: 2
+rho_high: 2
+rho_bequest_low: 2
+rho_bequest_high: 2
+
 beta: 0.999999999999
 
 disutil_ft_work_good_women: 5
@@ -89,24 +94,30 @@ util_solo_informal_care_mother_bad: 5
 # util_joint_informal_care_high: 5
 
 
-util_unemployed_and_informal_care: 5
-util_unemployed_and_informal_care_low: 5
-util_unemployed_and_informal_care_high: 5
-util_pt_work_and_informal_care_low: 5
-util_pt_work_and_informal_care_high: 5
-util_ft_work_and_informal_care_low: 5
-util_ft_work_and_informal_care_high: 5
+disutil_unemployed_and_informal_care: 5
+disutil_unemployed_and_informal_care_low: 5
+disutil_unemployed_and_informal_care_high: 5
+disutil_pt_work_and_informal_care_low: 5
+disutil_pt_work_and_informal_care_high: 5
+disutil_ft_work_and_informal_care_low: 5
+disutil_ft_work_and_informal_care_high: 5
 
 
-util_unemployed_and_informal_care_bad: 5
-util_unemployed_and_informal_care_good: 5
-util_pt_work_and_informal_care_good: 5
-util_pt_work_and_informal_care_bad: 5
-util_ft_work_and_informal_care_good: 5
-util_ft_work_and_informal_care_bad: 5
+disutil_unemployed_and_informal_care_bad: 5
+disutil_unemployed_and_informal_care_good: 5
+disutil_pt_work_and_informal_care_good: 5
+disutil_pt_work_and_informal_care_bad: 5
+disutil_ft_work_and_informal_care_good: 5
+disutil_ft_work_and_informal_care_bad: 5
 
-util_pt_work_and_informal_care: 5
-util_ft_work_and_informal_care: 5
+disutil_pt_work_and_informal_care: 5
+disutil_ft_work_and_informal_care: 5
+
+disutil_children_pt_work_informal_care_low: 5
+disutil_children_pt_work_informal_care_high: 5
+disutil_children_ft_work_informal_care_low: 5
+disutil_children_ft_work_informal_care_high: 5
+
 
 # util_cons_unemployed_low_educ: -1e-12
 # util_cons_unemployed_high_educ: -1e-12
@@ -126,9 +137,13 @@ util_ft_work_and_informal_care: 5
 
 # Bequest scale
 bequest_scale: 5
+bequest_scale_low: 5
+bequest_scale_high: 5
 
 # Taste shock scale
 lambda: 2
+lambda_low: 2
+lambda_high: 2
 
 # Job finding
 job_finding_logit_const_women: 5

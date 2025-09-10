@@ -9,7 +9,7 @@ MISSING_VALUE = -99
 BASE_YEAR = 2010  # 2015
 MAX_SYEAR = 2023  # Maximum year in thhe SOEP
 
-START_PERIOD_CAREGIVING = 15  # period when caregiving starts (age 45)
+START_PERIOD_CAREGIVING = 10  # period when caregiving starts (age 45)
 PERIOD_SCALE = 10  # to rescale age in utility functions
 
 PARENT_WEIGHTS_SHARE = {

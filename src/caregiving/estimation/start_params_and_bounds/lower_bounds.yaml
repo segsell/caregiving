@@ -1,5 +1,9 @@
 # Utility parameters
 rho: 1.0e-12
+rho_low: 1.0e-12
+rho_high: 1.0e-12
+rho_bequest_low: 1.0e-12
+rho_bequest_high: 1.0e-12
 beta: 0.9
 
 disutil_unemployed_low_women: 1.0e-12
@@ -94,24 +98,29 @@ util_solo_informal_care_mother_bad: -5
 # util_unemployed_and_informal_care: -5
 # util_pt_work_and_informal_care: -5
 # util_ft_work_and_informal_care: -5
-util_unemployed_and_informal_care: -5
-util_unemployed_and_informal_care_low: -5
-util_unemployed_and_informal_care_high: -5
-util_pt_work_and_informal_care_low: -5
-util_pt_work_and_informal_care_high: -5
-util_ft_work_and_informal_care_low: 1.0e-12
-util_ft_work_and_informal_care_high: 1.0e-12
+disutil_unemployed_and_informal_care: -5
+disutil_unemployed_and_informal_care_low: -5
+disutil_unemployed_and_informal_care_high: -5
+disutil_pt_work_and_informal_care_low: -5
+disutil_pt_work_and_informal_care_high: -5
+disutil_ft_work_and_informal_care_low: 1.0e-12
+disutil_ft_work_and_informal_care_high: 1.0e-12
 
 
-util_unemployed_and_informal_care_good: -5
-util_unemployed_and_informal_care_bad: -5
-util_pt_work_and_informal_care_good: -5
-util_pt_work_and_informal_care_bad: -5
-util_ft_work_and_informal_care_good: 1.0e-12
-util_ft_work_and_informal_care_bad: 1.0e-12
+disutil_unemployed_and_informal_care_good: -5
+disutil_unemployed_and_informal_care_bad: -5
+disutil_pt_work_and_informal_care_good: -5
+disutil_pt_work_and_informal_care_bad: -5
+disutil_ft_work_and_informal_care_good: 1.0e-12
+disutil_ft_work_and_informal_care_bad: 1.0e-12
 
-util_pt_work_and_informal_care: 1.0e-12
-util_ft_work_and_informal_care: 1.0e-12
+disutil_pt_work_and_informal_care: 1.0e-12
+disutil_ft_work_and_informal_care: 1.0e-12
+
+disutil_children_pt_work_informal_care_low: -5
+disutil_children_pt_work_informal_care_high: -5
+disutil_children_ft_work_informal_care_low: -5
+disutil_children_ft_work_informal_care_high: -5
 
 
 # util_cons_unemployed_low_educ: -5
@@ -132,9 +141,13 @@ util_ft_work_and_informal_care: 1.0e-12
 
 # Bequest scale
 bequest_scale: 1.0e-12
+bequest_scale_low: 1.0e-12
+bequest_scale_high: 1.0e-12
 
 # Taste shock scale
 lambda: 1.0e-12
+lambda_low: 1.0e-12
+lambda_high: 1.0e-12
 
 # Job finding
 job_finding_logit_const_women: -5

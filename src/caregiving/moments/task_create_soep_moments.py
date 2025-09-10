@@ -67,7 +67,11 @@ def task_create_soep_moments(
     )
 
     df_full = pd.read_csv(path_to_main_sample, index_col=[0])
-    df = df_full[(df_full["sex"] == 1) & (df_full["age"] <= end_age + 10)]  # women only
+    df = df_full[
+        (df_full["sex"] == 1)
+        & (df_full["age"] <= end_age + 10)
+        & (df_full["any_care"] == 0)
+    ]  # women only and non-caregivers
     _df_alive = df[df["health"] != DEAD].copy()
     _df_good_health = df[df["health"] == GOOD_HEALTH].copy()
     _df_bad_health = df[df["health"] == BAD_HEALTH].copy()
@@ -239,13 +243,13 @@ def task_create_soep_moments(
     # ].var(ddof=DEGREES_OF_FREEDOM)
 
     # Caregiving
-    moments, variances = compute_labor_shares_by_age(
-        df_caregivers,
-        moments=moments,
-        variances=variances,
-        age_range=age_range_caregivers,
-        label="caregivers",
-    )
+    # moments, variances = compute_labor_shares_by_age(
+    #     df_caregivers,
+    #     moments=moments,
+    #     variances=variances,
+    #     age_range=age_range_caregivers,
+    #     label="caregivers",
+    # )
     # moments, variances = compute_labor_shares_by_age(
     #     df_caregivers_low,
     #     moments=moments,
@@ -261,24 +265,24 @@ def task_create_soep_moments(
     #     label="caregivers_high_education",
     # )
 
-    # moments, variances = compute_labor_shares_by_age_bin(
-    #     df_caregivers,
-    #     moments=moments,
-    #     variances=variances,
-    #     label="caregivers",
-    # )
-    # moments, variances = compute_labor_shares_by_age_bin(
-    #     df_caregivers_low,
-    #     moments=moments,
-    #     variances=variances,
-    #     label="caregivers_low_education",
-    # )
-    # moments, variances = compute_labor_shares_by_age_bin(
-    #     df_caregivers_high,
-    #     moments=moments,
-    #     variances=variances,
-    #     label="caregivers_high_education",
-    # )
+    moments, variances = compute_labor_shares_by_age_bin(
+        df_caregivers,
+        moments=moments,
+        variances=variances,
+        label="caregivers",
+    )
+    moments, variances = compute_labor_shares_by_age_bin(
+        df_caregivers_low,
+        moments=moments,
+        variances=variances,
+        label="caregivers_low_education",
+    )
+    moments, variances = compute_labor_shares_by_age_bin(
+        df_caregivers_high,
+        moments=moments,
+        variances=variances,
+        label="caregivers_high_education",
+    )
 
     # # B2.2) Light caregiving
     # moments, variances = compute_labor_shares_by_age_bin(
