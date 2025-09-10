@@ -243,46 +243,46 @@ def task_create_soep_moments(
     # ].var(ddof=DEGREES_OF_FREEDOM)
 
     # Caregiving
-    # moments, variances = compute_labor_shares_by_age(
-    #     df_caregivers,
-    #     moments=moments,
-    #     variances=variances,
-    #     age_range=age_range_caregivers,
-    #     label="caregivers",
-    # )
-    # moments, variances = compute_labor_shares_by_age(
-    #     df_caregivers_low,
-    #     moments=moments,
-    #     variances=variances,
-    #     age_range=age_range_caregivers,
-    #     label="caregivers_low_education",
-    # )
-    # moments, variances = compute_labor_shares_by_age(
-    #     df_caregivers_high,
-    #     moments=moments,
-    #     variances=variances,
-    #     age_range=age_range_caregivers,
-    #     label="caregivers_high_education",
-    # )
-
-    moments, variances = compute_labor_shares_by_age_bin(
+    moments, variances = compute_labor_shares_by_age(
         df_caregivers,
         moments=moments,
         variances=variances,
+        age_range=age_range_caregivers,
         label="caregivers",
     )
-    moments, variances = compute_labor_shares_by_age_bin(
+    moments, variances = compute_labor_shares_by_age(
         df_caregivers_low,
         moments=moments,
         variances=variances,
+        age_range=age_range_caregivers,
         label="caregivers_low_education",
     )
-    moments, variances = compute_labor_shares_by_age_bin(
+    moments, variances = compute_labor_shares_by_age(
         df_caregivers_high,
         moments=moments,
         variances=variances,
+        age_range=age_range_caregivers,
         label="caregivers_high_education",
     )
+
+    # moments, variances = compute_labor_shares_by_age_bin(
+    #     df_caregivers,
+    #     moments=moments,
+    #     variances=variances,
+    #     label="caregivers",
+    # )
+    # moments, variances = compute_labor_shares_by_age_bin(
+    #     df_caregivers_low,
+    #     moments=moments,
+    #     variances=variances,
+    #     label="caregivers_low_education",
+    # )
+    # moments, variances = compute_labor_shares_by_age_bin(
+    #     df_caregivers_high,
+    #     moments=moments,
+    #     variances=variances,
+    #     label="caregivers_high_education",
+    # )
 
     # # B2.2) Light caregiving
     # moments, variances = compute_labor_shares_by_age_bin(
