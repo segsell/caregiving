@@ -28,7 +28,6 @@ from caregiving.model.shared import (  # is_nursing_home_care,
 )
 from caregiving.model.utility.bequest_utility import (
     utility_final_consume_all,
-    marginal_utility_final_consume_all,
 )
 
 
@@ -36,7 +35,7 @@ def create_utility_functions():
     """Create dict of utility functions."""
     return {
         "utility": utility_func,
-        "marginal_utility": marg_utility,
+        "marginal_utility": marginal_utility_function_alive,
         "inverse_marginal_utility": inverse_marginal,
     }
 
@@ -182,73 +181,74 @@ def utility_func_alive(
     return utility  # + util_labor_and_caregiving + util_caregiving
 
 
-# def _utility_func_alive(
-#     params, consumption, choice, education, partner_state, health, period, options
+# def marg_utility(
+#     consumption,
+#     # sex,
+#     partner_state,
+#     education,
+#     health,
+#     care_demand,
+#     period,
+#     choice,
+#     params,
+#     options,
+# ):
+#     marginal_utility_death = marginal_utility_final_consume_all(
+#         wealth=consumption,
+#         education=education,
+#         params=params,
+#     )
+#     marginal_utility_alive = marginal_utility_function_alive(
+#         consumption=consumption,
+#         partner_state=partner_state,
+#         education=education,
+#         health=health,
+#         care_demand=care_demand,
+#         period=period,
+#         choice=choice,
+#         params=params,
+#         options=options,
+#     )
+#     is_dead = health == DEAD
+
+#     marginal_utility = jax.lax.select(
+#         is_dead, marginal_utility_death, marginal_utility_alive
+#     )
+
+#     return marginal_utility
+
+
+# def marg_utility(
+#     consumption, partner_state, education, health, period, choice, params, options
 # ):
 #     rho = params["rho"]
 
-#     has_partner = (partner_state > 0).astype(int)
-#     n_children = options["children_by_state"][SEX, education, has_partner, period]
-#     # age_youngest_child = options["age_youngest_child_by_state"][
-#     #     SEX, education, has_partner, period
-#     # ]
-
-#     cons_scale = consumption_scale(has_partner, n_children)
-#     utility_consumption = ((consumption / cons_scale) ** (1 - rho) - 1) / (1 - rho)
-
-#     eta = _utility_of_labor_and_children(
-#         choice=choice, education=education, n_children=n_children, params=params
+#     cons_scale = consumption_scale(
+#         partner_state=partner_state,
+#         # sex=sex,
+#         education=education,
+#         period=period,
+#         options=options,
 #     )
-#     # zeta = utility_of_labor_and_elder_care(
-#     #     choice, params
-#     # )
+#     eta = disutility_work(
+#         period=period,
+#         choice=choice,
+#         # sex=sex,
+#         education=education,
+#         partner_state=partner_state,
+#         health=health,
+#         params=params,
+#         options=options,
+#     )
+#     marg_util_rho_not_one = ((eta / cons_scale) ** (1 - rho)) * (consumption ** (-rho))
 
-#     utility_with_rho_not_one = utility_consumption * jnp.exp(eta)  # + jnp.exp(zeta)
-
-#     utility = jax.lax.select(
+#     marg_util = jax.lax.select(
 #         jnp.allclose(rho, 1),
-#         jnp.log(consumption * jnp.exp(eta) / cons_scale),
-#         utility_with_rho_not_one,
+#         1 / consumption,
+#         marg_util_rho_not_one,
 #     )
 
-#     return utility
-
-
-def marg_utility(
-    consumption,
-    # sex,
-    partner_state,
-    education,
-    health,
-    care_demand,
-    period,
-    choice,
-    params,
-    options,
-):
-    marginal_utility_death = marginal_utility_final_consume_all(
-        wealth=consumption,
-        education=education,
-        params=params,
-    )
-    marginal_utility_alive = marginal_utility_function_alive(
-        consumption=consumption,
-        partner_state=partner_state,
-        education=education,
-        health=health,
-        care_demand=care_demand,
-        period=period,
-        choice=choice,
-        params=params,
-        options=options,
-    )
-    is_dead = health == DEAD
-
-    marginal_utility = jax.lax.select(
-        is_dead, marginal_utility_death, marginal_utility_alive
-    )
-
-    return marginal_utility
+#     return marg_util
 
 
 def marginal_utility_function_alive(

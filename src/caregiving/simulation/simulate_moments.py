@@ -110,13 +110,13 @@ def simulate_moments_pandas(  # noqa: PLR0915
     moments = {}
 
     # =================================================================================
-    moments = create_labor_share_moments_pandas(df, moments, age_range=age_range)
-    moments = create_labor_share_moments_pandas(
-        df_low, moments, age_range=age_range, label="low_education"
-    )
-    moments = create_labor_share_moments_pandas(
-        df_high, moments, age_range=age_range, label="high_education"
-    )
+    # moments = create_labor_share_moments_pandas(df, moments, age_range=age_range)
+    # moments = create_labor_share_moments_pandas(
+    #     df_low, moments, age_range=age_range, label="low_education"
+    # )
+    # moments = create_labor_share_moments_pandas(
+    #     df_high, moments, age_range=age_range, label="high_education"
+    # )
 
     # moments = create_choice_shares_by_age_bin_pandas(
     #     df,
@@ -1303,23 +1303,23 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
 
     return jnp.asarray(
         # labor shares all
-        share_retired_by_age
-        + share_unemployed_by_age
-        + share_working_part_time_by_age
-        + share_working_full_time_by_age
-        + share_retired_by_age_low_educ
-        + share_unemployed_by_age_low_educ
-        + share_working_part_time_by_age_low_educ
-        + share_working_full_time_by_age_low_educ
-        + share_retired_by_age_high_educ
-        + share_unemployed_by_age_high_educ
-        + share_working_part_time_by_age_high_educ
-        + share_working_full_time_by_age_high_educ
+        # share_retired_by_age
+        # + share_unemployed_by_age
+        # + share_working_part_time_by_age
+        # + share_working_full_time_by_age
+        # + share_retired_by_age_low_educ
+        # + share_unemployed_by_age_low_educ
+        # + share_working_part_time_by_age_low_educ
+        # + share_working_full_time_by_age_low_educ
+        # + share_retired_by_age_high_educ
+        # + share_unemployed_by_age_high_educ
+        # + share_working_part_time_by_age_high_educ
+        # + share_working_full_time_by_age_high_educ
         #
         # caregivers
         # + share_caregivers_by_age_bin
         # + [share_caregivers_high_educ]
-        + share_retired_by_age_caregivers
+        share_retired_by_age_caregivers
         + share_unemployed_by_age_caregivers
         + share_working_part_time_by_age_caregivers
         + share_working_full_time_by_age_caregivers
