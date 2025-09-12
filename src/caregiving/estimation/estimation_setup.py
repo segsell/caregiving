@@ -180,10 +180,16 @@ def estimate_model(
         pandas=True,
     )
 
+    # is_least_squares = (
+    #     lambda algo: algo.lower() in {"tranquilo_ls", "nag_dfols"}
+    #     or "pounders" in algo.lower()
+    # )
+
     criterion_func = get_msm_optimization_function(
         simulate_moments=simulate_moments_given_params,
         empirical_moments=empirical_moments,
         weights=weights,
+        # is_least_squares=True,
         cholesky=use_cholesky_weights,
         relative_deviations=relative_deviations,
     )
@@ -299,6 +305,7 @@ def get_msm_optimization_function(
     simulate_moments: callable,
     empirical_moments: np.ndarray,
     weights: np.ndarray,
+    # is_least_squares: bool,
     cholesky: bool = True,
     relative_deviations: bool = False,
 ) -> np.ndarray:
@@ -308,6 +315,7 @@ def get_msm_optimization_function(
     else:
         chol_weights = weights
 
+    # if is_least_squares:
     criterion = om.mark.least_squares(
         partial(
             msm_criterion,
@@ -317,6 +325,16 @@ def get_msm_optimization_function(
             relative_deviations=relative_deviations,
         )
     )
+    # else:
+    #     criterion = om.mark.scalar(
+    #         partial(
+    #             msm_criterion,
+    #             simulate_moments=simulate_moments,
+    #             flat_empirical_moments=empirical_moments,
+    #             chol_weights=chol_weights,
+    #             relative_deviations=relative_deviations,
+    #         )
+    #     )
 
     return criterion
 

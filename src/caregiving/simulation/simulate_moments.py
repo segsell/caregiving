@@ -157,7 +157,7 @@ def simulate_moments_pandas(  # noqa: PLR0915
         label="caregivers_high_education",
     )
 
-    # # Caregivers labor shares by age bin
+    # Caregivers labor shares by age bin
     # moments = create_labor_share_moments_by_age_bin_pandas(
     #     df_caregivers, moments, label="caregivers", age_bins=age_bins_caregivers
     # )
@@ -1302,6 +1302,7 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
     # =================================================================================
 
     return jnp.asarray(
+        []
         # labor shares all
         # share_retired_by_age
         # + share_unemployed_by_age
@@ -1319,7 +1320,7 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
         # caregivers
         # + share_caregivers_by_age_bin
         # + [share_caregivers_high_educ]
-        share_retired_by_age_caregivers
+        + share_retired_by_age_caregivers
         + share_unemployed_by_age_caregivers
         + share_working_part_time_by_age_caregivers
         + share_working_full_time_by_age_caregivers
@@ -1331,7 +1332,7 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
         + share_unemployed_by_age_caregivers_high_educ
         + share_working_part_time_by_age_caregivers_high_educ
         + share_working_full_time_by_age_caregivers_high_educ
-        # #
+        #
         # + share_retired_by_age_bin_caregivers
         # + share_unemployed_by_age_bin_caregivers
         # + share_working_part_time_by_age_bin_caregivers
@@ -1344,7 +1345,6 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
         # + share_unemployed_by_age_bin_caregivers_high_educ
         # + share_working_part_time_by_age_bin_caregivers_high_educ
         # + share_working_full_time_by_age_bin_caregivers_high_educ
-        #
         # # light caregivers
         # + share_retired_by_age_bin_light_caregivers
         # + share_unemployed_by_age_bin_light_caregivers
