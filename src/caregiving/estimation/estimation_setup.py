@@ -10,8 +10,6 @@ import numpy as np
 import optimagic as om
 import pandas as pd
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import MACHINE_ZERO, RETIREMENT
@@ -28,6 +26,8 @@ from caregiving.simulation.simulate_moments import (
     simulate_moments_jax,
     simulate_moments_pandas,
 )
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 jax.config.update("jax_enable_x64", True)
 
@@ -39,6 +39,8 @@ def estimate_model(
     options: Dict[str, Any],
     algo: str,
     algo_options: Dict[str, Any],
+    lower_bounds: Dict[str, float],
+    upper_bounds: Dict[str, float],
     weighting_method: str = "identity",
     use_cholesky_weights: bool = True,
     relative_deviations: bool = False,
@@ -51,8 +53,6 @@ def estimate_model(
     # / "model"
     # / "params"
     # / "start_params_model.yaml",
-    lower_bounds: Dict[str, float] = {},
-    upper_bounds: Dict[str, float] = {},
     path_to_save_estimation_result: str = BLD / "estimation" / "result.pkl",
     path_to_save_estimation_params: str = BLD / "estimation" / "estimated_params.csv",
     # last_estimate: Optional[Dict[str, Any]] = None,
@@ -145,25 +145,35 @@ def estimate_model(
     # # --------------------------------------------------------------------------
 
     # --- Adjust bounds if other_constraint is present --------------------------
-    constraints_list: List[Any] = []
-    if select_fixed_params is not None:
-        constraints_list.append(om.FixedConstraint(selector=select_fixed_params))
+    # constraints_list: List[Any] = []
+    # if select_fixed_params is not None:
+    #     constraints_list.append(om.FixedConstraint(selector=select_fixed_params))
 
-    if other_constraint is not None:
-        if isinstance(other_constraint, (list, tuple)):
-            constraints_to_apply = other_constraint
-        else:
-            constraints_to_apply = [other_constraint]
+    # if other_constraint is not None:
+    #     if isinstance(other_constraint, (list, tuple)):
+    #         constraints_to_apply = other_constraint
+    #     else:
+    #         constraints_to_apply = [other_constraint]
 
-        # set bounds of selected params to (-inf, inf)
-        for constr in constraints_to_apply:
-            if hasattr(constr, "selector") and callable(constr.selector):
-                selected = constr.selector(start_params)
-                for pname in selected.keys():
-                    lower_bounds[pname] = -np.inf
-                    upper_bounds[pname] = np.inf
+    #     # set bounds of selected params to (-inf, inf)
+    #     for constr in constraints_to_apply:
+    #         if hasattr(constr, "selector") and callable(constr.selector):
+    #             selected = constr.selector(start_params)
+    #             for pname in selected.keys():
+    #                 lower_bounds[pname] = -np.inf
+    #                 upper_bounds[pname] = np.inf
 
-        constraints_list.extend(constraints_to_apply)
+    #     constraints_list.extend(constraints_to_apply)
+
+    constraints_list, lower_bounds, upper_bounds = (
+        combine_constraints_and_update_bounds(
+            select_fixed_params=select_fixed_params,
+            other_constraint=other_constraint,
+            start_params=start_params,
+            lower_bounds=lower_bounds,
+            upper_bounds=upper_bounds,
+        )
+    )
     # --------------------------------------------------------------------------
 
     bounds = om.Bounds(lower=lower_bounds, upper=upper_bounds)
@@ -189,7 +199,6 @@ def estimate_model(
         simulate_moments=simulate_moments_given_params,
         empirical_moments=empirical_moments,
         weights=weights,
-        # is_least_squares=True,
         cholesky=use_cholesky_weights,
         relative_deviations=relative_deviations,
     )
@@ -372,22 +381,32 @@ def msm_criterion(
     return residuals
 
 
-def select_fixed_params(params):
-    """Select fixed parameters for the optimization."""
+def combine_constraints_and_update_bounds(
+    select_fixed_params, other_constraint, start_params, lower_bounds, upper_bounds
+):
+    """Select constraints for the optimization."""
+    constraints_list: List[Any] = []
 
-    fixed_params = {
-        "sigma": params["sigma"],
-        "interest_rate": params["interest_rate"],
-        "beta": params["beta"],
-        "rho": params["rho"],
-    }
+    if select_fixed_params is not None:
+        constraints_list.append(om.FixedConstraint(selector=select_fixed_params))
 
-    job_finding_params = {
-        key: val for key, val in params.items() if key.startswith("job_finding")
-    }
-    fixed_params.update(job_finding_params)
+    if other_constraint is not None:
+        if isinstance(other_constraint, (list, tuple)):
+            constraints_to_apply = other_constraint
+        else:
+            constraints_to_apply = [other_constraint]
 
-    return fixed_params
+        # set bounds of selected params to (-inf, inf)
+        for constr in constraints_to_apply:
+            if hasattr(constr, "selector") and callable(constr.selector):
+                selected = constr.selector(start_params)
+                for pname in selected.keys():
+                    lower_bounds[pname] = -np.inf
+                    upper_bounds[pname] = np.inf
+
+        constraints_list.extend(constraints_to_apply)
+
+    return constraints_list, lower_bounds, upper_bounds
 
 
 # =====================================================================================
@@ -462,3 +481,26 @@ def load_and_prep_data(data_emp, model, start_params, drop_retirees=True):
     states_dict["wealth"] = data_emp["adjusted_wealth"].values
 
     return data_emp, states_dict
+
+
+# =====================================================================================
+# Example functions for estimation setup
+# =====================================================================================
+
+
+def _select_fixed_params_example(params):
+    """Select fixed parameters for the optimization."""
+
+    fixed_params = {
+        "sigma": params["sigma"],
+        "interest_rate": params["interest_rate"],
+        "beta": params["beta"],
+        "rho": params["rho"],
+    }
+
+    job_finding_params = {
+        key: val for key, val in params.items() if key.startswith("job_finding")
+    }
+    fixed_params.update(job_finding_params)
+
+    return fixed_params

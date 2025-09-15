@@ -240,7 +240,8 @@ def utility_func_alive(
 #         params=params,
 #         options=options,
 #     )
-#     marg_util_rho_not_one = ((eta / cons_scale) ** (1 - rho)) * (consumption ** (-rho))
+#     marg_util_rho_not_one = (
+# (eta / cons_scale) ** (1 - rho)) * (consumption ** (-rho))
 
 #     marg_util = jax.lax.select(
 #         jnp.allclose(rho, 1),
