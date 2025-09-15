@@ -7,13 +7,16 @@ from caregiving.model.shared import (
     START_PERIOD_CAREGIVING,
 )
 
+AGE_OFFSET = 3
+SCALE_DOWN_DEMAND = 0.9
+
 
 def health_transition_good_medium_bad(
     mother_health, education, has_sister, period, options
 ):
     """Transition probability for next period health state."""
     trans_mat = options["health_trans_mat_three"]
-    mother_age = period + options["mother_age_diff"][has_sister, education]
+    mother_age = period + options["mother_age_diff"][has_sister, education] + AGE_OFFSET
 
     prob_vector = trans_mat[MOTHER, mother_age, mother_health, :]
 
@@ -24,7 +27,10 @@ def care_demand_and_supply_transition(
     mother_health, period, has_sister, education, options
 ):
     """Transition probability for next period care demand."""
-    mother_age = period - 20 + options["mother_age_diff"][has_sister, education]
+    mother_age = (
+        period - 20 + options["mother_age_diff"][has_sister, education] + AGE_OFFSET
+    )
+    end_age_caregiving = options["end_age_msm"] - options["start_age"]
 
     adl_mat = options["limitations_with_adl_mat"]
     limitations_with_adl = adl_mat[MOTHER, mother_age, mother_health, :]
@@ -36,13 +42,14 @@ def care_demand_and_supply_transition(
     care_demand = (
         limitations_with_adl[1]
         * (mother_health != PARENT_DEAD)
-        * (period >= START_PERIOD_CAREGIVING)
-    )
+        * (period >= START_PERIOD_CAREGIVING - 1)
+        * (period < end_age_caregiving)
+    ) * SCALE_DOWN_DEMAND
 
     prob_vector = jnp.array(
         [
             1 - care_demand,  # no care demand
-            care_demand * prob_other_care_supply,  # care demand an others supply care
+            care_demand * prob_other_care_supply,  # care demand and others supply care
             care_demand * (1 - prob_other_care_supply),  # care demand and not other
         ]
     )
@@ -61,7 +68,7 @@ def care_demand_transition(mother_health, period, has_sister, education, options
     care_demand = (
         limitations_with_adl[1]
         * (mother_health != PARENT_DEAD)
-        * (period >= START_PERIOD_CAREGIVING)
+        * (period >= START_PERIOD_CAREGIVING - 1)
     )
 
     return jnp.array([1 - care_demand, care_demand])

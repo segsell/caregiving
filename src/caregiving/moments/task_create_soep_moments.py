@@ -18,12 +18,16 @@ from caregiving.data_management.share.task_create_parent_child_data_set import (
 )
 from caregiving.model.shared import (
     BAD_HEALTH,
+    DEAD,
     FULL_TIME_CHOICES,
+    GOOD_HEALTH,
     NOT_WORKING,
     PARENT_BAD_HEALTH,
     PARENT_WEIGHTS_SHARE,
     PART_TIME_CHOICES,
     RETIREMENT_CHOICES,
+    SCALE_CAREGIVER_SHARE,
+    START_PERIOD_CAREGIVING,
     UNEMPLOYED_CHOICES,
     WORK,
 )
@@ -49,12 +53,28 @@ def task_create_soep_moments(
     """Create moments for MSM estimation."""
 
     specs = read_and_derive_specs(path_to_specs)
+
     start_age = specs["start_age"]
+    start_age_caregivers = start_age + START_PERIOD_CAREGIVING
     end_age = specs["end_age_msm"]
+
     age_range = range(start_age, end_age + 1)
+    age_range_caregivers = range(start_age_caregivers, end_age + 1)
+
+    _age_bins_75 = (
+        list(range(40, 80, 5)),  # [40, 45, … , 70]
+        [f"{s}_{s+4}" for s in range(40, 75, 5)],  # "40_44", …a
+    )
 
     df_full = pd.read_csv(path_to_main_sample, index_col=[0])
-    df = df_full[(df_full["sex"] == 1) & (df_full["age"] <= end_age + 10)]  # women only
+    df = df_full[
+        (df_full["sex"] == 1)
+        & (df_full["age"] <= end_age + 10)
+        & (df_full["any_care"] == 0)
+    ]  # women only and non-caregivers
+    _df_alive = df[df["health"] != DEAD].copy()
+    _df_good_health = df[df["health"] == GOOD_HEALTH].copy()
+    _df_bad_health = df[df["health"] == BAD_HEALTH].copy()
 
     df_caregivers_full = pd.read_csv(path_to_caregivers_sample, index_col=[0])
     df_caregivers = df_caregivers_full[
@@ -62,11 +82,19 @@ def task_create_soep_moments(
         & (df_caregivers_full["age"] <= end_age + 10)
         & (df_caregivers_full["any_care"] == 1)
     ]
+    _df_caregivers_alive = df_caregivers[df_caregivers["health"] != DEAD].copy()
+
     df_light_caregivers = df_caregivers[df_caregivers["light_care"] == 1]
     df_intensive_caregivers = df_caregivers[df_caregivers["intensive_care"] == 1]
 
-    df_year = df[df["syear"] == 2012]  # 2016 # noqa: PLR2004
+    df_year = df[df["syear"] == 2012]  # 2012, 2016 # noqa: PLR2004
+    _df_year_caregivers = df_year[
+        (df_year["any_care"] == 1) & (df_year["health"] != DEAD)
+    ].copy()
+    _df_year_alive = df_year[df_year["health"] != DEAD].copy()
     # # df_year = df[df["syear"].between(2012, 2018)]
+    _df_year_bad_health = df_year[df_year["health"] == BAD_HEALTH]
+    _df_year_good_health = df_year[df_year["health"] == GOOD_HEALTH]
 
     df["kidage_youngest"] = df["kidage_youngest"] - 1
 
@@ -75,20 +103,23 @@ def task_create_soep_moments(
 
     df_caregivers_low = df_caregivers[df_caregivers["education"] == 0]
     df_caregivers_high = df_caregivers[df_caregivers["education"] == 1]
-    df_light_caregivers_low = df_light_caregivers[df_light_caregivers["education"] == 0]
-    df_light_caregivers_high = df_light_caregivers[
+    _df_light_caregivers_low = df_light_caregivers[
+        df_light_caregivers["education"] == 0
+    ]
+    _df_light_caregivers_high = df_light_caregivers[
         df_light_caregivers["education"] == 1
     ]
-    df_intensive_caregivers_low = df_intensive_caregivers[
+    _df_intensive_caregivers_low = df_intensive_caregivers[
         df_intensive_caregivers["education"] == 0
     ]
-    df_intensive_caregivers_high = df_intensive_caregivers[
+    _df_intensive_caregivers_high = df_intensive_caregivers[
         df_intensive_caregivers["education"] == 1
     ]
 
     moments = {}
     variances = {}
 
+    # =================================================================================
     # A) Moments by age.
     moments, variances = compute_labor_shares_by_age(
         df,
@@ -112,6 +143,31 @@ def task_create_soep_moments(
         age_range=age_range,
         label="high_education",
     )
+    # =================================================================================
+
+    # # B) Health
+    # # moments, variances = compute_shares_by_age_bin(
+    # #     df_alive,
+    # #     moments,
+    # #     variances,
+    # #     age_bins=age_bins_75,
+    # #     variable="health",
+    # #     label="good_health",
+    # # )
+    # moments, variances = compute_labor_shares_by_age(
+    #     df_good_health,
+    #     moments=moments,
+    #     variances=variances,
+    #     age_range=age_range,
+    #     label="good_health",
+    # )
+    # moments, variances = compute_labor_shares_by_age(
+    #     df_bad_health,
+    #     moments=moments,
+    #     variances=variances,
+    #     age_range=age_range,
+    #     label="bad_health",
+    # )
 
     # B2) Moments by age bin conditional on caregiving
     # moments, variances = compute_share_informal_care_by_age(
@@ -120,23 +176,58 @@ def task_create_soep_moments(
     #     variances=variances,
     #     age_range=age_range,
     # )
-    _, variances = compute_share_informal_care_by_age_bin(
-        df_year,
-        moments=moments.copy(),
-        variances=variances,
-        weights=PARENT_WEIGHTS_SHARE,
-    )
-    moments.update(
-        {
-            "share_informal_care_age_bin_40_45": 0.02980982,
-            "share_informal_care_age_bin_45_50": 0.04036255,
-            "share_informal_care_age_bin_50_55": 0.05350986,
-            "share_informal_care_age_bin_55_60": 0.06193384,
-            "share_informal_care_age_bin_60_65": 0.05304824,
-            "share_informal_care_age_bin_65_70": 0.03079298,
-            "share_informal_care_age_bin_70_75": 0.00155229,
-        }
-    )
+
+    # =================================================================================
+    # _, variances = compute_share_informal_care_by_age_bin(
+    #     df_year,
+    #     moments=moments.copy(),
+    #     variances=variances,
+    #     weights=PARENT_WEIGHTS_SHARE,
+    #     scale=SCALE_CAREGIVER_SHARE,
+    # )
+    # =================================================================================
+
+    # t, variances = compute_share_informal_care_by_age_bin(
+    #     df_year_good_health,
+    #     moments=t,
+    #     variances=variances,
+    #     weights=PARENT_WEIGHTS_SHARE,
+    #     scale=SCALE_CAREGIVER_SHARE,
+    #     label="good_health",
+    # )
+    # t, variances = compute_share_informal_care_by_age_bin(
+    #     df_year_bad_health,
+    #     moments=t,
+    #     variances=variances,
+    #     weights=PARENT_WEIGHTS_SHARE,
+    #     scale=SCALE_CAREGIVER_SHARE,
+    #     label="bad_health",
+    # )
+
+    # =================================================================================
+    # caregiver_shares = {
+    #     "share_informal_care_age_bin_40_45": 0.02980982,
+    #     "share_informal_care_age_bin_45_50": 0.04036255,
+    #     "share_informal_care_age_bin_50_55": 0.05350986,
+    #     "share_informal_care_age_bin_55_60": 0.06193384,
+    #     "share_informal_care_age_bin_60_65": 0.05304824,
+    #     "share_informal_care_age_bin_65_70": 0.03079298,
+    #     # "share_informal_care_age_bin_70_75": 0.00155229,
+    # }
+    # scaled_caregiver_shares = {
+    #     k: v * SCALE_CAREGIVER_SHARE for k, v in caregiver_shares.items()
+    # }
+    # moments.update(scaled_caregiver_shares)
+    # =================================================================================
+
+    # moments, variances = compute_shares_by_age_bin(
+    #     df_caregivers_alive,
+    #     moments,
+    #     variances,
+    #     variable="health",
+    #     label="caregivers_good_health",
+    # )
+
     # share_informal_care_40_45, 0.02980982
     # share_informal_care_45_50, 0.04036255
     # share_informal_care_50_55, 0.05350986
@@ -144,72 +235,94 @@ def task_create_soep_moments(
     # share_informal_care_60_65, 0.05304824
     # share_informal_care_65_70, 0.03079298
     # share_informal_care_70_75, 0.00155229
-    moments["share_informal_care_high_educ"] = df.loc[
-        df["any_care"] == 1, "education"
-    ].mean()
-    variances["share_informal_care_high_educ"] = df.loc[
-        df["any_care"] == 1, "education"
-    ].var(ddof=DEGREES_OF_FREEDOM)
+    # moments["share_informal_care_high_educ"] = df.loc[
+    #     df["any_care"] == 1, "education"
+    # ].mean()
+    # variances["share_informal_care_high_educ"] = df.loc[
+    #     df["any_care"] == 1, "education"
+    # ].var(ddof=DEGREES_OF_FREEDOM)
 
     # Caregiving
-    moments, variances = compute_labor_shares_by_age_bin(
+    moments, variances = compute_labor_shares_by_age(
         df_caregivers,
         moments=moments,
         variances=variances,
+        age_range=age_range_caregivers,
         label="caregivers",
     )
-    moments, variances = compute_labor_shares_by_age_bin(
+    moments, variances = compute_labor_shares_by_age(
         df_caregivers_low,
         moments=moments,
         variances=variances,
+        age_range=age_range_caregivers,
         label="caregivers_low_education",
     )
-    moments, variances = compute_labor_shares_by_age_bin(
+    moments, variances = compute_labor_shares_by_age(
         df_caregivers_high,
         moments=moments,
         variances=variances,
+        age_range=age_range_caregivers,
         label="caregivers_high_education",
     )
 
-    # B2.2) Light caregiving
-    moments, variances = compute_labor_shares_by_age_bin(
-        df_light_caregivers,
-        moments=moments,
-        variances=variances,
-        label="light_caregivers",
-    )
-    moments, variances = compute_labor_shares_by_age_bin(
-        df_light_caregivers_low,
-        moments=moments,
-        variances=variances,
-        label="light_caregivers_low_education",
-    )
-    moments, variances = compute_labor_shares_by_age_bin(
-        df_light_caregivers_high,
-        moments=moments,
-        variances=variances,
-        label="light_caregivers_high_education",
-    )
+    # moments, variances = compute_labor_shares_by_age_bin(
+    #     df_caregivers,
+    #     moments=moments,
+    #     variances=variances,
+    #     label="caregivers",
+    # )
+    # moments, variances = compute_labor_shares_by_age_bin(
+    #     df_caregivers_low,
+    #     moments=moments,
+    #     variances=variances,
+    #     label="caregivers_low_education",
+    # )
+    # moments, variances = compute_labor_shares_by_age_bin(
+    #     df_caregivers_high,
+    #     moments=moments,
+    #     variances=variances,
+    #     label="caregivers_high_education",
+    # )
 
-    # B2.3) Intensive caregiving
-    moments, variances = compute_labor_shares_by_age_bin(
-        df_intensive_caregivers,
-        moments=moments,
-        variances=variances,
-        label="intensive_caregivers",
-    )
-    moments, variances = compute_labor_shares_by_age_bin(
-        df_intensive_caregivers_low,
-        moments=moments,
-        variances=variances,
-        label="intensive_caregivers_low_education",
-    )
-    moments, variances = compute_labor_shares_by_age_bin(
-        df_intensive_caregivers_high,
-        moments=moments,
-        variances=variances,
-        label="intensive_caregivers_high_education",
-    )
+    # # B2.2) Light caregiving
+    # moments, variances = compute_labor_shares_by_age_bin(
+    #     df_light_caregivers,
+    #     moments=moments,
+    #     variances=variances,
+    #     label="light_caregivers",
+    # )
+    # moments, variances = compute_labor_shares_by_age_bin(
+    #     df_light_caregivers_low,
+    #     moments=moments,
+    #     variances=variances,
+    #     label="light_caregivers_low_education",
+    # )
+    # moments, variances = compute_labor_shares_by_age_bin(
+    #     df_light_caregivers_high,
+    #     moments=moments,
+    #     variances=variances,
+    #     label="light_caregivers_high_education",
+    # )
+
+    # # B2.3) Intensive caregiving
+    # moments, variances = compute_labor_shares_by_age_bin(
+    #     df_intensive_caregivers,
+    #     moments=moments,
+    #     variances=variances,
+    #     label="intensive_caregivers",
+    # )
+    # moments, variances = compute_labor_shares_by_age_bin(
+    #     df_intensive_caregivers_low,
+    #     moments=moments,
+    #     variances=variances,
+    #     label="intensive_caregivers_low_education",
+    # )
+    # moments, variances = compute_labor_shares_by_age_bin(
+    #     df_intensive_caregivers_high,
+    #     moments=moments,
+    #     variances=variances,
+    #     label="intensive_caregivers_high_education",
+    # )
 
     # =================================================================================
 
@@ -315,19 +428,21 @@ def task_create_soep_moments(
     # plot_wealth_by_age(df, start_age=30, end_age=70, educ_val=1)
     # plot_wealth_by_5yr_bins(df, start_age=30, end_age=70, educ_val=1)
 
-    df_bad_health = df_caregivers_full.loc[
-        (df_caregivers_full["health"] == BAD_HEALTH)
-        & (df_caregivers_full["age"] > AGE_BINS_PARENTS[0])
-    ].copy()
+    # =================================================================================
+    # df_bad_health = df_caregivers_full.loc[
+    #     (df_caregivers_full["health"] == BAD_HEALTH)
+    #     & (df_caregivers_full["age"] > AGE_BINS_PARENTS[0])
+    # ].copy()
 
-    moments, variances = compute_shares_by_age_bin(
-        df_bad_health,
-        moments,
-        variances,
-        variable="nursing_home",
-        age_bins=(AGE_BINS_PARENTS, AGE_LABELS_PARENTS),
-        label="parents_nursing_home",
-    )
+    # moments, variances = compute_shares_by_age_bin(
+    #     df_bad_health,
+    #     moments,
+    #     variances,
+    #     variable="nursing_home",
+    #     age_bins=(AGE_BINS_PARENTS, AGE_LABELS_PARENTS),
+    #     label="parents_nursing_home",
+    # )
+    # =================================================================================
 
     moments_df = pd.DataFrame({"value": pd.Series(moments)})
     moments_df.index.name = "moment"
@@ -446,6 +561,7 @@ def compute_share_informal_care_by_age_bin(
     age_bins: tuple | None = None,
     weights: dict | None = None,
     label: str | None = None,
+    scale: float = 1.0,
 ):
     """
     Update *moments* in=place with the share of agents whose “choice”
@@ -459,7 +575,7 @@ def compute_share_informal_care_by_age_bin(
 
     if age_bins is None:
         # bin edges: 40,45,50,55,60,65,70  (right edge 70 is *exclusive*)
-        bin_edges = list(range(40, 80, 5))  # [40,45,50,55,60,65,70]
+        bin_edges = list(range(40, 75, 5))  # [40,45,50,55,60,65,70]
         bin_labels = [f"{s}_{s+4}" for s in bin_edges[:-1]]
     else:
         bin_edges, bin_labels = age_bins
@@ -488,6 +604,9 @@ def compute_share_informal_care_by_age_bin(
     variance_by_age = age_groups["any_care"].apply(
         lambda s: s.eq(1).astype(int).var(ddof=DEGREES_OF_FREEDOM)
     )
+    # variance_by_age = age_groups["any_care"].apply(
+    #     lambda x: x.astype(int).var(ddof=DEGREES_OF_FREEDOM)
+    # )
 
     if weights is None:
         adjusted_share_by_age = share_by_age
@@ -499,7 +618,7 @@ def compute_share_informal_care_by_age_bin(
 
     for age in bin_labels:
         moments[f"share_informal_care{label}_age_bin_{age}"] = (
-            adjusted_share_by_age.loc[age]
+            adjusted_share_by_age.loc[age] * scale
         )
         variances[f"variance_informal_care{label}_age_bin_{age}"] = variance_by_age.loc[
             age

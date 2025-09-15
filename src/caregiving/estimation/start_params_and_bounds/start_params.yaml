@@ -21,8 +21,13 @@
 # disutil_children_ft_work_high: -0.2
 
 # Utility parameters
-# rho: 1.5
-rho: 1.98
+rho: 1.5
+# rho_low: 1.5 #1.98
+# rho_high: 1.5 #1.98
+
+rho_bequest_low: 1.5
+rho_bequest_high: 1.5
+# rho: 1.98
 
 #disutil_not_retired_bad: 1.0
 #disutil_working_bad: 0.3
@@ -41,39 +46,105 @@ disutil_unemployed_low_women: 1.0
 disutil_unemployed_high_women: 1.0
 disutil_pt_work_bad_women: 1.3
 disutil_pt_work_good_women: 1.3
-disutil_ft_work_bad_women: 1.3
+disutil_ft_work_bad_women: 1.5
 disutil_ft_work_good_women: 1.3
-# disutil_pt_work_low_women: 0
-# disutil_pt_work_high_women: 0
-# disutil_ft_work_low_women: 0
-# disutil_ft_work_high_women: 0
+# disutil_pt_work_low_women: 1.3
+# disutil_pt_work_high_women: 1.3
+# disutil_ft_work_low_women: 1.3
+# disutil_ft_work_high_women: 1.3
 disutil_children_pt_work_low: 0.2
 disutil_children_pt_work_high: 0.2
 disutil_children_ft_work_low: 0.2
 disutil_children_ft_work_high: 0.2
 
+# disutil_pt_work_low_age: 0.1
+# disutil_pt_work_low_age_squared: 0.01
+# disutil_pt_work_high_age: 0.1
+# disutil_pt_work_high_age_squared: 0.01
+# disutil_ft_work_low_age: 0.1
+# disutil_ft_work_low_age_squared: 0.01
+# disutil_ft_work_high_age: 0.1
+# disutil_ft_work_high_age_squared: 0.01
+
 # Caregiving
-util_intensive_informal_care_low: 0
-util_light_informal_care_low: 0
-util_intensive_informal_care_high: 0
-util_light_informal_care_high: 0
+# util_intensive_informal_care_low: 0
+# util_light_informal_care_low: 0
+# util_intensive_informal_care_high: 0
+# util_light_informal_care_high: 0
+#
 # util_nursing_home_low: 0
 # util_nursing_home_high: 0
 # util_home_care_low: 0
 # util_home_care_high: 0
-util_nursing_home_bad: 0
-util_nursing_home_good: 0
-util_home_care_bad: 0
-util_home_care_good: 0
+# util_nursing_home_bad: 0
+# util_nursing_home_good: 0
+# util_home_care_bad: 0
+# util_home_care_good: 0
 
+# util_informal_care_high: 0
+# util_informal_care_low: 0
 
-util_joint_informal_care_low: 0
-util_joint_informal_care_high: 0
+# util_informal_care_period: 0
+# util_informal_care_period_squared: 0
+# util_informal_care_period_cubic: 0
 
-util_ft_work_informal_care_bad: -1
-util_ft_work_informal_care_good: -1
-util_pt_work_informal_care_bad: -1
-util_pt_work_informal_care_good: -1
+# util_joint_informal_care_low: 0
+# util_joint_informal_care_high: 0
+# util_joint_informal_care_bad: 0
+# util_joint_informal_care_good: 0
+
+# util_joint_informal_care: 0
+
+# util_joint_informal_care_mother_good: 0
+# util_joint_informal_care_mother_medium: 0
+# util_joint_informal_care_mother_bad: 0
+# util_joint_informal_care_period: 0
+# util_joint_informal_care_period_squared: 0
+# util_joint_informal_care_period_cubic: 0
+
+# util_formal_care_bad: 0
+# util_formal_care_good: 0
+
+# util_formal_care: 0
+
+# util_solo_informal_care_bad: 0
+# util_solo_informal_care_good: 0
+# util_solo_informal_care_mother_good: 0
+# util_solo_informal_care_mother_medium: 0
+# util_solo_informal_care_mother_bad: 0
+# util_joint_informal_care_low: 0
+# util_joint_informal_care_high: 0
+
+# util_unemployed_and_informal_care: -1.0
+disutil_unemployed_and_informal_care_low: 0.2
+disutil_unemployed_and_informal_care_high: 0.2
+# util_pt_work_and_informal_care_good: -0.2
+# util_pt_work_and_informal_care_bad: -0.2
+# util_ft_work_and_informal_care_good: -0.3
+# util_ft_work_and_informal_care_bad: -0.3
+# util_pt_work_and_informal_care: 1.3
+# util_ft_work_and_informal_care: 1.3
+# util_pt_work_and_informal_care_low: 0.3
+# util_pt_work_and_informal_care_high: 0.3
+# util_ft_work_and_informal_care_low: 0.3
+# util_ft_work_and_informal_care_high: 0.3
+
+# util_unemployed_and_informal_care_bad: 0.2
+# util_unemployed_and_informal_care_good: 0.2
+disutil_pt_work_and_informal_care_bad: 1.3
+disutil_pt_work_and_informal_care_good: 1.3
+disutil_ft_work_and_informal_care_bad: 1.5
+disutil_ft_work_and_informal_care_good: 1.3
+# informal care and children
+disutil_children_pt_work_informal_care_low: 0.2
+disutil_children_pt_work_informal_care_high: 0.2
+disutil_children_ft_work_informal_care_low: 0.2
+disutil_children_ft_work_informal_care_high: 0.2
+
+# util_ft_work_informal_care_bad: -1
+# util_ft_work_informal_care_good: -1
+# util_pt_work_informal_care_bad: -1
+# util_pt_work_informal_care_good: -1
 
 # disutil_unemployed_women: 2.6654188449619967
 # disutil_ft_work_bad_women: 2.8504908655256718
@@ -172,11 +243,16 @@ util_pt_work_informal_care_good: -1
 # util_unemployed_high_educ_child_bin_three: -1.3
 
 # Bequest scale
-bequest_scale: 2.4
+# bequest_scale: 2.4
+bequest_scale_low: 2.4
+bequest_scale_high: 2.4
 
 # Job separation params are set internally driven by data
 
 # Taste shock scale
 lambda: 0.5
+# lambda_care: 0.5
+# lambda_low: 0.5
+# lambda_high: 0.5
 #taste_shock_scale_men: 0.29
 #taste_shock_scale_women: 0.29

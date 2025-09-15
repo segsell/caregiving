@@ -150,6 +150,7 @@ def task_create_parent_child_data(
     # Health, ADL and IADL
     dat = create_health_variables(dat)
     dat = create_limitations_with_adl_categories(dat)
+    dat = _create_lagged_var(dat, "adl_cat")
 
     dat = create_care_variables(dat)
     dat = create_care_combinations(dat, informal_care_var="informal_care_child")
@@ -398,7 +399,7 @@ def create_limitations_with_adl_categories(df):
     # Conditions for each category
     cond_3 = (df["adl"] >= FIVE) & (df["iadl"] >= FIVE)
     cond_2 = (df["adl"] >= THREE) & (df["iadl"] >= THREE)
-    cond_1 = (df["adl"] >= TWO) & (df["iadl"] >= ONE)
+    cond_1 = (df["adl"] >= TWO) & (df["iadl"] >= TWO)  # original: TWO, ONE
 
     # Create 'adl_cat' using np.select
     df["adl_cat"] = np.select([cond_3, cond_2, cond_1], [3, 2, 1], default=0)

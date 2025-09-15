@@ -308,8 +308,10 @@ def task_create_parental_survival_prob_good_medium_bad(
 
 
 def task_create_params_exog_care_demand_basic(
-    path_to_parent_data: Path = BLD / "data" / "parent_child_data.csv",
-    path_to_parent_couple_data: Path = BLD / "data" / "parent_child_data_couple.csv",
+    path_to_parent_data: Path = BLD / "data" / "share_parent_child_data.csv",
+    path_to_parent_couple_data: Path = BLD
+    / "data"
+    / "share_parent_child_data_couple.csv",
 ) -> None:
     """Create exogenous care demand probabilities."""
     parent = pd.read_csv(path_to_parent_data)
@@ -443,8 +445,10 @@ def task_create_params_exog_care_demand_basic(
 
 @pytask.mark.skip(reason="Reduce to two health states.")
 def task_create_params_exog_care_demand(
-    path_to_parent_data: Path = BLD / "data" / "parent_child_data.csv",
-    path_to_parent_couple_data: Path = BLD / "data" / "parent_child_data_couple.csv",
+    path_to_parent_data: Path = BLD / "data" / "share_parent_child_data.csv",
+    path_to_parent_couple_data: Path = BLD
+    / "data"
+    / "share_parent_child_data_couple.csv",
     path_to_save_single_mother: Annotated[Path, Product] = BLD
     / "model"
     / "exog_care_single_mother.pkl",

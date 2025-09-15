@@ -25,7 +25,10 @@ from caregiving.model.wealth_and_budget.tax_and_ssc import (
     calc_inc_tax_for_single_income,
     calc_pension_unempl_contr,
 )
-from caregiving.model.wealth_and_budget.transfers import calc_unemployment_benefits
+from caregiving.model.wealth_and_budget.transfers import (
+    calc_care_benefits_and_costs,
+    calc_unemployment_benefits,
+)
 
 jax.config.update("jax_enable_x64", True)
 
@@ -51,15 +54,19 @@ PERIOD_GRID = np.arange(0, 65, 15, dtype=int)
 OLD_AGE_PERIOD_GRID = np.arange(33, 43, 3, dtype=int)
 EDUCATION_GRID = [0, 1]
 SEX_GRID = [1]
+SISTER_GRID = [0, 1]
+CARE_DEMAND_GRID = [0, 1, 2]
 
 
 @pytest.mark.parametrize(
-    "period, sex, partner_state, education, savings",
+    "period, sex, partner_state, education, has_sister, care_demand, savings",
     list(
         product(
             PERIOD_GRID,
             SEX_GRID,
             PARTNER_STATES,
+            SISTER_GRID,
+            CARE_DEMAND_GRID,
             EDUCATION_GRID,
             SAVINGS_GRID_UNEMPLOYED,
         )
@@ -70,6 +77,8 @@ def test_budget_unemployed(
     sex,
     partner_state,
     education,
+    has_sister,
+    care_demand,
     savings,
     load_specs,
 ):
@@ -88,8 +97,8 @@ def test_budget_unemployed(
         lagged_choice=UNEMPLOYED_NO_CARE[0].item(),
         experience=exp_cont,
         # sex=sex,
-        # has_sister=0,
-        # care_demand=0,
+        has_sister=has_sister,
+        care_demand=care_demand,
         savings_end_of_previous_period=savings,
         income_shock_previous_period=0,
         params=params,
@@ -135,6 +144,7 @@ def test_budget_unemployed(
         specs_internal["unemployment_wealth_thresh"] + potential_unemployment_benefits
     )
     reduced_benefits_means_test = savings_scaled < reduced_means_test_threshold
+
     if means_test:
         income = np.maximum(
             potential_unemployment_benefits, net_partner_plus_child_benefits
@@ -147,9 +157,19 @@ def test_budget_unemployed(
     else:
         income = net_partner_plus_child_benefits
 
+    care_benefits_and_costs = calc_care_benefits_and_costs(
+        lagged_choice=UNEMPLOYED_NO_CARE[0].item(),
+        education=education,
+        has_sister=has_sister,
+        care_demand=care_demand,
+        options=specs_internal,
+    )
+
+    total_income = income + care_benefits_and_costs
+
     np.testing.assert_almost_equal(
         wealth,
-        (savings_scaled * (1 + params["interest_rate"]) + income)
+        (savings_scaled * (1 + params["interest_rate"]) + total_income)
         / specs_internal["wealth_unit"],
     )
 
@@ -168,6 +188,8 @@ WORKER_CHOICES = [PART_TIME_NO_CARE[0].item(), FULL_TIME_NO_CARE[0].item()]
         "period",
         "partner_state",
         "education",
+        "has_sister",
+        "care_demand",
         "gamma",
         "income_shock",
         "experience",
@@ -180,6 +202,8 @@ WORKER_CHOICES = [PART_TIME_NO_CARE[0].item(), FULL_TIME_NO_CARE[0].item()]
             PERIOD_GRID,
             PARTNER_STATES,
             EDUCATION_GRID,
+            SISTER_GRID,
+            CARE_DEMAND_GRID,
             GAMMA_GRID,
             INCOME_SHOCK_GRID,
             EXP_GRID,
@@ -193,6 +217,8 @@ def test_budget_worker(
     period,
     partner_state,
     education,
+    has_sister,
+    care_demand,
     gamma,
     income_shock,
     experience,
@@ -217,8 +243,8 @@ def test_budget_worker(
         lagged_choice=working_choice,
         experience=exp_cont,
         # sex=sex,
-        # has_sister=0,
-        # care_demand=0,
+        has_sister=has_sister,
+        care_demand=care_demand,
         savings_end_of_previous_period=savings,
         income_shock_previous_period=income_shock,
         params=params,
@@ -265,9 +291,20 @@ def test_budget_worker(
         sex, education, partner_state, period
     ]
     child_benefits = nb_children * specs_internal["monthly_child_benefits"] * 12
+
+    care_benefits_and_costs = calc_care_benefits_and_costs(
+        lagged_choice=working_choice,
+        education=education,
+        has_sister=has_sister,
+        care_demand=care_demand,
+        options=specs_internal,
+    )
+
     if partner_state == 0:
         tax_total = calc_inc_tax_for_single_income(income_after_ssc)
-        total_net_income = income_after_ssc - tax_total + child_benefits
+        total_net_income = (
+            income_after_ssc - tax_total + child_benefits + care_benefits_and_costs
+        )
         checked_income = np.maximum(total_net_income, unemployment_benefits)
         np.testing.assert_almost_equal(
             wealth,
@@ -294,7 +331,9 @@ def test_budget_worker(
         total_income_after_ssc = income_after_ssc + income_partner
 
         tax_toal = calc_inc_tax_for_single_income(total_income_after_ssc / 2) * 2
-        total_net_income = total_income_after_ssc + child_benefits - tax_toal
+        total_net_income = (
+            total_income_after_ssc + child_benefits + care_benefits_and_costs - tax_toal
+        )
 
         checked_income = np.maximum(total_net_income, unemployment_benefits)
         np.testing.assert_almost_equal(
@@ -310,13 +349,15 @@ RET_AGE_GRID = np.linspace(0, 2, 3, dtype=int)
 
 
 @pytest.mark.parametrize(
-    "period, sex, partner_state ,education, savings, exp",
+    "period, sex, partner_state ,education, has_sister,care_demand, savings, exp",
     list(
         product(
             OLD_AGE_PERIOD_GRID,
             SEX_GRID,
             PARTNER_STATES,
             EDUCATION_GRID,
+            SISTER_GRID,
+            CARE_DEMAND_GRID,
             SAVINGS_GRID,
             EXP_GRID,
         )
@@ -327,6 +368,8 @@ def test_retiree(
     sex,
     partner_state,
     education,
+    has_sister,
+    care_demand,
     savings,
     exp,
     load_specs,
@@ -360,8 +403,8 @@ def test_retiree(
         lagged_choice=RETIREMENT_NO_CARE[0].item(),
         experience=exp_cont,
         # sex=sex,
-        # has_sister=0,
-        # care_demand=0,
+        has_sister=has_sister,
+        care_demand=care_demand,
         savings_end_of_previous_period=savings,
         income_shock_previous_period=0,
         params=params,
@@ -394,9 +437,19 @@ def test_retiree(
     ]
     child_benefits = nb_children * specs_internal["monthly_child_benefits"] * 12
 
+    care_benefits_and_costs = calc_care_benefits_and_costs(
+        lagged_choice=RETIREMENT_NO_CARE[0].item(),
+        education=education,
+        has_sister=has_sister,
+        care_demand=care_demand,
+        options=specs_internal,
+    )
+
     if partner_state == 0:
         tax_total = calc_inc_tax_for_single_income(income_after_ssc)
-        total_net_income = income_after_ssc - tax_total + child_benefits
+        total_net_income = (
+            income_after_ssc - tax_total + child_benefits + care_benefits_and_costs
+        )
         checked_income = np.maximum(total_net_income, unemployment_benefits)
         scaled_wealth = (
             savings_scaled * (1 + specs_internal["interest_rate"]) + checked_income
@@ -423,7 +476,9 @@ def test_retiree(
         total_income_after_ssc = income_after_ssc + income_partner
 
         tax_toal = calc_inc_tax_for_single_income(total_income_after_ssc / 2) * 2
-        total_net_income = total_income_after_ssc + child_benefits - tax_toal
+        total_net_income = (
+            total_income_after_ssc + child_benefits + care_benefits_and_costs - tax_toal
+        )
 
         checked_income = np.maximum(total_net_income, unemployment_benefits)
         scaled_wealth = (
@@ -435,12 +490,14 @@ def test_retiree(
 
 
 @pytest.mark.parametrize(
-    "period, sex, partner_state ,education, savings, exp",
+    "period, sex, partner_state ,education, has_sister, care_demand, savings, exp",
     list(
         product(
             OLD_AGE_PERIOD_GRID,
             SEX_GRID,
             PARTNER_STATES,
+            SISTER_GRID,
+            CARE_DEMAND_GRID,
             EDUCATION_GRID,
             SAVINGS_GRID,
             EXP_GRID,
@@ -452,6 +509,8 @@ def test_fresh_retiree(
     sex,
     partner_state,
     education,
+    has_sister,
+    care_demand,
     savings,
     exp,
     load_specs,
@@ -485,8 +544,8 @@ def test_fresh_retiree(
         lagged_choice=RETIREMENT_NO_CARE[0].item(),
         experience=exp_cont,
         # sex=sex,
-        # has_sister=0,
-        # care_demand=0,
+        has_sister=has_sister,
+        care_demand=care_demand,
         savings_end_of_previous_period=savings,
         income_shock_previous_period=0,
         params=params,

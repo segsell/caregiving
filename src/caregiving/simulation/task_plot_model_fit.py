@@ -23,6 +23,7 @@ from caregiving.model.shared import (
     NOT_WORKING,
     NOT_WORKING_CHOICES,
     PARENT_DEAD,
+    SCALE_CAREGIVER_SHARE,
     SEX,
     WORK,
     WORK_CHOICES,
@@ -54,6 +55,9 @@ def task_plot_model_fit(  # noqa: PLR0915
     path_to_empirical_data: Path = BLD
     / "data"
     / "soep_structural_estimation_sample.csv",
+    path_to_caregivers_sample: Path = BLD
+    / "data"
+    / "soep_structural_caregivers_sample.csv",
     path_to_simulated_data: Path = BLD / "solve_and_simulate" / "simulated_data.pkl",
     path_to_save_wealth_plot: Annotated[Path, Product] = BLD
     / "plots"
@@ -124,11 +128,13 @@ def task_plot_model_fit(  # noqa: PLR0915
     emp_moms = pd.read_csv(path_to_empirical_moments, index_col=[0]).squeeze("columns")
 
     df_emp = pd.read_csv(path_to_empirical_data, index_col=[0])
+    df_caregivers = pd.read_csv(path_to_caregivers_sample, index_col=[0])
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
     df_sim["sex"] = SEX
 
     # Subsets empirical
-    df_emp_caregivers = df_emp.loc[df_emp["any_care"] == 1].copy()
+    df_emp_caregivers = df_caregivers.loc[df_caregivers["any_care"] == 1].copy()
+
     df_emp_light_caregivers = df_emp_caregivers.loc[
         df_emp_caregivers["light_care"] == 1
     ]
@@ -145,6 +151,10 @@ def task_plot_model_fit(  # noqa: PLR0915
     df_sim_intensive_caregivers = df_sim.loc[
         df_sim["choice"].isin(np.asarray(INTENSIVE_INFORMAL_CARE).tolist())
     ]
+
+    # df_emp.loc[
+    #     (df_emp["education"] == 1) & (df_emp["age"] == 41), "choice"
+    # ].value_counts(normalize=True).sort_index()
 
     # df_emp_prep, _states_dict = load_and_prep_data(
     #     data_emp=df_emp,
@@ -170,6 +180,13 @@ def task_plot_model_fit(  # noqa: PLR0915
     plot_job_offer_share_by_age(
         df_sim,
         path_to_save_plot=BLD / "plots" / "model_fit" / "simulated_job_offer",
+    )
+
+    plot_choice_shares_by_education(
+        df_emp_caregivers,
+        df_sim_caregivers,
+        specs,
+        path_to_save_plot=path_to_save_labor_shares_caregivers_by_age,
     )
 
     plot_choice_shares_by_education_age_bins(
@@ -221,6 +238,7 @@ def task_plot_model_fit(  # noqa: PLR0915
     #     choice_set=INFORMAL_CARE,
     #     path_to_save_plot=path_to_save_caregiver_share_by_age_plot,
     # )
+
     plot_caregiver_shares_by_age_bins(
         emp_moms,
         df_sim,
@@ -228,8 +246,10 @@ def task_plot_model_fit(  # noqa: PLR0915
         choice_set=INFORMAL_CARE,
         age_min=40,
         age_max=75,
+        scale=SCALE_CAREGIVER_SHARE,
         path_to_save_plot=path_to_save_caregiver_share_by_age_bin_plot,
     )
+
     # plot_simulated_care_demand_by_age(
     #     df_sim,
     #     specs,
@@ -262,27 +282,23 @@ def task_plot_model_fit(  # noqa: PLR0915
     # mean_care_years = agg.loc[agg["care_ever"], "care_sum"].mean()
     # print(f"Avg. number of informal caregiving years: {mean_care_years}")
 
-    # df_sim["informal_care"] = df_sim["choice"].isin(np.asarray(INFORMAL_CARE))
+    df_sim["informal_care"] = df_sim["choice"].isin(np.asarray(INFORMAL_CARE))
     # share_caregivers = df_sim.loc[df_sim["age"] < AGE_FOCUS, "informal_care"].mean()
     # print(f"Share of informal caregivers (unconditional): {share_caregivers}")
 
     # # _share_informal_care = df_sim.loc[
     # #     df_sim["informal_care"] == 1, "care_demand"
     # # ].mean()
-    # share_informal_care = df_sim.loc[
-    # df_sim["care_demand"] == 1, "informal_care"
-    # ].mean()
-    # print(f"Share informal caregivers (cond. on care demand): {share_informal_care}")
+    share_informal_care = df_sim.loc[df_sim["care_demand"] == 1, "informal_care"].mean()
+    print(f"Share informal caregivers (cond. on care demand): {share_informal_care}")
 
-    # share_caregivers_high_edu = df_sim.loc[
-    #     (df_sim["informal_care"] == 1), "education"
-    # ].mean()
-    # print(
-    #     f"Share high education (cond. on informal care): {share_caregivers_high_edu}"
-    # )
-    # # plot_choice_shares(df_emp, df_sim, specs)
-    # # discrete_state_names = model_full["model_structure"]["discrete_states_names"]
-    # # plot_states(df_emp, df_sim, discrete_state_names, specs)
+    share_caregivers_high_edu = df_sim.loc[
+        (df_sim["informal_care"] == 1), "education"
+    ].mean()
+    print(f"Share high education (cond. on informal care): {share_caregivers_high_edu}")
+    # plot_choice_shares(df_emp, df_sim, specs)
+    # discrete_state_names = model_full["model_structure"]["discrete_states_names"]
+    # plot_states(df_emp, df_sim, discrete_state_names, specs)
 
     states_sim = {
         "not_working": NOT_WORKING,
