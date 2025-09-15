@@ -8,8 +8,6 @@ import jax
 import jax.numpy as jnp
 import pandas as pd
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.solve import get_solve_func_for_model
 from pytask import Product
 
 from caregiving.config import BLD
@@ -28,6 +26,8 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.simulation.simulate import simulate_scenario
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.solve import get_solve_func_for_model
 
 jax.config.update("jax_enable_x64", True)
 
@@ -84,16 +84,16 @@ def task_solve_and_simulate_start_params(
 
     sim_df = simulate_scenario(
         model_for_simulation,
-        solution_endog_grid=solution_dict["endog_grid"],
-        solution_value=solution_dict["value"],
-        solution_policy=solution_dict["policy"],
+        solution=solution_dict,
+        # solution_endog_grid=solution_dict["endog_grid"],
+        # solution_value=solution_dict["value"],
+        # solution_policy=solution_dict["policy"],
         initial_states=initial_states,
         wealth_agents=wealth_agents,
         params=params,
         options=options,
         seed=options["model_params"]["seed"],
     )
-
     # sim_df.to_csv(path_to_save_simulated_data, index=True)
     sim_df.to_pickle(path_to_save_simulated_data)
 

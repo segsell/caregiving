@@ -10,6 +10,7 @@ import pytest
 from caregiving.config import BLD
 from caregiving.model.shared import (
     FULL_TIME_NO_CARE,
+    PARENT_DEAD,
     PART_TIME_NO_CARE,
     UNEMPLOYED_NO_CARE,
 )
@@ -20,7 +21,7 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions import (
     consumption_scale,
     inverse_marginal,
-    marg_utility,
+    marginal_utility_function_alive,
     utility_func,
 )
 
@@ -43,6 +44,7 @@ def load_specs():
 
 
 RHO_GRID = [1, 1.5]
+EDUCATION_GRID = [0, 1]
 CONSUMPTION_GRID = np.linspace(10, 100, 3)
 _UTIL_UNEMPLOYED_GRID = np.linspace(-0.1, -0.9, 2)
 _UTIL_WORK_GRID = np.linspace(-0.1, -0.9, 2)
@@ -114,51 +116,32 @@ def test_utility_func(
     options = load_specs
     params = {
         "rho": rho,
-        "bequest_scale": 2,
-        # "util_cons_unemployed_low_educ": util_unemployed,
-        # "util_cons_unemployed_high_educ": util_unemployed,
-        # "util_cons_part_time_low_educ": util_work,
-        # "util_cons_part_time_high_educ": util_work,
-        # "util_cons_full_time_low_educ": util_work,
-        # "util_cons_full_time_high_educ": util_work,
-        # "util_cons_children_part_time_low_educ": 0,
-        # "util_cons_children_part_time_high_educ": 0,
-        # "util_cons_children_full_time_low_educ": -0.1,
-        # "util_cons_children_full_time_high_educ": -0.1,
-        "disutil_pt_work_good_women": disutil_work + 1,
-        "disutil_pt_work_bad_women": disutil_work,
-        "disutil_ft_work_good_women": disutil_work + 1,
-        "disutil_ft_work_bad_women": disutil_work,
-        "disutil_pt_work_low_women": disutil_work,
-        "disutil_pt_work_high_women": disutil_work,
-        # "disutil_ft_work_low_women": disutil_work,
-        # "disutil_ft_work_high_women": disutil_work,
+        "rho_bequest_low": rho,
+        "rho_bequest_high": rho,
+        "bequest_scale_low": 2,
+        "bequest_scale_high": 2,
+        # labor, no caregiving
+        "disutil_pt_work_good_women": disutil_work,
+        "disutil_pt_work_bad_women": disutil_work + 1,
+        "disutil_ft_work_good_women": disutil_work,
+        "disutil_ft_work_bad_women": disutil_work + 1,
         "disutil_unemployed_low_women": disutil_unemployed,
         "disutil_unemployed_high_women": disutil_unemployed,
-        # "disutil_children_pt_work": 0,
         "disutil_children_pt_work_low": 0,
         "disutil_children_pt_work_high": 0,
         "disutil_children_ft_work_low": 0.1,
         "disutil_children_ft_work_high": 0.1,
-        # caregiving
-        # "util_unemployed_and_care_women": 0,
-        # "util_ft_work_and_care_women": 0,
-        # "util_pt_work_and_care_women": 0,
-        # "util_formal_care_women": 0,
-        "util_intensive_informal_care_low": 0,
-        "util_light_informal_care_low": 0,
-        "util_intensive_informal_care_high": 0,
-        "util_light_informal_care_high": 0,
-        "util_nursing_home_bad": 0,
-        "util_nursing_home_good": 0,
-        "util_home_care_bad": 0,
-        "util_home_care_good": 0,
-        "util_joint_informal_care_low": 0,
-        "util_joint_informal_care_high": 0,
-        "util_ft_work_informal_care_bad": -1,
-        "util_ft_work_informal_care_good": -1,
-        "util_pt_work_informal_care_bad": -1,
-        "util_pt_work_informal_care_good": -1,
+        # labor and caregiving
+        "disutil_pt_work_and_informal_care_good": disutil_work,
+        "disutil_pt_work_and_informal_care_bad": disutil_work + 1,
+        "disutil_ft_work_and_informal_care_good": disutil_work,
+        "disutil_ft_work_and_informal_care_bad": disutil_work + 1,
+        "disutil_unemployed_and_informal_care_low": disutil_unemployed,
+        "disutil_unemployed_and_informal_care_high": disutil_unemployed,
+        "disutil_children_pt_work_informal_care_low": 0,
+        "disutil_children_pt_work_informal_care_high": 0,
+        "disutil_children_ft_work_informal_care_low": 0.1,
+        "disutil_children_ft_work_informal_care_high": 0.1,
     }
 
     # has_partner = int(partner_state > 0)
@@ -248,7 +231,7 @@ def test_utility_func(
             education=education,
             health=health,
             care_demand=0,
-            # sex=sex,
+            mother_health=PARENT_DEAD,
             period=period,
             choice=UNEMPLOYED_NO_CARE,
             params=params,
@@ -264,7 +247,7 @@ def test_utility_func(
             education=education,
             health=health,
             care_demand=0,
-            # sex=sex,
+            mother_health=PARENT_DEAD,
             period=period,
             choice=PART_TIME_NO_CARE,
             params=params,
@@ -280,7 +263,7 @@ def test_utility_func(
             education=education,
             health=health,
             care_demand=0,
-            # sex=sex,
+            mother_health=PARENT_DEAD,
             period=period,
             choice=FULL_TIME_NO_CARE,
             params=params,
@@ -323,51 +306,32 @@ def test_marginal_utility(
     options = load_specs
     params = {
         "rho": rho,
-        "bequest_scale": 2,
-        # "util_cons_unemployed_low_educ": util_unemployed,
-        # "util_cons_unemployed_high_educ": util_unemployed,
-        # "util_cons_part_time_low_educ": util_work,
-        # "util_cons_part_time_high_educ": util_work,
-        # "util_cons_full_time_low_educ": util_work,
-        # "util_cons_full_time_high_educ": util_work,
-        # "util_cons_children_part_time_low_educ": 0,
-        # "util_cons_children_part_time_high_educ": 0,
-        # "util_cons_children_full_time_low_educ": -0.1,
-        # "util_cons_children_full_time_high_educ": -0.1,
-        "disutil_pt_work_good_women": disutil_work + 1,
-        "disutil_pt_work_bad_women": disutil_work,
-        "disutil_ft_work_good_women": disutil_work + 1,
-        "disutil_ft_work_bad_women": disutil_work,
-        "disutil_pt_work_low_women": disutil_work,
-        "disutil_pt_work_high_women": disutil_work,
-        # "disutil_ft_work_low_women": disutil_work,
-        # "disutil_ft_work_high_women": disutil_work,
+        "rho_bequest_low": rho,
+        "rho_bequest_high": rho,
+        "bequest_scale_low": 2,
+        "bequest_scale_high": 2,
+        # labor, no caregiving
+        "disutil_pt_work_good_women": disutil_work,
+        "disutil_pt_work_bad_women": disutil_work + 1,
+        "disutil_ft_work_good_women": disutil_work,
+        "disutil_ft_work_bad_women": disutil_work + 1,
         "disutil_unemployed_low_women": disutil_unemployed,
         "disutil_unemployed_high_women": disutil_unemployed,
-        # "disutil_children_pt_work": 0,
         "disutil_children_pt_work_low": 0,
         "disutil_children_pt_work_high": 0,
         "disutil_children_ft_work_low": 0.1,
         "disutil_children_ft_work_high": 0.1,
-        # caregiving
-        # "util_unemployed_and_care_women": 0,
-        # "util_ft_work_and_care_women": 0,
-        # "util_pt_work_and_care_women": 0,
-        # "util_formal_care_women": 0,
-        "util_intensive_informal_care_low": 0,
-        "util_light_informal_care_low": 0,
-        "util_intensive_informal_care_high": 0,
-        "util_light_informal_care_high": 0,
-        "util_nursing_home_bad": 0,
-        "util_nursing_home_good": 0,
-        "util_home_care_bad": 0,
-        "util_home_care_good": 0,
-        "util_joint_informal_care_low": 0,
-        "util_joint_informal_care_high": 0,
-        "util_ft_work_informal_care_bad": -1,
-        "util_ft_work_informal_care_good": -1,
-        "util_pt_work_informal_care_bad": -1,
-        "util_pt_work_informal_care_good": -1,
+        # labor and caregiving
+        "disutil_pt_work_and_informal_care_good": disutil_work,
+        "disutil_pt_work_and_informal_care_bad": disutil_work + 1,
+        "disutil_ft_work_and_informal_care_good": disutil_work,
+        "disutil_ft_work_and_informal_care_bad": disutil_work + 1,
+        "disutil_unemployed_and_informal_care_low": disutil_unemployed,
+        "disutil_unemployed_and_informal_care_high": disutil_unemployed,
+        "disutil_children_pt_work_informal_care_low": 0,
+        "disutil_children_pt_work_informal_care_high": 0,
+        "disutil_children_ft_work_informal_care_low": 0.1,
+        "disutil_children_ft_work_informal_care_high": 0.1,
     }
 
     random_choice = np.random.choice(np.array([0, 1, 2]))
@@ -378,16 +342,18 @@ def test_marginal_utility(
         education,
         health,
         0,  # care_demand
+        PARENT_DEAD,  # mother_health
         partner_state,
         params,
         options,
     )
-    marg_util_model = marg_utility(
+    marg_util_model = marginal_utility_function_alive(
         consumption=consumption,
         choice=random_choice,
         period=period,
         education=education,
         health=health,
+        care_demand=0,
         partner_state=partner_state,
         params=params,
         options=options,
@@ -426,56 +392,42 @@ def test_inverse_marginal_utility(
     options = load_specs
     params = {
         "rho": rho,
-        "bequest_scale": 2,
-        # "util_cons_unemployed_low_educ": util_unemployed,
-        # "util_cons_unemployed_high_educ": util_unemployed,
-        # "util_cons_part_time_low_educ": util_work,
-        # "util_cons_part_time_high_educ": util_work,
-        # "util_cons_full_time_low_educ": util_work,
-        # "util_cons_full_time_high_educ": util_work,
-        # "util_cons_children_part_time_low_educ": 0,
-        # "util_cons_children_part_time_high_educ": 0,
-        # "util_cons_children_full_time_low_educ": -0.1,
-        # "util_cons_children_full_time_high_educ": -0.1,
-        "disutil_pt_work_good_women": disutil_work + 1,
-        "disutil_pt_work_bad_women": disutil_work,
-        "disutil_ft_work_good_women": disutil_work + 1,
-        "disutil_ft_work_bad_women": disutil_work,
-        "disutil_pt_work_low_women": disutil_work,
-        "disutil_pt_work_high_women": disutil_work,
-        # "disutil_ft_work_low_women": disutil_work,
-        # "disutil_ft_work_high_women": disutil_work,
+        "rho_bequest_low": rho,
+        "rho_bequest_high": rho,
+        "bequest_scale_low": 2,
+        "bequest_scale_high": 2,
+        # labor, no caregiving
+        "disutil_pt_work_good_women": disutil_work,
+        "disutil_pt_work_bad_women": disutil_work + 1,
+        "disutil_ft_work_good_women": disutil_work,
+        "disutil_ft_work_bad_women": disutil_work + 1,
         "disutil_unemployed_low_women": disutil_unemployed,
         "disutil_unemployed_high_women": disutil_unemployed,
-        # "disutil_children_pt_work": 0,
         "disutil_children_pt_work_low": 0,
         "disutil_children_pt_work_high": 0,
         "disutil_children_ft_work_low": 0.1,
         "disutil_children_ft_work_high": 0.1,
-        # caregiving
-        "util_intensive_informal_care_low": 0,
-        "util_light_informal_care_low": 0,
-        "util_intensive_informal_care_high": 0,
-        "util_light_informal_care_high": 0,
-        "util_nursing_home_bad": 0,
-        "util_nursing_home_good": 0,
-        "util_home_care_bad": 0,
-        "util_home_care_good": 0,
-        "util_joint_informal_care_low": 0,
-        "util_joint_informal_care_high": 0,
-        "util_ft_work_informal_care_bad": -1,
-        "util_ft_work_informal_care_good": -1,
-        "util_pt_work_informal_care_bad": -1,
-        "util_pt_work_informal_care_good": -1,
+        # labor and caregiving
+        "disutil_pt_work_and_informal_care_good": disutil_work,
+        "disutil_pt_work_and_informal_care_bad": disutil_work + 1,
+        "disutil_ft_work_and_informal_care_good": disutil_work,
+        "disutil_ft_work_and_informal_care_bad": disutil_work + 1,
+        "disutil_unemployed_and_informal_care_low": disutil_unemployed,
+        "disutil_unemployed_and_informal_care_high": disutil_unemployed,
+        "disutil_children_pt_work_informal_care_low": 0,
+        "disutil_children_pt_work_informal_care_high": 0,
+        "disutil_children_ft_work_informal_care_low": 0.1,
+        "disutil_children_ft_work_informal_care_high": 0.1,
     }
 
     random_choice = np.random.choice(np.array([0, 1, 2]))
-    marg_util = marg_utility(
+    marg_util = marginal_utility_function_alive(
         consumption=consumption,
         choice=random_choice,
         period=period,
         education=education,
         health=health,
+        care_demand=0,
         partner_state=partner_state,
         params=params,
         options=options,
@@ -487,6 +439,7 @@ def test_inverse_marginal_utility(
             period=period,
             education=education,
             health=health,
+            care_demand=0,
             partner_state=partner_state,
             params=params,
             options=options,
@@ -496,36 +449,56 @@ def test_inverse_marginal_utility(
 
 
 @pytest.mark.parametrize(
-    "consumption, rho, bequest_scale",
-    list(product(CONSUMPTION_GRID, RHO_GRID, BEQUEST_SCALE)),
+    "consumption, education, rho_educ, bequest_scale_educ",
+    list(product(CONSUMPTION_GRID, EDUCATION_GRID, RHO_GRID, BEQUEST_SCALE)),
 )
-def test_bequest(consumption, rho, bequest_scale):
+def test_bequest(consumption, education, rho_educ, bequest_scale_educ):
     """Test bequest utility function."""
     params = {
-        "rho": rho,
-        "bequest_scale": bequest_scale,
+        "rho_bequest_low": rho_educ,
+        "rho_bequest_high": rho_educ,
+        "bequest_scale_low": bequest_scale_educ,
+        "bequest_scale_high": bequest_scale_educ,
     }
+    rho = (
+        params["rho_bequest_low"] * (1 - education)
+        + params["rho_bequest_high"] * education
+    )
+    bequest_scale = (
+        params["bequest_scale_low"] * (1 - education)
+        + params["bequest_scale_high"] * education
+    )
+
     if rho == 1:
         bequest = bequest_scale * np.log(consumption)
     else:
         bequest = bequest_scale * (((consumption ** (1 - rho)) - 1) / (1 - rho))
+
     np.testing.assert_almost_equal(
-        utility_final_consume_all(consumption, params), bequest
+        utility_final_consume_all(consumption, education=education, params=params),
+        bequest,
     )
 
 
 @pytest.mark.parametrize(
-    "consumption, rho, bequest_scale",
-    list(product(CONSUMPTION_GRID, RHO_GRID, BEQUEST_SCALE)),
+    "consumption, education, rho_educ, bequest_scale_educ",
+    list(product(CONSUMPTION_GRID, EDUCATION_GRID, RHO_GRID, BEQUEST_SCALE)),
 )
-def test_bequest_marginal(consumption, rho, bequest_scale):
+def test_bequest_marginal(consumption, education, rho_educ, bequest_scale_educ):
     """Test marginal utility of bequest function."""
     params = {
-        "rho": rho,
-        "bequest_scale": bequest_scale,
+        "rho_bequest_low": rho_educ,
+        "rho_bequest_high": rho_educ,
+        "bequest_scale_low": bequest_scale_educ,
+        "bequest_scale_high": bequest_scale_educ,
     }
-    bequest = jax.jacfwd(utility_final_consume_all, argnums=0)(consumption, params)
+    bequest = jax.jacfwd(utility_final_consume_all, argnums=0)(
+        consumption, education, params
+    )
+
     np.testing.assert_almost_equal(
-        marginal_utility_final_consume_all(consumption, params),
+        marginal_utility_final_consume_all(
+            consumption, education=education, params=params
+        ),
         bequest,
     )

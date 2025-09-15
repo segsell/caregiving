@@ -54,8 +54,8 @@ def task_add_share_moments(
     soep_moments = pd.read_csv(path_to_soep_moments, index_col=[0])
     soep_variances = pd.read_csv(path_to_soep_variances, index_col=[0])
 
-    share_moments = {}
-    share_variances = {}
+    _share_moments = {}
+    _share_variances = {}
 
     dat = pd.read_csv(path_to_share_parent_child_sample, index_col=[0])
     dat = dat[dat["sex"] == 1].copy()  # Mothers only
@@ -64,13 +64,13 @@ def task_add_share_moments(
         dat["age"], bins=AGE_BINS_PARENTS, labels=AGE_LABELS_PARENTS, right=False
     )
 
-    shares_weighted_hh = weighted_shares_and_counts(
+    _shares_weighted_hh = weighted_shares_and_counts(
         dat,
         care_cols=CARE_COLS,
         weight_col="hh_weight",
         group_cols=["age_group"],
     )
-    variances_weighted_hh = weighted_shares_and_counts(
+    _variances_weighted_hh = weighted_shares_and_counts(
         dat,
         care_cols=CARE_COLS,
         weight_col="hh_weight",
@@ -105,24 +105,26 @@ def task_add_share_moments(
     #     group_cols=["sex", "age_group"],
     # )
 
-    _strip_suffix = "_general"
-    for col in shares_weighted_hh.columns:
-        for age_group, val in shares_weighted_hh[col].items():
-            col_stripped = col.replace(_strip_suffix, "")
-            share_moments[f"{col_stripped}_age_bin_{age_group}"] = val
+    # ==================================================================================
+    # _strip_suffix = "_general"
+    # for col in shares_weighted_hh.columns:
+    #     for age_group, val in shares_weighted_hh[col].items():
+    #         col_stripped = col.replace(_strip_suffix, "")
+    #         share_moments[f"{col_stripped}_age_bin_{age_group}"] = val
 
-    for col in variances_weighted_hh.columns:
-        for age_group, val in variances_weighted_hh[col].items():
-            col_stripped = col.replace(_strip_suffix, "")
-            share_variances[f"{col_stripped}_age_bin_{age_group}"] = val
+    # for col in variances_weighted_hh.columns:
+    #     for age_group, val in variances_weighted_hh[col].items():
+    #         col_stripped = col.replace(_strip_suffix, "")
+    #         share_variances[f"{col_stripped}_age_bin_{age_group}"] = val
 
-    moments = pd.concat(
-        [soep_moments, pd.Series(share_moments, name="value").to_frame()]
-    )
-    variances = pd.concat(
-        [soep_variances, pd.Series(share_variances, name="value").to_frame()]
-    )
+    # moments = pd.concat(
+    #     [soep_moments, pd.Series(share_moments, name="value").to_frame()]
+    # )
+    # variances = pd.concat(
+    #     [soep_variances, pd.Series(share_variances, name="value").to_frame()]
+    # )
+    # ==================================================================================
 
     # Save
-    moments.to_csv(path_to_save_full_moments)
-    variances.to_csv(path_to_save_full_variances)
+    soep_moments.to_csv(path_to_save_full_moments)
+    soep_variances.to_csv(path_to_save_full_variances)

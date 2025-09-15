@@ -1,4 +1,4 @@
-"""Utility functions for the model."""
+"""Utility functions for the model with multiplicative disutility of labor."""
 
 import jax
 import jax.numpy as jnp
@@ -6,7 +6,6 @@ import jax.numpy as jnp
 from caregiving.model.shared import (  # is_nursing_home_care,
     CARE_DEMAND_AND_NO_OTHER_SUPPLY,
     CARE_DEMAND_AND_OTHER_SUPPLY,
-    DEAD,
     PARENT_BAD_HEALTH,
     PARENT_GOOD_HEALTH,
     PARENT_MEDIUM_HEALTH,
@@ -26,17 +25,15 @@ from caregiving.model.shared import (  # is_nursing_home_care,
     is_part_time,
     is_unemployed,
 )
-from caregiving.model.utility.bequest_utility import (
-    utility_final_consume_all,
-)
+from caregiving.model.utility.bequest_utility import utility_final_consume_all
 
 
 def create_utility_functions():
     """Create dict of utility functions."""
     return {
-        "utility": utility_func,
-        "marginal_utility": marginal_utility_function_alive,
-        "inverse_marginal_utility": inverse_marginal,
+        "utility": utility_func_adda,
+        "marginal_utility": marg_utility_adda,
+        "inverse_marginal_utility": inverse_marginal_adda,
     }
 
 
@@ -45,14 +42,13 @@ def create_utility_functions():
 # =====================================================================================
 
 
-def utility_func(
+def utility_func_adda(
     consumption: jnp.array,
     choice: int,
     period: int,
     education: int,
     health: int,
-    care_demand: int,
-    mother_health: int,
+    # care_demand: int,
     partner_state: int,
     params: dict,
     options: dict,
@@ -87,14 +83,13 @@ def utility_func(
             (n_quad_stochastic * n_grid_wealth,) or (n_grid_wealth,).
 
     """
-    utility_alive = utility_func_alive(
+    utility_alive = utility_func_alive_adda(
         consumption=consumption,
         # sex=sex,
         partner_state=partner_state,
         education=education,
         health=health,
-        care_demand=care_demand,
-        mother_health=mother_health,
+        # care_demand=care_demand,
         period=period,
         choice=choice,
         params=params,
@@ -102,7 +97,6 @@ def utility_func(
     )
     utility_death = utility_final_consume_all(
         wealth=consumption,
-        education=education,
         params=params,
     )
     death_bool = is_dead(health)
@@ -111,13 +105,12 @@ def utility_func(
     return utility
 
 
-def utility_func_alive(
+def utility_func_alive_adda(
     consumption,
     partner_state,
     education,
     health,
-    care_demand,
-    mother_health,
+    # care_demand,
     period,
     choice,
     params,
@@ -126,11 +119,7 @@ def utility_func_alive(
     """Calculate the choice specific cobb-douglas utility, i.e. u =
     ((c*eta/consumption_scale)^(1-rho))/(1-rho) ."""
     # gather params
-    # informal_care = is_informal_care(choice)
-
     rho = params["rho"]
-    # rho = params["rho_low"] * (1 - education) + params["rho_high"] * education
-
     eta = disutility_work(
         period=period,
         choice=choice,
@@ -149,123 +138,31 @@ def utility_func_alive(
         options=options,
     )
 
-    # util_labor_and_caregiving = utility_of_labor_and_caregiving(
-    #     period=period,
-    #     choice=choice,
-    #     education=education,
-    #     health=health,
-    #     care_demand=care_demand,
-    #     params=params,
-    #     options=options,
-    # )
-    # util_caregiving = utility_of_caregiving(
+    # zeta = utility_of_caregiving(
     #     period,
     #     choice,
     #     education,
     #     health=health,
     #     care_demand=care_demand,
-    #     mother_health=mother_health,
     #     params=params,
     #     options=options,
     # )
 
     # compute utility
-    scaled_consumption = consumption * eta / cons_scale
+    scaled_consumption = consumption / cons_scale
     utility_rho_not_one = (scaled_consumption ** (1 - rho) - 1) / (1 - rho)
 
     utility = jax.lax.select(
         jnp.allclose(rho, 1),
-        jnp.log(consumption * eta / cons_scale),
+        jnp.log(consumption / cons_scale),
         utility_rho_not_one,
     )
-    return utility  # + util_labor_and_caregiving + util_caregiving
+    return utility * eta  # + zeta * care_demand
 
 
-# def marg_utility(
-#     consumption,
-#     # sex,
-#     partner_state,
-#     education,
-#     health,
-#     care_demand,
-#     period,
-#     choice,
-#     params,
-#     options,
-# ):
-#     marginal_utility_death = marginal_utility_final_consume_all(
-#         wealth=consumption,
-#         education=education,
-#         params=params,
-#     )
-#     marginal_utility_alive = marginal_utility_function_alive(
-#         consumption=consumption,
-#         partner_state=partner_state,
-#         education=education,
-#         health=health,
-#         care_demand=care_demand,
-#         period=period,
-#         choice=choice,
-#         params=params,
-#         options=options,
-#     )
-#     is_dead = health == DEAD
-
-#     marginal_utility = jax.lax.select(
-#         is_dead, marginal_utility_death, marginal_utility_alive
-#     )
-
-#     return marginal_utility
-
-
-# def marg_utility(
-#     consumption, partner_state, education, health, period, choice, params, options
-# ):
-#     rho = params["rho"]
-
-#     cons_scale = consumption_scale(
-#         partner_state=partner_state,
-#         # sex=sex,
-#         education=education,
-#         period=period,
-#         options=options,
-#     )
-#     eta = disutility_work(
-#         period=period,
-#         choice=choice,
-#         # sex=sex,
-#         education=education,
-#         partner_state=partner_state,
-#         health=health,
-#         params=params,
-#         options=options,
-#     )
-#     marg_util_rho_not_one = (
-# (eta / cons_scale) ** (1 - rho)) * (consumption ** (-rho))
-
-#     marg_util = jax.lax.select(
-#         jnp.allclose(rho, 1),
-#         1 / consumption,
-#         marg_util_rho_not_one,
-#     )
-
-#     return marg_util
-
-
-def marginal_utility_function_alive(
-    consumption,
-    partner_state,
-    education,
-    health,
-    care_demand,
-    period,
-    choice,
-    params,
-    options,
+def marg_utility_adda(
+    consumption, partner_state, education, health, period, choice, params, options
 ):
-    rho = params["rho"]
-    # rho = params["rho_low"] * (1 - education) + params["rho_high"] * education
-
     cons_scale = consumption_scale(
         partner_state=partner_state,
         # sex=sex,
@@ -273,64 +170,7 @@ def marginal_utility_function_alive(
         period=period,
         options=options,
     )
-
-    disutil_labor = disutility_work(
-        period=period,
-        choice=choice,
-        # sex=sex,
-        education=education,
-        partner_state=partner_state,
-        health=health,
-        params=params,
-        options=options,
-    )
-    # A = utility_of_labor_and_caregiving(
-    #     period=period,
-    #     choice=choice,
-    #     education=education,
-    #     health=health,
-    #     care_demand=care_demand,
-    #     params=params,
-    #     options=options,
-    # )
-    # base_marg_util_rho_not_one = ((disutil_labor / cons_scale) ** (1 - rho)) * (
-    #     consumption ** (-rho)
-    # )
-    base_marg_util_rho_not_one = (disutil_labor / cons_scale) ** (1 - rho) * (
-        consumption ** (-rho)
-    )
-
-    marg_util = jax.lax.select(
-        jnp.allclose(rho, 1),
-        1 / consumption,
-        base_marg_util_rho_not_one,
-    )
-
-    return marg_util  # * A * disutil_labor
-
-
-def inverse_marginal(
-    marginal_utility,
-    partner_state,
-    education,
-    health,
-    care_demand,
-    period,
-    choice,
-    params,
-    options,
-):
     rho = params["rho"]
-    # rho = params["rho_low"] * (1 - education) + params["rho_high"] * education
-
-    cons_scale = consumption_scale(
-        partner_state=partner_state,
-        # sex=sex,
-        education=education,
-        period=period,
-        options=options,
-    )
-
     eta = disutility_work(
         period=period,
         choice=choice,
@@ -341,101 +181,52 @@ def inverse_marginal(
         params=params,
         options=options,
     )
-    # A = utility_of_labor_and_caregiving(
-    #     period=period,
-    #     choice=choice,
-    #     education=education,
-    #     health=health,
-    #     care_demand=care_demand,
-    #     params=params,
-    #     options=options,
-    # )
+    marg_util_rho_not_one = eta * (consumption / cons_scale) ** (-rho) / cons_scale
 
-    # _consumption_rho_not_one = (
-    #     A * (eta / cons_scale) ** (1 - rho) / marginal_utility
-    # ) ** (1.0 / rho)
-    consumption_rho_not_one = marginal_utility ** (-1 / rho) * (eta / cons_scale) ** (
-        (1 - rho) / rho
+    marg_util = jax.lax.select(
+        jnp.allclose(rho, 1),
+        1 / consumption,
+        marg_util_rho_not_one,
+    )
+
+    return marg_util
+
+
+def inverse_marginal_adda(
+    marginal_utility,
+    partner_state,
+    education,
+    health,
+    period,
+    choice,
+    params,
+    options,
+):
+    cons_scale = consumption_scale(
+        partner_state=partner_state,
+        # sex=sex,
+        education=education,
+        period=period,
+        options=options,
+    )
+    rho = params["rho"]
+    eta = disutility_work(
+        period=period,
+        choice=choice,
+        # sex=sex,
+        education=education,
+        partner_state=partner_state,
+        health=health,
+        params=params,
+        options=options,
+    )
+    consumption_rho_not_one = cons_scale * ((marginal_utility * cons_scale) / eta) ** (
+        -1 / rho
     )
     consumption = jax.lax.select(
-        jnp.allclose(rho, 1),
-        1 / marginal_utility,
-        consumption_rho_not_one,
+        jnp.allclose(rho, 1), 1 / marginal_utility, consumption_rho_not_one
     )
-
-    # marginal_utility = jnp.maximum(marginal_utility, 1e-12)  # optional safety
-
-    # base = A * (eta / cons_scale) ** (1.0 - rho) / marginal_utility
-    # consumption = base ** (1.0 / rho)
-    # base = (eta * A) / (marginal_utility * cons_scale)
-    # base = 1 / (marginal_utility * cons_scale)
-    # consumption = cons_scale * (base ** (1.0 / rho))
-
     return consumption
-
-
-# def marginal_utility(
-#     consumption, choice, period, education, partner_state, params, options
-# ):
-#     """Computes the marginal utility of consumption and labor.
-
-#     consumption ** (-params["rho"])
-#     marginal utility = (consumption^(-rho)) * (cons_scale^(rho-1)).
-#     """
-#     rho = params["rho"]
-
-#     has_partner = (partner_state > 0).astype(int)
-#     n_children = options["children_by_state"][SEX, education, has_partner, period]
-
-#     eta = utility_of_labor_and_children(
-#         choice=choice, education=education, n_children=n_children, params=params
-#     )
-
-#     cons_scale = consumption_scale(has_partner, n_children)
-
-#     marg_util_with_rho_not_one = (
-#         consumption ** (-rho) * cons_scale ** (rho - 1)
-#     ) * jnp.exp(eta)
-
-#     marg_util = jax.lax.select(
-#         jnp.allclose(rho, 1),
-#         1 / consumption,
-#         marg_util_with_rho_not_one,
-#     )
-
-#     return marg_util
-
-
-# def inverse_marginal_utility(
-#     marginal_utility, choice, period, education, partner_state, params, options
-# ):
-#     """Compute the inverse marginal utility of consumption and labor.
-
-#     marginal_utility ** (-1 / params["rho"])
-#     """
-#     rho = params["rho"]
-
-#     has_partner = (partner_state > 0).astype(int)
-#     n_children = options["children_by_state"][SEX, education, has_partner, period]
-
-#     eta = utility_of_labor_and_children(
-#         choice=choice, education=education, n_children=n_children, params=params
-#     )
-#     cons_scale = consumption_scale(has_partner, n_children)
-
-#     inv_marg_util_with_rho_not_one = (
-#         marginal_utility ** (-1 / rho)
-#         * (cons_scale ** ((rho - 1) / rho))
-#         * (jnp.exp(eta) ** (1 / rho))
-#     )
-
-#     inv_marg_util = jax.lax.select(
-#         jnp.allclose(rho, 1),
-#         1 / marginal_utility,
-#         inv_marg_util_with_rho_not_one,
-#     )
-
-#     return inv_marg_util
 
 
 # =====================================================================================
@@ -843,144 +634,6 @@ def utility_of_caregiving(
     util_relative_to_only_other_family_provide_care = util_informal + util_formal_care
 
     return util_relative_to_only_other_family_provide_care  # * (care_demand >= 1)
-
-
-def _utility_of_labor_and_children(choice, education, n_children, params):
-    """Compute utility of labor.
-
-    Interacted with utility of consumption above.
-
-    Reference category is 'retired'.
-
-    """
-
-    unemployed = is_unemployed(choice)
-    working_part_time = is_part_time(choice)
-    working_full_time = is_full_time(choice)
-
-    # util_unemployed = (
-    #     params["util_cons_unemployed_low_educ"] * (1 - education)
-    #     + params["util_cons_unemployed_high_educ"] * education
-    # )
-    # util_part_time = params["util_cons_part_time"]
-    # util_full_time = (
-    #     params["util_cons_full_time"]
-    #     + params["util_cons_full_time_children"] * n_children
-    # ) * education
-
-    util_unemployed = (
-        params["util_cons_unemployed_low_educ"] * (1 - education)
-        + params["util_cons_unemployed_high_educ"] * education
-    )
-    util_part_time = (
-        params["util_cons_part_time_low_educ"]
-        + params["util_cons_children_part_time_low_educ"] * n_children
-    ) * (1 - education) + (
-        params["util_cons_part_time_high_educ"]
-        + params["util_cons_children_part_time_high_educ"] * n_children
-    ) * education
-    util_full_time = (
-        params["util_cons_full_time_low_educ"]
-        + params["util_cons_children_full_time_low_educ"] * n_children
-    ) * (1 - education) + (
-        params["util_cons_full_time_high_educ"]
-        + params["util_cons_children_full_time_high_educ"] * n_children
-    ) * education
-
-    return (
-        util_unemployed * unemployed
-        + util_part_time * working_part_time
-        + util_full_time * working_full_time
-    )
-
-
-def _utility_of_labor_and_caregiving(choice, age_youngest_child, education, params):
-    """Compute utility of labor and caregiving.
-
-    Reference category is 'not working'.
-    """
-    # util_unemployed_low_educ = (
-    #     params["util_unemployed_low_educ_constant"]
-    #     + params["util_unemployed_low_educ_child_bin_one"]
-    #     * is_child_age_0_to_3(age_youngest_child)
-    #     + params["util_unemployed_low_educ_child_bin_two"]
-    #     * is_child_age_4_to_6(age_youngest_child)
-    #     + params["util_unemployed_low_educ_child_bin_three"]
-    #     * is_child_age_7_to_9(age_youngest_child)
-    # )
-    util_part_time_low_educ = (
-        params["util_part_time_low_educ_constant"]
-        + params["util_part_time_low_educ_child_bin_one"]
-        * is_child_age_0_to_3(age_youngest_child)
-        + params["util_part_time_low_educ_child_bin_two"]
-        * is_child_age_4_to_6(age_youngest_child)
-        + params["util_part_time_low_educ_child_bin_three"]
-        * is_child_age_7_to_9(age_youngest_child)
-    )
-    util_full_time_low_educ = (
-        params["util_full_time_low_educ_constant"]
-        + params["util_full_time_low_educ_child_bin_one"]
-        * is_child_age_0_to_3(age_youngest_child)
-        + params["util_full_time_low_educ_child_bin_two"]
-        * is_child_age_4_to_6(age_youngest_child)
-        + params["util_full_time_low_educ_child_bin_three"]
-        * is_child_age_7_to_9(age_youngest_child)
-    )
-
-    # util_unemployed_high_educ = (
-    #     params["util_unemployed_high_educ_constant"]
-    #     + params["util_unemployed_high_educ_child_bin_one"]
-    #     * is_child_age_0_to_3(age_youngest_child)
-    #     + params["util_unemployed_high_educ_child_bin_two"]
-    #     * is_child_age_4_to_6(age_youngest_child)
-    #     + params["util_unemployed_high_educ_child_bin_three"]
-    #     * is_child_age_7_to_9(age_youngest_child)
-    # )
-    util_part_time_high_educ = (
-        params["util_part_time_high_educ_constant"]
-        + params["util_part_time_high_educ_child_bin_one"]
-        * is_child_age_0_to_3(age_youngest_child)
-        + params["util_part_time_high_educ_child_bin_two"]
-        * is_child_age_4_to_6(age_youngest_child)
-        + params["util_part_time_high_educ_child_bin_three"]
-        * is_child_age_7_to_9(age_youngest_child)
-    )
-    util_full_time_high_educ = (
-        params["util_full_time_high_educ_constant"]
-        + params["util_full_time_high_educ_child_bin_one"]
-        * is_child_age_0_to_3(age_youngest_child)
-        + params["util_full_time_high_educ_child_bin_two"]
-        * is_child_age_4_to_6(age_youngest_child)
-        + params["util_full_time_high_educ_child_bin_three"]
-        * is_child_age_7_to_9(age_youngest_child)
-    )
-
-    # not_working = is_unemployed(choice)
-    working_part_time = is_part_time(choice)
-    working_full_time = is_full_time(choice)
-
-    # util_not_working = (
-    #     util_unemployed_low_educ * (1 - education)
-    #     + util_unemployed_high_educ * education
-    # )
-    util_part_time = (
-        util_part_time_low_educ * (1 - education) + util_part_time_high_educ * education
-    )
-    util_full_time = (
-        util_full_time_low_educ * (1 - education) + util_full_time_high_educ * education
-    )
-
-    return (
-        # util_not_working * not_working +
-        util_part_time * working_part_time
-        + util_full_time * working_full_time
-    )
-
-
-# def consumption_scale(has_partner, n_children):
-#     """Adjust for number of people living in household."""
-#     hh_size = 1 + has_partner + n_children
-#     return jnp.sqrt(hh_size)
 
 
 def consumption_scale(partner_state, education, period, options):
