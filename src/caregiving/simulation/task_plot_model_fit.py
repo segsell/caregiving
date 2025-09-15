@@ -47,6 +47,7 @@ from caregiving.simulation.plot_model_fit import (
 )
 
 
+@pytask.mark.model_fit
 def task_plot_model_fit(  # noqa: PLR0915
     path_to_options: Path = BLD / "model" / "options.pkl",
     path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
@@ -115,6 +116,14 @@ def task_plot_model_fit(  # noqa: PLR0915
     / "plots"
     / "model_fit"
     / "work_transitions_by_edu_and_age_bin.png",
+    path_to_save_average_wealth: Annotated[Path, Product] = BLD
+    / "plots"
+    / "model_fit"
+    / "average_wealth.png",
+    path_to_save_average_savings: Annotated[Path, Product] = BLD
+    / "plots"
+    / "model_fit"
+    / "average_savings.png",
 ) -> None:
     """Plot model fit between empirical and simulated data."""
 
@@ -401,6 +410,9 @@ def task_plot_model_fit(  # noqa: PLR0915
         .rename("count")
         .reset_index()
     )
+
+    plot_average_wealth(df_emp, df_sim, specs, path_to_save_average_wealth)
+    plot_average_savings_decision(df_sim, path_to_save_average_savings)
 
 
 def test_choice_shares_sum_to_one(data_emp, data_sim, specs):
