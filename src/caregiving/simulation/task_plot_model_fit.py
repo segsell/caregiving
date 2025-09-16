@@ -318,6 +318,7 @@ def task_plot_model_fit(  # noqa: PLR0915
         # "part_time": "Part-time",
         # "full_time": "Full-time",
     }
+
     plot_transitions_by_age(
         df_emp,
         df_sim,
@@ -335,7 +336,7 @@ def task_plot_model_fit(  # noqa: PLR0915
         state_labels,
         states_emp=states_emp,
         states_sim=states_sim,
-        bin_width=10,
+        bin_width=5,
         one_way=True,
         path_to_save_plot=path_to_save_work_transition_age_bin_plot,
     )

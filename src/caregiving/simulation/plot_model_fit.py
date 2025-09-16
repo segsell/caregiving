@@ -1608,6 +1608,16 @@ def plot_transitions_by_age_bins(  # noqa: PLR0912, PLR0915
         f"{start}-{end - 1}" for start, end in zip(edges[:-1], edges[1:], strict=False)
     ]
 
+    ### NEW: drop the final single-year bin (e.g., 70–70) if it exists
+    if len(edges) >= 2 and (edges[-1] - edges[-2] == 1):
+        # remove the last (1-year) edge so the last bin disappears
+        edges = edges[:-1]
+        # and remove the corresponding last start/label
+        if bin_starts:
+            bin_starts = bin_starts[:-1]
+        if bin_labels:
+            bin_labels = bin_labels[:-1]
+
     # ── Figure setup (sharey only so we can pad x per panel) ────────────────
     n_edu, n_trans = len(edu_labels), len(transitions)
     fig, axs = plt.subplots(
