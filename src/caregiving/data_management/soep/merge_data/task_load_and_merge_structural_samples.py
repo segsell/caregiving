@@ -8,11 +8,7 @@ import pytask
 from pytask import Product
 
 from caregiving.config import BLD, SRC
-
-
-def table(df_col):
-    """Return a table with the count of unique values in a column."""
-    return pd.crosstab(df_col, columns="Count")["Count"]
+from caregiving.utils import table
 
 
 def _get_cols_biobirth():
@@ -127,7 +123,9 @@ def task_load_and_merge_estimation_sample(
         ],
         convert_categoricals=False,
     )
+    # hl_data["hlc0005_h"] = hl_data["hlc0005_h"] * 12
     merged_data = pd.merge(merged_data, hl_data, on=["hid", "syear"], how="left")
+
     pequiv_data = pd.read_stata(
         # d11107: number of children in household
         # d11101: age of individual
@@ -135,7 +133,7 @@ def task_load_and_merge_estimation_sample(
         # m11124: Disability Status of Individual
         # m111050-m11123: Activities of Daily Living
         soep_c40_pequiv,
-        columns=["pid", "syear", "d11107", "d11101", "m11126", "m11124"],
+        columns=["pid", "syear", "d11107", "d11101", "m11126", "m11124", "igrv1"],
         convert_categoricals=False,
     )
     merged_data = pd.merge(merged_data, pequiv_data, on=["pid", "syear"], how="inner")

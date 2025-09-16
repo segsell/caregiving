@@ -32,6 +32,7 @@ jax.config.update("jax_enable_x64", True)
 
 
 @pytask.mark.sim
+@pytask.mark.skip()
 def task_simulate_moments(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_options: Path = BLD / "model" / "options.pkl",

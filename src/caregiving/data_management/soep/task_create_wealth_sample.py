@@ -8,10 +8,7 @@ from pytask import Product
 
 from caregiving.config import BLD, SRC
 from caregiving.specs.task_write_specs import read_and_derive_specs
-
-
-def table(df_col):
-    return pd.crosstab(df_col, columns="Count")["Count"]
+from caregiving.utils import table
 
 
 def task_create_household_wealth_sample(
@@ -23,8 +20,8 @@ def task_create_household_wealth_sample(
     """Create sample for wealth estimation."""
 
     specs = read_and_derive_specs(path_to_specs)
-    specs["start_year"] = 2010
-    specs["end_year"] = 2017
+    # specs["start_year"] = 2010
+    # specs["end_year"] = 2017
 
     cpi = pd.read_csv(path_to_cpi, index_col=0)
 
@@ -47,6 +44,9 @@ def task_create_household_wealth_sample(
 
     print(str(len(data)) + " left after dropping people with missing wealth.")
 
+    breakpoint()
+
+    # breakpoint()
     data.to_csv(path_to_save)
 
 
@@ -54,6 +54,8 @@ def trim_and_rename(wealth_data):
     """Trim wealth data (drop missing, negative set to 0) and rename."""
     wealth_data = wealth_data[wealth_data["w011ha"].notna()]
     wealth_data.loc[wealth_data["w011ha"] < 0, "w011ha"] = 0
+    # wealth_data.loc[wealth_data["w011ha"] < 0, "w011ha"] = 0
+
     wealth_data.rename(columns={"w011ha": "wealth"}, inplace=True)
 
     return wealth_data
