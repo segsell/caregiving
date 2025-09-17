@@ -22,6 +22,7 @@ from caregiving.model.shared import (
     FULL_TIME_CHOICES,
     GOOD_HEALTH,
     NOT_WORKING,
+    NOT_WORKING_CHOICES,
     PARENT_BAD_HEALTH,
     PARENT_WEIGHTS_SHARE,
     PART_TIME_CHOICES,
@@ -30,6 +31,7 @@ from caregiving.model.shared import (
     START_PERIOD_CAREGIVING,
     UNEMPLOYED_CHOICES,
     WORK,
+    WORK_CHOICES,
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
 from caregiving.utils import table
@@ -37,7 +39,7 @@ from caregiving.utils import table
 DEGREES_OF_FREEDOM = 1
 
 
-def task_create_soep_moments(
+def task_create_soep_moments(  # noqa: PLR0915
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_main_sample: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
     path_to_caregivers_sample: Path = BLD
@@ -346,34 +348,34 @@ def task_create_soep_moments(
     # )
     # =================================================================================
 
-    # # E) Year-to-year labor supply transitions
-    # states_work_no_work = {
-    #     "working": WORK,
-    #     "not_working": NOT_WORKING,
-    # }
-    # transition_moments, transition_variances = (
-    #     compute_transition_moments_and_variances_for_age_bins(
-    #         df_low,
-    #         min_age=start_age,
-    #         max_age=end_age,
-    #         states=states_work_no_work,
-    #         label="low_education",
-    #     )
-    # )
-    # moments.update(transition_moments)
-    # variances.update(transition_variances)
+    # E) Year-to-year labor supply transitions
+    states_work_no_work = {
+        "not_working": NOT_WORKING_CHOICES,
+        "working": WORK_CHOICES,
+    }
+    transition_moments, transition_variances = (
+        compute_transition_moments_and_variances_for_age_bins(
+            df_low,
+            min_age=start_age,
+            max_age=end_age,
+            states=states_work_no_work,
+            label="low_education",
+        )
+    )
+    moments.update(transition_moments)
+    variances.update(transition_variances)
 
-    # transition_moments, transition_variances = (
-    #     compute_transition_moments_and_variances_for_age_bins(
-    #         df_high,
-    #         min_age=start_age,
-    #         max_age=end_age,
-    #         states=states_work_no_work,
-    #         label="high_education",
-    #     )
-    # )
-    # moments.update(transition_moments)
-    # variances.update(transition_variances)
+    transition_moments, transition_variances = (
+        compute_transition_moments_and_variances_for_age_bins(
+            df_high,
+            min_age=start_age,
+            max_age=end_age,
+            states=states_work_no_work,
+            label="high_education",
+        )
+    )
+    moments.update(transition_moments)
+    variances.update(transition_variances)
 
     # states = {
     #     "not_working": NOT_WORKING,
