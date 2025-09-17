@@ -39,7 +39,7 @@ from caregiving.utils import table
 DEGREES_OF_FREEDOM = 1
 
 
-def task_create_soep_moments(
+def task_create_soep_moments(  # noqa: PLR0915
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_main_sample: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
     path_to_caregivers_sample: Path = BLD

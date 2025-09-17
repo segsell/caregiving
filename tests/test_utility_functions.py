@@ -218,7 +218,7 @@ def test_utility_func(
     if rho == 1:
         utility_lambda = lambda disutil: np.log(  # noqa: E731
             consumption * disutil / cons_scale
-        )  # noqa: E730
+        )
     else:
         utility_lambda = lambda disutil: (  # noqa: E731
             (consumption * disutil / cons_scale) ** (1 - rho) - 1
