@@ -9,16 +9,14 @@ from pytask import Product
 from caregiving.config import BLD, SRC
 from caregiving.specs.task_write_specs import read_and_derive_specs
 
-
-def table(df_col):
-    return pd.crosstab(df_col, columns="Count")["Count"]
+from caregiving.utils import table
 
 
 def task_create_household_wealth_sample(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
     soep_c38_hwealth: Path = SRC / "data" / "soep" / "hwealth.dta",
-    path_to_save: Annotated[Path, Product] = BLD / "data" / "soep_wealth_data.csv",
+    path_to_save: Annotated[Path, Product] = BLD / "data" / "soep_wealth_data_old.csv",
 ) -> None:
     """Create sample for wealth estimation."""
 

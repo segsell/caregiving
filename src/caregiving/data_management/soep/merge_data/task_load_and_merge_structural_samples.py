@@ -102,6 +102,9 @@ def task_load_and_merge_estimation_sample(
             "pld0032",  # number of brothers
             "plj0118_h",  # distance to mother
             "plj0119_h",  # distance to father
+            # "iyear",  # interview year
+            # "pmonin",  # month of interview
+            # "ptagin",  # day of interview
         ],
         chunksize=100000,
         convert_categoricals=False,
@@ -110,7 +113,10 @@ def task_load_and_merge_estimation_sample(
     for itm in pl_data_reader:
         pl_data = pd.concat([pl_data, itm])
     merged_data = pd.merge(
-        merged_data, pl_data, on=["pid", "hid", "syear"], how="inner"
+        merged_data,
+        pl_data,
+        on=["pid", "hid", "syear"],
+        how="inner",
     )
 
     # get household level data
@@ -544,7 +550,7 @@ def task_load_and_merge_health_sample(
     )
     pequiv_data = pd.read_stata(
         # m11126: Self-Rated Health Status
-        # m11124: Disability Status of Individual
+        # m11124: Disability Status of Individuadeflate_wealthl
         soep_c40_pequiv,
         columns=["pid", "syear", "m11126", "m11124"],
         convert_categoricals=False,
