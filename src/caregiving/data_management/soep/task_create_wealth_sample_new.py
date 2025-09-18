@@ -2,6 +2,7 @@
 
 from pathlib import Path
 from typing import Annotated
+import matplotlib.pyplot as plt
 
 import numpy as np
 import pandas as pd
@@ -9,21 +10,25 @@ from pytask import Product
 
 from caregiving.config import BLD, SRC
 from caregiving.specs.task_write_specs import read_and_derive_specs
+from caregiving.data_management.soep.auxiliary import recode_sex
+from caregiving.data_management.soep.variables import create_education_type
 
 from caregiving.utils import table
 
 
 def deflate_wealth(df, cpi_data, specs):
     """Deflate wealth using consumer price index."""
-    cpi_data = cpi_data.rename(columns={"int_year": "syear"})
 
-    _base_year = specs["reference_year"]
-    base_year_cpi = cpi_data.loc[cpi_data["syear"] == _base_year, "cpi"].iloc[0]
+    # base_year_cpi = cpi_data.loc[
+    #     cpi_data["syear"] == specs["reference_year"], "cpi"
+    # ].iloc[0]
+    # We need to set the index to the year
+    cpi_data /= cpi_data.loc[specs["reference_year"]]
 
-    cpi_data["cpi_normalized"] = cpi_data["cpi"] / base_year_cpi
+    # cpi_data["cpi_normalized"] = cpi_data["cpi"] / base_year_cpi
 
-    data_merged = df.merge(cpi_data, on="syear", how="left")
-    data_merged["wealth"] = data_merged["wealth"] / data_merged["cpi_normalized"]
+    data_merged = df.merge(cpi_data, left_on="syear", right_index=True)
+    data_merged["wealth"] = data_merged["wealth"] / data_merged["cpi"]
 
     return data_merged
 
@@ -37,7 +42,9 @@ def calc_age_at_interview(df, drop_missing_month=True):
     Vars needed: gebjahr, gebmonat, syear, pmonin, ptagin
     """
     # Create birth and interview date
-    df = create_float_interview_date(df)
+    # df = create_float_interview_date(df)
+    total_days = 365 / 2
+    df["float_interview"] = df.index.get_level_values("syear").values + total_days / 365
     df = _create_float_birth_date(df, drop_missing_month=drop_missing_month)
 
     # Calculate the age at interview date
@@ -71,6 +78,7 @@ def _create_float_birth_date(df, drop_missing_month=True):
         month = df["gebmonat"].copy()
         month[invalid_month] = 6
         df.loc[~invalid_year, "float_birth_date"] = df["gebjahr"] + month / 12
+
     return df
 
 
@@ -90,6 +98,7 @@ def create_float_interview_date(df):
     total_invalid_mask = (df["ptagin"].values == 0) | ivalid_mask
     total_days[total_invalid_mask] = np.nan
     df["float_interview"] = df.index.get_level_values("syear").values + total_days / 365
+
     return df
 
 
@@ -119,6 +128,7 @@ def task_create_household_wealth_sample(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
     soep_c40_hwealth: Path = SRC / "data" / "soep_c40" / "hwealth.dta",
+    soep_c40_pgen: Path = SRC / "data" / "soep_c40" / "pgen.dta",
     soep_c40_ppathl: Path = SRC / "data" / "soep_c40" / "ppathl.dta",
     soep_c40_pl: Path = SRC / "data" / "soep_c40" / "pl.dta",
     soep_c40_pequiv: Path = SRC / "data" / "soep_c40" / "pequiv.dta",
@@ -129,7 +139,6 @@ def task_create_household_wealth_sample(
     / "data"
     / "soep_wealth_and_personal_data.csv",
 ) -> None:
-
     #     # def add_wealth_interpolate_and_deflate(
     #     data,
     #     path_dict,
@@ -143,6 +152,9 @@ def task_create_household_wealth_sample(
     """
     specs = read_and_derive_specs(path_to_specs)
     cpi = pd.read_csv(path_to_cpi, index_col=0)
+    cpi.rename(columns={"int_year": "syear"}, inplace=True)
+    cpi.set_index("syear", inplace=True)
+    # cpi.index.name = "syear    cpi.index.name = "syear""
 
     # 1) Load raw household wealth (hwealth.dta)
     wealth_data = pd.read_stata(
@@ -154,40 +166,120 @@ def task_create_household_wealth_sample(
     wealth_data.set_index(["hid", "syear"], inplace=True)
     wealth_data.rename(columns={"w011ha": "wealth"}, inplace=True)
 
+    # 4) Deflate wealth (CPI)
+    wealth_data = deflate_wealth(wealth_data, cpi_data=cpi, specs=specs)
+
     # 2) Span to complete (hid × syear) within analysis window
     wealth_data_full = span_full_wealth_panel(wealth_data, specs)
 
     # 3) Attach personal data (age, partner flag, children, etc.) on (hid, syear)
-    wealth_data_full = add_personal_data(
-        soep_c40_ppathl, soep_c40_pl, soep_c40_pequiv, specs, wealth_data_full
+    personal_data = perpare_personal_data(
+        soep_c40_pgen, soep_c40_ppathl, soep_c40_pl, soep_c40_pequiv, specs=specs
     )
-
-    # 4) Deflate wealth (CPI)
-    wealth_data_full = deflate_wealth(wealth_data_full, cpi_data=cpi, specs=specs)
+    wealth_and_personal_data = wealth_data_full.merge(
+        personal_data, right_index=True, left_index=True, how="left"
+    )
 
     # 5) No negatives
-    wealth_data_full.loc[wealth_data_full["wealth"] < 0, "wealth"] = 0
+    wealth_and_personal_data.loc[wealth_and_personal_data["wealth"] < 0, "wealth"] = 0
+
+    wealth_and_personal_data = recode_sex(wealth_and_personal_data)
+    wealth_and_personal_data = create_education_type(wealth_and_personal_data)
+    wealth_and_personal_data = wealth_and_personal_data[
+        wealth_and_personal_data["sex"] >= 0
+    ]
 
     # 6) Keep one row per (hid, syear)
-    wealth_data_full = (
-        wealth_data_full[["wealth"]]
-        .reset_index()
-        .drop_duplicates(subset=["hid", "syear"])
+    # wealth_and_personal_data = (
+    #     wealth_and_personal_data[["wealth"]].reset_index()
+    #     .drop_duplicates(subset=["hid", "pid", "syear"])
+    # )
+    wealth_and_personal_data = wealth_and_personal_data.reset_index().drop_duplicates(
+        subset=["hid", "syear", "pid"]
     )
 
-    wealth_data_full.to_csv(path_to_save_wealth)
-    # wealth_data_full.to_pickle(file_name)
+    wealth_and_personal_data = wealth_and_personal_data[
+        wealth_and_personal_data["wealth"].notna()
+    ]
+    wealth_and_personal_data.to_csv(path_to_save_wealth)
+    # wealth_and_personal_data.to_pickle(file_name)
 
-    # Merge onto person-year data
-    data = data.reset_index()
-    data = data.merge(wealth_data_full, on=["hid", "syear"], how="left")
-    data.set_index(["pid", "syear"], inplace=True)
+    # # Merge onto person-year data
+    # data = data.reset_index()
+    # data = data.merge(wealth_data_full, on=["hid", "syear"], how="left")
+    # data.set_index(["pid", "syear"], inplace=True)
 
-    # if filter_missings:
-    data = data[data["wealth"].notna()]
-    print(str(len(data)) + " left after dropping people with missing wealth.")
+    # # if filter_missings:
+    # data = data[data["wealth"].notna()]
+    # print(str(len(data)) + " left after dropping people with missing wealth.")
 
-    data.to_csv(path_to_save_wealth_and_personal)
+    # data.to_csv(path_to_save_wealth_and_personal)
+
+    # ==================================================================================
+
+    # Plotting
+    df = wealth_and_personal_data.copy()
+    df = df[df["age"] < specs["end_age"]]
+    # drop rows without age or wealth
+    # df = df.dropna(subset=["age", "wealth"])
+
+    # # create 5-year bins (e.g. 30–34, 35–39, …)
+    # df["age_bin"] = pd.cut(
+    #     df["age"],
+    #     bins=range(0, int(df["age"].max()) + 5, 5),
+    #     right=False,  # left-inclusive bins like 30–34
+    # )
+
+    # # compute mean wealth per bin
+    # wealth_by_bin = df.groupby("age_bin")["wealth"].mean()
+
+    # # plot
+    # plt.figure(figsize=(10, 6))
+    # wealth_by_bin.plot(kind="bar", width=0.8)
+
+    # plt.ylabel("Average Wealth")
+    # plt.xlabel("Age bin (5 years)")
+    # plt.title("Average Wealth by 5-Year Age Bin")
+    # plt.xticks(rotation=45, ha="right")
+    # plt.tight_layout()
+    # plt.show()
+
+    # # drop rows without age or wealth
+    # df = df.dropna(subset=["age", "wealth"])
+
+    # # --- 1) Wealth by 5-year age bins ---
+    # df["age_bin"] = pd.cut(
+    #     df["age"], bins=range(0, int(df["age"].max()) + 5, 5), right=False
+    # )
+    # wealth_by_bin = df.groupby("age_bin")["wealth"].mean()
+
+    # # --- 2) Wealth by exact age ---
+    # wealth_by_age = df.groupby("age")["wealth"].mean()
+
+    # # --- Plot both ---
+    # fig, ax = plt.subplots(1, 2, figsize=(14, 6), sharey=True)
+
+    # # left: 5-year bins
+    # wealth_by_bin.plot(kind="bar", ax=ax[0], width=0.8)
+    # ax[0].set_title("Average Wealth by 5-Year Age Bin")
+    # ax[0].set_xlabel("Age bin")
+    # ax[0].set_ylabel("Average Wealth")
+    # ax[0].tick_params(axis="x", rotation=45)
+
+    # # right: exact age
+    # wealth_by_age.plot(ax=ax[1])
+    # ax[1].set_title("Average Wealth by Exact Age")
+    # ax[1].set_xlabel("Age")
+    # ax[1].set_ylabel("Average Wealth")
+
+    # plt.tight_layout()
+    # plt.show()
+
+    # ==================================================================================
+
+    # ==================================================================================
+
+    plot_wealth_by_age_bins_and_age(df, bin_width=5, edu_col="education")
     breakpoint()
 
 
@@ -220,16 +312,36 @@ def load_wealth_data(soep_c38_path):
     return wealth_data
 
 
-def add_personal_data(
+def perpare_personal_data(
+    soep_c40_pgen,
     soep_c40_ppathl,
     soep_c40_pl,
     soep_c40_pequiv,
     specs,
-    wealth_data_full,
-    # use_processed_pl=False,
 ):
     """(Unchanged) Load ppathl/pl and attach person-year info by (hid, syear).
     Not used by the simplified pipeline, but kept in case other modules rely on it."""
+
+    # Load SOEP core data
+    pgen_data = pd.read_stata(
+        soep_c40_pgen,
+        columns=[
+            "syear",
+            "pid",
+            "hid",
+            # "pgemplst",
+            # "pgexpft",
+            # "pgexppt",
+            # "pgstib",
+            # "pgpartz",
+            # "pglabgro",
+            "pgpsbil",
+        ],
+        convert_categoricals=False,
+    )
+    pgen_data.dropna(inplace=True)
+    pgen_data["hid"] = pgen_data["hid"].astype(int)
+
     ppathl_data = pd.read_stata(
         soep_c40_ppathl,
         columns=["pid", "hid", "syear", "sex", "parid", "gebjahr", "gebmonat"],
@@ -238,9 +350,19 @@ def add_personal_data(
     ppathl_data.dropna(inplace=True)
     ppathl_data["hid"] = ppathl_data["hid"].astype(int)
 
+    # 1st Merge
+    merged_data = pd.merge(
+        ppathl_data, pgen_data, on=["pid", "hid", "syear"], how="left"
+    )
+
     pl_data_reader = pd.read_stata(
         soep_c40_pl,
-        columns=["pid", "hid", "syear", "pmonin", "ptagin"],
+        columns=[
+            "pid",
+            "hid",
+            "syear",
+            #  "pmonin", "ptagin"
+        ],
         chunksize=100000,
         convert_categoricals=False,
     )
@@ -248,9 +370,14 @@ def add_personal_data(
     pl_data["hid"] = pl_data["hid"].astype(int)
     # pl_data.to_pickle(pl_intermediate_file)
 
-    merged_data = pd.merge(ppathl_data, pl_data, on=["pid", "syear", "hid"], how="left")
+    # 2nd Merge
+    merged_data = pd.merge(merged_data, pl_data, on=["pid", "syear", "hid"], how="left")
+    # merged_data = pd.merge(ppathl_data, pl_data, on=["pid", "syear", "hid"], how="left")
+
+    # merged_data = calc_age_at_interview(merged_data)
+    merged_data["age"] = merged_data["syear"] - merged_data["gebjahr"]
+
     merged_data.set_index(["pid", "syear"], inplace=True)
-    merged_data = calc_age_at_interview(merged_data)
     merged_data = merged_data[merged_data["age"] >= specs["start_age"]]
     merged_data["is_par"] = np.where(merged_data["parid"] == -2, 0, 1)
     merged_data.reset_index(inplace=True)
@@ -264,6 +391,80 @@ def add_personal_data(
     merged_data.reset_index(inplace=True)
     merged_data.set_index(["hid", "syear"], inplace=True)
 
-    return wealth_data_full.merge(
-        merged_data, right_index=True, left_index=True, how="left"
-    )
+    return merged_data
+
+
+def plot_wealth_by_age_bins_and_age(df, bin_width=5, edu_col="education"):
+    # keep only rows with needed columns
+    df = df.copy()
+    needed = ["age", "wealth", edu_col]
+    df = df.dropna(subset=needed)
+    df = df[df[edu_col].isin([0, 1])]
+
+    def make_age_bins(s, width):
+        # left-closed bins [a, a+width)
+        bins = range(
+            int(np.floor(s.min() // width) * width),
+            int(np.ceil((s.max() + 1) / width) * width) + 1,
+            width,
+        )
+        return pd.cut(s, bins=bins, right=False)
+
+    # split by education
+    d0 = df[df[edu_col] == 0].copy()
+    d1 = df[df[edu_col] == 1].copy()
+
+    # compute for each subset
+    for d in (d0, d1):
+        d["age_bin"] = make_age_bins(d["age"], bin_width)
+
+    # means by 5-year bin
+    bin0 = d0.groupby("age_bin")["wealth"].mean()
+    bin1 = d1.groupby("age_bin")["wealth"].mean()
+
+    # means by exact age
+    age0 = d0.groupby("age")["wealth"].mean().sort_index()
+    age1 = d1.groupby("age")["wealth"].mean().sort_index()
+
+    # nice bin labels like "30–34"
+    def bin_labels(idx):
+        labels = []
+        for iv in idx:
+            a = int(iv.left)
+            b = int(iv.right) - 1
+            labels.append(f"{a}–{b}")
+        return labels
+
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10), sharey=True)
+
+    # Top-left: education 0, 5-year bins
+    labels0 = bin_labels(bin0.index)
+    axes[0, 0].bar(range(len(bin0)), bin0.values)
+    axes[0, 0].set_xticks(range(len(bin0)))
+    axes[0, 0].set_xticklabels(labels0, rotation=45, ha="right")
+    axes[0, 0].set_title("Avg Wealth by 5-Year Age Bin (education = 0)")
+    axes[0, 0].set_ylabel("Average Wealth")
+
+    # Top-right: education 0, exact age
+    axes[0, 1].plot(age0.index.values, age0.values)
+    axes[0, 1].set_title("Avg Wealth by Exact Age (education = 0)")
+    axes[0, 1].set_xlabel("Age")
+
+    # Bottom-left: education 1, 5-year bins
+    labels1 = bin_labels(bin1.index)
+    axes[1, 0].bar(range(len(bin1)), bin1.values)
+    axes[1, 0].set_xticks(range(len(bin1)))
+    axes[1, 0].set_xticklabels(labels1, rotation=45, ha="right")
+    axes[1, 0].set_title("Avg Wealth by 5-Year Age Bin (education = 1)")
+    axes[1, 0].set_ylabel("Average Wealth")
+    axes[1, 0].set_xlabel("Age bin")
+
+    # Bottom-right: education 1, exact age
+    axes[1, 1].plot(age1.index.values, age1.values)
+    axes[1, 1].set_title("Avg Wealth by Exact Age (education = 1)")
+    axes[1, 1].set_xlabel("Age")
+
+    # global y-label
+    fig.supylabel("Average Wealth", x=0.03)
+    plt.tight_layout()
+    plt.show()
