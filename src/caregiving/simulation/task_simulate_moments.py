@@ -8,6 +8,7 @@ import jax
 import numpy as np
 import pandas as pd
 import pytask
+from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal as aae
 from pytask import Product
 
@@ -71,7 +72,7 @@ def task_simulate_moments(
     sim_moms_pandas.to_csv(path_to_save_pandas_moments)
     np.savetxt(path_to_save_jax_moments, sim_moms_jax, delimiter=",")
 
-    aae(sim_moms_jax, sim_moms_pandas)
+    aaae(sim_moms_jax, sim_moms_pandas, decimal=12)
     assert np.equal(emp_moms.shape, sim_moms_pandas.shape)
 
     # states = {

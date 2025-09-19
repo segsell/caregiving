@@ -41,6 +41,8 @@ AGE_4 = 4
 AGE_7 = 7
 AGE_10 = 10
 
+AGE_30 = 30
+AGE_35 = 35
 AGE_40 = 40
 AGE_45 = 45
 AGE_50 = 50
@@ -89,6 +91,35 @@ PARENT_AGE_BINS_SIM = [
     (AGE_80, AGE_85),
     (AGE_85, AGE_90),
     (AGE_90, AGE_100),
+]
+
+AGE_BINS_WEALTH = [
+    (AGE_30, AGE_35),
+    (AGE_35, AGE_40),
+    (AGE_40, AGE_45),
+    (AGE_45, AGE_50),
+    (AGE_50, AGE_55),
+    (AGE_55, AGE_60),
+    (AGE_60, AGE_65),
+    (AGE_65, AGE_70),
+    (AGE_70, AGE_75),
+    (AGE_75, AGE_80),
+    (AGE_80, AGE_85),
+    (AGE_85, AGE_90),
+]
+AGE_LABELS_WEALTH = [
+    "30_34",
+    "35_39",
+    "40_44",
+    "45_49",
+    "50_54",
+    "55_59",
+    "60_64",
+    "65_69",
+    "70_74",
+    "75_79",
+    "80_84",
+    "85_89",
 ]
 
 AGE_BIN_0_TO_3 = 0

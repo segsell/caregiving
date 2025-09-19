@@ -34,7 +34,7 @@ def plot_average_wealth(
 ):
     """Plot average wealth by age and education."""
 
-    data_emp.loc[:, "age"] = data_emp["period"] + specs["start_age"]
+    # data_emp.loc[:, "age"] = data_emp["period"] + specs["start_age"]
     data_sim.loc[:, "age"] = data_sim["period"] + specs["start_age"]
 
     sex = SEX

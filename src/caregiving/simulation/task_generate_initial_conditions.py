@@ -9,8 +9,6 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
@@ -37,10 +35,13 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.utils import table
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 
 def task_generate_start_states_for_solution(  # noqa: PLR0915
     path_to_sample: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
+    path_to_wealth: Path = BLD / "data" / "soep_wealth_and_personal_data.csv",
     path_to_lifetable: Path = BLD
     / "estimation"
     / "stochastic_processes"
@@ -71,6 +72,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     sex_var = SEX
 
     observed_data = pd.read_csv(path_to_sample, index_col=[0])
+    wealth_data = pd.read_csv(path_to_wealth, index_col=[0])
     lifetable = pd.read_csv(path_to_lifetable)
     health_sample = pd.read_pickle(path_to_health_sample)
 
@@ -97,7 +99,10 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     # Define start data and adjust wealth
     min_period = observed_data["period"].min()
     start_period_data = observed_data[observed_data["period"].isin([min_period])].copy()
-    start_period_data = start_period_data[start_period_data["wealth"].notnull()].copy()
+    # start_period_data = start_period_data[start_period_data["wealth"].notnull()].copy()
+
+    # wealth_data = wealth_data[wealth_data["wealth"].notnull()].copy()
+    wealth_data = wealth_data[(wealth_data["age"] == 30)].copy()
 
     # =================================================================================
     # Static state variables
@@ -132,14 +137,16 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         if name not in ("mother_health", "care_demand", "care_supply")
     }
 
-    states_dict["care_demand"] = np.zeros_like(start_period_data["wealth"])
-    states_dict["wealth"] = start_period_data["wealth"].values / specs["wealth_unit"]
+    states_dict["care_demand"] = np.zeros_like(start_period_data["education"])
     states_dict["experience"] = start_period_data["experience"].values
-    start_period_data.loc[:, "adjusted_wealth"] = adjust_observed_wealth(
-        observed_states_dict=states_dict,
-        params=params,
-        model=model,
-    )
+
+    states_dict["adjusted_wealth"] = wealth_data["wealth"].values / specs["wealth_unit"]
+    wealth_data["adjusted_wealth"] = wealth_data["wealth"].values / specs["wealth_unit"]
+    # wealth_data.loc[:, "adjusted_wealth"] = adjust_observed_wealth(
+    #     observed_states_dict=states_dict,
+    #     params=params,
+    #     model=model,
+    # )
 
     # # Generate container
     # sex_agents = np.array([], np.uint8)
@@ -249,6 +256,9 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
             (start_period_data["sex"] == sex_var)
             & (start_period_data["education"] == edu)
         ]
+        wealth_period_data_edu = wealth_data[
+            (wealth_data["sex"] == sex_var) & (wealth_data["education"] == edu)
+        ]
 
         n_agents_edu = np.sum(type_mask)
 
@@ -273,8 +283,8 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         )
 
         # Wealth distribution
-        wealth_start_edu = draw_start_wealth_dist(start_period_data_edu, n_agents_edu)
-        wealth_agents[type_mask] = wealth_start_edu
+        wealth_edu = draw_start_wealth_dist(wealth_period_data_edu, n_agents_edu)
+        wealth_agents[type_mask] = wealth_edu
 
         # Generate type specific initial experience distribution
         exp_max_edu = start_period_data_edu["experience"].max()

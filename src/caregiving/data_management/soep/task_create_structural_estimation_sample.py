@@ -86,8 +86,8 @@ def task_create_main_estimation_sample(
     # df.drop(columns=["retire_flag"], inplace=True)
     # df.set_index(["pid", "syear"], inplace=True)
 
-    wealth = pd.read_csv(path_to_wealth, index_col=[0])
-    df = add_wealth_data(df, wealth, drop_missing=False)
+    # wealth = pd.read_csv(path_to_wealth, index_col=[0])
+    # df = add_wealth_data(df, wealth, drop_missing=False)
 
     df["period"] = df["age"] - specs["start_age"]
 
@@ -133,7 +133,7 @@ def task_create_main_estimation_sample(
         "partner_state": "int8",
         "job_offer": "int8",
         "experience": "int8",
-        "wealth": "float32",
+        # "wealth": "float32",
         "education": "int8",
         "health": "float16",
         "nursing_home": "float16",
@@ -165,7 +165,7 @@ def task_create_main_estimation_sample(
 def task_create_caregivers_sample(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_raw: Path = BLD / "data" / "soep_estimation_data_raw.csv",
-    path_to_wealth: Path = BLD / "data" / "soep_wealth_data.csv",
+    # path_to_wealth: Path = BLD / "data" / "soep_wealth_data.csv",
     path_to_save: Annotated[Path, Product] = BLD
     / "data"
     / "soep_structural_caregivers_sample.csv",
@@ -217,8 +217,8 @@ def task_create_caregivers_sample(
     # df.drop(columns=["retire_flag"], inplace=True)
     # df.set_index(["pid", "syear"], inplace=True)
 
-    wealth = pd.read_csv(path_to_wealth, index_col=[0])
-    df = add_wealth_data(df, wealth, drop_missing=False)
+    # wealth = pd.read_csv(path_to_wealth, index_col=[0])
+    # df = add_wealth_data(df, wealth, drop_missing=False)
 
     df["period"] = df["age"] - specs["start_age"]
 
@@ -262,7 +262,7 @@ def task_create_caregivers_sample(
         "partner_state": "int8",
         "job_offer": "int8",
         "experience": "int8",
-        "wealth": "float32",
+        # "wealth": "float32",
         "education": "int8",
         "health": "float16",  # can be NA
         "nursing_home": "float16",

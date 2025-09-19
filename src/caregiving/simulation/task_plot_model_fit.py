@@ -59,6 +59,7 @@ def task_plot_model_fit(  # noqa: PLR0915
     path_to_caregivers_sample: Path = BLD
     / "data"
     / "soep_structural_caregivers_sample.csv",
+    path_to_wealth_sample: Path = BLD / "data" / "soep_wealth_and_personal_data.csv",
     path_to_simulated_data: Path = BLD / "solve_and_simulate" / "simulated_data.pkl",
     path_to_save_wealth_plot: Annotated[Path, Product] = BLD
     / "plots"
@@ -128,7 +129,7 @@ def task_plot_model_fit(  # noqa: PLR0915
     """Plot model fit between empirical and simulated data."""
 
     options = pickle.load(path_to_options.open("rb"))
-    # params = yaml.safe_load(path_to_start_params.open("rb"))
+    params = yaml.safe_load(path_to_start_params.open("rb"))
 
     model_full = load_and_setup_full_model_for_solution(
         options, path_to_model=path_to_solution_model
@@ -138,6 +139,8 @@ def task_plot_model_fit(  # noqa: PLR0915
 
     df_emp = pd.read_csv(path_to_empirical_data, index_col=[0])
     df_caregivers = pd.read_csv(path_to_caregivers_sample, index_col=[0])
+    df_emp_wealth = pd.read_csv(path_to_wealth_sample, index_col=[0])
+
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
     df_sim["sex"] = SEX
 
@@ -171,11 +174,12 @@ def task_plot_model_fit(  # noqa: PLR0915
     #     start_params=params,
     #     drop_retirees=False,
     # )
-
     specs = model_full["options"]["model_params"]
-
-    # plot_average_wealth(df_emp_prep, df_sim, specs, path_to_save_wealth_plot)
-    # plot_average_savings_decision(df_sim, path_to_save_savings_plot)
+    df_emp_wealth["adjusted_wealth"] = (
+        df_emp_wealth["wealth"].values / specs["wealth_unit"]
+    )
+    plot_average_wealth(df_emp_wealth, df_sim, specs, path_to_save_wealth_plot)
+    plot_average_savings_decision(df_sim, path_to_save_savings_plot)
 
     # # plot_choice_shares_single(
     # #     df_emp, df_sim, specs, path_to_save_plot=path_to_save_single_choice_plot
@@ -410,9 +414,6 @@ def task_plot_model_fit(  # noqa: PLR0915
         .rename("count")
         .reset_index()
     )
-
-    plot_average_wealth(df_emp, df_sim, specs, path_to_save_average_wealth)
-    plot_average_savings_decision(df_sim, path_to_save_average_savings)
 
 
 def test_choice_shares_sum_to_one(data_emp, data_sim, specs):

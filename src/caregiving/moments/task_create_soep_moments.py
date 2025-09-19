@@ -17,6 +17,8 @@ from caregiving.data_management.share.task_create_parent_child_data_set import (
     weighted_shares_and_counts,
 )
 from caregiving.model.shared import (
+    AGE_BINS_WEALTH,
+    AGE_LABELS_WEALTH,
     BAD_HEALTH,
     DEAD,
     FULL_TIME_CHOICES,
@@ -33,12 +35,14 @@ from caregiving.model.shared import (
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
 from caregiving.utils import table
+from dcegm.wealth_correction import adjust_observed_wealth
 
 DEGREES_OF_FREEDOM = 1
 
 
 def task_create_soep_moments(
     path_to_specs: Path = SRC / "specs.yaml",
+    path_to_wealth_sample: Path = BLD / "data" / "soep_wealth_and_personal_data.csv",
     path_to_main_sample: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
     path_to_caregivers_sample: Path = BLD
     / "data"
@@ -60,6 +64,23 @@ def task_create_soep_moments(
 
     age_range = range(start_age, end_age + 1)
     age_range_caregivers = range(start_age_caregivers, end_age + 1)
+
+    # =================================================================================
+    df_wealth = pd.read_csv(path_to_wealth_sample, index_col=[0])
+    df_wealth["wealth"] = df_wealth["wealth"] / specs["wealth_unit"]
+
+    # female respondents only
+    df_wealth = df_wealth[
+        (df_wealth["sex"] == 1) & (df_wealth["age"] < specs["end_age"])
+    ]
+    df_wealth_low = df_wealth[df_wealth["education"] == 0]
+    df_wealth_high = df_wealth[df_wealth["education"] == 1]
+
+    age_bins_90 = (
+        list(range(30, 95, 5)),
+        [f"{s}_{s+4}" for s in range(30, 90, 5)],
+    )
+    # =================================================================================
 
     _age_bins_75 = (
         list(range(40, 80, 5)),  # [40, 45, … , 70]
@@ -120,6 +141,24 @@ def task_create_soep_moments(
     variances = {}
 
     # =================================================================================
+    # 0) Wealth by education and age bin
+    moments, variances = compute_mean_by_age_bin(
+        df_wealth_low,
+        moments,
+        variances,
+        variable="wealth",
+        age_bins=age_bins_90,
+        label="wealth_low_education",
+    )
+    moments, variances = compute_mean_by_age_bin(
+        df_wealth_high,
+        moments,
+        variances,
+        variable="wealth",
+        age_bins=age_bins_90,
+        label="wealth_high_education",
+    )
+
     # A) Moments by age.
     moments, variances = compute_labor_shares_by_age(
         df,
@@ -806,6 +845,73 @@ def compute_shares_by_age_bin(
         variances[f"share{label}_age_bin_{bin}"] = vars.loc[bin]
 
     return moments, variances
+
+
+def compute_mean_by_age_bin(
+    df: pd.DataFrame,
+    moments: dict,
+    variances: dict,
+    variable: str,
+    age_bins: tuple[list[int], list[str]] | None = None,
+    label: str | None = None,
+):
+    """
+    Compute means and sample variances by age-bin for a numeric variable.
+
+    Parameters
+    ----------
+    df : DataFrame
+        Must contain columns 'age' (int) and the numeric column given by *variable*.
+    moments, variances : dict
+        Dictionaries updated **in-place** with results.
+    variable : str
+        Name of the numeric column in `df` (e.g., 'income').
+    age_bins : tuple[list[int], list[str]] | None
+        Optional (bin_edges, bin_labels). If None, defaults to 5-year bins 40–74:
+          edges:  [40, 45, 50, 55, 60, 65, 70, 75]
+          labels: ['40_44', '45_49', ..., '70_74']
+        Note: edges must include both the first left edge and the final right edge.
+    label : str | None
+        Optional extra label inserted in every key (prefixed with '_' if given).
+
+    Returns
+    -------
+    moments, variances : dict
+        The same objects passed in, updated with new values.
+    """
+    # 1) Label prefix
+    key_label = f"_{label}" if label else ""
+
+    # 2) Default 5-year bins (40–44, ..., 70–74)
+    if age_bins is None:
+        bin_edges = list(range(40, 75, 5))  # [40,45,...,70]
+        bin_labels = [f"{s}_{s+4}" for s in bin_edges[:-1]]
+    else:
+        bin_edges, bin_labels = age_bins
+
+    # # 3) Ensure numeric dtype (robust to bool/object)
+    # x = pd.to_numeric(df[variable], errors="coerce")
+
+    # 4) Assign bins (left-closed, right-open ⇒ 40–44, 45–49, …)
+    df["age_bin"] = pd.cut(df["age"], bins=bin_edges, labels=bin_labels, right=False)
+
+    # 5) Group, compute mean & variance
+    grouped = df.groupby("age_bin", observed=False)[variable]
+    means = grouped.mean().reindex(bin_labels, fill_value=np.nan)
+    vars = grouped.var(ddof=DEGREES_OF_FREEDOM).reindex(bin_labels, fill_value=np.nan)
+
+    # 6) Store results with consistent keys
+    # Keys: mean_<label>_<var>_age_bin_<bin>, var_<label>_<var>_age_bin_<bin>
+    for bin in bin_labels:
+        moments[f"mean{key_label}_{variable}_age_bin_{bin}"] = means.loc[bin]
+        variances[f"var{key_label}_{variable}_age_bin_{bin}"] = vars.loc[bin]
+
+    return moments, variances
+
+
+# =====================================================================================
+# Transition moments
+# =====================================================================================
 
 
 def compute_transition_moments_and_variances_for_age_bins(

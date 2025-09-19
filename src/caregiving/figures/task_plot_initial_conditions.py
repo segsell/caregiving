@@ -8,11 +8,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 from pytask import Product
 
 from caregiving.config import BLD, JET_COLOR_MAP, SRC
+from caregiving.model.shared import SEX
 from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.utility.bequest_utility import (
     create_final_period_utility_functions,
@@ -22,10 +21,13 @@ from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.simulation.task_generate_initial_conditions import (
     draw_start_wealth_dist,
 )
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 
 def task_plot_initial_wealth(
     path_to_sample: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
+    path_to_wealth: Path = BLD / "data" / "soep_wealth_and_personal_data.csv",
     path_to_options: Path = BLD / "model" / "options.pkl",
     path_to_model: Path = BLD / "model" / "model_for_solution.pkl",
     path_to_start_params: Path = BLD / "model" / "params" / "start_params_model.yaml",
@@ -37,6 +39,9 @@ def task_plot_initial_wealth(
     """Plot initial wealth for different underlying distributions."""
 
     observed_data = pd.read_csv(path_to_sample, index_col=[0])
+    wealth_data = pd.read_csv(path_to_wealth, index_col=[0])
+
+    wealth_data = wealth_data[(wealth_data["age"] == 30)].copy()
 
     options = pickle.load(path_to_options.open("rb"))
     params = yaml.safe_load(path_to_start_params.open("rb"))
@@ -61,7 +66,7 @@ def task_plot_initial_wealth(
     # Define start data and adjust wealth
     min_period = observed_data["period"].min()
     start_period_data = observed_data[observed_data["period"].isin([min_period])].copy()
-    start_period_data = start_period_data[start_period_data["wealth"].notnull()].copy()
+    # start_period_data = start_period_data[start_period_data["wealth"].notnull()].copy()
 
     states_dict = {
         name: start_period_data[name].values
@@ -69,16 +74,18 @@ def task_plot_initial_wealth(
         if name not in ("mother_health", "care_demand", "care_supply")
     }
 
-    states_dict["care_demand"] = np.zeros_like(start_period_data["wealth"])
-    states_dict["wealth"] = start_period_data["wealth"].values / specs["wealth_unit"]
+    states_dict["care_demand"] = np.zeros_like(start_period_data["education"])
     states_dict["experience"] = start_period_data["experience"].values
-    start_period_data.loc[:, "adjusted_wealth"] = adjust_observed_wealth(
-        observed_states_dict=states_dict,
-        params=params,
-        model=model,
-    )
 
-    print(start_period_data["adjusted_wealth"].describe())
+    states_dict["adjusted_wealth"] = wealth_data["wealth"].values / specs["wealth_unit"]
+    wealth_data["adjusted_wealth"] = wealth_data["wealth"].values / specs["wealth_unit"]
+    # wealth_data.loc[:, "adjusted_wealth"] = adjust_observed_wealth(
+    #     observed_states_dict=states_dict,
+    #     params=params,
+    #     model=model,
+    # )
+
+    print(wealth_data["adjusted_wealth"].describe())
 
     # Plotting
     methods = ["uniform", "lognormal", "kde"]
@@ -91,16 +98,14 @@ def task_plot_initial_wealth(
 
     for idx, edu in enumerate(specs["education_labels"]):
         # Filter data for this education level
-        start_period_data_edu = start_period_data[start_period_data["education"] == idx]
-        wealth_data = start_period_data_edu["adjusted_wealth"]
-        print(f"Education {edu}:\n", wealth_data.describe(), "\n")
+        # start_period_data_edu = start_period_data[start_period_data["education"] == idx]
+        wealth_data_edu = wealth_data[wealth_data["education"] == idx]
+        print(f"Education {edu}:\n", wealth_data_edu.describe(), "\n")
 
         ax = axes[idx]  # Current subplot
 
         for method in methods:
-            samples = draw_start_wealth_dist(
-                start_period_data_edu, n_agents_edu, method
-            )
+            samples = draw_start_wealth_dist(wealth_data_edu, n_agents_edu, method)
             # samples = np.clip(samples, xmin, xmax)  # Clip for visibility
             ax.hist(samples, bins=bins, density=True, alpha=0.6, label=method)
 

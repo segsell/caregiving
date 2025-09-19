@@ -2,17 +2,16 @@
 
 from pathlib import Path
 from typing import Annotated
-import matplotlib.pyplot as plt
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from pytask import Product
 
 from caregiving.config import BLD, SRC
-from caregiving.specs.task_write_specs import read_and_derive_specs
 from caregiving.data_management.soep.auxiliary import recode_sex
 from caregiving.data_management.soep.variables import create_education_type
-
+from caregiving.specs.task_write_specs import read_and_derive_specs
 from caregiving.utils import table
 
 
@@ -149,6 +148,11 @@ def task_create_household_wealth_sample(
     # ):
     """Load household wealth, span to a full (hid, year) panel, deflate by CPI,
     set negatives to zero, and merge onto the person-year data. No interpolation or extrapolation.
+
+    https://paneldata.org/soep-core/datasets/hwealth/w011ha
+
+    Drop negative wealth values or set to zero?
+
     """
     specs = read_and_derive_specs(path_to_specs)
     cpi = pd.read_csv(path_to_cpi, index_col=0)
@@ -165,6 +169,11 @@ def task_create_household_wealth_sample(
     wealth_data["hid"] = wealth_data["hid"].astype(int)
     wealth_data.set_index(["hid", "syear"], inplace=True)
     wealth_data.rename(columns={"w011ha": "wealth"}, inplace=True)
+
+    print(
+        "Number of wealth observations per survey year:"
+        f" {wealth_data.groupby('syear')['wealth'].count()}"
+    )
 
     # 4) Deflate wealth (CPI)
     wealth_data = deflate_wealth(wealth_data, cpi_data=cpi, specs=specs)
@@ -201,7 +210,7 @@ def task_create_household_wealth_sample(
     wealth_and_personal_data = wealth_and_personal_data[
         wealth_and_personal_data["wealth"].notna()
     ]
-    wealth_and_personal_data.to_csv(path_to_save_wealth)
+    wealth_and_personal_data.to_csv(path_to_save_wealth_and_personal)
     # wealth_and_personal_data.to_pickle(file_name)
 
     # # Merge onto person-year data
@@ -218,69 +227,9 @@ def task_create_household_wealth_sample(
     # ==================================================================================
 
     # Plotting
-    df = wealth_and_personal_data.copy()
-    df = df[df["age"] < specs["end_age"]]
-    # drop rows without age or wealth
-    # df = df.dropna(subset=["age", "wealth"])
-
-    # # create 5-year bins (e.g. 30–34, 35–39, …)
-    # df["age_bin"] = pd.cut(
-    #     df["age"],
-    #     bins=range(0, int(df["age"].max()) + 5, 5),
-    #     right=False,  # left-inclusive bins like 30–34
+    # plot_wealth_by_age_bins_and_age(
+    #     df=wealth_and_personal_data, specs=specs, bin_width=5, edu_col="education"
     # )
-
-    # # compute mean wealth per bin
-    # wealth_by_bin = df.groupby("age_bin")["wealth"].mean()
-
-    # # plot
-    # plt.figure(figsize=(10, 6))
-    # wealth_by_bin.plot(kind="bar", width=0.8)
-
-    # plt.ylabel("Average Wealth")
-    # plt.xlabel("Age bin (5 years)")
-    # plt.title("Average Wealth by 5-Year Age Bin")
-    # plt.xticks(rotation=45, ha="right")
-    # plt.tight_layout()
-    # plt.show()
-
-    # # drop rows without age or wealth
-    # df = df.dropna(subset=["age", "wealth"])
-
-    # # --- 1) Wealth by 5-year age bins ---
-    # df["age_bin"] = pd.cut(
-    #     df["age"], bins=range(0, int(df["age"].max()) + 5, 5), right=False
-    # )
-    # wealth_by_bin = df.groupby("age_bin")["wealth"].mean()
-
-    # # --- 2) Wealth by exact age ---
-    # wealth_by_age = df.groupby("age")["wealth"].mean()
-
-    # # --- Plot both ---
-    # fig, ax = plt.subplots(1, 2, figsize=(14, 6), sharey=True)
-
-    # # left: 5-year bins
-    # wealth_by_bin.plot(kind="bar", ax=ax[0], width=0.8)
-    # ax[0].set_title("Average Wealth by 5-Year Age Bin")
-    # ax[0].set_xlabel("Age bin")
-    # ax[0].set_ylabel("Average Wealth")
-    # ax[0].tick_params(axis="x", rotation=45)
-
-    # # right: exact age
-    # wealth_by_age.plot(ax=ax[1])
-    # ax[1].set_title("Average Wealth by Exact Age")
-    # ax[1].set_xlabel("Age")
-    # ax[1].set_ylabel("Average Wealth")
-
-    # plt.tight_layout()
-    # plt.show()
-
-    # ==================================================================================
-
-    # ==================================================================================
-
-    plot_wealth_by_age_bins_and_age(df, bin_width=5, edu_col="education")
-    breakpoint()
 
 
 def span_full_wealth_panel(wealth_data, specs):
@@ -394,10 +343,13 @@ def perpare_personal_data(
     return merged_data
 
 
-def plot_wealth_by_age_bins_and_age(df, bin_width=5, edu_col="education"):
+def plot_wealth_by_age_bins_and_age(df, specs, bin_width=5, edu_col="education"):
     # keep only rows with needed columns
     df = df.copy()
+    df = df[df["age"] < specs["end_age"]]
+
     needed = ["age", "wealth", edu_col]
+
     df = df.dropna(subset=needed)
     df = df[df[edu_col].isin([0, 1])]
 

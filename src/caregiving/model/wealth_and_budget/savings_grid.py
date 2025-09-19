@@ -13,4 +13,4 @@ def create_savings_grid():
     savings_grid = np.concatenate(
         [section_1, section_2, section_3, section_4, section_5, section_6, section_7]
     )
-    return savings_grid
+    return savings_grid  # * 1_000
