@@ -29,6 +29,8 @@ from caregiving.utils import table
 # ====================================================================================
 # Wealth
 # ====================================================================================
+
+
 def plot_wealth_by_age_and_education(
     data_emp: pd.DataFrame,
     data_sim: pd.DataFrame,

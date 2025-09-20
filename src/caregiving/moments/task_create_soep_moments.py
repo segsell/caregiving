@@ -32,6 +32,7 @@ from caregiving.model.shared import (
     START_PERIOD_CAREGIVING,
     UNEMPLOYED_CHOICES,
     WORK,
+    SEX,
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
 from caregiving.utils import table
@@ -64,15 +65,14 @@ def task_create_soep_moments(
 
     age_range = range(start_age, end_age + 1)
     age_range_caregivers = range(start_age_caregivers, end_age + 1)
+    age_range_wealth = range(start_age, specs["end_age"] + 1)
 
     # =================================================================================
     df_wealth = pd.read_csv(path_to_wealth_sample, index_col=[0])
-    df_wealth["wealth"] = df_wealth["wealth"] / specs["wealth_unit"]
+    df_wealth["adjusted_wealth"] = df_wealth["wealth"] / specs["wealth_unit"]
 
     # female respondents only
-    df_wealth = df_wealth[
-        (df_wealth["sex"] == 1) & (df_wealth["age"] < specs["end_age"])
-    ]
+    df_wealth = df_wealth[df_wealth["sex"] == SEX].copy()
     df_wealth_low = df_wealth[df_wealth["education"] == 0]
     df_wealth_high = df_wealth[df_wealth["education"] == 1]
 
@@ -89,7 +89,7 @@ def task_create_soep_moments(
 
     df_full = pd.read_csv(path_to_main_sample, index_col=[0])
     df = df_full[
-        (df_full["sex"] == 1)
+        (df_full["sex"] == SEX)
         & (df_full["age"] <= end_age + 10)
         & (df_full["any_care"] == 0)
     ]  # women only and non-caregivers
@@ -142,20 +142,22 @@ def task_create_soep_moments(
 
     # =================================================================================
     # 0) Wealth by education and age bin
-    moments, variances = compute_mean_by_age_bin(
+    moments, variances = compute_mean_wealth_by_age(
         df_wealth_low,
         moments,
         variances,
-        variable="wealth",
-        age_bins=age_bins_90,
+        wealth_var="adjusted_wealth",
+        age_range=age_range_wealth,
+        quantile=0.98,
         label="wealth_low_education",
     )
-    moments, variances = compute_mean_by_age_bin(
+    moments, variances = compute_mean_wealth_by_age(
         df_wealth_high,
         moments,
         variances,
-        variable="wealth",
-        age_bins=age_bins_90,
+        wealth_var="adjusted_wealth",
+        age_range=age_range_wealth,
+        quantile=0.98,
         label="wealth_high_education",
     )
 
@@ -843,6 +845,96 @@ def compute_shares_by_age_bin(
     for bin in bin_labels:
         moments[f"share{label}_age_bin_{bin}"] = shares.loc[bin]
         variances[f"share{label}_age_bin_{bin}"] = vars.loc[bin]
+
+    return moments, variances
+
+
+# =====================================================================================
+# Wealth
+# =====================================================================================
+
+
+def compute_mean_wealth_by_age(
+    df: pd.DataFrame,
+    moments: dict,
+    variances: dict,
+    age_range: list[int] | np.ndarray,
+    quantile: float = 0.95,
+    *,
+    wealth_var: str = "wealth",
+    label: str | None = None,
+):
+    """
+    Compute empirical mean + variance of wealth by AGE (not bins) and
+    store them into `moments` and `variances` with keys:
+        mean_<label>_wealth_age_<age>
+        var_<label>_wealth_age_<age>
+
+    Smoothing (empirical-only):
+      - Trim top 5% by wealth.
+      - Use rolling(3) mean by age.
+      - For the first two ages in `age_range`, use the raw mean.
+      - For the last 21 ages in `age_range`, use rolling(5).
+
+    Parameters
+    ----------
+    df : DataFrame
+        Must contain columns: 'age' and `wealth_var`.
+        Assumes only one sex and one education present.
+    moments, variances : dict
+        Updated in-place with new entries.
+    age_range : sequence of int
+        Ages to include (used for reindexing & key creation).
+    wealth_var : str, default "wealth"
+        Wealth column name.
+    quantile : float, default 0.95
+        Top quantile to trim (e.g., 0.95 for top 5%
+    label : str | None
+        Optional suffix in keys (prefixed with '_').
+
+    """
+    label = f"_{label}" if label else ""
+    age_index = pd.Index(age_range, name="age")
+
+    # 1) Percentile trim
+    wealth_mask = df[wealth_var] < df[wealth_var].quantile(quantile)
+    trimmed = df.loc[wealth_mask, ["age", wealth_var]].copy()
+
+    # 2) Group by age: raw mean and variance
+    base_mean = (
+        trimmed.groupby("age", observed=False)[wealth_var]
+        .mean()
+        .reindex(age_index, fill_value=np.nan)
+        .sort_index()
+    )
+    base_var = (
+        trimmed.groupby("age", observed=False)[wealth_var]
+        .var(ddof=DEGREES_OF_FREEDOM)
+        .reindex(age_index, fill_value=np.nan)
+        .sort_index()
+    )
+
+    # 3) Rolling smoothing on the mean (index is age, regular spacing assumed)
+    roll3 = base_mean.rolling(3, min_periods=1).mean()
+    roll5 = base_mean.rolling(5, min_periods=1).mean()
+
+    # First two ages → raw mean
+    if len(age_index) >= 1:
+        roll3.iloc[0] = base_mean.iloc[0]
+    if len(age_index) >= 2:
+        roll3.iloc[1] = base_mean.iloc[1]
+
+    # Last 21 ages → rolling(5)
+    last_n = min(21, len(age_index))
+    if last_n > 0:
+        roll3.iloc[-last_n:] = roll5.iloc[-last_n:]
+
+    smoothed_mean = roll3
+
+    # 4) Write out moments/variances with per-age keys
+    for age in age_index:
+        moments[f"mean{label}_wealth_age_{age}"] = smoothed_mean.loc[age]
+        variances[f"var{label}_wealth_age_{age}"] = base_var.loc[age]
 
     return moments, variances
 
