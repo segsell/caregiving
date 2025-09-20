@@ -550,7 +550,7 @@ def task_load_and_merge_health_sample(
     )
     pequiv_data = pd.read_stata(
         # m11126: Self-Rated Health Status
-        # m11124: Disability Status of Individuadeflate_wealthl
+        # m11124: Disability Status of Individuadel
         soep_c40_pequiv,
         columns=["pid", "syear", "m11126", "m11124"],
         convert_categoricals=False,

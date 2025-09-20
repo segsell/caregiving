@@ -29,6 +29,7 @@ from caregiving.model.shared import (
     WORK_CHOICES,
 )
 from caregiving.simulation.plot_model_fit import (
+    plot_wealth_by_age_and_education,
     plot_average_savings_decision,
     plot_average_wealth,
     plot_caregiver_shares_by_age,
@@ -178,7 +179,18 @@ def task_plot_model_fit(  # noqa: PLR0915
     df_emp_wealth["adjusted_wealth"] = (
         df_emp_wealth["wealth"].values / specs["wealth_unit"]
     )
-    plot_average_wealth(df_emp_wealth, df_sim, specs, path_to_save_wealth_plot)
+    plot_wealth_by_age_and_education(
+        data_emp=df_emp_wealth,
+        data_sim=df_sim,
+        specs=specs,
+        wealth_var_emp="adjusted_wealth",
+        wealth_var_sim="wealth_at_beginning",
+        median=False,
+        age_min=30,
+        age_max=100,
+        path_to_save_plot=path_to_save_wealth_plot,
+    )
+    # plot_average_wealth(df_emp_wealth, df_sim, specs, path_to_save_wealth_plot)
     plot_average_savings_decision(df_sim, path_to_save_savings_plot)
 
     # # plot_choice_shares_single(
