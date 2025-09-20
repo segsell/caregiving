@@ -1,6 +1,7 @@
 """Simulate moments."""
 
 import re
+import warnings
 from itertools import product
 from typing import Optional
 
@@ -430,10 +431,18 @@ def create_labor_share_moments_pandas(df, moments, age_range, label=None):
 
     # Reindex to ensure that every age between start_age and end_age is included;
     # missing ages will be filled with NaN
-    # retired_shares = retired_shares.reindex(age_range, fill_value=np.nan)
+    retired_shares = retired_shares.reindex(age_range, fill_value=np.nan)
     unemployed_shares = unemployed_shares.reindex(age_range, fill_value=np.nan)
     part_time_shares = part_time_shares.reindex(age_range, fill_value=np.nan)
     full_time_shares = full_time_shares.reindex(age_range, fill_value=np.nan)
+
+    if retired_shares.isna().any():
+        missing = retired_shares[retired_shares.isna()].index.tolist()
+        warnings.warn(
+            f"Missing retired_shares values for ages: {missing}",
+            category=UserWarning,
+            stacklevel=2,
+        )
 
     # Populate the moments dictionary for age-specific shares
     for age in age_range:
