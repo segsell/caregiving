@@ -41,6 +41,7 @@ def task_plot_empirical_soep_moments(
     path_to_caregivers_sample: Path = BLD
     / "data"
     / "soep_structural_caregivers_sample.csv",
+    path_to_wealth_sample: Path = BLD / "data" / "soep_wealth_and_personal_data.csv",
     path_to_save_wealth: Annotated[Path, Product] = BLD
     / "plots"
     / "raw_moments"
@@ -116,8 +117,7 @@ def task_plot_empirical_soep_moments(
 
     df["kidage_youngest"] = df["kidage_youngest"] - 1
 
-    # df_wealth = pd.read_csv(path_to_wealth_sample, index_col=[0])
-    df_wealth = df_full.copy()
+    df_wealth = pd.read_csv(path_to_wealth_sample, index_col=[0])
     df_wealth["adjusted_wealth"] = df_wealth["wealth"] / specs["wealth_unit"]
     df_wealth = df_wealth[df_wealth["sex"] == 1].copy()
     wealth_mask = df_wealth["adjusted_wealth"] < df_wealth["adjusted_wealth"].quantile(

@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 from pytask import Product
 
-from dcegm.wealth_correction import adjust_observed_wealth
 from caregiving.config import BLD, SRC
 from caregiving.data_management.share.task_create_parent_child_data_set import (
     AGE_BINS_PARENTS,
@@ -28,13 +27,14 @@ from caregiving.model.shared import (
     PART_TIME_CHOICES,
     RETIREMENT_CHOICES,
     SCALE_CAREGIVER_SHARE,
+    SEX,
     START_PERIOD_CAREGIVING,
     UNEMPLOYED_CHOICES,
     WORK,
-    SEX,
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
 from caregiving.utils import table
+from dcegm.wealth_correction import adjust_observed_wealth
 
 DEGREES_OF_FREEDOM = 1
 
@@ -45,6 +45,7 @@ def task_create_soep_moments(
     path_to_caregivers_sample: Path = BLD
     / "data"
     / "soep_structural_caregivers_sample.csv",
+    path_to_wealth_sample: Path = BLD / "data" / "soep_wealth_and_personal_data.csv",
     path_to_save_moments: Annotated[Path, Product] = BLD
     / "moments"
     / "soep_moments_new.csv",
@@ -77,8 +78,11 @@ def task_create_soep_moments(
     ].copy()  # women only and non-caregivers
 
     # female respondents only
-    df_wealth = df_full[df_full["sex"] == SEX].copy()
+    df_wealth = pd.read_csv(path_to_wealth_sample, index_col=[0])
     df_wealth["adjusted_wealth"] = df_wealth["wealth"] / specs["wealth_unit"]
+
+    # female respondents only
+    df_wealth = df_wealth[df_wealth["sex"] == SEX].copy()
     df_wealth_low = df_wealth[df_wealth["education"] == 0]
     df_wealth_high = df_wealth[df_wealth["education"] == 1]
 
