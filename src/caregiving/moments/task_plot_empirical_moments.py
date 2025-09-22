@@ -41,6 +41,10 @@ def task_plot_empirical_soep_moments(
     path_to_caregivers_sample: Path = BLD
     / "data"
     / "soep_structural_caregivers_sample.csv",
+    path_to_save_wealth: Annotated[Path, Product] = BLD
+    / "plots"
+    / "raw_moments"
+    / "wealth_by_age_and_education.png",
     path_to_save_labor_supply_all_by_age: Annotated[Path, Product] = BLD
     / "plots"
     / "raw_moments"
@@ -88,8 +92,10 @@ def task_plot_empirical_soep_moments(
     start_age = specs["start_age"]
     end_age = specs["end_age_msm"]
 
-    df = pd.read_csv(path_to_main_sample, index_col=[0])
-    df = df[(df["sex"] == 1) & (df["age"] <= end_age + 10)].copy()  # women only
+    df_full = pd.read_csv(path_to_main_sample, index_col=[0])
+    df = df_full[
+        (df_full["sex"] == 1) & (df_full["age"] <= end_age + 10)
+    ].copy()  # women only
 
     df_non_caregivers = df[df["any_care"] == 0].copy()
 
@@ -109,6 +115,29 @@ def task_plot_empirical_soep_moments(
     # # df_year = df[df["syear"].between(2012, 2018)]
 
     df["kidage_youngest"] = df["kidage_youngest"] - 1
+
+    # df_wealth = pd.read_csv(path_to_wealth_sample, index_col=[0])
+    df_wealth = df_full.copy()
+    df_wealth["adjusted_wealth"] = df_wealth["wealth"] / specs["wealth_unit"]
+    df_wealth = df_wealth[df_wealth["sex"] == 1].copy()
+    wealth_mask = df_wealth["adjusted_wealth"] < df_wealth["adjusted_wealth"].quantile(
+        0.98
+    )
+    trimmed = df_wealth.loc[wealth_mask, ["age", "adjusted_wealth", "education"]].copy()
+
+    # Wealth
+    plot_wealth_emp(
+        data_emp=trimmed,
+        # data_emp=df_wealth,
+        specs=specs,
+        wealth_var_emp="adjusted_wealth",
+        median=False,
+        age_min=30,
+        age_max=100,
+        path_to_save_plot=path_to_save_wealth,
+    )
+
+    # Labor supply
 
     plot_choice_shares_by_education_emp(
         data_emp=df,
@@ -181,6 +210,111 @@ def task_plot_empirical_soep_moments(
         bin_width=5,
         path_to_save_plot=path_to_save_labor_supply_intensive_caregivers_by_age_bins,
     )
+
+
+# ======================================================================================
+# Wealth
+# ======================================================================================
+
+
+def plot_wealth_emp(
+    data_emp: pd.DataFrame,
+    specs: dict,
+    *,
+    wealth_var_emp: str,
+    median: bool = False,
+    age_min: int | None = None,
+    age_max: int | None = None,
+    path_to_save_plot: str | None = None,
+):
+    """
+    Plot empirical average/median wealth by age and education only.
+    Parameters
+    ----------
+    data_emp : DataFrame
+        Must include columns: 'age', 'education', and the wealth variable.
+    specs : dict
+        Expects:
+          - 'start_age', 'end_age_msm'
+          - 'education_labels' : list[str]
+    wealth_var_emp : str
+        Column name of wealth in the empirical dataset.
+    median : bool, default False
+        If True, plot median; else plot mean.
+    age_min, age_max : int | None
+        Plot range. Defaults to [specs['start_age'], specs['end_age_msm']].
+    path_to_save_plot : str | None
+        If provided, saves the figure.
+    """
+    # ---------- 0. Setup ----------
+    if age_min is None:
+        age_min = specs["start_age"]
+    if age_max is None:
+        age_max = specs["end_age_msm"]
+    ages = range(age_min, age_max + 1)
+    stat_name = "Median" if median else "Average"
+
+    n_edu = len(specs["education_labels"])
+    fig, axs = plt.subplots(1, n_edu, figsize=(5 * n_edu, 4), sharex=True, sharey=True)
+    if n_edu == 1:
+        axs = np.array([axs])
+
+    agg = (
+        (lambda s: s.median(skipna=True)) if median else (lambda s: s.mean(skipna=True))
+    )
+
+    # ---------- 1. Loop over education groups ----------
+    all_values = []
+    for edu_idx, edu_label in enumerate(specs["education_labels"]):
+        ax = axs[edu_idx]
+
+        emp_edu = data_emp[data_emp["education"] == edu_idx]
+        emp_series = (
+            emp_edu.groupby("age")[wealth_var_emp]
+            .apply(agg)
+            .reindex(ages, fill_value=np.nan)
+        )
+
+        all_values.extend(emp_series.dropna().tolist())
+
+        ax.plot(ages, emp_series.values, color="black", ls="-", label="Observed")
+
+        # Add internal x padding (5% of the range)
+        xrange = age_max - age_min
+        pad = int(0.05 * xrange)
+        ax.set_xlim(age_min - pad, age_max + pad)
+
+        ax.set_xlabel("Age")
+        ax.set_title(edu_label)
+        ax.grid(True, alpha=0.2)
+
+        if edu_idx == 0:
+            ax.set_ylabel(f"{stat_name} wealth")
+            # ax.legend()
+        else:
+            ax.tick_params(labelleft=False)
+
+    # ---------- 2. Common y-limits ----------
+    if all_values:
+        ymin, ymax = np.nanmin(all_values), np.nanmax(all_values)
+        pad = 0.05 * (ymax - ymin)
+        for ax in axs:
+            ax.set_ylim(ymin - pad, ymax + pad)
+
+    # ---------- 3. Add left y-axis to right panel too ----------
+    axs[-1].yaxis.set_ticks_position("left")
+    axs[-1].yaxis.set_label_position("left")
+    axs[-1].set_ylabel(f"{stat_name} wealth")
+
+    plt.tight_layout()
+
+    if path_to_save_plot:
+        plt.savefig(path_to_save_plot, dpi=300, transparent=False)
+
+
+# ======================================================================================
+# Labor supply choices
+# ======================================================================================
 
 
 def plot_choice_shares_by_education_emp(
