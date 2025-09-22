@@ -8,8 +8,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 from pytask import Product
 
 from caregiving.config import BLD, JET_COLOR_MAP, SRC
@@ -22,6 +20,51 @@ from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.simulation.task_generate_initial_conditions import (
     draw_start_wealth_dist,
 )
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
+
+
+def task_plot_initial_conditions_wealth(
+    path_to_wealth_old: Path = BLD / "model" / "initial_conditions" / "wealth_old.csv",
+    path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
+    path_to_save: Annotated[Path, Product] = BLD
+    / "plots"
+    / "initial_conditions"
+    / "initial_wealth_distributions.png",
+):
+
+    wealth_old = pd.read_csv(path_to_wealth_old)
+    wealth_new = pd.read_csv(path_to_wealth)
+
+    plt.figure(figsize=(9, 6))
+
+    # raw data histograms
+    plt.hist(
+        wealth_old["wealth"],
+        bins=50,
+        density=True,
+        alpha=0.3,
+        label="Wealth (old, raw)",
+    )
+    plt.hist(
+        wealth_new["wealth"],
+        bins=50,
+        density=True,
+        alpha=0.3,
+        label="Wealth (new, raw)",
+    )
+
+    # smoothed KDE curves
+    wealth_old["wealth"].plot(kind="kde", lw=2, label="Wealth (old, KDE)")
+    wealth_new["wealth"].plot(kind="kde", lw=2, label="Wealth (new, KDE)")
+
+    plt.xlabel("Wealth")
+    plt.ylabel("Density")
+    plt.title("Wealth Distributions: Raw + Smoothed")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(path_to_save, dpi=300)
+    plt.close()
 
 
 def task_plot_initial_wealth(
