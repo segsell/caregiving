@@ -24,6 +24,7 @@ from caregiving.model.shared import (
     PARENT_DEAD,
     SEX,
     WORK_AND_UNEMPLOYED_NO_CARE,
+    WEALTH_QUANTILE_CUTOFF,
 )
 from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.stochastic_processes.job_transition import (
@@ -77,6 +78,8 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
 
     observed_data = pd.read_csv(path_to_sample, index_col=[0])
     wealth_data = pd.read_csv(path_to_wealth_sample, index_col=[0])
+    wealth_data = wealth_data[wealth_data["wealth"] > 0].copy()
+
     lifetable = pd.read_csv(path_to_lifetable)
     health_sample = pd.read_pickle(path_to_health_sample)
 
@@ -104,10 +107,6 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     min_period = observed_data["period"].min()
     start_period_data = observed_data[observed_data["period"].isin([min_period])].copy()
     start_period_data = start_period_data[start_period_data["wealth"].notnull()].copy()
-
-    wealth_data = wealth_data[
-        (wealth_data["age"] == 30) & (wealth_data["wealth"] > 0)
-    ].copy()
 
     # =================================================================================
     # Static state variables
@@ -145,6 +144,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     states_dict["care_demand"] = np.zeros_like(start_period_data["wealth"])
     states_dict["experience"] = start_period_data["experience"].values
     states_dict["wealth"] = start_period_data["wealth"].values / specs["wealth_unit"]
+
     # states_dict["adjusted_wealth"] = wealth_data["wealth"].values / specs["wealth_unit"]
     start_period_data.loc[:, "adjusted_wealth"] = adjust_observed_wealth(
         observed_states_dict=states_dict,
@@ -152,6 +152,12 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         model=model,
     )
     wealth_data["adjusted_wealth"] = wealth_data["wealth"].values / specs["wealth_unit"]
+    # wealth_mask = wealth_data["adjusted_wealth"] < wealth_data[
+    #     "adjusted_wealth"
+    # ].quantile(WEALTH_QUANTILE_CUTOFF)
+    # wealth_data = wealth_data.loc[
+    #     wealth_mask, ["age", "sex", "adjusted_wealth", "education"]
+    # ].copy()
 
     # # Generate container
     # sex_agents = np.array([], np.uint8)
@@ -262,9 +268,20 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
             (start_period_data["sex"] == sex_var)
             & (start_period_data["education"] == edu)
         ]
+
+        # 1. Condition on education
         wealth_period_data_edu = wealth_data[
             (wealth_data["sex"] == sex_var) & (wealth_data["education"] == edu)
         ]
+        # 2. Restrict quantile
+        wealth_mask = wealth_period_data_edu[
+            "adjusted_wealth"
+        ] < wealth_period_data_edu["adjusted_wealth"].quantile(WEALTH_QUANTILE_CUTOFF)
+        # 3. Restrict to age 30
+        wealth_period_data_edu = wealth_period_data_edu.loc[
+            wealth_mask & (wealth_period_data_edu["age"] == 30),
+            ["age", "sex", "adjusted_wealth", "education"],
+        ].copy()
 
         n_agents_edu = np.sum(type_mask)
 

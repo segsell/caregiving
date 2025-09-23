@@ -27,6 +27,7 @@ from caregiving.model.shared import (
     SEX,
     WORK,
     WORK_CHOICES,
+    WEALTH_QUANTILE_CUTOFF,
 )
 from caregiving.simulation.plot_model_fit import (
     plot_average_savings_decision,
@@ -59,7 +60,7 @@ def task_plot_model_fit(  # noqa: PLR0915
     path_to_caregivers_sample: Path = BLD
     / "data"
     / "soep_structural_caregivers_sample.csv",
-    # path_to_wealth_sample: Path = BLD / "data" / "soep_wealth_and_personal_data.csv",
+    path_to_wealth_sample: Path = BLD / "data" / "soep_wealth_and_personal_data.csv",
     path_to_simulated_data: Path = BLD / "solve_and_simulate" / "simulated_data.pkl",
     path_to_save_wealth_plot: Annotated[Path, Product] = BLD
     / "plots"
@@ -130,7 +131,11 @@ def task_plot_model_fit(  # noqa: PLR0915
     emp_moms = pd.read_csv(path_to_empirical_moments, index_col=[0]).squeeze("columns")
 
     df_emp = pd.read_csv(path_to_empirical_data, index_col=[0])
-    df_emp_wealth = df_emp[(df_emp["wealth"].notna()) & (df_emp["sex"] == 1)].copy()
+    df_emp_wealth = pd.read_csv(path_to_wealth_sample, index_col=[0])
+    df_emp_wealth = df_emp_wealth[
+        (df_emp_wealth["wealth"].notna()) & (df_emp_wealth["sex"] == 1)
+    ].copy()
+
     df_caregivers = pd.read_csv(path_to_caregivers_sample, index_col=[0])
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
     df_sim["sex"] = SEX
@@ -171,6 +176,13 @@ def task_plot_model_fit(  # noqa: PLR0915
     df_emp_wealth["adjusted_wealth"] = (
         df_emp_wealth["wealth"].values / specs["wealth_unit"]
     )
+    wealth_mask = df_emp_wealth["adjusted_wealth"] < df_emp_wealth[
+        "adjusted_wealth"
+    ].quantile(WEALTH_QUANTILE_CUTOFF)
+    df_emp_wealth = df_emp_wealth.loc[
+        wealth_mask, ["age", "sex", "adjusted_wealth", "education"]
+    ].copy()
+
     plot_wealth_by_age_and_education(
         data_emp=df_emp_wealth,
         data_sim=df_sim,

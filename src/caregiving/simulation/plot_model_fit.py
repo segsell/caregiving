@@ -70,8 +70,12 @@ def plot_wealth_by_age_and_education(
     for edu_idx, edu_label in enumerate(specs["education_labels"]):
         ax = axs[edu_idx]
 
-        emp_edu = data_emp[data_emp["education"] == edu_idx]
-        sim_edu = data_sim[data_sim["education"] == edu_idx]
+        emp_edu = data_emp[
+            (data_emp["education"] == edu_idx) & (data_emp["sex"] == SEX)
+        ]
+        sim_edu = data_sim[
+            (data_sim["education"] == edu_idx) & (data_sim["sex"] == SEX)
+        ]
 
         emp_series = (
             emp_edu.groupby("age")[wealth_var_emp]

@@ -50,7 +50,6 @@ def task_solve_and_simulate_start_params(
 ) -> None:
 
     options = pickle.load(path_to_options.open("rb"))
-
     params = yaml.safe_load(path_to_start_params.open("rb"))
 
     model_for_solution = load_and_setup_full_model_for_solution(

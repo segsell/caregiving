@@ -28,6 +28,7 @@ from caregiving.model.shared import (
     UNEMPLOYED,
     UNEMPLOYED_CHOICES,
     WORK,
+    WEALTH_QUANTILE_CUTOFF,
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
 from caregiving.utils import table
@@ -121,7 +122,7 @@ def task_plot_empirical_soep_moments(
     df_wealth["adjusted_wealth"] = df_wealth["wealth"] / specs["wealth_unit"]
     df_wealth = df_wealth[df_wealth["sex"] == 1].copy()
     wealth_mask = df_wealth["adjusted_wealth"] < df_wealth["adjusted_wealth"].quantile(
-        0.98
+        WEALTH_QUANTILE_CUTOFF
     )
     trimmed = df_wealth.loc[wealth_mask, ["age", "adjusted_wealth", "education"]].copy()
 

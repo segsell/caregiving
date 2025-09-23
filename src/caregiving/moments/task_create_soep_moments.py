@@ -31,6 +31,7 @@ from caregiving.model.shared import (
     START_PERIOD_CAREGIVING,
     UNEMPLOYED_CHOICES,
     WORK,
+    WEALTH_QUANTILE_CUTOFF,
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
 from caregiving.utils import table
@@ -79,10 +80,9 @@ def task_create_soep_moments(
 
     # female respondents only
     df_wealth = pd.read_csv(path_to_wealth_sample, index_col=[0])
+    df_wealth = df_wealth[(df_wealth["wealth"] > 0) & (df_wealth["sex"] == SEX)].copy()
     df_wealth["adjusted_wealth"] = df_wealth["wealth"] / specs["wealth_unit"]
 
-    # female respondents only
-    df_wealth = df_wealth[df_wealth["sex"] == SEX].copy()
     df_wealth_low = df_wealth[df_wealth["education"] == 0]
     df_wealth_high = df_wealth[df_wealth["education"] == 1]
 
@@ -142,7 +142,7 @@ def task_create_soep_moments(
         variances,
         wealth_var="adjusted_wealth",
         age_range=age_range_wealth,
-        quantile=0.98,
+        quantile=WEALTH_QUANTILE_CUTOFF,
         label="wealth_low_education",
     )
     moments, variances = compute_mean_wealth_by_age(
@@ -151,7 +151,7 @@ def task_create_soep_moments(
         variances,
         wealth_var="adjusted_wealth",
         age_range=age_range_wealth,
-        quantile=0.98,
+        quantile=WEALTH_QUANTILE_CUTOFF,
         label="wealth_high_education",
     )
 
@@ -241,7 +241,7 @@ def task_create_soep_moments(
 
     # =================================================================================
     # caregiver_shares = {
-    #     "share_informal_care_age_bin_40_45": 0.02980982,
+    #     "share_informal_care_age_bin_40_45": WEALTH_QUANTILE_CUTOFF980982,
     #     "share_informal_care_age_bin_45_50": 0.04036255,
     #     "share_informal_care_age_bin_50_55": 0.05350986,
     #     "share_informal_care_age_bin_55_60": 0.06193384,
