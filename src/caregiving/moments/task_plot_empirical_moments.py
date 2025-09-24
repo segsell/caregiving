@@ -119,6 +119,7 @@ def task_plot_empirical_soep_moments(
     df["kidage_youngest"] = df["kidage_youngest"] - 1
 
     df_wealth = pd.read_csv(path_to_wealth_sample, index_col=[0])
+    # df_wealth = df_wealth[(df_wealth["wealth"] > 0) & (df_wealth["sex"] == SEX)].copy()
     df_wealth["adjusted_wealth"] = df_wealth["wealth"] / specs["wealth_unit"]
     df_wealth = df_wealth[df_wealth["sex"] == 1].copy()
     wealth_mask = df_wealth["adjusted_wealth"] < df_wealth["adjusted_wealth"].quantile(

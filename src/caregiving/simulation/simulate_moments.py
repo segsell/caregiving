@@ -32,6 +32,7 @@ from caregiving.model.shared import (  # NURSING_HOME_CARE,
     START_PERIOD_CAREGIVING,
     UNEMPLOYED,
     WORK,
+    WEALTH_MOMENTS_SCALE,
 )
 
 SEX = 1
@@ -53,8 +54,8 @@ def simulate_moments_pandas(  # noqa: PLR0915
     end_age = model_params["end_age_msm"]
 
     age_range = range(start_age, end_age + 1)
+    age_range_wealth = range(start_age, 90 + 1)
     age_range_caregivers = range(start_age_caregivers, end_age + 1)
-    age_range_wealth = range(start_age, model_params["end_age"] + 1)
 
     age_bins_caregivers = (
         list(range(40, 75, 5)),  # [40, 45, … , 70]
@@ -701,7 +702,9 @@ def create_mean_by_age(
 
     # 4) Write to moments
     for age in ages:
-        moments[f"mean_{variable}{label}_age_{age}"] = mean_by_age.loc[age]
+        moments[f"mean_{variable}{label}_age_{age}"] = (
+            mean_by_age.loc[age] * WEALTH_MOMENTS_SCALE
+        )
 
     return moments
 
@@ -931,14 +934,14 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
         ind=idx,
         variable="wealth_beginning_of_period",
         min_age=30,
-        max_age=100,
+        max_age=90,
     )
     mean_wealth_by_age_high_educ = get_mean_by_age(
         arr_high_educ,
         ind=idx,
         variable="wealth_beginning_of_period",
         min_age=30,
-        max_age=100,
+        max_age=90,
     )
 
     # Labor shares by education and age
@@ -1637,7 +1640,7 @@ def get_mean_by_age(df_arr, ind, variable, min_age, max_age, age_var=None):
     means: list[jnp.ndarray] = []
     for age in range(min_age, max_age + 1):
         age_mask = age_col == age
-        mean = jnp.nanmean(jnp.where(age_mask, values, jnp.nan))
+        mean = jnp.nanmean(jnp.where(age_mask, values, jnp.nan)) * WEALTH_MOMENTS_SCALE
         means.append(mean)
 
     return means
