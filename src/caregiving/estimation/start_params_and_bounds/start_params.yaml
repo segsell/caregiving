@@ -21,9 +21,11 @@
 # disutil_children_ft_work_high: -0.2
 
 # Utility parameters
-rho: 1.5
-# rho_low: 1.5 #1.98
-# rho_high: 1.5 #1.98
+# rho: 1.5
+rho_low: 1.5 #1.98
+rho_high: 1.5 #1.98
+# rho_bad: 1.5 #1.98
+# rho_good: 1.5 #1.98
 
 rho_bequest_low: 1.5
 rho_bequest_high: 1.5

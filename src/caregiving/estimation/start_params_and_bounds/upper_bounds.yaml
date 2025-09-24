@@ -2,6 +2,8 @@
 rho: 2
 rho_low: 2
 rho_high: 2
+rho_bad: 2
+rho_good: 2
 rho_bequest_low: 2
 rho_bequest_high: 2
 

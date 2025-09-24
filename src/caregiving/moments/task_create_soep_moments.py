@@ -869,7 +869,7 @@ def adjust_and_trim_wealth_data(
     wealth_mask = df["adjusted_wealth"] < df["adjusted_wealth"].quantile(
         WEALTH_QUANTILE_CUTOFF
     )
-    trimmed = df.loc[wealth_mask, ["age", "adjusted_wealth", "education"]].copy()
+    trimmed = df.loc[wealth_mask, ["age", "sex", "adjusted_wealth", "education"]].copy()
 
     return trimmed
 
