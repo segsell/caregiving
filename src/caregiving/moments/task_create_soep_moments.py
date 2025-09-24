@@ -81,7 +81,9 @@ def task_create_soep_moments(
 
     # female respondents only
     df_wealth = pd.read_csv(path_to_wealth_sample, index_col=[0])
+    # df_wealth = pd.read_csv(path_to_wealth_sample, index_col=[0])
     # df_wealth = df_wealth[(df_wealth["wealth"] > 0) & (df_wealth["sex"] == SEX)].copy()
+    df_wealth = df_wealth[df_wealth["sex"] == SEX].copy()
     df_wealth = adjust_and_trim_wealth_data(df=df_wealth, specs=specs)
 
     df_wealth_low = df_wealth[df_wealth["education"] == 0]
@@ -856,6 +858,13 @@ def adjust_and_trim_wealth_data(
 
     df["adjusted_wealth"] = df["wealth"] / specs["wealth_unit"]
     df = df[df["sex"] == SEX].copy()
+
+    # if adjust_wealth:
+    #     df["adjusted_wealth"] = adjust_observed_wealth(
+    #         observed_states_dict=states_dict,
+    #         params=params,
+    #         model=model,
+    #     )
 
     wealth_mask = df["adjusted_wealth"] < df["adjusted_wealth"].quantile(
         WEALTH_QUANTILE_CUTOFF

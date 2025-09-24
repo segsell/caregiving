@@ -22,11 +22,11 @@ disutil_unemployed_and_informal_care_low: 0.2
 disutil_unemployed_high_women: 1.0
 disutil_unemployed_low_women: 1.0
 interest_rate: 0.03
-job_finding_logit_age_cubed_women: -3.162982266453729e-05
-job_finding_logit_age_squared_women: 0.0016012387939461
-job_finding_logit_age_women: 0.0065131540323549
-job_finding_logit_const_women: -2.03524742129707
-job_finding_logit_high_educ_women: 0.6955095961575429
+job_finding_logit_age_cubed_women: -3.974860752491693e-05
+job_finding_logit_age_squared_women: 0.0028610672124571
+job_finding_logit_age_women: -0.0525479911656818
+job_finding_logit_const_women: -1.1536027753420903
+job_finding_logit_high_educ_women: 0.7192478200816665
 lambda: 0.5
 rho: 1.5
 rho_bequest_high: 1.5

@@ -123,38 +123,132 @@ def deflate_wealth(df, cpi_data, specs):
 # =====================================================================================
 
 
-def task_create_household_wealth_sample(
-    path_to_specs: Path = SRC / "specs.yaml",
-    path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
-    soep_c40_hwealth: Path = SRC / "data" / "soep_c40" / "hwealth.dta",
-    soep_c40_pgen: Path = SRC / "data" / "soep_c40" / "pgen.dta",
-    soep_c40_ppathl: Path = SRC / "data" / "soep_c40" / "ppathl.dta",
-    soep_c40_pl: Path = SRC / "data" / "soep_c40" / "pl.dta",
-    soep_c40_pequiv: Path = SRC / "data" / "soep_c40" / "pequiv.dta",
-    # path_to_save_wealth: Annotated[Path, Product] = BLD
-    # / "data"
-    # / "soep_wealth_data.csv",
-    path_to_save_wealth_and_personal: Annotated[Path, Product] = BLD
-    / "data"
-    / "soep_wealth_and_personal_data.csv",
-) -> None:
-    #     # def add_wealth_interpolate_and_deflate(
-    #     data,
-    #     path_dict,
-    #     specs,
-    #     filter_missings=True,
-    #     load_wealth=False,
-    #     use_processed_pl=True,
-    # ):
-    """Load household wealth, span to a full (hid, year) panel, deflate by CPI,
-    set negatives to zero, and merge onto the person-year data. No interpolation or extrapolation.
+# def task_create_household_wealth_sample(
+#     path_to_specs: Path = SRC / "specs.yaml",
+#     path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
+#     soep_c40_hwealth: Path = SRC / "data" / "soep_c40" / "hwealth.dta",
+#     soep_c40_pgen: Path = SRC / "data" / "soep_c40" / "pgen.dta",
+#     soep_c40_ppathl: Path = SRC / "data" / "soep_c40" / "ppathl.dta",
+#     soep_c40_pl: Path = SRC / "data" / "soep_c40" / "pl.dta",
+#     soep_c40_pequiv: Path = SRC / "data" / "soep_c40" / "pequiv.dta",
+#     # path_to_save_wealth: Annotated[Path, Product] = BLD
+#     # / "data"
+#     # / "soep_wealth_data.csv",
+#     path_to_save_wealth_and_personal: Annotated[Path, Product] = BLD
+#     / "data"
+#     / "soep_wealth_and_personal_data.csv",
+# ) -> None:
+#     #     # def add_wealth_interpolate_and_deflate(
+#     #     data,
+#     #     path_dict,
+#     #     specs,
+#     #     filter_missings=True,
+#     #     load_wealth=False,
+#     #     use_processed_pl=True,
+#     # ):
+#     """Load household wealth, span to a full (hid, year) panel, deflate by CPI,
+#     set negatives to zero, and merge onto the person-year data. No interpolation or extrapolation.
 
-    https://paneldata.org/soep-core/datasets/hwealth/w011ha
+#     https://paneldata.org/soep-core/datasets/hwealth/w011ha
 
-    Drop negative wealth values or set to zero?
+#     Drop negative wealth values or set to zero?
 
-    """
-    specs = read_and_derive_specs(path_to_specs)
+#     """
+#     specs = read_and_derive_specs(path_to_specs)
+#     cpi = pd.read_csv(path_to_cpi, index_col=0)
+#     cpi.rename(columns={"int_year": "syear"}, inplace=True)
+#     cpi.set_index("syear", inplace=True)
+#     # cpi.index.name = "syear    cpi.index.name = "syear""
+
+#     # 1) Load raw household wealth (hwealth.dta)
+#     wealth_data = pd.read_stata(
+#         soep_c40_hwealth,
+#         columns=["hid", "syear", "w011ha"],
+#         convert_categoricals=False,
+#     )
+#     wealth_data["hid"] = wealth_data["hid"].astype(int)
+#     wealth_data.set_index(["hid", "syear"], inplace=True)
+#     wealth_data.rename(columns={"w011ha": "wealth"}, inplace=True)
+
+#     print(
+#         "Number of wealth observations per survey year:"
+#         f" {wealth_data.groupby('syear')['wealth'].count()}"
+#     )
+
+#     # 4) Deflate wealth (CPI)
+#     wealth_data = deflate_wealth(wealth_data, cpi_data=cpi, specs=specs)
+
+#     # 2) Span to complete (hid × syear) within analysis window
+#     wealth_data_full = span_full_wealth_panel(wealth_data, specs)
+
+#     # 3) Attach personal data (age, partner flag, children, etc.) on (hid, syear)
+#     personal_data = perpare_personal_data(
+#         soep_c40_pgen, soep_c40_ppathl, soep_c40_pl, soep_c40_pequiv, specs=specs
+#     )
+#     wealth_and_personal_data = wealth_data_full.merge(
+#         personal_data, right_index=True, left_index=True, how="left"
+#     )
+
+#     # Interpolate wealth for each household (consistent hh size)
+#     wealth_and_personal_data = interpolate_and_extrapolate_wealth(
+#         wealth_and_personal_data
+#     )
+
+#     # 5) No negatives
+#     wealth_and_personal_data.loc[wealth_and_personal_data["wealth"] < 0, "wealth"] = 0
+
+#     wealth_and_personal_data = recode_sex(wealth_and_personal_data)
+#     wealth_and_personal_data = create_education_type(wealth_and_personal_data)
+#     wealth_and_personal_data = wealth_and_personal_data[
+#         wealth_and_personal_data["sex"] >= 0
+#     ]
+
+#     # 6) Keep one row per (hid, syear)
+#     # wealth_and_personal_data = (
+#     #     wealth_and_personal_data[["wealth"]].reset_index()
+#     #     .drop_duplicates(subset=["hid", "pid", "syear"])
+#     # )
+#     wealth_and_personal_data = wealth_and_personal_data.reset_index().drop_duplicates(
+#         subset=["hid", "syear", "pid"]
+#     )
+
+#     wealth_and_personal_data = wealth_and_personal_data[
+#         wealth_and_personal_data["wealth"].notna()
+#     ]
+#     wealth_and_personal_data.to_csv(path_to_save_wealth_and_personal)
+#     # wealth_and_personal_data.to_pickle(file_name)
+
+#     # # Merge onto person-year data
+#     # data = data.reset_index()
+#     # data = data.merge(wealth_data_full, on=["hid", "syear"], how="left")
+#     # data.set_index(["pid", "syear"], inplace=True)
+
+#     # # if filter_missings:
+#     # data = data[data["wealth"].notna()]
+#     # print(str(len(data)) + " left after dropping people with missing wealth.")
+
+#     # data.to_csv(path_to_save_wealth_and_personal)
+
+#     # ==================================================================================
+
+#     # Plotting
+#     # plot_wealth_by_age_bins_and_age(
+#     #     df=wealth_and_personal_data, specs=specs, bin_width=5, edu_col="education"
+#     # )
+
+
+def add_wealth_deflate_and_interpolate(
+    data,
+    specs,
+    filter_missings,
+    path_to_cpi=SRC / "data" / "statistical_office" / "cpi_germany.csv",
+    soep_c40_hwealth=SRC / "data" / "soep_c40" / "hwealth.dta",
+    soep_c40_pgen=SRC / "data" / "soep_c40" / "pgen.dta",
+    soep_c40_ppathl=SRC / "data" / "soep_c40" / "ppathl.dta",
+    soep_c40_pl=SRC / "data" / "soep_c40" / "pl.dta",
+    soep_c40_pequiv=SRC / "data" / "soep_c40" / "pequiv.dta",
+):
+
     cpi = pd.read_csv(path_to_cpi, index_col=0)
     cpi.rename(columns={"int_year": "syear"}, inplace=True)
     cpi.set_index("syear", inplace=True)
@@ -197,44 +291,27 @@ def task_create_household_wealth_sample(
     # 5) No negatives
     wealth_and_personal_data.loc[wealth_and_personal_data["wealth"] < 0, "wealth"] = 0
 
-    wealth_and_personal_data = recode_sex(wealth_and_personal_data)
-    wealth_and_personal_data = create_education_type(wealth_and_personal_data)
-    wealth_and_personal_data = wealth_and_personal_data[
-        wealth_and_personal_data["sex"] >= 0
-    ]
-
-    # 6) Keep one row per (hid, syear)
-    # wealth_and_personal_data = (
-    #     wealth_and_personal_data[["wealth"]].reset_index()
-    #     .drop_duplicates(subset=["hid", "pid", "syear"])
-    # )
-    wealth_and_personal_data = wealth_and_personal_data.reset_index().drop_duplicates(
-        subset=["hid", "syear", "pid"]
-    )
-
-    wealth_and_personal_data = wealth_and_personal_data[
-        wealth_and_personal_data["wealth"].notna()
-    ]
-    wealth_and_personal_data.to_csv(path_to_save_wealth_and_personal)
-    # wealth_and_personal_data.to_pickle(file_name)
-
-    # # Merge onto person-year data
-    # data = data.reset_index()
-    # data = data.merge(wealth_data_full, on=["hid", "syear"], how="left")
-    # data.set_index(["pid", "syear"], inplace=True)
-
-    # # if filter_missings:
-    # data = data[data["wealth"].notna()]
-    # print(str(len(data)) + " left after dropping people with missing wealth.")
-
-    # data.to_csv(path_to_save_wealth_and_personal)
-
     # ==================================================================================
 
-    # Plotting
-    # plot_wealth_by_age_bins_and_age(
-    #     df=wealth_and_personal_data, specs=specs, bin_width=5, edu_col="education"
-    # )
+    # 6) Keep one row per (hid, syear)
+    # We only keep one wealth obs per household and year
+    wealth_and_personal_one_hid = (
+        wealth_and_personal_data[["wealth"]]
+        .reset_index()
+        .drop_duplicates(subset=["hid", "syear"])
+        .drop("pid", axis=1)
+    )
+
+    # 7) Now merge with existing dataset on hid and syear
+    data = data.reset_index()
+    data = data.merge(wealth_and_personal_one_hid, on=["hid", "syear"], how="left")
+    data.set_index(["pid", "syear"], inplace=True)
+
+    if filter_missings:
+        data = data[(data["wealth"].notna())]
+        print(str(len(data)) + " left after dropping people with missing wealth.")
+
+    return data
 
 
 def span_full_wealth_panel(wealth_data, specs):

@@ -34,6 +34,9 @@ from caregiving.data_management.soep.variables import (
     determine_observed_job_offers,
     generate_job_separation_var,
 )
+from caregiving.data_management.soep.task_create_wealth_sample_new import (
+    add_wealth_deflate_and_interpolate,
+)
 from caregiving.model.shared import PART_TIME_CHOICES, RETIREMENT_CHOICES, WORK_CHOICES
 from caregiving.specs.task_write_specs import read_and_derive_specs
 from caregiving.utils import table
@@ -43,12 +46,19 @@ def task_create_main_estimation_sample(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_raw: Path = BLD / "data" / "soep_estimation_data_raw.csv",
     path_to_wealth: Path = BLD / "data" / "soep_wealth_data.csv",
+    path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
+    soep_c40_hwealth: Path = SRC / "data" / "soep_c40" / "hwealth.dta",
+    soep_c40_pgen: Path = SRC / "data" / "soep_c40" / "pgen.dta",
+    soep_c40_ppathl: Path = SRC / "data" / "soep_c40" / "ppathl.dta",
+    soep_c40_pl: Path = SRC / "data" / "soep_c40" / "pl.dta",
+    soep_c40_pequiv: Path = SRC / "data" / "soep_c40" / "pequiv.dta",
     path_to_save: Annotated[Path, Product] = BLD
     / "data"
     / "soep_structural_estimation_sample.csv",
 ) -> None:
 
     specs = read_and_derive_specs(path_to_specs)
+    specs["start_age"] = specs["start_age"] - 1
     # specs["start_year"] = 2001
     # specs["end_year"] = 2023
 
@@ -86,8 +96,19 @@ def task_create_main_estimation_sample(
     # df.drop(columns=["retire_flag"], inplace=True)
     # df.set_index(["pid", "syear"], inplace=True)
 
-    wealth = pd.read_csv(path_to_wealth, index_col=[0])
-    df = add_wealth_data(df, wealth, drop_missing=False)
+    # wealth = pd.read_csv(path_to_wealth, index_col=[0])
+    # df = add_wealth_data(df, wealth, drop_missing=False)
+    df = add_wealth_deflate_and_interpolate(
+        df,
+        specs,
+        filter_missings=True,
+        path_to_cpi=path_to_cpi,
+        soep_c40_hwealth=soep_c40_hwealth,
+        soep_c40_pgen=soep_c40_pgen,
+        soep_c40_ppathl=soep_c40_ppathl,
+        soep_c40_pl=soep_c40_pl,
+        soep_c40_pequiv=soep_c40_pequiv,
+    )
 
     df["period"] = df["age"] - specs["start_age"]
 
@@ -161,152 +182,152 @@ def task_create_main_estimation_sample(
     df.to_csv(path_to_save)
 
 
-@pytask.mark.check
-def task_create_caregivers_sample(
-    path_to_specs: Path = SRC / "specs.yaml",
-    path_to_raw: Path = BLD / "data" / "soep_estimation_data_raw.csv",
-    path_to_wealth: Path = BLD / "data" / "soep_wealth_data.csv",
-    path_to_save: Annotated[Path, Product] = BLD
-    / "data"
-    / "soep_structural_caregivers_sample.csv",
-) -> None:
+# @pytask.mark.check
+# def task_create_caregivers_sample(
+#     path_to_specs: Path = SRC / "specs.yaml",
+#     path_to_raw: Path = BLD / "data" / "soep_estimation_data_raw.csv",
+#     path_to_wealth: Path = BLD / "data" / "soep_wealth_data.csv",
+#     path_to_save: Annotated[Path, Product] = BLD
+#     / "data"
+#     / "soep_structural_caregivers_sample.csv",
+# ) -> None:
 
-    specs = read_and_derive_specs(path_to_specs)
+#     specs = read_and_derive_specs(path_to_specs)
 
-    # merged_data = pd.read_csv(path_to_raw, index_col=[0, 1])
-    df = pd.read_csv(path_to_raw, index_col=[0, 1])
+#     # merged_data = pd.read_csv(path_to_raw, index_col=[0, 1])
+#     df = pd.read_csv(path_to_raw, index_col=[0, 1])
 
-    df = create_partner_state(df, filter_missing=True)
-    df = create_kidage_youngest(df)
+#     df = create_partner_state(df, filter_missing=True)
+#     df = create_kidage_youngest(df)
 
-    df = create_parent_info(df, filter_missing=False)
-    df = create_sibling_info(df, filter_missing=False)
+#     df = create_parent_info(df, filter_missing=False)
+#     df = create_sibling_info(df, filter_missing=False)
 
-    df = create_choice_variable(df)
-    df = create_caregiving(df, filter_missing=False)
+#     df = create_choice_variable(df)
+#     df = create_caregiving(df, filter_missing=False)
 
-    # filter data. Leave additional years in for lagging and leading.
-    # df = filter_data(df, specs)
-    df = filter_below_age(df, specs["start_age"] - 1)
-    df = recode_sex(df)
-    df = filter_years(df, start_year=2001, end_year=2023)
-    syear_counts = df.index.get_level_values("syear").value_counts().sort_index()
-    print("Number of observations per year in the sample:\n" + str(syear_counts))
+#     # filter data. Leave additional years in for lagging and leading.
+#     # df = filter_data(df, specs)
+#     df = filter_below_age(df, specs["start_age"] - 1)
+#     df = recode_sex(df)
+#     df = filter_years(df, start_year=2001, end_year=2023)
+#     syear_counts = df.index.get_level_values("syear").value_counts().sort_index()
+#     print("Number of observations per year in the sample:\n" + str(syear_counts))
 
-    df = generate_job_separation_var(df)
-    df = create_lagged_and_lead_variables(
-        df,
-        specs,
-        lead_job_sep=True,
-        drop_missing_lagged_choice=False,
-        start_year=2001,
-        end_year=2023,
-    )
-    # df["lagged_care"] = df.groupby(["pid"])["any_care"].shift(1)
+#     df = generate_job_separation_var(df)
+#     df = create_lagged_and_lead_variables(
+#         df,
+#         specs,
+#         lead_job_sep=True,
+#         drop_missing_lagged_choice=False,
+#         start_year=2001,
+#         end_year=2023,
+#     )
+#     # df["lagged_care"] = df.groupby(["pid"])["any_care"].shift(1)
 
-    df = create_alreay_retired_variable(df)
-    # df = df.reset_index()
-    # df = df.sort_values(["pid", "syear"])
+#     df = create_alreay_retired_variable(df)
+#     # df = df.reset_index()
+#     # df = df.sort_values(["pid", "syear"])
 
-    # retired_values = np.asarray(RETIREMENT).ravel().tolist()
-    # df["retire_flag"] = (
-    #     df["lagged_choice"].isin(retired_values) & df["choice"].isin(retired_values)
-    # ).astype(int)
-    # df["already_retired"] = df.groupby("pid")["retire_flag"].cummax()
+#     # retired_values = np.asarray(RETIREMENT).ravel().tolist()
+#     # df["retire_flag"] = (
+#     #     df["lagged_choice"].isin(retired_values) & df["choice"].isin(retired_values)
+#     # ).astype(int)
+#     # df["already_retired"] = df.groupby("pid")["retire_flag"].cummax()
 
-    # df.drop(columns=["retire_flag"], inplace=True)
-    # df.set_index(["pid", "syear"], inplace=True)
+#     # df.drop(columns=["retire_flag"], inplace=True)
+#     # df.set_index(["pid", "syear"], inplace=True)
 
-    wealth = pd.read_csv(path_to_wealth, index_col=[0])
-    df = add_wealth_data(df, wealth, drop_missing=False)
+#     wealth = pd.read_csv(path_to_wealth, index_col=[0])
+#     df = add_wealth_data(df, wealth, drop_missing=False)
 
-    df["period"] = df["age"] - specs["start_age"]
+#     df["period"] = df["age"] - specs["start_age"]
 
-    df = create_policy_state(df, specs)
-    df = create_experience_variable(df)
-    df = create_education_type(df)
-    df = create_health_var_good_bad(df, drop_missing=False)
-    df = create_nursing_home(df)
+#     df = create_policy_state(df, specs)
+#     df = create_experience_variable(df)
+#     df = create_education_type(df)
+#     df = create_health_var_good_bad(df, drop_missing=False)
+#     df = create_nursing_home(df)
 
-    df = enforce_model_choice_restriction(df, specs)
+#     df = enforce_model_choice_restriction(df, specs)
 
-    # Construct job offer state
-    was_fired_last_period = df["job_sep_this_year"] == 1
-    df = determine_observed_job_offers(
-        df, working_choices=WORK_CHOICES, was_fired_last_period=was_fired_last_period
-    )
+#     # Construct job offer state
+#     was_fired_last_period = df["job_sep_this_year"] == 1
+#     df = determine_observed_job_offers(
+#         df, working_choices=WORK_CHOICES, was_fired_last_period=was_fired_last_period
+#     )
 
-    # Filter out part-time men
-    part_time_values = np.asarray(PART_TIME_CHOICES).ravel().tolist()
-    mask = df["sex"] == 0
-    df = df.loc[~(mask & df["choice"].isin(part_time_values))]
-    df = df.loc[~(mask & df["lagged_choice"].isin(part_time_values))]
+#     # Filter out part-time men
+#     part_time_values = np.asarray(PART_TIME_CHOICES).ravel().tolist()
+#     mask = df["sex"] == 0
+#     df = df.loc[~(mask & df["choice"].isin(part_time_values))]
+#     df = df.loc[~(mask & df["lagged_choice"].isin(part_time_values))]
 
-    df["has_sister"] = (df["n_sisters"] > 0).astype(int)
-    df["mother_age_diff"] = df["mother_age"] - df["age"]
-    df["father_age_diff"] = df["father_age"] - df["age"]
+#     df["has_sister"] = (df["n_sisters"] > 0).astype(int)
+#     df["mother_age_diff"] = df["mother_age"] - df["age"]
+#     df["father_age_diff"] = df["father_age"] - df["age"]
 
-    # _obs_per_pid = df.groupby("pid").size().rename("n_obs")
+#     # _obs_per_pid = df.groupby("pid").size().rename("n_obs")
 
-    # Keep relevant columns (i.e. state variables) and set their minimal datatype
-    type_dict = {
-        "syear": "int16",
-        "gebjahr": "int16",
-        "age": "int8",
-        "period": "int8",
-        "choice": "int8",
-        "lagged_choice": "float32",  # can be NA
-        "policy_state": "int8",
-        "policy_state_value": "int8",
-        "already_retired": "int8",
-        "partner_state": "int8",
-        "job_offer": "int8",
-        "experience": "int8",
-        "wealth": "float32",
-        "education": "int8",
-        "health": "float16",  # can be NA
-        "nursing_home": "float16",
-        "sex": "int8",
-        "children": "int8",
-        "kidage_youngest": "int8",
-        # caregiving, contains nans
-        "any_care": "float32",
-        "light_care": "float32",
-        "intensive_care": "float32",
-        "has_sister": "float32",
-        "mother_age_diff": "float32",
-        "father_age_diff": "float32",
-        "mother_alive": "float32",
-        "father_alive": "float32",
-    }
+#     # Keep relevant columns (i.e. state variables) and set their minimal datatype
+#     type_dict = {
+#         "syear": "int16",
+#         "gebjahr": "int16",
+#         "age": "int8",
+#         "period": "int8",
+#         "choice": "int8",
+#         "lagged_choice": "float32",  # can be NA
+#         "policy_state": "int8",
+#         "policy_state_value": "int8",
+#         "already_retired": "int8",
+#         "partner_state": "int8",
+#         "job_offer": "int8",
+#         "experience": "int8",
+#         "wealth": "float32",
+#         "education": "int8",
+#         "health": "float16",  # can be NA
+#         "nursing_home": "float16",
+#         "sex": "int8",
+#         "children": "int8",
+#         "kidage_youngest": "int8",
+#         # caregiving, contains nans
+#         "any_care": "float32",
+#         "light_care": "float32",
+#         "intensive_care": "float32",
+#         "has_sister": "float32",
+#         "mother_age_diff": "float32",
+#         "father_age_diff": "float32",
+#         "mother_alive": "float32",
+#         "father_alive": "float32",
+#     }
 
-    # #
-    # df = df.reset_index(level=["syear", "pid"])
-    # df["age_at_first_care"] = (
-    #     df.loc[df["any_care"] == 1].groupby("pid")["age"].transform("min")
-    # )
+#     # #
+#     # df = df.reset_index(level=["syear", "pid"])
+#     # df["age_at_first_care"] = (
+#     #     df.loc[df["any_care"] == 1].groupby("pid")["age"].transform("min")
+#     # )
 
-    # first_care = df.loc[df["any_care"] == 1].groupby("pid")["age"].min()
-    # df["_age_at_first_care"] = df["pid"].map(first_care)
+#     # first_care = df.loc[df["any_care"] == 1].groupby("pid")["age"].min()
+#     # df["_age_at_first_care"] = df["pid"].map(first_care)
 
-    # mean_first_care_age = (
-    #     df.query("any_care == 1")
-    #     .groupby("pid")["age"]
-    #     .min()  # one value per pid
-    #     .mean()  # sample mean over those who ever provided care
-    # )
-    # _mean_first_care_age = df.drop_duplicates("pid")["age_at_first_care"].mean()
-    # #
+#     # mean_first_care_age = (
+#     #     df.query("any_care == 1")
+#     #     .groupby("pid")["age"]
+#     #     .min()  # one value per pid
+#     #     .mean()  # sample mean over those who ever provided care
+#     # )
+#     # _mean_first_care_age = df.drop_duplicates("pid")["age_at_first_care"].mean()
+#     # #
 
-    df = df.reset_index(level="syear")
-    df = df[list(type_dict.keys())]
-    df = df.astype(type_dict)
+#     df = df.reset_index(level="syear")
+#     df = df[list(type_dict.keys())]
+#     df = df.astype(type_dict)
 
-    # print_data_description(df)
+#     # print_data_description(df)
 
-    # Anonymize and save data
-    df.reset_index(drop=True, inplace=True)
-    df.to_csv(path_to_save)
+#     # Anonymize and save data
+#     df.reset_index(drop=True, inplace=True)
+#     df.to_csv(path_to_save)
 
 
 def add_wealth_data(data, wealth, drop_missing=False):

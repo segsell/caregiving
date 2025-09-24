@@ -148,13 +148,22 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     states_dict["experience"] = start_period_data["experience"].values
     states_dict["wealth"] = start_period_data["wealth"].values / specs["wealth_unit"]
 
-    # states_dict["adjusted_wealth"] = wealth_data["wealth"].values / specs["wealth_unit"]
-    start_period_data.loc[:, "adjusted_wealth"] = adjust_observed_wealth(
-        observed_states_dict=states_dict,
-        params=params,
-        model=model,
-    )
-    wealth_data["adjusted_wealth"] = wealth_data["wealth"].values / specs["wealth_unit"]
+    # start_period_data.loc[:, "adjusted_wealth"] = adjust_observed_wealth(
+    #     observed_states_dict=states_dict,
+    #     params=params,
+    #     model=model,
+    # )
+    start_period_data.loc[:, "adjusted_wealth"] = states_dict["wealth"]
+
+    # states_dict["wealth"] = wealth_data["wealth"].values / specs["wealth_unit"]
+    # wealth_data.loc[:, "adjusted_wealth"] = adjust_observed_wealth(
+    #     observed_states_dict=states_dict,
+    #     params=params,
+    #     model=model,
+    # )
+    # wealth_data["pre_adjusted_wealth"] = (
+    #     wealth_data["wealth"].values / specs["wealth_unit"]
+    # )
     # wealth_mask = wealth_data["adjusted_wealth"] < wealth_data[
     #     "adjusted_wealth"
     # ].quantile(WEALTH_QUANTILE_CUTOFF)
@@ -273,18 +282,33 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         ]
 
         # 1. Condition on education
-        wealth_period_data_edu = wealth_data[
-            (wealth_data["sex"] == sex_var) & (wealth_data["education"] == edu)
-        ]
-        # 2. Restrict quantile
-        wealth_mask = wealth_period_data_edu[
-            "adjusted_wealth"
-        ] < wealth_period_data_edu["adjusted_wealth"].quantile(WEALTH_QUANTILE_CUTOFF)
-        # 3. Restrict to age 30
-        wealth_period_data_edu = wealth_period_data_edu.loc[
-            wealth_mask & (wealth_period_data_edu["age"] == 30),
-            ["age", "sex", "adjusted_wealth", "education"],
+        wealth_period_data_edu = start_period_data[
+            (start_period_data["sex"] == sex_var)
+            & (start_period_data["education"] == edu)
+            & (start_period_data["wealth"] > 0)
         ].copy()
+        # 2. Restrict quantile
+        # wealth_mask = wealth_period_data_edu[
+        #     "adjusted_wealth"
+        # ] < wealth_period_data_edu["adjusted_wealth"].quantile(WEALTH_QUANTILE_CUTOFF)
+        # wealth_period_data_edu = wealth_period_data_edu.loc[
+        #     wealth_mask,
+        #     ["age", "sex", "adjusted_wealth", "education"],
+        # ].copy()
+
+        # # 1. Condition on education
+        # wealth_period_data_edu = wealth_data[
+        #     (wealth_data["sex"] == sex_var) & (wealth_data["education"] == edu)
+        # ]
+        # # 2. Restrict quantile
+        # wealth_mask = wealth_period_data_edu[
+        #     "adjusted_wealth"
+        # ] < wealth_period_data_edu["adjusted_wealth"].quantile(WEALTH_QUANTILE_CUTOFF)
+        # # 3. Restrict to age 30
+        # wealth_period_data_edu = wealth_period_data_edu.loc[
+        #     wealth_mask & (wealth_period_data_edu["age"] == 30),
+        #     ["age", "sex", "adjusted_wealth", "education"],
+        # ].copy()
 
         n_agents_edu = np.sum(type_mask)
 
@@ -309,11 +333,12 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         )
 
         # Wealth distribution
-        wealth_start_edu = draw_start_wealth_dist(start_period_data_edu, n_agents_edu)
+        # wealth_start_edu = draw_start_wealth_dist(start_period_data_edu, n_agents_edu)
+        wealth_start_edu = draw_start_wealth_dist(wealth_period_data_edu, n_agents_edu)
         wealth_agents[type_mask] = wealth_start_edu
 
-        wealth_edu = draw_start_wealth_dist(wealth_period_data_edu, n_agents_edu)
-        wealth_agents_new[type_mask] = wealth_edu
+        # wealth_edu = draw_start_wealth_dist(wealth_period_data_edu, n_agents_edu)
+        # wealth_agents_new[type_mask] = wealth_edu
 
         # Generate type specific initial experience distribution
         exp_max_edu = start_period_data_edu["experience"].max()
@@ -411,10 +436,10 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         pickle.dump(states, f)
 
     wealth_agents_old_df = pd.DataFrame(wealth_agents, columns=["wealth"])
-    wealth_agents_old_df.to_csv(path_to_save_wealth_old, index=False)
+    wealth_agents_old_df.to_csv(path_to_save_wealth, index=False)
 
-    wealth_agents_df = pd.DataFrame(wealth_agents_new, columns=["wealth"])
-    wealth_agents_df.to_csv(path_to_save_wealth, index=False)
+    # wealth_agents_df = pd.DataFrame(wealth_agents_new, columns=["wealth"])
+    # wealth_agents_df.to_csv(path_to_save_wealth, index=False)
 
 
 def draw_start_wealth_dist(start_period_data_edu, n_agents_edu, method="kde"):
