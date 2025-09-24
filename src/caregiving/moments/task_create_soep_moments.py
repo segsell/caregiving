@@ -82,15 +82,7 @@ def task_create_soep_moments(
     # female respondents only
     df_wealth = pd.read_csv(path_to_wealth_sample, index_col=[0])
     # df_wealth = df_wealth[(df_wealth["wealth"] > 0) & (df_wealth["sex"] == SEX)].copy()
-    df_wealth["adjusted_wealth"] = df_wealth["wealth"] / specs["wealth_unit"]
-    df_wealth = df_wealth[df_wealth["sex"] == SEX].copy()
-    # 1) Percentile trim
-    wealth_mask = df_wealth["adjusted_wealth"] < df_wealth["adjusted_wealth"].quantile(
-        WEALTH_QUANTILE_CUTOFF
-    )
-    df_wealth = df_wealth.loc[
-        wealth_mask, ["age", "sex", "education", "adjusted_wealth"]
-    ].copy()
+    df_wealth = adjust_and_trim_wealth_data(df=df_wealth, specs=specs)
 
     df_wealth_low = df_wealth[df_wealth["education"] == 0]
     df_wealth_high = df_wealth[df_wealth["education"] == 1]
@@ -153,7 +145,6 @@ def task_create_soep_moments(
         variances,
         wealth_var="adjusted_wealth",
         age_range=age_range_wealth,
-        quantile=WEALTH_QUANTILE_CUTOFF,
         label="wealth_low_education",
     )
     moments, variances = compute_mean_wealth_by_age(
@@ -162,7 +153,6 @@ def task_create_soep_moments(
         variances,
         wealth_var="adjusted_wealth",
         age_range=age_range_wealth,
-        quantile=WEALTH_QUANTILE_CUTOFF,
         label="wealth_high_education",
     )
 
@@ -859,12 +849,27 @@ def compute_shares_by_age_bin(
 # =====================================================================================
 
 
+def adjust_and_trim_wealth_data(
+    df: pd.DataFrame,
+    specs: dict,
+):
+
+    df["adjusted_wealth"] = df["wealth"] / specs["wealth_unit"]
+    df = df[df["sex"] == SEX].copy()
+
+    wealth_mask = df["adjusted_wealth"] < df["adjusted_wealth"].quantile(
+        WEALTH_QUANTILE_CUTOFF
+    )
+    trimmed = df.loc[wealth_mask, ["age", "adjusted_wealth", "education"]].copy()
+
+    return trimmed
+
+
 def compute_mean_wealth_by_age(
     df: pd.DataFrame,
     moments: dict,
     variances: dict,
     age_range: list[int] | np.ndarray,
-    quantile: float = 0.95,
     *,
     wealth_var: str = "adjusted_wealth",
     label: str | None = None,
@@ -898,21 +903,15 @@ def compute_mean_wealth_by_age(
     label = f"_{label}" if label else ""
     age_index = pd.Index(age_range, name="age")
 
-    # # 1) Percentile trim
-    # wealth_mask = df[wealth_var] < df[wealth_var].quantile(quantile)
-    # trimmed = df.loc[wealth_mask, ["age", wealth_var]].copy()
-
-    trimmed = df.copy()
-
     # 2) Group by age: raw mean and variance
     base_mean = (
-        trimmed.groupby("age", observed=False)[wealth_var]
+        df.groupby("age", observed=False)[wealth_var]
         .mean()
         .reindex(age_index, fill_value=np.nan)
         .sort_index()
     )
     base_var = (
-        trimmed.groupby("age", observed=False)[wealth_var]
+        df.groupby("age", observed=False)[wealth_var]
         .var(ddof=DEGREES_OF_FREEDOM)
         .reindex(age_index, fill_value=np.nan)
         .sort_index()

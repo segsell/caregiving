@@ -47,6 +47,7 @@ from caregiving.simulation.plot_model_fit import (
     plot_transitions_by_age,
     plot_transitions_by_age_bins,
 )
+from caregiving.moments.task_create_soep_moments import adjust_and_trim_wealth_data
 
 
 def task_plot_model_fit(  # noqa: PLR0915
@@ -127,6 +128,7 @@ def task_plot_model_fit(  # noqa: PLR0915
     model_full = load_and_setup_full_model_for_solution(
         options, path_to_model=path_to_solution_model
     )
+    specs = model_full["options"]["model_params"]
 
     emp_moms = pd.read_csv(path_to_empirical_moments, index_col=[0]).squeeze("columns")
 
@@ -171,17 +173,17 @@ def task_plot_model_fit(  # noqa: PLR0915
     #     drop_retirees=False,
     # )
 
-    specs = model_full["options"]["model_params"]
-
-    df_emp_wealth["adjusted_wealth"] = (
-        df_emp_wealth["wealth"].values / specs["wealth_unit"]
-    )
-    wealth_mask = df_emp_wealth["adjusted_wealth"] < df_emp_wealth[
-        "adjusted_wealth"
-    ].quantile(WEALTH_QUANTILE_CUTOFF)
-    df_emp_wealth = df_emp_wealth.loc[
-        wealth_mask, ["age", "sex", "adjusted_wealth", "education"]
-    ].copy()
+    # df_emp_wealth["adjusted_wealth"] = (
+    #     df_emp_wealth["wealth"].values / specs["wealth_unit"]
+    # )
+    # df_emp_wealth = df_emp_wealth[df_emp_wealth["sex"] == SEX].copy()
+    # wealth_mask = df_emp_wealth["adjusted_wealth"] < df_emp_wealth[
+    #     "adjusted_wealth"
+    # ].quantile(WEALTH_QUANTILE_CUTOFF)
+    # df_emp_wealth = df_emp_wealth.loc[
+    #     wealth_mask, ["age", "sex", "adjusted_wealth", "education"]
+    # ].copy()
+    df_emp_wealth = adjust_and_trim_wealth_data(df=df_emp_wealth, specs=specs)
 
     plot_wealth_by_age_and_education(
         data_emp=df_emp_wealth,

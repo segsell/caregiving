@@ -43,6 +43,7 @@ from dcegm.wealth_correction import adjust_observed_wealth
 def task_generate_start_states_for_solution(  # noqa: PLR0915
     path_to_sample: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
     path_to_wealth_sample: Path = BLD / "data" / "soep_wealth_and_personal_data.csv",
+    path_to_soep_moments: Path = BLD / "moments" / "soep_moments_new.csv",
     path_to_lifetable: Path = BLD
     / "estimation"
     / "stochastic_processes"
@@ -79,6 +80,8 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     observed_data = pd.read_csv(path_to_sample, index_col=[0])
     wealth_data = pd.read_csv(path_to_wealth_sample, index_col=[0])
     wealth_data = wealth_data[wealth_data["wealth"] > 0].copy()
+
+    soep_moments = pd.read_csv(path_to_soep_moments, index_col=[0])
 
     lifetable = pd.read_csv(path_to_lifetable)
     health_sample = pd.read_pickle(path_to_health_sample)

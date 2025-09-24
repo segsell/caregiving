@@ -33,6 +33,7 @@ from caregiving.model.shared import (
     WEALTH_MOMENTS_SCALE,
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
+from caregiving.moments.task_create_soep_moments import adjust_and_trim_wealth_data
 from caregiving.utils import table
 
 DEGREES_OF_FREEDOM = 1
@@ -133,12 +134,14 @@ def task_plot_empirical_soep_moments(
 
     df_wealth = pd.read_csv(path_to_wealth_sample, index_col=[0])
     # df_wealth = df_wealth[(df_wealth["wealth"] > 0) & (df_wealth["sex"] == SEX)].copy()
-    df_wealth["adjusted_wealth"] = df_wealth["wealth"] / specs["wealth_unit"]
-    df_wealth = df_wealth[df_wealth["sex"] == 1].copy()
-    wealth_mask = df_wealth["adjusted_wealth"] < df_wealth["adjusted_wealth"].quantile(
-        WEALTH_QUANTILE_CUTOFF
-    )
-    trimmed = df_wealth.loc[wealth_mask, ["age", "adjusted_wealth", "education"]].copy()
+    #
+    # df_wealth["adjusted_wealth"] = df_wealth["wealth"] / specs["wealth_unit"]
+    # df_wealth = df_wealth[df_wealth["sex"] == SEX].copy()
+    # wealth_mask = df_wealth["adjusted_wealth"] < df_wealth["adjusted_wealth"].quantile(
+    #     WEALTH_QUANTILE_CUTOFF
+    # )
+    # trimmed = df_wealth.loc[wealth_mask, ["age", "adjusted_wealth", "education"]].copy()
+    trimmed = adjust_and_trim_wealth_data(df=df_wealth, specs=specs)
 
     # Wealth
     plot_wealth_emp(
