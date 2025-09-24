@@ -83,6 +83,7 @@ def task_create_soep_moments(
     df_wealth = pd.read_csv(path_to_wealth_sample, index_col=[0])
     # df_wealth = df_wealth[(df_wealth["wealth"] > 0) & (df_wealth["sex"] == SEX)].copy()
     df_wealth["adjusted_wealth"] = df_wealth["wealth"] / specs["wealth_unit"]
+    df_wealth = df_wealth[df_wealth["sex"] == SEX].copy()
     # 1) Percentile trim
     wealth_mask = df_wealth["adjusted_wealth"] < df_wealth["adjusted_wealth"].quantile(
         WEALTH_QUANTILE_CUTOFF
@@ -93,6 +94,8 @@ def task_create_soep_moments(
 
     df_wealth_low = df_wealth[df_wealth["education"] == 0]
     df_wealth_high = df_wealth[df_wealth["education"] == 1]
+
+    # ==================================================================================
 
     _df_alive = df[df["health"] != DEAD].copy()
     _df_good_health = df[df["health"] == GOOD_HEALTH].copy()
