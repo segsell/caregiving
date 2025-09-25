@@ -8,13 +8,15 @@ rho_bequest_low: 1.0e-12
 rho_bequest_high: 1.0e-12
 beta: 0.9
 
-disutil_unemployed_low_women: 1.0e-12
-disutil_unemployed_high_women: 1.0e-12
-disutil_ft_work_good_women: 1.0e-12
-disutil_ft_work_bad_women: 1.0e-12
-disutil_pt_work_good_women: 1.0e-12
-disutil_pt_work_bad_women: 1.0e-12
-disutil_unemployed_women: 1.0e-12
+disutil_partner_retired: -5
+
+disutil_unemployed_low_women: 0
+disutil_unemployed_high_women: 0
+disutil_ft_work_good_women: 0
+disutil_ft_work_bad_women: 0
+disutil_pt_work_good_women: 0
+disutil_pt_work_bad_women: 0
+disutil_unemployed_women: 0
 
 disutil_pt_work_low_women: 1.0e-12
 disutil_pt_work_high_women: 1.0e-12

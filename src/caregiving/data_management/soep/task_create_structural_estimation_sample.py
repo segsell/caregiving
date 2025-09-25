@@ -58,7 +58,7 @@ def task_create_main_estimation_sample(
 ) -> None:
 
     specs = read_and_derive_specs(path_to_specs)
-    specs["start_age"] = specs["start_age"] - 1
+    specs["start_age"] = specs["start_age"]
     # specs["start_year"] = 2001
     # specs["end_year"] = 2023
 
@@ -96,19 +96,19 @@ def task_create_main_estimation_sample(
     # df.drop(columns=["retire_flag"], inplace=True)
     # df.set_index(["pid", "syear"], inplace=True)
 
-    # wealth = pd.read_csv(path_to_wealth, index_col=[0])
-    # df = add_wealth_data(df, wealth, drop_missing=False)
-    df = add_wealth_deflate_and_interpolate(
-        df,
-        specs,
-        filter_missings=True,
-        path_to_cpi=path_to_cpi,
-        soep_c40_hwealth=soep_c40_hwealth,
-        soep_c40_pgen=soep_c40_pgen,
-        soep_c40_ppathl=soep_c40_ppathl,
-        soep_c40_pl=soep_c40_pl,
-        soep_c40_pequiv=soep_c40_pequiv,
-    )
+    wealth = pd.read_csv(path_to_wealth, index_col=[0])
+    df = add_wealth_data(df, wealth, drop_missing=False)
+    # df = add_wealth_deflate_and_interpolate(
+    #     df,
+    #     specs,
+    #     filter_missings=True,
+    #     path_to_cpi=path_to_cpi,
+    #     soep_c40_hwealth=soep_c40_hwealth,
+    #     soep_c40_pgen=soep_c40_pgen,
+    #     soep_c40_ppathl=soep_c40_ppathl,
+    #     soep_c40_pl=soep_c40_pl,
+    #     soep_c40_pequiv=soep_c40_pequiv,
+    # )
 
     df["period"] = df["age"] - specs["start_age"]
 

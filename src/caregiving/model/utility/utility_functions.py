@@ -25,9 +25,11 @@ from caregiving.model.shared import (  # is_nursing_home_care,
     is_no_care,
     is_part_time,
     is_unemployed,
+    is_retired,
 )
 from caregiving.model.utility.bequest_utility import (
     utility_final_consume_all,
+    marginal_utility_final_consume_all,
 )
 
 
@@ -35,7 +37,7 @@ def create_utility_functions():
     """Create dict of utility functions."""
     return {
         "utility": utility_func,
-        "marginal_utility": marginal_utility_function_alive,
+        "marginal_utility": marg_utility,
         "inverse_marginal_utility": inverse_marginal,
     }
 
@@ -173,86 +175,54 @@ def utility_func_alive(
     # )
 
     # compute utility
-    scaled_consumption = consumption * eta / cons_scale
+    # scaled_consumption = consumption * eta / cons_scale
+    scaled_consumption = consumption / cons_scale
     utility_rho_not_one = (scaled_consumption ** (1 - rho) - 1) / (1 - rho)
 
     utility = jax.lax.select(
         jnp.allclose(rho, 1),
-        jnp.log(consumption * eta / cons_scale),
+        jnp.log(consumption / cons_scale),
+        # jnp.log(consumption * eta / cons_scale),
         utility_rho_not_one,
     )
-    return utility  # + util_labor_and_caregiving + util_caregiving
+    return utility + eta  # + util_labor_and_caregiving + util_caregiving
 
 
-# def marg_utility(
-#     consumption,
-#     # sex,
-#     partner_state,
-#     education,
-#     health,
-#     care_demand,
-#     period,
-#     choice,
-#     params,
-#     options,
-# ):
-#     marginal_utility_death = marginal_utility_final_consume_all(
-#         wealth=consumption,
-#         education=education,
-#         params=params,
-#     )
-#     marginal_utility_alive = marginal_utility_function_alive(
-#         consumption=consumption,
-#         partner_state=partner_state,
-#         education=education,
-#         health=health,
-#         care_demand=care_demand,
-#         period=period,
-#         choice=choice,
-#         params=params,
-#         options=options,
-#     )
-#     is_dead = health == DEAD
+def marg_utility(
+    consumption,
+    # sex,
+    partner_state,
+    education,
+    health,
+    care_demand,
+    period,
+    choice,
+    params,
+    options,
+):
+    marginal_utility_death = marginal_utility_final_consume_all(
+        wealth=consumption,
+        education=education,
+        params=params,
+    )
+    marginal_utility_alive = marginal_utility_function_alive(
+        consumption=consumption,
+        partner_state=partner_state,
+        education=education,
+        health=health,
+        care_demand=care_demand,
+        period=period,
+        choice=choice,
+        params=params,
+        options=options,
+    )
+    is_dead = health == DEAD
 
-#     marginal_utility = jax.lax.select(
-#         is_dead, marginal_utility_death, marginal_utility_alive
-#     )
+    marginal_utility = jax.lax.select(
+        is_dead, marginal_utility_death, marginal_utility_alive
+    )
 
-#     return marginal_utility
-
-
-# def marg_utility(
-#     consumption, partner_state, education, health, period, choice, params, options
-# ):
-#     rho = params["rho"]
-
-#     cons_scale = consumption_scale(
-#         partner_state=partner_state,
-#         # sex=sex,
-#         education=education,
-#         period=period,
-#         options=options,
-#     )
-#     eta = disutility_work(
-#         period=period,
-#         choice=choice,
-#         # sex=sex,
-#         education=education,
-#         partner_state=partner_state,
-#         health=health,
-#         params=params,
-#         options=options,
-#     )
-#     marg_util_rho_not_one = (
-# (eta / cons_scale) ** (1 - rho)) * (consumption ** (-rho))
-
-#     marg_util = jax.lax.select(
-#         jnp.allclose(rho, 1),
-#         1 / consumption,
-#         marg_util_rho_not_one,
-#     )
-
-#     return marg_util
+    return marginal_utility
 
 
 def marginal_utility_function_alive(
@@ -280,16 +250,16 @@ def marginal_utility_function_alive(
         options=options,
     )
 
-    disutil_labor = disutility_work(
-        period=period,
-        choice=choice,
-        # sex=sex,
-        education=education,
-        partner_state=partner_state,
-        health=health,
-        params=params,
-        options=options,
-    )
+    # disutil_labor = disutility_work(
+    #     period=period,
+    #     choice=choice,
+    #     # sex=sex,
+    #     education=education,
+    #     partner_state=partner_state,
+    #     health=health,
+    #     params=params,
+    #     options=options,
+    # )
     # A = utility_of_labor_and_caregiving(
     #     period=period,
     #     choice=choice,
@@ -302,9 +272,10 @@ def marginal_utility_function_alive(
     # base_marg_util_rho_not_one = ((disutil_labor / cons_scale) ** (1 - rho)) * (
     #     consumption ** (-rho)
     # )
-    base_marg_util_rho_not_one = (disutil_labor / cons_scale) ** (1 - rho) * (
-        consumption ** (-rho)
-    )
+    # base_marg_util_rho_not_one = (disutil_labor / cons_scale) ** (1 - rho) * (
+    #     consumption ** (-rho)
+    # )
+    base_marg_util_rho_not_one = (consumption / cons_scale) ** (-rho) / cons_scale
 
     marg_util = jax.lax.select(
         jnp.allclose(rho, 1),
@@ -340,16 +311,16 @@ def inverse_marginal(
         options=options,
     )
 
-    eta = disutility_work(
-        period=period,
-        choice=choice,
-        # sex=sex,
-        education=education,
-        partner_state=partner_state,
-        health=health,
-        params=params,
-        options=options,
-    )
+    # eta = disutility_work(
+    #     period=period,
+    #     choice=choice,
+    #     # sex=sex,
+    #     education=education,
+    #     partner_state=partner_state,
+    #     health=health,
+    #     params=params,
+    #     options=options,
+    # )
     # A = utility_of_labor_and_caregiving(
     #     period=period,
     #     choice=choice,
@@ -363,9 +334,10 @@ def inverse_marginal(
     # _consumption_rho_not_one = (
     #     A * (eta / cons_scale) ** (1 - rho) / marginal_utility
     # ) ** (1.0 / rho)
-    consumption_rho_not_one = marginal_utility ** (-1 / rho) * (eta / cons_scale) ** (
-        (1 - rho) / rho
-    )
+    # consumption_rho_not_one = marginal_utility ** (-1 / rho) * (eta / cons_scale) ** (
+    #     (1 - rho) / rho
+    # )
+    consumption_rho_not_one = (marginal_utility * cons_scale) ** (-1 / rho) * cons_scale
     consumption = jax.lax.select(
         jnp.allclose(rho, 1),
         1 / marginal_utility,
@@ -454,10 +426,12 @@ def inverse_marginal(
 
 def disutility_work(period, choice, education, partner_state, health, params, options):
     # choice booleans
+    retired = is_retired(choice)
     unemployed = is_unemployed(choice)
     working_part_time = is_part_time(choice)
     working_full_time = is_full_time(choice)
-    # partner_retired = partner_state == 0
+    partner_retired = partner_state == 2
+
     bad_health = is_bad_health(health)
     good_health = is_good_health(health)
 
@@ -643,9 +617,10 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     disutility = (
         -exp_factor_work * (1 - informal_care)
         - exp_factor_work_and_care * informal_care
+        - partner_retired * retired * params["disutil_partner_retired"]
     )
 
-    return jnp.exp(disutility)
+    return disutility
 
 
 def utility_of_labor_and_caregiving(

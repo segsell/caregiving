@@ -78,10 +78,10 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     sex_var = SEX
 
     observed_data = pd.read_csv(path_to_sample, index_col=[0])
-    wealth_data = pd.read_csv(path_to_wealth_sample, index_col=[0])
-    wealth_data = wealth_data[wealth_data["wealth"] > 0].copy()
 
-    soep_moments = pd.read_csv(path_to_soep_moments, index_col=[0])
+    # wealth_data = pd.read_csv(path_to_wealth_sample, index_col=[0])
+    # wealth_data = wealth_data[wealth_data["wealth"] > 0].copy()
+    # soep_moments = pd.read_csv(path_to_soep_moments, index_col=[0])
 
     lifetable = pd.read_csv(path_to_lifetable)
     health_sample = pd.read_pickle(path_to_health_sample)
@@ -262,7 +262,6 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
 
     # Generate containers
     wealth_agents = np.empty(n_agents, np.float64)
-    wealth_agents_new = np.empty(n_agents, np.float64)
     exp_agents = np.empty(n_agents, np.float64)
     lagged_choice = np.empty(n_agents, np.uint8)
     partner_states = np.empty(n_agents, np.uint8)
@@ -282,11 +281,11 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         ]
 
         # 1. Condition on education
-        wealth_period_data_edu = start_period_data[
-            (start_period_data["sex"] == sex_var)
-            & (start_period_data["education"] == edu)
-            & (start_period_data["wealth"] > 0)
-        ].copy()
+        # wealth_period_data_edu = start_period_data[
+        #     (start_period_data["sex"] == sex_var)
+        #     & (start_period_data["education"] == edu)
+        #     & (start_period_data["wealth"] > 0)
+        # ].copy()
         # 2. Restrict quantile
         # wealth_mask = wealth_period_data_edu[
         #     "adjusted_wealth"
@@ -333,8 +332,8 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         )
 
         # Wealth distribution
-        # wealth_start_edu = draw_start_wealth_dist(start_period_data_edu, n_agents_edu)
-        wealth_start_edu = draw_start_wealth_dist(wealth_period_data_edu, n_agents_edu)
+        wealth_start_edu = draw_start_wealth_dist(start_period_data_edu, n_agents_edu)
+        # wealth_start_edu = draw_start_wealth_dist(wealth_period_data_edu, n_agents_edu)
         wealth_agents[type_mask] = wealth_start_edu
 
         # wealth_edu = draw_start_wealth_dist(wealth_period_data_edu, n_agents_edu)
