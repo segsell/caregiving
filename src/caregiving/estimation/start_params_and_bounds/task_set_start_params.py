@@ -25,6 +25,7 @@ def task_load_and_set_start_params(
     / "start_params_updated.yaml",
 ) -> None:
     """Load start parameters and update them with job offer probabilities."""
+
     start_params_all = yaml.safe_load(path_to_start_params.open("rb"))
     job_offer_params = pd.read_csv(path_to_job_offer_params, index_col=0)
 

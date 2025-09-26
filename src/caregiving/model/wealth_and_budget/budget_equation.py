@@ -100,7 +100,7 @@ def budget_constraint(
         period=period,
         options=options,
     )
-    care_benfits_and_costs = calc_care_benefits_and_costs(
+    care_benefits_and_costs = calc_care_benefits_and_costs(
         lagged_choice=lagged_choice,
         education=education,
         has_sister=has_sister,
@@ -109,7 +109,7 @@ def budget_constraint(
     )
 
     total_income = jnp.maximum(
-        total_net_income + child_benefits + care_benfits_and_costs,
+        total_net_income + child_benefits + care_benefits_and_costs,
         unemployment_benefits,
     )
     # calculate beginning of period wealth M_t

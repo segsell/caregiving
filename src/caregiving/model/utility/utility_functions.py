@@ -37,8 +37,8 @@ def create_utility_functions():
     """Create dict of utility functions."""
     return {
         "utility": utility_func,
-        # "marginal_utility": marginal_utility_function_alive,
-        "marginal_utility": marg_utility,
+        "marginal_utility": marginal_utility_function_alive,
+        # "marginal_utility": marg_utility,
         "inverse_marginal_utility": inverse_marginal,
     }
 

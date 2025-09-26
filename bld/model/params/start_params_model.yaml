@@ -18,6 +18,8 @@ job_finding_logit_age_women: 0.0065131540323549
 job_finding_logit_const_women: -2.03524742129707
 job_finding_logit_high_educ_women: 0.6955095961575429
 lambda: 0.5
+rho_bequest_high: 1.5
+rho_bequest_low: 1.5
 rho_high: 1.5
 rho_low: 1.5
 sigma: 0.16471062648214

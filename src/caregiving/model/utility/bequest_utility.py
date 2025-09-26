@@ -22,11 +22,11 @@ def utility_final_consume_all(
 ):
     """Compute the utility in the final period including bequest."""
     # rho = params["rho"]
-    # rho_bequest = (
-    #     params["rho_bequest_low"] * (1 - education)
-    #     + params["rho_bequest_high"] * education
-    # )
-    rho = params["rho_low"] * (1 - education) + params["rho_high"] * education
+    rho = (
+        params["rho_bequest_low"] * (1 - education)
+        + params["rho_bequest_high"] * education
+    )
+    # rho = params["rho_low"] * (1 - education) + params["rho_high"] * education
     bequest_scale = params["bequest_scale"]
     # bequest_scale = (
     #     params["bequest_scale_low"] * (1 - education)
@@ -53,11 +53,11 @@ def marginal_utility_final_consume_all(
     """Compute marginal utility in the final period."""
     # rho = params["rho"]
     # bequest_scale = params["bequest_scale"]
-    # rho_bequest = (
-    #     params["rho_bequest_low"] * (1 - education)
-    #     + params["rho_bequest_high"] * education
-    # )
-    rho = params["rho_low"] * (1 - education) + params["rho_high"] * education
+    rho = (
+        params["rho_bequest_low"] * (1 - education)
+        + params["rho_bequest_high"] * education
+    )
+    # rho = params["rho_low"] * (1 - education) + params["rho_high"] * education
     bequest_scale = params["bequest_scale"]
     # bequest_scale = (
     #     params["bequest_scale_low"] * (1 - education)
