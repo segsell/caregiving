@@ -57,7 +57,6 @@ def task_simulate_moments(
     / "model_fit"
     / "simulated_work_transitions_pandas.png",
 ) -> None:
-
     specs = read_and_derive_specs(path_to_specs)
 
     options = pickle.load(path_to_options.open("rb"))

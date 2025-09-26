@@ -76,7 +76,7 @@ def task_create_soep_moments(
     df = df_full[
         (df_full["sex"] == SEX)
         & (df_full["age"] <= end_age + 10)
-        & (df_full["any_care"] == 0)
+        # & (df_full["any_care"] == 0)
     ].copy()  # women only and non-caregivers
 
     # female respondents only

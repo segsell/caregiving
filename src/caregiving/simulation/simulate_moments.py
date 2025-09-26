@@ -78,13 +78,14 @@ def simulate_moments_pandas(  # noqa: PLR0915
         ]
     )
 
-    df = df_full[df_full["choice"].isin(np.asarray(NO_INFORMAL_CARE))].copy()
+    # df = df_full[df_full["choice"].isin(np.asarray(NO_INFORMAL_CARE))].copy()
+    df = df_full.copy()
     df_low = df[df["education"] == 0]
     df_high = df[df["education"] == 1]
 
-    df_caregivers = df_full[df_full["choice"].isin(np.asarray(INFORMAL_CARE))].copy()
-    df_caregivers_low = df_caregivers[df_caregivers["education"] == 0]
-    df_caregivers_high = df_caregivers[df_caregivers["education"] == 1]
+    # df_caregivers = df_full[df_full["choice"].isin(np.asarray(INFORMAL_CARE))].copy()
+    # df_caregivers_low = df_caregivers[df_caregivers["education"] == 0]
+    # df_caregivers_high = df_caregivers[df_caregivers["education"] == 1]
 
     # =================================================================================
     # df_light_caregivers = df[df["choice"].isin(np.asarray(LIGHT_INFORMAL_CARE))]
@@ -893,7 +894,8 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
     # df_high_educ = sim_df.loc[sim_df["education"] == 1]
 
     _no_care_mask = jnp.isin(arr_all[:, idx["choice"]], NO_INFORMAL_CARE)
-    arr = arr_all[_no_care_mask]
+    # arr = arr_all[_no_care_mask]
+    arr = arr_all
     arr_low_educ = arr[arr[:, idx["education"]] == 0]
     arr_high_educ = arr[arr[:, idx["education"]] == 1]
 

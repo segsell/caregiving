@@ -121,10 +121,8 @@ def task_plot_model_fit(  # noqa: PLR0915
     / "work_transitions_by_edu_and_age_bin.png",
 ) -> None:
     """Plot model fit between empirical and simulated data."""
-
     options = pickle.load(path_to_options.open("rb"))
     # params = yaml.safe_load(path_to_start_params.open("rb"))
-
     model_full = load_and_setup_full_model_for_solution(
         options, path_to_model=path_to_solution_model
     )
