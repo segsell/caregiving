@@ -25,6 +25,107 @@ from caregiving.model.shared import (
 )
 from caregiving.utils import table
 
+# ====================================================================================
+# Wealth
+# ====================================================================================
+
+
+def plot_wealth_by_age_and_education(
+    data_emp: pd.DataFrame,
+    data_sim: pd.DataFrame,
+    specs: dict,
+    *,
+    wealth_var_emp: str,
+    wealth_var_sim: str,
+    median: bool = False,
+    age_min: int | None = None,
+    age_max: int | None = None,
+    path_to_save_plot: str | None = None,
+):
+    """
+    Plot average/median wealth by age and education (Observed vs Simulated),
+    with education groups side by side, shared y-axis, y-labels on left for both
+    panels, and internal x-padding near the vertical axes.
+    """
+    # ---------- 0. Setup ----------
+    if age_min is None:
+        age_min = specs["start_age"]
+    if age_max is None:
+        age_max = specs["end_age_msm"]
+    ages = range(age_min, age_max + 1)
+    stat_name = "Median" if median else "Average"
+
+    n_edu = len(specs["education_labels"])
+    fig, axs = plt.subplots(1, n_edu, figsize=(5 * n_edu, 4), sharex=True, sharey=True)
+    if n_edu == 1:
+        axs = np.array([axs])
+
+    agg = (
+        (lambda s: s.median(skipna=True)) if median else (lambda s: s.mean(skipna=True))
+    )
+
+    # ---------- 1. Loop over education groups ----------
+    all_values = []
+    for edu_idx, edu_label in enumerate(specs["education_labels"]):
+        ax = axs[edu_idx]
+
+        emp_edu = data_emp[
+            (data_emp["education"] == edu_idx) & (data_emp["sex"] == SEX)
+        ]
+        sim_edu = data_sim[
+            (data_sim["education"] == edu_idx) & (data_sim["sex"] == SEX)
+        ]
+
+        emp_series = (
+            emp_edu.groupby("age")[wealth_var_emp]
+            .apply(agg)
+            .reindex(ages, fill_value=np.nan)
+        )
+        sim_series = (
+            sim_edu.groupby("age")[wealth_var_sim]
+            .apply(agg)
+            .reindex(ages, fill_value=np.nan)
+        )
+
+        all_values.extend(emp_series.dropna().tolist())
+        all_values.extend(sim_series.dropna().tolist())
+
+        ax.plot(ages, sim_series.values, label="Simulated")
+        ax.plot(ages, emp_series.values, ls="--", label="Observed")
+
+        # Add internal x padding (5% of the range)
+        xrange = age_max - age_min
+        pad = int(0.05 * xrange)
+        ax.set_xlim(age_min - pad, age_max + pad)
+
+        ax.set_xlabel("Age")
+        ax.set_title(edu_label)
+        ax.grid(True, alpha=0.2)
+
+        if edu_idx == 0:
+            ax.set_ylabel(f"{stat_name} wealth")
+            ax.legend()
+        else:
+            # remove default left ticks
+            ax.tick_params(labelleft=False)
+
+    # ---------- 2. Common y-limits ----------
+    if all_values:
+        ymin, ymax = np.nanmin(all_values), np.nanmax(all_values)
+        pad = 0.05 * (ymax - ymin)
+        for ax in axs:
+            ax.set_ylim(ymin - pad, ymax + pad)
+
+    # ---------- 3. Add left y-axis to right panel too ----------
+    axs[-1].yaxis.set_ticks_position("left")
+    axs[-1].yaxis.set_label_position("left")
+    axs[-1].set_ylabel(f"{stat_name} wealth")
+
+    plt.tight_layout()
+
+    if path_to_save_plot:
+        plt.savefig(path_to_save_plot, dpi=300, transparent=False)
+
 
 def plot_average_wealth(
     data_emp,
@@ -34,7 +135,7 @@ def plot_average_wealth(
 ):
     """Plot average wealth by age and education."""
 
-    data_emp.loc[:, "age"] = data_emp["period"] + specs["start_age"]
+    # data_emp.loc[:, "age"] = data_emp["period"] + specs["start_age"]
     data_sim.loc[:, "age"] = data_sim["period"] + specs["start_age"]
 
     sex = SEX
@@ -63,6 +164,11 @@ def plot_average_wealth(
         )
         ax.legend()
         fig.savefig(path_to_save_plot, transparent=True, dpi=300)
+
+
+# =====================================================================================
+# Choices
+# =====================================================================================
 
 
 def plot_choice_shares_by_education(

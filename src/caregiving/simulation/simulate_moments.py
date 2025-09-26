@@ -32,9 +32,9 @@ from caregiving.model.shared import (  # NURSING_HOME_CARE,
     START_PERIOD_CAREGIVING,
     UNEMPLOYED,
     WORK,
+    WEALTH_MOMENTS_SCALE,
+    SEX,
 )
-
-SEX = 1
 
 # =====================================================================================
 # Pandas
@@ -54,6 +54,7 @@ def simulate_moments_pandas(  # noqa: PLR0915
 
     age_range = range(start_age, end_age + 1)
     age_range_caregivers = range(start_age_caregivers, end_age + 1)
+    age_range_wealth = range(start_age, model_params["end_age_wealth"] + 1)
 
     age_bins_caregivers = (
         list(range(40, 75, 5)),  # [40, 45, … , 70]
@@ -71,14 +72,15 @@ def simulate_moments_pandas(  # noqa: PLR0915
             df_full["has_sister"].to_numpy(), df_full["education"].to_numpy()
         ]
     )
+    df = df_full.copy()
 
-    df = df_full[df_full["choice"].isin(np.asarray(NO_INFORMAL_CARE))].copy()
+    # df = df_full[df_full["choice"].isin(np.asarray(NO_INFORMAL_CARE))].copy()
     df_low = df[df["education"] == 0]
     df_high = df[df["education"] == 1]
 
-    df_caregivers = df_full[df_full["choice"].isin(np.asarray(INFORMAL_CARE))].copy()
-    df_caregivers_low = df_caregivers[df_caregivers["education"] == 0]
-    df_caregivers_high = df_caregivers[df_caregivers["education"] == 1]
+    # df_caregivers = df_full[df_full["choice"].isin(np.asarray(INFORMAL_CARE))].copy()
+    # df_caregivers_low = df_caregivers[df_caregivers["education"] == 0]
+    # df_caregivers_high = df_caregivers[df_caregivers["education"] == 1]
 
     # =================================================================================
     # df_light_caregivers = df[df["choice"].isin(np.asarray(LIGHT_INFORMAL_CARE))]
@@ -108,6 +110,23 @@ def simulate_moments_pandas(  # noqa: PLR0915
     # =================================================================================
 
     moments = {}
+
+    # =================================================================================
+    # Wealth moments
+    moments = create_mean_by_age(
+        df_low,
+        moments,
+        variable="wealth_beginning_of_period",
+        age_range=age_range_wealth,
+        label="low_education",
+    )
+    moments = create_mean_by_age(
+        df_high,
+        moments,
+        variable="wealth_beginning_of_period",
+        age_range=age_range_wealth,
+        label="high_education",
+    )
 
     # =================================================================================
     moments = create_labor_share_moments_pandas(df, moments, age_range=age_range)
@@ -141,21 +160,21 @@ def simulate_moments_pandas(  # noqa: PLR0915
     # ].mean()
     # ================================================================================
 
-    moments = create_labor_share_moments_pandas(
-        df_caregivers, moments, age_range=age_range_caregivers, label="caregivers"
-    )
-    moments = create_labor_share_moments_pandas(
-        df_caregivers_low,
-        moments,
-        age_range=age_range_caregivers,
-        label="caregivers_low_education",
-    )
-    moments = create_labor_share_moments_pandas(
-        df_caregivers_high,
-        moments,
-        age_range=age_range_caregivers,
-        label="caregivers_high_education",
-    )
+    # moments = create_labor_share_moments_pandas(
+    #     df_caregivers, moments, age_range=age_range_caregivers, label="caregivers"
+    # )
+    # moments = create_labor_share_moments_pandas(
+    #     df_caregivers_low,
+    #     moments,
+    #     age_range=age_range_caregivers,
+    #     label="caregivers_low_education",
+    # )
+    # moments = create_labor_share_moments_pandas(
+    #     df_caregivers_high,
+    #     moments,
+    #     age_range=age_range_caregivers,
+    #     label="caregivers_high_education",
+    # )
 
     # Caregivers labor shares by age bin
     # moments = create_labor_share_moments_by_age_bin_pandas(
@@ -613,6 +632,131 @@ def create_choice_shares_by_age_bin_pandas(
     return moments
 
 
+# =====================================================================================
+# Wealth
+# =====================================================================================
+
+
+def create_mean_by_age(
+    df: pd.DataFrame,
+    moments: dict,
+    *,
+    variable: str,
+    age_range: list[int] | np.ndarray,
+    label: str | None = None,
+    age_var: str = "age",
+):
+    """
+    Compute means by single-year age for a numeric variable and
+    store them in `moments` with keys:
+        mean_<variable>_<label>_age_<age>
+
+    Parameters
+    ----------
+    df : DataFrame
+        Must contain columns `age_var` and `variable`.
+    moments : dict
+        Updated in place.
+    variable : str
+        Column to average (e.g., "wealth_beginning_of_period").
+    age_range : sequence of int
+        Ages to include (e.g., range(40, 71)).
+    label : str | None
+        Optional suffix inserted in the key (prefixed with "_").
+    age_var : str, default "age"
+        Name of the age column.
+    """
+    # 1) Label prefix
+    label = f"_{label}" if label else ""
+    ages = pd.Index(list(age_range), name=age_var)
+
+    # # # 2) Restrict to requested ages (copy to avoid SettingWithCopy warnings)
+    # a_min, a_max = int(np.min(age_range)), int(np.max(age_range))
+    # df = df[df[age_var].between(a_min, a_max)].copy()
+    df_sub = df[df[age_var].isin(ages)]
+
+    # 3) Group by age and compute means
+    # mean_by_age = (
+    #     df.groupby(age_var, observed=False)[variable]
+    #     .mean()
+    #     .reindex(age_index, fill_value=np.nan)  # keep all ages even if empty
+    # )
+    mean_by_age = (
+        df_sub.groupby(df_sub[age_var])[variable]
+        .mean()
+        .reindex(ages, fill_value=np.nan)
+    )
+
+    # # 3) Warn if any requested ages have no data
+    # if mean_by_age.isna().any():
+    #     missing = mean_by_age[mean_by_age.isna()].index.tolist()
+    #     warnings.warn(
+    #         f"Missing mean values for ages (no data): {missing}",
+    #         category=UserWarning,
+    #         stacklevel=2,
+    #     )
+
+    # 4) Write to moments
+    for age in ages:
+        moments[f"mean_{variable}{label}_age_{age}"] = (
+            mean_by_age.loc[age] * WEALTH_MOMENTS_SCALE
+        )
+
+    return moments
+
+
+def create_mean_by_age_bin(
+    df: pd.DataFrame,
+    moments: dict,
+    *,
+    variable: str,
+    age_bins_and_labels: tuple[list[int], list[str]] | None = None,
+    label: str | None = None,
+    age_var: str = "age",
+):
+    """
+    Compute means by age-bin for a numeric variable.
+
+    """
+    # 1) Label prefix
+    label = f"_{label}" if label else ""
+
+    # 2) Default 5-year bins (40–44, ..., 70–74)
+    if age_bins_and_labels is None:
+        bin_edges = list(range(40, 75, 5))  # [40,45,...,70]
+        bin_labels = [f"{s}_{s+4}" for s in bin_edges[:-1]]
+    else:
+        bin_edges, bin_labels = age_bins_and_labels
+
+    # Work on a copy limited to the covered age range
+    df = df[df[age_var].between(bin_edges[0], bin_edges[-1] - 1)].copy()
+
+    df["age_bin"] = pd.cut(
+        df[age_var],
+        bins=bin_edges,
+        labels=bin_labels,
+        right=False,  # [40,45) ⇒ 40–44, etc.
+    )
+
+    age_groups = df.groupby("age_bin", observed=False)
+
+    mean_by_bin = (
+        age_groups[variable]
+        .mean()
+        .reindex(bin_labels, fill_value=np.nan)  # keep bins even if empty
+    )
+
+    for age_bin in bin_labels:
+        moments[f"mean_{variable}{label}_age_bin_{age_bin}"] = mean_by_bin.loc[age_bin]
+
+    return moments
+
+
+# =====================================================================================
+# Transition moments
+# =====================================================================================
+
+
 def compute_transition_moments_pandas_for_age_bins(
     df,
     moments,
@@ -740,12 +884,14 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
     arr_all = jnp.asarray(sim_df)
 
     min_age_caregivers = min_age + START_PERIOD_CAREGIVING
+    end_age_wealth = model_params["end_age_wealth"]
 
     # df_low_educ = sim_df.loc[sim_df["education"] == 0]
     # df_high_educ = sim_df.loc[sim_df["education"] == 1]
 
-    _no_care_mask = jnp.isin(arr_all[:, idx["choice"]], NO_INFORMAL_CARE)
-    arr = arr_all[_no_care_mask]
+    # _no_care_mask = jnp.isin(arr_all[:, idx["choice"]], NO_INFORMAL_CARE)
+    # arr = arr_all[_no_care_mask]
+    arr = arr_all
     arr_low_educ = arr[arr[:, idx["education"]] == 0]
     arr_high_educ = arr[arr[:, idx["education"]] == 1]
 
@@ -779,6 +925,22 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
 
     age_bins = [(40, 45), (45, 50), (50, 55), (55, 60), (60, 65), (65, 70)]
     age_bins_75 = [(40, 45), (45, 50), (50, 55), (55, 60), (60, 65), (65, 70), (70, 75)]
+
+    # Mean wealth by education and age bin
+    mean_wealth_by_age_low_educ = get_mean_by_age(
+        arr_low_educ,
+        ind=idx,
+        variable="wealth_beginning_of_period",
+        min_age=min_age,
+        max_age=end_age_wealth,
+    )
+    mean_wealth_by_age_high_educ = get_mean_by_age(
+        arr_high_educ,
+        ind=idx,
+        variable="wealth_beginning_of_period",
+        min_age=min_age,
+        max_age=end_age_wealth,
+    )
 
     # Labor shares by education and age
     share_retired_by_age = get_share_by_age(
@@ -1303,6 +1465,9 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
 
     return jnp.asarray(
         []
+        # wealth
+        + mean_wealth_by_age_low_educ
+        + mean_wealth_by_age_high_educ
         # labor shares all
         + share_retired_by_age
         + share_unemployed_by_age
@@ -1316,21 +1481,21 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
         + share_unemployed_by_age_high_educ
         + share_working_part_time_by_age_high_educ
         + share_working_full_time_by_age_high_educ
-        # caregivers
-        # + share_caregivers_by_age_bin
-        # + [share_caregivers_high_educ]
-        + share_retired_by_age_caregivers
-        + share_unemployed_by_age_caregivers
-        + share_working_part_time_by_age_caregivers
-        + share_working_full_time_by_age_caregivers
-        + share_retired_by_age_caregivers_low_educ
-        + share_unemployed_by_age_caregivers_low_educ
-        + share_working_part_time_by_age_caregivers_low_educ
-        + share_working_full_time_by_age_caregivers_low_educ
-        + share_retired_by_age_caregivers_high_educ
-        + share_unemployed_by_age_caregivers_high_educ
-        + share_working_part_time_by_age_caregivers_high_educ
-        + share_working_full_time_by_age_caregivers_high_educ
+        # # caregivers
+        # # + share_caregivers_by_age_bin
+        # # + [share_caregivers_high_educ]
+        # + share_retired_by_age_caregivers
+        # + share_unemployed_by_age_caregivers
+        # + share_working_part_time_by_age_caregivers
+        # + share_working_full_time_by_age_caregivers
+        # + share_retired_by_age_caregivers_low_educ
+        # + share_unemployed_by_age_caregivers_low_educ
+        # + share_working_part_time_by_age_caregivers_low_educ
+        # + share_working_full_time_by_age_caregivers_low_educ
+        # + share_retired_by_age_caregivers_high_educ
+        # + share_unemployed_by_age_caregivers_high_educ
+        # + share_working_part_time_by_age_caregivers_high_educ
+        # + share_working_full_time_by_age_caregivers_high_educ
         #
         # + share_retired_by_age_bin_caregivers
         # + share_unemployed_by_age_bin_caregivers
@@ -1461,6 +1626,38 @@ def get_share_by_age_bin_with_extra_mask(df_arr, ind, bins, extra_mask, age_var=
         shares.append(share)
 
     return shares
+
+
+def get_mean_by_age(df_arr, ind, variable, min_age, max_age, age_var=None):
+    """Get mean of variable by age bin."""
+    age_var = age_var or "age"
+    age_col = df_arr[:, ind[age_var]]
+
+    values = df_arr[:, ind[variable]]
+
+    means: list[jnp.ndarray] = []
+    for age in range(min_age, max_age + 1):
+        age_mask = age_col == age
+        mean = jnp.nanmean(jnp.where(age_mask, values, jnp.nan)) * WEALTH_MOMENTS_SCALE
+        means.append(mean)
+
+    return means
+
+
+def get_mean_by_age_bin(df_arr, ind, variable, bins, age_var=None):
+    """Get mean of variable by age bin."""
+    age_var = age_var or "age"
+    age_col = df_arr[:, ind[age_var]]
+
+    values = df_arr[:, ind[variable]]
+
+    means: list[jnp.ndarray] = []
+    for bin_start, bin_end in bins:
+        age_mask = (age_col >= bin_start) & (age_col < bin_end)
+        mean = jnp.nanmean(jnp.where(age_mask, values, jnp.nan))
+        means.append(mean)
+
+    return means
 
 
 def _get_share_by_type(df_arr, ind, choice, care_type):

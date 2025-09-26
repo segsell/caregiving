@@ -3,6 +3,7 @@
 from itertools import product
 from pathlib import Path
 from typing import Annotated, Optional
+import re
 
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
@@ -28,19 +29,35 @@ from caregiving.model.shared import (
     UNEMPLOYED,
     UNEMPLOYED_CHOICES,
     WORK,
+    WEALTH_QUANTILE_CUTOFF,
+    WEALTH_MOMENTS_SCALE,
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
 from caregiving.utils import table
+from caregiving.moments.task_create_soep_moments import adjust_and_trim_wealth_data
 
 DEGREES_OF_FREEDOM = 1
 
 
 def task_plot_empirical_soep_moments(
     path_to_specs: Path = SRC / "specs.yaml",
+    path_to_soep_moments: Path = BLD / "moments" / "soep_moments_new.csv",
     path_to_main_sample: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
     path_to_caregivers_sample: Path = BLD
     / "data"
     / "soep_structural_caregivers_sample.csv",
+    path_to_save_wealth: Annotated[Path, Product] = BLD
+    / "plots"
+    / "raw_moments"
+    / "wealth_by_age_and_education.png",
+    path_to_save_wealth_from_moments: Annotated[Path, Product] = BLD
+    / "plots"
+    / "raw_moments"
+    / "wealth_by_age_and_education_from_moments.png",
+    path_to_save_wealth_empirical_vs_moments: Annotated[Path, Product] = BLD
+    / "plots"
+    / "raw_moments"
+    / "wealth_by_age_and_education_empirical_vs_moments.png",
     path_to_save_labor_supply_all_by_age: Annotated[Path, Product] = BLD
     / "plots"
     / "raw_moments"
@@ -88,8 +105,12 @@ def task_plot_empirical_soep_moments(
     start_age = specs["start_age"]
     end_age = specs["end_age_msm"]
 
-    df = pd.read_csv(path_to_main_sample, index_col=[0])
-    df = df[(df["sex"] == 1) & (df["age"] <= end_age + 10)].copy()  # women only
+    soep_moments = pd.read_csv(path_to_soep_moments, index_col=[0])
+
+    df_full = pd.read_csv(path_to_main_sample, index_col=[0])
+    df = df_full[
+        (df_full["sex"] == 1) & (df_full["age"] <= end_age + 10)
+    ].copy()  # women only
 
     df_non_caregivers = df[df["any_care"] == 0].copy()
 
@@ -110,6 +131,40 @@ def task_plot_empirical_soep_moments(
 
     df["kidage_youngest"] = df["kidage_youngest"] - 1
 
+    # df_wealth = pd.read_csv(path_to_wealth_sample, index_col=[0])
+    df_wealth = df_full[df_full["sex"] == SEX].copy()
+    trimmed = adjust_and_trim_wealth_data(df=df_wealth, specs=specs)
+
+    # Wealth
+    plot_wealth_emp(
+        data_emp=trimmed,
+        # data_emp=df_wealth,
+        specs=specs,
+        wealth_var_emp="adjusted_wealth",
+        median=False,
+        age_min=30,
+        age_max=100,
+        path_to_save_plot=path_to_save_wealth,
+    )
+    plot_wealth_from_moments(
+        soep_moments,
+        specs=specs,
+        age_min=30,
+        age_max=100,
+        path_to_save_plot=path_to_save_wealth_from_moments,
+    )
+    plot_wealth_emp_vs_moments(
+        data_emp=trimmed,
+        moments=soep_moments / WEALTH_MOMENTS_SCALE,
+        specs=specs,
+        wealth_var_emp="adjusted_wealth",
+        median=False,
+        age_min=30,
+        age_max=100,
+        path_to_save_plot=path_to_save_wealth_empirical_vs_moments,
+    )
+
+    # Labor supply
     plot_choice_shares_by_education_emp(
         data_emp=df,
         specs=specs,
@@ -181,6 +236,523 @@ def task_plot_empirical_soep_moments(
         bin_width=5,
         path_to_save_plot=path_to_save_labor_supply_intensive_caregivers_by_age_bins,
     )
+
+
+# ======================================================================================
+# Wealth
+# ======================================================================================
+
+
+def plot_wealth_emp(
+    data_emp: pd.DataFrame,
+    specs: dict,
+    *,
+    wealth_var_emp: str,
+    median: bool = False,
+    age_min: int | None = None,
+    age_max: int | None = None,
+    path_to_save_plot: str | None = None,
+):
+    """
+    Plot empirical average/median wealth by age and education only.
+    Parameters
+    ----------
+    data_emp : DataFrame
+        Must include columns: 'age', 'education', and the wealth variable.
+    specs : dict
+        Expects:
+          - 'start_age', 'end_age_msm'
+          - 'education_labels' : list[str]
+    wealth_var_emp : str
+        Column name of wealth in the empirical dataset.
+    median : bool, default False
+        If True, plot median; else plot mean.
+    age_min, age_max : int | None
+        Plot range. Defaults to [specs['start_age'], specs['end_age_msm']].
+    path_to_save_plot : str | None
+        If provided, saves the figure.
+    """
+    # ---------- 0. Setup ----------
+    if age_min is None:
+        age_min = specs["start_age"]
+    if age_max is None:
+        age_max = specs["end_age_msm"]
+    ages = range(age_min, age_max + 1)
+    stat_name = "Median" if median else "Average"
+
+    n_edu = len(specs["education_labels"])
+    fig, axs = plt.subplots(1, n_edu, figsize=(5 * n_edu, 4), sharex=True, sharey=True)
+    if n_edu == 1:
+        axs = np.array([axs])
+
+    agg = (
+        (lambda s: s.median(skipna=True)) if median else (lambda s: s.mean(skipna=True))
+    )
+
+    # ---------- 1. Loop over education groups ----------
+    all_values = []
+    for edu_idx, edu_label in enumerate(specs["education_labels"]):
+        ax = axs[edu_idx]
+
+        emp_edu = data_emp[data_emp["education"] == edu_idx]
+        emp_series = (
+            emp_edu.groupby("age")[wealth_var_emp]
+            .apply(agg)
+            .reindex(ages, fill_value=np.nan)
+        )
+
+        all_values.extend(emp_series.dropna().tolist())
+
+        ax.plot(ages, emp_series.values, color="black", ls="-", label="Observed")
+
+        # Add internal x padding (5% of the range)
+        xrange = age_max - age_min
+        pad = int(0.05 * xrange)
+        ax.set_xlim(age_min - pad, age_max + pad)
+
+        ax.set_xlabel("Age")
+        ax.set_title(edu_label)
+        ax.grid(True, alpha=0.2)
+
+        if edu_idx == 0:
+            ax.set_ylabel(f"{stat_name} wealth")
+            # ax.legend()
+        else:
+            ax.tick_params(labelleft=False)
+
+    # ---------- 2. Common y-limits ----------
+    if all_values:
+        ymin, ymax = np.nanmin(all_values), np.nanmax(all_values)
+        pad = 0.05 * (ymax - ymin)
+        for ax in axs:
+            ax.set_ylim(ymin - pad, ymax + pad)
+
+    # ---------- 3. Add left y-axis to right panel too ----------
+    axs[-1].yaxis.set_ticks_position("left")
+    axs[-1].yaxis.set_label_position("left")
+    axs[-1].set_ylabel(f"{stat_name} wealth")
+
+    plt.tight_layout()
+
+    if path_to_save_plot:
+        plt.savefig(path_to_save_plot, dpi=300, transparent=False)
+
+
+def plot_wealth_from_moments(
+    moments: pd.DataFrame,
+    specs: dict,
+    *,
+    age_min: int | None = None,
+    age_max: int | None = None,
+    path_to_save_plot: str | None = None,
+):
+    """
+    Plot mean wealth moments by age and education (low/high) in the
+    same style as `plot_wealth_emp`.
+
+    Parameters
+    ----------
+    df_moments : DataFrame
+        Loaded from CSV. Expect index column 0 to contain moment keys like:
+        'mean_wealth_low_education_wealth_age_30'
+        and a 'value' column with the numeric moment.
+    specs : dict
+        Expects:
+          - 'start_age', 'end_age_msm'
+          - 'education_labels' : list[str] (ordered like [low_label, high_label])
+    age_min, age_max : int | None
+        Plot range. Defaults to [specs['start_age'], specs['end_age_msm']].
+    path_to_save_plot : str | None
+        If provided, saves the figure.
+    """
+    # ---------- 0. Setup ----------
+    if moments.index.name is None or moments.index.name != moments.columns[0]:
+        # Ensure the moment strings live in the index if user didn't pass index_col=0
+        if moments.columns[0] != "value":  # typical load without index_col=0
+            moments = moments.set_index(moments.columns[0])
+
+    if "value" not in moments.columns:
+        raise ValueError("Expected a 'value' column in df_moments.")
+
+    if age_min is None:
+        age_min = specs["start_age"]
+    if age_max is None:
+        age_max = specs["end_age_msm"]
+    ages = range(age_min, age_max + 1)
+
+    edu_labels = specs["education_labels"]
+    n_edu = len(edu_labels)
+    fig, axs = plt.subplots(1, n_edu, figsize=(5 * n_edu, 4), sharex=True, sharey=True)
+    if n_edu == 1:
+        axs = np.array([axs])
+
+    # Helper to extract a Series (index=int age) for a given education tag ("low" or "high")
+    def extract_series_for(tag: str) -> pd.Series:
+        # pattern captures trailing age
+        pattern = re.compile(rf"^mean_wealth_{tag}_education_wealth_age_(\d+)$")
+        # extract ages that match
+        extracted = moments.index.to_series().str.extract(pattern)
+        ages_str = extracted[0]
+        mask = ages_str.notna()
+        s = moments.loc[mask, "value"].copy()
+        s.index = ages_str[mask].astype(int)
+        return s.sort_index()
+
+    # We assume two education groups (low/high). If you have more, extend this mapping.
+    tag_map = {
+        0: "low",
+        1: "high",
+    }
+
+    # ---------- 1. Loop over education groups ----------
+    all_values = []
+    for edu_idx in range(n_edu):
+        ax = axs[edu_idx]
+        tag = tag_map.get(edu_idx)
+        if tag is None:
+            # If more than 2 groups, skip gracefully
+            ax.set_visible(False)
+            continue
+
+        s = extract_series_for(tag)
+        s = s.reindex(ages, fill_value=np.nan)
+        all_values.extend(s.dropna().tolist())
+
+        # plot style: black line, like in plot_wealth_emp
+        ax.plot(ages, s.values, color="black", ls="-", label="Moments")
+
+        # Add internal x padding (5% of the range)
+        xrange = age_max - age_min
+        pad = int(0.05 * xrange)
+        ax.set_xlim(age_min - pad, age_max + pad)
+
+        ax.set_xlabel("Age")
+        ax.set_title(
+            edu_labels[edu_idx] if edu_idx < len(edu_labels) else f"Edu {edu_idx}"
+        )
+        ax.grid(True, alpha=0.2)
+
+        if edu_idx == 0:
+            ax.set_ylabel("Average wealth")
+        else:
+            ax.tick_params(labelleft=False)
+
+    # ---------- 2. Common y-limits ----------
+    if all_values:
+        ymin, ymax = np.nanmin(all_values), np.nanmax(all_values)
+        pad = 0.05 * (ymax - ymin if ymax > ymin else 1.0)
+        for ax in axs:
+            if ax.get_visible():
+                ax.set_ylim(ymin - pad, ymax + pad)
+
+    # ---------- 3. Add left y-axis to right panel too ----------
+    axs[-1].yaxis.set_ticks_position("left")
+    axs[-1].yaxis.set_label_position("left")
+    axs[-1].set_ylabel("Average wealth")
+
+    plt.tight_layout()
+
+    if path_to_save_plot:
+        plt.savefig(path_to_save_plot, dpi=300, transparent=False)
+
+    return fig, axs
+
+
+def plot_wealth_emp_vs_moments(
+    data_emp: pd.DataFrame,
+    moments: pd.DataFrame,
+    specs: dict,
+    *,
+    wealth_var_emp: str,
+    median: bool = False,
+    age_min: int | None = None,
+    age_max: int | None = None,
+    path_to_save_plot: str | None = None,
+):
+    """
+    Overlay empirical wealth (mean/median) and moment-based mean wealth by age,
+    with one subplot per education group (left: low, right: high).
+
+    Parameters
+    ----------
+    data_emp : DataFrame
+        Must include columns: 'age', 'education', and the wealth variable.
+    moments : DataFrame
+        Loaded from CSV. Expect index col to contain moment keys like:
+        'mean_wealth_low_education_wealth_age_30' and a 'value' column.
+    specs : dict
+        Expects:
+          - 'start_age', 'end_age_msm'
+          - 'education_labels' : list[str], e.g. ["Low education", "High education"]
+    wealth_var_emp : str
+        Column name of wealth in the empirical dataset.
+    median : bool, default False
+        If True, plot median for empirical; else plot mean.
+    age_min, age_max : int | None
+        Plot range. Defaults to [specs['start_age'], specs['end_age_msm']].
+    path_to_save_plot : str | None
+        If provided, saves the figure.
+    """
+    # ---------- 0) Setup ----------
+    if age_min is None:
+        age_min = specs["start_age"]
+    if age_max is None:
+        age_max = specs["end_age_msm"]
+    ages = range(age_min, age_max + 1)
+    stat_name = "Median" if median else "Average"
+
+    # Make sure the moments have the moment keys as index and a 'value' column
+    if moments.index.name is None or (
+        moments.index.name != moments.columns[0] and "value" in moments.columns
+    ):
+        # If user didn't load with index_col=0, set first column as index (the moment key column)
+        if "value" not in moments.columns:
+            # Typical CSV: moment,value  (so first column is "moment")
+            moments = moments.set_index(moments.columns[0])
+        # else: already fine
+
+    if "value" not in moments.columns:
+        raise ValueError("Expected a 'value' column in the moments DataFrame.")
+
+    edu_labels = specs["education_labels"]
+    n_edu = len(edu_labels)
+    fig, axs = plt.subplots(1, n_edu, figsize=(5 * n_edu, 4), sharex=True, sharey=True)
+    if n_edu == 1:
+        axs = np.array([axs])
+
+    agg = (
+        (lambda s: s.median(skipna=True)) if median else (lambda s: s.mean(skipna=True))
+    )
+
+    # Helper: parse a Series (index=int age) from moments for a given education tag
+    def extract_moment_series(tag: str) -> pd.Series:
+        pattern = re.compile(rf"^mean_wealth_{tag}_education_wealth_age_(\d+)$")
+        extracted = moments.index.to_series().str.extract(pattern)
+        ages_str = extracted[0]
+        mask = ages_str.notna()
+        s = moments.loc[mask, "value"].copy()
+        s.index = ages_str[mask].astype(int)
+        return s.sort_index()
+
+    # Map panel index → tag used in moment keys
+    tag_map = {0: "low", 1: "high"}
+
+    # ---------- 1) Plot per education ----------
+    all_values = []
+    for edu_idx, edu_label in enumerate(edu_labels):
+        ax = axs[edu_idx]
+
+        # Empirical series
+        emp_edu = data_emp[data_emp["education"] == edu_idx]
+        emp_series = (
+            emp_edu.groupby("age")[wealth_var_emp]
+            .apply(agg)
+            .reindex(ages, fill_value=np.nan)
+        )
+
+        # Moments series
+        tag = tag_map.get(edu_idx)
+        if tag is None:
+            # If more than two education groups exist, hide extra panels gracefully
+            ax.set_visible(False)
+            continue
+        mom_series = extract_moment_series(tag).reindex(ages, fill_value=np.nan)
+
+        # Collect for common y-limits
+        all_values.extend(emp_series.dropna().tolist())
+        all_values.extend(mom_series.dropna().tolist())
+
+        # Lines (match style spirit: black empirical; dashed moments)
+        ax.plot(ages, emp_series.values, color="black", ls="-", label="Observed")
+        ax.plot(ages, mom_series.values, color="C1", ls="--", label="Moments")
+
+        # Ax cosmetics
+        xrange = age_max - age_min
+        pad = int(0.05 * xrange)
+        ax.set_xlim(age_min - pad, age_max + pad)
+        ax.set_xlabel("Age")
+        ax.set_title(edu_label)
+        ax.grid(True, alpha=0.2)
+
+        if edu_idx == 0:
+            ax.set_ylabel(f"{stat_name} wealth")
+        else:
+            ax.tick_params(labelleft=False)
+
+    # ---------- 2) Common y-limits ----------
+    if all_values:
+        ymin, ymax = np.nanmin(all_values), np.nanmax(all_values)
+        pad = 0.05 * (ymax - ymin if ymax > ymin else 1.0)
+        for ax in axs:
+            if ax.get_visible():
+                ax.set_ylim(ymin - pad, ymax + pad)
+
+    # ---------- 3) Mirror left y-axis on right panel ----------
+    axs[-1].yaxis.set_ticks_position("left")
+    axs[-1].yaxis.set_label_position("left")
+    axs[-1].set_ylabel(f"{stat_name} wealth")
+
+    # ---------- 4) Single legend (top center) ----------
+    handles, labels = axs[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper center", ncol=2, frameon=False)
+
+    plt.tight_layout(rect=[0, 0, 1, 0.95])  # leave space for legend
+
+    if path_to_save_plot:
+        plt.savefig(path_to_save_plot, dpi=300, transparent=False)
+
+    return fig, axs
+
+
+def plot_wealth_emp_vs_moments(
+    data_emp: pd.DataFrame,
+    moments: pd.DataFrame,
+    specs: dict,
+    *,
+    wealth_var_emp: str,
+    median: bool = False,
+    age_min: int | None = None,
+    age_max: int | None = None,
+    path_to_save_plot: str | None = None,
+):
+    """
+    Overlay empirical wealth (mean/median) and moment-based mean wealth by age,
+    with one subplot per education group (left: low, right: high).
+
+    Parameters
+    ----------
+    data_emp : DataFrame
+        Must include columns: 'age', 'education', and the wealth variable.
+    moments : DataFrame
+        Loaded from CSV. Expect index col to contain moment keys like:
+        'mean_wealth_low_education_wealth_age_30' and a 'value' column.
+    specs : dict
+        Expects:
+          - 'start_age', 'end_age_msm'
+          - 'education_labels' : list[str], e.g. ["Low education", "High education"]
+    wealth_var_emp : str
+        Column name of wealth in the empirical dataset.
+    median : bool, default False
+        If True, plot median for empirical; else plot mean.
+    age_min, age_max : int | None
+        Plot range. Defaults to [specs['start_age'], specs['end_age_msm']].
+    path_to_save_plot : str | None
+        If provided, saves the figure.
+    """
+    # ---------- 0) Setup ----------
+    if age_min is None:
+        age_min = specs["start_age"]
+    if age_max is None:
+        age_max = specs["end_age_msm"]
+    ages = range(age_min, age_max + 1)
+    stat_name = "Median" if median else "Average"
+
+    # Make sure the moments have the moment keys as index and a 'value' column
+    if moments.index.name is None or (
+        moments.index.name != moments.columns[0] and "value" in moments.columns
+    ):
+        # If user didn't load with index_col=0, set first column as index (the moment key column)
+        if "value" not in moments.columns:
+            # Typical CSV: moment,value  (so first column is "moment")
+            moments = moments.set_index(moments.columns[0])
+        # else: already fine
+
+    if "value" not in moments.columns:
+        raise ValueError("Expected a 'value' column in the moments DataFrame.")
+
+    edu_labels = specs["education_labels"]
+    n_edu = len(edu_labels)
+    fig, axs = plt.subplots(1, n_edu, figsize=(5 * n_edu, 4), sharex=True, sharey=True)
+    if n_edu == 1:
+        axs = np.array([axs])
+
+    agg = (
+        (lambda s: s.median(skipna=True)) if median else (lambda s: s.mean(skipna=True))
+    )
+
+    # Helper: parse a Series (index=int age) from moments for a given education tag
+    def extract_moment_series(tag: str) -> pd.Series:
+        pattern = re.compile(rf"^mean_wealth_{tag}_education_wealth_age_(\d+)$")
+        extracted = moments.index.to_series().str.extract(pattern)
+        ages_str = extracted[0]
+        mask = ages_str.notna()
+        s = moments.loc[mask, "value"].copy()
+        s.index = ages_str[mask].astype(int)
+        return s.sort_index()
+
+    # Map panel index → tag used in moment keys
+    tag_map = {0: "low", 1: "high"}
+
+    # ---------- 1) Plot per education ----------
+    all_values = []
+    for edu_idx, edu_label in enumerate(edu_labels):
+        ax = axs[edu_idx]
+
+        # Empirical series
+        emp_edu = data_emp[data_emp["education"] == edu_idx]
+        emp_series = (
+            emp_edu.groupby("age")[wealth_var_emp]
+            .apply(agg)
+            .reindex(ages, fill_value=np.nan)
+        )
+
+        # Moments series
+        tag = tag_map.get(edu_idx)
+        if tag is None:
+            # If more than two education groups exist, hide extra panels gracefully
+            ax.set_visible(False)
+            continue
+        mom_series = extract_moment_series(tag).reindex(ages, fill_value=np.nan)
+
+        # Collect for common y-limits
+        all_values.extend(emp_series.dropna().tolist())
+        all_values.extend(mom_series.dropna().tolist())
+
+        # Lines (match style spirit: black empirical; dashed moments)
+        ax.plot(ages, emp_series.values, color="black", ls="-", label="Observed")
+        ax.plot(ages, mom_series.values, color="C1", ls="--", label="Moments")
+
+        # Ax cosmetics
+        xrange = age_max - age_min
+        pad = int(0.05 * xrange)
+        ax.set_xlim(age_min - pad, age_max + pad)
+        ax.set_xlabel("Age")
+        ax.set_title(edu_label)
+        ax.grid(True, alpha=0.2)
+
+        if edu_idx == 0:
+            ax.set_ylabel(f"{stat_name} wealth")
+        else:
+            ax.tick_params(labelleft=False)
+
+    # ---------- 2) Common y-limits ----------
+    if all_values:
+        ymin, ymax = np.nanmin(all_values), np.nanmax(all_values)
+        pad = 0.05 * (ymax - ymin if ymax > ymin else 1.0)
+        for ax in axs:
+            if ax.get_visible():
+                ax.set_ylim(ymin - pad, ymax + pad)
+
+    # ---------- 3) Mirror left y-axis on right panel ----------
+    axs[-1].yaxis.set_ticks_position("left")
+    axs[-1].yaxis.set_label_position("left")
+    axs[-1].set_ylabel(f"{stat_name} wealth")
+
+    # ---------- 4) Single legend (top center) ----------
+    handles, labels = axs[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper center", ncol=2, frameon=False)
+
+    plt.tight_layout(rect=[0, 0, 1, 0.95])  # leave space for legend
+
+    if path_to_save_plot:
+        plt.savefig(path_to_save_plot, dpi=300, transparent=False)
+
+    return fig, axs
+
+
+# ======================================================================================
+# Labor supply choices
+# ======================================================================================
 
 
 def plot_choice_shares_by_education_emp(
