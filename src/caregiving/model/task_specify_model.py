@@ -26,7 +26,7 @@ from caregiving.model.stochastic_processes.partner_transition import partner_tra
 from caregiving.model.utility.bequest_utility import (
     create_final_period_utility_functions,
 )
-from caregiving.model.utility.utility_functions import create_utility_functions
+from caregiving.model.utility.utility_functions_adda import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
 
