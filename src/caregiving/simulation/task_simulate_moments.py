@@ -84,7 +84,6 @@ def task_simulate_moments(
     #     "part_time": "Part-time",
     #     "full_time": "Full-time",
     # }
-
     # states = {
     #     "not_working": NOT_WORKING,
     #     "working": WORK,

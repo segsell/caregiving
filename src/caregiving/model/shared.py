@@ -142,6 +142,7 @@ END_YEAR_PARENT_GENERATION = 1960
 WEALTH_QUANTILE_CUTOFF = 0.98
 WEALTH_MOMENTS_SCALE = 0.01  # to rescale wealth moments
 
+
 # ==============================================================================
 # Empirical Labor Choices
 # ==============================================================================

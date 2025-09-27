@@ -36,6 +36,8 @@ from caregiving.model.shared import (  # NURSING_HOME_CARE,
     SEX,
 )
 
+FILL_VALUE_MISSING_AGE = np.nan
+
 # =====================================================================================
 # Pandas
 # =====================================================================================
@@ -428,10 +430,18 @@ def create_labor_share_moments_pandas(df, moments, age_range, label=None):
 
     # Reindex to ensure that every age between start_age and end_age is included;
     # missing ages will be filled with NaN
-    # retired_shares = retired_shares.reindex(age_range, fill_value=np.nan)
-    unemployed_shares = unemployed_shares.reindex(age_range, fill_value=np.nan)
-    part_time_shares = part_time_shares.reindex(age_range, fill_value=np.nan)
-    full_time_shares = full_time_shares.reindex(age_range, fill_value=np.nan)
+    retired_shares = retired_shares.reindex(
+        age_range, fill_value=FILL_VALUE_MISSING_AGE
+    )
+    unemployed_shares = unemployed_shares.reindex(
+        age_range, fill_value=FILL_VALUE_MISSING_AGE
+    )
+    part_time_shares = part_time_shares.reindex(
+        age_range, fill_value=FILL_VALUE_MISSING_AGE
+    )
+    full_time_shares = full_time_shares.reindex(
+        age_range, fill_value=FILL_VALUE_MISSING_AGE
+    )
 
     # Populate the moments dictionary for age-specific shares
     for age in age_range:

@@ -171,7 +171,6 @@ def task_plot_model_fit(  # noqa: PLR0915
     # )
 
     df_emp_wealth = adjust_and_trim_wealth_data(df=df_emp_wealth, specs=specs)
-
     plot_wealth_by_age_and_education(
         data_emp=df_emp_wealth,
         data_sim=df_sim,
