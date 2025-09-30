@@ -377,34 +377,34 @@ def task_create_soep_moments(  # noqa: PLR0915
     # )
     # =================================================================================
 
-    # E) Year-to-year labor supply transitions
-    states_work_no_work = {
-        "not_working": NOT_WORKING_CHOICES,
-        "working": WORK_CHOICES,
-    }
-    transition_moments, transition_variances = (
-        compute_transition_moments_and_variances_for_age_bins(
-            df_low,
-            min_age=start_age,
-            max_age=end_age,
-            states=states_work_no_work,
-            label="low_education",
-        )
-    )
-    moments.update(transition_moments)
-    variances.update(transition_variances)
+    # # E) Year-to-year labor supply transitions
+    # states_work_no_work = {
+    #     "not_working": NOT_WORKING_CHOICES,
+    #     "working": WORK_CHOICES,
+    # }
+    # transition_moments, transition_variances = (
+    #     compute_transition_moments_and_variances_for_age_bins(
+    #         df_low,
+    #         min_age=start_age,
+    #         max_age=end_age,
+    #         states=states_work_no_work,
+    #         label="low_education",
+    #     )
+    # )
+    # moments.update(transition_moments)
+    # variances.update(transition_variances)
 
-    transition_moments, transition_variances = (
-        compute_transition_moments_and_variances_for_age_bins(
-            df_high,
-            min_age=start_age,
-            max_age=end_age,
-            states=states_work_no_work,
-            label="high_education",
-        )
-    )
-    moments.update(transition_moments)
-    variances.update(transition_variances)
+    # transition_moments, transition_variances = (
+    #     compute_transition_moments_and_variances_for_age_bins(
+    #         df_high,
+    #         min_age=start_age,
+    #         max_age=end_age,
+    #         states=states_work_no_work,
+    #         label="high_education",
+    #     )
+    # )
+    # moments.update(transition_moments)
+    # variances.update(transition_variances)
 
     # states = {
     #     "not_working": NOT_WORKING,
