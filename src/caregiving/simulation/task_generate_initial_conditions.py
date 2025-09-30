@@ -32,7 +32,7 @@ from caregiving.model.stochastic_processes.job_transition import (
 from caregiving.model.utility.bequest_utility import (
     create_final_period_utility_functions,
 )
-from caregiving.model.utility.utility_functions import create_utility_functions
+from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.utils import table
 from dcegm.pre_processing.setup_model import load_and_setup_model

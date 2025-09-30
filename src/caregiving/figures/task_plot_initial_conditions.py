@@ -15,7 +15,7 @@ from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.utility.bequest_utility import (
     create_final_period_utility_functions,
 )
-from caregiving.model.utility.utility_functions import create_utility_functions
+from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.simulation.task_generate_initial_conditions import (
     draw_start_wealth_dist,

@@ -18,7 +18,7 @@ from caregiving.model.utility.bequest_utility import (
     marginal_utility_final_consume_all,
     utility_final_consume_all,
 )
-from caregiving.model.utility.utility_functions_adda import (
+from caregiving.model.utility.utility_functions_additive import (
     consumption_scale,
     inverse_marginal_additive,
     marginal_utility_func_additive_alive,
