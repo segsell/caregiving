@@ -10,6 +10,7 @@ from caregiving.model.shared import (  # is_nursing_home_care,
     PARENT_BAD_HEALTH,
     PARENT_GOOD_HEALTH,
     PARENT_MEDIUM_HEALTH,
+    PARTNER_RETIRED,
     PERIOD_SCALE,
     SEX,
     is_bad_health,
@@ -24,12 +25,12 @@ from caregiving.model.shared import (  # is_nursing_home_care,
     is_light_informal_care,
     is_no_care,
     is_part_time,
-    is_unemployed,
     is_retired,
+    is_unemployed,
 )
 from caregiving.model.utility.bequest_utility import (
-    utility_final_consume_all,
     marginal_utility_final_consume_all,
+    utility_final_consume_all,
 )
 
 
@@ -39,7 +40,7 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     unemployed = is_unemployed(choice)
     working_part_time = is_part_time(choice)
     working_full_time = is_full_time(choice)
-    partner_retired = partner_state == 2
+    partner_retired = partner_state == PARTNER_RETIRED
 
     bad_health = is_bad_health(health)
     good_health = is_good_health(health)

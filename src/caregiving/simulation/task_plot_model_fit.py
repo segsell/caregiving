@@ -25,15 +25,14 @@ from caregiving.model.shared import (
     PARENT_DEAD,
     SCALE_CAREGIVER_SHARE,
     SEX,
+    WEALTH_QUANTILE_CUTOFF,
     WORK,
     WORK_CHOICES,
-    WEALTH_QUANTILE_CUTOFF,
 )
 from caregiving.moments.task_create_soep_moments import adjust_and_trim_wealth_data
 from caregiving.simulation.plot_model_fit import (
     plot_average_savings_decision,
     plot_average_wealth,
-    plot_wealth_by_age_and_education,
     plot_caregiver_shares_by_age,
     plot_caregiver_shares_by_age_bins,
     plot_choice_shares,
@@ -47,6 +46,7 @@ from caregiving.simulation.plot_model_fit import (
     plot_states,
     plot_transitions_by_age,
     plot_transitions_by_age_bins,
+    plot_wealth_by_age_and_education,
 )
 
 

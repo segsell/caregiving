@@ -32,21 +32,21 @@ from caregiving.model.utility.utility_components import (
 )
 
 
-def _create_utility_functions():
-    """Create dict of utility functions."""
-    return {
-        "utility": utility_func_adda,
-        "marginal_utility": marg_utility_adda,
-        "inverse_marginal_utility": inverse_marginal_adda,
-    }
-
-
 def create_utility_functions():
     """Create dict of utility functions."""
     return {
         "utility": utility_func_additive,
-        "marginal_utility": marg_utility_additive,
+        "marginal_utility": marginal_utility_func_additive_alive,
         "inverse_marginal_utility": inverse_marginal_additive,
+    }
+
+
+def _create_utility_functions():
+    """Create dict of utility functions."""
+    return {
+        "utility": utility_func_adda,
+        "marginal_utility": marginal_utility_func_adda_alive,
+        "inverse_marginal_utility": inverse_marginal_adda,
     }
 
 
@@ -177,7 +177,7 @@ def utility_func_alive_adda(
     return utility * eta  # + zeta * care_demand
 
 
-def marg_utility_adda(
+def marginal_utility_func_adda_alive(
     consumption, partner_state, education, health, period, choice, params, options
 ):
 
@@ -267,7 +267,8 @@ def utility_func_additive(
     period: int,
     education: int,
     health: int,
-    care_demand: int,
+    # care_demand: int,
+    # mother_health: int,
     partner_state: int,
     params: dict,
     options: dict,
@@ -309,6 +310,7 @@ def utility_func_additive(
         education=education,
         health=health,
         # care_demand=care_demand,
+        # mother_health=mother_health,
         period=period,
         choice=choice,
         params=params,
@@ -331,6 +333,7 @@ def utility_func_alive_additive(
     education,
     health,
     # care_demand,
+    # mother_health,
     period,
     choice,
     params,
@@ -382,7 +385,7 @@ def utility_func_alive_additive(
     return utility + disutil_work  # + zeta * care_demand
 
 
-def marg_utility_additive(
+def marginal_utility_func_additive_alive(
     consumption, partner_state, education, health, period, choice, params, options
 ):
 
@@ -429,7 +432,8 @@ def inverse_marginal_additive(
         options=options,
     )
 
-    # Solve m = (c/cons_scale)^(-rho) / cons_scale  →  c = cons_scale * (m*cons_scale)^(-1/rho)
+    # Solve m = (c/cons_scale)^(-rho) / cons_scale
+    # c = cons_scale * (m*cons_scale)^(-1/rho)
     consumption_rho_not_one = cons_scale * (marginal_utility * cons_scale) ** (-1 / rho)
     consumption = jax.lax.select(
         jnp.allclose(rho, 1), 1.0 / marginal_utility, consumption_rho_not_one

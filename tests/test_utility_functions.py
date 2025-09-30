@@ -18,11 +18,11 @@ from caregiving.model.utility.bequest_utility import (
     marginal_utility_final_consume_all,
     utility_final_consume_all,
 )
-from caregiving.model.utility.utility_functions import (
+from caregiving.model.utility.utility_functions_adda import (
     consumption_scale,
-    inverse_marginal,
-    marginal_utility_function_alive,
-    utility_func,
+    inverse_marginal_additive,
+    marginal_utility_func_additive_alive,
+    utility_func_additive,
 )
 
 jax.config.update("jax_enable_x64", True)
@@ -115,18 +115,24 @@ def test_utility_func(
     """Test utility function for unemployed, part and full-time."""
     options = load_specs
     params = {
-        "rho": rho,
+        "rho_low": rho,
+        "rho_high": rho,
         "rho_bequest_low": rho,
         "rho_bequest_high": rho,
         "bequest_scale_low": 2,
         "bequest_scale_high": 2,
         # labor, no caregiving
-        "disutil_pt_work_good_women": disutil_work,
-        "disutil_pt_work_bad_women": disutil_work + 1,
-        "disutil_ft_work_good_women": disutil_work,
-        "disutil_ft_work_bad_women": disutil_work + 1,
+        "disutil_pt_work_high_good": disutil_work,
+        "disutil_pt_work_high_bad": disutil_work + 1,
+        "disutil_ft_work_high_good": disutil_work,
+        "disutil_ft_work_high_bad": disutil_work + 1,
+        "disutil_pt_work_low_good": disutil_work,
+        "disutil_pt_work_low_bad": disutil_work + 1,
+        "disutil_ft_work_low_good": disutil_work,
+        "disutil_ft_work_low_bad": disutil_work + 1,
         "disutil_unemployed_low_women": disutil_unemployed,
         "disutil_unemployed_high_women": disutil_unemployed,
+        "disutil_partner_retired": 0,
         "disutil_children_pt_work_low": 0,
         "disutil_children_pt_work_high": 0,
         "disutil_children_ft_work_low": 0.1,
@@ -156,7 +162,7 @@ def test_utility_func(
         # n_children=n_children,
     )
 
-    # educ_str = "low" * (1 - education) + "high" * education
+    educ_str = "low" * (1 - education) + "high" * education
     health_str = "good" * health + "bad" * (1 - health)
     sex_str = "women"
 
@@ -165,7 +171,7 @@ def test_utility_func(
     # * (1 - education)
     # + np.exp(params["util_cons_unemployed_high_educ"]) * education
     # )
-    disutil_unemployment = np.exp(-params[f"disutil_unemployed_low_{sex_str}"])
+    disutil_unemployment = -params[f"disutil_unemployed_low_{sex_str}"]
 
     # exp_factor_pt_work = params["util_cons_part_time_low_educ"] * (
     #     1 - education
@@ -184,11 +190,11 @@ def test_utility_func(
     # )
 
     exp_factor_pt_work = (
-        params[f"disutil_pt_work_{health_str}_{sex_str}"]
+        params[f"disutil_pt_work_{educ_str}_{health_str}"]
         # + params[f"disutil_pt_work_{educ_str}_{sex_str}"]
     )
     exp_factor_ft_work = (
-        params[f"disutil_ft_work_{health_str}_{sex_str}"]
+        params[f"disutil_ft_work_{educ_str}_{health_str}"]
         # + params[f"disutil_ft_work_{educ_str}_{sex_str}"]
     )
 
@@ -202,36 +208,27 @@ def test_utility_func(
         params["disutil_children_ft_work_low"] * nb_children * (1 - education)
     )
 
-    disutil_pt_work = np.exp(-exp_factor_pt_work)
-    disutil_ft_work = np.exp(-exp_factor_ft_work)
+    disutil_pt_work = -exp_factor_pt_work
+    disutil_ft_work = -exp_factor_ft_work
 
-    # if rho == 1:
-    #     utility_lambda = lambda util: np.log(  # noqa: E731
-    #         consumption * util / cons_scale
-    #     )
-    # else:
-    #     utility_lambda = (  # noqa: E731
-    #         lambda util: ((consumption / cons_scale) ** (1 - rho) - 1)
-    #         / (1 - rho)
-    #         * util
-    #     )
     if rho == 1:
-        utility_lambda = lambda disutil: np.log(  # noqa: E731
-            consumption * disutil / cons_scale
-        )  # noqa: E730
+        utility_lambda = (  # noqa: E731
+            lambda disutil: np.log(consumption / cons_scale) + disutil
+        )
     else:
-        utility_lambda = lambda disutil: (  # noqa: E731
-            (consumption * disutil / cons_scale) ** (1 - rho) - 1
-        ) / (1 - rho)
+        utility_lambda = (  # noqa: E731
+            lambda disutil: ((consumption / cons_scale) ** (1 - rho) - 1) / (1 - rho)
+            + disutil
+        )
 
     np.testing.assert_almost_equal(
-        utility_func(
+        utility_func_additive(
             consumption=consumption,
             partner_state=partner_state,
             education=education,
             health=health,
-            care_demand=0,
-            mother_health=PARENT_DEAD,
+            # care_demand=0,
+            # mother_health=PARENT_DEAD,
             period=period,
             choice=UNEMPLOYED_NO_CARE,
             params=params,
@@ -241,13 +238,13 @@ def test_utility_func(
     )
 
     np.testing.assert_almost_equal(
-        utility_func(
+        utility_func_additive(
             consumption=consumption,
             partner_state=partner_state,
             education=education,
             health=health,
-            care_demand=0,
-            mother_health=PARENT_DEAD,
+            # care_demand=0,
+            # mother_health=PARENT_DEAD,
             period=period,
             choice=PART_TIME_NO_CARE,
             params=params,
@@ -257,13 +254,13 @@ def test_utility_func(
     )
 
     np.testing.assert_almost_equal(
-        utility_func(
+        utility_func_additive(
             consumption=consumption,
             partner_state=partner_state,
             education=education,
             health=health,
-            care_demand=0,
-            mother_health=PARENT_DEAD,
+            # care_demand=0,
+            # mother_health=PARENT_DEAD,
             period=period,
             choice=FULL_TIME_NO_CARE,
             params=params,
@@ -305,18 +302,24 @@ def test_marginal_utility(
 
     options = load_specs
     params = {
-        "rho": rho,
+        "rho_low": rho,
+        "rho_high": rho,
         "rho_bequest_low": rho,
         "rho_bequest_high": rho,
         "bequest_scale_low": 2,
         "bequest_scale_high": 2,
         # labor, no caregiving
-        "disutil_pt_work_good_women": disutil_work,
-        "disutil_pt_work_bad_women": disutil_work + 1,
-        "disutil_ft_work_good_women": disutil_work,
-        "disutil_ft_work_bad_women": disutil_work + 1,
+        "disutil_pt_work_high_good": disutil_work,
+        "disutil_pt_work_high_bad": disutil_work + 1,
+        "disutil_ft_work_high_good": disutil_work,
+        "disutil_ft_work_high_bad": disutil_work + 1,
+        "disutil_pt_work_low_good": disutil_work,
+        "disutil_pt_work_low_bad": disutil_work + 1,
+        "disutil_ft_work_low_good": disutil_work,
+        "disutil_ft_work_low_bad": disutil_work + 1,
         "disutil_unemployed_low_women": disutil_unemployed,
         "disutil_unemployed_high_women": disutil_unemployed,
+        "disutil_partner_retired": 0,
         "disutil_children_pt_work_low": 0,
         "disutil_children_pt_work_high": 0,
         "disutil_children_ft_work_low": 0.1,
@@ -335,25 +338,25 @@ def test_marginal_utility(
     }
 
     random_choice = np.random.choice(np.array([0, 1, 2]))
-    marg_util_jax = jax.jacfwd(utility_func, argnums=0)(
+    marg_util_jax = jax.jacfwd(utility_func_additive, argnums=0)(
         consumption,
         random_choice,
         period,
         education,
         health,
-        0,  # care_demand
-        PARENT_DEAD,  # mother_health
+        # 0,  # care_demand
+        # PARENT_DEAD,  # mother_health
         partner_state,
         params,
         options,
     )
-    marg_util_model = marginal_utility_function_alive(
+    marg_util_model = marginal_utility_func_additive_alive(
         consumption=consumption,
         choice=random_choice,
         period=period,
         education=education,
         health=health,
-        care_demand=0,
+        # care_demand=0,
         partner_state=partner_state,
         params=params,
         options=options,
@@ -391,18 +394,24 @@ def test_inverse_marginal_utility(
 ):
     options = load_specs
     params = {
-        "rho": rho,
+        "rho_low": rho,
+        "rho_high": rho,
         "rho_bequest_low": rho,
         "rho_bequest_high": rho,
         "bequest_scale_low": 2,
         "bequest_scale_high": 2,
         # labor, no caregiving
-        "disutil_pt_work_good_women": disutil_work,
-        "disutil_pt_work_bad_women": disutil_work + 1,
-        "disutil_ft_work_good_women": disutil_work,
-        "disutil_ft_work_bad_women": disutil_work + 1,
+        "disutil_pt_work_high_good": disutil_work,
+        "disutil_pt_work_high_bad": disutil_work + 1,
+        "disutil_ft_work_high_good": disutil_work,
+        "disutil_ft_work_high_bad": disutil_work + 1,
+        "disutil_pt_work_low_good": disutil_work,
+        "disutil_pt_work_low_bad": disutil_work + 1,
+        "disutil_ft_work_low_good": disutil_work,
+        "disutil_ft_work_low_bad": disutil_work + 1,
         "disutil_unemployed_low_women": disutil_unemployed,
         "disutil_unemployed_high_women": disutil_unemployed,
+        "disutil_partner_retired": 0,
         "disutil_children_pt_work_low": 0,
         "disutil_children_pt_work_high": 0,
         "disutil_children_ft_work_low": 0.1,
@@ -421,31 +430,36 @@ def test_inverse_marginal_utility(
     }
 
     random_choice = np.random.choice(np.array([0, 1, 2]))
-    marg_util = marginal_utility_function_alive(
+    marg_util = marginal_utility_func_additive_alive(
         consumption=consumption,
         choice=random_choice,
         period=period,
         education=education,
         health=health,
-        care_demand=0,
+        # care_demand=0,
         partner_state=partner_state,
         params=params,
         options=options,
     )
     np.testing.assert_almost_equal(
-        inverse_marginal(
+        inverse_marginal_additive(
             marginal_utility=marg_util,
             choice=random_choice,
             period=period,
             education=education,
             health=health,
-            care_demand=0,
+            # care_demand=0,
             partner_state=partner_state,
             params=params,
             options=options,
         ),
         consumption,
     )
+
+
+# ======================================================================================
+# Bequest utility
+# ======================================================================================
 
 
 @pytest.mark.parametrize(

@@ -27,12 +27,12 @@ from caregiving.model.shared import (
     PART_TIME_CHOICES,
     RETIREMENT_CHOICES,
     SCALE_CAREGIVER_SHARE,
+    SEX,
     START_PERIOD_CAREGIVING,
     UNEMPLOYED_CHOICES,
-    WORK,
-    SEX,
     WEALTH_MOMENTS_SCALE,
     WEALTH_QUANTILE_CUTOFF,
+    WORK,
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
 from caregiving.utils import table
@@ -62,7 +62,7 @@ def task_create_soep_moments(
     end_age = specs["end_age_msm"]
 
     age_range = range(start_age, end_age + 1)
-    age_range_caregivers = range(start_age_caregivers, end_age + 1)
+    _age_range_caregivers = range(start_age_caregivers, end_age + 1)
     age_range_wealth = range(start_age, specs["end_age_wealth"] + 1)
 
     _age_bins_75 = (
@@ -111,8 +111,8 @@ def task_create_soep_moments(
     df_low = df[df["education"] == 0]
     df_high = df[df["education"] == 1]
 
-    df_caregivers_low = df_caregivers[df_caregivers["education"] == 0]
-    df_caregivers_high = df_caregivers[df_caregivers["education"] == 1]
+    _df_caregivers_low = df_caregivers[df_caregivers["education"] == 0]
+    _df_caregivers_high = df_caregivers[df_caregivers["education"] == 1]
     _df_light_caregivers_low = df_light_caregivers[
         df_light_caregivers["education"] == 0
     ]
@@ -924,7 +924,7 @@ def compute_mean_wealth_by_age(
     # First two ages → raw mean
     if len(age_index) >= 1:
         roll3.iloc[0] = base_mean.iloc[0]
-    if len(age_index) >= 2:
+    if len(age_index) >= 2:  # noqa: PLR2004
         roll3.iloc[1] = base_mean.iloc[1]
 
     # Last 21 ages → rolling(5)

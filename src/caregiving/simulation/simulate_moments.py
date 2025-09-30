@@ -29,11 +29,11 @@ from caregiving.model.shared import (  # NURSING_HOME_CARE,
     PART_TIME,
     RETIREMENT,
     SCALE_CAREGIVER_SHARE,
+    SEX,
     START_PERIOD_CAREGIVING,
     UNEMPLOYED,
-    WORK,
     WEALTH_MOMENTS_SCALE,
-    SEX,
+    WORK,
 )
 
 FILL_VALUE_MISSING_AGE = np.nan
