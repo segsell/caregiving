@@ -24,6 +24,7 @@ from caregiving.model.shared import (  # NURSING_HOME_CARE,
     NO_CARE,
     NO_INFORMAL_CARE,
     NO_NURSING_HOME_CARE,
+    NOT_WORKING,
     NOT_WORKING_CARE,
     PARENT_BAD_HEALTH,
     PART_TIME,
@@ -237,20 +238,16 @@ def simulate_moments_pandas(  # noqa: PLR0915
     # }
     # moments = compute_transition_moments_pandas(df, moments, age_range, states=states)
 
-    # states_work_no_work = {
-    #     "not_working": NOT_WORKING,
-    #     "working": WORK,
-    # }
-    # moments = compute_transition_moments_pandas_for_age_bins(
-    #     df_low, moments, age_range, states=states_work_no_work, label="low_education"
-    # )
-    # moments = compute_transition_moments_pandas_for_age_bins(
-    #     df_high,
-    # moments,
-    # age_range,
-    # states=states_work_no_work,
-    # label="high_education"
-    # )
+    states_work_no_work = {
+        "not_working": NOT_WORKING,
+        "working": WORK,
+    }
+    moments = compute_transition_moments_pandas_for_age_bins(
+        df_low, moments, age_range, states=states_work_no_work, label="low_education"
+    )
+    moments = compute_transition_moments_pandas_for_age_bins(
+        df_high, moments, age_range, states=states_work_no_work, label="high_education"
+    )
 
     # states_informal_care = {
     #     "no_informal_care": NOT_WORKING_CARE,
@@ -1251,40 +1248,39 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
     )
 
     # Work transitions
-    # work_to_work_low_educ_by_age = get_transition_for_age_bins(
-    #     arr_low_educ,
-    #     ind=idx,
-    #     lagged_choice=WORK,
-    #     current_choice=WORK,
-    #     min_age=min_age,
-    #     max_age=max_age,
-    # )
-    # no_work_to_no_work_low_educ_by_age = get_transition_for_age_bins(
-    #     arr_low_educ,
-    #     ind=idx,
-    #     lagged_choice=NOT_WORKING,
-    #     current_choice=NOT_WORKING,
-    #     min_age=min_age,
-    #     max_age=max_age,
-    # )
+    no_work_to_no_work_low_educ_by_age_bin = get_transition_for_age_bins(
+        arr_low_educ,
+        ind=idx,
+        lagged_choice=NOT_WORKING,
+        current_choice=NOT_WORKING,
+        min_age=min_age,
+        max_age=max_age,
+    )
+    work_to_work_low_educ_by_age_bin = get_transition_for_age_bins(
+        arr_low_educ,
+        ind=idx,
+        lagged_choice=WORK,
+        current_choice=WORK,
+        min_age=min_age,
+        max_age=max_age,
+    )
 
-    # work_to_work_high_educ_by_age = get_transition_for_age_bins(
-    #     arr_high_educ,
-    #     ind=idx,
-    #     lagged_choice=WORK,
-    #     current_choice=WORK,
-    #     min_age=min_age,
-    #     max_age=max_age,
-    # )
-    # no_work_to_no_work_high_educ_by_age = get_transition_for_age_bins(
-    #     arr_high_educ,
-    #     ind=idx,
-    #     lagged_choice=NOT_WORKING,
-    #     current_choice=NOT_WORKING,
-    #     min_age=min_age,
-    #     max_age=max_age,
-    # )
-    # #
+    no_work_to_no_work_high_educ_by_age_bin = get_transition_for_age_bins(
+        arr_high_educ,
+        ind=idx,
+        lagged_choice=NOT_WORKING,
+        current_choice=NOT_WORKING,
+        min_age=min_age,
+        max_age=max_age,
+    )
+    work_to_work_high_educ_by_age_bin = get_transition_for_age_bins(
+        arr_high_educ,
+        ind=idx,
+        lagged_choice=WORK,
+        current_choice=WORK,
+        min_age=min_age,
+        max_age=max_age,
+    )
 
     # no_work_to_part_time_by_age = get_transition(
     #     arr,
@@ -1549,10 +1545,10 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
         #
         # #
         # transitions
-        # + work_to_work_low_educ_by_age
-        # + no_work_to_no_work_low_educ_by_age
-        # + work_to_work_high_educ_by_age
-        # + no_work_to_no_work_high_educ_by_age
+        + no_work_to_no_work_low_educ_by_age_bin
+        + work_to_work_low_educ_by_age_bin
+        + no_work_to_no_work_high_educ_by_age_bin
+        + work_to_work_high_educ_by_age_bin
         # #
         # # work to work transitions
         # + no_work_to_no_work_low_educ_by_age
