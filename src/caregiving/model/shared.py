@@ -112,6 +112,8 @@ CARE_DEMAND_AND_NO_OTHER_SUPPLY = 2
 EARLY_RETIREMENT_AGE = 60
 RETIREMENT_AGE = 65
 
+PARTNER_RETIRED = 2
+
 
 TOTAL_WEEKLY_HOURS = 80
 WEEKLY_HOURS_PART_TIME = 20
@@ -138,6 +140,10 @@ INITIAL_CONDITIONS_AGE_HIGH = 60
 SCALE_CAREGIVER_SHARE = 1.0
 
 END_YEAR_PARENT_GENERATION = 1960
+
+WEALTH_QUANTILE_CUTOFF = 0.98
+WEALTH_MOMENTS_SCALE = 0.01  # to rescale wealth moments
+
 
 # ==============================================================================
 # Empirical Labor Choices

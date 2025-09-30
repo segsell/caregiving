@@ -1,12 +1,27 @@
 # Utility parameters
-rho: 2
-rho_low: 2
-rho_high: 2
-rho_bequest_low: 2
-rho_bequest_high: 2
+rho: 5
+rho_low: 5
+rho_high: 5
+rho_bad: 5
+rho_good: 5
+rho_bequest_low: 5
+rho_bequest_high: 5
 
 beta: 0.999999999999
 
+disutil_partner_retired: 5
+
+disutil_ft_work_high_good: 5
+disutil_ft_work_high_bad: 5
+disutil_ft_work_low_good: 5
+disutil_ft_work_low_bad: 5
+
+disutil_pt_work_high_good: 5
+disutil_pt_work_high_bad: 5
+disutil_pt_work_low_good: 5
+disutil_pt_work_low_bad: 5
+
+#
 disutil_ft_work_good_women: 5
 disutil_ft_work_bad_women: 5
 disutil_pt_work_good_women: 5
@@ -14,10 +29,12 @@ disutil_pt_work_bad_women: 5
 disutil_unemployed_women: 5
 disutil_unemployed_low_women: 5
 disutil_unemployed_high_women: 5
+
 disutil_pt_work_low_women: 5
 disutil_pt_work_high_women: 5
 disutil_ft_work_low_women: 5
 disutil_ft_work_high_women: 5
+
 disutil_children_pt_work_low: 5
 disutil_children_pt_work_high: 5
 disutil_children_ft_work_low: 5
@@ -136,9 +153,9 @@ disutil_children_ft_work_informal_care_high: 5
 # util_cons_children_full_time_high_educ: -1e-12
 
 # Bequest scale
-bequest_scale: 5
-bequest_scale_low: 5
-bequest_scale_high: 5
+bequest_scale: 50
+bequest_scale_low: 50
+bequest_scale_high: 50
 
 # Taste shock scale
 lambda: 2
