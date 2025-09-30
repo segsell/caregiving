@@ -14,7 +14,7 @@ from caregiving.config import BLD, JET_COLOR_MAP, SRC
 from caregiving.model.shared import PARENT_DEAD
 from caregiving.model.utility.bequest_utility import utility_final_consume_all
 from caregiving.model.utility.utility_components import consumption_scale
-from caregiving.model.utility.utility_functions_adda import (
+from caregiving.model.utility.utility_functions_additive import (
     utility_func_adda as utility_func,
 )
 from caregiving.specs.derive_specs import read_and_derive_specs
