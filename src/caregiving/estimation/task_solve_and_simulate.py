@@ -25,7 +25,7 @@ from caregiving.model.state_space import (
 from caregiving.model.utility.bequest_utility import (
     create_final_period_utility_functions,
 )
-from caregiving.model.utility.utility_functions import create_utility_functions
+from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.simulation.simulate import simulate_scenario
 
@@ -94,6 +94,7 @@ def task_solve_and_simulate_start_params(
         options=options,
         seed=options["model_params"]["seed"],
     )
+
     # sim_df.to_csv(path_to_save_simulated_data, index=True)
     sim_df.to_pickle(path_to_save_simulated_data)
 

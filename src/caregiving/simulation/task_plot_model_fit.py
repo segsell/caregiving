@@ -25,9 +25,11 @@ from caregiving.model.shared import (
     PARENT_DEAD,
     SCALE_CAREGIVER_SHARE,
     SEX,
+    WEALTH_QUANTILE_CUTOFF,
     WORK,
     WORK_CHOICES,
 )
+from caregiving.moments.task_create_soep_moments import adjust_and_trim_wealth_data
 from caregiving.simulation.plot_model_fit import (
     plot_average_savings_decision,
     plot_average_wealth,
@@ -44,6 +46,7 @@ from caregiving.simulation.plot_model_fit import (
     plot_states,
     plot_transitions_by_age,
     plot_transitions_by_age_bins,
+    plot_wealth_by_age_and_education,
 )
 
 
@@ -124,10 +127,14 @@ def task_plot_model_fit(  # noqa: PLR0915
     model_full = load_and_setup_full_model_for_solution(
         options, path_to_model=path_to_solution_model
     )
+    specs = model_full["options"]["model_params"]
 
     emp_moms = pd.read_csv(path_to_empirical_moments, index_col=[0]).squeeze("columns")
 
     df_emp = pd.read_csv(path_to_empirical_data, index_col=[0])
+    # df_emp_wealth = pd.read_csv(path_to_wealth_sample, index_col=[0])
+    df_emp_wealth = df_emp[(df_emp["wealth"].notna()) & (df_emp["sex"] == 1)].copy()
+
     df_caregivers = pd.read_csv(path_to_caregivers_sample, index_col=[0])
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
     df_sim["sex"] = SEX
@@ -163,10 +170,20 @@ def task_plot_model_fit(  # noqa: PLR0915
     #     drop_retirees=False,
     # )
 
-    specs = model_full["options"]["model_params"]
-
-    # plot_average_wealth(df_emp_prep, df_sim, specs, path_to_save_wealth_plot)
-    # plot_average_savings_decision(df_sim, path_to_save_savings_plot)
+    df_emp_wealth = adjust_and_trim_wealth_data(df=df_emp_wealth, specs=specs)
+    plot_wealth_by_age_and_education(
+        data_emp=df_emp_wealth,
+        data_sim=df_sim,
+        specs=specs,
+        wealth_var_emp="adjusted_wealth",
+        wealth_var_sim="wealth_at_beginning",
+        median=False,
+        age_min=30,
+        age_max=100,
+        path_to_save_plot=path_to_save_wealth_plot,
+    )
+    # plot_average_wealth(df_emp_wealth, df_sim, specs, path_to_save_wealth_plot)
+    plot_average_savings_decision(df_sim, path_to_save_savings_plot)
 
     # # plot_choice_shares_single(
     # #     df_emp, df_sim, specs, path_to_save_plot=path_to_save_single_choice_plot
