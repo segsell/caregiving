@@ -7,7 +7,6 @@ from typing import Annotated
 import jax.numpy as jnp
 import numpy as np
 import yaml
-from dcegm.pre_processing.setup_model import setup_and_save_model
 from pytask import Product
 
 from caregiving.config import BLD
@@ -29,6 +28,7 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
+from dcegm.pre_processing.setup_model import setup_and_save_model
 
 
 def task_specify_model(
@@ -102,10 +102,6 @@ def task_specify_model(
                     "transition": care_demand_and_supply_transition,
                     "states": np.arange(3, dtype=int),
                 },
-                # "care_supply": {
-                #     "transition": exog_care_supply_transition,
-                #     "states": np.arange(2, dtype=int),
-                # },
             },
             "continuous_states": {
                 "wealth": savings_grid,

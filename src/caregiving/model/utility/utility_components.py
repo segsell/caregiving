@@ -45,42 +45,31 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     bad_health = is_bad_health(health)
     good_health = is_good_health(health)
 
-    # informal_care = is_informal_care(choice)
+    informal_care = is_informal_care(choice)
 
-    # t = period / PERIOD_SCALE
+    has_partner_int = (partner_state > 0).astype(int)
+    nb_children = options["children_by_state"][SEX, education, has_partner_int, period]
 
-    # disutil_ft_work_women = (
-    #     params["disutil_ft_work_bad_women"] * bad_health
-    #     + params["disutil_ft_work_good_women"] * good_health
-    #     + params["disutil_ft_work_low_women"] * (1 - education)
-    #     + params["disutil_ft_work_high_women"] * education
-    # )
-    # disutil_pt_work_women = (
-    #     params["disutil_pt_work_bad_women"] * bad_health
-    #     + params["disutil_pt_work_good_women"] * good_health
-    #     + params["disutil_pt_work_low_women"] * (1 - education)
-    #     + params["disutil_pt_work_high_women"] * education
-    # )
-    disutil_ft_work_women = (
+    # =================================================================================
+    # No caregiving
+    # =================================================================================
+
+    disutil_ft_work = (
         params["disutil_ft_work_high_bad"] * bad_health * education
         + params["disutil_ft_work_low_bad"] * bad_health * (1 - education)
         + params["disutil_ft_work_high_good"] * good_health * education
         + params["disutil_ft_work_low_good"] * good_health * (1 - education)
     )
-    disutil_pt_work_women = (
+    disutil_pt_work = (
         params["disutil_pt_work_high_bad"] * bad_health * education
         + params["disutil_pt_work_low_bad"] * bad_health * (1 - education)
         + params["disutil_pt_work_high_good"] * good_health * education
         + params["disutil_pt_work_low_good"] * good_health * (1 - education)
     )
-
-    disutil_unemployed_women = (
+    disutil_unemployed = (
         params["disutil_unemployed_low_women"] * (1 - education)
         + params["disutil_unemployed_high_women"] * education
     )
-
-    has_partner_int = (partner_state > 0).astype(int)
-    nb_children = options["children_by_state"][SEX, education, has_partner_int, period]
 
     disutil_children_ft_low = params["disutil_children_ft_work_low"] * nb_children
     disutil_children_ft_high = params["disutil_children_ft_work_high"] * nb_children
@@ -95,151 +84,74 @@ def disutility_work(period, choice, education, partner_state, health, params, op
         disutil_children_ft_low * (1 - education) + disutil_children_ft_high * education
     )
 
-    # disutil_pt_work_age = (
-    #     params["disutil_pt_work_low_women"] * (1 - education)
-    #     + params["disutil_pt_work_high_women"] * education
-    #     + (
-    #         params["disutil_pt_work_low_age"] * (1 - education)
-    #         + params["disutil_pt_work_high_age"] * education
-    #     )
-    #     * period
-    #     + (
-    #         params["disutil_pt_work_low_age_squared"] * (1 - education)
-    #         + params["disutil_pt_work_high_age_squared"] * education
-    #     )
-    #     * (period**2)
-    # )
-
-    # disutil_ft_work_age = (
-    #     params["disutil_ft_work_low_women"] * (1 - education)
-    #     + params["disutil_ft_work_high_women"] * education
-    #     + params["disutil_ft_work_low_age"] * (1 - education)
-    #     + params["disutil_ft_work_high_age"] * education
-    # ) * period + (
-    #     params["disutil_ft_work_low_age_squared"] * (1 - education)
-    #     + params["disutil_ft_work_high_age_squared"] * education
-    # ) * (
-    #     period**2
-    # )
-
-    # pt_int = (
-    #     params["disutil_pt_work_low_women"] * (1 - education)
-    #     + params["disutil_pt_work_high_women"] * education
-    # )
-    # pt_lin = (
-    #     params["disutil_pt_work_low_age"] * (1 - education)
-    #     + params["disutil_pt_work_high_age"] * education
-    # )
-    # pt_quad = (
-    #     params["disutil_pt_work_low_age_squared"] * (1 - education)
-    #     + params["disutil_pt_work_high_age_squared"] * education
-    # )
-
-    # ft_int = (
-    #     params["disutil_ft_work_low_women"] * (1 - education)
-    #     + params["disutil_ft_work_high_women"] * education
-    # )
-    # ft_lin = (
-    #     params["disutil_ft_work_low_age"] * (1 - education)
-    #     + params["disutil_ft_work_high_age"] * education
-    # )
-    # ft_quad = (
-    #     params["disutil_ft_work_low_age_squared"] * (1 - education)
-    #     + params["disutil_ft_work_high_age_squared"] * education
-    # )
-
-    # disutil_pt_work = pt_int + pt_lin * t + pt_quad * t**2
-    # disutil_ft_work = ft_int + ft_lin * t + ft_quad * t**2
-
-    exp_factor_work = (
-        disutil_unemployed_women * unemployed
-        + (disutil_pt_work_women + disutil_children_pt) * working_part_time
-        + (disutil_ft_work_women + disutil_children_ft) * working_full_time
+    disutility_no_caregiving = (
+        disutil_unemployed * unemployed
+        + (disutil_pt_work + disutil_children_pt) * working_part_time
+        + (disutil_ft_work + disutil_children_ft) * working_full_time
     )
 
     # =================================================================================
-    # Informal caregiving work interaction
+    # Caregiving
+    # =================================================================================
 
-    # util_unemployed_and_informal_care = params["util_unemployed_and_informal_care"]
-    # util_pt_work_and_informal_care = params["util_pt_work_and_informal_care"]
-    # util_ft_work_and_informal_care = params["util_ft_work_and_informal_care"]
-    # util_pt_work_and_informal_care_good = params[
-    # "util_pt_work_and_informal_care_good"]
-    # util_pt_work_and_informal_care_bad = params["util_pt_work_and_informal_care_bad"]
-    # util_ft_work_and_informal_care_good = params["
-    # util_ft_work_and_informal_care_good"]
-    # util_ft_work_and_informal_care_bad = params["util_ft_work_and_informal_care_bad"]
+    disutil_ft_work_informal_care = (
+        params["disutil_ft_work_high_bad_informal_care"] * bad_health * education
+        + params["disutil_ft_work_low_bad_informal_care"] * bad_health * (1 - education)
+        + params["disutil_ft_work_high_good_informal_care"] * good_health * education
+        + params["disutil_ft_work_low_good_informal_care"]
+        * good_health
+        * (1 - education)
+    )
+    disutil_pt_work_informal_care = (
+        params["disutil_pt_work_high_bad_informal_care"] * bad_health * education
+        + params["disutil_pt_work_low_bad_informal_care"] * bad_health * (1 - education)
+        + params["disutil_pt_work_high_good_informal_care"] * good_health * education
+        + params["disutil_pt_work_low_good_informal_care"]
+        * good_health
+        * (1 - education)
+    )
+    disutil_unemployed_informal_care = (
+        params["disutil_unemployed_low_women_informal_care"] * (1 - education)
+        + params["disutil_unemployed_high_women_informal_care"] * education
+    )
 
-    # util_informal_care_and_work = (
-    #     util_unemployed_and_informal_care * unemployed
-    #     + util_pt_work_and_informal_care * working_part_time
-    #     + util_ft_work_and_informal_care * working_full_time
-    # )
+    disutil_children_ft_low_informal_care = (
+        params["disutil_children_ft_work_low_informal_care"] * nb_children
+    )
+    disutil_children_ft_high_informal_care = (
+        params["disutil_children_ft_work_high_informal_care"] * nb_children
+    )
 
-    # exp_factor_work_and_care = util_informal_care_and_work * informal_care
+    disutil_children_pt_low_informal_care = (
+        params["disutil_children_pt_work_low_informal_care"] * nb_children
+    )
+    disutil_children_pt_high_informal_care = (
+        params["disutil_children_pt_work_high_informal_care"] * nb_children
+    )
 
-    # disutil_unemployed_and_informal_care = (
-    #     params["disutil_unemployed_and_informal_care_low"] * (1 - education)
-    #     + params["disutil_unemployed_and_informal_care_high"] * education
-    # )
-    # # util_pt_work_and_informal_care = (
-    # #     params["util_pt_work_and_informal_care_low"] * (1 - education)
-    # #     + params["util_pt_work_and_informal_care_high"] * education
-    # # )
-    # # util_ft_work_and_informal_care = (
-    # #     params["util_ft_work_and_informal_care_low"] * (1 - education)
-    # #     + params["util_ft_work_and_informal_care_high"] * education
-    # # )
-    # # util_unemployed_and_informal_care = (
-    # #     params["util_unemployed_and_informal_care_bad"] * bad_health
-    # #     + params["util_unemployed_and_informal_care_good"] * good_health
-    # # )
-    # disutil_pt_work_and_informal_care = (
-    #     params["disutil_pt_work_and_informal_care_bad"] * bad_health
-    #     + params["disutil_pt_work_and_informal_care_good"] * good_health
-    # )
-    # disutil_ft_work_and_informal_care = (
-    #     params["disutil_ft_work_and_informal_care_bad"] * bad_health
-    #     + params["disutil_ft_work_and_informal_care_good"] * good_health
-    # )
+    disutil_children_pt_informal_care = (
+        disutil_children_pt_low_informal_care * (1 - education)
+        + disutil_children_pt_high_informal_care * education
+    )
+    disutil_children_ft_informal_care = (
+        disutil_children_ft_low_informal_care * (1 - education)
+        + disutil_children_ft_high_informal_care * education
+    )
 
-    # disutil_children_ft_informal_care_low = (
-    #     params["disutil_children_ft_work_informal_care_low"] * nb_children
-    # )
-    # disutil_children_ft_informal_care_high = (
-    #     params["disutil_children_ft_work_informal_care_high"] * nb_children
-    # )
-
-    # disutil_children_pt_informal_care_low = (
-    #     params["disutil_children_pt_work_informal_care_low"] * nb_children
-    # )
-    # disutil_children_pt_informal_care_high = (
-    #     params["disutil_children_pt_work_informal_care_high"] * nb_children
-    # )
-
-    # disutil_children_pt_informal_care = (
-    #     disutil_children_pt_informal_care_low * (1 - education)
-    #     + disutil_children_pt_informal_care_high * education
-    # )
-    # disutil_children_ft_informal_care = (
-    #     disutil_children_ft_informal_care_low * (1 - education)
-    #     + disutil_children_ft_informal_care_high * education
-    # )
-
-    # exp_factor_work_and_care = (
-    #     disutil_unemployed_and_informal_care * unemployed
-    #     + (disutil_pt_work_and_informal_care + disutil_children_pt_informal_care)
-    #     * working_part_time
-    #     + (disutil_ft_work_and_informal_care + disutil_children_ft_informal_care)
-    #     * working_full_time
-    # )
+    disutility_informal_care = (
+        disutil_unemployed_informal_care * unemployed
+        + (disutil_pt_work_informal_care + disutil_children_pt_informal_care)
+        * working_part_time
+        + (disutil_ft_work_informal_care + disutil_children_ft_informal_care)
+        * working_full_time
+    )
 
     # =================================================================================
 
     # Compute eta
     disutility = (
-        -exp_factor_work  # * (1 - informal_care)
-        # - exp_factor_work_and_care * informal_care
+        -disutility_no_caregiving * (1 - informal_care)
+        - disutility_informal_care * informal_care
         - partner_retired * retired * params["disutil_partner_retired"]
     )
 
