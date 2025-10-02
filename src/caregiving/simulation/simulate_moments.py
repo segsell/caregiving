@@ -75,9 +75,9 @@ def simulate_moments_pandas(  # noqa: PLR0915
             df_full["has_sister"].to_numpy(), df_full["education"].to_numpy()
         ]
     )
-    # df = df_full.copy()
+    df = df_full.copy()
 
-    df = df_full[df_full["choice"].isin(np.asarray(NO_INFORMAL_CARE))].copy()
+    # df = df_full[df_full["choice"].isin(np.asarray(NO_INFORMAL_CARE))].copy()
     df_low = df[df["education"] == 0]
     df_high = df[df["education"] == 1]
 
@@ -897,9 +897,9 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
     # df_low_educ = sim_df.loc[sim_df["education"] == 0]
     # df_high_educ = sim_df.loc[sim_df["education"] == 1]
 
-    _no_care_mask = jnp.isin(arr_all[:, idx["choice"]], NO_INFORMAL_CARE)
-    arr = arr_all[_no_care_mask]
-    # arr = arr_all
+    # _no_care_mask = jnp.isin(arr_all[:, idx["choice"]], NO_INFORMAL_CARE)
+    # arr = arr_all[_no_care_mask]
+    arr = arr_all
     arr_low_educ = arr[arr[:, idx["education"]] == 0]
     arr_high_educ = arr[arr[:, idx["education"]] == 1]
 

@@ -29,15 +29,20 @@ disutil_children_ft_work_low: -5
 disutil_children_ft_work_high: -5
 #
 
-disutil_ft_work_high_good_informal_care: 1.0e-12
-disutil_ft_work_high_bad_informal_care: 1.0e-12
-disutil_ft_work_low_good_informal_care: 1.0e-12
-disutil_ft_work_low_bad_informal_care: 1.0e-12
+# disutil_ft_work_high_good_informal_care: 1.0e-12
+# disutil_ft_work_high_bad_informal_care: 1.0e-12
+# disutil_ft_work_low_good_informal_care: 1.0e-12
+# disutil_ft_work_low_bad_informal_care: 1.0e-12
 
-disutil_pt_work_high_good_informal_care: 1.0e-12
-disutil_pt_work_high_bad_informal_care: 1.0e-12
-disutil_pt_work_low_good_informal_care: 1.0e-12
-disutil_pt_work_low_bad_informal_care: 1.0e-12
+# disutil_pt_work_high_good_informal_care: 1.0e-12
+# disutil_pt_work_high_bad_informal_care: 1.0e-12
+# disutil_pt_work_low_good_informal_care: 1.0e-12
+# disutil_pt_work_low_bad_informal_care: 1.0e-12
+
+disutil_ft_work_high_informal_care: 1.0e-12
+disutil_ft_work_low_informal_care: 1.0e-12
+disutil_pt_work_high_informal_care: 1.0e-12
+disutil_pt_work_low_informal_care: 1.0e-12
 
 disutil_unemployed_low_women_informal_care: 1.0e-12
 disutil_unemployed_high_women_informal_care: 1.0e-12

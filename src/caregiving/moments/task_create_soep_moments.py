@@ -76,7 +76,7 @@ def task_create_soep_moments(  # noqa: PLR0915
     df = df_full[
         (df_full["sex"] == 1)
         & (df_full["age"] <= end_age + 10)
-        & (df_full["any_care"] == 0)
+        # & (df_full["any_care"] == 0)
     ]  # women only and non-caregivers
     _df_alive = df[df["health"] != DEAD].copy()
     _df_good_health = df[df["health"] == GOOD_HEALTH].copy()
