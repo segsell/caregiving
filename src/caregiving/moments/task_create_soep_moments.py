@@ -151,29 +151,29 @@ def task_create_soep_moments(  # noqa: PLR0915
         label="wealth_high_education",
     )
 
-    # A) Moments by age.
-    moments, variances = compute_labor_shares_by_age(
-        df,
-        moments=moments,
-        variances=variances,
-        age_range=age_range,
-    )
+    # # A) Moments by age.
+    # moments, variances = compute_labor_shares_by_age(
+    #     df,
+    #     moments=moments,
+    #     variances=variances,
+    #     age_range=age_range,
+    # )
 
-    # B1) Moments by age and education.
-    moments, variances = compute_labor_shares_by_age(
-        df_low,
-        moments=moments,
-        variances=variances,
-        age_range=age_range,
-        label="low_education",
-    )
-    moments, variances = compute_labor_shares_by_age(
-        df_high,
-        moments=moments,
-        variances=variances,
-        age_range=age_range,
-        label="high_education",
-    )
+    # # B1) Moments by age and education.
+    # moments, variances = compute_labor_shares_by_age(
+    #     df_low,
+    #     moments=moments,
+    #     variances=variances,
+    #     age_range=age_range,
+    #     label="low_education",
+    # )
+    # moments, variances = compute_labor_shares_by_age(
+    #     df_high,
+    #     moments=moments,
+    #     variances=variances,
+    #     age_range=age_range,
+    #     label="high_education",
+    # )
     # =================================================================================
 
     # # B) Health
