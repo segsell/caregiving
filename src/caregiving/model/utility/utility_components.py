@@ -150,7 +150,7 @@ def disutility_work(period, choice, education, partner_state, health, params, op
 
     # Compute eta
     disutility = (
-        -disutility_no_caregiving  # * (1 - informal_care)
+        -disutility_no_caregiving * informal_care  # * (1 - informal_care)
         # - disutility_informal_care * informal_care
         - partner_retired * retired * params["disutil_partner_retired"]
     )
