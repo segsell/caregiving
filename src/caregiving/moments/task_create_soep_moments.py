@@ -273,14 +273,14 @@ def task_create_soep_moments(  # noqa: PLR0915
     #     df["any_care"] == 1, "education"
     # ].var(ddof=DEGREES_OF_FREEDOM)
 
-    # Caregiving
-    moments, variances = compute_labor_shares_by_age(
-        df_caregivers,
-        moments=moments,
-        variances=variances,
-        age_range=age_range_caregivers,
-        label="caregivers",
-    )
+    # # Caregiving
+    # moments, variances = compute_labor_shares_by_age(
+    #     df_caregivers,
+    #     moments=moments,
+    #     variances=variances,
+    #     age_range=age_range_caregivers,
+    #     label="caregivers",
+    # )
     moments, variances = compute_labor_shares_by_age(
         df_caregivers_low,
         moments=moments,
