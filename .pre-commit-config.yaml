@@ -31,7 +31,7 @@ repos:
     -   id: pyupgrade
         args: [--py37-plus]
 -   repo: https://github.com/pycqa/isort
-    rev: 6.0.1
+    rev: 6.1.0
     hooks:
     -   id: isort
         name: isort
@@ -40,7 +40,7 @@ repos:
     rev: v2.8.0
     hooks:
     -   id: setup-cfg-fmt
--   repo: https://github.com/psf/black
+-   repo: https://github.com/psf/black-pre-commit-mirror
     rev: 25.9.0
     hooks:
     -   id: black
@@ -50,7 +50,7 @@ repos:
 #     -   id: docformatter
 #         args: [--in-place, --wrap-summaries, "88", --wrap-descriptions, "88", --blank]
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.13.2
+    rev: v0.13.3
     hooks:
     # Run the linter.
     -   id: ruff
