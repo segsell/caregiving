@@ -94,7 +94,6 @@ def task_solve_and_simulate_start_params(
         options=options,
         seed=options["model_params"]["seed"],
     )
-
     # sim_df.to_csv(path_to_save_simulated_data, index=True)
     sim_df.to_pickle(path_to_save_simulated_data)
 
