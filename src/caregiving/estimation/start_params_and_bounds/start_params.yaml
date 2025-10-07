@@ -69,6 +69,8 @@ disutil_pt_work_low_bad: 0.4
 disutil_unemployed_low_women: 0.2
 disutil_unemployed_high_women: 0.2
 
+disutil_children_unemployed_low: 0.0
+disutil_children_unemployed_high: 0.0
 disutil_children_pt_work_low: 0.1
 disutil_children_pt_work_high: 0.1
 disutil_children_ft_work_low: 0.1

@@ -23,6 +23,9 @@ disutil_pt_work_low_bad: 1.0e-12
 
 disutil_unemployed_low_women: 1.0e-12
 disutil_unemployed_high_women: 1.0e-12
+
+disutil_children_unemployed_low: -5
+disutil_children_unemployed_high: -5
 disutil_children_pt_work_low: -5
 disutil_children_pt_work_high: -5
 disutil_children_ft_work_low: -5
