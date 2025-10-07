@@ -21,24 +21,53 @@ disutil_pt_work_high_bad: 5
 disutil_pt_work_low_good: 5
 disutil_pt_work_low_bad: 5
 
+disutil_unemployed_low_women: 5
+disutil_unemployed_high_women: 5
+
+disutil_children_unemployed_low: 5
+disutil_children_unemployed_high: 5
+disutil_children_pt_work_low: 5
+disutil_children_pt_work_high: 5
+disutil_children_ft_work_low: 5
+disutil_children_ft_work_high: 5
+#
+
+disutil_ft_work_high_good_informal_care: 5
+disutil_ft_work_high_bad_informal_care: 5
+disutil_ft_work_low_good_informal_care: 5
+disutil_ft_work_low_bad_informal_care: 5
+
+disutil_pt_work_high_good_informal_care: 5
+disutil_pt_work_high_bad_informal_care: 5
+disutil_pt_work_low_good_informal_care: 5
+disutil_pt_work_low_bad_informal_care: 5
+
+disutil_ft_work_high_informal_care: 5
+disutil_ft_work_low_informal_care: 5
+disutil_pt_work_high_informal_care: 5
+disutil_pt_work_low_informal_care: 5
+
+disutil_unemployed_low_women_informal_care: 5
+disutil_unemployed_high_women_informal_care: 5
+
+disutil_children_pt_work_low_informal_care: 5
+disutil_children_pt_work_high_informal_care: 5
+disutil_children_ft_work_low_informal_care: 5
+disutil_children_ft_work_high_informal_care: 5
+
 #
 disutil_ft_work_good_women: 5
 disutil_ft_work_bad_women: 5
 disutil_pt_work_good_women: 5
 disutil_pt_work_bad_women: 5
 disutil_unemployed_women: 5
-disutil_unemployed_low_women: 5
-disutil_unemployed_high_women: 5
+
 
 disutil_pt_work_low_women: 5
 disutil_pt_work_high_women: 5
 disutil_ft_work_low_women: 5
 disutil_ft_work_high_women: 5
 
-disutil_children_pt_work_low: 5
-disutil_children_pt_work_high: 5
-disutil_children_ft_work_low: 5
-disutil_children_ft_work_high: 5
 
 disutil_pt_work_low_age: 5
 disutil_pt_work_low_age_squared: 5

@@ -128,8 +128,8 @@ def utility_func_alive(
     # gather params
     # informal_care = is_informal_care(choice)
 
-    rho = params["rho"]
-    # rho = params["rho_low"] * (1 - education) + params["rho_high"] * education
+    # rho = params["rho"]
+    rho = params["rho_low"] * (1 - education) + params["rho_high"] * education
 
     eta = disutility_work(
         period=period,
@@ -263,8 +263,8 @@ def marginal_utility_function_alive(
     params,
     options,
 ):
-    rho = params["rho"]
-    # rho = params["rho_low"] * (1 - education) + params["rho_high"] * education
+    # rho = params["rho"]
+    rho = params["rho_low"] * (1 - education) + params["rho_high"] * education
 
     cons_scale = consumption_scale(
         partner_state=partner_state,
@@ -320,8 +320,8 @@ def inverse_marginal(
     params,
     options,
 ):
-    rho = params["rho"]
-    # rho = params["rho_low"] * (1 - education) + params["rho_high"] * education
+    # rho = params["rho"]
+    rho = params["rho_low"] * (1 - education) + params["rho_high"] * education
 
     cons_scale = consumption_scale(
         partner_state=partner_state,
