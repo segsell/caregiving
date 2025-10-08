@@ -24,14 +24,19 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions_additive_no_care_demand import (
     create_utility_functions,
 )
-from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
+from caregiving.model.wealth_and_budget.budget_equation_no_care_demand import (
+    budget_constraint,
+)
 from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
 from dcegm.pre_processing.setup_model import setup_and_save_model
 
 
 def task_specify_model_no_care_demand(
     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
-    path_to_start_params: Path = BLD / "model" / "params" / "start_params_updated.yaml",
+    path_to_start_params: Path = BLD
+    / "model"
+    / "params"
+    / "params_no_care_demand.yaml",
     path_to_save_options: Annotated[Path, Product] = BLD
     / "model"
     / "options_no_care_demand.pkl",
@@ -41,7 +46,7 @@ def task_specify_model_no_care_demand(
     path_to_save_start_params: Annotated[Path, Product] = BLD
     / "model"
     / "params"
-    / "start_params_model_no_care_demand.yaml",
+    / "params_model_no_care_demand.yaml",
 ):
     """Generate counterfactual model and options dictionaries without care_demand.
 
@@ -101,6 +106,7 @@ def task_specify_model_no_care_demand(
                 "wealth": savings_grid,
                 "experience": experience_grid,
             },
+            #
         },
         "model_params": specs,
     }
