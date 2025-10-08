@@ -1,4 +1,4 @@
-"""Utility functions for the model."""
+"""Utility functions for the model with care demand and caregiving."""
 
 import jax
 import jax.numpy as jnp

@@ -1,3 +1,5 @@
+"""State space for the model with care demand and caregiving."""
+
 import jax
 import jax.numpy as jnp
 import numpy as np
