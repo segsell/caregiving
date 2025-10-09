@@ -1,6 +1,5 @@
 bequest_scale_high: 2.4
 bequest_scale_low: 2.4
-beta: 0.97
 disutil_children_ft_work_high: 0.1
 disutil_children_ft_work_low: 0.1
 disutil_children_pt_work_high: 0.1
@@ -16,7 +15,6 @@ disutil_pt_work_low_bad: 0.4
 disutil_pt_work_low_good: 0.4
 disutil_unemployed_high_women: 0.2
 disutil_unemployed_low_women: 0.2
-interest_rate: 0.03
 job_finding_logit_age_cubed_women: -3.162982266453729e-05
 job_finding_logit_age_squared_women: 0.0016012387939461
 job_finding_logit_age_women: 0.0065131540323549
@@ -27,4 +25,3 @@ rho_bequest_high: 1.5
 rho_bequest_low: 1.5
 rho_high: 1.5
 rho_low: 1.5
-sigma: 0.16471062648214

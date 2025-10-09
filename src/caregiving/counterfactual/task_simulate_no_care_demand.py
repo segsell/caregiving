@@ -8,12 +8,10 @@ import jax
 import jax.numpy as jnp
 import pandas as pd
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.solve import get_solve_func_for_model
 from pytask import Product
 
 from caregiving.config import BLD
-from caregiving.model.state_space_no_care import create_state_space_functions
+from caregiving.model.state_space_no_care_demand import create_state_space_functions
 from caregiving.model.utility.bequest_utility import (
     create_final_period_utility_functions,
 )
@@ -26,6 +24,8 @@ from caregiving.model.wealth_and_budget.budget_equation_no_care_demand import (
 from caregiving.simulation.simulate_no_care_demand import (
     simulate_scenario_no_care_demand,
 )
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.solve import get_solve_func_for_model
 
 jax.config.update("jax_enable_x64", True)
 

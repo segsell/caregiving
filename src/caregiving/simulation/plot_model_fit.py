@@ -172,7 +172,14 @@ def plot_average_wealth(
 
 
 def plot_choice_shares_by_education(
-    data_emp, data_sim, specs, age_min=None, age_max=None, path_to_save_plot=None
+    data_emp,
+    data_sim,
+    specs,
+    age_min=None,
+    age_max=None,
+    choice_groups_sim=None,
+    choice_groups_emp=None,
+    path_to_save_plot=None,
 ):
     """Plot choice-specific shares by age and education, only over the
     age range [start_age, end_age_msm]."""
@@ -184,12 +191,13 @@ def plot_choice_shares_by_education(
         2: PART_TIME_CHOICES,
         3: FULL_TIME_CHOICES,
     }
-    choice_groups_sim = {
-        0: RETIREMENT,
-        1: UNEMPLOYED,
-        2: PART_TIME,
-        3: FULL_TIME,
-    }
+    if choice_groups_sim is None:
+        choice_groups_sim = {
+            0: RETIREMENT,
+            1: UNEMPLOYED,
+            2: PART_TIME,
+            3: FULL_TIME,
+        }
 
     data_sim = data_sim.loc[data_sim["health"] != DEAD].copy()
     data_emp = data_emp.copy()
@@ -215,7 +223,9 @@ def plot_choice_shares_by_education(
     sex = SEX  # assumed scalar {0,1}
 
     n_edu = len(specs["education_labels"])
-    n_choices = len(specs["choice_labels"])  # after aggregation
+    # Ensure hashable elements when deriving number of aggregated choices
+    # choice_groups_sim.values() may contain JAX arrays; convert to tuples of ints
+    n_choices = sum(arr.size for arr in choice_groups_sim.values())
     fig, axs = plt.subplots(n_edu, n_choices, figsize=(16, 6), sharex=True, sharey=True)
 
     # ---------- 3. Loop over education groups ------------------------------

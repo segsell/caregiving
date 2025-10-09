@@ -9,8 +9,6 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
@@ -23,7 +21,7 @@ from caregiving.model.shared import (
     INITIAL_CONDITIONS_COHORT_LOW,
     SEX,
 )
-from caregiving.model.state_space_no_care import create_state_space_functions
+from caregiving.model.state_space_no_care_demand import create_state_space_functions
 from caregiving.model.stochastic_processes.job_transition import (
     job_offer_process_transition_initial_conditions,
 )
@@ -39,6 +37,8 @@ from caregiving.model.wealth_and_budget.budget_equation_no_care_demand import (
 from caregiving.simulation.task_generate_initial_conditions import (
     draw_start_wealth_dist,
 )
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 
 def task_generate_start_states_for_solution_no_care_demand(  # noqa: PLR0915

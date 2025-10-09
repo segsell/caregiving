@@ -10,7 +10,7 @@ import yaml
 from pytask import Product
 
 from caregiving.config import BLD
-from caregiving.model.state_space_no_care import create_state_space_functions
+from caregiving.model.state_space_no_care_demand import create_state_space_functions
 from caregiving.model.stochastic_processes.health_transition import (
     health_transition,
 )
@@ -36,7 +36,7 @@ def task_specify_model_no_care_demand(
     path_to_start_params: Path = BLD
     / "model"
     / "params"
-    / "params_no_care_demand.yaml",
+    / "start_params_updated_no_care_demand.yaml",
     path_to_save_options: Annotated[Path, Product] = BLD
     / "model"
     / "options_no_care_demand.pkl",
@@ -106,7 +106,6 @@ def task_specify_model_no_care_demand(
                 "wealth": savings_grid,
                 "experience": experience_grid,
             },
-            #
         },
         "model_params": specs,
     }
