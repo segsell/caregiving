@@ -13,7 +13,9 @@ from caregiving.model.wealth_and_budget.transfers import (
     calc_child_benefits,
     calc_unemployment_benefits,
 )
-from caregiving.model.wealth_and_budget.wages import calc_labor_income_after_ssc
+from caregiving.model.wealth_and_budget.wages_no_care_demand import (
+    calc_labor_income_after_ssc,
+)
 
 
 def budget_constraint(

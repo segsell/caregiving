@@ -7,8 +7,6 @@ import jax.numpy as jnp
 import pandas as pd
 import pytask
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.solve import get_solve_func_for_model
 from pytask import Product
 
 from caregiving.config import BLD, TESTS
@@ -30,13 +28,16 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.simulation.simulate import simulate_scenario
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.solve import get_solve_func_for_model
 
 
 @pytask.mark.skip()
 def task_simulate_counterfactual(
     path_to_options: Path = BLD / "model" / "options.pkl",
     path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
-    # path_to_options_counterfactual: Path = BLD / "model" / "options_counterfactual.pkl",
+    # path_to_options_counterfactual: Path = BLD / "model" /
+    # "options_counterfactual.pkl",
     # path_to_solution_model_counterfactual: Path = BLD
     # / "model"
     # / "model_for_solution_counterfactual.pkl",

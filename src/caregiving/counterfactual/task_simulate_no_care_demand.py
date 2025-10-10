@@ -1,4 +1,4 @@
-"""Task: Solve and simulate the counterfactual without care demand and save df."""
+"""Solve and simulate the counterfactual without care demand."""
 
 import pickle
 from pathlib import Path
@@ -7,6 +7,7 @@ from typing import Annotated, Any, Dict
 import jax
 import jax.numpy as jnp
 import pandas as pd
+import pytask
 import yaml
 from pytask import Product
 
@@ -33,12 +34,19 @@ jax.config.update("jax_enable_x64", True)
 def task_solve_and_simulate_no_care_demand(
     path_to_solution_model: Path = BLD / "model" / "model_no_care_demand.pkl",
     path_to_options: Path = BLD / "model" / "options_no_care_demand.pkl",
-    path_to_start_params: Path = BLD
+    path_to_params: Path = BLD
     / "model"
     / "params"
-    / "params_model_no_care_demand.yaml",
-    path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",
-    path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
+    / "start_params_model_no_care_demand.yaml",
+    # / "params_estimated_no_care_demand.yaml",
+    path_to_discrete_states: Path = BLD
+    / "model"
+    / "initial_conditions"
+    / "states_no_care_demand.pkl",
+    path_to_wealth: Path = BLD
+    / "model"
+    / "initial_conditions"
+    / "wealth_no_care_demand.csv",
     path_to_save_solution: Annotated[Path, Product] = BLD
     / "solve_and_simulate"
     / "solution_no_care_demand.pkl",
@@ -49,7 +57,7 @@ def task_solve_and_simulate_no_care_demand(
     """Solve and simulate the counterfactual and save the DataFrame."""
 
     options = pickle.load(path_to_options.open("rb"))
-    params = yaml.safe_load(path_to_start_params.open("rb"))
+    params = yaml.safe_load(path_to_params.open("rb"))
 
     model_for_solution = load_and_setup_full_model_for_solution(
         options, path_to_model=path_to_solution_model

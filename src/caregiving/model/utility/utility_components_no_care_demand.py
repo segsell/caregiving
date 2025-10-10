@@ -10,8 +10,10 @@ from caregiving.model.shared import (
     PARTNER_RETIRED,
     SEX,
     is_bad_health,
-    is_full_time,
     is_good_health,
+)
+from caregiving.model.shared_no_care_demand import (
+    is_full_time,
     is_part_time,
     is_retired,
     is_unemployed,

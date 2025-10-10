@@ -52,7 +52,7 @@ def task_generate_start_states_for_solution_no_care_demand(  # noqa: PLR0915
     path_to_start_params: Path = BLD
     / "model"
     / "params"
-    / "params_model_no_care_demand.yaml",
+    / "start_params_model_no_care_demand.yaml",
     path_to_save_discrete_states: Annotated[Path, Product] = BLD
     / "model"
     / "initial_conditions"
@@ -197,12 +197,10 @@ def task_generate_start_states_for_solution_no_care_demand(  # noqa: PLR0915
         empirical_lagged_choice_probs = start_period_data_edu[
             "lagged_choice"
         ].value_counts(normalize=True)
-        lagged_choice_probs = pd.Series(
-            index=np.arange(0, specs["n_choices"]), data=0, dtype=float
-        )
+        lagged_choice_probs = pd.Series(index=np.arange(0, 4), data=0, dtype=float)
         lagged_choice_probs.update(empirical_lagged_choice_probs)
         lagged_choice_edu = np.random.choice(
-            specs["n_choices"], size=n_agents_edu, p=lagged_choice_probs.values
+            4, size=n_agents_edu, p=lagged_choice_probs.values
         )
         lagged_choice[type_mask] = lagged_choice_edu
 
@@ -254,6 +252,14 @@ def task_generate_start_states_for_solution_no_care_demand(  # noqa: PLR0915
     # Set lagged choice to 1(unemployment) if experience is 0
     exp_zero_mask = exp_agents == 0
     lagged_choice[exp_zero_mask] = 1
+
+    # # Show share of observations for each discrete outcome in lagged_choice
+    # lagged_choice_counts = (
+    #     pd.Series(lagged_choice).value_counts(normalize=True).sort_index()
+    # )
+    # print("Lagged choice shares:")
+    # for choice, share in lagged_choice_counts.items():
+    #     print(f"  Choice {choice}: {share:.4f} ({share*100:.2f}%)")
 
     # Build states without unsupported keys
     states = {

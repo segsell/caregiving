@@ -21,8 +21,10 @@ from caregiving.model.shared_no_care_demand import (
 )
 from caregiving.model.state_space import (
     apply_retirement_constraint_for_SRA,
-    calc_experience_years_for_pension_adjustment,
-    construct_experience_years,
+)
+from caregiving.model.wealth_and_budget.pensions import (
+    calc_experience_for_total_pension_points,
+    calc_total_pension_points,
 )
 
 
@@ -233,3 +235,54 @@ def get_next_period_experience(
         fresh_retired, experience_years_with_penalty, exp_new_period
     )
     return (1 / (period + options["max_exp_diffs_per_period"][period])) * exp_new_period
+
+
+def calc_experience_years_for_pension_adjustment(
+    period, sex, experience_years, education, options
+):
+    """Calculate the reduced experience with early retirement penalty."""
+    total_pension_points = calc_total_pension_points(
+        education=education,
+        experience_years=experience_years,
+        sex=sex,
+        options=options,
+    )
+    # retirement age is last periods age
+    actual_retirement_age = options["start_age"] + period - 1
+    # SRA at retirement, difference to actual retirement age and boolean
+    # for early retirement
+    # SRA_at_retirement = options["min_SRA"]
+    SRA_at_retirement = options["min_SRA"]
+    retirement_age_difference = jnp.abs(SRA_at_retirement - actual_retirement_age)
+    early_retired_bool = actual_retirement_age < SRA_at_retirement
+
+    # deduction factor for early  retirement
+    early_retirement_penalty_informed = options["early_retirement_penalty"]
+    early_retirement_penalty = (
+        1 - early_retirement_penalty_informed * retirement_age_difference
+    )
+
+    # Total bonus for late retirement
+    late_retirement_bonus = 1 + (
+        options["late_retirement_bonus"] * retirement_age_difference
+    )
+
+    # Select bonus or penalty depending on age difference
+    pension_factor = jax.lax.select(
+        early_retired_bool, early_retirement_penalty, late_retirement_bonus
+    )
+    # pension_factor = late_retirement_bonus
+
+    adjusted_pension_points = pension_factor * total_pension_points
+    reduced_experience_years = calc_experience_for_total_pension_points(
+        total_pension_points=adjusted_pension_points,
+        sex=sex,
+        education=education,
+        options=options,
+    )
+    return reduced_experience_years
+
+
+def construct_experience_years(experience, period, max_exp_diffs_per_period):
+    """Experience and period can also be arrays."""
+    return experience * (period + max_exp_diffs_per_period[period])

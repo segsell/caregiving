@@ -178,7 +178,6 @@ def plot_choice_shares_by_education(
     age_min=None,
     age_max=None,
     choice_groups_sim=None,
-    choice_groups_emp=None,
     path_to_save_plot=None,
 ):
     """Plot choice-specific shares by age and education, only over the
@@ -212,7 +211,8 @@ def plot_choice_shares_by_education(
             data_emp["choice"].isin(np.asarray(raw_codes).tolist()), "choice_group"
         ] = agg_code
 
-    data_sim["choice_group"] = data_sim["choice_group"].astype(int)
+    data_sim["choice_group"] = data_sim["choice_group"].fillna(0).astype(int)
+    # data_sim["choice_group"] = data_sim["choice_group"].astype(int)
     data_emp["choice_group"] = data_emp["choice_group"].astype(int)
 
     # ---------- 2. Plotting setup ------------------------------------------

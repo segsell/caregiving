@@ -59,10 +59,12 @@ def task_plot_model_fit_no_care_demand(
     path_to_save_work_transition_age_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "model_fit"
+    / "counterfactual"
     / "work_transitions_by_edu_and_age_no_care_demand.png",
     path_to_save_work_transition_age_bin_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "model_fit"
+    / "counterfactual"
     / "work_transitions_by_edu_and_age_bin_no_care_demand.png",
 ) -> None:
     options = pickle.load(path_to_options.open("rb"))
@@ -96,7 +98,7 @@ def task_plot_model_fit_no_care_demand(
 
     # Labor shares (no-care-demand has 4 choices; function handles generic mapping)
 
-    choice_groups_sim = {
+    choices_sim = {
         0: RETIREMENT_NO_CARE_DEMAND,
         1: UNEMPLOYED_NO_CARE_DEMAND,
         2: PART_TIME_NO_CARE_DEMAND,
@@ -106,7 +108,7 @@ def task_plot_model_fit_no_care_demand(
         df_emp,
         df_sim,
         specs,
-        choice_groups_sim=choice_groups_sim,
+        choice_groups_sim=choices_sim,
         path_to_save_plot=path_to_save_labor_shares_by_educ_plot,
     )
 

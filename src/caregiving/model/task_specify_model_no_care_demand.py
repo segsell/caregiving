@@ -14,7 +14,7 @@ from caregiving.model.state_space_no_care_demand import create_state_space_funct
 from caregiving.model.stochastic_processes.health_transition import (
     health_transition,
 )
-from caregiving.model.stochastic_processes.job_transition import (
+from caregiving.model.stochastic_processes.job_transition_no_care_demand import (
     job_offer_process_transition,
 )
 from caregiving.model.stochastic_processes.partner_transition import partner_transition
@@ -46,7 +46,7 @@ def task_specify_model_no_care_demand(
     path_to_save_start_params: Annotated[Path, Product] = BLD
     / "model"
     / "params"
-    / "params_model_no_care_demand.yaml",
+    / "start_params_model_no_care_demand.yaml",
 ):
     """Generate counterfactual model and options dictionaries without care_demand.
 
