@@ -95,6 +95,10 @@ AGE_BIN_0_TO_3 = 0
 AGE_BIN_4_TO_6 = 1
 AGE_BIN_7_TO_9 = 2
 
+
+NPV_START_AGE = 30
+NPV_END_AGE = 80
+
 BAD_HEALTH = 0
 GOOD_HEALTH = 1
 DEAD = 2
@@ -177,6 +181,25 @@ PART_TIME = jnp.array([4, 5])
 FULL_TIME = jnp.array([6, 7])
 
 WORK_AND_NO_WORK = ALL.copy()
+
+# ====================================================================================
+# Counterfactual (no care demand): reduced state-choice space (4 discrete states)
+# Choices: 0 retirement, 1 unemployed, 2 part-time, 3 full-time
+# ====================================================================================
+ALL_NO_CARE_DEMAND = jnp.arange(4)
+
+RETIREMENT_NO_CARE_DEMAND = jnp.array([0])
+UNEMPLOYED_NO_CARE_DEMAND = jnp.array([1])
+PART_TIME_NO_CARE_DEMAND = jnp.array([2])
+FULL_TIME_NO_CARE_DEMAND = jnp.array([3])
+
+WORK_AND_NO_WORK_NO_CARE_DEMAND = ALL_NO_CARE_DEMAND.copy()
+NOT_WORKING_NO_CARE_DEMAND = jnp.concatenate(
+    [RETIREMENT_NO_CARE_DEMAND, UNEMPLOYED_NO_CARE_DEMAND]
+)
+WORK_NO_CARE_DEMAND = jnp.concatenate(
+    [PART_TIME_NO_CARE_DEMAND, FULL_TIME_NO_CARE_DEMAND]
+)
 
 # ====================================================================================
 # Caregiving
