@@ -3,22 +3,62 @@
 Baseline and no-care demand counterfactual.
 """
 
+import pickle as pkl
 from pathlib import Path
 from typing import Annotated
 
+import numpy as np
 import pandas as pd
 import yaml
 from pytask import Product
 
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import NPV_END_AGE, NPV_START_AGE
+from caregiving.simulation.simulate import (
+    setup_model_for_simulation_baseline,
+    simulate_career_costs,
+)
+from caregiving.simulation.simulate_no_care_demand import (
+    setup_model_for_simulation_no_care_demand,
+    simulate_career_costs_no_care_demand,
+)
 
 
 def task_compute_career_costs(
-    path_to_original_data: Path = BLD / "solve_and_simulate" / "simulated_data.pkl",
-    path_to_no_care_demand_data: Path = BLD
+    # Baseline
+    path_to_baseline_options: Path = BLD / "model" / "options.pkl",
+    path_to_baseline_model: Path = BLD / "model" / "model_for_solution.pkl",
+    path_to_baseline_solution: Path = BLD / "solve_and_simulate" / "solution.pkl",
+    path_to_baseline_initial_states: Path = BLD
+    / "model"
+    / "initial_conditions"
+    / "states.pkl",
+    path_to_baseline_wealth_agents: Path = BLD
+    / "model"
+    / "initial_conditions"
+    / "wealth.csv",
+    path_to_baseline_params: Path = BLD
+    / "model"
+    / "params"
+    / "start_params_model.yaml",
+    # Counterfactual: no care demand
+    path_to_no_care_demand_options: Path = BLD / "model" / "options_no_care_demand.pkl",
+    path_to_no_care_demand_params: Path = BLD
+    / "model"
+    / "params"
+    / "params_estimated_no_care_demand.yaml",
+    path_to_no_care_demand_model: Path = BLD / "model" / "model_no_care_demand.pkl",
+    path_to_no_care_demand_solution: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_no_care_demand.pkl",
+    / "solution_no_care_demand.pkl",
+    path_to_no_care_demand_initial_states: Path = BLD
+    / "model"
+    / "initial_conditions"
+    / "states_no_care_demand.pkl",
+    path_to_no_care_demand_wealth_agents: Path = BLD
+    / "model"
+    / "initial_conditions"
+    / "wealth_no_care_demand.csv",
     # path_to_original_npv: Annotated[Path, Product] = BLD
     # / "counterfactual"
     # / "original_career_npv.csv",
@@ -31,30 +71,85 @@ def task_compute_career_costs(
 ) -> None:
     """Compute career costs as NPV difference between baseline and counterfactual."""
 
-    # Load original simulated data
-    df_original = pd.read_pickle(path_to_original_data)
+    # ===============================================================================
+    # Baseline
+    # ===============================================================================
 
-    # Load no-care-demand simulated data
-    df_no_care_demand = pd.read_pickle(path_to_no_care_demand_data)
+    options = pkl.load(path_to_baseline_options.open("rb"))
+
+    params = yaml.safe_load(path_to_baseline_params.open("rb"))
+    solution_dict = pkl.load(path_to_baseline_solution.open("rb"))
+    initial_states = pkl.load(path_to_baseline_initial_states.open("rb"))
+    wealth_agents = np.array(
+        pd.read_csv(path_to_baseline_wealth_agents, usecols=["wealth"]).squeeze()
+    )
+
+    model_for_simulation = setup_model_for_simulation_baseline(
+        path_to_model=path_to_baseline_model,
+        options=options,
+    )
+
+    # Simulate using the provided function
+    df_baseline = simulate_career_costs(
+        model=model_for_simulation,
+        solution=solution_dict,
+        initial_states=initial_states,
+        wealth_agents=wealth_agents,
+        params=params,
+        options=options,
+        seed=options["model_params"]["seed"],
+    )
+
+    # ===============================================================================
+    # Counterfactual: no care demand
+    # ===============================================================================
+
+    options_no_care_demand = pkl.load(path_to_no_care_demand_options.open("rb"))
+
+    params_no_care_demand = yaml.safe_load(path_to_no_care_demand_params.open("rb"))
+    solution_no_care_demand = pkl.load(path_to_no_care_demand_solution.open("rb"))
+    initial_states_no_care_demand = pkl.load(
+        path_to_no_care_demand_initial_states.open("rb")
+    )
+    wealth_agents_no_care_demand = np.array(
+        pd.read_csv(path_to_no_care_demand_wealth_agents, usecols=["wealth"]).squeeze()
+    )
+
+    # Setup no-care-demand model for simulation
+    model_no_care_demand_for_simulation = setup_model_for_simulation_no_care_demand(
+        path_to_model=path_to_no_care_demand_model,
+        options=options_no_care_demand,
+    )
+
+    # Simulate no-care-demand scenario using the specialized function
+    df_no_care_demand = simulate_career_costs_no_care_demand(
+        model=model_no_care_demand_for_simulation,
+        solution=solution_no_care_demand,
+        initial_states=initial_states_no_care_demand,
+        wealth_agents=wealth_agents_no_care_demand,
+        params=params_no_care_demand,
+        options=options_no_care_demand,
+        seed=options_no_care_demand["model_params"]["seed"],
+    )
 
     # Load beta
     beta = 0.98
 
-    # Compute NPV for original scenario
-    original_npv = compute_career_npv(df_original, beta)
-    # original_npv.to_csv(path_to_original_npv)
+    # Compute NPV for baseline scenario
+    baseline_npv = compute_career_npv(df_baseline, beta)
+    # baseline_npv.to_csv(path_to_baseline_npv)
 
     # Compute NPV for no-care-demand scenario
     no_care_demand_npv = compute_career_npv(df_no_care_demand, beta)
     # no_care_demand_npv.to_csv(path_to_no_care_demand_npv)
 
     # Compute career costs (difference in NPV)
-    career_costs = compute_career_costs(original_npv, no_care_demand_npv)
+    career_costs = compute_career_costs(baseline_npv, no_care_demand_npv)
 
     _npv_care = (
         1
         - career_costs["career_npv_no_care_demand"]
-        / career_costs["career_npv_original"]
+        / career_costs["career_npv_baseline"]
     )
 
 
@@ -67,7 +162,7 @@ def compute_career_npv(df: pd.DataFrame, beta: float) -> pd.DataFrame:
     # Create discount factors (beta^(age-30))
     df_filtered["discount_factor"] = beta ** (df_filtered["age"] - NPV_START_AGE)
 
-    # Compute discounted income
+    # Compute discounted income using total_income (individual income components)
     df_filtered["discounted_income"] = (
         df_filtered["total_income"] * df_filtered["discount_factor"]
     )
@@ -89,27 +184,27 @@ def compute_career_npv(df: pd.DataFrame, beta: float) -> pd.DataFrame:
 
 
 def compute_career_costs(
-    original_npv: pd.DataFrame, no_care_demand_npv: pd.DataFrame
+    baseline_npv: pd.DataFrame, no_care_demand_npv: pd.DataFrame
 ) -> pd.DataFrame:
     """Compute career costs as difference in NPV between scenarios."""
 
     # Merge the two NPV datasets
     merged = pd.merge(
-        original_npv,
+        baseline_npv,
         no_care_demand_npv,
         on=["agent"],
-        suffixes=("_original", "_no_care_demand"),
+        suffixes=("_baseline", "_no_care_demand"),
     )
 
     merged["career_costs"] = (
-        merged["career_npv_no_care_demand"] - merged["career_npv_original"]
+        merged["career_npv_no_care_demand"] - merged["career_npv_baseline"]
     )
 
     # Select relevant columns
     result = merged[
         [
             "agent",
-            "career_npv_original",
+            "career_npv_baseline",
             "career_npv_no_care_demand",
             "career_costs",
         ]

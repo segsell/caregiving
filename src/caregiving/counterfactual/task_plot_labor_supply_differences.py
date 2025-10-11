@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Annotated
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import pytask
 from pytask import Product
@@ -21,13 +22,13 @@ from caregiving.model.shared_no_care_demand import (
 )
 
 
-@pytask.mark.skip()
 def task_plot_labor_supply_differences(
     path_to_original_data: Path = BLD / "solve_and_simulate" / "simulated_data.pkl",
     path_to_no_care_demand_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_no_care_demand.pkl",
     path_to_plot: Annotated[Path, Product] = BLD
+    / "plots"
     / "counterfactual"
     / "labor_supply_differences_by_age.png",
 ) -> None:
@@ -55,24 +56,29 @@ def task_plot_labor_supply_differences(
 def compute_labor_supply_shares_by_age(
     df: pd.DataFrame, is_original: bool = True
 ) -> pd.DataFrame:
-    """Compute labor supply shares by age."""
+    """Compute labor supply shares by age - corrected version."""
 
-    df_working = df.copy()
+    # Select only the columns we need to minimize memory usage
+    subset_df = df[["choice", "age"]].copy()
 
-    # Create working indicators based on model type
-    if is_original:  # Original model with caregiving choices
-        df_working["is_working"] = df_working["choice"].isin(WORK)
-        df_working["is_part_time"] = df_working["choice"].isin(PART_TIME)
-        df_working["is_full_time"] = df_working["choice"].isin(FULL_TIME)
+    if is_original:
+        work_choices = np.asarray(WORK).ravel().tolist()
+        part_time_choices = np.asarray(PART_TIME).ravel().tolist()
+        full_time_choices = np.asarray(FULL_TIME).ravel().tolist()
     else:  # No-care-demand model
-        df_working["is_working"] = df_working["choice"].isin(WORK_NO_CARE_DEMAND)
-        df_working["is_part_time"] = df_working["choice"].isin(PART_TIME_NO_CARE_DEMAND)
-        df_working["is_full_time"] = df_working["choice"].isin(FULL_TIME_NO_CARE_DEMAND)
+        work_choices = np.asarray(WORK_NO_CARE_DEMAND).ravel().tolist()
+        part_time_choices = np.asarray(PART_TIME_NO_CARE_DEMAND).ravel().tolist()
+        full_time_choices = np.asarray(FULL_TIME_NO_CARE_DEMAND).ravel().tolist()
 
-    # Compute shares by age (assuming single sex model)
+    # Create boolean columns using the converted arrays
+    subset_df["is_working"] = subset_df["choice"].isin(work_choices)
+    subset_df["is_part_time"] = subset_df["choice"].isin(part_time_choices)
+    subset_df["is_full_time"] = subset_df["choice"].isin(full_time_choices)
+
+    # Use pandas' optimized groupby with mean aggregation
     shares = (
-        df_working.groupby(["age"])
-        .agg({"is_working": "mean", "is_part_time": "mean", "is_full_time": "mean"})
+        subset_df.groupby("age")[["is_working", "is_part_time", "is_full_time"]]
+        .mean()
         .reset_index()
     )
 
@@ -84,11 +90,11 @@ def compute_labor_supply_differences(
 ) -> pd.DataFrame:
     """Compute differences in labor supply shares between scenarios."""
 
-    # Merge on age and sex
+    # Merge on age only (assuming single sex model)
     merged = pd.merge(
         original_shares,
         no_care_demand_shares,
-        on=["age", "sex"],
+        on=["age"],
         suffixes=("_original", "_no_care_demand"),
     )
 
@@ -146,10 +152,30 @@ def create_labor_supply_difference_plot(
     axes[1].legend()
     axes[1].grid(True, alpha=0.3)
 
-    # Set common x-axis label
-    for ax in axes:
-        ax.set_xlabel("Age")
-        ax.set_xlim(30, 80)
+    # Calculate common y-axis range for both plots
+    working_diff = differences["working_diff"].values
+    part_time_diff = differences["part_time_diff"].values
+    full_time_diff = differences["full_time_diff"].values
+
+    # Find the overall min and max across all difference series
+    all_values = np.concatenate([working_diff, part_time_diff, full_time_diff])
+    common_min = np.min(all_values)
+    common_max = np.max(all_values)
+
+    # Add padding
+    common_range = common_max - common_min
+    padding = common_range * 0.1
+    common_y_min = common_min - padding
+    common_y_max = common_max + padding
+
+    # Set x-axis properties and common y-axis range
+    axes[0].set_xlabel("Age")
+    axes[0].set_xlim(30, 80)
+    axes[0].set_ylim(common_y_min, common_y_max)
+
+    axes[1].set_xlabel("Age")
+    axes[1].set_xlim(30, 80)
+    axes[1].set_ylim(common_y_min, common_y_max)
 
     plt.tight_layout()
     plt.savefig(path_to_plot, dpi=300, bbox_inches="tight")

@@ -93,6 +93,7 @@ def budget_constraint(
         has_partner_int=has_partner_int,
         options=options,
     )
+
     child_benefits = calc_child_benefits(
         education=education,
         sex=sex_var,
