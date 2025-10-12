@@ -29,6 +29,9 @@ FULL_TIME_NO_CARE_DEMAND = FULL_TIME.copy()
 WORK_NO_CARE_DEMAND = WORK.copy()
 NOT_WORKING_NO_CARE_DEMAND = NOT_WORKING.copy()
 
+WORK_AND_UNEMPLOYED_NO_CARE_DEMAND = jnp.concatenate([UNEMPLOYED, PART_TIME, FULL_TIME])
+WORK_AND_RETIREMENT_NO_CARE_DEMAND = jnp.concatenate([RETIREMENT, PART_TIME, FULL_TIME])
+
 
 # ====================================================================================
 # Helper predicates

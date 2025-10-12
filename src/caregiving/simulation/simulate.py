@@ -359,12 +359,19 @@ def build_simulation_df_with_income_components(sim_dict, options, params):
     # Total net income = labor income + pension income + child benefits + care benefits
     df["total_net_income"] = (
         df["gross_labor_income"]
-        + df["gross_pension_income"]
+        # + df["gross_pension_income"]
         + df["child_benefits"]
         + df["care_benefits_and_costs"]
     )
 
     # Apply maximum with unemployment benefits (following budget equation)
-    df["total_income"] = np.maximum(df["total_net_income"], df["unemployment_benefits"])
+    # df["total_income"] = np.maximum(
+    #     df["total_net_income"], df["unemployment_benefits"]
+    # ) * (df["health"] != DEAD)
+    df["total_income"] = np.where(
+        df["health"] != DEAD,
+        np.maximum(df["total_net_income"], df["unemployment_benefits"]),
+        0,
+    )
 
     return df

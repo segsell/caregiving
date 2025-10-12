@@ -10,9 +10,12 @@ from caregiving.model.shared import (
     is_dead,
 )
 from caregiving.model.shared_no_care_demand import (
+    ALL_NO_CARE_DEMAND,
     NOT_WORKING_NO_CARE_DEMAND,
     RETIREMENT_NO_CARE_DEMAND,
     UNEMPLOYED_NO_CARE_DEMAND,
+    WORK_AND_RETIREMENT_NO_CARE_DEMAND,
+    WORK_AND_UNEMPLOYED_NO_CARE_DEMAND,
     WORK_NO_CARE_DEMAND,
     is_full_time,
     is_part_time,
@@ -181,7 +184,7 @@ def state_specific_choice_set(  # noqa: PLR0911, PLR0912
         if job_offer == 0:
             return UNEMPLOYED_NO_CARE_DEMAND
         else:
-            return WORK_NO_CARE_DEMAND
+            return WORK_AND_UNEMPLOYED_NO_CARE_DEMAND
     # Person must be retired
     elif age >= options["max_ret_age"]:
         return RETIREMENT_NO_CARE_DEMAND
@@ -191,13 +194,13 @@ def state_specific_choice_set(  # noqa: PLR0911, PLR0912
             if job_offer == 0:
                 return RETIREMENT_NO_CARE_DEMAND
             else:
-                return WORK_NO_CARE_DEMAND
+                return WORK_AND_RETIREMENT_NO_CARE_DEMAND
         else:
             if job_offer == 0:
                 # Choose unemployment or retirement
                 return NOT_WORKING_NO_CARE_DEMAND
             else:
-                return WORK_NO_CARE_DEMAND
+                return ALL_NO_CARE_DEMAND
 
 
 def get_next_period_experience(

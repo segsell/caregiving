@@ -13,7 +13,7 @@ import yaml
 from pytask import Product
 
 from caregiving.config import BLD, SRC
-from caregiving.model.shared import NPV_END_AGE, NPV_START_AGE
+from caregiving.model.shared import INFORMAL_CARE, NPV_END_AGE, NPV_START_AGE
 from caregiving.simulation.simulate import (
     setup_model_for_simulation_baseline,
     simulate_career_costs,
@@ -43,9 +43,8 @@ def task_compute_career_costs(
     / "start_params_model.yaml",
     # Counterfactual: no care demand
     path_to_no_care_demand_options: Path = BLD / "model" / "options_no_care_demand.pkl",
-    path_to_no_care_demand_params: Path = BLD
-    / "model"
-    / "params"
+    path_to_no_care_demand_params: Path = BLD / "model" / "params"
+    # / "start_params_model_no_care_demand.yaml",
     / "params_estimated_no_care_demand.yaml",
     path_to_no_care_demand_model: Path = BLD / "model" / "model_no_care_demand.pkl",
     path_to_no_care_demand_solution: Path = BLD
@@ -133,23 +132,46 @@ def task_compute_career_costs(
     )
 
     # Load beta
-    beta = 0.98
+    beta = 0.95
+
+    df_baseline_care_ever = create_care_flags(df_baseline)
+
+    # Get agent IDs that have care_ever == 1 in baseline
+    agents_with_care = (
+        df_baseline_care_ever[df_baseline_care_ever["care_ever"] == 1]
+        .index.get_level_values("agent")
+        .unique()
+    )
+
+    # Subset baseline data to only include agents who provided care
+    df_baseline_care_ever_subset = df_baseline_care_ever[
+        df_baseline_care_ever.index.get_level_values("agent").isin(agents_with_care)
+    ]
+
+    # Subset no-care-demand data to only include agents who provided care in baseline
+    df_no_care_demand_subset = df_no_care_demand[
+        df_no_care_demand.index.get_level_values("agent").isin(agents_with_care)
+    ]
 
     # Compute NPV for baseline scenario
-    baseline_npv = compute_career_npv(df_baseline, beta)
+    baseline_npv = compute_career_npv(df_baseline_care_ever_subset, beta)
     # baseline_npv.to_csv(path_to_baseline_npv)
 
-    # Compute NPV for no-care-demand scenario
-    no_care_demand_npv = compute_career_npv(df_no_care_demand, beta)
+    # Compute NPV for no-care-demand scenario (subsetted to care providers)
+    no_care_demand_npv = compute_career_npv(df_no_care_demand_subset, beta)
     # no_care_demand_npv.to_csv(path_to_no_care_demand_npv)
 
     # Compute career costs (difference in NPV)
-    career_costs = compute_career_costs(baseline_npv, no_care_demand_npv)
+    # career_costs = compute_career_costs(baseline_npv, no_care_demand_npv)
 
-    _npv_care = (
-        1
-        - career_costs["career_npv_no_care_demand"]
-        / career_costs["career_npv_baseline"]
+    # _npv_care = (
+    #     1
+    #     - career_costs["career_npv_no_care_demand"]
+    #     / career_costs["career_npv_baseline"]
+    # )
+    _npv_care = 1 - no_care_demand_npv["career_npv"] / baseline_npv["career_npv"]
+    _npv_mean = (
+        1 - no_care_demand_npv["career_npv"].mean() / baseline_npv["career_npv"].mean()
     )
 
 
@@ -168,7 +190,9 @@ def compute_career_npv(df: pd.DataFrame, beta: float) -> pd.DataFrame:
     )
 
     # Group by agent and sum discounted income to get NPV
-    npv_by_agent = df_filtered.groupby("agent")["discounted_income"].sum().reset_index()
+    npv_by_agent = (
+        df_filtered.groupby(level="agent")["discounted_income"].sum().reset_index()
+    )
     npv_by_agent.columns = ["agent", "career_npv"]
 
     # # Merge with agent characteristics (education, sex, etc.)
@@ -211,3 +235,26 @@ def compute_career_costs(
     ].copy()
 
     return result
+
+
+def create_care_flags(df: pd.DataFrame) -> pd.DataFrame:
+    """Create care ever and sum care variables."""
+    # Caregiving
+    df["informal_care"] = df["choice"].isin(np.asarray(INFORMAL_CARE).ravel().tolist())
+
+    # Care ever - use MultiIndex level for grouping
+    df["care_ever"] = df.groupby(level="agent")["informal_care"].transform(
+        lambda x: x.cumsum().clip(upper=1)
+    )
+
+    # # Sum care
+    # df["sum_informal_care"] = df.groupby(level="agent")["informal_care"].transform(
+    #     lambda x: x.cumsum()
+    # )
+
+    # # Care demand ever
+    # df["care_demand_ever"] = df.groupby(level="agent")["care_demand"].transform(
+    #     lambda x: x.cumsum().clip(upper=1)
+    # )
+
+    return df

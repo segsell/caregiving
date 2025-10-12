@@ -9,18 +9,13 @@ import jax.numpy as jnp
 import numpy as np
 import pandas as pd
 
-from caregiving.model.shared import (
-    SEX,
-)
+from caregiving.model.shared import DEAD, SEX
 from caregiving.model.shared_no_care_demand import (
     FULL_TIME,
     PART_TIME,
     RETIREMENT_NO_CARE_DEMAND,
     UNEMPLOYED_NO_CARE_DEMAND,
     WORK_NO_CARE_DEMAND,
-    is_retired,
-    is_unemployed,
-    is_working,
 )
 from caregiving.model.state_space import (
     construct_experience_years,
@@ -313,10 +308,19 @@ def build_simulation_df_with_income_components_no_care_demand(
     # Calculate total individual income following budget equation logic
     # Total net income = labor income + pension income + child benefits
     df["total_net_income"] = (
-        df["gross_labor_income"] + df["gross_pension_income"] + df["child_benefits"]
+        df["gross_labor_income"]
+        + df["child_benefits"]
+        # df["gross_labor_income"] + df["gross_pension_income"] + df["child_benefits"]
     )
 
     # Apply maximum with unemployment benefits (following budget equation)
-    df["total_income"] = np.maximum(df["total_net_income"], df["unemployment_benefits"])
+    # df["total_income"] = np.maximum(
+    #     df["total_net_income"], df["unemployment_benefits"]
+    # ) * (df["health"] != DEAD)
+    df["total_income"] = np.where(
+        df["health"] != DEAD,
+        np.maximum(df["total_net_income"], df["unemployment_benefits"]),
+        0,
+    )
 
     return df

@@ -34,11 +34,9 @@ jax.config.update("jax_enable_x64", True)
 def task_solve_and_simulate_no_care_demand(
     path_to_solution_model: Path = BLD / "model" / "model_no_care_demand.pkl",
     path_to_options: Path = BLD / "model" / "options_no_care_demand.pkl",
-    path_to_params: Path = BLD
-    / "model"
-    / "params"
-    / "start_params_model_no_care_demand.yaml",
-    # / "params_estimated_no_care_demand.yaml",
+    path_to_params: Path = BLD / "model" / "params"
+    # / "start_params_model_no_care_demand.yaml",
+    / "params_estimated_no_care_demand.yaml",
     path_to_discrete_states: Path = BLD
     / "model"
     / "initial_conditions"
