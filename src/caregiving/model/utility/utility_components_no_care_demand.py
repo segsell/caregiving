@@ -35,15 +35,17 @@ def disutility_work(period, choice, education, partner_state, health, params, op
 
     disutil_ft_work = (
         params["disutil_ft_work_high_bad"] * bad_health * education
-        + params["disutil_ft_work_low_bad"] * bad_health * (1 - education)
+        # + params["disutil_ft_work_low_bad"] * bad_health * (1 - education)
         + params["disutil_ft_work_high_good"] * good_health * education
-        + params["disutil_ft_work_low_good"] * good_health * (1 - education)
+        # + params["disutil_ft_work_low_good"] * good_health * (1 - education)
+        + params["disutil_ft_work_low"] * (1 - education)
     )
     disutil_pt_work = (
         params["disutil_pt_work_high_bad"] * bad_health * education
-        + params["disutil_pt_work_low_bad"] * bad_health * (1 - education)
+        # + params["disutil_pt_work_low_bad"] * bad_health * (1 - education)
         + params["disutil_pt_work_high_good"] * good_health * education
-        + params["disutil_pt_work_low_good"] * good_health * (1 - education)
+        # + params["disutil_pt_work_low_good"] * good_health * (1 - education)
+        + params["disutil_pt_work_low"] * (1 - education)
     )
     disutil_unemployed = (
         params["disutil_unemployed_low_women"] * (1 - education)

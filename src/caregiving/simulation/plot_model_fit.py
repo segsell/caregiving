@@ -225,7 +225,8 @@ def plot_choice_shares_by_education(
     n_edu = len(specs["education_labels"])
     # Ensure hashable elements when deriving number of aggregated choices
     # choice_groups_sim.values() may contain JAX arrays; convert to tuples of ints
-    n_choices = sum(arr.size for arr in choice_groups_sim.values())
+    # n_choices = sum(arr.size for arr in choice_groups_sim.values())
+    n_choices = len(specs["choice_labels"])
     fig, axs = plt.subplots(n_edu, n_choices, figsize=(16, 6), sharex=True, sharey=True)
 
     # ---------- 3. Loop over education groups ------------------------------

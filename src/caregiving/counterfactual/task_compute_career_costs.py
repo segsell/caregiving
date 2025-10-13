@@ -176,7 +176,7 @@ def task_compute_career_costs(
 
 
 def compute_career_npv(df: pd.DataFrame, beta: float) -> pd.DataFrame:
-    """Compute net present value of total income from age 30 to 80."""
+    """Compute net present value of total income from age 30 to 70."""
 
     # Filter data for ages 30-80
     df_filtered = df[(df["age"] >= NPV_START_AGE) & (df["age"] <= NPV_END_AGE)].copy()

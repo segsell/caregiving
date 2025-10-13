@@ -242,7 +242,7 @@ def task_plot_model_fit(  # noqa: PLR0915
     #     path_to_save_plot=path_to_save_labor_shares_caregivers_by_age_bin,
     # )
     # plot_choice_shares_by_education(
-    #     df_emp_caregivers,
+    #     df_emp_caregivers
     #     df_sim_caregivers,
     #     specs,
     #     path_to_save_plot=path_to_save_labor_shares_caregivers_by_educ_and_age_plot,
