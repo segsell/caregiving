@@ -37,7 +37,7 @@ FILL_VALUE_MISSING_AGE = np.nan
 # =====================================================================================
 
 
-def simulate_moments_pandas_no_care_demand(  # noqa: PLR0915
+def simulate_moments_pandas_no_care_demand(
     df_full,
     options,
 ) -> pd.DataFrame:
@@ -53,8 +53,8 @@ def simulate_moments_pandas_no_care_demand(  # noqa: PLR0915
     age_range = range(start_age, end_age + 1)
     age_range_wealth = range(start_age, model_params["end_age_wealth"] + 1)
 
-    df_low = df_full[df_full["education"] == 0]
-    df_high = df_full[df_full["education"] == 1]
+    df_low = df_full[df_full["education"] == 0].copy()
+    df_high = df_full[df_full["education"] == 1].copy()
 
     # =================================================================================
     # Wealth moments
@@ -75,7 +75,7 @@ def simulate_moments_pandas_no_care_demand(  # noqa: PLR0915
         moments,
         variable="wealth_beginning_of_period",
         age_range=age_range_wealth,
-        label="low_education",
+        label="high_education",
     )
 
     # A) Moments by age.

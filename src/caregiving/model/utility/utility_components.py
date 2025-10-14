@@ -34,7 +34,9 @@ from caregiving.model.utility.bequest_utility import (
 )
 
 
-def disutility_work(period, choice, education, partner_state, health, params, options):
+def disutility_work(
+    period, choice, education, partner_state, health, care_demand, params, options
+):
     # choice booleans
     retired = is_retired(choice)
     unemployed = is_unemployed(choice)
@@ -56,17 +58,17 @@ def disutility_work(period, choice, education, partner_state, health, params, op
 
     disutil_ft_work = (
         params["disutil_ft_work_high_bad"] * bad_health * education
-        # + params["disutil_ft_work_low_bad"] * bad_health * (1 - education)
+        + params["disutil_ft_work_low_bad"] * bad_health * (1 - education)
         + params["disutil_ft_work_high_good"] * good_health * education
-        # + params["disutil_ft_work_low_good"] * good_health * (1 - education)
-        + params["disutil_ft_work_low"] * (1 - education)
+        + params["disutil_ft_work_low_good"] * good_health * (1 - education)
+        # + params["disutil_ft_work_low"] * (1 - education)
     )
     disutil_pt_work = (
         params["disutil_pt_work_high_bad"] * bad_health * education
-        # + params["disutil_pt_work_low_bad"] * bad_health * (1 - education)
+        + params["disutil_pt_work_low_bad"] * bad_health * (1 - education)
         + params["disutil_pt_work_high_good"] * good_health * education
-        # + params["disutil_pt_work_low_good"] * good_health * (1 - education)
-        + params["disutil_pt_work_low"] * (1 - education)
+        + params["disutil_pt_work_low_good"] * good_health * (1 - education)
+        # + params["disutil_pt_work_low"] * (1 - education)
     )
     disutil_unemployed = (
         params["disutil_unemployed_low_women"] * (1 - education)
@@ -173,6 +175,15 @@ def disutility_work(period, choice, education, partner_state, health, params, op
         -disutility_no_caregiving * (1 - informal_care)
         - disutility_informal_care * informal_care
         - partner_retired * retired * params["disutil_partner_retired"]
+        + (care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
+        * informal_care
+        * params["util_informal_care"]
+        + (care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
+        * (1 - informal_care)
+        * params["util_formal_care"]
+        + (care_demand == CARE_DEMAND_AND_OTHER_SUPPLY)
+        * informal_care
+        * params["util_joint_informal_care"]
     )
 
     return disutility
