@@ -10,8 +10,6 @@ import numpy as np
 import optimagic as om
 import pandas as pd
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import MACHINE_ZERO, RETIREMENT
@@ -28,6 +26,8 @@ from caregiving.simulation.simulate_moments import (
     simulate_moments_jax,
     simulate_moments_pandas,
 )
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 jax.config.update("jax_enable_x64", True)
 
@@ -44,6 +44,7 @@ def estimate_model(
     weighting_method: str = "identity",
     use_cholesky_weights: bool = True,
     relative_deviations: bool = False,
+    least_squares: bool = True,
     *,
     path_to_discrete_states: str = BLD / "model" / "initial_conditions" / "states.pkl",
     path_to_wealth: str = BLD / "model" / "initial_conditions" / "wealth.csv",
@@ -65,7 +66,21 @@ def estimate_model(
     random_seed: bool = False,
     error_handling: str = "continue",
 ) -> None:
-    """Estimate the model based on empirical data and starting parameters."""
+    """Estimate the model based on empirical data and starting parameters.
+
+    Parameters:
+    -----------
+    least_squares : bool, default True
+        If True, uses least squares optimization (returns residuals array).
+        If False, uses scalar optimization (returns a single scalar value from
+        the criterion function). When False, the criterion function returns
+        the sum of squared residuals as a scalar value, which is suitable for
+        scalar optimizers like 'scipy_lbfgsb', 'scipy_neldermead', etc.
+
+        Note: When least_squares=False, the optimization uses om.mark.scalar()
+        instead of om.mark.least_squares(), and the criterion function returns
+        a float instead of a residuals array.
+    """
 
     # 1) set up a single RNG if we’re doing truly random draws
     if random_seed:
@@ -201,6 +216,7 @@ def estimate_model(
         weights=weights,
         cholesky=use_cholesky_weights,
         relative_deviations=relative_deviations,
+        least_squares=least_squares,
     )
 
     minimize_kwargs = {
@@ -310,6 +326,34 @@ def simulate_moments(
     return out
 
 
+def msm_criterion_scalar(
+    params: np.ndarray,
+    simulate_moments: callable,
+    flat_empirical_moments: np.ndarray,
+    chol_weights: np.ndarray,
+    relative_deviations: bool = False,
+) -> float:
+    """Compute the MSM scalar criterion based on simulated and empirical moments."""
+
+    simulated_flat = simulate_moments(params)
+
+    deviations = simulated_flat - flat_empirical_moments
+
+    if relative_deviations:
+        np.divide(
+            deviations,
+            flat_empirical_moments,
+            out=deviations,
+            where=flat_empirical_moments != 0,
+        )
+
+    # Return the weighted sum of squared deviations as a scalar
+    # This is equivalent to deviations @ weights @ deviations (Mahalanobis distance)
+    scalar_criterion = deviations @ chol_weights @ deviations
+
+    return scalar_criterion
+
+
 def get_msm_optimization_function(
     simulate_moments: callable,
     empirical_moments: np.ndarray,
@@ -317,6 +361,7 @@ def get_msm_optimization_function(
     # is_least_squares: bool,
     cholesky: bool = True,
     relative_deviations: bool = False,
+    least_squares: bool = True,
 ) -> np.ndarray:
 
     if cholesky:
@@ -324,26 +369,26 @@ def get_msm_optimization_function(
     else:
         chol_weights = weights
 
-    # if is_least_squares:
-    criterion = om.mark.least_squares(
-        partial(
-            msm_criterion,
-            simulate_moments=simulate_moments,
-            flat_empirical_moments=empirical_moments,
-            chol_weights=chol_weights,
-            relative_deviations=relative_deviations,
+    if least_squares:
+        criterion = om.mark.least_squares(
+            partial(
+                msm_criterion,
+                simulate_moments=simulate_moments,
+                flat_empirical_moments=empirical_moments,
+                chol_weights=chol_weights,
+                relative_deviations=relative_deviations,
+            )
         )
-    )
-    # else:
-    #     criterion = om.mark.scalar(
-    #         partial(
-    #             msm_criterion,
-    #             simulate_moments=simulate_moments,
-    #             flat_empirical_moments=empirical_moments,
-    #             chol_weights=chol_weights,
-    #             relative_deviations=relative_deviations,
-    #         )
-    #     )
+    else:
+        criterion = om.mark.scalar(
+            partial(
+                msm_criterion_scalar,
+                simulate_moments=simulate_moments,
+                flat_empirical_moments=empirical_moments,
+                chol_weights=chol_weights,
+                relative_deviations=relative_deviations,
+            )
+        )
 
     return criterion
 
