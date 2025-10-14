@@ -9,6 +9,7 @@ from typing import Annotated
 
 import numpy as np
 import pandas as pd
+import pytask
 import yaml
 from pytask import Product
 
@@ -24,6 +25,7 @@ from caregiving.simulation.simulate_no_care_demand import (
 )
 
 
+@pytask.mark.skip()
 def task_compute_career_costs(
     # Baseline
     path_to_baseline_options: Path = BLD / "model" / "options.pkl",

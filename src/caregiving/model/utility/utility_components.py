@@ -71,8 +71,12 @@ def disutility_work(
         # + params["disutil_pt_work_low"] * (1 - education)
     )
     disutil_unemployed = (
-        params["disutil_unemployed_low_women"] * (1 - education)
-        + params["disutil_unemployed_high_women"] * education
+        # params["disutil_unemployed_low_women"] * (1 - education)
+        # + params["disutil_unemployed_high_women"] * education
+        params["disutil_unemployed_high_bad_women"] * bad_health * education
+        + params["disutil_unemployed_low_bad_women"] * bad_health * (1 - education)
+        + params["disutil_unemployed_high_good_women"] * good_health * education
+        + params["disutil_unemployed_low_good_women"] * good_health * (1 - education)
     )
 
     # disutil_children_ue_low = params["disutil_children_unemployed_low"]*nb_children
