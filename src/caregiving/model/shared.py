@@ -452,10 +452,6 @@ def is_no_care(choice):
     return jnp.any(choice == NO_CARE)
 
 
-def is_caregiving(choice):
-    return jnp.any(choice == ALL_CARE)
-
-
 # def is_pure_informal_care(lagged_choice):
 #     # intensive only here
 #     return jnp.any(lagged_choice == PURE_INFORMAL_CARE)
@@ -514,6 +510,15 @@ def is_dead(health):
 
 # def is_bad_health(parental_health):
 #     return jnp.any(parental_health == BAD_HEALTH)
+
+
+# ==============================================================================
+# Job Before Caregiving Helper Functions
+# ==============================================================================
+
+
+def had_job_before_caregiving(job_before_caregiving):
+    return jnp.any(job_before_caregiving == 1)
 
 
 # ==============================================================================

@@ -34,9 +34,9 @@ from caregiving.model.shared import (  # BAD_HEALTH,; CARE_AND_NO_CARE,; FORMAL_
     WORK_AND_UNEMPLOYED_NO_CARE,
     WORK_AND_UNEMPLOYED_NO_FORMAL_CARE,
     is_alive,
-    is_caregiving,
     is_dead,
     is_full_time,
+    is_informal_care,
     is_part_time,
     is_retired,
     is_unemployed,
@@ -153,7 +153,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
     elif (not is_retired(lagged_choice)) & (already_retired == 1):
         return False
     # ================================================================================
-    elif (age > options["end_age_msm"] + 1) & is_caregiving(lagged_choice):
+    elif (age > options["end_age_msm"] + 1) & is_informal_care(lagged_choice):
         return False
     # ================================================================================
     # After the maximum retirement age, you must be retired.
