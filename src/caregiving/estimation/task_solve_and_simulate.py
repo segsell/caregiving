@@ -14,7 +14,7 @@ from caregiving.config import BLD
 from caregiving.counterfactual.simulate_counterfactual import (
     simulate_counterfactual_npv,
 )
-from caregiving.estimation.estimation_setup import (
+from caregiving.estimation.prepare_estimation import (
     load_and_setup_full_model_for_solution,
 )
 from caregiving.model.state_space import (
