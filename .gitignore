@@ -189,3 +189,6 @@ submodules
 
 backup_*/
 _backup_*/
+
+# Temporary test files
+tests/temp/
