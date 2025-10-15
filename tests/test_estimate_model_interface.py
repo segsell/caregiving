@@ -2,6 +2,7 @@
 
 import pickle
 import signal
+from contextlib import suppress
 from pathlib import Path
 from unittest.mock import patch
 
@@ -16,6 +17,31 @@ from caregiving.estimation.prepare_estimation import (
 from caregiving.simulation.simulate import simulate_scenario
 from caregiving.simulation.simulate_moments import simulate_moments_pandas
 from dcegm.solve import get_solve_func_for_model
+
+
+@pytest.fixture
+def temp_test_dir():
+    """Create a temporary directory for test files and clean up after test."""
+    # Create temp directory in tests/temp/
+    temp_dir = Path(__file__).parent / "temp"
+    temp_dir.mkdir(exist_ok=True)
+
+    # List to track created files for cleanup
+    created_files = []
+
+    def create_temp_file(filename):
+        """Create a temporary file in the test temp directory."""
+        temp_file = temp_dir / filename
+        created_files.append(temp_file)
+        return temp_file
+
+    yield create_temp_file
+
+    # Cleanup: remove all created files
+    for file_path in created_files:
+        if file_path.exists():
+            with suppress(OSError, PermissionError):
+                file_path.unlink()
 
 
 class MockResult:
@@ -74,7 +100,7 @@ def load_real_parameters(test_param_keys=None):
     return start_params, lower_bounds, upper_bounds
 
 
-def test_estimate_model_least_squares_interface():
+def test_estimate_model_least_squares_interface(temp_test_dir):
     """Test estimate_model interface with least squares optimization."""
 
     # Check if required files exist, skip test if not
@@ -112,6 +138,10 @@ def test_estimate_model_least_squares_interface():
 
     solve_func = get_solve_func_for_model(model)
 
+    # Create temporary files in the test temp directory
+    temp_result_file = temp_test_dir("temp_result_ls.pkl")
+    temp_params_file = temp_test_dir("temp_params_ls.csv")
+
     with patch("optimagic.minimize", side_effect=mock_minimize):
         result = estimate_model(
             model_for_simulation=model,
@@ -132,8 +162,8 @@ def test_estimate_model_least_squares_interface():
             path_to_wealth=BLD / "model" / "initial_conditions" / "wealth.csv",
             path_to_empirical_moments=BLD / "moments" / "moments_full.csv",
             path_to_empirical_variance=BLD / "moments" / "variances_full.csv",
-            path_to_save_estimation_result=Path("temp_result_ls.pkl"),
-            path_to_save_estimation_params=Path("temp_params_ls.csv"),
+            path_to_save_estimation_result=temp_result_file,
+            path_to_save_estimation_params=temp_params_file,
         )
 
     assert result is not None
@@ -142,7 +172,7 @@ def test_estimate_model_least_squares_interface():
     print("✓ Least squares optimization interface test passed")
 
 
-def test_estimate_model_scalar_interface():
+def test_estimate_model_scalar_interface(temp_test_dir):
     """Test estimate_model interface with scalar optimization."""
 
     # Check if required files exist, skip test if not
@@ -179,6 +209,10 @@ def test_estimate_model_scalar_interface():
     start_params, lower_bounds, upper_bounds = load_real_parameters()
     solve_func = get_solve_func_for_model(model)
 
+    # Create temporary files in the test temp directory
+    temp_result_file = temp_test_dir("temp_result_scalar.pkl")
+    temp_params_file = temp_test_dir("temp_params_scalar.csv")
+
     with patch("optimagic.minimize", side_effect=mock_minimize):
         result = estimate_model(
             model_for_simulation=model,
@@ -199,8 +233,8 @@ def test_estimate_model_scalar_interface():
             path_to_wealth=BLD / "model" / "initial_conditions" / "wealth.csv",
             path_to_empirical_moments=BLD / "moments" / "moments_full.csv",
             path_to_empirical_variance=BLD / "moments" / "variances_full.csv",
-            path_to_save_estimation_result=Path("temp_result_scalar.pkl"),
-            path_to_save_estimation_params=Path("temp_params_scalar.csv"),
+            path_to_save_estimation_result=temp_result_file,
+            path_to_save_estimation_params=temp_params_file,
         )
 
     assert result is not None
@@ -209,7 +243,7 @@ def test_estimate_model_scalar_interface():
     print("✓ Scalar optimization interface test passed")
 
 
-def test_estimate_model_with_timeout():
+def test_estimate_model_with_timeout(temp_test_dir):
     """Test estimate_model with a timeout to prevent long runs."""
 
     # Check if required files exist, skip test if not
