@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Annotated
 
 import pandas as pd
+import pytask
 import yaml
 from pytask import Product
 
@@ -25,9 +26,11 @@ from caregiving.simulation.plot_model_fit import (
     plot_transitions_by_age,
     plot_transitions_by_age_bins,
     plot_wealth_by_age_and_education,
+    plot_wealth_by_age_bins_and_education,
 )
 
 
+@pytask.mark.model_fit
 def task_plot_model_fit_no_care_demand(
     path_to_options: Path = BLD / "model" / "options_no_care_demand.pkl",
     # path_to_start_params: Path = BLD
@@ -46,6 +49,11 @@ def task_plot_model_fit_no_care_demand(
     / "model_fit"
     / "counterfactual"
     / "average_wealth_no_care_demand.png",
+    path_to_save_wealth_age_bins_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "model_fit"
+    / "counterfactual"
+    / "average_wealth_age_bins_no_care_demand.png",
     path_to_save_savings_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "model_fit"
@@ -91,6 +99,20 @@ def task_plot_model_fit_no_care_demand(
         age_min=30,
         age_max=100,
         path_to_save_plot=path_to_save_wealth_plot,
+    )
+
+    # Wealth by age bins
+    plot_wealth_by_age_bins_and_education(
+        data_emp=df_emp_wealth,
+        data_sim=df_sim,
+        specs=specs,
+        wealth_var_emp="adjusted_wealth",
+        wealth_var_sim="wealth_at_beginning",
+        median=False,
+        age_min=30,
+        age_max=79,
+        bin_width=5,
+        path_to_save_plot=path_to_save_wealth_age_bins_plot,
     )
 
     # Savings

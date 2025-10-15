@@ -127,6 +127,123 @@ def plot_wealth_by_age_and_education(
         plt.savefig(path_to_save_plot, dpi=300, transparent=False)
 
 
+def plot_wealth_by_age_bins_and_education(  # noqa: PLR0912, PLR0915
+    data_emp: pd.DataFrame,
+    data_sim: pd.DataFrame,
+    specs: dict,
+    *,
+    wealth_var_emp: str,
+    wealth_var_sim: str,
+    median: bool = False,
+    age_min: int | None = None,
+    age_max: int | None = None,
+    bin_width: int = 5,
+    path_to_save_plot: str | None = None,
+):
+    """
+    Plot average/median wealth by age bins and education (Observed vs Simulated),
+    with education groups side by side, shared y-axis, y-labels on left for both
+    panels, and internal x-padding near the vertical axes.
+    """
+    # ---------- 0. Setup ----------
+    if age_min is None:
+        age_min = specs["start_age"]
+    if age_max is None:
+        age_max = specs["end_age_msm"]
+
+    # Build age bins & labels
+    edges = list(range(age_min, age_max + 1, bin_width))
+    if edges[-1] <= age_max:
+        edges.append(age_max + 1)
+
+    # Left-edge x positions and labels like "55-59"
+    bin_starts = edges[:-1]
+    bin_labels = [
+        f"{start}-{end - 1}" for start, end in zip(edges[:-1], edges[1:], strict=False)
+    ]
+
+    stat_name = "Median" if median else "Average"
+    agg = (
+        (lambda s: s.median(skipna=True)) if median else (lambda s: s.mean(skipna=True))
+    )
+
+    n_edu = len(specs["education_labels"])
+    fig, axs = plt.subplots(1, n_edu, figsize=(5 * n_edu, 4), sharex=True, sharey=True)
+    if n_edu == 1:
+        axs = np.array([axs])
+
+    # ---------- 1. Loop over education groups ----------
+    all_values = []
+    for edu_idx, edu_label in enumerate(specs["education_labels"]):
+        ax = axs[edu_idx]
+
+        emp_edu = data_emp[
+            (data_emp["education"] == edu_idx) & (data_emp["sex"] == SEX)
+        ]
+        sim_edu = data_sim[
+            (data_sim["education"] == edu_idx) & (data_sim["sex"] == SEX)
+        ]
+
+        emp_rates = []
+        sim_rates = []
+
+        for start, end in zip(edges[:-1], edges[1:], strict=False):
+            # Empirical bin
+            emp_bin = emp_edu[(emp_edu["age"] >= start) & (emp_edu["age"] < end)]
+            emp_rates.append(agg(emp_bin[wealth_var_emp]) if len(emp_bin) else np.nan)
+            # Simulated bin
+            sim_bin = sim_edu[(sim_edu["age"] >= start) & (sim_edu["age"] < end)]
+            sim_rates.append(agg(sim_bin[wealth_var_sim]) if len(sim_bin) else np.nan)
+
+        all_values.extend([v for v in emp_rates if not np.isnan(v)])
+        all_values.extend([v for v in sim_rates if not np.isnan(v)])
+
+        ax.plot(bin_starts, sim_rates, label="Simulated")
+        ax.plot(bin_starts, emp_rates, ls="--", label="Observed")
+
+        # Add internal x padding (similar to original function)
+        if len(bin_starts) > 1:
+            xrange = bin_starts[-1] - bin_starts[0]
+            pad = 0.05 * xrange
+            ax.set_xlim(bin_starts[0] - pad, bin_starts[-1] + pad)
+        else:
+            # Single bin: give symmetric whitespace
+            pad = 0.5 * bin_width
+            ax.set_xlim(bin_starts[0] - pad, bin_starts[0] + pad)
+
+        # Set x-axis labels to bin ranges
+        ax.set_xticks(bin_starts)
+        ax.set_xticklabels(bin_labels, rotation=45, ha="right")
+
+        ax.set_xlabel("Age")
+        ax.set_title(edu_label)
+        ax.grid(True, alpha=0.2)
+
+        if edu_idx == 0:
+            ax.set_ylabel(f"{stat_name} wealth")
+            ax.legend()
+        else:
+            # remove default left ticks
+            ax.tick_params(labelleft=False)
+
+    # ---------- 2. Common y-limits ----------
+    if all_values:
+        ymin, ymax = np.nanmin(all_values), np.nanmax(all_values)
+        pad = 0.05 * (ymax - ymin)
+        for ax in axs:
+            ax.set_ylim(ymin - pad, ymax + pad)
+
+    # ---------- 3. Add left y-axis to right panel too ----------
+    axs[-1].yaxis.set_ticks_position("left")
+    axs[-1].yaxis.set_label_position("left")
+    axs[-1].set_ylabel(f"{stat_name} wealth")
+
+    plt.tight_layout()
+
+    if path_to_save_plot:
+        plt.savefig(path_to_save_plot, dpi=300, transparent=False)
+
+
 def plot_average_wealth(
     data_emp,
     data_sim,

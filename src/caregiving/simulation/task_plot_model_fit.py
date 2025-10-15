@@ -47,6 +47,7 @@ from caregiving.simulation.plot_model_fit import (
     plot_transitions_by_age,
     plot_transitions_by_age_bins,
     plot_wealth_by_age_and_education,
+    plot_wealth_by_age_bins_and_education,
 )
 
 
@@ -66,6 +67,10 @@ def task_plot_model_fit(  # noqa: PLR0915
     / "plots"
     / "model_fit"
     / "average_wealth.png",
+    path_to_save_wealth_age_bins_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "model_fit"
+    / "average_wealth_age_bins.png",
     path_to_save_savings_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "model_fit"
@@ -181,6 +186,20 @@ def task_plot_model_fit(  # noqa: PLR0915
         age_min=30,
         age_max=100,
         path_to_save_plot=path_to_save_wealth_plot,
+    )
+
+    # Wealth by age bins
+    plot_wealth_by_age_bins_and_education(
+        data_emp=df_emp_wealth,
+        data_sim=df_sim,
+        specs=specs,
+        wealth_var_emp="adjusted_wealth",
+        wealth_var_sim="wealth_at_beginning",
+        median=False,
+        age_min=30,
+        age_max=79,
+        bin_width=5,
+        path_to_save_plot=path_to_save_wealth_age_bins_plot,
     )
     # plot_average_wealth(df_emp_wealth, df_sim, specs, path_to_save_wealth_plot)
     plot_average_savings_decision(df_sim, path_to_save_savings_plot)
