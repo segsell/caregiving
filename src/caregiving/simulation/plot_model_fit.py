@@ -98,7 +98,7 @@ def plot_wealth_by_age_and_education(
         pad = int(0.05 * xrange)
         ax.set_xlim(age_min - pad, age_max + pad)
 
-        ax.set_xlabel("Age")
+        ax.set_xlabel("Age bin")
         ax.set_title(edu_label)
         ax.grid(True, alpha=0.2)
 
