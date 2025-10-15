@@ -16,12 +16,12 @@ disutil_pt_work_high_good: 0.4338135042693555
 disutil_pt_work_low_bad: 0.021045437451502717
 disutil_pt_work_low_good: 0.504009313881325
 # disutil_pt_work_low: 0.254009313881325
-# disutil_unemployed_high_women: 0.5018749927519268
-# disutil_unemployed_low_women: 0.5022833379484756
-disutil_unemployed_high_bad_women: 0.5018749927519268
-disutil_unemployed_low_bad_women: 0.5022833379484756
-disutil_unemployed_high_good_women: 0.5018749927519268
-disutil_unemployed_low_good_women: 0.5022833379484756
+disutil_unemployed_high_women: 0.5018749927519268
+disutil_unemployed_low_women: 0.5022833379484756
+# disutil_unemployed_high_bad_women: 0.5018749927519268
+# disutil_unemployed_low_bad_women: 0.5022833379484756
+# disutil_unemployed_high_good_women: 0.5018749927519268
+# disutil_unemployed_low_good_women: 0.5022833379484756
 interest_rate: 0.03
 job_finding_logit_age_cubed_women: -3.162982266453729e-05
 job_finding_logit_age_squared_women: 0.0016012387939461
