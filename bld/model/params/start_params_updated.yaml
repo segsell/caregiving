@@ -37,6 +37,3 @@ rho_bequest_high: 1.5
 rho_bequest_low: 1.5
 rho_high: 1.5
 rho_low: 1.5
-util_formal_care: 0
-util_informal_care: 0
-util_joint_informal_care: 0
