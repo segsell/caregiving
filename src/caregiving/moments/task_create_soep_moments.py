@@ -266,12 +266,10 @@ def task_create_soep_moments(  # noqa: PLR0915
     # share_informal_care_60_65, 0.05304824
     # share_informal_care_65_70, 0.03079298
     # share_informal_care_70_75, 0.00155229
-    moments["share_informal_care_high_educ"] = df.loc[
-        df["any_care"] == 1, "education"
-    ].mean()
-    variances["share_informal_care_high_educ"] = df.loc[
-        df["any_care"] == 1, "education"
-    ].var(ddof=DEGREES_OF_FREEDOM)
+    moments["share_informal_care_high_educ"] = df_caregivers["education"].mean()
+    variances["share_informal_care_high_educ"] = df_caregivers["education"].var(
+        ddof=DEGREES_OF_FREEDOM
+    )
 
     # Caregiving
     moments, variances = compute_labor_shares_by_age(
