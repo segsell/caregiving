@@ -179,15 +179,15 @@ def disutility_work(
         -disutility_no_caregiving * (1 - informal_care)
         - disutility_informal_care * informal_care
         - partner_retired * retired * params["disutil_partner_retired"]
-        + (care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
-        * informal_care
-        * params["util_informal_care"]
-        + (care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
-        * (1 - informal_care)
-        * params["util_formal_care"]
-        + (care_demand == CARE_DEMAND_AND_OTHER_SUPPLY)
-        * informal_care
-        * params["util_joint_informal_care"]
+        # + (care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
+        # * informal_care
+        # * params["util_informal_care"]
+        # + (care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
+        # * (1 - informal_care)
+        # * params["util_formal_care"]
+        # + (care_demand == CARE_DEMAND_AND_OTHER_SUPPLY)
+        # * informal_care
+        # * params["util_joint_informal_care"]
     )
 
     return disutility

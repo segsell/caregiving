@@ -51,6 +51,7 @@ from caregiving.simulation.plot_model_fit import (
 )
 
 
+@pytask.mark.model_fit
 def task_plot_model_fit(  # noqa: PLR0915
     path_to_options: Path = BLD / "model" / "options.pkl",
     path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",

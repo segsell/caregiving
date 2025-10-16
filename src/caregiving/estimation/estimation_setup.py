@@ -86,12 +86,12 @@ def estimate_model(
     if weighting_method == "identity":
         weights = np.identity(empirical_moments.shape[0])
     elif weighting_method == "diagonal":
-        # empirical_variances_reg = np.maximum(empirical_variances, 1e-4)
-        # weights = np.diag(1 / empirical_variances_reg)
-        empirical_variances_reg = empirical_variances
+        # Use robust diagonal weights to avoid numerical issues
+        empirical_variances_reg = empirical_variances.copy()
         close_to_zero = empirical_variances_reg < MACHINE_ZERO
+        # Replace zero variances with a small positive value to avoid division by zero
+        empirical_variances_reg[close_to_zero] = 1e-6
         weight_elements = 1 / empirical_variances_reg
-        weight_elements[close_to_zero] = 0.0
         weight_elements = np.sqrt(weight_elements)
         weights = np.diag(weight_elements)
     else:
@@ -288,7 +288,8 @@ def simulate_moments(
     simulated_moments = simulate_moments_func(sim_df, options=options)
 
     out = np.asarray(simulated_moments.to_numpy())
-    out = np.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0)
+    # More aggressive NaN handling to prevent optimizer issues
+    out = np.nan_to_num(out, nan=1e6, posinf=1e6, neginf=1e6)
 
     return out
 
