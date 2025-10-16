@@ -127,9 +127,9 @@ disutil_children_ft_work_high_informal_care: 0.1
 
 #############################################
 
-# util_informal_care: 0
-# util_formal_care: 0
-# util_joint_informal_care: 0
+util_informal_care: 0
+util_formal_care: 0
+util_joint_informal_care: 0
 
 # disutil_pt_work_low_age: 0.1
 # disutil_pt_work_low_age_squared: 0.01

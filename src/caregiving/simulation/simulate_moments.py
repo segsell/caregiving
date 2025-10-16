@@ -907,6 +907,9 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
     arr_low_educ = arr[arr[:, idx["education"]] == 0]
     arr_high_educ = arr[arr[:, idx["education"]] == 1]
 
+    arr_all_low_educ = arr_all[arr_all[:, idx["education"]] == 0]
+    arr_all_high_educ = arr_all[arr_all[:, idx["education"]] == 1]
+
     _care_mask = jnp.isin(arr_all[:, idx["choice"]], INFORMAL_CARE)
     _light_care_mask = jnp.isin(arr_all[:, idx["choice"]], LIGHT_INFORMAL_CARE)
     _intensive_care_mask = jnp.isin(arr_all[:, idx["choice"]], INTENSIVE_INFORMAL_CARE)
@@ -940,14 +943,14 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
 
     # Mean wealth by education and age bin
     mean_wealth_by_age_low_educ = get_mean_by_age(
-        arr_low_educ,
+        arr_all_low_educ,
         ind=idx,
         variable="wealth_beginning_of_period",
         min_age=min_age,
         max_age=end_age_wealth,
     )
     mean_wealth_by_age_high_educ = get_mean_by_age(
-        arr_high_educ,
+        arr_all_high_educ,
         ind=idx,
         variable="wealth_beginning_of_period",
         min_age=min_age,
@@ -1004,7 +1007,11 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
 
     # Caregivers labor shares by education and age bin
     share_caregivers_by_age_bin = get_share_by_age_bin(
-        arr, ind=idx, choice=INFORMAL_CARE, bins=age_bins, scale=SCALE_CAREGIVER_SHARE
+        arr_all,
+        ind=idx,
+        choice=INFORMAL_CARE,
+        bins=age_bins,
+        scale=SCALE_CAREGIVER_SHARE,
     )
     # share_caregivers_by_age_bin = get_share_by_age_bin(
     #     arr, ind=idx, choice=LIGHT_INFORMAL_CARE, bins=age_bins_75
@@ -1014,8 +1021,8 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
     # )
 
     # ================================================================================
-    education_mask = arr[:, idx["education"]] == 1
-    care_type_mask = jnp.isin(arr[:, idx["choice"]], INFORMAL_CARE)
+    education_mask = arr_all[:, idx["education"]] == 1
+    care_type_mask = jnp.isin(arr_all[:, idx["choice"]], INFORMAL_CARE)
     share_caregivers_high_educ = jnp.sum(education_mask & care_type_mask) / jnp.sum(
         care_type_mask
     )
