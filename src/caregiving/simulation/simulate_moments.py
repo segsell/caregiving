@@ -75,11 +75,15 @@ def simulate_moments_pandas(  # noqa: PLR0915
             df_full["has_sister"].to_numpy(), df_full["education"].to_numpy()
         ]
     )
-    # df = df_full.copy()
-    df = df_full[df_full["choice"].isin(np.asarray(NO_INFORMAL_CARE))].copy()
+    df_non_caregivers = df_full[
+        df_full["choice"].isin(np.asarray(NO_INFORMAL_CARE))
+    ].copy()
 
-    df_low = df[df["education"] == 0]
-    df_high = df[df["education"] == 1]
+    df_low = df_non_caregivers[df_non_caregivers["education"] == 0]
+    df_high = df_non_caregivers[df_non_caregivers["education"] == 1]
+
+    df_wealth_low = df_full[df_full["education"] == 0]
+    df_wealth_high = df_full[df_full["education"] == 1]
 
     df_caregivers = df_full[df_full["choice"].isin(np.asarray(INFORMAL_CARE))].copy()
     df_caregivers_low = df_caregivers[df_caregivers["education"] == 0]
@@ -117,14 +121,14 @@ def simulate_moments_pandas(  # noqa: PLR0915
     # =================================================================================
     # Wealth moments
     moments = create_mean_by_age(
-        df_low,
+        df_wealth_low,
         moments,
         variable="wealth_beginning_of_period",
         age_range=age_range_wealth,
         label="low_education",
     )
     moments = create_mean_by_age(
-        df_high,
+        df_wealth_high,
         moments,
         variable="wealth_beginning_of_period",
         age_range=age_range_wealth,
@@ -132,7 +136,9 @@ def simulate_moments_pandas(  # noqa: PLR0915
     )
 
     # =================================================================================
-    moments = create_labor_share_moments_pandas(df, moments, age_range=age_range)
+    moments = create_labor_share_moments_pandas(
+        df_non_caregivers, moments, age_range=age_range
+    )
     moments = create_labor_share_moments_pandas(
         df_low, moments, age_range=age_range, label="low_education"
     )
@@ -141,7 +147,7 @@ def simulate_moments_pandas(  # noqa: PLR0915
     )
 
     moments = create_choice_shares_by_age_bin_pandas(
-        df,
+        df_full,
         moments,
         choice_set=INFORMAL_CARE,
         age_bins_and_labels=age_bins_caregivers,
@@ -158,9 +164,7 @@ def simulate_moments_pandas(  # noqa: PLR0915
     # )
 
     # ================================================================================
-    # moments["share_informal_care_high_educ"] = df.loc[
-    #     df["choice"].isin(np.atleast_1d(INFORMAL_CARE)), "education"
-    # ].mean()
+    moments["share_informal_care_high_educ"] = df_caregivers["education"].mean()
     # ================================================================================
 
     moments = create_labor_share_moments_pandas(
@@ -1490,7 +1494,7 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
         + share_working_full_time_by_age_high_educ
         # caregivers
         + share_caregivers_by_age_bin
-        # + [share_caregivers_high_educ]
+        + [share_caregivers_high_educ]
         + share_retired_by_age_caregivers
         + share_unemployed_by_age_caregivers
         + share_working_part_time_by_age_caregivers
