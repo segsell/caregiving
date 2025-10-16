@@ -288,8 +288,7 @@ def simulate_moments(
     simulated_moments = simulate_moments_func(sim_df, options=options)
 
     out = np.asarray(simulated_moments.to_numpy())
-    # More aggressive NaN handling to prevent optimizer issues
-    out = np.nan_to_num(out, nan=1e6, posinf=1e6, neginf=1e6)
+    out = np.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0)
 
     return out
 

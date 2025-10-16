@@ -1055,7 +1055,7 @@ def plot_caregiver_shares_by_age_bins(
     emp_rates, sim_rates = [], []
 
     for start, end in zip(edges[:-1], edges[1:], strict=False):
-        key = f"share_informal_care_age_bin_{start}_{end}"
+        key = f"share_informal_care_age_bin_{start}_{end-1}"
         emp_rates.append(emp_lookup.get(key, np.nan) / scale)
 
         sim_bin = df_sim[(df_sim["age"] >= start) & (df_sim["age"] < end)]

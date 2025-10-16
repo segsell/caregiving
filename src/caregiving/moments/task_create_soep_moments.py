@@ -236,19 +236,19 @@ def task_create_soep_moments(  # noqa: PLR0915
     # )
 
     # =================================================================================
-    # caregiver_shares = {
-    #     "share_informal_care_age_bin_40_45": 0.02980982,
-    #     "share_informal_care_age_bin_45_50": 0.04036255,
-    #     "share_informal_care_age_bin_50_55": 0.05350986,
-    #     "share_informal_care_age_bin_55_60": 0.06193384,
-    #     "share_informal_care_age_bin_60_65": 0.05304824,
-    #     "share_informal_care_age_bin_65_70": 0.03079298,
-    #     # "share_informal_care_age_bin_70_75": 0.00155229,
-    # }
-    # scaled_caregiver_shares = {
-    #     k: v * SCALE_CAREGIVER_SHARE for k, v in caregiver_shares.items()
-    # }
-    # moments.update(scaled_caregiver_shares)
+    caregiver_shares = {
+        "share_informal_care_age_bin_40_44": 0.02980982,
+        "share_informal_care_age_bin_45_49": 0.04036255,
+        "share_informal_care_age_bin_50_54": 0.05350986,
+        "share_informal_care_age_bin_55_59": 0.06193384,
+        "share_informal_care_age_bin_60_64": 0.05304824,
+        "share_informal_care_age_bin_65_69": 0.03079298,
+        # "share_informal_care_age_bin_70_74": 0.00155229,
+    }
+    scaled_caregiver_shares = {
+        k: v * SCALE_CAREGIVER_SHARE for k, v in caregiver_shares.items()
+    }
+    moments.update(scaled_caregiver_shares)
     # =================================================================================
 
     # moments, variances = compute_shares_by_age_bin(
