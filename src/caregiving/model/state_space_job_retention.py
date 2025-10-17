@@ -4,6 +4,7 @@ import jax.numpy as jnp
 
 from caregiving.model.shared import (
     PARENT_DEAD,
+    START_PERIOD_CAREGIVING,
     is_alive,
     is_dead,
     is_informal_care,
@@ -46,17 +47,27 @@ def next_period_endogenous_state_with_job_retention(
     current_caregiver = is_informal_care(choice)
     previous_caregiver = is_informal_care(lagged_choice)
 
-    had_job_before_caregiving = jnp.where(
-        # If not caregiving, reset to 0
-        ~current_caregiver,
-        0,
-        jnp.where(
-            # If just started caregiving and was working, set to 1 (had job before caregiving)
+    had_job_before_caregiving = jnp.select(
+        [
+            # Case 0: Before age 40, no caregiving possible
+            period < START_PERIOD_CAREGIVING,
+            # Case 1: Not caregiving now, reset to 0
+            ~current_caregiver,
+            # ~current_caregiver,
+            # Case 2: Just started caregiving and was working, set to 1
             ~previous_caregiver & current_caregiver & is_working(lagged_choice),
-            1,
-            # If continuing caregiving, keep the same job_before_caregiving state
+            # Case 3: Just started caregiving but was not working, set to 0
+            ~previous_caregiver & current_caregiver & ~is_working(lagged_choice),
+            # Case 4: Continuing caregiving, keep the same state
+            current_caregiver,  # & previous_caregiver,
+        ],
+        [
+            jnp.zeros_like(job_before_caregiving),
+            jnp.zeros_like(job_before_caregiving),
+            jnp.ones_like(job_before_caregiving),
+            jnp.zeros_like(job_before_caregiving),
             job_before_caregiving,
-        ),
+        ],
     )
 
     states_already_retired = {
@@ -98,8 +109,8 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
     already_retired,
     education,
     has_sister,
-    health,
     partner_state,
+    health,
     mother_health,
     care_demand,
     job_before_caregiving,
@@ -128,14 +139,13 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
     elif (not is_retired(lagged_choice)) & (already_retired == 1):
         return False
     # ================================================================================
-    elif (age > options["end_age_msm"] + 1) & is_informal_care(lagged_choice):
+    elif (age <= options["start_age_caregiving"]) & is_informal_care(lagged_choice):
+        return False
+    elif (job_before_caregiving == 1) & (not is_informal_care(lagged_choice)):
         return False
     # # ================================================================================
-    # elif (not care_demand == 0) & (job_before_caregiving == 1):
-    #     return False
-    # # ================================================================================
-    # elif (not is_informal_care(lagged_choice)) & (job_before_caregiving == 1):
-    #     return False
+    elif (age > options["end_age_msm"] + 1) & is_informal_care(lagged_choice):
+        return False
     # # ================================================================================
     # After the maximum retirement age, you must be retired.
     elif (age > max_ret_age) & (not is_retired(lagged_choice)) & (is_alive(health)):
@@ -158,12 +168,44 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
                 "already_retired": 1,
                 "education": education,
                 "has_sister": has_sister,
-                "health": health,
                 "partner_state": partner_state,
+                "health": health,
                 "mother_health": PARENT_DEAD,
                 "care_demand": 0,
                 "job_offer": 0,
-                "job_before_caregiving": job_before_caregiving,
+                "job_before_caregiving": 0,
+            }
+            return state_proxy
+        elif age <= options["start_age_caregiving"] - 1:
+            # If before age 40, no care demand and supply
+            state_proxy = {
+                "period": period,
+                "lagged_choice": lagged_choice,
+                "already_retired": already_retired,
+                "education": education,
+                "has_sister": has_sister,
+                "partner_state": partner_state,
+                "health": health,
+                "mother_health": mother_health,
+                "job_offer": job_offer,
+                "care_demand": 0,
+                "job_before_caregiving": 0,
+            }
+            return state_proxy
+        elif age <= options["start_age_caregiving"]:
+            # If before age 40, no care demand and supply
+            state_proxy = {
+                "period": period,
+                "lagged_choice": lagged_choice,
+                "already_retired": already_retired,
+                "education": education,
+                "has_sister": has_sister,
+                "partner_state": partner_state,
+                "health": health,
+                "mother_health": mother_health,
+                "job_offer": job_offer,
+                "care_demand": care_demand,
+                "job_before_caregiving": 0,
             }
             return state_proxy
         elif mother_health == PARENT_DEAD:
@@ -174,8 +216,8 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
                 "already_retired": already_retired,
                 "education": education,
                 "has_sister": has_sister,
-                "health": health,
                 "partner_state": partner_state,
+                "health": health,
                 "mother_health": mother_health,
                 "care_demand": 0,
                 "job_offer": job_offer,
@@ -191,8 +233,8 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
                 "already_retired": already_retired,
                 "education": education,
                 "has_sister": has_sister,
-                "health": health,
                 "partner_state": partner_state,
+                "health": health,
                 "mother_health": mother_health,
                 "care_demand": care_demand,
                 "job_offer": 0,
@@ -208,8 +250,8 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
                 "already_retired": already_retired,
                 "education": education,
                 "has_sister": has_sister,
-                "health": health,
                 "partner_state": partner_state,
+                "health": health,
                 "mother_health": PARENT_DEAD,
                 "care_demand": 0,
                 "job_offer": 0,

@@ -13,6 +13,7 @@ start_age: 30
 end_age: 100
 end_age_msm: 70
 end_age_wealth: 80
+start_age_caregiving: 40
 start_age_parents: 50
 start_age_msm: 40
 end_age_children_in_household: 60
