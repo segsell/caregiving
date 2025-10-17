@@ -9,8 +9,6 @@ import jax.numpy as jnp
 import pandas as pd
 import pytask
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.solve import get_solve_func_for_model
 from pytask import Product
 
 from caregiving.config import BLD
@@ -27,6 +25,8 @@ from caregiving.model.wealth_and_budget.budget_equation_no_care_demand import (
 from caregiving.simulation.simulate_no_care_demand import (
     simulate_scenario_no_care_demand,
 )
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.solve import get_solve_func_for_model
 
 jax.config.update("jax_enable_x64", True)
 
@@ -34,9 +34,11 @@ jax.config.update("jax_enable_x64", True)
 def task_solve_and_simulate_no_care_demand(
     path_to_solution_model: Path = BLD / "model" / "model_no_care_demand.pkl",
     path_to_options: Path = BLD / "model" / "options_no_care_demand.pkl",
-    path_to_params: Path = BLD / "model" / "params"
-    # / "start_params_model_no_care_demand.yaml",
-    / "params_estimated_no_care_demand.yaml",
+    path_to_params: Path = BLD
+    / "model"
+    / "params"
+    / "start_params_model_no_care_demand.yaml",
+    # / "params_estimated_no_care_demand.yaml",
     path_to_discrete_states: Path = BLD
     / "model"
     / "initial_conditions"
