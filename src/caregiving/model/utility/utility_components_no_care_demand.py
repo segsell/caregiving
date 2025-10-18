@@ -58,16 +58,15 @@ def disutility_work(period, choice, education, partner_state, health, params, op
         # + params["disutil_unemployed_low_good_women"] * good_health * (1 - education)
     )
 
-    # disutil_children_pt_low = params["disutil_children_pt_work_low"] * nb_children
-    # disutil_children_pt_high = params["disutil_children_pt_work_high"] * nb_children
+    disutil_children_pt_low = params["disutil_children_pt_work_low"] * nb_children
+    disutil_children_pt_high = params["disutil_children_pt_work_high"] * nb_children
 
     disutil_children_ft_low = params["disutil_children_ft_work_low"] * nb_children
     disutil_children_ft_high = params["disutil_children_ft_work_high"] * nb_children
 
-    # disutil_children_pt = (
-    #     disutil_children_pt_low * (1 - education)
-    # + disutil_children_pt_high * education
-    # )
+    disutil_children_pt = (
+        disutil_children_pt_low * (1 - education) + disutil_children_pt_high * education
+    )
     disutil_children_ft = (
         disutil_children_ft_low * (1 - education) + disutil_children_ft_high * education
     )
@@ -91,8 +90,8 @@ def disutility_work(period, choice, education, partner_state, health, params, op
 
     disutility_no_caregiving = (
         (disutil_unemployed) * unemployed
-        + disutil_pt_work * working_part_time
-        # + (disutil_pt_work + disutil_children_pt) * working_part_time
+        # + disutil_pt_work * working_part_time
+        + (disutil_pt_work + disutil_children_pt) * working_part_time
         + (disutil_ft_work + disutil_children_ft) * working_full_time
     )
 
