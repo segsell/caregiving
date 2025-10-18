@@ -1,0 +1,36 @@
+bequest_scale_high: 1.2272703267511367
+bequest_scale_low: 4.190684699627203
+beta: 0.97
+disutil_children_ft_work_high: 0.13118612571068208
+disutil_children_ft_work_low: 0.004752717657718024
+disutil_children_pt_work_high: 0.001991360551466132
+disutil_children_pt_work_low: 0.017010294874039985
+disutil_ft_work_high_bad: 1.424139878171253
+disutil_ft_work_high_good: 0.23168100450841378
+disutil_ft_work_low_bad: 0.00950480867716141
+disutil_ft_work_low_good: 0.5837965852374452
+# disutil_ft_work_low: 0.2837965852374452
+disutil_partner_retired: -0.040169330857525526
+disutil_pt_work_high_bad: 0.25960408516037886
+disutil_pt_work_high_good: 0.4338135042693555
+disutil_pt_work_low_bad: 0.021045437451502717
+disutil_pt_work_low_good: 0.504009313881325
+# disutil_pt_work_low: 0.254009313881325
+disutil_unemployed_high_women: 0.5018749927519268
+disutil_unemployed_low_women: 0.5022833379484756
+# disutil_unemployed_high_bad_women: 0.5018749927519268
+# disutil_unemployed_low_bad_women: 0.5022833379484756
+# disutil_unemployed_high_good_women: 0.5018749927519268
+# disutil_unemployed_low_good_women: 0.5022833379484756
+interest_rate: 0.03
+job_finding_logit_age_cubed_women: -3.162982266453729e-05
+job_finding_logit_age_squared_women: 0.0016012387939461
+job_finding_logit_age_women: 0.0065131540323549
+job_finding_logit_const_women: -2.03524742129707
+job_finding_logit_high_educ_women: 0.6955095961575429
+lambda: 0.24282218586456597
+rho_bequest_high: 1.5763988859964755
+rho_bequest_low: 1.4993239480184333
+rho_high: 3.289837879232018
+rho_low: 2.946971386695747
+sigma: 0.16471062648214

@@ -30,7 +30,7 @@ def care_demand_and_supply_transition(
     mother_age = (
         period - 20 + options["mother_age_diff"][has_sister, education] + AGE_OFFSET
     )
-    end_age_caregiving = options["end_age_msm"] - options["start_age"]
+    end_period_caregiving = options["end_age_msm"] - options["start_age"]
 
     adl_mat = options["limitations_with_adl_mat"]
     limitations_with_adl = adl_mat[MOTHER, mother_age, mother_health, :]
@@ -40,11 +40,15 @@ def care_demand_and_supply_transition(
 
     # no_care_demand = prob_other_care * limitations_with_adl[0]
     care_demand = (
-        limitations_with_adl[1]
-        * (mother_health != PARENT_DEAD)
+        (
+            limitations_with_adl[1]
+            * (mother_health != PARENT_DEAD)
+            * (period >= START_PERIOD_CAREGIVING - 1)
+            * (period < end_period_caregiving)
+        )
+        * SCALE_DOWN_DEMAND
         * (period >= START_PERIOD_CAREGIVING - 1)
-        * (period < end_age_caregiving)
-    ) * SCALE_DOWN_DEMAND
+    )
 
     prob_vector = jnp.array(
         [

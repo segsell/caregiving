@@ -167,7 +167,8 @@ bld/_old_model/
 
 
 # File too large to be tracked
-/bld/model/model_for_solution.pkl
+bld/model/model_for_solution*
+bld/model/model_job_retention*
 
 # # Ensure bld/ itself is tracked
 # !bld/

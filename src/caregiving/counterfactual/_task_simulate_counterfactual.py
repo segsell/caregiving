@@ -36,7 +36,8 @@ from caregiving.simulation.simulate import simulate_scenario
 def task_simulate_counterfactual(
     path_to_options: Path = BLD / "model" / "options.pkl",
     path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
-    # path_to_options_counterfactual: Path = BLD / "model" / "options_counterfactual.pkl",
+    # path_to_options_counterfactual: Path = BLD / "model" /
+    # "options_counterfactual.pkl",
     # path_to_solution_model_counterfactual: Path = BLD
     # / "model"
     # / "model_for_solution_counterfactual.pkl",

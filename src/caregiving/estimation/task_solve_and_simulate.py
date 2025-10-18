@@ -41,6 +41,9 @@ def task_solve_and_simulate_start_params(
     path_to_save_solution: Annotated[Path, Product] = BLD
     / "solve_and_simulate"
     / "solution.pkl",
+    # path_to_save_simulation_model: Annotated[Path, Product] = BLD
+    # / "model"
+    # / "model_for_simulation.pkl",
     path_to_save_simulated_data: Annotated[Path, Product] = BLD
     / "solve_and_simulate"
     / "simulated_data.pkl",
@@ -81,6 +84,7 @@ def task_solve_and_simulate_start_params(
         path=path_to_solution_model,
         sim_model=True,
     )
+    # pickle.dump(model_for_simulation, path_to_save_simulation_model.open("wb"))
 
     sim_df = simulate_scenario(
         model_for_simulation,
@@ -94,6 +98,7 @@ def task_solve_and_simulate_start_params(
         options=options,
         seed=options["model_params"]["seed"],
     )
+
     # sim_df.to_csv(path_to_save_simulated_data, index=True)
     sim_df.to_pickle(path_to_save_simulated_data)
 

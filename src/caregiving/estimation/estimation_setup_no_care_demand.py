@@ -10,9 +10,29 @@ import numpy as np
 import optimagic as om
 import pandas as pd
 import yaml
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 from caregiving.config import BLD, SRC
-from caregiving.model.shared import MACHINE_ZERO
+from caregiving.model.shared import MACHINE_ZERO, RETIREMENT
+from caregiving.model.state_space_no_care_demand import (
+    create_state_space_functions,
+)
+from caregiving.model.utility.bequest_utility import (
+    create_final_period_utility_functions,
+)
+from caregiving.model.utility.utility_functions_additive_no_care_demand import (
+    create_utility_functions,
+)
+from caregiving.model.wealth_and_budget.budget_equation_no_care_demand import (
+    budget_constraint,
+)
+from caregiving.simulation.simulate_moments_no_care_demand import (
+    simulate_moments_pandas_no_care_demand,
+)
+from caregiving.simulation.simulate_no_care_demand import (
+    simulate_scenario_no_care_demand,
+)
 
 jax.config.update("jax_enable_x64", True)
 
@@ -26,19 +46,21 @@ def estimate_model(
     algo_options: Dict[str, Any],
     lower_bounds: Dict[str, float],
     upper_bounds: Dict[str, float],
-    simulate_scenario_func: callable,
-    simulate_moments_func: callable,
     weighting_method: str = "identity",
     use_cholesky_weights: bool = True,
     relative_deviations: bool = False,
-    least_squares: bool = True,
     *,
     path_to_discrete_states: str = BLD / "model" / "initial_conditions" / "states.pkl",
     path_to_wealth: str = BLD / "model" / "initial_conditions" / "wealth.csv",
     path_to_empirical_moments: str = BLD / "moments" / "moments_full.csv",
     path_to_empirical_variance: str = BLD / "moments" / "variances_full.csv",
+    # path_to_updated_start_params: str = BLD
+    # / "model"
+    # / "params"
+    # / "start_params_model.yaml",
     path_to_save_estimation_result: str = BLD / "estimation" / "result.pkl",
     path_to_save_estimation_params: str = BLD / "estimation" / "estimated_params.csv",
+    # last_estimate: Optional[Dict[str, Any]] = None,
     select_fixed_params: Optional[Callable[[str, Any], bool]] = None,
     other_constraint: Optional[om.constraints.Constraint] = None,
     scaling: bool = False,
@@ -48,21 +70,7 @@ def estimate_model(
     random_seed: bool = False,
     error_handling: str = "continue",
 ) -> None:
-    """Estimate the model based on empirical data and starting parameters.
-
-    Parameters:
-    -----------
-    simulate_scenario_func : callable
-        Function to simulate the model scenario given parameters.
-    simulate_moments_func : callable
-        Function to compute moments from simulated data.
-    least_squares : bool, default True
-        If True, uses least squares optimization (returns residuals array).
-        If False, uses scalar optimization (returns a single scalar value from
-        the criterion function). When False, the criterion function returns
-        the sum of squared residuals as a scalar value, which is suitable for
-        scalar optimizers like 'scipy_lbfgsb', 'scipy_neldermead', etc.
-    """
+    """Estimate the model based on empirical data and starting parameters."""
 
     # 1) set up a single RNG if we're doing truly random draws
     if random_seed:
@@ -86,12 +94,12 @@ def estimate_model(
     if weighting_method == "identity":
         weights = np.identity(empirical_moments.shape[0])
     elif weighting_method == "diagonal":
-        # Use robust diagonal weights to avoid numerical issues
-        empirical_variances_reg = empirical_variances.copy()
+        # empirical_variances_reg = np.maximum(empirical_variances, 1e-4)
+        # weights = np.diag(1 / empirical_variances_reg)
+        empirical_variances_reg = empirical_variances
         close_to_zero = empirical_variances_reg < MACHINE_ZERO
-        # Replace zero variances with a small positive value to avoid division by zero
-        empirical_variances_reg[close_to_zero] = 1e-6
         weight_elements = 1 / empirical_variances_reg
+        weight_elements[close_to_zero] = 0.0
         weight_elements = np.sqrt(weight_elements)
         weights = np.diag(weight_elements)
     else:
@@ -184,9 +192,13 @@ def estimate_model(
         options=options,
         fixed_seed=fixed_seed,
         seed_generator=seed_generator,
-        simulate_scenario_func=simulate_scenario_func,
-        simulate_moments_func=simulate_moments_func,
+        pandas=True,
     )
+
+    # is_least_squares = (
+    #     lambda algo: algo.lower() in {"tranquilo_ls", "nag_dfols"}
+    #     or "pounders" in algo.lower()
+    # )
 
     criterion_func = get_msm_optimization_function(
         simulate_moments=simulate_moments_given_params,
@@ -194,7 +206,6 @@ def estimate_model(
         weights=weights,
         cholesky=use_cholesky_weights,
         relative_deviations=relative_deviations,
-        least_squares=least_squares,
     )
 
     minimize_kwargs = {
@@ -206,10 +217,16 @@ def estimate_model(
         "error_handling": error_handling,
     }
 
+    # if select_fixed_params is not None:
+    #     fixed_constraint = om.FixedConstraint(selector=select_fixed_params)
+    #     minimize_kwargs["constraints"] = [fixed_constraint]
+    # if other_constraint:
+    #     minimize_kwargs["constraints"] = other_constraint
     if constraints_list:
         minimize_kwargs["constraints"] = constraints_list
 
     if scaling:
+        # Either use user-supplied dict or fall back to your defaults
         so_opts = scaling_options or {
             "method": "start_values",
             "clipping_value": 0.1,
@@ -218,6 +235,7 @@ def estimate_model(
         minimize_kwargs["scaling"] = so_opts
 
     if multistart:
+        # allow custom options or fall back to your defaults
         ms_opts = (
             om.MultistartOptions(**multistart_options)
             if multistart_options is not None
@@ -230,6 +248,8 @@ def estimate_model(
     pickle.dump(result, open(path_to_save_estimation_result, "wb"))
 
     start_params.update(result.params)
+    # with open(path_to_save_estimation_params, "w") as yamlfile:
+    #     yaml.dump(start_params, yamlfile)
     start_params_series = pd.Series(start_params, name="value")
     start_params_series.to_csv(path_to_save_estimation_params, header=True)
 
@@ -250,8 +270,7 @@ def simulate_moments(
     options: Dict[str, Any],
     fixed_seed: Optional[int],
     seed_generator: Optional[np.random.Generator],
-    simulate_scenario_func: callable,
-    simulate_moments_func: callable,
+    pandas: bool = False,
 ):
     """Solve the model and simulate moments.
 
@@ -275,7 +294,7 @@ def simulate_moments(
         solution_dict["endog_grid"],
     ) = solve_func(params)
 
-    sim_df = simulate_scenario_func(
+    sim_df = simulate_scenario_no_care_demand(
         model=model_for_simulation,
         solution=solution_dict,
         initial_states=initial_states,
@@ -285,7 +304,7 @@ def simulate_moments(
         seed=seed,
     )
 
-    simulated_moments = simulate_moments_func(sim_df, options=options)
+    simulated_moments = simulate_moments_pandas_no_care_demand(sim_df, options=options)
 
     out = np.asarray(simulated_moments.to_numpy())
     out = np.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0)
@@ -293,41 +312,13 @@ def simulate_moments(
     return out
 
 
-def msm_criterion_scalar(
-    params: np.ndarray,
-    simulate_moments: callable,
-    flat_empirical_moments: np.ndarray,
-    chol_weights: np.ndarray,
-    relative_deviations: bool = False,
-) -> float:
-    """Compute the MSM scalar criterion based on simulated and empirical moments."""
-
-    simulated_flat = simulate_moments(params)
-
-    deviations = simulated_flat - flat_empirical_moments
-
-    if relative_deviations:
-        np.divide(
-            deviations,
-            flat_empirical_moments,
-            out=deviations,
-            where=flat_empirical_moments != 0,
-        )
-
-    # Return the weighted sum of squared deviations as a scalar
-    # This is equivalent to deviations @ weights @ deviations (Mahalanobis distance)
-    scalar_criterion = deviations @ chol_weights @ deviations
-
-    return scalar_criterion
-
-
 def get_msm_optimization_function(
     simulate_moments: callable,
     empirical_moments: np.ndarray,
     weights: np.ndarray,
+    # is_least_squares: bool,
     cholesky: bool = True,
     relative_deviations: bool = False,
-    least_squares: bool = True,
 ) -> np.ndarray:
 
     if cholesky:
@@ -335,26 +326,26 @@ def get_msm_optimization_function(
     else:
         chol_weights = weights
 
-    if least_squares:
-        criterion = om.mark.least_squares(
-            partial(
-                msm_criterion,
-                simulate_moments=simulate_moments,
-                flat_empirical_moments=empirical_moments,
-                chol_weights=chol_weights,
-                relative_deviations=relative_deviations,
-            )
+    # if is_least_squares:
+    criterion = om.mark.least_squares(
+        partial(
+            msm_criterion,
+            simulate_moments=simulate_moments,
+            flat_empirical_moments=empirical_moments,
+            chol_weights=chol_weights,
+            relative_deviations=relative_deviations,
         )
-    else:
-        criterion = om.mark.scalar(
-            partial(
-                msm_criterion_scalar,
-                simulate_moments=simulate_moments,
-                flat_empirical_moments=empirical_moments,
-                chol_weights=chol_weights,
-                relative_deviations=relative_deviations,
-            )
-        )
+    )
+    # else:
+    #     criterion = om.mark.scalar(
+    #         partial(
+    #             msm_criterion,
+    #             simulate_moments=simulate_moments,
+    #             flat_empirical_moments=empirical_moments,
+    #             chol_weights=chol_weights,
+    #             relative_deviations=relative_deviations,
+    #         )
+    #     )
 
     return criterion
 
@@ -371,6 +362,13 @@ def msm_criterion(
     simulated_flat = simulate_moments(params)
 
     deviations = simulated_flat - flat_empirical_moments
+
+    # if relative_deviations:
+    #     # with np.errstate(divide="ignore", invalid="ignore"):
+    #     #     rel = deviations / flat_empirical_moments
+    #     #     invalid = ~np.isfinite(rel)
+    #     #     rel[invalid] = deviations[invalid]
+    #     deviations /= flat_empirical_moments
 
     if relative_deviations:
         np.divide(
@@ -414,11 +412,89 @@ def combine_constraints_and_update_bounds(
 
 
 # =====================================================================================
-# Example
+# Preparation for estimation
 # =====================================================================================
 
 
-def select_fixed_params_example(params):
+def load_and_setup_full_model_for_solution_no_care_demand(
+    options, path_to_model
+) -> Dict[str, Any]:
+    """Load and setup full model for solution (no care demand version)."""
+
+    model_full = load_and_setup_model(
+        options=options,
+        state_space_functions=create_state_space_functions(),
+        utility_functions=create_utility_functions(),
+        utility_functions_final_period=create_final_period_utility_functions(),
+        budget_constraint=budget_constraint,
+        # shock_functions=shock_function_dict(),
+        path=path_to_model,
+        sim_model=False,
+    )
+
+    return model_full
+
+
+def load_and_prep_data_no_care_demand(
+    data_emp, model, start_params, drop_retirees=True
+):
+    """Load and prepare empirical data to compare with simulated data."""
+    # specs = generate_derived_and_data_derived_specs(path_dict)
+    # data_decision = pd.read_pickle(path_dict["struct_est_sample"])
+
+    specs = model["options"]["model_params"]
+    # We need to filter observations in period 0 because of job offer
+    # weighting from last period
+    data_emp = data_emp[data_emp["period"] > 0].copy()
+
+    # Also already retired individuals hold no identification
+    if drop_retirees:
+        data_emp = data_emp[~data_emp["lagged_choice"].isin(RETIREMENT.tolist())]
+
+    data_emp.loc[:, "age"] = data_emp["period"] + specs["start_age"]
+    data_emp.loc[:, "age_bin"] = np.floor(data_emp["age"] / 10)
+    data_emp.loc[data_emp["age_bin"] > 6, "age_bin"] = 6  # noqa: PLR2004
+
+    age_bin_av_size = data_emp.shape[0] / data_emp["age_bin"].nunique()
+    data_emp.loc[:, "age_weights"] = 1.0
+    data_emp.loc[:, "age_weights"] = age_bin_av_size / data_emp.groupby("age_bin")[
+        "age_weights"
+    ].transform("sum")
+
+    # Transform experience
+    max_init_exp = specs["max_exp_diffs_per_period"][data_emp["period"].values]
+    exp_denominator = data_emp["period"].values + max_init_exp
+    data_emp["experience"] = data_emp["experience"] / exp_denominator
+
+    # We can adjust wealth outside, as it does not depend on estimated parameters
+    # (only on interest rate)
+    # Now transform for dcegm
+    states_dict = {
+        name: data_emp[name].values
+        for name in model["model_structure"]["discrete_states_names"]
+        if name not in ("mother_health", "care_demand", "care_supply")
+    }
+    states_dict["care_demand"] = np.zeros_like(data_emp["wealth"])
+    states_dict["experience"] = data_emp["experience"].values
+    states_dict["wealth"] = data_emp["wealth"].values / specs["wealth_unit"]
+
+    adjusted_wealth = adjust_observed_wealth(
+        observed_states_dict=states_dict,
+        params=start_params,
+        model=model,
+    )
+    data_emp.loc[:, "adjusted_wealth"] = adjusted_wealth
+    states_dict["wealth"] = data_emp["adjusted_wealth"].values
+
+    return data_emp, states_dict
+
+
+# =====================================================================================
+# Example functions for estimation setup
+# =====================================================================================
+
+
+def _select_fixed_params_example(params):
     """Select fixed parameters for the optimization."""
 
     fixed_params = {
