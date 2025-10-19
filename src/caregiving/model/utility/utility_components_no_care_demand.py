@@ -71,34 +71,35 @@ def disutility_work(period, choice, education, partner_state, health, params, op
         disutil_children_ft_low * (1 - education) + disutil_children_ft_high * education
     )
 
-    util_age_youngest_child = (
+    disutil_age_youngest_child_pt = (
         params["disutil_age_youngest_child_pt_work_low"]
         * child_age_curvature_func(age_youngest_child)
         * (1 - education)
-        * working_part_time
         + params["disutil_age_youngest_child_pt_work_high"]
         * child_age_curvature_func(age_youngest_child)
         * education
-        * working_part_time
-        # + params["util_age_youngest_age_ft_work_low"]
-        # * child_age_curvature_func(age_youngest_child)
-        # * (1 - education)
-        # + params["util_age_youngest_age_ft_work_high"]
-        # * child_age_curvature_func(age_youngest_child)
-        # * education
-    )
+    ) * (nb_children > 0)
+    disutil_age_youngest_child_ft = (
+        params["disutil_age_youngest_child_ft_work_low"]
+        * child_age_curvature_func(age_youngest_child)
+        * (1 - education)
+        + params["disutil_age_youngest_child_ft_work_high"]
+        * child_age_curvature_func(age_youngest_child)
+        * education
+    ) * (nb_children > 0)
 
     disutility_no_caregiving = (
         (disutil_unemployed) * unemployed
         # + disutil_pt_work * working_part_time
-        + (disutil_pt_work + disutil_children_pt) * working_part_time
-        + (disutil_ft_work + disutil_children_ft) * working_full_time
+        + (disutil_pt_work + disutil_children_pt + disutil_age_youngest_child_pt)
+        * working_part_time
+        + (disutil_ft_work + disutil_children_ft + disutil_age_youngest_child_ft)
+        * working_full_time
     )
 
     disutility = (
         -disutility_no_caregiving
         - partner_retired * retired * params["disutil_partner_retired"]
-        - util_age_youngest_child * (nb_children > 0)
     )
     return disutility
 
@@ -106,7 +107,7 @@ def disutility_work(period, choice, education, partner_state, health, params, op
 def child_age_curvature_func(age):
     # Implementation using the derivative of log(1 + age) = 1/(1 + age)
     # This creates a more concave function that flattens out faster
-    return 1 / (1.0 + age)
+    return 1 / (1.0 + jnp.sqrt(age))
 
 
 def consumption_scale(partner_state, education, period, options):
