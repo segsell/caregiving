@@ -32,10 +32,9 @@ def disutility_work(period, choice, education, partner_state, health, params, op
 
     has_partner_int = (partner_state > 0).astype(int)
     nb_children = options["children_by_state"][SEX, education, has_partner_int, period]
-
-    age_youngest_child = options["child_age_youngest_by_state"][
-        SEX, education, has_partner_int, period
-    ]
+    # age_youngest_child = options["child_age_youngest_by_state"][
+    #     SEX, education, has_partner_int, period
+    # ]
 
     disutil_ft_work = (
         params["disutil_ft_work_high_bad"] * bad_health * education
@@ -71,30 +70,28 @@ def disutility_work(period, choice, education, partner_state, health, params, op
         disutil_children_ft_low * (1 - education) + disutil_children_ft_high * education
     )
 
-    disutil_age_youngest_child_pt = (
-        params["disutil_age_youngest_child_pt_work_low"]
-        * child_age_curvature_func(age_youngest_child)
-        * (1 - education)
-        + params["disutil_age_youngest_child_pt_work_high"]
-        * child_age_curvature_func(age_youngest_child)
-        * education
-    ) * (nb_children > 0)
-    disutil_age_youngest_child_ft = (
-        params["disutil_age_youngest_child_ft_work_low"]
-        * child_age_curvature_func(age_youngest_child)
-        * (1 - education)
-        + params["disutil_age_youngest_child_ft_work_high"]
-        * child_age_curvature_func(age_youngest_child)
-        * education
-    ) * (nb_children > 0)
+    # disutil_age_youngest_child_pt = (
+    #     params["disutil_age_youngest_child_pt_work_low"]
+    #     * child_age_curvature_func(age_youngest_child)
+    #     * (1 - education)
+    #     + params["disutil_age_youngest_child_pt_work_high"]
+    #     * child_age_curvature_func(age_youngest_child)
+    #     * education
+    # ) * (nb_children > 0)
+    # disutil_age_youngest_child_ft = (
+    #     params["disutil_age_youngest_child_ft_work_low"]
+    #     * child_age_curvature_func(age_youngest_child)
+    #     * (1 - education)
+    #     + params["disutil_age_youngest_child_ft_work_high"]
+    #     * child_age_curvature_func(age_youngest_child)
+    #     * education
+    # ) * (nb_children > 0)
 
     disutility_no_caregiving = (
         (disutil_unemployed) * unemployed
         # + disutil_pt_work * working_part_time
-        + (disutil_pt_work + disutil_children_pt + disutil_age_youngest_child_pt)
-        * working_part_time
-        + (disutil_ft_work + disutil_children_ft + disutil_age_youngest_child_ft)
-        * working_full_time
+        + (disutil_pt_work + disutil_children_pt) * working_part_time
+        + (disutil_ft_work + disutil_children_ft) * working_full_time
     )
 
     disutility = (
@@ -114,4 +111,4 @@ def consumption_scale(partner_state, education, period, options):
     has_partner = (partner_state > 0).astype(int)
     nb_children = options["children_by_state"][SEX, education, has_partner, period]
     hh_size = 1 + has_partner + nb_children
-    return jnp.sqrt(hh_size)
+    return jnp.sqrt(hh_size), hh_size

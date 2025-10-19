@@ -15,7 +15,7 @@ from caregiving.model.shared import PARENT_DEAD
 from caregiving.model.utility.bequest_utility import utility_final_consume_all
 from caregiving.model.utility.utility_components import consumption_scale
 from caregiving.model.utility.utility_functions_additive import (
-    utility_func_adda as utility_func,
+    utility_func_additive as utility_func,
 )
 from caregiving.specs.derive_specs import read_and_derive_specs
 
@@ -139,7 +139,7 @@ def task_plot_cons_scale(
                 # has_partner = (np.array(married_val) > 0).astype(int)
                 # n_child = specs["children_by_state"][1, edu_val, has_partner, period]
                 # cons_scale[period] = consumption_scale(has_partner, n_children)
-                cons_scale[period] = consumption_scale(
+                cons_scale[period], _hh_size = consumption_scale(
                     partner_state=np.array(married_val),
                     # sex=1,
                     education=edu_val,

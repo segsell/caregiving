@@ -357,7 +357,7 @@ def utility_func_alive_additive(
         params=params,
         options=options,
     )
-    cons_scale = consumption_scale(
+    cons_scale, hh_size = consumption_scale(
         partner_state=partner_state,
         # sex=sex,
         education=education,
@@ -384,7 +384,7 @@ def utility_func_alive_additive(
         jnp.log(consumption / cons_scale),
         utility_rho_not_one,
     )
-    return utility + disutil_work  # + zeta * care_demand
+    return hh_size * utility + disutil_work  # + zeta * care_demand
 
 
 def marginal_utility_func_additive_alive(
@@ -394,7 +394,7 @@ def marginal_utility_func_additive_alive(
     # rho = params["rho"]
     rho = params["rho_low"] * (1 - education) + params["rho_high"] * education
 
-    cons_scale = consumption_scale(
+    cons_scale, hh_size = consumption_scale(
         partner_state=partner_state,
         # sex=sex,
         education=education,
@@ -402,10 +402,10 @@ def marginal_utility_func_additive_alive(
         options=options,
     )
 
-    marg_util_rho_not_one = (consumption / cons_scale) ** (-rho) / cons_scale
+    marg_util_rho_not_one = hh_size * (consumption / cons_scale) ** (-rho) / cons_scale
     marg_util = jax.lax.select(
         jnp.allclose(rho, 1),
-        1.0 / consumption,
+        hh_size / consumption,
         marg_util_rho_not_one,
     )
 
@@ -426,7 +426,7 @@ def inverse_marginal_additive(
     # rho = params["rho"]
     rho = params["rho_low"] * (1 - education) + params["rho_high"] * education
 
-    cons_scale = consumption_scale(
+    cons_scale, hh_size = consumption_scale(
         partner_state=partner_state,
         # sex=sex,
         education=education,
@@ -436,9 +436,11 @@ def inverse_marginal_additive(
 
     # Solve m = (c/cons_scale)^(-rho) / cons_scale
     # c = cons_scale * (m*cons_scale)^(-1/rho)
-    consumption_rho_not_one = cons_scale * (marginal_utility * cons_scale) ** (-1 / rho)
+    consumption_rho_not_one = cons_scale * (
+        marginal_utility * cons_scale / hh_size
+    ) ** (-1 / rho)
     consumption = jax.lax.select(
-        jnp.allclose(rho, 1), 1.0 / marginal_utility, consumption_rho_not_one
+        jnp.allclose(rho, 1), hh_size / marginal_utility, consumption_rho_not_one
     )
 
     return consumption

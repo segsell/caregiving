@@ -32,7 +32,6 @@ from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
 from dcegm.pre_processing.setup_model import setup_and_save_model
 
 
-@pytask.mark.skip()
 def task_specify_model(
     # load_model=False,
     # model_type="solution",
