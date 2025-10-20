@@ -141,35 +141,35 @@ def disutility_work(
         + params["disutil_unemployed_high_women_informal_care"] * education
     )
 
-    # disutil_children_ft_low_informal_care = (
-    #     params["disutil_children_ft_work_low_informal_care"] * nb_children
-    # )
-    # disutil_children_ft_high_informal_care = (
-    #     params["disutil_children_ft_work_high_informal_care"] * nb_children
-    # )
+    disutil_children_ft_low_informal_care = (
+        params["disutil_children_ft_work_low_informal_care"] * nb_children
+    )
+    disutil_children_ft_high_informal_care = (
+        params["disutil_children_ft_work_high_informal_care"] * nb_children
+    )
 
-    # disutil_children_pt_low_informal_care = (
-    #     params["disutil_children_pt_work_low_informal_care"] * nb_children
-    # )
-    # disutil_children_pt_high_informal_care = (
-    #     params["disutil_children_pt_work_high_informal_care"] * nb_children
-    # )
+    disutil_children_pt_low_informal_care = (
+        params["disutil_children_pt_work_low_informal_care"] * nb_children
+    )
+    disutil_children_pt_high_informal_care = (
+        params["disutil_children_pt_work_high_informal_care"] * nb_children
+    )
 
-    # disutil_children_pt_informal_care = (
-    #     disutil_children_pt_low_informal_care * (1 - education)
-    #     + disutil_children_pt_high_informal_care * education
-    # )
-    # disutil_children_ft_informal_care = (
-    #     disutil_children_ft_low_informal_care * (1 - education)
-    #     + disutil_children_ft_high_informal_care * education
-    # )
+    disutil_children_pt_informal_care = (
+        disutil_children_pt_low_informal_care * (1 - education)
+        + disutil_children_pt_high_informal_care * education
+    )
+    disutil_children_ft_informal_care = (
+        disutil_children_ft_low_informal_care * (1 - education)
+        + disutil_children_ft_high_informal_care * education
+    )
 
     disutility_informal_care = (
         disutil_unemployed_informal_care * unemployed
-        # + (disutil_pt_work_informal_care + disutil_children_pt_informal_care)
-        + disutil_pt_work_informal_care * working_part_time
-        # + (disutil_ft_work_informal_care + disutil_children_ft_informal_care)
-        + disutil_ft_work_informal_care * working_full_time
+        + (disutil_pt_work_informal_care + disutil_children_pt_informal_care)
+        # + disutil_pt_work_informal_care * working_part_time
+        + (disutil_ft_work_informal_care + disutil_children_ft_informal_care)
+        # + disutil_ft_work_informal_care * working_full_time
     )
 
     # =================================================================================
