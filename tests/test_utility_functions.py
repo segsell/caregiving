@@ -4,20 +4,25 @@ import pickle as pkl
 from itertools import product
 
 import jax
+import jax.numpy as jnp
 import numpy as np
 import pytest
 
 from caregiving.config import BLD
 from caregiving.model.shared import (
+    CARE_DEMAND_AND_NO_OTHER_SUPPLY,
+    CARE_DEMAND_AND_OTHER_SUPPLY,
     FULL_TIME_NO_CARE,
     PARENT_DEAD,
     PART_TIME_NO_CARE,
+    PARTNER_RETIRED,
     UNEMPLOYED_NO_CARE,
 )
 from caregiving.model.utility.bequest_utility import (
     marginal_utility_final_consume_all,
     utility_final_consume_all,
 )
+from caregiving.model.utility.utility_components import disutility_work
 from caregiving.model.utility.utility_functions_additive import (
     consumption_scale,
     inverse_marginal_additive,
@@ -57,6 +62,50 @@ EDUCATION_GRID = np.array([0, 1], dtype=int)
 HEALTH_GRID = np.array([0, 1], dtype=int)
 PERIOD_GRID = np.arange(0, 15, 5, dtype=int)
 SEX_GRID = np.array([1], dtype=int)
+
+
+# Common parameter dictionary for utility tests
+def create_test_params(disutil_work, disutil_unemployed, rho):
+    """Create a standardized parameter dictionary for utility tests."""
+    return {
+        "rho_low": rho,
+        "rho_high": rho,
+        "rho_bequest_low": rho,
+        "rho_bequest_high": rho,
+        "bequest_scale_low": 2,
+        "bequest_scale_high": 2,
+        # labor, no caregiving
+        "disutil_pt_work_high_good": disutil_work,
+        "disutil_pt_work_high_bad": disutil_work + 1,
+        "disutil_ft_work_high_good": disutil_work,
+        "disutil_ft_work_high_bad": disutil_work + 1,
+        "disutil_pt_work_low_good": disutil_work,
+        "disutil_pt_work_low_bad": disutil_work + 1,
+        "disutil_ft_work_low_good": disutil_work,
+        "disutil_ft_work_low_bad": disutil_work + 1,
+        "disutil_unemployed_low_women": disutil_unemployed,
+        "disutil_unemployed_high_women": disutil_unemployed,
+        "disutil_partner_retired": 0,
+        "disutil_children_pt_work_low": 0,
+        "disutil_children_pt_work_high": 0,
+        "disutil_children_ft_work_low": 0.1,
+        "disutil_children_ft_work_high": 0.2,
+        # labor and caregiving
+        "disutil_pt_work_high_good_informal_care": disutil_work,
+        "disutil_pt_work_high_bad_informal_care": disutil_work + 1,
+        "disutil_ft_work_high_good_informal_care": disutil_work,
+        "disutil_ft_work_high_bad_informal_care": disutil_work + 1,
+        "disutil_pt_work_low_good_informal_care": disutil_work,
+        "disutil_pt_work_low_bad_informal_care": disutil_work + 1,
+        "disutil_ft_work_low_good_informal_care": disutil_work,
+        "disutil_ft_work_low_bad_informal_care": disutil_work + 1,
+        "disutil_unemployed_low_women_informal_care": disutil_unemployed,
+        "disutil_unemployed_high_women_informal_care": disutil_unemployed,
+        "disutil_children_pt_work_low_informal_care": 0,
+        "disutil_children_pt_work_high_informal_care": 0,
+        "disutil_children_ft_work_low_informal_care": 0.1,
+        "disutil_children_ft_work_high_informal_care": 0.2,
+    }
 
 
 @pytest.mark.parametrize(
@@ -114,45 +163,7 @@ def test_utility_func(
 ):
     """Test utility function for unemployed, part and full-time."""
     options = load_specs
-    params = {
-        "rho_low": rho,
-        "rho_high": rho,
-        "rho_bequest_low": rho,
-        "rho_bequest_high": rho,
-        "bequest_scale_low": 2,
-        "bequest_scale_high": 2,
-        # labor, no caregiving
-        "disutil_pt_work_high_good": disutil_work,
-        "disutil_pt_work_high_bad": disutil_work + 1,
-        "disutil_ft_work_high_good": disutil_work,
-        "disutil_ft_work_high_bad": disutil_work + 1,
-        "disutil_pt_work_low_good": disutil_work,
-        "disutil_pt_work_low_bad": disutil_work + 1,
-        "disutil_ft_work_low_good": disutil_work,
-        "disutil_ft_work_low_bad": disutil_work + 1,
-        "disutil_unemployed_low_women": disutil_unemployed,
-        "disutil_unemployed_high_women": disutil_unemployed,
-        "disutil_partner_retired": 0,
-        "disutil_children_pt_work_low": 0,
-        "disutil_children_pt_work_high": 0,
-        "disutil_children_ft_work_low": 0.1,
-        "disutil_children_ft_work_high": 0.1,
-        # labor and caregiving
-        "disutil_pt_work_high_good_informal_care": disutil_work,
-        "disutil_pt_work_high_bad_informal_care": disutil_work + 1,
-        "disutil_ft_work_high_good_informal_care": disutil_work,
-        "disutil_ft_work_high_bad_informal_care": disutil_work + 1,
-        "disutil_pt_work_low_good_informal_care": disutil_work,
-        "disutil_pt_work_low_bad_informal_care": disutil_work + 1,
-        "disutil_ft_work_low_good_informal_care": disutil_work,
-        "disutil_ft_work_low_bad_informal_care": disutil_work + 1,
-        "disutil_unemployed_low_women_informal_care": disutil_unemployed,
-        "disutil_unemployed_high_women_informal_care": disutil_unemployed,
-        "disutil_children_pt_work_low_informal_care": 0,
-        "disutil_children_pt_work_high_informal_care": 0,
-        "disutil_children_ft_work_low_informal_care": 0.1,
-        "disutil_children_ft_work_high_informal_care": 0.1,
-    }
+    params = create_test_params(disutil_work, disutil_unemployed, rho)
 
     # has_partner = int(partner_state > 0)
     # n_children = options["children_by_state"][sex, education, has_partner, period]
@@ -225,21 +236,21 @@ def test_utility_func(
             + disutil
         )
 
-    np.testing.assert_almost_equal(
-        utility_func_additive(
-            consumption=consumption,
-            partner_state=partner_state,
-            education=education,
-            health=health,
-            # care_demand=0,
-            # mother_health=PARENT_DEAD,
-            period=period,
-            choice=UNEMPLOYED_NO_CARE,
-            params=params,
-            options=options,
-        ),
-        utility_lambda(disutil_unemployment),
-    )
+        np.testing.assert_almost_equal(
+            utility_func_additive(
+                consumption=consumption,
+                partner_state=partner_state,
+                education=education,
+                health=health,
+                care_demand=0,
+                # mother_health=PARENT_DEAD,
+                period=period,
+                choice=UNEMPLOYED_NO_CARE,
+                params=params,
+                options=options,
+            ),
+            utility_lambda(disutil_unemployment),
+        )
 
     np.testing.assert_almost_equal(
         utility_func_additive(
@@ -247,7 +258,7 @@ def test_utility_func(
             partner_state=partner_state,
             education=education,
             health=health,
-            # care_demand=0,
+            care_demand=0,
             # mother_health=PARENT_DEAD,
             period=period,
             choice=PART_TIME_NO_CARE,
@@ -263,7 +274,7 @@ def test_utility_func(
             partner_state=partner_state,
             education=education,
             health=health,
-            # care_demand=0,
+            care_demand=0,
             # mother_health=PARENT_DEAD,
             period=period,
             choice=FULL_TIME_NO_CARE,
@@ -305,47 +316,7 @@ def test_marginal_utility(
     """Test marginal utility function."""
 
     options = load_specs
-    params = {
-        "rho_low": rho,
-        "rho_high": rho,
-        "rho_bequest_low": rho,
-        "rho_bequest_high": rho,
-        "bequest_scale_low": 2,
-        "bequest_scale_high": 2,
-        # labor, no caregiving
-        "disutil_pt_work_high_good": disutil_work,
-        "disutil_pt_work_high_bad": disutil_work + 1,
-        "disutil_ft_work_high_good": disutil_work,
-        "disutil_ft_work_high_bad": disutil_work + 1,
-        "disutil_pt_work_low_good": disutil_work,
-        "disutil_pt_work_low_bad": disutil_work + 1,
-        "disutil_ft_work_low_good": disutil_work,
-        "disutil_ft_work_low_bad": disutil_work + 1,
-        "disutil_unemployed_low_women": disutil_unemployed,
-        "disutil_unemployed_high_women": disutil_unemployed,
-        "disutil_partner_retired": 0,
-        "disutil_children_pt_work_low": 0,
-        "disutil_children_pt_work_high": 0,
-        "disutil_children_ft_work_low": 0.1,
-        "disutil_children_ft_work_high": 0.1,
-        # labor and caregiving
-        "disutil_pt_work_high_good_informal_care": disutil_work,
-        "disutil_pt_work_high_bad_informal_care": disutil_work + 1,
-        "disutil_ft_work_high_good_informal_care": disutil_work,
-        "disutil_ft_work_high_bad_informal_care": disutil_work + 1,
-        "disutil_pt_work_low_good_informal_care": disutil_work,
-        "disutil_pt_work_low_bad_informal_care": disutil_work + 1,
-        "disutil_ft_work_low_good_informal_care": disutil_work,
-        "disutil_ft_work_low_bad_informal_care": disutil_work + 1,
-        # "disutil_unemployed_and_informal_care_low": disutil_unemployed,
-        # "disutil_unemployed_and_informal_care_high": disutil_unemployed,
-        "disutil_unemployed_low_women_informal_care": disutil_unemployed,
-        "disutil_unemployed_high_women_informal_care": disutil_unemployed,
-        "disutil_children_pt_work_low_informal_care": 0,
-        "disutil_children_pt_work_high_informal_care": 0,
-        "disutil_children_ft_work_low_informal_care": 0.1,
-        "disutil_children_ft_work_high_informal_care": 0.1,
-    }
+    params = create_test_params(disutil_work, disutil_unemployed, rho)
 
     random_choice = np.random.choice(np.array([0, 1, 2]))
     marg_util_jax = jax.jacfwd(utility_func_additive, argnums=0)(
@@ -354,8 +325,7 @@ def test_marginal_utility(
         period,
         education,
         health,
-        # 0,  # care_demand
-        # PARENT_DEAD,  # mother_health
+        0,  # care_demand
         partner_state,
         params,
         options,
@@ -403,67 +373,27 @@ def test_inverse_marginal_utility(
     load_specs,
 ):
     options = load_specs
-    params = {
-        "rho_low": rho,
-        "rho_high": rho,
-        "rho_bequest_low": rho,
-        "rho_bequest_high": rho,
-        "bequest_scale_low": 2,
-        "bequest_scale_high": 2,
-        # labor, no caregiving
-        "disutil_pt_work_high_good": disutil_work,
-        "disutil_pt_work_high_bad": disutil_work + 1,
-        "disutil_ft_work_high_good": disutil_work,
-        "disutil_ft_work_high_bad": disutil_work + 1,
-        "disutil_pt_work_low_good": disutil_work,
-        "disutil_pt_work_low_bad": disutil_work + 1,
-        "disutil_ft_work_low_good": disutil_work,
-        "disutil_ft_work_low_bad": disutil_work + 1,
-        "disutil_unemployed_low_women": disutil_unemployed,
-        "disutil_unemployed_high_women": disutil_unemployed,
-        "disutil_partner_retired": 0,
-        "disutil_children_pt_work_low": 0,
-        "disutil_children_pt_work_high": 0,
-        "disutil_children_ft_work_low": 0.1,
-        "disutil_children_ft_work_high": 0.1,
-        # labor and caregiving
-        "disutil_pt_work_high_good_informal_care": disutil_work,
-        "disutil_pt_work_high_bad_informal_care": disutil_work + 1,
-        "disutil_ft_work_high_good_informal_care": disutil_work,
-        "disutil_ft_work_high_bad_informal_care": disutil_work + 1,
-        "disutil_pt_work_low_good_informal_care": disutil_work,
-        "disutil_pt_work_low_bad_informal_care": disutil_work + 1,
-        "disutil_ft_work_low_good_informal_care": disutil_work,
-        "disutil_ft_work_low_bad_informal_care": disutil_work + 1,
-        "disutil_unemployed_low_women_informal_care": disutil_unemployed,
-        "disutil_unemployed_high_women_informal_care": disutil_unemployed,
-        "disutil_children_pt_work_low_informal_care": 0,
-        "disutil_children_pt_work_high_informal_care": 0,
-        "disutil_children_ft_work_low_informal_care": 0.1,
-        "disutil_children_ft_work_high_informal_care": 0.1,
-    }
+    params = create_test_params(disutil_work, disutil_unemployed, rho)
 
     random_choice = np.random.choice(np.array([0, 1, 2]))
     marg_util = marginal_utility_func_additive_alive(
         consumption=consumption,
-        choice=random_choice,
-        period=period,
+        partner_state=partner_state,
         education=education,
         health=health,
-        # care_demand=0,
-        partner_state=partner_state,
+        period=period,
+        choice=random_choice,
         params=params,
         options=options,
     )
     np.testing.assert_almost_equal(
         inverse_marginal_additive(
             marginal_utility=marg_util,
-            choice=random_choice,
-            period=period,
+            partner_state=partner_state,
             education=education,
             health=health,
-            # care_demand=0,
-            partner_state=partner_state,
+            period=period,
+            choice=random_choice,
             params=params,
             options=options,
         ),
@@ -530,3 +460,318 @@ def test_bequest_marginal(consumption, education, rho_educ, bequest_scale_educ):
         ),
         bequest,
     )
+
+
+# ======================================================================================
+# Disutility work tests
+# ======================================================================================
+
+
+@pytest.mark.parametrize(
+    "period, choice, education, partner_state, health, care_demand",
+    list(
+        product(
+            PERIOD_GRID,
+            [UNEMPLOYED_NO_CARE, PART_TIME_NO_CARE, FULL_TIME_NO_CARE],
+            EDUCATION_GRID,
+            PARTNER_STATE_GRIRD,
+            HEALTH_GRID,
+            [0, CARE_DEMAND_AND_NO_OTHER_SUPPLY, CARE_DEMAND_AND_OTHER_SUPPLY],
+        )
+    ),
+)
+def test_disutility_work_no_caregiving(
+    period, choice, education, partner_state, health, care_demand, load_specs
+):
+    """Test disutility_work function for no caregiving scenarios."""
+    options = load_specs
+    params = {
+        # No caregiving disutility parameters
+        "disutil_ft_work_high_bad": 0.5,
+        "disutil_ft_work_low_bad": 0.4,
+        "disutil_ft_work_high_good": 0.3,
+        "disutil_ft_work_low_good": 0.2,
+        "disutil_pt_work_high_bad": 0.4,
+        "disutil_pt_work_low_bad": 0.3,
+        "disutil_pt_work_high_good": 0.2,
+        "disutil_pt_work_low_good": 0.1,
+        "disutil_unemployed_low_women": 0.1,
+        "disutil_unemployed_high_women": 0.2,
+        "disutil_children_pt_work_low": 0.05,
+        "disutil_children_pt_work_high": 0.1,
+        "disutil_children_ft_work_low": 0.1,
+        "disutil_children_ft_work_high": 0.2,
+        # Informal care disutility parameters
+        "disutil_ft_work_high_bad_informal_care": 0.6,
+        "disutil_ft_work_low_bad_informal_care": 0.5,
+        "disutil_ft_work_high_good_informal_care": 0.4,
+        "disutil_ft_work_low_good_informal_care": 0.3,
+        "disutil_pt_work_high_bad_informal_care": 0.5,
+        "disutil_pt_work_low_bad_informal_care": 0.4,
+        "disutil_pt_work_high_good_informal_care": 0.3,
+        "disutil_pt_work_low_good_informal_care": 0.2,
+        "disutil_unemployed_low_women_informal_care": 0.2,
+        "disutil_unemployed_high_women_informal_care": 0.3,
+        "disutil_children_pt_work_low_informal_care": 0.1,
+        "disutil_children_pt_work_high_informal_care": 0.15,
+        "disutil_children_ft_work_low_informal_care": 0.15,
+        "disutil_children_ft_work_high_informal_care": 0.25,
+        "disutil_partner_retired": 0.1,
+    }
+
+    disutil = disutility_work(
+        period=period,
+        choice=choice,
+        education=education,
+        partner_state=partner_state,
+        health=health,
+        care_demand=care_demand,
+        params=params,
+        options=options,
+    )
+
+    # Test that disutility is negative (as expected for disutility)
+    assert disutil <= 0, f"Disutility should be negative, got {disutil}"
+
+    # Test that the function returns a scalar (JAX array with shape ())
+    assert (
+        disutil.shape == ()
+    ), f"Disutility should be scalar, got shape {disutil.shape}"
+
+
+@pytest.mark.parametrize(
+    "period, choice, education, partner_state, health, care_demand",
+    list(
+        product(
+            PERIOD_GRID,
+            [3, 5, 7],  # Informal care choices
+            EDUCATION_GRID,
+            PARTNER_STATE_GRIRD,
+            HEALTH_GRID,
+            [CARE_DEMAND_AND_NO_OTHER_SUPPLY, CARE_DEMAND_AND_OTHER_SUPPLY],
+        )
+    ),
+)
+def test_disutility_work_informal_care(
+    period, choice, education, partner_state, health, care_demand, load_specs
+):
+    """Test disutility_work function for informal care scenarios."""
+    options = load_specs
+    params = {
+        # No caregiving disutility parameters
+        "disutil_ft_work_high_bad": 0.5,
+        "disutil_ft_work_low_bad": 0.4,
+        "disutil_ft_work_high_good": 0.3,
+        "disutil_ft_work_low_good": 0.2,
+        "disutil_pt_work_high_bad": 0.4,
+        "disutil_pt_work_low_bad": 0.3,
+        "disutil_pt_work_high_good": 0.2,
+        "disutil_pt_work_low_good": 0.1,
+        "disutil_unemployed_low_women": 0.1,
+        "disutil_unemployed_high_women": 0.2,
+        "disutil_children_pt_work_low": 0.05,
+        "disutil_children_pt_work_high": 0.1,
+        "disutil_children_ft_work_low": 0.1,
+        "disutil_children_ft_work_high": 0.2,
+        # Informal care disutility parameters
+        "disutil_ft_work_high_bad_informal_care": 0.6,
+        "disutil_ft_work_low_bad_informal_care": 0.5,
+        "disutil_ft_work_high_good_informal_care": 0.4,
+        "disutil_ft_work_low_good_informal_care": 0.3,
+        "disutil_pt_work_high_bad_informal_care": 0.5,
+        "disutil_pt_work_low_bad_informal_care": 0.4,
+        "disutil_pt_work_high_good_informal_care": 0.3,
+        "disutil_pt_work_low_good_informal_care": 0.2,
+        "disutil_unemployed_low_women_informal_care": 0.2,
+        "disutil_unemployed_high_women_informal_care": 0.3,
+        "disutil_children_pt_work_low_informal_care": 0.1,
+        "disutil_children_pt_work_high_informal_care": 0.15,
+        "disutil_children_ft_work_low_informal_care": 0.15,
+        "disutil_children_ft_work_high_informal_care": 0.25,
+        "disutil_partner_retired": 0.1,
+    }
+
+    disutil = disutility_work(
+        period=period,
+        choice=choice,
+        education=education,
+        partner_state=partner_state,
+        health=health,
+        care_demand=care_demand,
+        params=params,
+        options=options,
+    )
+
+    # Test that disutility is negative (as expected for disutility)
+    assert disutil <= 0, f"Disutility should be negative, got {disutil}"
+
+    # Test that the function returns a scalar (JAX array with shape ())
+    assert (
+        disutil.shape == ()
+    ), f"Disutility should be scalar, got shape {disutil.shape}"
+
+
+def test_disutility_work_partner_retired_effect(load_specs):
+    """Test that partner retired status affects disutility correctly."""
+    options = load_specs
+    params = {
+        # No caregiving disutility parameters
+        "disutil_ft_work_high_bad": 0.5,
+        "disutil_ft_work_low_bad": 0.4,
+        "disutil_ft_work_high_good": 0.3,
+        "disutil_ft_work_low_good": 0.2,
+        "disutil_pt_work_high_bad": 0.4,
+        "disutil_pt_work_low_bad": 0.3,
+        "disutil_pt_work_high_good": 0.2,
+        "disutil_pt_work_low_good": 0.1,
+        "disutil_unemployed_low_women": 0.1,
+        "disutil_unemployed_high_women": 0.2,
+        "disutil_children_pt_work_low": 0.05,
+        "disutil_children_pt_work_high": 0.1,
+        "disutil_children_ft_work_low": 0.1,
+        "disutil_children_ft_work_high": 0.2,
+        # Informal care disutility parameters
+        "disutil_ft_work_high_bad_informal_care": 0.6,
+        "disutil_ft_work_low_bad_informal_care": 0.5,
+        "disutil_ft_work_high_good_informal_care": 0.4,
+        "disutil_ft_work_low_good_informal_care": 0.3,
+        "disutil_pt_work_high_bad_informal_care": 0.5,
+        "disutil_pt_work_low_bad_informal_care": 0.4,
+        "disutil_pt_work_high_good_informal_care": 0.3,
+        "disutil_pt_work_low_good_informal_care": 0.2,
+        "disutil_unemployed_low_women_informal_care": 0.2,
+        "disutil_unemployed_high_women_informal_care": 0.3,
+        "disutil_children_pt_work_low_informal_care": 0.1,
+        "disutil_children_pt_work_high_informal_care": 0.15,
+        "disutil_children_ft_work_low_informal_care": 0.15,
+        "disutil_children_ft_work_high_informal_care": 0.25,
+        "disutil_partner_retired": 0.1,
+    }
+
+    # Test with partner not retired
+    disutil_no_retired = disutility_work(
+        period=jnp.array(0),
+        choice=jnp.array(0),  # retired choice
+        education=jnp.array(1),
+        partner_state=jnp.array(1),  # partner not retired
+        health=jnp.array(1),
+        care_demand=jnp.array(0),
+        params=params,
+        options=options,
+    )
+
+    # Test with partner retired
+    disutil_retired = disutility_work(
+        period=jnp.array(0),
+        choice=jnp.array(0),  # retired choice
+        education=jnp.array(1),
+        partner_state=jnp.array(PARTNER_RETIRED),  # partner retired
+        health=jnp.array(1),
+        care_demand=jnp.array(0),
+        params=params,
+        options=options,
+    )
+
+    # When partner is retired and individual is retired, there should be additional disutility
+    assert disutil_retired < disutil_no_retired, (
+        f"Disutility with retired partner should be more negative, "
+        f"got {disutil_retired} vs {disutil_no_retired}"
+    )
+
+
+def test_disutility_work_education_health_effects(load_specs):
+    """Test that education and health status affect disutility correctly."""
+    options = load_specs
+    params = {
+        # No caregiving disutility parameters
+        "disutil_ft_work_high_bad": 0.5,
+        "disutil_ft_work_low_bad": 0.4,
+        "disutil_ft_work_high_good": 0.3,
+        "disutil_ft_work_low_good": 0.2,
+        "disutil_pt_work_high_bad": 0.4,
+        "disutil_pt_work_low_bad": 0.3,
+        "disutil_pt_work_high_good": 0.2,
+        "disutil_pt_work_low_good": 0.1,
+        "disutil_unemployed_low_women": 0.1,
+        "disutil_unemployed_high_women": 0.2,
+        "disutil_children_pt_work_low": 0.05,
+        "disutil_children_pt_work_high": 0.1,
+        "disutil_children_ft_work_low": 0.1,
+        "disutil_children_ft_work_high": 0.2,
+        # Informal care disutility parameters
+        "disutil_ft_work_high_bad_informal_care": 0.6,
+        "disutil_ft_work_low_bad_informal_care": 0.5,
+        "disutil_ft_work_high_good_informal_care": 0.4,
+        "disutil_ft_work_low_good_informal_care": 0.3,
+        "disutil_pt_work_high_bad_informal_care": 0.5,
+        "disutil_pt_work_low_bad_informal_care": 0.4,
+        "disutil_pt_work_high_good_informal_care": 0.3,
+        "disutil_pt_work_low_good_informal_care": 0.2,
+        "disutil_unemployed_low_women_informal_care": 0.2,
+        "disutil_unemployed_high_women_informal_care": 0.3,
+        "disutil_children_pt_work_low_informal_care": 0.1,
+        "disutil_children_pt_work_high_informal_care": 0.15,
+        "disutil_children_ft_work_low_informal_care": 0.15,
+        "disutil_children_ft_work_high_informal_care": 0.25,
+        "disutil_partner_retired": 0.1,
+    }
+
+    # Test high education vs low education
+    disutil_high_ed = disutility_work(
+        period=jnp.array(0),
+        choice=FULL_TIME_NO_CARE,
+        education=jnp.array(1),  # high education
+        partner_state=jnp.array(0),
+        health=jnp.array(1),
+        care_demand=jnp.array(0),
+        params=params,
+        options=options,
+    )
+
+    disutil_low_ed = disutility_work(
+        period=jnp.array(0),
+        choice=FULL_TIME_NO_CARE,
+        education=jnp.array(0),  # low education
+        partner_state=jnp.array(0),
+        health=jnp.array(1),
+        care_demand=jnp.array(0),
+        params=params,
+        options=options,
+    )
+
+    # Test bad health vs good health
+    disutil_bad_health = disutility_work(
+        period=jnp.array(0),
+        choice=FULL_TIME_NO_CARE,
+        education=jnp.array(1),
+        partner_state=jnp.array(0),
+        health=jnp.array(0),  # bad health
+        care_demand=jnp.array(0),
+        params=params,
+        options=options,
+    )
+
+    disutil_good_health = disutility_work(
+        period=jnp.array(0),
+        choice=FULL_TIME_NO_CARE,
+        education=jnp.array(1),
+        partner_state=jnp.array(0),
+        health=jnp.array(1),  # good health
+        care_demand=jnp.array(0),
+        params=params,
+        options=options,
+    )
+
+    # With the given parameters, bad health should have higher disutility
+    assert disutil_bad_health < disutil_good_health, (
+        f"Bad health should have higher disutility, "
+        f"got {disutil_bad_health} vs {disutil_good_health}"
+    )
+
+    # Test that function returns different values for different inputs
+    assert (
+        disutil_high_ed != disutil_low_ed
+    ), "Different education levels should give different disutility"
+    assert (
+        disutil_bad_health != disutil_good_health
+    ), "Different health levels should give different disutility"

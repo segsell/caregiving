@@ -1,4 +1,8 @@
-"""Function that simulates the model for a given scenario."""
+"""Simulation helper for the no-care-demand counterfactual.
+
+Mirrors the baseline simulate_scenario but uses the reduced 4-state
+choice arrays from shared_no_care_demand to assign working hours, etc.
+"""
 
 import jax
 import jax.numpy as jnp
@@ -8,22 +12,13 @@ from dcegm.pre_processing.setup_model import load_and_setup_model
 from dcegm.simulation.sim_utils import create_simulation_df
 from dcegm.simulation.simulate import simulate_all_periods
 
-from caregiving.model.shared import (
-    DEAD,
+from caregiving.model.shared import DEAD, SEX
+from caregiving.model.shared_no_care_demand import (
     FULL_TIME,
-    FULL_TIME_CHOICES,
-    INFORMAL_CARE,
-    PARENT_DEAD,
     PART_TIME,
-    RETIREMENT,
-    SEX,
-    UNEMPLOYED,
-    WORK,
-    is_full_time,
-    is_part_time,
-    is_retired,
-    is_unemployed,
-    is_working,
+    RETIREMENT_NO_CARE_DEMAND,
+    UNEMPLOYED_NO_CARE_DEMAND,
+    WORK_NO_CARE_DEMAND,
 )
 from caregiving.model.state_space import (
     construct_experience_years,
@@ -32,28 +27,26 @@ from caregiving.model.state_space import (
 from caregiving.model.utility.bequest_utility import (
     create_final_period_utility_functions,
 )
-from caregiving.model.utility.utility_functions_additive import create_utility_functions
-from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
+from caregiving.model.utility.utility_functions_additive_no_care_demand import (
+    create_utility_functions,
+)
+from caregiving.model.wealth_and_budget.budget_equation_no_care_demand import (
+    budget_constraint,
+)
 from caregiving.model.wealth_and_budget.pensions import (
     calc_gross_pension_income,
-    calc_pensions_after_ssc,
 )
 from caregiving.model.wealth_and_budget.transfers import (
-    calc_care_benefits_and_costs,
     calc_child_benefits,
     calc_unemployment_benefits,
 )
-from caregiving.model.wealth_and_budget.wages import (
-    calc_labor_income_after_ssc,
+from caregiving.model.wealth_and_budget.wages_no_care_demand import (
     calculate_gross_labor_income,
 )
-from caregiving.utils import table
-
-jax.config.update("jax_enable_x64", True)
 
 
-def setup_model_for_simulation_baseline(path_to_model, options):
-    """Setup baseline model for simulation with correct utility functions."""
+def setup_model_for_simulation_no_care_demand(path_to_model, options):
+    """Setup no-care-demand model for simulation with correct utility functions."""
     return load_and_setup_model(
         options=options,
         state_space_functions=create_state_space_functions(),
@@ -65,11 +58,8 @@ def setup_model_for_simulation_baseline(path_to_model, options):
     )
 
 
-def simulate_scenario(
+def simulate_scenario_no_care_demand(
     model,
-    # solution_endog_grid,
-    # solution_value,
-    # solution_policy,
     solution,
     initial_states,
     wealth_agents,
@@ -77,7 +67,7 @@ def simulate_scenario(
     options,
     seed,
 ) -> pd.DataFrame:
-    """Simulate the model for given parametrization and model solution."""
+    """Simulate the counterfactual model and return a DataFrame."""
 
     sim_dict = simulate_all_periods(
         states_initial=initial_states,
@@ -93,45 +83,36 @@ def simulate_scenario(
     )
     df = create_simulation_df(sim_dict)
 
-    # Create additional variables
+    # Add derived variables
     model_params = options["model_params"]
     df["age"] = df.index.get_level_values("period") + model_params["start_age"]
 
-    # Create experience years
     df["exp_years"] = construct_experience_years(
         experience=df["experience"].values,
         period=df.index.get_level_values("period").values,
         max_exp_diffs_per_period=model_params["max_exp_diffs_per_period"],
     )
 
-    # Assign working hours for choice 1 (unemployed)
+    # Assign working hours
     df["working_hours"] = 0.0
-
     part_time_values = PART_TIME.ravel().tolist()
-    full_time_values = FULL_TIME_CHOICES.ravel().tolist()
+    full_time_values = FULL_TIME.ravel().tolist()
 
     sex_var = SEX
-
     for edu_var in range(model_params["n_education_types"]):
-
         # full-time
         df.loc[
             df["choice"].isin(full_time_values) & (df["education"] == edu_var),
             "working_hours",
         ] = model_params["av_annual_hours_ft"][sex_var, edu_var]
-
         # part-time
         df.loc[
             df["choice"].isin(part_time_values) & (df["education"] == edu_var),
             "working_hours",
         ] = model_params["av_annual_hours_pt"][sex_var, edu_var]
 
-    # Create income vars:
-    # First wealth at the beginning of period as the sum of savings and consumption
+    # Income variables
     df["wealth_at_beginning"] = df["savings"] + df["consumption"]
-
-    # Then total income as the difference between wealth at the beginning
-    # of next period and savings
     df["total_income"] = (
         df.groupby("agent")["wealth_at_beginning"].shift(-1) - df["savings"]
     )
@@ -139,27 +120,10 @@ def simulate_scenario(
         -1
     ) - df["savings"] * (1 + params["interest_rate"])
 
-    # periodic savings and savings rate
     df["savings_dec"] = df["total_income"] - df["consumption"]
     df["savings_rate"] = df["savings_dec"] / df["total_income"]
 
-    # # Caregiving
-    # df["informal_care"] = np.nan
-    # df["formal_care"] = np.nan
-
-    # alive_and_demand = (
-    #     (df["health"] != DEAD)
-    #     & (df["mother_health"] != PARENT_DEAD)
-    #     & (df["care_demand"] == 1)
-    # )
-
-    # df.loc[alive_and_demand & (df["choice"].isin(INFORMAL_CARE)), "informal_care"] = 1
-    # df.loc[alive_and_demand & (~df["choice"].isin(INFORMAL_CARE)),
-    # "informal_care"] = 0
-
-    # df.loc[alive_and_demand & (~df["choice"].isin(INFORMAL_CARE)), "formal_care"] = 1
-    # df.loc[alive_and_demand & (df["choice"].isin(INFORMAL_CARE)), "formal_care"] = 0
-
+    # Mother age
     df["mother_age"] = (
         df["age"].to_numpy()
         + model_params["mother_age_diff"][
@@ -170,7 +134,7 @@ def simulate_scenario(
     return df
 
 
-def simulate_career_costs(
+def simulate_career_costs_no_care_demand(
     model,
     solution,
     initial_states,
@@ -179,10 +143,11 @@ def simulate_career_costs(
     options,
     seed,
 ) -> pd.DataFrame:
-    """Ultra-fast career costs simulation: build from sim_dict and compute income.
+    """Ultra-fast career costs simulation for no-care-demand model.
 
     This function runs the simulation and computes individual income components
-    directly from the simulation dictionary for maximum speed.
+    directly from the simulation dictionary for maximum speed, using the restricted
+    choice sets from the no-care-demand counterfactual.
     """
 
     # Run the simulation to get sim_dict
@@ -200,12 +165,16 @@ def simulate_career_costs(
     )
 
     # Build simulation DataFrame from sim_dict with income components
-    df = build_simulation_df_with_income_components(sim_dict, options, params)
+    df = build_simulation_df_with_income_components_no_care_demand(
+        sim_dict, options, params
+    )
 
     return df
 
 
-def build_simulation_df_with_income_components(sim_dict, options, params):
+def build_simulation_df_with_income_components_no_care_demand(
+    sim_dict, options, params
+):
     """Build simulation DataFrame and compute income components efficiently."""
 
     df = create_simulation_df(sim_dict)
@@ -224,10 +193,11 @@ def build_simulation_df_with_income_components(sim_dict, options, params):
     # Assign working hours for choice 1 (unemployed)
     df["working_hours"] = 0.0
 
+    # Use no-care-demand choice arrays
     part_time_values = PART_TIME.ravel().tolist()
     full_time_values = FULL_TIME.ravel().tolist()
-    work_values = WORK.ravel().tolist()
-    retirement_values = RETIREMENT.ravel().tolist()
+    work_values = WORK_NO_CARE_DEMAND.ravel().tolist()
+    retirement_values = RETIREMENT_NO_CARE_DEMAND.ravel().tolist()
 
     sex_var = SEX
 
@@ -254,11 +224,9 @@ def build_simulation_df_with_income_components(sim_dict, options, params):
     savings_array = np.asarray(df["savings"])
     has_partner_int_array = np.asarray((df["partner_state"] > 0).astype(int))
     periods_array = np.asarray(df.index.get_level_values("period"))
-    has_sister_array = np.asarray(df["has_sister"])
-    care_demand_array = np.asarray(df["care_demand"])
 
     # ===============================================================================
-    # Gross abor and pension income
+    # Gross labor and pension income
     # ===============================================================================
 
     # Female gross labor income
@@ -298,7 +266,7 @@ def build_simulation_df_with_income_components(sim_dict, options, params):
     )
 
     # ===============================================================================
-    # Benefits and costs
+    # Benefits and costs (NO CARE BENEFITS/COSTS IN NO-CARE-DEMAND MODEL)
     # ===============================================================================
 
     # Female unemployment benefits
@@ -337,31 +305,12 @@ def build_simulation_df_with_income_components(sim_dict, options, params):
     )
     df["child_benefits"] = child_benefits_array
 
-    # Care benefits and costs
-    vectorized_calc_care_benefits_and_costs = jax.vmap(
-        lambda lc, edu, has_sister, care_demand: calc_care_benefits_and_costs(
-            lagged_choice=lc,
-            education=edu,
-            has_sister=has_sister,
-            care_demand=care_demand,
-            options=model_params,
-        )
-    )
-    care_benefits_costs_array = vectorized_calc_care_benefits_and_costs(
-        lagged_choice_array,
-        education_array,
-        has_sister_array,
-        care_demand_array,
-    )
-    df["care_benefits_and_costs"] = care_benefits_costs_array
-
     # Calculate total individual income following budget equation logic
-    # Total net income = labor income + pension income + child benefits + care benefits
+    # Total net income = labor income + pension income + child benefits
     df["total_net_income"] = (
         df["gross_labor_income"]
-        # + df["gross_pension_income"]
         + df["child_benefits"]
-        + df["care_benefits_and_costs"]
+        # df["gross_labor_income"] + df["gross_pension_income"] + df["child_benefits"]
     )
 
     # Apply maximum with unemployment benefits (following budget equation)
