@@ -51,7 +51,7 @@ def next_period_endogenous_state_with_job_retention(
         ~current_caregiver,
         0,
         jnp.where(
-            # If just started caregiving and was working, set to 1 (had job before caregiving)
+            # If just started caregiving and was working, set to 1 (had job before)
             ~previous_caregiver & current_caregiver & is_working(lagged_choice),
             1,
             # If continuing caregiving, keep the same job_before_caregiving state

@@ -29,9 +29,12 @@ def job_offer_process_transition_with_job_retention(
     - 1: Job offer in case of unemployment and no job destruction in case of employment
 
     Job Retention Policy:
-    - For people who are caregiving AND had a job before caregiving started, job_sep_prob = 0
-    - For people who are caregiving AND had a job before caregiving, job_finding_prob is increased
-    - This allows caregivers to keep their previous job and return to it after caregiving ends
+    - For people who are caregiving AND had a job before caregiving started,
+      job_sep_prob = 0
+    - For people who are caregiving AND had a job before caregiving,
+      job_finding_prob is increased
+    - This allows caregivers to keep their previous job and return to it
+      after caregiving ends
 
     """
 
@@ -42,7 +45,8 @@ def job_offer_process_transition_with_job_retention(
     caregiving_choice = is_informal_care(choice)
     employed_before_caregiving = had_job_before_caregiving(job_before_caregiving)
 
-    # Job separation policy: if caregiving + had job before caregiving, no job separation
+    # Job separation policy: if caregiving + had job before caregiving,
+    # no job separation
     labor_and_caregiving_with_previous_job = (
         employed_before_caregiving & caregiving_choice
     )
@@ -50,7 +54,8 @@ def job_offer_process_transition_with_job_retention(
     job_sep_prob = options["job_sep_probs"][SEX, education, period]
     job_finding_prob = calc_job_finding_prob_women(period, education, params, options)
 
-    # Apply job retention policy: if caregiving + had job before caregiving, no job separation
+    # Apply job retention policy: if caregiving + had job before caregiving,
+    # no job separation
     job_sep_prob_with_caregiver_retention = jnp.where(
         labor_and_caregiving_with_previous_job, 0.0, job_sep_prob
     )
