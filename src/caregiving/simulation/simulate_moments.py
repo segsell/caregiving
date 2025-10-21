@@ -75,11 +75,15 @@ def simulate_moments_pandas(  # noqa: PLR0915
             df_full["has_sister"].to_numpy(), df_full["education"].to_numpy()
         ]
     )
-    # df = df_full.copy()
-    df = df_full[df_full["choice"].isin(np.asarray(NO_INFORMAL_CARE))].copy()
+    df_non_caregivers = df_full[
+        df_full["choice"].isin(np.asarray(NO_INFORMAL_CARE))
+    ].copy()
 
-    df_low = df[df["education"] == 0]
-    df_high = df[df["education"] == 1]
+    df_low = df_non_caregivers[df_non_caregivers["education"] == 0]
+    df_high = df_non_caregivers[df_non_caregivers["education"] == 1]
+
+    df_wealth_low = df_full[df_full["education"] == 0]
+    df_wealth_high = df_full[df_full["education"] == 1]
 
     df_caregivers = df_full[df_full["choice"].isin(np.asarray(INFORMAL_CARE))].copy()
     df_caregivers_low = df_caregivers[df_caregivers["education"] == 0]
@@ -117,14 +121,14 @@ def simulate_moments_pandas(  # noqa: PLR0915
     # =================================================================================
     # Wealth moments
     moments = create_mean_by_age(
-        df_low,
+        df_wealth_low,
         moments,
         variable="wealth_beginning_of_period",
         age_range=age_range_wealth,
         label="low_education",
     )
     moments = create_mean_by_age(
-        df_high,
+        df_wealth_high,
         moments,
         variable="wealth_beginning_of_period",
         age_range=age_range_wealth,
@@ -132,7 +136,9 @@ def simulate_moments_pandas(  # noqa: PLR0915
     )
 
     # =================================================================================
-    moments = create_labor_share_moments_pandas(df, moments, age_range=age_range)
+    moments = create_labor_share_moments_pandas(
+        df_non_caregivers, moments, age_range=age_range
+    )
     moments = create_labor_share_moments_pandas(
         df_low, moments, age_range=age_range, label="low_education"
     )
@@ -140,14 +146,14 @@ def simulate_moments_pandas(  # noqa: PLR0915
         df_high, moments, age_range=age_range, label="high_education"
     )
 
-    # moments = create_choice_shares_by_age_bin_pandas(
-    #     df,
-    #     moments,
-    #     choice_set=INFORMAL_CARE,
-    #     age_bins_and_labels=age_bins,
-    #     label="informal_care",
-    #     scale=SCALE_CAREGIVER_SHARE,
-    # )
+    moments = create_choice_shares_by_age_bin_pandas(
+        df_full,
+        moments,
+        choice_set=INFORMAL_CARE,
+        age_bins_and_labels=age_bins_caregivers,
+        label="informal_care",
+        scale=SCALE_CAREGIVER_SHARE,
+    )
     # =================================================================================
 
     # moments = create_choice_shares_by_age_bin_pandas(
@@ -158,9 +164,7 @@ def simulate_moments_pandas(  # noqa: PLR0915
     # )
 
     # ================================================================================
-    # moments["share_informal_care_high_educ"] = df.loc[
-    #     df["choice"].isin(np.atleast_1d(INFORMAL_CARE)), "education"
-    # ].mean()
+    moments["share_informal_care_high_educ"] = df_caregivers["education"].mean()
     # ================================================================================
 
     moments = create_labor_share_moments_pandas(
@@ -903,6 +907,9 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
     arr_low_educ = arr[arr[:, idx["education"]] == 0]
     arr_high_educ = arr[arr[:, idx["education"]] == 1]
 
+    arr_all_low_educ = arr_all[arr_all[:, idx["education"]] == 0]
+    arr_all_high_educ = arr_all[arr_all[:, idx["education"]] == 1]
+
     _care_mask = jnp.isin(arr_all[:, idx["choice"]], INFORMAL_CARE)
     _light_care_mask = jnp.isin(arr_all[:, idx["choice"]], LIGHT_INFORMAL_CARE)
     _intensive_care_mask = jnp.isin(arr_all[:, idx["choice"]], INTENSIVE_INFORMAL_CARE)
@@ -936,14 +943,14 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
 
     # Mean wealth by education and age bin
     mean_wealth_by_age_low_educ = get_mean_by_age(
-        arr_low_educ,
+        arr_all_low_educ,
         ind=idx,
         variable="wealth_beginning_of_period",
         min_age=min_age,
         max_age=end_age_wealth,
     )
     mean_wealth_by_age_high_educ = get_mean_by_age(
-        arr_high_educ,
+        arr_all_high_educ,
         ind=idx,
         variable="wealth_beginning_of_period",
         min_age=min_age,
@@ -1000,7 +1007,11 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
 
     # Caregivers labor shares by education and age bin
     share_caregivers_by_age_bin = get_share_by_age_bin(
-        arr, ind=idx, choice=INFORMAL_CARE, bins=age_bins, scale=SCALE_CAREGIVER_SHARE
+        arr_all,
+        ind=idx,
+        choice=INFORMAL_CARE,
+        bins=age_bins,
+        scale=SCALE_CAREGIVER_SHARE,
     )
     # share_caregivers_by_age_bin = get_share_by_age_bin(
     #     arr, ind=idx, choice=LIGHT_INFORMAL_CARE, bins=age_bins_75
@@ -1010,8 +1021,8 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
     # )
 
     # ================================================================================
-    education_mask = arr[:, idx["education"]] == 1
-    care_type_mask = jnp.isin(arr[:, idx["choice"]], INFORMAL_CARE)
+    education_mask = arr_all[:, idx["education"]] == 1
+    care_type_mask = jnp.isin(arr_all[:, idx["choice"]], INFORMAL_CARE)
     share_caregivers_high_educ = jnp.sum(education_mask & care_type_mask) / jnp.sum(
         care_type_mask
     )
@@ -1489,8 +1500,8 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
         + share_working_part_time_by_age_high_educ
         + share_working_full_time_by_age_high_educ
         # caregivers
-        # + share_caregivers_by_age_bin
-        # + [share_caregivers_high_educ]
+        + share_caregivers_by_age_bin
+        + [share_caregivers_high_educ]
         + share_retired_by_age_caregivers
         + share_unemployed_by_age_caregivers
         + share_working_part_time_by_age_caregivers

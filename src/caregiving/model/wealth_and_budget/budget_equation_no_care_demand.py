@@ -1,6 +1,7 @@
 from jax import numpy as jnp
 
-from caregiving.model.shared import SEX, is_retired, is_working
+from caregiving.model.shared import SEX
+from caregiving.model.shared_no_care_demand import is_retired, is_working
 from caregiving.model.wealth_and_budget.partner_income import (
     calc_partner_income_after_ssc,
 )
@@ -9,11 +10,12 @@ from caregiving.model.wealth_and_budget.pensions import (
 )
 from caregiving.model.wealth_and_budget.tax_and_ssc import calc_net_household_income
 from caregiving.model.wealth_and_budget.transfers import (
-    calc_care_benefits_and_costs,
     calc_child_benefits,
     calc_unemployment_benefits,
 )
-from caregiving.model.wealth_and_budget.wages import calc_labor_income_after_ssc
+from caregiving.model.wealth_and_budget.wages_no_care_demand import (
+    calc_labor_income_after_ssc,
+)
 
 
 def budget_constraint(
@@ -21,10 +23,8 @@ def budget_constraint(
     education,
     lagged_choice,  # d_{t-1}
     experience,
-    # sex,
     partner_state,
     has_sister,
-    care_demand,
     savings_end_of_previous_period,  # A_{t-1}
     income_shock_previous_period,  # epsilon_{t - 1}
     params,
@@ -93,7 +93,6 @@ def budget_constraint(
         has_partner_int=has_partner_int,
         options=options,
     )
-
     child_benefits = calc_child_benefits(
         education=education,
         sex=sex_var,
@@ -101,16 +100,10 @@ def budget_constraint(
         period=period,
         options=options,
     )
-    care_benfits_and_costs = calc_care_benefits_and_costs(
-        lagged_choice=lagged_choice,
-        education=education,
-        has_sister=has_sister,
-        care_demand=care_demand,
-        options=options,
-    )
 
+    # No care demand / caregiving transfers in counterfactual
     total_income = jnp.maximum(
-        total_net_income + child_benefits + care_benfits_and_costs,
+        total_net_income + child_benefits,
         unemployment_benefits,
     )
     # calculate beginning of period wealth M_t

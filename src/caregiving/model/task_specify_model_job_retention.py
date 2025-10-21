@@ -1,4 +1,4 @@
-"""Specify model for estimation."""
+"""Specify model for job retention counterfactual."""
 
 import pickle
 from pathlib import Path
@@ -12,7 +12,7 @@ from dcegm.pre_processing.setup_model import setup_and_save_model
 from pytask import Product
 
 from caregiving.config import BLD
-from caregiving.model.state_space import create_state_space_functions
+from caregiving.model.state_space_job_retention import create_state_space_functions
 from caregiving.model.stochastic_processes.caregiving_transition import (
     care_demand_and_supply_transition,
     health_transition_good_medium_bad,
@@ -20,8 +20,8 @@ from caregiving.model.stochastic_processes.caregiving_transition import (
 from caregiving.model.stochastic_processes.health_transition import (
     health_transition,
 )
-from caregiving.model.stochastic_processes.job_transition import (
-    job_offer_process_transition,
+from caregiving.model.stochastic_processes.job_transition_job_retention import (
+    job_offer_process_transition_with_job_retention,
 )
 from caregiving.model.stochastic_processes.partner_transition import partner_transition
 from caregiving.model.utility.bequest_utility import (
@@ -32,21 +32,26 @@ from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
 
 
-def task_specify_model(
-    # load_model=False,
-    # model_type="solution",
+@pytask.mark.skip()
+def task_specify_model_job_retention(
     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_start_params: Path = BLD / "model" / "params" / "start_params_updated.yaml",
-    path_to_save_options: Annotated[Path, Product] = BLD / "model" / "options.pkl",
+    path_to_save_options: Annotated[Path, Product] = BLD
+    / "model"
+    / "options_job_retention.pkl",
     path_to_save_model: Annotated[Path, Product] = BLD
     / "model"
-    / "model_for_solution.pkl",
+    / "model_job_retention.pkl",
     path_to_save_start_params: Annotated[Path, Product] = BLD
     / "model"
     / "params"
-    / "start_params_model.yaml",
+    / "start_params_model_job_retention.yaml",
 ):
-    """Generate model and options dictionaries."""
+    """Generate model and options dictionaries for job retention counterfactual.
+
+    This counterfactual implements a policy where caregivers can keep their jobs
+    even when they reduce hours or become unemployed due to caregiving activities.
+    """
 
     with path_to_derived_specs.open("rb") as f:
         specs = pickle.load(f)
@@ -64,7 +69,6 @@ def task_specify_model(
     # Load specifications
     n_periods = specs["n_periods"]
     choices = np.arange(specs["n_choices"], dtype=int)
-    # n_policy_states = specs["n_policy_states"]
 
     # Savings grid
     savings_grid = create_savings_grid()
@@ -80,11 +84,12 @@ def task_specify_model(
             "endogenous_states": {
                 "education": np.arange(specs["n_education_types"], dtype=int),
                 "already_retired": np.arange(2, dtype=int),
+                "job_before_caregiving": np.arange(2, dtype=int),
                 "has_sister": np.arange(2, dtype=int),
             },
             "exogenous_processes": {
                 "job_offer": {
-                    "transition": job_offer_process_transition,
+                    "transition": job_offer_process_transition_with_job_retention,
                     "states": np.arange(2, dtype=int),
                 },
                 "partner_state": {
@@ -119,10 +124,9 @@ def task_specify_model(
         utility_functions=create_utility_functions(),
         utility_functions_final_period=create_final_period_utility_functions(),
         budget_constraint=budget_constraint,
-        # shock_functions=shock_function_dict(),
         path=path_to_save_model,
         sim_model=False,
     )
 
-    print("Model specified.")
+    print("Job retention counterfactual model specified.")
     return model, params
