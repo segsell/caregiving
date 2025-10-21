@@ -153,9 +153,6 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
     elif (not is_retired(lagged_choice)) & (already_retired == 1):
         return False
     # ================================================================================
-    elif (age <= options["start_age_caregiving"]) & is_informal_care(lagged_choice):
-        return False
-    # ================================================================================
     elif (age > options["end_age_msm"] + 1) & is_informal_care(lagged_choice):
         return False
     # ================================================================================
@@ -187,23 +184,6 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "job_offer": 0,
             }
             return state_proxy
-        # ================================================================================
-        elif age <= options["start_age_caregiving"] - 1:
-            # If before age 40, no care demand and supply
-            state_proxy = {
-                "period": period,
-                "lagged_choice": lagged_choice,
-                "already_retired": already_retired,
-                "education": education,
-                "has_sister": has_sister,
-                "partner_state": partner_state,
-                "health": health,
-                "mother_health": mother_health,
-                "job_offer": job_offer,
-                "care_demand": 0,
-            }
-            return state_proxy
-        # ================================================================================
         elif mother_health == PARENT_DEAD:
             # If mother is dead, no care demand and supply
             state_proxy = {
@@ -271,6 +251,159 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
             return True
 
 
+# def sparsity_condition(  # noqa: PLR0911, PLR0912
+#     period,
+#     lagged_choice,
+#     already_retired,
+#     education,
+#     has_sister,
+#     health,
+#     partner_state,
+#     mother_health,
+#     care_demand,
+#     job_offer,
+#     options,
+# ):
+#     start_age = options["start_age"]
+#     max_ret_age = options["max_ret_age"]
+#     min_ret_age_state_space = options["min_ret_age"]
+
+#     SRA_pol_state = options["min_SRA"]  # + policy_state
+
+#     # Generate last period, because only here are death states
+#     last_period = options["n_periods"] - 1
+
+#     age = start_age + period
+
+#     # You cannot retire before the earliest retirement age
+#     if (age <= min_ret_age_state_space) & (is_retired(lagged_choice)):
+#         return False
+#     elif (age <= min_ret_age_state_space + 1) & (already_retired == 1):
+#         return False
+#     # elif (age >= options["min_SRA_baseline"] + 1) & (is_unemployed(lagged_choice)):
+#     elif (age > SRA_pol_state) & (is_unemployed(lagged_choice)):
+#         return False
+#     elif (not is_retired(lagged_choice)) & (already_retired == 1):
+#         return False
+#     # ================================================================================
+#     elif (age <= options["start_age_caregiving"]) & is_informal_care(lagged_choice):
+#         return False
+#     # ================================================================================
+#     elif (age > options["end_age_msm"] + 1) & is_informal_care(lagged_choice):
+#         return False
+#     # ================================================================================
+#     # After the maximum retirement age, you must be retired.
+#     elif (age > max_ret_age) & (not is_retired(lagged_choice)) & (is_alive(health)):
+#         return False
+#     elif (age > max_ret_age + 1) & (already_retired != 1):
+#         return False
+#     else:
+#         # Now turn to the states, where it is decided by the value of an exogenous
+#         # state if it is valid or not. For invalid states we provide a proxy child state
+#         if is_dead(health):
+#             # Lead all states with death to last period death states
+#             # with job offer 0 (not relevant for bequest). You could be in principle
+#             # die upon retirement for which we need informed and policy state
+#             if period == last_period:
+#                 return True
+
+#             state_proxy = {
+#                 "period": last_period,
+#                 "lagged_choice": 0,
+#                 "already_retired": 1,
+#                 "education": education,
+#                 "has_sister": has_sister,
+#                 "health": health,
+#                 "partner_state": partner_state,
+#                 "mother_health": PARENT_DEAD,
+#                 "care_demand": 0,
+#                 "job_offer": 0,
+#             }
+#             return state_proxy
+#         # ================================================================================
+#         elif age <= options["start_age_caregiving"] - 1:
+#             # If before age 40, no care demand and supply
+#             state_proxy = {
+#                 "period": period,
+#                 "lagged_choice": lagged_choice,
+#                 "already_retired": already_retired,
+#                 "education": education,
+#                 "has_sister": has_sister,
+#                 "partner_state": partner_state,
+#                 "health": health,
+#                 "mother_health": mother_health,
+#                 "job_offer": job_offer,
+#                 "care_demand": 0,
+#             }
+#             return state_proxy
+#         # ================================================================================
+#         elif mother_health == PARENT_DEAD:
+#             # If mother is dead, no care demand and supply
+#             state_proxy = {
+#                 "period": period,
+#                 "lagged_choice": lagged_choice,
+#                 "already_retired": already_retired,
+#                 "education": education,
+#                 "has_sister": has_sister,
+#                 "health": health,
+#                 "partner_state": partner_state,
+#                 "mother_health": mother_health,
+#                 "care_demand": 0,
+#                 "job_offer": job_offer,
+#             }
+#             return state_proxy
+#         elif (age <= max_ret_age + 1) and is_retired(lagged_choice):
+#             # If retirement is already chosen we proxy all states to job offer 0.
+#             # Until age max_ret_age + 1 the individual could also be freshly retired
+#             state_proxy = {
+#                 "period": period,
+#                 "lagged_choice": lagged_choice,
+#                 "already_retired": already_retired,
+#                 "education": education,
+#                 "has_sister": has_sister,
+#                 "health": health,
+#                 "partner_state": partner_state,
+#                 "mother_health": mother_health,
+#                 "care_demand": care_demand,
+#                 "job_offer": 0,
+#             }
+#             return state_proxy
+#         elif age > max_ret_age + 1:
+#             # If age is larger than max_ret_age + 1, the individual can only be
+#             # longer retired.
+#             state_proxy = {
+#                 "period": period,
+#                 "lagged_choice": lagged_choice,
+#                 "already_retired": already_retired,
+#                 "education": education,
+#                 "has_sister": has_sister,
+#                 "health": health,
+#                 "partner_state": partner_state,
+#                 "mother_health": PARENT_DEAD,
+#                 "care_demand": 0,
+#                 "job_offer": 0,
+#             }
+#             return state_proxy
+#         # elif period < 10:
+#         #     # If agent before age 40, no care demand and supply
+#         #     state_proxy = {
+#         #         "period": period,
+#         #         "lagged_choice": lagged_choice,
+#         #         "already_retired": already_retired,
+#         #         "education": education,
+#         #         "has_sister": has_sister,
+#         #         "health": health,
+#         #         "partner_state": partner_state,
+#         #         "mother_health": mother_health,
+#         #         "care_demand": 0,
+#         #         "job_offer": job_offer,
+#         #     }
+#         #     return state_proxy
+
+#         else:
+#             return True
+
+
 def state_specific_choice_set(  # noqa: PLR0911, PLR0912
     period, lagged_choice, job_offer, health, options
 ):
@@ -312,7 +445,7 @@ def apply_retirement_constraint_for_SRA(SRA, options):
     return np.maximum(SRA - options["ret_years_before_SRA"], 63)
 
 
-def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR0915
+def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912
     period, lagged_choice, job_offer, health, care_demand, options
 ):
     age = period + options["start_age"]
@@ -346,40 +479,8 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
     #             return NOT_WORKING
     #         else:
     #             return ALL
-    if age < options["start_age_caregiving"]:
-        if is_dead(health):
-            return RETIREMENT_NO_CARE
-        # Retirement is absorbing
-        elif is_retired(lagged_choice):
-            return RETIREMENT_NO_CARE
-        # Check if the person is not in the voluntary retirement range.
-        elif age < min_ret_age_pol_state:  # min_ret_age: 63
-            if job_offer == 0:
-                return UNEMPLOYED_NO_CARE
-            else:
-                return WORK_AND_UNEMPLOYED_NO_CARE
-        # Person must retire
-        elif age >= options["max_ret_age"]:
-            return RETIREMENT_NO_CARE
-        # Person is in the voluntary retirement range
-        else:
-            if age >= SRA_pol_state:  # min_SRA: 65
-                if job_offer == 0:
-                    return RETIREMENT_NO_CARE  # Cannot choose unemployment after 65
-                else:
-                    return WORK_AND_RETIREMENT_NO_CARE
-            else:
-                if job_offer == 0:
-                    # Choose unemployment or retirement
-                    return NOT_WORKING_NO_CARE
-                else:
-                    return ALL_NO_CARE
 
-    elif (
-        (age < options["start_age_caregiving"])
-        | (care_demand == 0)
-        | (age > options["end_age_msm"])
-    ):
+    if (care_demand == 0) | (age > options["end_age_msm"]):
         if is_dead(health):
             return RETIREMENT_NO_CARE
         # Retirement is absorbing
@@ -407,11 +508,10 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
                     return NOT_WORKING_NO_CARE
                 else:
                     return ALL_NO_CARE
-    elif (
-        (care_demand == CARE_DEMAND_AND_OTHER_SUPPLY)
-        & (age >= options["start_age_caregiving"])
-        & (age <= options["end_age_msm"])
+    elif (care_demand == CARE_DEMAND_AND_OTHER_SUPPLY) & (
+        age <= options["end_age_msm"]
     ):
+        # & ( care_supply == 1):  # & (age >= 40):
         # Other family member (also) provides care
         if is_dead(health):
             return RETIREMENT_NO_FORMAL_CARE
@@ -473,10 +573,8 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
     #                 return NOT_WORKING_CARE
     #             else:
     #                 return ALL_CARE
-    elif (
-        (care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
-        & (age >= options["start_age_caregiving"])
-        & (age <= options["end_age_msm"])
+    elif (care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY) & (
+        age <= options["end_age_msm"]
     ):  # & (age >= 40):
         # elif (care_demand > 0) & (age <= options["end_age_msm"]):  # & (age >= 40):
         # elif (care_demand == 1) & (care_supply == 0):  # & (age >= 40):
@@ -508,6 +606,204 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
                     return NOT_WORKING
                 else:
                     return ALL
+
+
+# def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR0915
+#     period, lagged_choice, job_offer, health, care_demand, options
+# ):
+#     age = period + options["start_age"]
+#     SRA_pol_state = options["min_SRA"]  # + policy_state  # * options["SRA_grid_size"]
+#     min_ret_age_pol_state = apply_retirement_constraint_for_SRA(SRA_pol_state, options)
+
+#     # if is_dead(health):
+#     #     return RETIREMENT
+#     # # Retirement is absorbing
+#     # elif is_retired(lagged_choice):
+#     #     return RETIREMENT
+#     # # Check if the person is not in the voluntary retirement range.
+#     # elif age < min_ret_age_pol_state:  # min_ret_age: 63
+#     #     if job_offer == 0:
+#     #         return UNEMPLOYED
+#     #     else:
+#     #         return WORK_AND_UNEMPLOYED
+#     # # Person must retire
+#     # elif age >= options["max_ret_age"]:
+#     #     return RETIREMENT
+#     # # Person is in the voluntary retirement range
+#     # else:
+#     #     if age >= SRA_pol_state:  # min_SRA: 65
+#     #         if job_offer == 0:
+#     #             return RETIREMENT  # Cannot choose unemployment after 65
+#     #         else:
+#     #             return WORK_AND_RETIREMENT
+#     #     else:
+#     #         if job_offer == 0:
+#     #             # Choose unemployment or retirement
+#     #             return NOT_WORKING
+#     #         else:
+#     #             return ALL
+#     if age < options["start_age_caregiving"]:
+#         if is_dead(health):
+#             return RETIREMENT_NO_CARE
+#         # Retirement is absorbing
+#         elif is_retired(lagged_choice):
+#             return RETIREMENT_NO_CARE
+#         # Check if the person is not in the voluntary retirement range.
+#         elif age < min_ret_age_pol_state:  # min_ret_age: 63
+#             if job_offer == 0:
+#                 return UNEMPLOYED_NO_CARE
+#             else:
+#                 return WORK_AND_UNEMPLOYED_NO_CARE
+#         # Person must retire
+#         elif age >= options["max_ret_age"]:
+#             return RETIREMENT_NO_CARE
+#         # Person is in the voluntary retirement range
+#         else:
+#             if age >= SRA_pol_state:  # min_SRA: 65
+#                 if job_offer == 0:
+#                     return RETIREMENT_NO_CARE  # Cannot choose unemployment after 65
+#                 else:
+#                     return WORK_AND_RETIREMENT_NO_CARE
+#             else:
+#                 if job_offer == 0:
+#                     # Choose unemployment or retirement
+#                     return NOT_WORKING_NO_CARE
+#                 else:
+#                     return ALL_NO_CARE
+
+#     elif (
+#         (age < options["start_age_caregiving"])
+#         | (care_demand == 0)
+#         | (age > options["end_age_msm"])
+#     ):
+#         if is_dead(health):
+#             return RETIREMENT_NO_CARE
+#         # Retirement is absorbing
+#         elif is_retired(lagged_choice):
+#             return RETIREMENT_NO_CARE
+#         # Check if the person is not in the voluntary retirement range.
+#         elif age < min_ret_age_pol_state:  # min_ret_age: 63
+#             if job_offer == 0:
+#                 return UNEMPLOYED_NO_CARE
+#             else:
+#                 return WORK_AND_UNEMPLOYED_NO_CARE
+#         # Person must retire
+#         elif age >= options["max_ret_age"]:
+#             return RETIREMENT_NO_CARE
+#         # Person is in the voluntary retirement range
+#         else:
+#             if age >= SRA_pol_state:  # min_SRA: 65
+#                 if job_offer == 0:
+#                     return RETIREMENT_NO_CARE  # Cannot choose unemployment after 65
+#                 else:
+#                     return WORK_AND_RETIREMENT_NO_CARE
+#             else:
+#                 if job_offer == 0:
+#                     # Choose unemployment or retirement
+#                     return NOT_WORKING_NO_CARE
+#                 else:
+#                     return ALL_NO_CARE
+#     elif (
+#         (care_demand == CARE_DEMAND_AND_OTHER_SUPPLY)
+#         & (age >= options["start_age_caregiving"])
+#         & (age <= options["end_age_msm"])
+#     ):
+#         # Other family member (also) provides care
+#         if is_dead(health):
+#             return RETIREMENT_NO_FORMAL_CARE
+#         # Retirement is absorbing
+#         elif is_retired(lagged_choice):
+#             return RETIREMENT_NO_FORMAL_CARE
+#         # Check if the person is not in the voluntary retirement range.
+#         elif age < min_ret_age_pol_state:
+#             if job_offer == 0:
+#                 return UNEMPLOYED_NO_FORMAL_CARE
+#             else:
+#                 return WORK_AND_UNEMPLOYED_NO_FORMAL_CARE
+#         # Person must retire
+#         elif age >= options["max_ret_age"]:
+#             return RETIREMENT_NO_FORMAL_CARE
+#         # Person is in the voluntary retirement range.
+#         else:
+#             if age >= SRA_pol_state:
+#                 if job_offer == 0:
+#                     return RETIREMENT_NO_FORMAL_CARE
+#                 else:
+#                     return WORK_AND_RETIREMENT_NO_FORMAL_CARE
+#             else:
+#                 if job_offer == 0:
+#                     # Choose unemployment or retirement
+#                     return NOT_WORKING_NO_FORMAL_CARE
+#                 else:
+#                     return ALL_NO_FORMAL_CARE
+#     # elif (care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY) & (
+#     #     age <= options["end_age_msm"]
+#     # ):  # & (age >= 40):
+#     #     # elif (care_demand > 0) & (age <= options["end_age_msm"]):  # & (age >= 40):
+#     #     # elif (care_demand == 1) & (care_supply == 0):  # & (age >= 40):
+#     #     # Care must be provided informally or organized formally
+#     #     if is_dead(health):
+#     #         return RETIREMENT_CARE
+#     #     # Retirement is absorbing
+#     #     elif is_retired(lagged_choice):
+#     #         return RETIREMENT_CARE
+#     #     # Check if the person is not in the voluntary retirement range.
+#     #     elif age < min_ret_age_pol_state:
+#     #         if job_offer == 0:
+#     #             return UNEMPLOYED_CARE
+#     #         else:
+#     #             return WORK_AND_UNEMPLOYED_CARE
+#     #     # Person must retire
+#     #     elif age >= options["max_ret_age"]:
+#     #         return RETIREMENT_CARE
+#     #     # Person is in the voluntary retirement range.
+#     #     else:
+#     #         if age >= SRA_pol_state:
+#     #             if job_offer == 0:
+#     #                 return RETIREMENT_CARE
+#     #             else:
+#     #                 return WORK_AND_RETIREMENT_CARE
+#     #         else:
+#     #             if job_offer == 0:
+#     #                 # Choose unemployment or retirement
+#     #                 return NOT_WORKING_CARE
+#     #             else:
+#     #                 return ALL_CARE
+#     elif (
+#         (care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
+#         & (age >= options["start_age_caregiving"])
+#         & (age <= options["end_age_msm"])
+#     ):  # & (age >= 40):
+#         # elif (care_demand > 0) & (age <= options["end_age_msm"]):  # & (age >= 40):
+#         # elif (care_demand == 1) & (care_supply == 0):  # & (age >= 40):
+#         # Care must be provided informally or organized formally
+#         if is_dead(health):
+#             return RETIREMENT
+#         # Retirement is absorbing
+#         elif is_retired(lagged_choice):
+#             return RETIREMENT
+#         # Check if the person is not in the voluntary retirement range.
+#         elif age < min_ret_age_pol_state:
+#             if job_offer == 0:
+#                 return UNEMPLOYED
+#             else:
+#                 return WORK_AND_UNEMPLOYED
+#         # Person must retire
+#         elif age >= options["max_ret_age"]:
+#             return RETIREMENT
+#         # Person is in the voluntary retirement range.
+#         else:
+#             if age >= SRA_pol_state:
+#                 if job_offer == 0:
+#                     return RETIREMENT
+#                 else:
+#                     return WORK_AND_RETIREMENT
+#             else:
+#                 if job_offer == 0:
+#                     # Choose unemployment or retirement
+#                     return NOT_WORKING
+#                 else:
+#                     return ALL
 
 
 # def get_next_period_experience(period, lagged_choice, experience, options):

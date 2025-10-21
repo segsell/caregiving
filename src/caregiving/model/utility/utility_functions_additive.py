@@ -384,10 +384,127 @@ def utility_func_alive_additive(
         jnp.log(consumption / cons_scale),
         utility_rho_not_one,
     )
-    return hh_size * utility + disutil_work  # + zeta * care_demand
+    return utility + disutil_work  # + zeta * care_demand
+    # return hh_size * utility + disutil_work  # + zeta * care_demand
 
 
 def marginal_utility_func_additive_alive(
+    consumption, partner_state, education, health, period, choice, params, options
+):
+
+    # rho = params["rho"]
+    rho = params["rho_low"] * (1 - education) + params["rho_high"] * education
+
+    cons_scale, hh_size = consumption_scale(
+        partner_state=partner_state,
+        # sex=sex,
+        education=education,
+        period=period,
+        options=options,
+    )
+
+    marg_util_rho_not_one = (consumption / cons_scale) ** (-rho) / cons_scale
+    marg_util = jax.lax.select(
+        jnp.allclose(rho, 1),
+        1.0 / consumption,
+        marg_util_rho_not_one,
+    )
+
+    return marg_util
+
+
+def inverse_marginal_additive(
+    marginal_utility,
+    partner_state,
+    education,
+    health,
+    period,
+    choice,
+    params,
+    options,
+):
+
+    # rho = params["rho"]
+    rho = params["rho_low"] * (1 - education) + params["rho_high"] * education
+
+    cons_scale, hh_size = consumption_scale(
+        partner_state=partner_state,
+        # sex=sex,
+        education=education,
+        period=period,
+        options=options,
+    )
+
+    # Solve m = (c/cons_scale)^(-rho) / cons_scale
+    # c = cons_scale * (m*cons_scale)^(-1/rho)
+    consumption_rho_not_one = cons_scale * (marginal_utility * cons_scale) ** (-1 / rho)
+    consumption = jax.lax.select(
+        jnp.allclose(rho, 1), 1.0 / marginal_utility, consumption_rho_not_one
+    )
+
+    return consumption
+
+
+def utility_func_alive_additive_hh_size(
+    consumption,
+    partner_state,
+    education,
+    health,
+    care_demand,
+    # mother_health,
+    period,
+    choice,
+    params,
+    options,
+):
+    """Calculate the choice specific cobb-douglas utility, i.e. u =
+    ((c*eta/consumption_scale)^(1-rho))/(1-rho) ."""
+    # gather params
+    # rho = params["rho"]
+    rho = params["rho_low"] * (1 - education) + params["rho_high"] * education
+
+    disutil_work = disutility_work(
+        period=period,
+        choice=choice,
+        # sex=sex,
+        education=education,
+        partner_state=partner_state,
+        health=health,
+        care_demand=care_demand,
+        params=params,
+        options=options,
+    )
+    cons_scale, hh_size = consumption_scale(
+        partner_state=partner_state,
+        # sex=sex,
+        education=education,
+        period=period,
+        options=options,
+    )
+
+    # zeta = utility_of_caregiving(
+    #     period,
+    #     choice,
+    #     education,
+    #     health=health,
+    #     care_demand=care_demand,
+    #     params=params,
+    #     options=options,
+    # )
+
+    # compute utility
+    scaled_consumption = consumption / cons_scale
+    utility_rho_not_one = (scaled_consumption ** (1 - rho) - 1) / (1 - rho)
+
+    utility = jax.lax.select(
+        jnp.allclose(rho, 1),
+        jnp.log(consumption / cons_scale),
+        utility_rho_not_one,
+    )
+    return hh_size * utility + disutil_work  # + zeta * care_demand
+
+
+def marginal_utility_func_additive_alive_hh_size(
     consumption, partner_state, education, health, period, choice, params, options
 ):
 
@@ -412,7 +529,7 @@ def marginal_utility_func_additive_alive(
     return marg_util
 
 
-def inverse_marginal_additive(
+def inverse_marginal_additive_hh_size(
     marginal_utility,
     partner_state,
     education,
