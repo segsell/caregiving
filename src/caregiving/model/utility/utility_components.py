@@ -37,6 +37,7 @@ from caregiving.model.utility.bequest_utility import (
 def disutility_work(
     period, choice, education, partner_state, health, care_demand, params, options
 ):
+    """Compute disutility of work."""
     # choice booleans
     retired = is_retired(choice)
     unemployed = is_unemployed(choice)
@@ -111,23 +112,21 @@ def disutility_work(
 
     disutil_ft_work_informal_care = (
         params["disutil_ft_work_high_bad_informal_care"] * bad_health * education
-        # + params["disutil_ft_work_low_bad_informal_care"] * bad_health *
-        # (1 - education)
+        + params["disutil_ft_work_low_bad_informal_care"] * bad_health * (1 - education)
         + params["disutil_ft_work_high_good_informal_care"] * good_health * education
-        # + params["disutil_ft_work_low_good_informal_care"]
-        # * good_health
-        # * (1 - education)
-        + params["disutil_ft_work_low_informal_care"] * (1 - education)
+        + params["disutil_ft_work_low_good_informal_care"]
+        * good_health
+        * (1 - education)
+        # + params["disutil_ft_work_low_informal_care"] * (1 - education)
     )
     disutil_pt_work_informal_care = (
         params["disutil_pt_work_high_bad_informal_care"] * bad_health * education
-        # + params["disutil_pt_work_low_bad_informal_care"] * bad_health *
-        #  (1 - education)
+        + params["disutil_pt_work_low_bad_informal_care"] * bad_health * (1 - education)
         + params["disutil_pt_work_high_good_informal_care"] * good_health * education
-        # + params["disutil_pt_work_low_good_informal_care"]
-        # * good_health
-        # * (1 - education)
-        + params["disutil_pt_work_low_informal_care"] * (1 - education)
+        + params["disutil_pt_work_low_good_informal_care"]
+        * good_health
+        * (1 - education)
+        # + params["disutil_pt_work_low_informal_care"] * (1 - education)
     )
     # disutil_ft_work_informal_care = params[
     #     "disutil_ft_work_high_informal_care"
@@ -194,6 +193,7 @@ def disutility_work(
 
 
 def consumption_scale(partner_state, education, period, options):
+    """Compute the household consumption scale."""
     has_partner = (partner_state > 0).astype(int)
     nb_children = options["children_by_state"][SEX, education, has_partner, period]
     hh_size = 1 + has_partner + nb_children
