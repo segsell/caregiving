@@ -7,10 +7,10 @@ from typing import Any, Dict
 import numpy as np
 import pandas as pd
 import yaml
-
-from caregiving.config import BLD
 from dcegm.pre_processing.setup_model import load_and_setup_model
 from dcegm.solve import get_solve_func_for_model
+
+from caregiving.config import BLD
 
 # Constants
 LARGE_VALUE_THRESHOLD = 1e10
