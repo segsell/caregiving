@@ -194,3 +194,4 @@ _backup_*/
 # Temporary test files
 tests/temp/
 tests/debug/
+tests/test_moments_shape_comparison.py
