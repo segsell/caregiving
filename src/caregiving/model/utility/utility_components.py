@@ -178,15 +178,15 @@ def disutility_work(
         -disutility_no_caregiving * (1 - informal_care)
         - disutility_informal_care * informal_care
         - partner_retired * retired * params["disutil_partner_retired"]
-        # + (care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
-        # * informal_care
-        # * params["util_informal_care"]
-        # + (care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
-        # * (1 - informal_care)
-        # * params["util_formal_care"]
-        # + (care_demand == CARE_DEMAND_AND_OTHER_SUPPLY)
-        # * informal_care
-        # * params["util_joint_informal_care"]
+        + (care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
+        * informal_care
+        * params["util_informal_care"]
+        + (care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
+        * (1 - informal_care)
+        * params["util_formal_care"]
+        + (care_demand == CARE_DEMAND_AND_OTHER_SUPPLY)
+        * informal_care
+        * params["util_joint_informal_care"]
     )
 
     return disutility
@@ -197,4 +197,4 @@ def consumption_scale(partner_state, education, period, options):
     has_partner = (partner_state > 0).astype(int)
     nb_children = options["children_by_state"][SEX, education, has_partner, period]
     hh_size = 1 + has_partner + nb_children
-    return jnp.sqrt(hh_size)
+    return jnp.sqrt(hh_size)  # , hh_size
