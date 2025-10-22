@@ -1,4 +1,4 @@
-"""Solve and simulate the model for start parameters."""
+"""Solve and simulate the model for estimated parameters."""
 
 import pickle
 from pathlib import Path
@@ -32,28 +32,31 @@ from dcegm.solve import get_solve_func_for_model
 jax.config.update("jax_enable_x64", True)
 
 
-def task_solve_and_simulate_start_params(
+def task_solve_and_simulate_estimated_params(
     path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
     path_to_options: Path = BLD / "model" / "options.pkl",
-    path_to_start_params: Path = BLD / "model" / "params" / "start_params_model.yaml",
+    path_to_estimated_params: Path = BLD
+    / "model"
+    / "params"
+    / "estimated_params_model.yaml",
     path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",
     path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
     path_to_save_solution: Annotated[Path, Product] = BLD
     / "solve_and_simulate"
-    / "solution.pkl",
+    / "solution_estimated_params.pkl",
     # path_to_save_simulation_model: Annotated[Path, Product] = BLD
     # / "model"
-    # / "model_for_simulation.pkl",
+    # / "model_for_simulation_estimated_params.pkl",
     path_to_save_simulated_data: Annotated[Path, Product] = BLD
     / "solve_and_simulate"
-    / "simulated_data.pkl",
+    / "simulated_data_estimated_params.pkl",
     # path_to_save_simulated_data_jax: Annotated[Path, Product] = BLD
     # / "solve_and_simulate"
-    # / "simulated_data_jax.pkl",
+    # / "simulated_data_jax_estimated_params.pkl",
 ) -> None:
 
     options = pickle.load(path_to_options.open("rb"))
-    params = yaml.safe_load(path_to_start_params.open("rb"))
+    params = yaml.safe_load(path_to_estimated_params.open("rb"))
 
     model_for_solution = load_and_setup_full_model_for_solution(
         options, path_to_model=path_to_solution_model

@@ -30,7 +30,9 @@ def task_compute_career_costs(
     # Baseline
     path_to_baseline_options: Path = BLD / "model" / "options.pkl",
     path_to_baseline_model: Path = BLD / "model" / "model_for_solution.pkl",
-    path_to_baseline_solution: Path = BLD / "solve_and_simulate" / "solution.pkl",
+    path_to_baseline_solution: Path = BLD
+    / "solve_and_simulate"
+    / "solution_estimated_params.pkl",
     path_to_baseline_initial_states: Path = BLD
     / "model"
     / "initial_conditions"
@@ -43,11 +45,14 @@ def task_compute_career_costs(
     / "model"
     / "params"
     / "start_params_model.yaml",
+    # / "estimated_params_model.yaml",
     # Counterfactual: no care demand
     path_to_no_care_demand_options: Path = BLD / "model" / "options_no_care_demand.pkl",
-    path_to_no_care_demand_params: Path = BLD / "model" / "params"
-    # / "start_params_model_no_care_demand.yaml",
-    / "params_estimated_no_care_demand.yaml",
+    path_to_no_care_demand_params: Path = BLD
+    / "model"
+    / "params"
+    / "start_params_model_no_care_demand.yaml",
+    # / "params_estimated_no_care_demand.yaml",
     path_to_no_care_demand_model: Path = BLD / "model" / "model_no_care_demand.pkl",
     path_to_no_care_demand_solution: Path = BLD
     / "solve_and_simulate"
@@ -69,6 +74,14 @@ def task_compute_career_costs(
     # path_to_career_costs: Annotated[Path, Product] = BLD
     # / "counterfactual"
     # / "career_costs.csv",
+    path_to_save_career_costs: Path = BLD
+    / "plots"
+    / "counterfactual"
+    / "career_costs.txt",
+    path_to_save_career_costs_mean: Path = BLD
+    / "plots"
+    / "counterfactual"
+    / "career_costs_mean.txt",
 ) -> None:
     """Compute career costs as NPV difference between baseline and counterfactual."""
 
@@ -141,8 +154,8 @@ def task_compute_career_costs(
     # Get agent IDs that have care_ever == 1 in baseline
     agents_with_care = (
         df_baseline_care_ever[df_baseline_care_ever["care_ever"] == 1]
-        .index.get_level_values("agent")
-        .unique()
+        # df_baseline_care_ever[df_baseline_care_ever["care_ever"] >= 0]
+        .index.get_level_values("agent").unique()
     )
 
     # Subset baseline data to only include agents who provided care
@@ -171,10 +184,13 @@ def task_compute_career_costs(
     #     - career_costs["career_npv_no_care_demand"]
     #     / career_costs["career_npv_baseline"]
     # )
-    _npv_care = 1 - no_care_demand_npv["career_npv"] / baseline_npv["career_npv"]
-    _npv_mean = (
+    npv_care = 1 - no_care_demand_npv["career_npv"] / baseline_npv["career_npv"]
+    npv_mean = (
         1 - no_care_demand_npv["career_npv"].mean() / baseline_npv["career_npv"].mean()
     )
+
+    np.savetxt(path_to_save_career_costs, [npv_care.mean()], delimiter=",")
+    np.savetxt(path_to_save_career_costs_mean, [npv_mean], delimiter=",")
 
 
 def compute_career_npv(df: pd.DataFrame, beta: float) -> pd.DataFrame:
