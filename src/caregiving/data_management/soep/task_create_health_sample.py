@@ -115,6 +115,10 @@ def task_create_nursing_home_sample(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_raw_data: Path = BLD / "data" / "soep_health_data_raw.csv",
     path_to_save: Annotated[Path, Product] = BLD / "data" / "nursing_home_sample.pkl",
+    path_to_save_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "stochastic_processes"
+    / "nursing_home_sample_plot.png",
 ):
 
     _specs = read_and_derive_specs(path_to_specs)
@@ -197,4 +201,6 @@ def task_create_nursing_home_sample(
     plt.title("Logit Predictions: All vs. Bad Health")
     plt.grid(True)
     plt.legend()
-    plt.show()
+
+    plt.savefig(path_to_save_plot, dpi=300)
+    plt.close()

@@ -9,6 +9,7 @@ import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pytask
 from matplotlib import colors as mcolors
 from pytask import Product
 
@@ -39,6 +40,7 @@ from caregiving.utils import table
 DEGREES_OF_FREEDOM = 1
 
 
+@pytask.mark.emp_moms
 def task_plot_empirical_soep_moments(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_soep_moments: Path = BLD / "moments" / "soep_moments_new.csv",
