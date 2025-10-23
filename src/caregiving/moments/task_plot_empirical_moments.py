@@ -111,7 +111,11 @@ def task_plot_empirical_soep_moments(
 
     df_full = pd.read_csv(path_to_main_sample, index_col=[0])
     df = df_full[
-        (df_full["sex"] == 1) & (df_full["age"] <= end_age + 10)
+        (df_full["gebjahr"] >= specs["min_birth_year"])
+        & (df_full["gebjahr"] <= 1975)
+        & (df_full["syear"] < 2020)
+        & (df_full["sex"] == 1)
+        & (df_full["age"] <= end_age + 10)
     ].copy()  # women only
 
     df_non_caregivers = df[df["any_care"] == 0].copy()
@@ -121,7 +125,10 @@ def task_plot_empirical_soep_moments(
 
     df_caregivers = pd.read_csv(path_to_caregivers_sample, index_col=[0])
     df_caregivers = df_caregivers[
-        (df_caregivers["sex"] == 1)
+        (df_caregivers["gebjahr"] >= specs["min_birth_year"])
+        & (df_caregivers["gebjahr"] <= 1975)
+        & (df_caregivers["syear"] < 2020)
+        & (df_caregivers["sex"] == 1)
         & (df_caregivers["age"] <= end_age + 10)
         & (df_caregivers["any_care"] == 1)
     ]

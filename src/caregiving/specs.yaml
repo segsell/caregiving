@@ -74,18 +74,22 @@ monthly_pension_point_value_east_2010: 24.13
 # quadratic_income_tax_rates: [0.0, 972.87, 212.02]
 # intercepts_income_tax: [0.0, 0.0, 972.79, -8963.74, -17078.74]
 
-# # Tax system from https://esth.bundesfinanzministerium.de/esth/2016
-# # /A-Einkommensteuergesetz/IV-Tarif/Paragraf-32a/inhalt.html
-# income_tax_brackets = [0.0, 8652, 13669, 53665, 254446]
-# linear_income_tax_rates = [0.0, 1400, 2397, 0.42, 0.45]
-# quadratic_income_tax_rates = [0.0, 993.62, 225.40]
-# intercepts_income_tax = [0.0, 0.0, 952.48, -8394.14, -16027.52]
-
-# https://www.lohn-info.de/einkommensteuertarif_2015.html?utm_source=chatgpt.com
-income_tax_brackets: [0.0, 8472, 13469, 52881, 250730]
+# Tax system from https://esth.bundesfinanzministerium.de/esth/2016
+# /A-Einkommensteuergesetz/IV-Tarif/Paragraf-32a/inhalt.html
+income_tax_brackets: [0.0, 8652, 13669, 53665, 254446]
 linear_income_tax_rates: [0.0, 1400, 2397, 0.42, 0.45]
-quadratic_income_tax_rates: [0.0, 997.6, 228.74]
-intercepts_income_tax: [0.0, 0.0, 948.68, -8261.29, -15783.19]
+quadratic_income_tax_rates: [0.0, 993.62, 225.40]
+intercepts_income_tax: [0.0, 0.0, 952.48, -8394.14, -16027.52]
+
+# # 2010
+# # https://www.bundesfinanzministerium.de/Datenportal/Daten/offene-daten/steuern-zoelle/
+# # Datensammlung-zur-Steuerpolitik-2023/datensaetze/PDF-Datensammlung-zur-Steuerpolitik.pdf
+# # page 31
+# income_tax_brackets: [0.0, 8004, 13469, 52881, 250730]
+# linear_income_tax_rates: [0.0, 1400, 2397, 0.42, 0.45]
+# quadratic_income_tax_rates: [0.0, 912.17, 228.74]
+# intercepts_income_tax: [0.0, 0.0, 1038.00, -8172.00, -15694.00]
+
 
 ###############################################################################
 # Data preparation
