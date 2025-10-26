@@ -77,19 +77,22 @@ def task_specify_model(
             "n_periods": n_periods,
             "choices": choices,
             "endogenous_states": {
-                "education": np.arange(specs["n_education_types"], dtype=int),
+                # "education": np.arange(specs["n_education_types"], dtype=int),
                 "already_retired": np.arange(2, dtype=int),
-                "has_sister": np.arange(2, dtype=int),
+                # "has_sister": np.arange(2, dtype=int),
+                "education": [0],
+                "has_sister": [0],
+                "partner_state": [0],
             },
             "exogenous_processes": {
                 "job_offer": {
                     "transition": job_offer_process_transition,
                     "states": np.arange(2, dtype=int),
                 },
-                "partner_state": {
-                    "transition": partner_transition,
-                    "states": np.arange(specs["n_partner_states"], dtype=int),
-                },
+                # "partner_state": {
+                #     "transition": partner_transition,
+                #     "states": np.arange(specs["n_partner_states"], dtype=int),
+                # },
                 "health": {
                     "transition": health_transition,
                     "states": np.arange(specs["n_health_states"], dtype=int),

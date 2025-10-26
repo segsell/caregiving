@@ -354,15 +354,18 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
 
     states = {
         "period": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
-        "education": jnp.array(education_agents, dtype=jnp.uint8),
+        # "education": jnp.array(education_agents, dtype=jnp.uint8),
+        # "partner_state": jnp.array(partner_states, dtype=jnp.uint8),
+        # "has_sister": jnp.array(has_sister_agents, dtype=jnp.uint8),
+        "education": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
+        "partner_state": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
+        "has_sister": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
+        #
         "health": jnp.array(health_agents, dtype=jnp.uint8),
         "lagged_choice": jnp.array(lagged_choice_model, dtype=jnp.uint8),
-        # "policy_state": jnp.array(drawn_sras, dtype=jnp.uint8),
         "already_retired": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
         "experience": jnp.array(exp_agents, dtype=jnp.float64),
         "job_offer": jnp.array(job_offer_agents, dtype=jnp.uint8),
-        "partner_state": jnp.array(partner_states, dtype=jnp.uint8),
-        "has_sister": jnp.array(has_sister_agents, dtype=jnp.uint8),
         "mother_health": jnp.array(mother_health_agents, dtype=jnp.uint8),
         "care_demand": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
     }

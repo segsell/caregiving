@@ -56,7 +56,9 @@ def plot_wealth_by_age_and_education(
     stat_name = "Median" if median else "Average"
 
     n_edu = len(specs["education_labels"])
-    fig, axs = plt.subplots(1, n_edu, figsize=(5 * n_edu, 4), sharex=True, sharey=True)
+    # Ensure minimum figure width for single education case
+    fig_width = max(5 * n_edu, 6)
+    fig, axs = plt.subplots(1, n_edu, figsize=(fig_width, 4), sharex=True, sharey=True)
     if n_edu == 1:
         axs = np.array([axs])
 
@@ -116,10 +118,11 @@ def plot_wealth_by_age_and_education(
         for ax in axs:
             ax.set_ylim(ymin - pad, ymax + pad)
 
-    # ---------- 3. Add left y-axis to right panel too ----------
-    axs[-1].yaxis.set_ticks_position("left")
-    axs[-1].yaxis.set_label_position("left")
-    axs[-1].set_ylabel(f"{stat_name} wealth")
+    # ---------- 3. Add left y-axis to right panel too (only if multiple panels) ----------
+    if n_edu > 1:
+        axs[-1].yaxis.set_ticks_position("left")
+        axs[-1].yaxis.set_label_position("left")
+        axs[-1].set_ylabel(f"{stat_name} wealth")
 
     plt.tight_layout()
 
@@ -345,6 +348,11 @@ def plot_choice_shares_by_education(
     # n_choices = sum(arr.size for arr in choice_groups_sim.values())
     n_choices = len(specs["choice_labels"])
     fig, axs = plt.subplots(n_edu, n_choices, figsize=(16, 6), sharex=True, sharey=True)
+    # Ensure axs is always 2D for consistent indexing
+    if n_edu == 1:
+        axs = axs.reshape(1, -1)
+    elif n_choices == 1:
+        axs = axs.reshape(-1, 1)
 
     # ---------- 3. Loop over education groups ------------------------------
     for edu_var, edu_label in enumerate(specs["education_labels"]):

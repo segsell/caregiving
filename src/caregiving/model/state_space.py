@@ -215,22 +215,22 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "job_offer": 0,
             }
             return state_proxy
-        elif age > options["max_ret_age"] + 1:
-            # If age is larger than max_ret_age + 1, the individual can only be
-            # longer retired.
-            state_proxy = {
-                "period": period,
-                "lagged_choice": lagged_choice,
-                "already_retired": already_retired,
-                "education": education,
-                "has_sister": has_sister,
-                "health": health,
-                "partner_state": partner_state,
-                "mother_health": mother_health,
-                "care_demand": care_demand,
-                "job_offer": 0,
-            }
-            return state_proxy
+        # elif age > options["max_ret_age"] + 1:
+        #     # If age is larger than max_ret_age + 1, the individual can only be
+        #     # longer retired.
+        #     state_proxy = {
+        #         "period": period,
+        #         "lagged_choice": lagged_choice,
+        #         "already_retired": already_retired,
+        #         "education": education,
+        #         "has_sister": has_sister,
+        #         "health": health,
+        #         "partner_state": partner_state,
+        #         "mother_health": mother_health,
+        #         "care_demand": care_demand,
+        #         "job_offer": 0,
+        #     }
+        #     return state_proxy
         elif age > options["end_age_msm"] + 1:
             # If age is larger than max_ret_age + 1, the individual can only be
             # longer retired.
@@ -317,7 +317,8 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912
     SRA_pol_state = options["min_SRA"]
     # min_ret_age_pol_state = apply_retirement_constraint_for_SRA(SRA_pol_state, options)
 
-    if care_demand == 0:
+    # if care_demand == 0:
+    if (care_demand == 0) | (age > options["end_age_msm"]):
         if is_dead(health):
             return RETIREMENT_NO_CARE
         # Retirement is absorbing
@@ -346,12 +347,11 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912
                     return NOT_WORKING_NO_CARE
                 else:
                     return ALL_NO_CARE
-    elif age > options["end_age_msm"]:
-        return RETIREMENT_NO_CARE
-    elif care_demand == CARE_DEMAND_AND_OTHER_SUPPLY:
-        # & (
-        #     age <= options["end_age_msm"]
-        # ):
+    # elif age > options["end_age_msm"]:
+    #     return RETIREMENT_NO_CARE
+    elif (care_demand == CARE_DEMAND_AND_OTHER_SUPPLY) & (
+        age <= options["end_age_msm"]
+    ):
         # & ( care_supply == 1):  # & (age >= 40):
         # Other family member (also) provides care
         if is_dead(health):
@@ -381,7 +381,9 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912
                     return NOT_WORKING_NO_FORMAL_CARE
                 else:
                     return ALL_NO_FORMAL_CARE
-    elif care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY:
+    elif (care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY) & (
+        age <= options["end_age_msm"]
+    ):
         # Care must be provided informally or organized formally
         if is_dead(health):
             return RETIREMENT

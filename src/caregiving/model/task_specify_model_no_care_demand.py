@@ -30,7 +30,10 @@ from caregiving.model.wealth_and_budget.budget_equation_no_care_demand import (
 )
 from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
 
+import pytask
 
+
+@pytask.mark.skip()
 def task_specify_model_no_care_demand(
     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_start_params: Path = BLD

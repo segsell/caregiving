@@ -134,6 +134,7 @@ def task_plot_model_fit(  # noqa: PLR0915
         options, path_to_model=path_to_solution_model
     )
     specs = model_full["options"]["model_params"]
+    specs["education_labels"] = ["Low Education"]
 
     emp_moms = pd.read_csv(path_to_empirical_moments, index_col=[0]).squeeze("columns")
 
