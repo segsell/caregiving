@@ -22,14 +22,14 @@ from caregiving.specs.derive_specs import read_and_derive_specs
 def task_estimate_wage_parameters(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_data: Path = BLD / "data" / "soep_wage_data.csv",
-    path_to_save_plot_men: Annotated[Path, Product] = BLD
-    / "plots"
-    / "stochastic_processes"
-    / "wages_men.png",
-    path_to_save_plot_women: Annotated[Path, Product] = BLD
-    / "plots"
-    / "stochastic_processes"
-    / "wages_women.png",
+    # path_to_save_plot_men: Annotated[Path, Product] = BLD
+    # / "plots"
+    # / "stochastic_processes"
+    # / "wages_men.png",
+    # path_to_save_plot_women: Annotated[Path, Product] = BLD
+    # / "plots"
+    # / "stochastic_processes"
+    # / "wages_women.png",
     path_to_save_wage_params: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"

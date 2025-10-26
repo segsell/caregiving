@@ -9,6 +9,7 @@ import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pytask
 from matplotlib import colors as mcolors
 from pytask import Product
 
@@ -39,6 +40,7 @@ from caregiving.utils import table
 DEGREES_OF_FREEDOM = 1
 
 
+@pytask.mark.emp_moms
 def task_plot_empirical_soep_moments(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_soep_moments: Path = BLD / "moments" / "soep_moments_new.csv",
@@ -109,7 +111,11 @@ def task_plot_empirical_soep_moments(
 
     df_full = pd.read_csv(path_to_main_sample, index_col=[0])
     df = df_full[
-        (df_full["sex"] == 1) & (df_full["age"] <= end_age + 10)
+        (df_full["gebjahr"] >= specs["min_birth_year"])
+        & (df_full["gebjahr"] <= specs["max_birth_year"])
+        & (df_full["syear"] <= specs["end_year"])
+        & (df_full["sex"] == 1)
+        & (df_full["age"] <= end_age + 10)
     ].copy()  # women only
 
     df_non_caregivers = df[df["any_care"] == 0].copy()
@@ -119,7 +125,10 @@ def task_plot_empirical_soep_moments(
 
     df_caregivers = pd.read_csv(path_to_caregivers_sample, index_col=[0])
     df_caregivers = df_caregivers[
-        (df_caregivers["sex"] == 1)
+        (df_caregivers["gebjahr"] >= specs["min_birth_year"])
+        & (df_caregivers["gebjahr"] <= specs["max_birth_year"])
+        & (df_caregivers["syear"] <= specs["end_year"])
+        & (df_caregivers["sex"] == 1)
         & (df_caregivers["age"] <= end_age + 10)
         & (df_caregivers["any_care"] == 1)
     ]

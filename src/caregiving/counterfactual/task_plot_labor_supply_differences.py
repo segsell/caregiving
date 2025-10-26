@@ -14,7 +14,7 @@ import pytask
 from pytask import Product
 
 from caregiving.config import BLD
-from caregiving.model.shared import FULL_TIME, PART_TIME, SEX, WORK
+from caregiving.model.shared import DEAD, FULL_TIME, INFORMAL_CARE, PART_TIME, SEX, WORK
 from caregiving.model.shared_no_care_demand import (
     FULL_TIME_NO_CARE_DEMAND,
     PART_TIME_NO_CARE_DEMAND,
@@ -23,7 +23,9 @@ from caregiving.model.shared_no_care_demand import (
 
 
 def task_plot_labor_supply_differences(
-    path_to_original_data: Path = BLD / "solve_and_simulate" / "simulated_data.pkl",
+    path_to_original_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params.pkl",
     path_to_no_care_demand_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_no_care_demand.pkl",
@@ -59,7 +61,7 @@ def compute_labor_supply_shares_by_age(
     """Compute labor supply shares by age - corrected version."""
 
     # Select only the columns we need to minimize memory usage
-    subset_df = df[["choice", "age"]].copy()
+    subset_df = df.loc[df["health"] != DEAD, ["choice", "age"]].copy()
 
     if is_original:
         work_choices = np.asarray(WORK).ravel().tolist()
@@ -117,40 +119,35 @@ def create_labor_supply_difference_plot(
 ) -> None:
     """Create plot showing labor supply differences by age."""
 
-    # Create figure with subplots (single row since only women)
-    fig, axes = plt.subplots(1, 2, figsize=(15, 6))
-    fig.suptitle(
-        "Labor Supply Differences by Age: No Care Demand vs Original (Women)",
-        fontsize=16,
-    )
+    # Create figure with subplots (single row, 2 columns)
+    fig, axes = plt.subplots(1, 2, figsize=(12, 6), sharex=True, sharey=True)
 
     # Plot 1: Working (any employment)
-    axes[0].plot(differences["age"], differences["working_diff"], "b-", linewidth=2)
+    axes[0].plot(differences["age"], differences["working_diff"], label="Working")
     axes[0].axhline(y=0, color="k", linestyle="--", alpha=0.5)
     axes[0].set_title("Working Rate Difference")
     axes[0].set_ylabel("Difference (No Care - Original)")
-    axes[0].grid(True, alpha=0.3)
+    axes[0].set_xlabel("Age")
+    axes[0].legend()
+    axes[0].grid(True, alpha=0.2)
 
     # Plot 2: Part-time vs Full-time
     axes[1].plot(
         differences["age"],
         differences["part_time_diff"],
-        "g-",
-        linewidth=2,
         label="Part-time",
     )
     axes[1].plot(
         differences["age"],
         differences["full_time_diff"],
-        "r-",
-        linewidth=2,
         label="Full-time",
     )
     axes[1].axhline(y=0, color="k", linestyle="--", alpha=0.5)
     axes[1].set_title("Part-time vs Full-time Differences")
     axes[1].set_ylabel("Difference (No Care - Original)")
+    axes[1].set_xlabel("Age")
     axes[1].legend()
-    axes[1].grid(True, alpha=0.3)
+    axes[1].grid(True, alpha=0.2)
 
     # Calculate common y-axis range for both plots
     working_diff = differences["working_diff"].values
@@ -162,23 +159,89 @@ def create_labor_supply_difference_plot(
     common_min = np.min(all_values)
     common_max = np.max(all_values)
 
-    # Add padding
+    # Add padding (5% of range, consistent with repository style)
     common_range = common_max - common_min
-    padding = common_range * 0.1
+    padding = 0.05 * common_range
     common_y_min = common_min - padding
     common_y_max = common_max + padding
 
-    # Set x-axis properties and common y-axis range
-    axes[0].set_xlabel("Age")
-    axes[0].set_xlim(30, 80)
-    axes[0].set_ylim(common_y_min, common_y_max)
-
-    axes[1].set_xlabel("Age")
-    axes[1].set_xlim(30, 80)
-    axes[1].set_ylim(common_y_min, common_y_max)
+    # Set common y-axis range and x-axis limits
+    for ax in axes:
+        ax.set_ylim(common_y_min, common_y_max)
+        ax.set_xlim(30, 80)
 
     plt.tight_layout()
-    plt.savefig(path_to_plot, dpi=300, bbox_inches="tight")
+    plt.savefig(path_to_plot, dpi=300, transparent=False)
     plt.close()
 
     print(f"Labor supply difference plot saved to: {path_to_plot}")
+
+
+def task_plot_labor_supply_differences_care_providers(
+    path_to_original_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params.pkl",
+    path_to_no_care_demand_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_no_care_demand.pkl",
+    path_to_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "labor_supply_differences_care_providers_by_age.png",
+) -> None:
+    """Plot labor supply differences by age for care providers only."""
+
+    # Load data
+    df_original = pd.read_pickle(path_to_original_data)
+    df_no_care_demand = pd.read_pickle(path_to_no_care_demand_data)
+
+    # Create care flags for original data to identify care providers
+    df_original_with_care_flags = create_care_flags(df_original)
+
+    # Get agent IDs that have care_ever == 1 in baseline
+    agents_with_care = (
+        df_original_with_care_flags[df_original_with_care_flags["care_ever"] == 1]
+        .index.get_level_values("agent")
+        .unique()
+    )
+
+    # Subset original data to only include agents who provided care
+    df_original_care_providers = df_original_with_care_flags[
+        df_original_with_care_flags.index.get_level_values("agent").isin(
+            agents_with_care
+        )
+    ]
+
+    # Subset no-care-demand data to only include agents who provided care in baseline
+    df_no_care_demand_care_providers = df_no_care_demand[
+        df_no_care_demand.index.get_level_values("agent").isin(agents_with_care)
+    ]
+
+    # Compute labor supply shares by age for both scenarios (care providers only)
+    original_shares = compute_labor_supply_shares_by_age(
+        df_original_care_providers, is_original=True
+    )
+    no_care_demand_shares = compute_labor_supply_shares_by_age(
+        df_no_care_demand_care_providers, is_original=False
+    )
+
+    # Compute differences
+    differences = compute_labor_supply_differences(
+        original_shares, no_care_demand_shares
+    )
+
+    # Create plot
+    create_labor_supply_difference_plot(differences, path_to_plot)
+
+
+def create_care_flags(df: pd.DataFrame) -> pd.DataFrame:
+    """Create care ever and sum care variables."""
+    # Caregiving
+    df["informal_care"] = df["choice"].isin(np.asarray(INFORMAL_CARE).ravel().tolist())
+
+    # Care ever - use MultiIndex level for grouping
+    df["care_ever"] = df.groupby(level="agent")["informal_care"].transform(
+        lambda x: x.cumsum().clip(upper=1)
+    )
+
+    return df

@@ -141,12 +141,12 @@ INITIAL_CONDITIONS_COHORT_HIGH = 1960
 INITIAL_CONDITIONS_AGE_LOW = 50
 INITIAL_CONDITIONS_AGE_HIGH = 60
 
-SCALE_CAREGIVER_SHARE = 1.0
 
 END_YEAR_PARENT_GENERATION = 1960
 
 WEALTH_QUANTILE_CUTOFF = 0.98
 WEALTH_MOMENTS_SCALE = 0.01  # to rescale wealth moments
+SCALE_CAREGIVER_SHARE = 10.0  # to rescale caregiver share moments
 
 
 # ==============================================================================

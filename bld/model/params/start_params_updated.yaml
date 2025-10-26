@@ -29,11 +29,11 @@ disutil_unemployed_high_women: 0.2
 disutil_unemployed_high_women_informal_care: 0.1
 disutil_unemployed_low_women: 0.2
 disutil_unemployed_low_women_informal_care: 0.1
-job_finding_logit_age_cubed_women: -3.162982266453729e-05
-job_finding_logit_age_squared_women: 0.0016012387939461
-job_finding_logit_age_women: 0.0065131540323549
-job_finding_logit_const_women: -2.03524742129707
-job_finding_logit_high_educ_women: 0.6955095961575429
+job_finding_logit_age_cubed_women: -0.0001150008171561
+job_finding_logit_age_squared_women: 0.0126484121661629
+job_finding_logit_age_women: -0.4742441374435048
+job_finding_logit_const_women: 4.801575851375413
+job_finding_logit_high_educ_women: 0.5643629493882861
 lambda: 0.5
 rho_bequest_high: 1.5
 rho_bequest_low: 1.5
