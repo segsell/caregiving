@@ -12,14 +12,14 @@ from caregiving.config import BLD
 from caregiving.model.shared import DEAD
 
 
-def task_plot_care_demand_by_age(
+def task_plot_simulated_care_demand_by_age(
     path_to_simulated_data: Path = BLD / "solve_and_simulate"
     # / "simulated_data.pkl",
     / "simulated_data_estimated_params.pkl",
     path_to_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "care_demand_by_age.png",
+    / "simulated_care_demand_by_age.png",
     has_sister: bool = True,
     education: bool = True,
 ) -> None:

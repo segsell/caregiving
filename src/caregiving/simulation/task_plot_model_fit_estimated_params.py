@@ -147,6 +147,7 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
     df_caregivers = pd.read_csv(path_to_caregivers_sample, index_col=[0])
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
     df_sim["sex"] = SEX
+    df_sim = df_sim[df_sim["health"] != DEAD].copy()
 
     # Subsets empirical
     df_emp_caregivers = df_caregivers.loc[df_caregivers["any_care"] == 1].copy()

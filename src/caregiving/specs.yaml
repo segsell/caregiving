@@ -96,8 +96,8 @@ intercepts_income_tax: [0.0, 0.0, 1038.00, -8172.00, -15694.00]
 ###############################################################################
 # start_year: 2001 # start year of estimation sample
 # end_year: 2019 # end year of estimation sample
-start_year: 2010 # start year of estimation sample
-end_year: 2017 # end year of estimation sample
+start_year: 2001 # start year of estimation sample
+end_year: 2019 # end year of estimation sample
 reference_year: 2010  # reference year for monetary values, taxes, etc.
 ###############################################
 # Wage process estimation (uses same start and end year)
@@ -114,7 +114,7 @@ first_cdf_point: 67.5
 second_cdf_point: 68.5
 # cohorts for which process parameters are estimated
 min_birth_year: 1947
-max_birth_year: 2000
+max_birth_year: 1975
 ###############################################
 # Health process estimation parameters
 # smoothing bandwidth for weighted moving average (half of age range used to smooth)

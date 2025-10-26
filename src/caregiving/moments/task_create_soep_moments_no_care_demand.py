@@ -73,8 +73,8 @@ def task_create_soep_moments_no_care_demand(  # noqa: PLR0915
     df_full = pd.read_csv(path_to_main_sample, index_col=[0])
     df = df_full[
         (df_full["gebjahr"] >= specs["min_birth_year"])
-        & (df_full["gebjahr"] <= 1975)
-        & (df_full["syear"] < 2020)
+        & (df_full["gebjahr"] <= specs["max_birth_year"])
+        & (df_full["syear"] <= specs["end_year"])
         & (df_full["sex"] == 1)
         & (df_full["age"] <= end_age + 10)
         & (df_full["any_care"] == 0)

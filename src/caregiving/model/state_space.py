@@ -382,11 +382,6 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912
                 else:
                     return ALL_NO_FORMAL_CARE
     elif care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY:
-        # & (
-        #     age <= options["end_age_msm"]
-        # ):  # & (age >= 40):
-        # elif (care_demand > 0) & (age <= options["end_age_msm"]):  # & (age >= 40):
-        # elif (care_demand == 1) & (care_supply == 0):  # & (age >= 40):
         # Care must be provided informally or organized formally
         if is_dead(health):
             return RETIREMENT
