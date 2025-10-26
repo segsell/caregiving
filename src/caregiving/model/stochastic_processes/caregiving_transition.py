@@ -44,7 +44,7 @@ def care_demand_and_supply_transition(
         * (mother_health != PARENT_DEAD)
         * (period >= START_PERIOD_CAREGIVING - 1)
         * (period < end_age_caregiving)
-    ) * SCALE_DOWN_DEMAND
+    )  # * SCALE_DOWN_DEMAND
 
     prob_vector = jnp.array(
         [

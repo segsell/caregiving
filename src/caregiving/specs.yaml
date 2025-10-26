@@ -32,15 +32,15 @@ partner_labels: ["Single","Working Partner", "Retired Partner"]
 SRA_grid_size: 1 # 0.25
 min_SRA_baseline: 67
 min_SRA: 65
-max_SRA: 72
+# max_SRA: 72
 max_SRA_baseline: 67
 resolution_age: 63
 informed_threshhold: 5
-
+#
 # Retirement parameters
 ret_years_before_SRA: 4
 min_ret_age: 63
-max_ret_age: 72
+max_ret_age: 67
 # Maximum age to estimate labor market
 max_est_age_labor: 65
 # Assume that part time gives half a year of experience

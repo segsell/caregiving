@@ -226,11 +226,27 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "has_sister": has_sister,
                 "health": health,
                 "partner_state": partner_state,
-                "mother_health": PARENT_DEAD,
-                "care_demand": 0,
+                "mother_health": mother_health,
+                "care_demand": care_demand,
                 "job_offer": 0,
             }
             return state_proxy
+        # elif age > options["end_age_msm"] + 1:
+        #     # If age is larger than max_ret_age + 1, the individual can only be
+        #     # longer retired.
+        #     state_proxy = {
+        #         "period": period,
+        #         "lagged_choice": lagged_choice,
+        #         "already_retired": already_retired,
+        #         "education": education,
+        #         "has_sister": has_sister,
+        #         "health": health,
+        #         "partner_state": partner_state,
+        #         "mother_health": PARENT_DEAD,
+        #         "care_demand": 0,
+        #         "job_offer": 0,
+        #     }
+        #     return state_proxy
         # elif period < 10:
         #     # If agent before age 40, no care demand and supply
         #     state_proxy = {
