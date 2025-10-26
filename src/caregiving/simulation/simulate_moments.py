@@ -380,6 +380,82 @@ def simulate_moments_pandas(  # noqa: PLR0915
 
 def create_labor_share_moments_pandas(df, moments, age_range, label=None):
     """
+    Create a Pandas Series of simulation moments using an optimized method.
+
+    This function computes age-specific shares by creating choice groups and using value_counts(normalize=True),
+    which is the same method used in the plotting functions for consistency. This version is optimized for
+    performance while maintaining correctness.
+
+    Assumes that the DataFrame `df` contains at least the following columns:
+      - age
+      - choice
+
+    Parameters:
+        df (pd.DataFrame): The simulation DataFrame.
+        moments (dict): Dictionary to store the computed moments.
+        age_range (range): The age range for computing age-specific shares.
+        label (str, optional): Label to append to moment names.
+
+    Returns:
+        dict: Updated moments dictionary with computed labor share moments.
+    """
+
+    if label is None:
+        label = ""
+    else:
+        label = "_" + label
+
+    # Create choice groups mapping
+    choice_groups = {
+        0: RETIREMENT,
+        1: UNEMPLOYED,
+        2: PART_TIME,
+        3: FULL_TIME,
+    }
+
+    # OPTIMIZATION 1: Use vectorized mapping instead of loops
+    choice_group_map = {}
+    for agg_code, raw_codes in choice_groups.items():
+        for code in raw_codes:
+            choice_group_map[code] = agg_code
+
+    # OPTIMIZATION 2: Use map() instead of copy + multiple loc operations
+    df_copy = df.copy()
+    df_copy["choice_group"] = (
+        df_copy["choice"].map(choice_group_map).fillna(0).astype(int)
+    )
+
+    # OPTIMIZATION 3: Single groupby operation
+    shares_by_age = (
+        df_copy.groupby("age")["choice_group"]
+        .value_counts(normalize=True)
+        .unstack(fill_value=0)
+    )
+
+    # OPTIMIZATION 4: Vectorized reindexing
+    shares_by_age = shares_by_age.reindex(age_range, fill_value=0)
+
+    # OPTIMIZATION 5: Vectorized dictionary population
+    choice_labels = ["retired", "unemployed", "part_time", "full_time"]
+
+    # Create all moment names and values at once
+    moment_data = []
+    for choice_var, choice_label in enumerate(choice_labels):
+        for age in age_range:
+            if choice_var in shares_by_age.columns:
+                value = shares_by_age.loc[age, choice_var]
+            else:
+                value = 0.0
+            moment_data.append((f"share_{choice_label}{label}_age_{age}", value))
+
+    # OPTIMIZATION 6: Bulk dictionary update
+    moments.update(dict(moment_data))
+
+    return moments
+
+
+def create_labor_share_moments_pandas_backup(df, moments, age_range, label=None):
+    """
     Create a Pandas Series of simulation moments using the same method as plot_choice_shares_by_education.
 
     This function computes age-specific shares by creating choice groups and using value_counts(normalize=True),
