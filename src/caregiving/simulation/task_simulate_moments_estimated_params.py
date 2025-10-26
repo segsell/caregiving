@@ -1,4 +1,4 @@
-"""Simulate moments of the model ."""
+"""Simulate moments of the model using estimated parameters."""
 
 import pickle
 from pathlib import Path
@@ -31,39 +31,34 @@ from caregiving.specs.task_write_specs import read_and_derive_specs
 jax.config.update("jax_enable_x64", True)
 
 
-@pytask.mark.sim
-def task_simulate_moments(
+@pytask.mark.sim_estimated_params
+def task_simulate_moments_estimated_params(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_options: Path = BLD / "model" / "options.pkl",
     path_to_empirical_moments: Path = BLD / "moments" / "moments_full.csv",
-    path_to_simulated_data: Path = BLD / "solve_and_simulate" / "simulated_data.pkl",
+    path_to_simulated_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params.pkl",
     path_to_save_pandas_moments: Annotated[Path, Product] = BLD
     / "moments"
-    / "simulated_moments_pandas.csv",
+    / "simulated_moments_pandas_estimated_params.csv",
     path_to_save_jax_moments: Annotated[Path, Product] = BLD
     / "moments"
-    / "simulated_moments_jax.csv",
+    / "simulated_moments_jax_estimated_params.csv",
     path_to_save_labor_shares_pandas: Annotated[Path, Product] = BLD
     / "plots"
     / "model_fit"
-    / "simulated_labor_shares_pandas.png",
+    / "simulated_labor_shares_pandas_estimated_params.png",
     path_to_save_labor_shares_jax: Annotated[Path, Product] = BLD
     / "plots"
     / "model_fit"
-    / "simulated_labor_shares_jax.png",
-    path_to_save_labor_shares_with_caregivers_pandas: Annotated[Path, Product] = BLD
-    / "plots"
-    / "model_fit"
-    / "simulated_labor_shares_with_caregivers_pandas.png",
-    path_to_save_labor_shares_with_caregivers_jax: Annotated[Path, Product] = BLD
-    / "plots"
-    / "model_fit"
-    / "simulated_labor_shares_with_caregivers_jax.png",
+    / "simulated_labor_shares_jax_estimated_params.png",
     path_to_save_transitions_pandas: Annotated[Path, Product] = BLD
     / "plots"
     / "model_fit"
-    / "simulated_work_transitions_pandas.png",
+    / "simulated_work_transitions_pandas_estimated_params.png",
 ) -> None:
+    """Simulate moments using estimated parameters model specification."""
 
     specs = read_and_derive_specs(path_to_specs)
 
@@ -79,7 +74,7 @@ def task_simulate_moments(
     sim_moms_pandas.to_csv(path_to_save_pandas_moments)
     np.savetxt(path_to_save_jax_moments, sim_moms_jax, delimiter=",")
 
-    # aaae(sim_moms_jax, sim_moms_pandas, decimal=12)
+    aaae(sim_moms_jax, sim_moms_pandas, decimal=12)
     assert np.equal(emp_moms.shape, sim_moms_pandas.shape)
 
     # states = {
@@ -109,13 +104,11 @@ def task_simulate_moments(
     #     path_to_save_plot=path_to_save_transitions_pandas,
     # )
 
-    # Plot general labor moments (non-caregivers only)
     plot_model_fit_labor_moments_pandas_by_education(
         moms_emp=emp_moms,
         moms_sim=sim_moms_pandas,
         specs=specs,
         path_to_save_plot=path_to_save_labor_shares_pandas,
-        include_caregivers=False,
     )
 
     plot_model_fit_labor_moments_by_education_pandas_jax(
@@ -123,22 +116,4 @@ def task_simulate_moments(
         moms_sim=sim_moms_jax,
         specs=specs,
         path_to_save_plot=path_to_save_labor_shares_jax,
-        include_caregivers=False,
-    )
-
-    # Plot labor moments including caregivers
-    plot_model_fit_labor_moments_pandas_by_education(
-        moms_emp=emp_moms,
-        moms_sim=sim_moms_pandas,
-        specs=specs,
-        path_to_save_plot=path_to_save_labor_shares_with_caregivers_pandas,
-        include_caregivers=True,
-    )
-
-    plot_model_fit_labor_moments_by_education_pandas_jax(
-        moms_emp=emp_moms,
-        moms_sim=sim_moms_jax,
-        specs=specs,
-        path_to_save_plot=path_to_save_labor_shares_with_caregivers_jax,
-        include_caregivers=True,
     )

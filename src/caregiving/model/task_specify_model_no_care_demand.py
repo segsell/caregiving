@@ -6,8 +6,8 @@ from typing import Annotated
 
 import jax.numpy as jnp
 import numpy as np
+import pytask
 import yaml
-from dcegm.pre_processing.setup_model import setup_and_save_model
 from pytask import Product
 
 from caregiving.config import BLD
@@ -29,8 +29,10 @@ from caregiving.model.wealth_and_budget.budget_equation_no_care_demand import (
     budget_constraint,
 )
 from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
+from dcegm.pre_processing.setup_model import setup_and_save_model
 
 
+@pytask.mark.skip()
 def task_specify_model_no_care_demand(
     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_start_params: Path = BLD
