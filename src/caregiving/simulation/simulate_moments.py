@@ -181,7 +181,8 @@ def simulate_moments_pandas(  # noqa: PLR0915
         ),  # [40, 43, 46, 49, 52, 55, 58, 61, 64, 67, 70]
         [
             f"{s}_{s+2}" for s in range(start_age_caregivers, end_age - 1, 3)
-        ],  # ["40_42", "43_45", "46_48", "49_51", "52_54", "55_57", "58_60", "61_63", "64_66", "67_69"]
+        ],  # ["40_42", "43_45", "46_48", "49_51", "52_54", "55_57",
+        # "58_60", "61_63", "64_66", "67_69"]
     )
 
     moments = create_labor_share_moments_by_age_bin_pandas(
@@ -394,9 +395,10 @@ def create_labor_share_moments_pandas(df, moments, age_range, label=None):
     """
     Create a Pandas Series of simulation moments using an optimized method.
 
-    This function computes age-specific shares by creating choice groups and using value_counts(normalize=True),
-    which is the same method used in the plotting functions for consistency. This version is optimized for
-    performance while maintaining correctness.
+    This function computes age-specific shares by creating choice groups and using
+    value_counts(normalize=True), which is the same method used in the plotting
+    functions for consistency. This version is optimized for performance while
+    maintaining correctness.
 
     Assumes that the DataFrame `df` contains at least the following columns:
       - age
@@ -468,10 +470,12 @@ def create_labor_share_moments_pandas(df, moments, age_range, label=None):
 
 def create_labor_share_moments_pandas_backup(df, moments, age_range, label=None):
     """
-    Create a Pandas Series of simulation moments using the same method as plot_choice_shares_by_education.
+    Create a Pandas Series of simulation moments using the same method as
+    plot_choice_shares_by_education.
 
-    This function computes age-specific shares by creating choice groups and using value_counts(normalize=True),
-    which is the same method used in the plotting functions for consistency.
+    This function computes age-specific shares by creating choice groups and using
+    value_counts(normalize=True), which is the same method used in the plotting
+    functions for consistency.
 
     Assumes that the DataFrame `df` contains at least the following columns:
       - age
@@ -512,7 +516,8 @@ def create_labor_share_moments_pandas_backup(df, moments, age_range, label=None)
     # Fill any missing choice_group values with 0 (retirement)
     df_copy["choice_group"] = df_copy["choice_group"].fillna(0).astype(int)
 
-    # Calculate shares by age using value_counts(normalize=True) - same as plotting function
+    # Calculate shares by age using value_counts(normalize=True) - same as plotting
+    # function
     shares_by_age = (
         df_copy.groupby("age", observed=False)["choice_group"]
         .value_counts(normalize=True)
@@ -1874,7 +1879,7 @@ def _get_share_by_type_by_age_bin(df_arr, ind, choice, care_type, age_bins):
 # =====================================================================================
 
 
-def plot_model_fit_labor_moments_pandas_by_education(
+def plot_model_fit_labor_moments_pandas_by_education(  # noqa: PLR0915
     moms_emp: pd.Series,
     moms_sim: pd.Series,
     specs: dict,
@@ -1920,7 +1925,7 @@ def plot_model_fit_labor_moments_pandas_by_education(
 
     row_idx = 0
 
-    for edu_var, edu_label in enumerate(specs["education_labels"]):
+    for _edu_var, edu_label in enumerate(specs["education_labels"]):
         # Plot general moments (non-caregivers)
         for choice_var, choice_label in enumerate(specs["choice_labels"]):
             ax = axs[row_idx, choice_var]
@@ -2217,7 +2222,7 @@ def plot_model_fit_labor_moments_by_education_pandas_jax(
 
     row_idx = 0
 
-    for edu_var, edu_label in enumerate(specs["education_labels"]):
+    for _edu_var, edu_label in enumerate(specs["education_labels"]):
         # Plot general moments (non-caregivers)
         for choice_var, choice_label in enumerate(specs["choice_labels"]):
             ax = axs[row_idx, choice_var]

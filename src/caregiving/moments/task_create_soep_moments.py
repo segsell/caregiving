@@ -66,7 +66,6 @@ def task_create_soep_moments(  # noqa: PLR0915
     end_year = 2019
 
     age_range = range(start_age, end_age + 1)
-    age_range_caregivers = range(start_age_caregivers, end_age + 1)
     age_range_wealth = range(start_age, specs["end_age_wealth"] + 1)
 
     _age_bins_75 = (
@@ -289,7 +288,8 @@ def task_create_soep_moments(  # noqa: PLR0915
         ),  # bin edges: [40, 43, 46, 49, 52, 55, 58, 61, 64, 67, 70]
         [
             f"{s}_{s+2}" for s in range(start_age_caregivers, end_age - 1, 3)
-        ],  # bin labels: ["40_42", "43_45", "46_48", "49_51", "52_54", "55_57", "58_60", "61_63", "64_66", "67_69"]
+        ],  # bin labels: ["40_42", "43_45", "46_48", "49_51", "52_54", "55_57",
+        # "58_60", "61_63", "64_66", "67_69"]
     )
 
     moments, variances = compute_labor_shares_by_age_bin(
@@ -484,12 +484,15 @@ def task_create_soep_moments(  # noqa: PLR0915
     variances_df.to_csv(path_to_save_variances, index=True)
 
 
-def compute_labor_shares_by_age(df, moments, variances, age_range, label=None):
+def compute_labor_shares_by_age(  # noqa: PLR0912
+    df, moments, variances, age_range, label=None
+):
     """
     Compute labor shares by age using the robust method (same as plotting functions).
 
     This function uses choice groups and value_counts(normalize=True) for consistency
-    with the plotting functions, ensuring shares sum to 1.0 and handling edge cases properly.
+    with the plotting functions, ensuring shares sum to 1.0 and handling edge cases
+    properly.
     """
 
     if label is None:
@@ -517,7 +520,8 @@ def compute_labor_shares_by_age(df, moments, variances, age_range, label=None):
     # Fill any missing choice_group values with 0 (retirement)
     df_copy["choice_group"] = df_copy["choice_group"].fillna(0).astype(int)
 
-    # Calculate shares by age using value_counts(normalize=True) - same as plotting function
+    # Calculate shares by age using value_counts(normalize=True) - same as plotting
+    # function
     shares_by_age = (
         df_copy.groupby("age", observed=False)["choice_group"]
         .value_counts(normalize=True)
@@ -556,7 +560,7 @@ def compute_labor_shares_by_age(df, moments, variances, age_range, label=None):
     choice_labels = ["retired", "unemployed", "part_time", "full_time"]
 
     for choice_var, choice_label in enumerate(choice_labels):
-    for age in age_range:
+        for age in age_range:
             if choice_var in shares_by_age.columns:
                 moments[f"share_{choice_label}{label}_age_{age}"] = shares_by_age.loc[
                     age, choice_var
@@ -676,7 +680,7 @@ def compute_share_informal_care_by_age_bin(
     return moments, variances
 
 
-def compute_labor_shares_by_age_bin(
+def compute_labor_shares_by_age_bin(  # noqa: PLR0912
     df: pd.DataFrame,
     moments: dict,
     variances: dict,
@@ -750,7 +754,8 @@ def compute_labor_shares_by_age_bin(
     # Fill any missing choice_group values with 0 (retirement)
     df["choice_group"] = df["choice_group"].fillna(0).astype(int)
 
-    # Calculate shares by age bin using value_counts(normalize=True) - same as plotting function
+    # Calculate shares by age bin using value_counts(normalize=True) - same as plotting
+    # function
     shares_by_bin = (
         df.groupby("age_bin", observed=False)["choice_group"]
         .value_counts(normalize=True)

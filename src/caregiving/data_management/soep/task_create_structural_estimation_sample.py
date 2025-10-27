@@ -172,8 +172,8 @@ def task_create_caregivers_sample(
 ) -> None:
 
     specs = read_and_derive_specs(path_to_specs)
-    start_year = 2001
-    end_year = 2019
+    specs["start_year"] = 2001
+    specs["end_year"] = 2019
 
     # merged_data = pd.read_csv(path_to_raw, index_col=[0, 1])
     df = pd.read_csv(path_to_raw, index_col=[0, 1])
