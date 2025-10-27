@@ -416,7 +416,7 @@ def create_labor_share_moments_pandas(df, moments, age_range, label=None):
     # OPTIMIZATION 1: Use vectorized mapping instead of loops
     choice_group_map = {}
     for agg_code, raw_codes in choice_groups.items():
-        for code in raw_codes:
+        for code in raw_codes.tolist():  # Convert JAX array to Python list
             choice_group_map[code] = agg_code
 
     # OPTIMIZATION 2: Use map() instead of copy + multiple loc operations

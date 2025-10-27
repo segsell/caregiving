@@ -61,6 +61,8 @@ def task_create_soep_moments_no_care_demand(  # noqa: PLR0915
 
     start_age = specs["start_age"]
     end_age = specs["end_age_msm"]
+    start_year = 2001
+    end_year = 2019
 
     age_range = range(start_age, end_age + 1)
     age_range_wealth = range(start_age, specs["end_age_wealth"] + 1)
@@ -74,7 +76,8 @@ def task_create_soep_moments_no_care_demand(  # noqa: PLR0915
     df = df_full[
         (df_full["gebjahr"] >= specs["min_birth_year"])
         & (df_full["gebjahr"] <= specs["max_birth_year"])
-        & (df_full["syear"] <= specs["end_year"])
+        & (df_full["syear"] >= start_year)
+        & (df_full["syear"] <= end_year)
         & (df_full["sex"] == 1)
         & (df_full["age"] <= end_age + 10)
         & (df_full["any_care"] == 0)

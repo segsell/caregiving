@@ -62,6 +62,8 @@ def task_create_soep_moments(  # noqa: PLR0915
     start_age = specs["start_age"]
     start_age_caregivers = start_age + START_PERIOD_CAREGIVING
     end_age = specs["end_age_msm"]
+    start_year = 2001
+    end_year = 2019
 
     age_range = range(start_age, end_age + 1)
     age_range_caregivers = range(start_age_caregivers, end_age + 1)
@@ -76,7 +78,8 @@ def task_create_soep_moments(  # noqa: PLR0915
     df = df_full[
         (df_full["gebjahr"] >= specs["min_birth_year"])
         & (df_full["gebjahr"] <= specs["max_birth_year"])
-        & (df_full["syear"] <= specs["end_year"])
+        & (df_full["syear"] >= start_year)
+        & (df_full["syear"] <= end_year)
         & (df_full["sex"] == 1)
         & (df_full["age"] <= end_age + 10)
         & (df_full["any_care"] == 0)
@@ -96,7 +99,8 @@ def task_create_soep_moments(  # noqa: PLR0915
     df_caregivers = df_caregivers_full[
         (df_caregivers_full["gebjahr"] >= specs["min_birth_year"])
         & (df_caregivers_full["gebjahr"] <= specs["max_birth_year"])
-        & (df_caregivers_full["syear"] <= specs["end_year"])
+        & (df_caregivers_full["syear"] >= start_year)
+        & (df_caregivers_full["syear"] <= end_year)
         & (df_caregivers_full["sex"] == 1)
         & (df_caregivers_full["age"] <= end_age + 10)
         & (df_caregivers_full["any_care"] == 1)
@@ -491,69 +495,88 @@ def task_create_soep_moments(  # noqa: PLR0915
 
 
 def compute_labor_shares_by_age(df, moments, variances, age_range, label=None):
+    """
+    Compute labor shares by age using the robust method (same as plotting functions).
+
+    This function uses choice groups and value_counts(normalize=True) for consistency
+    with the plotting functions, ensuring shares sum to 1.0 and handling edge cases properly.
+    """
 
     if label is None:
         label = ""
     else:
         label = "_" + label
 
-    age_groups = df.groupby("age", observed=False)
+    # Create choice groups mapping (same as in plot_choice_shares_by_education)
+    choice_groups = {
+        0: RETIREMENT_CHOICES,
+        1: UNEMPLOYED_CHOICES,
+        2: PART_TIME_CHOICES,
+        3: FULL_TIME_CHOICES,
+    }
 
-    # Compute the proportion for each status using vectorized operations
-    retired_shares = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(RETIREMENT_CHOICES)).mean()
-    )
-    unemployed_shares = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(UNEMPLOYED_CHOICES)).mean()
-    )
-    part_time_shares = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(PART_TIME_CHOICES)).mean()
-    )
-    full_time_shares = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(FULL_TIME_CHOICES)).mean()
-    )
+    # Create a copy of the dataframe to avoid modifying the original
+    df_copy = df.copy()
 
-    retired_vars = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(RETIREMENT_CHOICES)).var(ddof=DEGREES_OF_FREEDOM)
-    )
-    unemployed_vars = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(UNEMPLOYED_CHOICES)).var(ddof=DEGREES_OF_FREEDOM)
-    )
-    part_time_vars = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(PART_TIME_CHOICES)).var(ddof=DEGREES_OF_FREEDOM)
-    )
-    full_time_vars = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(FULL_TIME_CHOICES)).var(ddof=DEGREES_OF_FREEDOM)
+    # Map raw choice codes to aggregated choice groups (same as plotting function)
+    for agg_code, raw_codes in choice_groups.items():
+        df_copy.loc[
+            df_copy["choice"].isin(np.asarray(raw_codes).tolist()), "choice_group"
+        ] = agg_code
+
+    # Fill any missing choice_group values with 0 (retirement)
+    df_copy["choice_group"] = df_copy["choice_group"].fillna(0).astype(int)
+
+    # Calculate shares by age using value_counts(normalize=True) - same as plotting function
+    shares_by_age = (
+        df_copy.groupby("age")["choice_group"]
+        .value_counts(normalize=True)
+        .unstack(fill_value=0)
     )
 
-    # Reindex to ensure that every age between start_age and end_age is included;
-    # missing ages will be filled with NaN
-    retired_shares = retired_shares.reindex(age_range, fill_value=np.nan)
-    unemployed_shares = unemployed_shares.reindex(age_range, fill_value=np.nan)
-    part_time_shares = part_time_shares.reindex(age_range, fill_value=np.nan)
-    full_time_shares = full_time_shares.reindex(age_range, fill_value=np.nan)
+    # Reindex to ensure all ages in age_range are included
+    shares_by_age = shares_by_age.reindex(age_range, fill_value=0)
 
-    retired_vars = retired_vars.reindex(age_range, fill_value=np.nan)
-    unemployed_vars = unemployed_vars.reindex(age_range, fill_value=np.nan)
-    part_time_vars = part_time_vars.reindex(age_range, fill_value=np.nan)
-    full_time_vars = full_time_vars.reindex(age_range, fill_value=np.nan)
+    # Calculate variances using the same approach
+    # Group by age and calculate variance for each choice group
+    variance_by_age = {}
+    for age in age_range:
+        age_data = df_copy[df_copy["age"] == age]
+        if len(age_data) > 0:
+            # Create binary indicators for each choice group
+            age_data = age_data.copy()
+            for choice_var in range(4):
+                age_data[f"choice_{choice_var}"] = (
+                    age_data["choice_group"] == choice_var
+                ).astype(int)
+
+            # Calculate variance for each choice group
+            variance_by_age[age] = {}
+            for choice_var in range(4):
+                if f"choice_{choice_var}" in age_data.columns:
+                    variance_by_age[age][choice_var] = age_data[
+                        f"choice_{choice_var}"
+                    ].var(ddof=DEGREES_OF_FREEDOM)
+                else:
+                    variance_by_age[age][choice_var] = np.nan
+        else:
+            variance_by_age[age] = {i: np.nan for i in range(4)}
 
     # Populate the moments dictionary for age-specific shares
-    for age in age_range:
-        moments[f"share_retired{label}_age_{age}"] = retired_shares.loc[age]
-        variances[f"share_retired{label}_age_{age}"] = retired_vars.loc[age]
+    choice_labels = ["retired", "unemployed", "part_time", "full_time"]
 
-    for age in age_range:
-        moments[f"share_unemployed{label}_age_{age}"] = unemployed_shares.loc[age]
-        variances[f"share_unemployed{label}_age_{age}"] = unemployed_vars.loc[age]
-
-    for age in age_range:
-        moments[f"share_part_time{label}_age_{age}"] = part_time_shares.loc[age]
-        variances[f"share_part_time{label}_age_{age}"] = part_time_vars.loc[age]
-
-    for age in age_range:
-        moments[f"share_full_time{label}_age_{age}"] = full_time_shares.loc[age]
-        variances[f"share_full_time{label}_age_{age}"] = full_time_vars.loc[age]
+    for choice_var, choice_label in enumerate(choice_labels):
+        for age in age_range:
+            if choice_var in shares_by_age.columns:
+                moments[f"share_{choice_label}{label}_age_{age}"] = shares_by_age.loc[
+                    age, choice_var
+                ]
+                variances[f"share_{choice_label}{label}_age_{age}"] = variance_by_age[
+                    age
+                ].get(choice_var, np.nan)
+            else:
+                moments[f"share_{choice_label}{label}_age_{age}"] = 0.0
+                variances[f"share_{choice_label}{label}_age_{age}"] = np.nan
 
     return moments, variances
 
@@ -719,61 +742,74 @@ def compute_labor_shares_by_age_bin(
         .reindex(bin_labels, fill_value=np.nan)
     )
 
-    # 3. Group by the new bins and compute shares & variances
-    age_groups = df.groupby("age_bin")
+    # 3. Group by the new bins and compute shares & variances using robust method
+    # Create choice groups mapping (same as in plot_choice_shares_by_education)
+    choice_groups = {
+        0: RETIREMENT_CHOICES,
+        1: UNEMPLOYED_CHOICES,
+        2: PART_TIME_CHOICES,
+        3: FULL_TIME_CHOICES,
+    }
 
-    retired_shares = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(RETIREMENT_CHOICES)).mean()
-    )
-    unemployed_shares = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(UNEMPLOYED_CHOICES)).mean()
-    )
-    part_time_shares = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(PART_TIME_CHOICES)).mean()
-    )
-    full_time_shares = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(FULL_TIME_CHOICES)).mean()
-    )
+    # Map raw choice codes to aggregated choice groups (same as plotting function)
+    for agg_code, raw_codes in choice_groups.items():
+        df.loc[df["choice"].isin(np.asarray(raw_codes).tolist()), "choice_group"] = (
+            agg_code
+        )
 
-    retired_vars = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(RETIREMENT_CHOICES)).var(ddof=DEGREES_OF_FREEDOM)
-    )
-    unemployed_vars = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(UNEMPLOYED_CHOICES)).var(ddof=DEGREES_OF_FREEDOM)
-    )
-    part_time_vars = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(PART_TIME_CHOICES)).var(ddof=DEGREES_OF_FREEDOM)
-    )
-    full_time_vars = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(FULL_TIME_CHOICES)).var(ddof=DEGREES_OF_FREEDOM)
+    # Fill any missing choice_group values with 0 (retirement)
+    df["choice_group"] = df["choice_group"].fillna(0).astype(int)
+
+    # Calculate shares by age bin using value_counts(normalize=True) - same as plotting function
+    shares_by_bin = (
+        df.groupby("age_bin")["choice_group"]
+        .value_counts(normalize=True)
+        .unstack(fill_value=0)
     )
 
-    # Re-index so every bin is present even if it appears nowhere in the data
-    retired_shares = retired_shares.reindex(bin_labels, fill_value=np.nan)
-    unemployed_shares = unemployed_shares.reindex(bin_labels, fill_value=np.nan)
-    part_time_shares = part_time_shares.reindex(bin_labels, fill_value=np.nan)
-    full_time_shares = full_time_shares.reindex(bin_labels, fill_value=np.nan)
+    # Reindex to ensure all bins are included
+    shares_by_bin = shares_by_bin.reindex(bin_labels, fill_value=0)
 
-    retired_vars = retired_vars.reindex(bin_labels, fill_value=np.nan)
-    unemployed_vars = unemployed_vars.reindex(bin_labels, fill_value=np.nan)
-    part_time_vars = part_time_vars.reindex(bin_labels, fill_value=np.nan)
-    full_time_vars = full_time_vars.reindex(bin_labels, fill_value=np.nan)
+    # Calculate variances using the same approach
+    # Group by age bin and calculate variance for each choice group
+    variance_by_bin = {}
+    for bin_label in bin_labels:
+        bin_data = df[df["age_bin"] == bin_label]
+        if len(bin_data) > 0:
+            # Create binary indicators for each choice group
+            bin_data = bin_data.copy()
+            for choice_var in range(4):
+                bin_data[f"choice_{choice_var}"] = (
+                    bin_data["choice_group"] == choice_var
+                ).astype(int)
 
-    for bin in bin_labels:
-        moments[f"share_retired{label}_age_bin_{bin}"] = retired_shares.loc[bin]
-        variances[f"share_retired{label}_age_bin_{bin}"] = retired_vars.loc[bin]
+            # Calculate variance for each choice group
+            variance_by_bin[bin_label] = {}
+            for choice_var in range(4):
+                if f"choice_{choice_var}" in bin_data.columns:
+                    variance_by_bin[bin_label][choice_var] = bin_data[
+                        f"choice_{choice_var}"
+                    ].var(ddof=DEGREES_OF_FREEDOM)
+                else:
+                    variance_by_bin[bin_label][choice_var] = np.nan
+        else:
+            variance_by_bin[bin_label] = {i: np.nan for i in range(4)}
 
-    for bin in bin_labels:
-        moments[f"share_unemployed{label}_age_bin_{bin}"] = unemployed_shares.loc[bin]
-        variances[f"share_unemployed{label}_age_bin_{bin}"] = unemployed_vars.loc[bin]
+    # Populate the moments dictionary for age bin shares
+    choice_labels = ["retired", "unemployed", "part_time", "full_time"]
 
-    for bin in bin_labels:
-        moments[f"share_part_time{label}_age_bin_{bin}"] = part_time_shares.loc[bin]
-        variances[f"share_part_time{label}_age_bin_{bin}"] = part_time_vars.loc[bin]
-
-    for bin in bin_labels:
-        moments[f"share_full_time{label}_age_bin_{bin}"] = full_time_shares.loc[bin]
-        variances[f"share_full_time{label}_age_bin_{bin}"] = full_time_vars.loc[bin]
+    for choice_var, choice_label in enumerate(choice_labels):
+        for bin_label in bin_labels:
+            if choice_var in shares_by_bin.columns:
+                moments[f"share_{choice_label}{label}_age_bin_{bin_label}"] = (
+                    shares_by_bin.loc[bin_label, choice_var]
+                )
+                variances[f"share_{choice_label}{label}_age_bin_{bin_label}"] = (
+                    variance_by_bin[bin_label].get(choice_var, np.nan)
+                )
+            else:
+                moments[f"share_{choice_label}{label}_age_bin_{bin_label}"] = 0.0
+                variances[f"share_{choice_label}{label}_age_bin_{bin_label}"] = np.nan
 
     return moments, variances
 
