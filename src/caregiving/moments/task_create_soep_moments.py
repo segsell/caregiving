@@ -519,7 +519,7 @@ def compute_labor_shares_by_age(df, moments, variances, age_range, label=None):
 
     # Calculate shares by age using value_counts(normalize=True) - same as plotting function
     shares_by_age = (
-        df_copy.groupby("age")["choice_group"]
+        df_copy.groupby("age", observed=False)["choice_group"]
         .value_counts(normalize=True)
         .unstack(fill_value=0)
     )
@@ -556,7 +556,7 @@ def compute_labor_shares_by_age(df, moments, variances, age_range, label=None):
     choice_labels = ["retired", "unemployed", "part_time", "full_time"]
 
     for choice_var, choice_label in enumerate(choice_labels):
-        for age in age_range:
+    for age in age_range:
             if choice_var in shares_by_age.columns:
                 moments[f"share_{choice_label}{label}_age_{age}"] = shares_by_age.loc[
                     age, choice_var
@@ -752,7 +752,7 @@ def compute_labor_shares_by_age_bin(
 
     # Calculate shares by age bin using value_counts(normalize=True) - same as plotting function
     shares_by_bin = (
-        df.groupby("age_bin")["choice_group"]
+        df.groupby("age_bin", observed=False)["choice_group"]
         .value_counts(normalize=True)
         .unstack(fill_value=0)
     )

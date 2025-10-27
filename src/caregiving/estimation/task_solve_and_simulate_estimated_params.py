@@ -33,7 +33,6 @@ from dcegm.solve import get_solve_func_for_model
 jax.config.update("jax_enable_x64", True)
 
 
-@pytask.mark.skip()
 def task_solve_and_simulate_estimated_params(
     path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
     path_to_options: Path = BLD / "model" / "options.pkl",

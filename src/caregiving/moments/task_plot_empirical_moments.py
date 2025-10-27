@@ -332,7 +332,7 @@ def plot_wealth_emp(
 
         emp_edu = data_emp[data_emp["education"] == edu_idx]
         emp_series = (
-            emp_edu.groupby("age")[wealth_var_emp]
+            emp_edu.groupby("age", observed=False)[wealth_var_emp]
             .apply(agg)
             .reindex(ages, fill_value=np.nan)
         )
@@ -583,7 +583,7 @@ def plot_wealth_emp_vs_moments(  # noqa: PLR0912, PLR0915
         # Empirical series
         emp_edu = data_emp[data_emp["education"] == edu_idx]
         emp_series = (
-            emp_edu.groupby("age")[wealth_var_emp]
+            emp_edu.groupby("age", observed=False)[wealth_var_emp]
             .apply(agg)
             .reindex(ages, fill_value=np.nan)
         )
@@ -702,7 +702,7 @@ def plot_choice_shares_by_education_emp(
 
         # shares by age × aggregated choice
         emp_shares = (
-            emp_edu.groupby("age")["choice_group"]
+            emp_edu.groupby("age", observed=False)["choice_group"]
             .value_counts(normalize=True)
             .unstack(fill_value=0)
         )

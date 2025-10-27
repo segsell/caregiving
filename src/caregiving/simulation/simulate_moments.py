@@ -439,7 +439,7 @@ def create_labor_share_moments_pandas(df, moments, age_range, label=None):
 
     # OPTIMIZATION 3: Single groupby operation
     shares_by_age = (
-        df_copy.groupby("age")["choice_group"]
+        df_copy.groupby("age", observed=False)["choice_group"]
         .value_counts(normalize=True)
         .unstack(fill_value=0)
     )
@@ -514,7 +514,7 @@ def create_labor_share_moments_pandas_backup(df, moments, age_range, label=None)
 
     # Calculate shares by age using value_counts(normalize=True) - same as plotting function
     shares_by_age = (
-        df_copy.groupby("age")["choice_group"]
+        df_copy.groupby("age", observed=False)["choice_group"]
         .value_counts(normalize=True)
         .unstack(fill_value=0)
     )
@@ -607,7 +607,7 @@ def create_labor_share_moments_by_age_bin_pandas(
 
     # Calculate shares by age bin using value_counts(normalize=True) - robust approach
     shares_by_bin = (
-        df_copy.groupby("age_bin")["choice_group"]
+        df_copy.groupby("age_bin", observed=False)["choice_group"]
         .value_counts(normalize=True)
         .unstack(fill_value=0)
     )
@@ -645,7 +645,7 @@ def create_choice_shares_by_age_pandas(
     label = f"_{label}" if label else ""
 
     share_by_age = (
-        df.groupby("age")["choice"]
+        df.groupby("age", observed=False)["choice"]
         .apply(lambda x: x.isin(np.atleast_1d(choice_set)).mean())
         .reindex(age_range, fill_value=np.nan)
     )
@@ -776,7 +776,7 @@ def create_mean_by_age(
     #     .reindex(age_index, fill_value=np.nan)  # keep all ages even if empty
     # )
     mean_by_age = (
-        df_sub.groupby(df_sub[age_var])[variable]
+        df_sub.groupby(df_sub[age_var], observed=False)[variable]
         .mean()
         .reindex(ages, fill_value=np.nan)
     )
