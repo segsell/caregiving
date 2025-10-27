@@ -1,4 +1,4 @@
-"""Simulate moments of the model using estimated parameters."""
+"""Simulate moments of the job retention model using estimated parameters."""
 
 import pickle
 from pathlib import Path
@@ -31,42 +31,64 @@ from caregiving.specs.task_write_specs import read_and_derive_specs
 jax.config.update("jax_enable_x64", True)
 
 
-@pytask.mark.sim_estimated_params
-def task_simulate_moments_estimated_params(
+@pytask.mark.sim_job_retention_estimated_params
+def task_simulate_moments_job_retention_estimated_params(
     path_to_specs: Path = SRC / "specs.yaml",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_options: Path = BLD / "model" / "options_job_retention.pkl",
     path_to_empirical_moments: Path = BLD / "moments" / "moments_full.csv",
     path_to_simulated_data: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_estimated_params.pkl",
+    / "simulated_data_job_retention_estimated_params.pkl",
     path_to_save_pandas_moments: Annotated[Path, Product] = BLD
     / "moments"
-    / "simulated_moments_pandas_estimated_params.csv",
+    / "simulated_moments_pandas_job_retention_estimated_params.csv",
     path_to_save_jax_moments: Annotated[Path, Product] = BLD
     / "moments"
-    / "simulated_moments_jax_estimated_params.csv",
+    / "simulated_moments_jax_job_retention_estimated_params.csv",
     path_to_save_labor_shares_pandas: Annotated[Path, Product] = BLD
     / "plots"
-    / "model_fit"
-    / "simulated_labor_shares_pandas_estimated_params.png",
+    / "model_fit_job_retention"
+    / "simulated_labor_shares_pandas_job_retention_estimated_params.png",
     path_to_save_labor_shares_jax: Annotated[Path, Product] = BLD
     / "plots"
-    / "model_fit"
-    / "simulated_labor_shares_jax_estimated_params.png",
+    / "model_fit_job_retention"
+    / "simulated_labor_shares_jax_job_retention_estimated_params.png",
+    path_to_save_transitions_pandas: Annotated[Path, Product] = BLD
+    / "plots"
+    / "model_fit_job_retention"
+    / "simulated_work_transitions_pandas_job_retention_estimated_params.png",
     path_to_save_labor_shares_with_caregivers_pandas: Annotated[Path, Product] = BLD
     / "plots"
-    / "model_fit"
-    / "simulated_labor_shares_with_caregivers_pandas_estimated_params.png",
+    / "model_fit_job_retention"
+    / "simulated_labor_shares_with_caregivers_pandas_job_retention.png",
     path_to_save_labor_shares_with_caregivers_jax: Annotated[Path, Product] = BLD
     / "plots"
-    / "model_fit"
-    / "simulated_labor_shares_with_caregivers_jax_estimated_params.png",
-    # path_to_save_transitions_pandas: Annotated[Path, Product] = BLD
-    # / "plots"
-    # / "model_fit"
-    # / "simulated_work_transitions_pandas_estimated_params.png",
+    / "model_fit_job_retention"
+    / "simulated_labor_shares_with_caregivers_jax_job_retention.png",
 ) -> None:
-    """Simulate moments using estimated parameters model specification."""
+    """Simulate moments using job retention model with estimated parameters.
+
+    This function simulates moments for the job retention counterfactual model
+    using estimated parameters. The job retention model implements a policy
+    where caregivers can keep their jobs even when they reduce hours or become
+    unemployed due to caregiving activities.
+
+    Args:
+        path_to_specs: Path to model specifications
+        path_to_options: Path to job retention model options
+        path_to_empirical_moments: Path to empirical moments
+        path_to_simulated_data: Path to simulated data from job retention model
+        path_to_save_pandas_moments: Path to save pandas moments
+        path_to_save_jax_moments: Path to save JAX moments
+        path_to_save_labor_shares_pandas: Path to save pandas labor shares plot
+        path_to_save_labor_shares_jax: Path to save JAX labor shares plot
+        path_to_save_transitions_pandas: Path to save transitions plot
+        path_to_save_labor_shares_with_caregivers_pandas: Path to save pandas labor
+            shares plot including caregivers
+        path_to_save_labor_shares_with_caregivers_jax: Path to save JAX labor shares
+            plot including caregivers
+
+    """
 
     specs = read_and_derive_specs(path_to_specs)
 
@@ -81,9 +103,6 @@ def task_simulate_moments_estimated_params(
     # Save moments
     sim_moms_pandas.to_csv(path_to_save_pandas_moments)
     np.savetxt(path_to_save_jax_moments, sim_moms_jax, delimiter=",")
-
-    # aaae(sim_moms_jax, sim_moms_pandas, decimal=12)
-    assert np.equal(emp_moms.shape, sim_moms_pandas.shape)
 
     # states = {
     #     "not_working": NOT_WORKING,

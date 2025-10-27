@@ -32,7 +32,7 @@ from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
 from dcegm.pre_processing.setup_model import setup_and_save_model
 
 
-@pytask.mark.skip()
+@pytask.mark.job_retention
 def task_specify_model_job_retention(
     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_start_params: Path = BLD / "model" / "params" / "start_params_updated.yaml",
