@@ -31,13 +31,14 @@ from dcegm.solve import get_solve_func_for_model
 jax.config.update("jax_enable_x64", True)
 
 
+@pytask.mark.solve_no_care_demand
 def task_solve_and_simulate_no_care_demand(
     path_to_solution_model: Path = BLD / "model" / "model_no_care_demand.pkl",
     path_to_options: Path = BLD / "model" / "options_no_care_demand.pkl",
     path_to_params: Path = BLD / "model" / "params"
     # / "start_params_model_no_care_demand.yaml",
     # / "params_estimated_no_care_demand.yaml",
-    "estimated_params_model.yaml",
+    / "estimated_params_model.yaml",
     path_to_discrete_states: Path = BLD
     / "model"
     / "initial_conditions"
@@ -95,6 +96,7 @@ def task_solve_and_simulate_no_care_demand(
         options=options,
         seed=options["model_params"]["seed"],
     )
+
     sim_df.to_pickle(path_to_save_simulated_data)
 
 

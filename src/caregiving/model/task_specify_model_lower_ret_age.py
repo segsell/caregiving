@@ -1,4 +1,4 @@
-"""Specify counterfactual model without care_demand process."""
+"""Specify model with lower retirement ages (min_SRA=60, max_ret_age=65)."""
 
 import pickle
 from pathlib import Path
@@ -11,48 +11,47 @@ import yaml
 from pytask import Product
 
 from caregiving.config import BLD
-from caregiving.model.state_space_no_care_demand import create_state_space_functions
+from caregiving.model.state_space_lower_ret_age import create_state_space_functions
+from caregiving.model.stochastic_processes.caregiving_transition import (
+    care_demand_and_supply_transition,
+    health_transition_good_medium_bad,
+)
 from caregiving.model.stochastic_processes.health_transition import (
     health_transition,
 )
-from caregiving.model.stochastic_processes.job_transition_no_care_demand import (
+from caregiving.model.stochastic_processes.job_transition import (
     job_offer_process_transition,
 )
 from caregiving.model.stochastic_processes.partner_transition import partner_transition
 from caregiving.model.utility.bequest_utility import (
     create_final_period_utility_functions,
 )
-from caregiving.model.utility.utility_functions_additive_no_care_demand import (
-    create_utility_functions,
-)
-from caregiving.model.wealth_and_budget.budget_equation_no_care_demand import (
-    budget_constraint,
-)
+from caregiving.model.utility.utility_functions_additive import create_utility_functions
+from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
 from dcegm.pre_processing.setup_model import setup_and_save_model
 
 
-def task_specify_model_no_care_demand(
+@pytask.mark.skip()
+def task_specify_model_lower_ret_age(
     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
-    path_to_start_params: Path = BLD
-    / "model"
-    / "params"
-    / "start_params_updated_no_care_demand.yaml",
+    path_to_start_params: Path = BLD / "model" / "params" / "start_params_updated.yaml",
     path_to_save_options: Annotated[Path, Product] = BLD
     / "model"
-    / "options_no_care_demand.pkl",
+    / "options_lower_ret_age.pkl",
     path_to_save_model: Annotated[Path, Product] = BLD
     / "model"
-    / "model_no_care_demand.pkl",
+    / "model_lower_ret_age.pkl",
     path_to_save_start_params: Annotated[Path, Product] = BLD
     / "model"
     / "params"
-    / "start_params_model_no_care_demand.yaml",
+    / "start_params_model_lower_ret_age.yaml",
 ):
-    """Generate counterfactual model and options dictionaries without care_demand.
+    """
+    Specify model with lower retirement ages.
 
-    This counterfactual removes the ``care_demand`` exogenous process from the
-    state space. All other specifications are kept identical to the baseline.
+    This version enforces min_SRA=60 and max_ret_age=65 in the options used for
+    the state space and model functions.
     """
 
     with path_to_derived_specs.open("rb") as f:
@@ -60,17 +59,24 @@ def task_specify_model_no_care_demand(
 
     params = yaml.safe_load(path_to_start_params.open("rb"))
 
-    # Assign selected specs to params written alongside the model
-    params["sigma"] = float(specs["income_shock_scale"])  # income shock scale
-    params["interest_rate"] = float(specs["interest_rate"])  # interest rate
-    params["beta"] = float(specs["discount_factor"])  # discount factor
+    # Assign key parameters sourced from derived specs
+    params["sigma"] = float(specs["income_shock_scale"])
+    params["interest_rate"] = float(specs["interest_rate"])
+    params["beta"] = float(specs["discount_factor"])
 
     with path_to_save_start_params.open("w") as f:
         yaml.dump(params, f)
 
-    # Load specifications
+    # Load specifications and override retirement-related settings
     n_periods = specs["n_periods"]
-    choices = np.arange(4, dtype=int)
+    choices = np.arange(specs["n_choices"], dtype=int)
+
+    # Override retirement policy ages
+    specs["min_SRA"] = 60
+    specs["max_ret_age"] = 65
+    # If present, also align minimum retirement age indicator
+    if "min_ret_age" in specs:
+        specs["min_ret_age"] = 60
 
     # Savings grid
     savings_grid = create_savings_grid()
@@ -78,7 +84,6 @@ def task_specify_model_no_care_demand(
     # Experience grid
     experience_grid = jnp.linspace(0, 1, specs["n_experience_grid_points"])
 
-    # Build options with exogenous processes EXCLUDING "care_demand"
     options = {
         "state_space": {
             "min_period_batch_segments": [33, 44],
@@ -102,6 +107,14 @@ def task_specify_model_no_care_demand(
                     "transition": health_transition,
                     "states": np.arange(specs["n_health_states"], dtype=int),
                 },
+                "mother_health": {
+                    "transition": health_transition_good_medium_bad,
+                    "states": np.arange(specs["n_health_states_three"], dtype=int),
+                },
+                "care_demand": {
+                    "transition": care_demand_and_supply_transition,
+                    "states": np.arange(3, dtype=int),
+                },
             },
             "continuous_states": {
                 "wealth": savings_grid,
@@ -110,7 +123,6 @@ def task_specify_model_no_care_demand(
         },
         "model_params": specs,
     }
-
     pickle.dump(options, path_to_save_options.open("wb"))
 
     model = setup_and_save_model(
@@ -123,5 +135,5 @@ def task_specify_model_no_care_demand(
         sim_model=False,
     )
 
-    print("Counterfactual model without care_demand specified.")
+    print("Lower retirement age model specified.")
     return model, params
