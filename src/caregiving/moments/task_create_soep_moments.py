@@ -8,6 +8,7 @@ import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pytask
 from pytask import Product
 
 from caregiving.config import BLD, SRC
@@ -42,6 +43,7 @@ from caregiving.utils import table
 DEGREES_OF_FREEDOM = 1
 
 
+@pytask.mark.soep_moments
 def task_create_soep_moments(  # noqa: PLR0915
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_main_sample: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
@@ -108,7 +110,7 @@ def task_create_soep_moments(  # noqa: PLR0915
     # df_light_caregivers = df_caregivers[df_caregivers["light_care"] == 1].copy()
     df_intensive_caregivers = df_caregivers[df_caregivers["intensive_care"] == 1].copy()
 
-    df_year = df[df["syear"] == 2012]  # 2012, 2016 # noqa: PLR2004
+    df_year = df_full[df_full["syear"] == 2012]  # 2012, 2016 # noqa: PLR2004
     _df_year_caregivers = df_year[
         (df_year["any_care"] == 1) & (df_year["health"] != DEAD)
     ].copy()
@@ -257,7 +259,6 @@ def task_create_soep_moments(  # noqa: PLR0915
         weights=PARENT_WEIGHTS_SHARE,
         scale=SCALE_CAREGIVER_SHARE,
     )
-    # =================================================================================
     # =================================================================================
 
     # moments, variances = compute_shares_by_age_bin(
