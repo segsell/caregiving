@@ -1,4 +1,4 @@
-"""Initial conditions for the simulation (no-care-demand counterfactual)."""
+"""Initial conditions for the simulation (10,000 agents)."""
 
 import pickle
 from pathlib import Path
@@ -15,57 +15,66 @@ from sklearn.neighbors import KernelDensity
 
 from caregiving.config import BLD
 from caregiving.model.shared import (
+    ALL_NO_CARE,
     INITIAL_CONDITIONS_AGE_HIGH,
     INITIAL_CONDITIONS_AGE_LOW,
     INITIAL_CONDITIONS_COHORT_HIGH,
     INITIAL_CONDITIONS_COHORT_LOW,
+    MOTHER,
+    PARENT_DEAD,
     SEX,
+    WORK_AND_UNEMPLOYED_NO_CARE,
 )
-from caregiving.model.state_space_no_care_demand import create_state_space_functions
+from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.stochastic_processes.job_transition import (
     job_offer_process_transition_initial_conditions,
 )
 from caregiving.model.utility.bequest_utility import (
     create_final_period_utility_functions,
 )
-from caregiving.model.utility.utility_functions_additive_no_care_demand import (
-    create_utility_functions,
-)
-from caregiving.model.wealth_and_budget.budget_equation_no_care_demand import (
-    budget_constraint,
-)
-from caregiving.simulation.task_generate_initial_conditions import (
-    draw_start_wealth_dist,
-)
+from caregiving.model.utility.utility_functions_additive import create_utility_functions
+from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from dcegm.pre_processing.setup_model import load_and_setup_model
 from dcegm.wealth_correction import adjust_observed_wealth
 
 
-def task_generate_start_states_for_solution_no_care_demand(  # noqa: PLR0915
+@pytask.mark.generate_initial_conditions_10k
+def task_generate_start_states_for_solution_10_000(  # noqa: PLR0915
     path_to_sample: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
     path_to_lifetable: Path = BLD
     / "estimation"
     / "stochastic_processes"
     / "lifetable.csv",
-    path_to_options: Path = BLD / "model" / "options_no_care_demand.pkl",
-    path_to_model: Path = BLD / "model" / "model_no_care_demand.pkl",
-    path_to_start_params: Path = BLD
+    path_to_health_sample: Path = BLD
+    / "data"
+    / "health_transition_estimation_sample_good_medium_bad.pkl",
+    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_model: Path = BLD / "model" / "model_for_solution.pkl",
+    path_to_start_params: Path = BLD / "model" / "params" / "start_params_model.yaml",
+    path_to_save_health_by_age: Annotated[Path, Product] = BLD
     / "model"
-    / "params"
-    / "start_params_model_no_care_demand.yaml",
+    / "initial_conditions"
+    / "health_by_age_10_000.csv",
+    path_to_save_survival_by_age: Annotated[Path, Product] = BLD
+    / "model"
+    / "initial_conditions"
+    / "survival_by_age_10_000.csv",
     path_to_save_discrete_states: Annotated[Path, Product] = BLD
     / "model"
     / "initial_conditions"
-    / "states_no_care_demand.pkl",
+    / "10_000"
+    / "states_10_000.pkl",
     path_to_save_wealth: Annotated[Path, Product] = BLD
     / "model"
     / "initial_conditions"
-    / "wealth_no_care_demand.csv",
+    / "10_000"
+    / "wealth_10_000.csv",
 ) -> None:
     sex_var = SEX
 
     observed_data = pd.read_csv(path_to_sample, index_col=[0])
     lifetable = pd.read_csv(path_to_lifetable)
+    health_sample = pd.read_pickle(path_to_health_sample)
 
     options = pickle.load(path_to_options.open("rb"))
     params = yaml.safe_load(path_to_start_params.open("rb"))
@@ -76,13 +85,12 @@ def task_generate_start_states_for_solution_no_care_demand(  # noqa: PLR0915
         utility_functions=create_utility_functions(),
         utility_functions_final_period=create_final_period_utility_functions(),
         budget_constraint=budget_constraint,
-        # shock_functions=shock_function_dict(),
         path=path_to_model,
         sim_model=False,
     )
 
-    specs = options["model_params"]
-    n_agents = specs["n_agents"]
+    specs = options["model_params"].copy()
+    n_agents = 10_000  # override
     seed = specs["seed"]
 
     np.random.seed(seed)
@@ -92,8 +100,6 @@ def task_generate_start_states_for_solution_no_care_demand(  # noqa: PLR0915
     start_period_data = observed_data[observed_data["period"].isin([min_period])].copy()
     start_period_data = start_period_data[start_period_data["wealth"].notnull()].copy()
 
-    # =================================================================================
-    # Static state variables
     sex_data = observed_data.loc[observed_data["sex"] == sex_var]
 
     sister_cohort = sex_data.loc[
@@ -102,8 +108,6 @@ def task_generate_start_states_for_solution_no_care_demand(  # noqa: PLR0915
         & (sex_data["age"] >= INITIAL_CONDITIONS_AGE_LOW)
         & (sex_data["age"] <= INITIAL_CONDITIONS_AGE_HIGH)
     ].copy()
-    # The fact that a woman has obtained higher education correlates with the
-    # presence of a sister.
     sister_shares = (
         sister_cohort.groupby("education")["has_sister"]
         .value_counts(normalize=True)
@@ -117,13 +121,13 @@ def task_generate_start_states_for_solution_no_care_demand(  # noqa: PLR0915
         (1 - lifetable["death_prob"]).groupby(lifetable["sex"]).cumprod()
     )
 
-    # =================================================================================
-
     states_dict = {
         name: start_period_data[name].values
         for name in model["model_structure"]["discrete_states_names"]
+        if name not in ("mother_health", "care_demand", "care_supply")
     }
 
+    states_dict["care_demand"] = np.zeros_like(start_period_data["wealth"])
     states_dict["wealth"] = start_period_data["wealth"].values / specs["wealth_unit"]
     states_dict["experience"] = start_period_data["experience"].values
     start_period_data.loc[:, "adjusted_wealth"] = adjust_observed_wealth(
@@ -145,7 +149,20 @@ def task_generate_start_states_for_solution_no_care_demand(  # noqa: PLR0915
     # Create the education array
     education_agents = np.repeat(edu_shares.index, n_agents_edu_types)
 
-    # =================================================================================
+    survival_by_age = lifetable.loc[lifetable["sex"] == sex_var].set_index("age")[
+        "cum_survival_prob"
+    ]
+    health_prob_by_age = (
+        health_sample.loc[health_sample["sex"] == MOTHER]
+        .groupby("age")["health"]
+        .value_counts(normalize=True)
+        .unstack(fill_value=0)
+        .sort_index()
+    )
+    health_prob_by_age.index = health_prob_by_age.index.astype(int)
+
+    survival_by_age.to_csv(path_to_save_survival_by_age, index=True)
+    health_prob_by_age.to_csv(path_to_save_health_by_age, index=True)
 
     # Generate containers
     wealth_agents = np.empty(n_agents, np.float64)
@@ -155,11 +172,9 @@ def task_generate_start_states_for_solution_no_care_demand(  # noqa: PLR0915
     health_agents = np.empty(n_agents, np.uint8)
     job_offer_agents = np.empty(n_agents, np.uint8)
     has_sister_agents = np.empty(n_agents, np.uint8)
+    mother_health_agents = np.empty(n_agents, np.uint8)
 
-    # for sex_var in range(specs["n_sexes"]):
     for edu in range(specs["n_education_types"]):
-
-        # Restrict dataset on education level
         type_mask = (sex_agents == sex_var) & (education_agents == edu)
         start_period_data_edu = start_period_data[
             (start_period_data["sex"] == sex_var)
@@ -168,21 +183,25 @@ def task_generate_start_states_for_solution_no_care_demand(  # noqa: PLR0915
 
         n_agents_edu = np.sum(type_mask)
 
-        # Generate has-sister indicator
         empirical_sister_probs = sister_shares.loc[edu].values
         sister_probs = pd.Series(index=[0, 1], data=0.0, dtype=float)
         sister_probs.update(empirical_sister_probs)
-
         has_sister_edu = np.random.choice(
             [0, 1], size=n_agents_edu, p=sister_probs.values
         )
         has_sister_agents[type_mask] = has_sister_edu
 
-        # Wealth distribution
+        mother_age_diff = specs["mother_age_diff"][has_sister_edu, edu]
+        mother_age = specs["start_age"] + mother_age_diff.round().astype(int)
+        mother_health_agents[type_mask] = draw_mother_health(
+            mother_age,
+            survival_by_age,
+            health_prob_by_age,
+        )
+
         wealth_start_edu = draw_start_wealth_dist(start_period_data_edu, n_agents_edu)
         wealth_agents[type_mask] = wealth_start_edu
 
-        # Generate type specific initial experience distribution
         exp_max_edu = start_period_data_edu["experience"].max()
         empirical_exp_probs = start_period_data_edu["experience"].value_counts(
             normalize=True
@@ -193,34 +212,30 @@ def task_generate_start_states_for_solution_no_care_demand(  # noqa: PLR0915
             exp_max_edu + 1, size=n_agents_edu, p=exp_probs.values
         )
 
-        # Generate type specific initial lagged choice distribution
         empirical_lagged_choice_probs = start_period_data_edu[
             "lagged_choice"
         ].value_counts(normalize=True)
-        lagged_choice_probs = pd.Series(index=np.arange(0, 4), data=0, dtype=float)
+        lagged_choice_probs = pd.Series(
+            index=np.arange(0, specs["n_choices"]), data=0, dtype=float
+        )
         lagged_choice_probs.update(empirical_lagged_choice_probs)
         lagged_choice_edu = np.random.choice(
-            4, size=n_agents_edu, p=lagged_choice_probs.values
+            specs["n_choices"], size=n_agents_edu, p=lagged_choice_probs.values
         )
         lagged_choice[type_mask] = lagged_choice_edu
 
-        # Generate job offer probabilities
         job_offer_probs = job_offer_process_transition_initial_conditions(
             params=params,
             options=specs,
-            # sex=jnp.ones_like(lagged_choice_edu) * sex_var,
             education=jnp.ones_like(lagged_choice_edu) * edu,
             period=jnp.zeros_like(lagged_choice_edu),
             choice=lagged_choice_edu,
         ).T
-        # Job offer probs is n_agents x 2. Choose for each row the job offer state
-        # with np random choice
         job_offer_edu = np.array(
             [np.random.choice(a=len(p), p=p) for p in job_offer_probs]
         )
         job_offer_agents[type_mask] = job_offer_edu
 
-        # Get type specific partner states
         empirical_partner_probs = start_period_data_edu["partner_state"].value_counts(
             normalize=True
         )
@@ -233,7 +248,6 @@ def task_generate_start_states_for_solution_no_care_demand(  # noqa: PLR0915
         )
         partner_states[type_mask] = partner_states_edu
 
-        # Generate health states
         empirical_health_probs = start_period_data_edu["health"].value_counts(
             normalize=True
         )
@@ -246,37 +260,82 @@ def task_generate_start_states_for_solution_no_care_demand(  # noqa: PLR0915
         )
         health_agents[type_mask] = health_states_edu
 
-    # Transform it to be between 0 and 1
     exp_agents /= specs["max_exp_diffs_per_period"][0]
-
-    # Set lagged choice to 1(unemployment) if experience is 0
     exp_zero_mask = exp_agents == 0
     lagged_choice[exp_zero_mask] = 1
 
-    # # Show share of observations for each discrete outcome in lagged_choice
-    # lagged_choice_counts = (
-    #     pd.Series(lagged_choice).value_counts(normalize=True).sort_index()
-    # )
-    # print("Lagged choice shares:")
-    # for choice, share in lagged_choice_counts.items():
-    #     print(f"  Choice {choice}: {share:.4f} ({share*100:.2f}%)")
+    n_care = len(specs["caregiving_labels"])
+    lagged_choice_model = lagged_choice * n_care
 
-    # Build states without unsupported keys
     states = {
         "period": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
         "education": jnp.array(education_agents, dtype=jnp.uint8),
         "health": jnp.array(health_agents, dtype=jnp.uint8),
-        "lagged_choice": jnp.array(lagged_choice, dtype=jnp.uint8),
+        "lagged_choice": jnp.array(lagged_choice_model, dtype=jnp.uint8),
         "already_retired": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
         "experience": jnp.array(exp_agents, dtype=jnp.float64),
         "job_offer": jnp.array(job_offer_agents, dtype=jnp.uint8),
         "partner_state": jnp.array(partner_states, dtype=jnp.uint8),
         "has_sister": jnp.array(has_sister_agents, dtype=jnp.uint8),
+        "mother_health": jnp.array(mother_health_agents, dtype=jnp.uint8),
+        "care_demand": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
     }
 
-    # Save initial discrete states and wealth
     with path_to_save_discrete_states.open("wb") as f:
         pickle.dump(states, f)
 
     wealth_agents = pd.DataFrame(wealth_agents, columns=["wealth"])
     wealth_agents.to_csv(path_to_save_wealth, index=False)
+
+
+def draw_start_wealth_dist(start_period_data_edu, n_agents_edu, method="kde"):
+    """Draws samples from the starting wealth distribution using different methods."""
+
+    wealth_data = start_period_data_edu["adjusted_wealth"]
+
+    if method == "uniform":
+        wealth_start = np.random.uniform(
+            wealth_data.quantile(0.3), wealth_data.quantile(0.7), n_agents_edu
+        )
+    elif method == "lognormal":
+        min_val = wealth_data.min()
+        shifted_data = wealth_data - min_val + 1e-6
+        shape, loc, scale = stats.lognorm.fit(shifted_data, floc=0)
+        samples = stats.lognorm.rvs(shape, loc=loc, scale=scale, size=n_agents_edu)
+        wealth_start = samples + min_val - 1e-6
+    elif method == "kde":
+        kde = KernelDensity(kernel="gaussian", bandwidth=0.1 * wealth_data.std()).fit(
+            wealth_data.values.reshape(-1, 1)
+        )
+        wealth_start = kde.sample(n_agents_edu).flatten()
+    elif method == "pareto":
+        min_val = wealth_data.min()
+        shifted_data = wealth_data - min_val + 1e-6
+        shape, loc, scale = stats.pareto.fit(shifted_data, floc=0)
+        samples = stats.pareto.rvs(shape, loc=loc, scale=scale, size=n_agents_edu)
+        wealth_start = samples + min_val - 1e-6
+
+    wealth_start_clipped = np.clip(
+        wealth_start,
+        a_min=wealth_data.quantile(0),
+        a_max=wealth_data.quantile(0.98),
+    )
+
+    return wealth_start_clipped
+
+
+def draw_mother_health(
+    mother_age: int,
+    survival_by_age: pd.Series,
+    health_prob_by_age: pd.DataFrame,
+) -> int:
+    rng = np.random.default_rng()
+    ages = np.asarray(mother_age, dtype=int)
+    prob_alive = pd.Series(ages).map(survival_by_age).to_numpy()
+    health = health_prob_by_age.reindex(ages).to_numpy()
+    probs_alive = health * prob_alive[:, None]
+    probs = np.hstack([probs_alive, (1 - prob_alive)[:, None]])
+    if not np.allclose(probs.sum(axis=1), 1.0, atol=1e-12):
+        raise ValueError("Probability rows do not sum to 1 after normalisation.")
+    mother_health = np.array([rng.choice(4, p=row) for row in probs], dtype=np.uint8)
+    return mother_health

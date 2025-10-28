@@ -40,7 +40,9 @@ jax.config.update("jax_enable_x64", True)
 #     / "model"
 #     / "params"
 #     / "estimated_params_model.yaml",
-#     path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",
+#     path_to_discrete_states: Path = (
+#         BLD / "model" / "initial_conditions" / "states.pkl"
+#     ),
 #     path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
 #     path_to_save_solution: Annotated[Path, Product] = BLD
 #     / "solve_and_simulate"
@@ -76,7 +78,9 @@ jax.config.update("jax_enable_x64", True)
 
 #     # 2) Simulate
 #     initial_states = pickle.load(path_to_discrete_states.open("rb"))
-#     wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
+#     wealth_agents = jnp.array(
+#         pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze()
+#     )
 
 #     model_for_simulation = load_and_setup_model(
 #         options=options,

@@ -25,7 +25,6 @@ from caregiving.simulation.simulate_no_care_demand import (
 )
 
 
-@pytask.mark.skip()
 def task_compute_career_costs(
     # Baseline
     path_to_baseline_options: Path = BLD / "model" / "options.pkl",
@@ -42,12 +41,13 @@ def task_compute_career_costs(
     path_to_baseline_params: Path = BLD
     / "model"
     / "params"
-    / "start_params_model.yaml",
+    / "estimated_params_model.yaml",
     # Counterfactual: no care demand
     path_to_no_care_demand_options: Path = BLD / "model" / "options_no_care_demand.pkl",
-    path_to_no_care_demand_params: Path = BLD / "model" / "params"
-    # / "start_params_model_no_care_demand.yaml",
-    / "params_estimated_no_care_demand.yaml",
+    path_to_no_care_demand_params: Path = BLD
+    / "model"
+    / "params"
+    / "estimated_params_model.yaml",
     path_to_no_care_demand_model: Path = BLD / "model" / "model_no_care_demand.pkl",
     path_to_no_care_demand_solution: Path = BLD
     / "solve_and_simulate"
@@ -63,12 +63,12 @@ def task_compute_career_costs(
     # path_to_original_npv: Annotated[Path, Product] = BLD
     # / "counterfactual"
     # / "original_career_npv.csv",
-    # path_to_no_care_demand_npv: Annotated[Path, Product] = BLD
-    # / "counterfactual"
-    # / "no_care_demand_career_npv.csv",
-    # path_to_career_costs: Annotated[Path, Product] = BLD
-    # / "counterfactual"
-    # / "career_costs.csv",
+    path_to_no_care_demand_npv: Annotated[Path, Product] = BLD
+    / "counterfactual"
+    / "career_npv_no_care_demand.csv",
+    path_to_baseline_npv: Annotated[Path, Product] = BLD
+    / "counterfactual"
+    / "career_npv_baseline.csv",
 ) -> None:
     """Compute career costs as NPV difference between baseline and counterfactual."""
 
