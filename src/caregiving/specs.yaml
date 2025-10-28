@@ -32,15 +32,15 @@ partner_labels: ["Single","Working Partner", "Retired Partner"]
 SRA_grid_size: 1 # 0.25
 min_SRA_baseline: 67
 min_SRA: 65
-max_SRA: 72
+# max_SRA: 72
 max_SRA_baseline: 67
 resolution_age: 63
 informed_threshhold: 5
-
+#
 # Retirement parameters
 ret_years_before_SRA: 4
 min_ret_age: 63
-max_ret_age: 72
+max_ret_age: 67
 # Maximum age to estimate labor market
 max_est_age_labor: 65
 # Assume that part time gives half a year of experience
@@ -66,6 +66,30 @@ late_retirement_bonus: 0.06
 monthly_pension_point_value_west_2010: 27.20
 monthly_pension_point_value_east_2010: 24.13
 
+
+# # Tax system from https://esth.bundesfinanzministerium.de/esth/2020
+# # /A-Einkommensteuergesetz/IV-Tarif/Paragraf-32a/inhalt.html
+# income_tax_brackets: [0.0, 9408, 14532, 57051, 270500]
+# linear_income_tax_rates: [0.0, 1400, 2397, 0.42, 0.45]
+# quadratic_income_tax_rates: [0.0, 972.87, 212.02]
+# intercepts_income_tax: [0.0, 0.0, 972.79, -8963.74, -17078.74]
+
+# # Tax system from https://esth.bundesfinanzministerium.de/esth/2016
+# # /A-Einkommensteuergesetz/IV-Tarif/Paragraf-32a/inhalt.html
+# income_tax_brackets: [0.0, 8652, 13669, 53665, 254446]
+# linear_income_tax_rates: [0.0, 1400, 2397, 0.42, 0.45]
+# quadratic_income_tax_rates: [0.0, 993.62, 225.40]
+# intercepts_income_tax: [0.0, 0.0, 952.48, -8394.14, -16027.52]
+
+# 2010
+# https://www.bundesfinanzministerium.de/Datenportal/Daten/offene-daten/steuern-zoelle/
+# Datensammlung-zur-Steuerpolitik-2023/datensaetze/PDF-Datensammlung-zur-Steuerpolitik.pdf
+# page 31
+income_tax_brackets: [0.0, 8004, 13469, 52881, 250730]
+linear_income_tax_rates: [0.0, 1400, 2397, 0.42, 0.45]
+quadratic_income_tax_rates: [0.0, 912.17, 228.74]
+intercepts_income_tax: [0.0, 0.0, 1038.00, -8172.00, -15694.00]
+
 ###############################################################################
 # Data preparation
 ###############################################################################
@@ -89,7 +113,7 @@ first_cdf_point: 67.5
 second_cdf_point: 68.5
 # cohorts for which process parameters are estimated
 min_birth_year: 1947
-max_birth_year: 2000
+max_birth_year: 1975
 ###############################################
 # Health process estimation parameters
 # smoothing bandwidth for weighted moving average (half of age range used to smooth)

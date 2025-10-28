@@ -4,6 +4,7 @@ import jax.numpy as jnp
 
 from caregiving.model.shared import (
     PARENT_DEAD,
+    START_PERIOD_CAREGIVING,
     is_alive,
     is_dead,
     is_informal_care,
@@ -106,6 +107,7 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
     job_offer,
     options,
 ):
+    """Sparsity condition for the job retention counterfactual model."""
     start_age = options["start_age"]
     max_ret_age = options["max_ret_age"]
     min_ret_age_state_space = options["min_ret_age"]
@@ -130,18 +132,23 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
     # ================================================================================
     elif (age > options["end_age_msm"] + 1) & is_informal_care(lagged_choice):
         return False
-    # # ================================================================================
-    # elif (not care_demand == 0) & (job_before_caregiving == 1):
-    #     return False
-    # # ================================================================================
-    # elif (not is_informal_care(lagged_choice)) & (job_before_caregiving == 1):
-    #     return False
-    # # ================================================================================
+    # ================================================================================
+    elif (age > options["end_age_msm"] + 1) & (job_before_caregiving == 1):
+        return False
+    # ================================================================================
     # After the maximum retirement age, you must be retired.
     elif (age > max_ret_age) & (not is_retired(lagged_choice)) & (is_alive(health)):
         return False
     elif (age > max_ret_age + 1) & (already_retired != 1):
         return False
+    # ================================================================================
+    elif (age <= start_age + START_PERIOD_CAREGIVING) & is_informal_care(lagged_choice):
+        return False
+    elif (age <= start_age + START_PERIOD_CAREGIVING) & (job_before_caregiving == 1):
+        return False
+    elif (not is_informal_care(lagged_choice)) & (job_before_caregiving == 1):
+        return False
+    # ================================================================================
     else:
         # Now turn to the states, where it is decided by the value of an exogenous
         # state if it is valid or not. For invalid states we provide a proxy child state
@@ -163,7 +170,7 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
                 "mother_health": PARENT_DEAD,
                 "care_demand": 0,
                 "job_offer": 0,
-                "job_before_caregiving": job_before_caregiving,
+                "job_before_caregiving": 0,
             }
             return state_proxy
         elif mother_health == PARENT_DEAD:
@@ -182,6 +189,40 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
                 "job_before_caregiving": job_before_caregiving,
             }
             return state_proxy
+        # =====================================================================
+        elif age < start_age + START_PERIOD_CAREGIVING:
+            # No care demand and supply before start of caregiving
+            state_proxy = {
+                "period": period,
+                "lagged_choice": lagged_choice,
+                "already_retired": already_retired,
+                "education": education,
+                "has_sister": has_sister,
+                "health": health,
+                "partner_state": partner_state,
+                "mother_health": mother_health,
+                "care_demand": 0,
+                "job_offer": job_offer,
+                "job_before_caregiving": 0,
+            }
+            return state_proxy
+        # elif age <= start_age + START_PERIOD_CAREGIVING:
+        #     # No care demand and supply before start of caregiving
+        #     state_proxy = {
+        #         "period": period,
+        #         "lagged_choice": lagged_choice,
+        #         "already_retired": already_retired,
+        #         "education": education,
+        #         "has_sister": has_sister,
+        #         "health": health,
+        #         "partner_state": partner_state,
+        #         "mother_health": mother_health,
+        #         "care_demand": care_demand,
+        #         "job_offer": job_offer,
+        #         "job_before_caregiving": 0,
+        #     }
+        #     return state_proxy
+        # =====================================================================
         elif (age <= max_ret_age + 1) and is_retired(lagged_choice):
             # If retirement is already chosen we proxy all states to job offer 0.
             # Until age max_ret_age + 1 the individual could also be freshly retired
@@ -210,27 +251,11 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
                 "has_sister": has_sister,
                 "health": health,
                 "partner_state": partner_state,
-                "mother_health": PARENT_DEAD,
-                "care_demand": 0,
+                "mother_health": mother_health,
+                "care_demand": care_demand,
                 "job_offer": 0,
                 "job_before_caregiving": job_before_caregiving,
             }
             return state_proxy
-        # elif period < 10:
-        #     # If agent before age 40, no care demand and supply
-        #     state_proxy = {
-        #         "period": period,
-        #         "lagged_choice": lagged_choice,
-        #         "already_retired": already_retired,
-        #         "education": education,
-        #         "has_sister": has_sister,
-        #         "health": health,
-        #         "partner_state": partner_state,
-        #         "mother_health": mother_health,
-        #         "care_demand": 0,
-        #         "job_offer": job_offer,
-        #     }
-        #     return state_proxy
-
         else:
             return True

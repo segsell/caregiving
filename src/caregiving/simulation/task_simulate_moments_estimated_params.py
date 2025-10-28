@@ -1,4 +1,4 @@
-"""Simulate moments of the model ."""
+"""Simulate moments of the model using estimated parameters."""
 
 import pickle
 from pathlib import Path
@@ -31,39 +31,42 @@ from caregiving.specs.task_write_specs import read_and_derive_specs
 jax.config.update("jax_enable_x64", True)
 
 
-@pytask.mark.sim
-def task_simulate_moments(
+@pytask.mark.sim_estimated_params
+def task_simulate_moments_estimated_params(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_options: Path = BLD / "model" / "options.pkl",
     path_to_empirical_moments: Path = BLD / "moments" / "moments_full.csv",
-    path_to_simulated_data: Path = BLD / "solve_and_simulate" / "simulated_data.pkl",
+    path_to_simulated_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params.pkl",
     path_to_save_pandas_moments: Annotated[Path, Product] = BLD
     / "moments"
-    / "simulated_moments_pandas.csv",
+    / "simulated_moments_pandas_estimated_params.csv",
     path_to_save_jax_moments: Annotated[Path, Product] = BLD
     / "moments"
-    / "simulated_moments_jax.csv",
+    / "simulated_moments_jax_estimated_params.csv",
     path_to_save_labor_shares_pandas: Annotated[Path, Product] = BLD
     / "plots"
     / "model_fit"
-    / "simulated_labor_shares_pandas.png",
+    / "simulated_labor_shares_pandas_estimated_params.png",
     path_to_save_labor_shares_jax: Annotated[Path, Product] = BLD
     / "plots"
     / "model_fit"
-    / "simulated_labor_shares_jax.png",
+    / "simulated_labor_shares_jax_estimated_params.png",
     path_to_save_labor_shares_with_caregivers_pandas: Annotated[Path, Product] = BLD
     / "plots"
     / "model_fit"
-    / "simulated_labor_shares_with_caregivers_pandas.png",
+    / "simulated_labor_shares_with_caregivers_pandas_estimated_params.png",
     path_to_save_labor_shares_with_caregivers_jax: Annotated[Path, Product] = BLD
     / "plots"
     / "model_fit"
-    / "simulated_labor_shares_with_caregivers_jax.png",
-    path_to_save_transitions_pandas: Annotated[Path, Product] = BLD
-    / "plots"
-    / "model_fit"
-    / "simulated_work_transitions_pandas.png",
+    / "simulated_labor_shares_with_caregivers_jax_estimated_params.png",
+    # path_to_save_transitions_pandas: Annotated[Path, Product] = BLD
+    # / "plots"
+    # / "model_fit"
+    # / "simulated_work_transitions_pandas_estimated_params.png",
 ) -> None:
+    """Simulate moments using estimated parameters model specification."""
 
     specs = read_and_derive_specs(path_to_specs)
 

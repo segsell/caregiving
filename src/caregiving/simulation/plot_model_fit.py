@@ -77,12 +77,12 @@ def plot_wealth_by_age_and_education(
         ]
 
         emp_series = (
-            emp_edu.groupby("age")[wealth_var_emp]
+            emp_edu.groupby("age", observed=False)[wealth_var_emp]
             .apply(agg)
             .reindex(ages, fill_value=np.nan)
         )
         sim_series = (
-            sim_edu.groupby("age")[wealth_var_sim]
+            sim_edu.groupby("age", observed=False)[wealth_var_sim]
             .apply(agg)
             .reindex(ages, fill_value=np.nan)
         )
@@ -355,12 +355,12 @@ def plot_choice_shares_by_education(
 
         # shares by age × aggregated choice
         sim_shares = (
-            sim_edu.groupby("age")["choice_group"]
+            sim_edu.groupby("age", observed=False)["choice_group"]
             .value_counts(normalize=True)
             .unstack(fill_value=0)
         )
         emp_shares = (
-            emp_edu.groupby("age")["choice_group"]
+            emp_edu.groupby("age", observed=False)["choice_group"]
             .value_counts(normalize=True)
             .unstack(fill_value=0)
         )
@@ -455,12 +455,12 @@ def plot_choice_shares_overall(
 
     # Pre-compute age × choice shares
     sim_shares = (
-        sim_all.groupby("age")["choice_group"]
+        sim_all.groupby("age", observed=False)["choice_group"]
         .value_counts(normalize=True)
         .unstack(fill_value=0)
     )
     emp_shares = (
-        emp_all.groupby("age")["choice_group"]
+        emp_all.groupby("age", observed=False)["choice_group"]
         .value_counts(normalize=True)
         .unstack(fill_value=0)
     )
@@ -888,7 +888,7 @@ def plot_caregiver_shares_by_age(
     # -------- 2. Compute empirical caregiver share -------------------------
     # pandas' mean() ignores NaNs → exactly the desired denominator logic
     emp_share = (
-        df_emp.groupby("age")["any_care"]
+        df_emp.groupby("age", observed=False)["any_care"]
         .mean()  # share of ones among {0,1}
         .reindex(ages)  # ensure full age range
     )
@@ -897,7 +897,7 @@ def plot_caregiver_shares_by_age(
     care_codes = np.asarray(choice_set).tolist()
     sim_share = (
         df_sim.assign(is_care=df_sim["choice"].isin(care_codes))
-        .groupby("age")["is_care"]
+        .groupby("age", observed=False)["is_care"]
         .mean()  # mean of Boolean = share
         .reindex(ages)
     )
@@ -1254,7 +1254,9 @@ def plot_simulated_care_demand_by_age(
 
     # ---- 2. Share by (age, education, has_sister)
     shares = (
-        df_sim.groupby(["age", "education", "has_sister"])["care_demand"]
+        df_sim.groupby(["age", "education", "has_sister"], observed=False)[
+            "care_demand"
+        ]
         .mean()
         .reindex(ages, level="age")  # keep full age grid on level 0
     )
@@ -1315,12 +1317,12 @@ def plot_choice_shares_single(data_emp, data_sim, specs, path_to_save_plot):
         data_decision_restr = data_emp[mask_obs]
 
         choice_shares_sim = (
-            data_sim_restr.groupby(["age"])["choice"]
+            data_sim_restr.groupby(["age"], observed=False)["choice"]
             .value_counts(normalize=True)
             .unstack()
         )
         choice_shares_obs = (
-            data_decision_restr.groupby(["age"])["choice"]
+            data_decision_restr.groupby(["age"], observed=False)["choice"]
             .value_counts(normalize=True)
             .unstack()
         )
@@ -1959,13 +1961,13 @@ def plot_choice_shares(data_emp, data_sim, specs):
     data_emp.loc[:, "age"] = data_emp["period"] + specs["start_age"]
     data_sim.loc[:, "age"] = data_sim["period"] + specs["start_age"]
 
-    data_sim.groupby(["age"])["choice"].value_counts(normalize=True).unstack().plot(
-        title="Simulated choice shares by age", kind="bar", stacked=True
-    )
+    data_sim.groupby(["age"], observed=False)["choice"].value_counts(
+        normalize=True
+    ).unstack().plot(title="Simulated choice shares by age", kind="bar", stacked=True)
 
-    data_emp.groupby(["age"])["choice"].value_counts(normalize=True).unstack().plot(
-        title="Observed choice shares by age", kind="bar", stacked=True
-    )
+    data_emp.groupby(["age"], observed=False)["choice"].value_counts(
+        normalize=True
+    ).unstack().plot(title="Observed choice shares by age", kind="bar", stacked=True)
 
 
 def plot_states(data_emp, data_sim, discrete_state_names, specs):
@@ -1975,10 +1977,10 @@ def plot_states(data_emp, data_sim, discrete_state_names, specs):
     data_sim.loc[:, "age"] = data_sim["period"] + specs["start_age"]
 
     for state_name in discrete_state_names:
-        data_emp.groupby(["age"])[state_name].value_counts(
+        data_emp.groupby(["age"], observed=False)[state_name].value_counts(
             normalize=True
         ).unstack().plot()
-        data_sim.groupby(["age"])[state_name].value_counts(
+        data_sim.groupby(["age"], observed=False)[state_name].value_counts(
             normalize=True
         ).unstack().plot()
         plt.show()
@@ -2013,7 +2015,9 @@ def plot_average_savings_decision(data_sim, path_to_save_plot):
 
     fig, ax = plt.subplots()
     # plot average periodic savings by age and choice
-    data_sim.groupby("age")["savings_dec"].mean().plot(ax=ax, label="Average savings")
+    data_sim.groupby("age", observed=False)["savings_dec"].mean().plot(
+        ax=ax, label="Average savings"
+    )
     ax.set_title("Average savings by age")
     ax.legend()
     fig.savefig(path_to_save_plot, transparent=True, dpi=300)
@@ -2039,7 +2043,7 @@ def plot_job_offer_share_by_age(df, min_age=30, max_age=75, path_to_save_plot=No
     df_age = df[(df["age"] >= min_age) & (df["age"] <= max_age)]
 
     # Calculate the share of positive job offers by age
-    share_by_age = df_age.groupby("age")["job_offer"].mean()
+    share_by_age = df_age.groupby("age", observed=False)["job_offer"].mean()
 
     # Debugging
     # df_age_working = df_age[df_age["choice"] >= 2]

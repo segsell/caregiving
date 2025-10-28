@@ -16,6 +16,7 @@ from caregiving.data_management.share.task_create_parent_child_data_set import (
 from caregiving.model.shared import (  # NURSING_HOME_CARE,
     CARE_DEMAND_AND_NO_OTHER_SUPPLY,
     CARE_DEMAND_AND_OTHER_SUPPLY,
+    DEAD,
     FULL_TIME,
     INFORMAL_CARE,
     INFORMAL_CARE_OR_OTHER_CARE,
@@ -37,7 +38,7 @@ from caregiving.model.shared import (  # NURSING_HOME_CARE,
     WORK,
 )
 
-FILL_VALUE_MISSING_AGE = np.nan
+FILL_VALUE_MISSING_AGE = 0  # np.nan
 
 # =====================================================================================
 # Pandas
@@ -59,24 +60,28 @@ def simulate_moments_pandas(  # noqa: PLR0915
     age_range_caregivers = range(start_age_caregivers, end_age + 1)
     age_range_wealth = range(start_age, model_params["end_age_wealth"] + 1)
 
-    age_bins_caregivers = (
-        list(range(40, 75, 5)),  # [40, 45, … , 70]
-        [f"{s}_{s+4}" for s in range(40, 70, 5)],  # "40_44", …a
+    age_bins_caregivers_5year = (
+        list(range(40, 75, 5)),  # [40, 45, 50, 55, 60, 65, 70]
+        [
+            f"{s}_{s+4}" for s in range(40, 70, 5)
+        ],  # ["40_44", "45_49", "50_54", "55_59", "60_64", "65_69"]
     )
     # age_bins_75 = (
     #     list(range(40, 80, 5)),  # [40, 45, … , 70]
     #     [f"{s}_{s+4}" for s in range(40, 75, 5)],  # "40_44", …a
     # )
 
-    # Only non-caregivers
+    df_full = df_full.loc[df_full["health"] != DEAD].copy()
     df_full["mother_age"] = (
         df_full["age"].to_numpy()
         + model_params["mother_age_diff"][
             df_full["has_sister"].to_numpy(), df_full["education"].to_numpy()
         ]
     )
+
+    # Only non-caregivers
     df_non_caregivers = df_full[
-        df_full["choice"].isin(np.asarray(NO_INFORMAL_CARE))
+        df_full["choice"].isin(np.asarray(NO_INFORMAL_CARE).tolist())
     ].copy()
 
     df_low = df_non_caregivers[df_non_caregivers["education"] == 0]
@@ -85,7 +90,9 @@ def simulate_moments_pandas(  # noqa: PLR0915
     df_wealth_low = df_full[df_full["education"] == 0]
     df_wealth_high = df_full[df_full["education"] == 1]
 
-    df_caregivers = df_full[df_full["choice"].isin(np.asarray(INFORMAL_CARE))].copy()
+    df_caregivers = df_full[
+        df_full["choice"].isin(np.asarray(INFORMAL_CARE).tolist())
+    ].copy()
     df_caregivers_low = df_caregivers[df_caregivers["education"] == 0]
     df_caregivers_high = df_caregivers[df_caregivers["education"] == 1]
 
@@ -150,7 +157,7 @@ def simulate_moments_pandas(  # noqa: PLR0915
         df_full,
         moments,
         choice_set=INFORMAL_CARE,
-        age_bins_and_labels=age_bins_caregivers,
+        age_bins_and_labels=age_bins_caregivers_5year,
         label="informal_care",
         scale=SCALE_CAREGIVER_SHARE,
     )
@@ -167,19 +174,30 @@ def simulate_moments_pandas(  # noqa: PLR0915
     moments["share_informal_care_high_educ"] = df_caregivers["education"].mean()
     # ================================================================================
 
-    moments = create_labor_share_moments_pandas(
-        df_caregivers, moments, age_range=age_range_caregivers, label="caregivers"
+    # Labor caregiver shares using 3-year age bins
+    age_bins_caregivers_3year = (
+        list(
+            range(start_age_caregivers, end_age + 1, 3)
+        ),  # [40, 43, 46, 49, 52, 55, 58, 61, 64, 67, 70]
+        [
+            f"{s}_{s+2}" for s in range(start_age_caregivers, end_age - 1, 3)
+        ],  # ["40_42", "43_45", "46_48", "49_51", "52_54", "55_57",
+        # "58_60", "61_63", "64_66", "67_69"]
     )
-    moments = create_labor_share_moments_pandas(
+
+    moments = create_labor_share_moments_by_age_bin_pandas(
+        df_caregivers, moments, age_bins=age_bins_caregivers_3year, label="caregivers"
+    )
+    moments = create_labor_share_moments_by_age_bin_pandas(
         df_caregivers_low,
         moments,
-        age_range=age_range_caregivers,
+        age_bins=age_bins_caregivers_3year,
         label="caregivers_low_education",
     )
-    moments = create_labor_share_moments_pandas(
+    moments = create_labor_share_moments_by_age_bin_pandas(
         df_caregivers_high,
         moments,
-        age_range=age_range_caregivers,
+        age_bins=age_bins_caregivers_3year,
         label="caregivers_high_education",
     )
 
@@ -375,34 +393,25 @@ def simulate_moments_pandas(  # noqa: PLR0915
 
 def create_labor_share_moments_pandas(df, moments, age_range, label=None):
     """
-    Create a Pandas Series of simulation moments.
+    Create a Pandas Series of simulation moments using an optimized method.
 
-    This function performs two tasks:
-
-      (a) Age-specific shares: For each age between start_age and end_age,
-          compute the share of agents (from df) whose 'choice' indicates they
-          are retired, unemployed, working part-time, or working full-time.
-          The resulting keys are named for example, "share_retired_age_40".
-
-      (b) Transition probabilities: Compute nine transition probabilities from
-          the previous period (lagged_choice) to the current period (choice) for
-          the following states: NOT_WORKING, PART_TIME, and FULL_TIME.
-          The keys are named like "trans_not_working_to_full_time".
+    This function computes age-specific shares by creating choice groups and using
+    value_counts(normalize=True), which is the same method used in the plotting
+    functions for consistency. This version is optimized for performance while
+    maintaining correctness.
 
     Assumes that the DataFrame `df` contains at least the following columns:
       - age
       - choice
-      - lagged_choice
 
     Parameters:
         df (pd.DataFrame): The simulation DataFrame.
-        start_age (int): The starting age (inclusive) for computing age-specific shares.
-        end_age (int): The ending age (inclusive) for computing age-specific shares.
+        moments (dict): Dictionary to store the computed moments.
+        age_range (range): The age range for computing age-specific shares.
+        label (str, optional): Label to append to moment names.
 
     Returns:
-        pd.Series: A Series with moment names as the index and computed moments
-            as the values.
-
+        dict: Updated moments dictionary with computed labor share moments.
     """
 
     if label is None:
@@ -410,50 +419,125 @@ def create_labor_share_moments_pandas(df, moments, age_range, label=None):
     else:
         label = "_" + label
 
-    # 1) Labor shares
-    # Create the desired age range
+    # Create choice groups mapping
+    choice_groups = {
+        0: RETIREMENT,
+        1: UNEMPLOYED,
+        2: PART_TIME,
+        3: FULL_TIME,
+    }
 
-    # Group by 'age' over the entire dataframe (assumes df already has an 'age' column)
-    age_groups = df.groupby("age")
+    # OPTIMIZATION 1: Use vectorized mapping instead of loops
+    choice_group_map = {}
+    for agg_code, raw_codes in choice_groups.items():
+        for code in raw_codes.tolist():  # Convert JAX array to Python list
+            choice_group_map[code] = agg_code
 
-    # Compute the proportion for each status using vectorized operations
-    retired_shares = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(RETIREMENT)).mean()
-    )
-    unemployed_shares = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(UNEMPLOYED)).mean()
-    )
-    part_time_shares = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(PART_TIME)).mean()
-    )
-    full_time_shares = age_groups["choice"].apply(
-        lambda x: x.isin(np.atleast_1d(FULL_TIME)).mean()
+    # OPTIMIZATION 2: Use map() instead of copy + multiple loc operations
+    df_copy = df.copy()
+    df_copy["choice_group"] = (
+        df_copy["choice"].map(choice_group_map).fillna(0).astype(int)
     )
 
-    # Reindex to ensure that every age between start_age and end_age is included;
-    # missing ages will be filled with NaN
-    retired_shares = retired_shares.reindex(
-        age_range, fill_value=FILL_VALUE_MISSING_AGE
+    # OPTIMIZATION 3: Single groupby operation
+    shares_by_age = (
+        df_copy.groupby("age", observed=False)["choice_group"]
+        .value_counts(normalize=True)
+        .unstack(fill_value=0)
     )
-    unemployed_shares = unemployed_shares.reindex(
-        age_range, fill_value=FILL_VALUE_MISSING_AGE
+
+    # OPTIMIZATION 4: Vectorized reindexing
+    shares_by_age = shares_by_age.reindex(age_range, fill_value=0)
+
+    # OPTIMIZATION 5: Vectorized dictionary population
+    choice_labels = ["retired", "unemployed", "part_time", "full_time"]
+
+    # Create all moment names and values at once
+    moment_data = []
+    for choice_var, choice_label in enumerate(choice_labels):
+        for age in age_range:
+            if choice_var in shares_by_age.columns:
+                value = shares_by_age.loc[age, choice_var]
+            else:
+                value = 0.0
+            moment_data.append((f"share_{choice_label}{label}_age_{age}", value))
+
+    # OPTIMIZATION 6: Bulk dictionary update
+    moments.update(dict(moment_data))
+
+    return moments
+
+
+def create_labor_share_moments_pandas_backup(df, moments, age_range, label=None):
+    """
+    Create a Pandas Series of simulation moments using the same method as
+    plot_choice_shares_by_education.
+
+    This function computes age-specific shares by creating choice groups and using
+    value_counts(normalize=True), which is the same method used in the plotting
+    functions for consistency.
+
+    Assumes that the DataFrame `df` contains at least the following columns:
+      - age
+      - choice
+
+    Parameters:
+        df (pd.DataFrame): The simulation DataFrame.
+        moments (dict): Dictionary to store the computed moments.
+        age_range (range): The age range for computing age-specific shares.
+        label (str, optional): Label to append to moment names.
+
+    Returns:
+        dict: Updated moments dictionary with computed labor share moments.
+    """
+
+    if label is None:
+        label = ""
+    else:
+        label = "_" + label
+
+    # Create choice groups mapping (same as in plot_choice_shares_by_education)
+    choice_groups = {
+        0: RETIREMENT,
+        1: UNEMPLOYED,
+        2: PART_TIME,
+        3: FULL_TIME,
+    }
+
+    # Create a copy of the dataframe to avoid modifying the original
+    df_copy = df.copy()
+
+    # Map raw choice codes to aggregated choice groups (same as plotting function)
+    for agg_code, raw_codes in choice_groups.items():
+        df_copy.loc[
+            df_copy["choice"].isin(np.asarray(raw_codes).tolist()), "choice_group"
+        ] = agg_code
+
+    # Fill any missing choice_group values with 0 (retirement)
+    df_copy["choice_group"] = df_copy["choice_group"].fillna(0).astype(int)
+
+    # Calculate shares by age using value_counts(normalize=True) - same as plotting
+    # function
+    shares_by_age = (
+        df_copy.groupby("age", observed=False)["choice_group"]
+        .value_counts(normalize=True)
+        .unstack(fill_value=0)
     )
-    part_time_shares = part_time_shares.reindex(
-        age_range, fill_value=FILL_VALUE_MISSING_AGE
-    )
-    full_time_shares = full_time_shares.reindex(
-        age_range, fill_value=FILL_VALUE_MISSING_AGE
-    )
+
+    # Reindex to ensure all ages in age_range are included
+    shares_by_age = shares_by_age.reindex(age_range, fill_value=0)
 
     # Populate the moments dictionary for age-specific shares
-    for age in age_range:
-        moments[f"share_retired{label}_age_{age}"] = retired_shares.loc[age]
-    for age in age_range:
-        moments[f"share_unemployed{label}_age_{age}"] = unemployed_shares.loc[age]
-    for age in age_range:
-        moments[f"share_part_time{label}_age_{age}"] = part_time_shares.loc[age]
-    for age in age_range:
-        moments[f"share_full_time{label}_age_{age}"] = full_time_shares.loc[age]
+    choice_labels = ["retired", "unemployed", "part_time", "full_time"]
+
+    for choice_var, choice_label in enumerate(choice_labels):
+        for age in age_range:
+            if choice_var in shares_by_age.columns:
+                moments[f"share_{choice_label}{label}_age_{age}"] = shares_by_age.loc[
+                    age, choice_var
+                ]
+            else:
+                moments[f"share_{choice_label}{label}_age_{age}"] = 0.0
 
     return moments
 
@@ -506,43 +590,46 @@ def create_labor_share_moments_by_age_bin_pandas(
         right=False,  # [40,45) ⇒ 40–44, etc.
     )
 
-    age_groups = df.groupby("age_bin", observed=False)
+    # Create choice groups mapping (same robust approach as other functions)
+    choice_groups = {
+        0: RETIREMENT,
+        1: UNEMPLOYED,
+        2: PART_TIME,
+        3: FULL_TIME,
+    }
 
-    retired_shares = (
-        age_groups["choice"]
-        .apply(lambda x: x.isin(np.atleast_1d(RETIREMENT)).mean())
-        .reindex(bin_labels, fill_value=np.nan)
-    )
-    unemployed_shares = (
-        age_groups["choice"]
-        .apply(lambda x: x.isin(np.atleast_1d(UNEMPLOYED)).mean())
-        .reindex(bin_labels, fill_value=np.nan)
-    )
-    part_time_shares = (
-        age_groups["choice"]
-        .apply(lambda x: x.isin(np.atleast_1d(PART_TIME)).mean())
-        .reindex(bin_labels, fill_value=np.nan)
-    )
-    full_time_shares = (
-        age_groups["choice"]
-        .apply(lambda x: x.isin(np.atleast_1d(FULL_TIME)).mean())
-        .reindex(bin_labels, fill_value=np.nan)
+    # Create a copy of the dataframe to avoid modifying the original
+    df_copy = df.copy()
+
+    # Map raw choice codes to aggregated choice groups (same as plotting function)
+    for agg_code, raw_codes in choice_groups.items():
+        df_copy.loc[
+            df_copy["choice"].isin(np.asarray(raw_codes).tolist()), "choice_group"
+        ] = agg_code
+
+    # Fill any missing choice_group values with 0 (retirement)
+    df_copy["choice_group"] = df_copy["choice_group"].fillna(0).astype(int)
+
+    # Calculate shares by age bin using value_counts(normalize=True) - robust approach
+    shares_by_bin = (
+        df_copy.groupby("age_bin", observed=False)["choice_group"]
+        .value_counts(normalize=True)
+        .unstack(fill_value=0)
     )
 
-    for age_bin in bin_labels:
-        moments[f"share_retired{label}_age_bin_{age_bin}"] = retired_shares.loc[age_bin]
-    for age_bin in bin_labels:
-        moments[f"share_unemployed{label}_age_bin_{age_bin}"] = unemployed_shares.loc[
-            age_bin
-        ]
-    for age_bin in bin_labels:
-        moments[f"share_part_time{label}_age_bin_{age_bin}"] = part_time_shares.loc[
-            age_bin
-        ]
-    for age_bin in bin_labels:
-        moments[f"share_full_time{label}_age_bin_{age_bin}"] = full_time_shares.loc[
-            age_bin
-        ]
+    # Reindex to ensure all bins are included
+    shares_by_bin = shares_by_bin.reindex(bin_labels, fill_value=0)
+
+    # Populate the moments dictionary for age bin-specific shares
+    choice_labels = ["retired", "unemployed", "part_time", "full_time"]
+
+    for choice_var, choice_label in enumerate(choice_labels):
+        for age_bin in bin_labels:
+            if choice_var in shares_by_bin.columns:
+                value = shares_by_bin.loc[age_bin, choice_var]
+            else:
+                value = 0.0
+            moments[f"share_{choice_label}{label}_age_bin_{age_bin}"] = value
 
     return moments
 
@@ -563,7 +650,7 @@ def create_choice_shares_by_age_pandas(
     label = f"_{label}" if label else ""
 
     share_by_age = (
-        df.groupby("age")["choice"]
+        df.groupby("age", observed=False)["choice"]
         .apply(lambda x: x.isin(np.atleast_1d(choice_set)).mean())
         .reindex(age_range, fill_value=np.nan)
     )
@@ -694,7 +781,7 @@ def create_mean_by_age(
     #     .reindex(age_index, fill_value=np.nan)  # keep all ages even if empty
     # )
     mean_by_age = (
-        df_sub.groupby(df_sub[age_var])[variable]
+        df_sub.groupby(df_sub[age_var], observed=False)[variable]
         .mean()
         .reindex(ages, fill_value=np.nan)
     )
@@ -938,8 +1025,38 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
         arr_intensive_caregivers[:, idx["education"]] == 1
     ]
 
-    age_bins = [(40, 45), (45, 50), (50, 55), (55, 60), (60, 65), (65, 70)]
-    age_bins_75 = [(40, 45), (45, 50), (50, 55), (55, 60), (60, 65), (65, 70), (70, 75)]
+    # Age bins for informal care shares (5-year bins)
+    age_bins = [
+        (40, 45),
+        (45, 50),
+        (50, 55),
+        (55, 60),
+        (60, 65),
+        (65, 70),
+    ]
+    age_bins_75 = [
+        (40, 45),
+        (45, 50),
+        (50, 55),
+        (55, 60),
+        (60, 65),
+        (65, 70),
+        (70, 75),
+    ]
+
+    # Age bins for caregiver labor shares (3-year bins)
+    age_bins_caregivers_3year_jax = [
+        (40, 43),
+        (43, 46),
+        (46, 49),
+        (49, 52),
+        (52, 55),
+        (55, 58),
+        (58, 61),
+        (61, 64),
+        (64, 67),
+        (67, 70),
+    ]
 
     # Mean wealth by education and age bin
     mean_wealth_by_age_low_educ = get_mean_by_age(
@@ -1028,134 +1145,70 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
     )
     # ================================================================================
 
-    # All informal caregivers
-    share_retired_by_age_caregivers = get_share_by_age(
-        arr_caregivers,
-        ind=idx,
-        choice=RETIREMENT,
-        min_age=min_age_caregivers,
-        max_age=max_age,
-    )
-    share_unemployed_by_age_caregivers = get_share_by_age(
-        arr_caregivers,
-        ind=idx,
-        choice=UNEMPLOYED,
-        min_age=min_age_caregivers,
-        max_age=max_age,
-    )
-    share_working_part_time_by_age_caregivers = get_share_by_age(
-        arr_caregivers,
-        ind=idx,
-        choice=PART_TIME,
-        min_age=min_age_caregivers,
-        max_age=max_age,
-    )
-    share_working_full_time_by_age_caregivers = get_share_by_age(
-        arr_caregivers,
-        ind=idx,
-        choice=FULL_TIME,
-        min_age=min_age_caregivers,
-        max_age=max_age,
-    )
-
-    # Low education caregivers
-    share_retired_by_age_caregivers_low_educ = get_share_by_age(
-        arr_caregivers_low_educ,
-        ind=idx,
-        choice=RETIREMENT,
-        min_age=min_age_caregivers,
-        max_age=max_age,
-    )
-    share_unemployed_by_age_caregivers_low_educ = get_share_by_age(
-        arr_caregivers_low_educ,
-        ind=idx,
-        choice=UNEMPLOYED,
-        min_age=min_age_caregivers,
-        max_age=max_age,
-    )
-    share_working_part_time_by_age_caregivers_low_educ = get_share_by_age(
-        arr_caregivers_low_educ,
-        ind=idx,
-        choice=PART_TIME,
-        min_age=min_age_caregivers,
-        max_age=max_age,
-    )
-    share_working_full_time_by_age_caregivers_low_educ = get_share_by_age(
-        arr_caregivers_low_educ,
-        ind=idx,
-        choice=FULL_TIME,
-        min_age=min_age_caregivers,
-        max_age=max_age,
-    )
-
-    # High education caregivers
-    share_retired_by_age_caregivers_high_educ = get_share_by_age(
-        arr_caregivers_high_educ,
-        ind=idx,
-        choice=RETIREMENT,
-        min_age=min_age_caregivers,
-        max_age=max_age,
-    )
-    share_unemployed_by_age_caregivers_high_educ = get_share_by_age(
-        arr_caregivers_high_educ,
-        ind=idx,
-        choice=UNEMPLOYED,
-        min_age=min_age_caregivers,
-        max_age=max_age,
-    )
-    share_working_part_time_by_age_caregivers_high_educ = get_share_by_age(
-        arr_caregivers_high_educ,
-        ind=idx,
-        choice=PART_TIME,
-        min_age=min_age_caregivers,
-        max_age=max_age,
-    )
-    share_working_full_time_by_age_caregivers_high_educ = get_share_by_age(
-        arr_caregivers_high_educ,
-        ind=idx,
-        choice=FULL_TIME,
-        min_age=min_age_caregivers,
-        max_age=max_age,
-    )
-
-    # All informal caregivers
+    # All informal caregivers - using 3-year age bins for labor shares
     share_retired_by_age_bin_caregivers = get_share_by_age_bin(
-        arr_caregivers, ind=idx, choice=RETIREMENT, bins=age_bins
+        arr_caregivers, ind=idx, choice=RETIREMENT, bins=age_bins_caregivers_3year_jax
     )
     share_unemployed_by_age_bin_caregivers = get_share_by_age_bin(
-        arr_caregivers, ind=idx, choice=UNEMPLOYED, bins=age_bins
+        arr_caregivers, ind=idx, choice=UNEMPLOYED, bins=age_bins_caregivers_3year_jax
     )
     share_working_part_time_by_age_bin_caregivers = get_share_by_age_bin(
-        arr_caregivers, ind=idx, choice=PART_TIME, bins=age_bins
+        arr_caregivers, ind=idx, choice=PART_TIME, bins=age_bins_caregivers_3year_jax
     )
     share_working_full_time_by_age_bin_caregivers = get_share_by_age_bin(
-        arr_caregivers, ind=idx, choice=FULL_TIME, bins=age_bins
+        arr_caregivers, ind=idx, choice=FULL_TIME, bins=age_bins_caregivers_3year_jax
     )
 
-    # Caregivers by education
+    # Low education caregivers - using 3-year age bins for labor shares
     share_retired_by_age_bin_caregivers_low_educ = get_share_by_age_bin(
-        arr_caregivers_low_educ, ind=idx, choice=RETIREMENT, bins=age_bins
+        arr_caregivers_low_educ,
+        ind=idx,
+        choice=RETIREMENT,
+        bins=age_bins_caregivers_3year_jax,
     )
     share_unemployed_by_age_bin_caregivers_low_educ = get_share_by_age_bin(
-        arr_caregivers_low_educ, ind=idx, choice=UNEMPLOYED, bins=age_bins
+        arr_caregivers_low_educ,
+        ind=idx,
+        choice=UNEMPLOYED,
+        bins=age_bins_caregivers_3year_jax,
     )
     share_working_part_time_by_age_bin_caregivers_low_educ = get_share_by_age_bin(
-        arr_caregivers_low_educ, ind=idx, choice=PART_TIME, bins=age_bins
+        arr_caregivers_low_educ,
+        ind=idx,
+        choice=PART_TIME,
+        bins=age_bins_caregivers_3year_jax,
     )
     share_working_full_time_by_age_bin_caregivers_low_educ = get_share_by_age_bin(
-        arr_caregivers_low_educ, ind=idx, choice=FULL_TIME, bins=age_bins
+        arr_caregivers_low_educ,
+        ind=idx,
+        choice=FULL_TIME,
+        bins=age_bins_caregivers_3year_jax,
     )
+
+    # High education caregivers - using 3-year age bins for labor shares
     share_retired_by_age_bin_caregivers_high_educ = get_share_by_age_bin(
-        arr_caregivers_high_educ, ind=idx, choice=RETIREMENT, bins=age_bins
+        arr_caregivers_high_educ,
+        ind=idx,
+        choice=RETIREMENT,
+        bins=age_bins_caregivers_3year_jax,
     )
     share_unemployed_by_age_bin_caregivers_high_educ = get_share_by_age_bin(
-        arr_caregivers_high_educ, ind=idx, choice=UNEMPLOYED, bins=age_bins
+        arr_caregivers_high_educ,
+        ind=idx,
+        choice=UNEMPLOYED,
+        bins=age_bins_caregivers_3year_jax,
     )
     share_working_part_time_by_age_bin_caregivers_high_educ = get_share_by_age_bin(
-        arr_caregivers_high_educ, ind=idx, choice=PART_TIME, bins=age_bins
+        arr_caregivers_high_educ,
+        ind=idx,
+        choice=PART_TIME,
+        bins=age_bins_caregivers_3year_jax,
     )
     share_working_full_time_by_age_bin_caregivers_high_educ = get_share_by_age_bin(
-        arr_caregivers_high_educ, ind=idx, choice=FULL_TIME, bins=age_bins
+        arr_caregivers_high_educ,
+        ind=idx,
+        choice=FULL_TIME,
+        bins=age_bins_caregivers_3year_jax,
     )
 
     # Light caregivers
@@ -1502,18 +1555,18 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
         # caregivers
         + share_caregivers_by_age_bin
         + [share_caregivers_high_educ]
-        + share_retired_by_age_caregivers
-        + share_unemployed_by_age_caregivers
-        + share_working_part_time_by_age_caregivers
-        + share_working_full_time_by_age_caregivers
-        + share_retired_by_age_caregivers_low_educ
-        + share_unemployed_by_age_caregivers_low_educ
-        + share_working_part_time_by_age_caregivers_low_educ
-        + share_working_full_time_by_age_caregivers_low_educ
-        + share_retired_by_age_caregivers_high_educ
-        + share_unemployed_by_age_caregivers_high_educ
-        + share_working_part_time_by_age_caregivers_high_educ
-        + share_working_full_time_by_age_caregivers_high_educ
+        + share_retired_by_age_bin_caregivers
+        + share_unemployed_by_age_bin_caregivers
+        + share_working_part_time_by_age_bin_caregivers
+        + share_working_full_time_by_age_bin_caregivers
+        + share_retired_by_age_bin_caregivers_low_educ
+        + share_unemployed_by_age_bin_caregivers_low_educ
+        + share_working_part_time_by_age_bin_caregivers_low_educ
+        + share_working_full_time_by_age_bin_caregivers_low_educ
+        + share_retired_by_age_bin_caregivers_high_educ
+        + share_unemployed_by_age_bin_caregivers_high_educ
+        + share_working_part_time_by_age_bin_caregivers_high_educ
+        + share_working_full_time_by_age_bin_caregivers_high_educ
         #
         # + share_retired_by_age_bin_caregivers
         # + share_unemployed_by_age_bin_caregivers
@@ -1826,11 +1879,12 @@ def _get_share_by_type_by_age_bin(df_arr, ind, choice, care_type, age_bins):
 # =====================================================================================
 
 
-def plot_model_fit_labor_moments_pandas_by_education(
+def plot_model_fit_labor_moments_pandas_by_education(  # noqa: PLR0915
     moms_emp: pd.Series,
     moms_sim: pd.Series,
     specs: dict,
     path_to_save_plot: Optional[str] = None,
+    include_caregivers: bool = False,
 ) -> None:
     """
     Plots the age specific labor supply shares (choice shares) for four states:
@@ -1838,40 +1892,58 @@ def plot_model_fit_labor_moments_pandas_by_education(
     and simulated moments.
 
     Both data_emp and data_sim are pandas Series indexed by moment names in the format:
-      "share_{state}_age_{age}"
-    e.g., "share_retired_age_30", "share_unemployed_age_40", etc.
+      "share_{state}_age_{age}" or "share_{state}_caregivers_age_{age}"
+    e.g., "share_retired_age_30", "share_unemployed_caregivers_age_40", etc.
 
     Parameters
     ----------
-    data_emp : pd.Series
+    moms_emp : pd.Series
         Empirical moments with keys like "share_retired_age_30", etc.
-    data_sim : pd.Series
+    moms_sim : pd.Series
         Simulated moments with the same key naming convention.
-    path_to_save_plot : str
+    specs : dict
+        Model specifications containing education_labels and choice_labels.
+    path_to_save_plot : str, optional
         File path to save the generated plot.
+    include_caregivers : bool, default False
+        If True, includes caregiver-specific moments in addition to general moments.
     """
 
     choices = ["retired", "unemployed", "part_time", "full_time"]
 
-    fig, axs = plt.subplots(2, 4, figsize=(16, 6), sharex=True, sharey=True)
+    # Determine number of rows based on whether we include caregivers
+    n_rows = (
+        2 if not include_caregivers else 4
+    )  # general + caregivers for each education level
+    fig, axs = plt.subplots(
+        n_rows, 4, figsize=(16, 6 * n_rows // 2), sharex=True, sharey=True
+    )
 
-    for edu_var, edu_label in enumerate(specs["education_labels"]):
+    # Ensure axs is always 2D
+    if n_rows == 1:
+        axs = axs.reshape(1, -1)
 
+    row_idx = 0
+
+    for _edu_var, edu_label in enumerate(specs["education_labels"]):
+        # Plot general moments (non-caregivers)
         for choice_var, choice_label in enumerate(specs["choice_labels"]):
+            ax = axs[row_idx, choice_var]
 
-            ax = axs[edu_var, choice_var]
-
+            # Filter for general moments (no "caregivers" in the key)
             emp_keys = [
                 k
                 for k in moms_emp.index
                 if k.startswith(f"share_{choices[choice_var]}_")
                 and str(edu_label.lower().replace(" ", "_")) in k
+                and "caregivers" not in k
             ]
             sim_keys = [
                 k
                 for k in moms_sim.index
                 if k.startswith(f"share_{choices[choice_var]}_")
                 and str(edu_label.lower().replace(" ", "_")) in k
+                and "caregivers" not in k
             ]
 
             # Sort the keys by age.
@@ -1885,21 +1957,69 @@ def plot_model_fit_labor_moments_pandas_by_education(
             sim_values = [moms_sim[k] for k in sim_keys_sorted]
 
             # Plot empirical and simulated shares.
-            ax.plot(sim_ages, sim_values, label="Simulated")
-            ax.plot(emp_ages, emp_values, label="Observed", ls="--")
+            ax.plot(sim_ages, sim_values, label="Simulated", color="blue")
+            ax.plot(emp_ages, emp_values, label="Observed", ls="--", color="red")
 
             ax.set_xlabel("Age")
             ax.set_ylim([0, 1])
 
-            # if edu_var == 0:
-            ax.set_title(choice_label)
+            ax.set_title(f"{choice_label} - {edu_label}")
             ax.tick_params(labelbottom=True)
 
             if choice_var == 0:
-                ax.set_ylabel(edu_label + "\nShare")
+                ax.set_ylabel("Share")
                 ax.legend()
             else:
                 ax.set_ylabel("")
+
+        row_idx += 1
+
+        # Plot caregiver moments if requested
+        if include_caregivers:
+            for choice_var, choice_label in enumerate(specs["choice_labels"]):
+                ax = axs[row_idx, choice_var]
+
+                # Filter for caregiver moments
+                emp_keys = [
+                    k
+                    for k in moms_emp.index
+                    if k.startswith(f"share_{choices[choice_var]}_caregivers_")
+                    and str(edu_label.lower().replace(" ", "_")) in k
+                ]
+                sim_keys = [
+                    k
+                    for k in moms_sim.index
+                    if k.startswith(f"share_{choices[choice_var]}_caregivers_")
+                    and str(edu_label.lower().replace(" ", "_")) in k
+                ]
+
+                # Sort the keys by age.
+                emp_keys_sorted = sorted(emp_keys, key=_extract_age)
+                sim_keys_sorted = sorted(sim_keys, key=_extract_age)
+
+                # Build lists of ages and corresponding values.
+                emp_ages = [_extract_age(k) for k in emp_keys_sorted]
+                emp_values = [moms_emp[k] for k in emp_keys_sorted]
+                sim_ages = [_extract_age(k) for k in sim_keys_sorted]
+                sim_values = [moms_sim[k] for k in sim_keys_sorted]
+
+                # Plot empirical and simulated shares.
+                ax.plot(sim_ages, sim_values, label="Simulated", color="blue")
+                ax.plot(emp_ages, emp_values, label="Observed", ls="--", color="red")
+
+                ax.set_xlabel("Age")
+                ax.set_ylim([0, 1])
+
+                ax.set_title(f"{choice_label} - {edu_label} (Caregivers)")
+                ax.tick_params(labelbottom=True)
+
+                if choice_var == 0:
+                    ax.set_ylabel("Share")
+                    ax.legend()
+                else:
+                    ax.set_ylabel("")
+
+            row_idx += 1
 
     plt.tight_layout()
     if path_to_save_plot:
@@ -2059,6 +2179,7 @@ def plot_model_fit_labor_moments_by_education_pandas_jax(
     moms_sim: jnp.ndarray,
     specs: dict,
     path_to_save_plot: Optional[str] = None,
+    include_caregivers: bool = False,
 ) -> None:
     """
     Plots the age specific labor supply shares (choice shares) for four states:
@@ -2066,39 +2187,54 @@ def plot_model_fit_labor_moments_by_education_pandas_jax(
     and simulated moments.
 
     Both data_emp and data_sim are pandas Series indexed by moment names in the format:
-      "share_{state}_age_{age}"
-    e.g., "share_retired_age_30", "share_unemployed_age_40", etc.
+      "share_{state}_age_{age}" or "share_{state}_caregivers_age_{age}"
+    e.g., "share_retired_age_30", "share_unemployed_caregivers_age_40", etc.
 
     Parameters
     ----------
-    data_emp : pd.Series
+    moms_emp : pd.Series
         Empirical moments with keys like "share_retired_age_30", etc.
-    data_sim : pd.Series
-        Simulated moments with the same key naming convention.
-    path_to_save_plot : str
+    moms_sim : jnp.ndarray
+        Simulated moments as JAX array.
+    specs : dict
+        Model specifications containing education_labels and choice_labels.
+    path_to_save_plot : str, optional
         File path to save the generated plot.
+    include_caregivers : bool, default False
+        If True, includes caregiver-specific moments in addition to general moments.
     """
 
     choices = ["retired", "unemployed", "part_time", "full_time"]
 
     sim_array = np.asarray(moms_sim)
 
-    fig, axs = plt.subplots(2, 4, figsize=(16, 6), sharex=True, sharey=True)
+    # Determine number of rows based on whether we include caregivers
+    n_rows = (
+        2 if not include_caregivers else 4
+    )  # general + caregivers for each education level
+    fig, axs = plt.subplots(
+        n_rows, 4, figsize=(16, 6 * n_rows // 2), sharex=True, sharey=True
+    )
 
-    for edu_var, edu_label in enumerate(specs["education_labels"]):
+    # Ensure axs is always 2D
+    if n_rows == 1:
+        axs = axs.reshape(1, -1)
 
+    row_idx = 0
+
+    for _edu_var, edu_label in enumerate(specs["education_labels"]):
+        # Plot general moments (non-caregivers)
         for choice_var, choice_label in enumerate(specs["choice_labels"]):
-
-            ax = axs[edu_var, choice_var]
+            ax = axs[row_idx, choice_var]
 
             # Get positions where keys match the current state. This preserves the order
             # of the empirical Series.
             indices = [
                 i
                 for i, k in enumerate(moms_emp.index)
-                # if key.startswith(f"share_{state}_age_")
                 if k.startswith(f"share_{choices[choice_var]}_")
                 and str(edu_label.lower().replace(" ", "_")) in k
+                and "caregivers" not in k
             ]
             # Retrieve the keys for these positions.
             keys = [moms_emp.index[i] for i in indices]
@@ -2111,21 +2247,62 @@ def plot_model_fit_labor_moments_by_education_pandas_jax(
             sim_values = sim_array[indices]
 
             # Plot empirical and simulated shares.
-            ax.plot(ages, sim_values, label="Simulated")
-            ax.plot(ages, emp_values, label="Observed", ls="--")
+            ax.plot(ages, sim_values, label="Simulated", color="blue")
+            ax.plot(ages, emp_values, label="Observed", ls="--", color="red")
 
             ax.set_xlabel("Age")
             ax.set_ylim([0, 1])
 
-            # if edu_var == 0:
-            ax.set_title(choice_label)
+            ax.set_title(f"{choice_label} - {edu_label}")
             ax.tick_params(labelbottom=True)
 
             if choice_var == 0:
-                ax.set_ylabel(edu_label + "\nShare")
+                ax.set_ylabel("Share")
                 ax.legend()
             else:
                 ax.set_ylabel("")
+
+        row_idx += 1
+
+        # Plot caregiver moments if requested
+        if include_caregivers:
+            for choice_var, choice_label in enumerate(specs["choice_labels"]):
+                ax = axs[row_idx, choice_var]
+
+                # Get positions where keys match the current state for caregivers
+                indices = [
+                    i
+                    for i, k in enumerate(moms_emp.index)
+                    if k.startswith(f"share_{choices[choice_var]}_caregivers_")
+                    and str(edu_label.lower().replace(" ", "_")) in k
+                ]
+                # Retrieve the keys for these positions.
+                keys = [moms_emp.index[i] for i in indices]
+                # Extract the ages from these keys.
+                ages = [_extract_age(key) for key in keys]
+
+                # Extract empirical values using iloc and simulated values from the jax
+                # array using the same indices.
+                emp_values = moms_emp.iloc[indices].values
+                sim_values = sim_array[indices]
+
+                # Plot empirical and simulated shares.
+                ax.plot(ages, sim_values, label="Simulated", color="blue")
+                ax.plot(ages, emp_values, label="Observed", ls="--", color="red")
+
+                ax.set_xlabel("Age")
+                ax.set_ylim([0, 1])
+
+                ax.set_title(f"{choice_label} - {edu_label} (Caregivers)")
+                ax.tick_params(labelbottom=True)
+
+                if choice_var == 0:
+                    ax.set_ylabel("Share")
+                    ax.legend()
+                else:
+                    ax.set_ylabel("")
+
+            row_idx += 1
 
     plt.tight_layout()
     if path_to_save_plot:
