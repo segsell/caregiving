@@ -105,7 +105,27 @@ def create_test_params(disutil_work, disutil_unemployed, rho):
         "disutil_children_pt_work_high_informal_care": 0,
         "disutil_children_ft_work_low_informal_care": 0.1,
         "disutil_children_ft_work_high_informal_care": 0.2,
+        # type of care
+        "util_informal_care": 0,
+        "util_formal_care": 0,
+        "util_joint_informal_care": 0,
     }
+
+
+@pytest.fixture(scope="module")
+def utility_params():
+    """Shared parameters for utility/disutility tests.
+
+    Uses a single, consistent parameter set across tests to avoid redefinition.
+    """
+    params = create_test_params(disutil_work=0.3, disutil_unemployed=0.15, rho=1.5)
+    # Ensure partner-retired disutility effect is present for tests that expect it
+    params.update(
+        {
+            "disutil_partner_retired": 0.1,
+        }
+    )
+    return params
 
 
 @pytest.mark.parametrize(
@@ -481,43 +501,18 @@ def test_bequest_marginal(consumption, education, rho_educ, bequest_scale_educ):
     ),
 )
 def test_disutility_work_no_caregiving(
-    period, choice, education, partner_state, health, care_demand, load_specs
+    period,
+    choice,
+    education,
+    partner_state,
+    health,
+    care_demand,
+    load_specs,
+    utility_params,
 ):
     """Test disutility_work function for no caregiving scenarios."""
     options = load_specs
-    params = {
-        # No caregiving disutility parameters
-        "disutil_ft_work_high_bad": 0.5,
-        "disutil_ft_work_low_bad": 0.4,
-        "disutil_ft_work_high_good": 0.3,
-        "disutil_ft_work_low_good": 0.2,
-        "disutil_pt_work_high_bad": 0.4,
-        "disutil_pt_work_low_bad": 0.3,
-        "disutil_pt_work_high_good": 0.2,
-        "disutil_pt_work_low_good": 0.1,
-        "disutil_unemployed_low_women": 0.1,
-        "disutil_unemployed_high_women": 0.2,
-        "disutil_children_pt_work_low": 0.05,
-        "disutil_children_pt_work_high": 0.1,
-        "disutil_children_ft_work_low": 0.1,
-        "disutil_children_ft_work_high": 0.2,
-        # Informal care disutility parameters
-        "disutil_ft_work_high_bad_informal_care": 0.6,
-        "disutil_ft_work_low_bad_informal_care": 0.5,
-        "disutil_ft_work_high_good_informal_care": 0.4,
-        "disutil_ft_work_low_good_informal_care": 0.3,
-        "disutil_pt_work_high_bad_informal_care": 0.5,
-        "disutil_pt_work_low_bad_informal_care": 0.4,
-        "disutil_pt_work_high_good_informal_care": 0.3,
-        "disutil_pt_work_low_good_informal_care": 0.2,
-        "disutil_unemployed_low_women_informal_care": 0.2,
-        "disutil_unemployed_high_women_informal_care": 0.3,
-        "disutil_children_pt_work_low_informal_care": 0.1,
-        "disutil_children_pt_work_high_informal_care": 0.15,
-        "disutil_children_ft_work_low_informal_care": 0.15,
-        "disutil_children_ft_work_high_informal_care": 0.25,
-        "disutil_partner_retired": 0.1,
-    }
+    params = utility_params
 
     disutil = disutility_work(
         period=period,
@@ -553,43 +548,18 @@ def test_disutility_work_no_caregiving(
     ),
 )
 def test_disutility_work_informal_care(
-    period, choice, education, partner_state, health, care_demand, load_specs
+    period,
+    choice,
+    education,
+    partner_state,
+    health,
+    care_demand,
+    load_specs,
+    utility_params,
 ):
     """Test disutility_work function for informal care scenarios."""
     options = load_specs
-    params = {
-        # No caregiving disutility parameters
-        "disutil_ft_work_high_bad": 0.5,
-        "disutil_ft_work_low_bad": 0.4,
-        "disutil_ft_work_high_good": 0.3,
-        "disutil_ft_work_low_good": 0.2,
-        "disutil_pt_work_high_bad": 0.4,
-        "disutil_pt_work_low_bad": 0.3,
-        "disutil_pt_work_high_good": 0.2,
-        "disutil_pt_work_low_good": 0.1,
-        "disutil_unemployed_low_women": 0.1,
-        "disutil_unemployed_high_women": 0.2,
-        "disutil_children_pt_work_low": 0.05,
-        "disutil_children_pt_work_high": 0.1,
-        "disutil_children_ft_work_low": 0.1,
-        "disutil_children_ft_work_high": 0.2,
-        # Informal care disutility parameters
-        "disutil_ft_work_high_bad_informal_care": 0.6,
-        "disutil_ft_work_low_bad_informal_care": 0.5,
-        "disutil_ft_work_high_good_informal_care": 0.4,
-        "disutil_ft_work_low_good_informal_care": 0.3,
-        "disutil_pt_work_high_bad_informal_care": 0.5,
-        "disutil_pt_work_low_bad_informal_care": 0.4,
-        "disutil_pt_work_high_good_informal_care": 0.3,
-        "disutil_pt_work_low_good_informal_care": 0.2,
-        "disutil_unemployed_low_women_informal_care": 0.2,
-        "disutil_unemployed_high_women_informal_care": 0.3,
-        "disutil_children_pt_work_low_informal_care": 0.1,
-        "disutil_children_pt_work_high_informal_care": 0.15,
-        "disutil_children_ft_work_low_informal_care": 0.15,
-        "disutil_children_ft_work_high_informal_care": 0.25,
-        "disutil_partner_retired": 0.1,
-    }
+    params = utility_params
 
     disutil = disutility_work(
         period=period,
@@ -611,42 +581,10 @@ def test_disutility_work_informal_care(
     ), f"Disutility should be scalar, got shape {disutil.shape}"
 
 
-def test_disutility_work_partner_retired_effect(load_specs):
+def test_disutility_work_partner_retired_effect(load_specs, utility_params):
     """Test that partner retired status affects disutility correctly."""
     options = load_specs
-    params = {
-        # No caregiving disutility parameters
-        "disutil_ft_work_high_bad": 0.5,
-        "disutil_ft_work_low_bad": 0.4,
-        "disutil_ft_work_high_good": 0.3,
-        "disutil_ft_work_low_good": 0.2,
-        "disutil_pt_work_high_bad": 0.4,
-        "disutil_pt_work_low_bad": 0.3,
-        "disutil_pt_work_high_good": 0.2,
-        "disutil_pt_work_low_good": 0.1,
-        "disutil_unemployed_low_women": 0.1,
-        "disutil_unemployed_high_women": 0.2,
-        "disutil_children_pt_work_low": 0.05,
-        "disutil_children_pt_work_high": 0.1,
-        "disutil_children_ft_work_low": 0.1,
-        "disutil_children_ft_work_high": 0.2,
-        # Informal care disutility parameters
-        "disutil_ft_work_high_bad_informal_care": 0.6,
-        "disutil_ft_work_low_bad_informal_care": 0.5,
-        "disutil_ft_work_high_good_informal_care": 0.4,
-        "disutil_ft_work_low_good_informal_care": 0.3,
-        "disutil_pt_work_high_bad_informal_care": 0.5,
-        "disutil_pt_work_low_bad_informal_care": 0.4,
-        "disutil_pt_work_high_good_informal_care": 0.3,
-        "disutil_pt_work_low_good_informal_care": 0.2,
-        "disutil_unemployed_low_women_informal_care": 0.2,
-        "disutil_unemployed_high_women_informal_care": 0.3,
-        "disutil_children_pt_work_low_informal_care": 0.1,
-        "disutil_children_pt_work_high_informal_care": 0.15,
-        "disutil_children_ft_work_low_informal_care": 0.15,
-        "disutil_children_ft_work_high_informal_care": 0.25,
-        "disutil_partner_retired": 0.1,
-    }
+    params = utility_params
 
     # Test with partner not retired
     disutil_no_retired = disutility_work(
@@ -679,42 +617,10 @@ def test_disutility_work_partner_retired_effect(load_specs):
     )
 
 
-def test_disutility_work_education_health_effects(load_specs):
+def test_disutility_work_education_health_effects(load_specs, utility_params):
     """Test that education and health status affect disutility correctly."""
     options = load_specs
-    params = {
-        # No caregiving disutility parameters
-        "disutil_ft_work_high_bad": 0.5,
-        "disutil_ft_work_low_bad": 0.4,
-        "disutil_ft_work_high_good": 0.3,
-        "disutil_ft_work_low_good": 0.2,
-        "disutil_pt_work_high_bad": 0.4,
-        "disutil_pt_work_low_bad": 0.3,
-        "disutil_pt_work_high_good": 0.2,
-        "disutil_pt_work_low_good": 0.1,
-        "disutil_unemployed_low_women": 0.1,
-        "disutil_unemployed_high_women": 0.2,
-        "disutil_children_pt_work_low": 0.05,
-        "disutil_children_pt_work_high": 0.1,
-        "disutil_children_ft_work_low": 0.1,
-        "disutil_children_ft_work_high": 0.2,
-        # Informal care disutility parameters
-        "disutil_ft_work_high_bad_informal_care": 0.6,
-        "disutil_ft_work_low_bad_informal_care": 0.5,
-        "disutil_ft_work_high_good_informal_care": 0.4,
-        "disutil_ft_work_low_good_informal_care": 0.3,
-        "disutil_pt_work_high_bad_informal_care": 0.5,
-        "disutil_pt_work_low_bad_informal_care": 0.4,
-        "disutil_pt_work_high_good_informal_care": 0.3,
-        "disutil_pt_work_low_good_informal_care": 0.2,
-        "disutil_unemployed_low_women_informal_care": 0.2,
-        "disutil_unemployed_high_women_informal_care": 0.3,
-        "disutil_children_pt_work_low_informal_care": 0.1,
-        "disutil_children_pt_work_high_informal_care": 0.15,
-        "disutil_children_ft_work_low_informal_care": 0.15,
-        "disutil_children_ft_work_high_informal_care": 0.25,
-        "disutil_partner_retired": 0.1,
-    }
+    params = utility_params
 
     # Test high education vs low education
     disutil_high_ed = disutility_work(
