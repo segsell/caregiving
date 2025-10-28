@@ -99,7 +99,9 @@
 #     path_to_emp_var = BLD / "moments" / "empirical_moments_var_long.csv"
 #     path_to_model = BLD / "model" / "model_short_exp.pkl"
 
-#     emp_moments = jnp.asarray(pd.read_csv(path_to_emp_moments, index_col=0).iloc[:, 0])
+#     emp_moments = jnp.asarray(
+#         pd.read_csv(path_to_emp_moments, index_col=0).iloc[:, 0]
+#     )
 #     emp_var = jnp.asarray(pd.read_csv(path_to_emp_var, index_col=0).iloc[:, 0])
 
 #     options = get_options_dict()
