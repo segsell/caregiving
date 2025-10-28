@@ -8,7 +8,6 @@ from unittest.mock import patch
 
 import pytest
 import yaml
-from dcegm.solve import get_solve_func_for_model
 
 from caregiving.config import BLD, SRC
 from caregiving.estimation.estimation_setup import estimate_model
@@ -17,6 +16,7 @@ from caregiving.estimation.prepare_estimation import (
 )
 from caregiving.simulation.simulate import simulate_scenario
 from caregiving.simulation.simulate_moments import simulate_moments_pandas
+from dcegm.solve import get_solve_func_for_model
 
 
 @pytest.fixture

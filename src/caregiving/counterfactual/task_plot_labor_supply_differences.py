@@ -14,12 +14,11 @@ import pytask
 from linearmodels.panel import PanelOLS
 from pytask import Product
 
-from caregiving.config import BLD
+from caregiving.config import BLD, JET_COLOR_MAP
 from caregiving.model.shared import (
     DEAD,
     FULL_TIME,
     INFORMAL_CARE,
-    NOT_WORKING,
     PART_TIME,
     RETIREMENT,
     SEX,
@@ -28,7 +27,6 @@ from caregiving.model.shared import (
 )
 from caregiving.model.shared_no_care_demand import (
     FULL_TIME_NO_CARE_DEMAND,
-    NOT_WORKING_NO_CARE_DEMAND,
     PART_TIME_NO_CARE_DEMAND,
     RETIREMENT_NO_CARE_DEMAND,
     UNEMPLOYED_NO_CARE_DEMAND,
@@ -48,10 +46,6 @@ def task_plot_labor_supply_differences(
     / "plots"
     / "counterfactual"
     / "labor_supply_differences_by_age.png",
-    path_to_plot_percentage_deviations: Annotated[Path, Product] = BLD
-    / "plots"
-    / "counterfactual"
-    / "labor_supply_percentage_deviations_by_age.png",
     ever_caregivers: bool = True,
 ) -> None:
     """Plot differences in labor supply by age between scenarios."""
@@ -112,14 +106,6 @@ def task_plot_labor_supply_differences(
     )
     # Create plot
     create_labor_supply_difference_plot(differences, path_to_plot)
-
-    # # Compute percentage deviations
-    # pct_devs = compute_labor_supply_percentage_deviations(
-    #     original_shares, no_care_demand_shares
-    # )
-
-    # # Plot
-    # create_labor_supply_percentage_plot(pct_devs, path_to_plot_percentage_deviations)
 
 
 def compute_labor_supply_shares_by_age(
@@ -216,65 +202,53 @@ def create_labor_supply_difference_plot(
 ) -> None:
     """Create plot showing labor supply differences by age."""
 
-    # Create figure with subplots (single row since only women)
-    fig, axes = plt.subplots(1, 2, figsize=(15, 6))
-    fig.suptitle(
-        "Labor Supply Differences by Age: No Care Demand vs Original (Women)",
-        fontsize=16,
-    )
+    # Create single plot with 3 lines
+    plt.figure(figsize=(10, 6))
 
-    # Plot 1: Working (any employment)
-    axes[0].plot(differences["age"], differences["working_diff"], "b-", linewidth=2)
-    axes[0].axhline(y=0, color="k", linestyle="--", alpha=0.5)
-    axes[0].set_title("Working Rate Difference")
-    axes[0].set_ylabel("Difference (No Care - Original)")
-    axes[0].grid(True, alpha=0.3)
-
-    # Plot 2: Part-time vs Full-time
-    axes[1].plot(
+    # Plot Working (black, dashed)
+    plt.plot(
         differences["age"],
-        differences["part_time_diff"],
-        "g-",
+        differences["working_diff"],
+        color="black",
         linewidth=2,
-        label="Part-time",
+        linestyle="--",
+        label="Working",
     )
-    axes[1].plot(
+
+    # Plot Full-time (JET_COLOR_MAP[1])
+    plt.plot(
         differences["age"],
         differences["full_time_diff"],
-        "r-",
+        color=JET_COLOR_MAP[1],
         linewidth=2,
-        label="Full-time",
+        label="Full Time",
     )
-    axes[1].axhline(y=0, color="k", linestyle="--", alpha=0.5)
-    axes[1].set_title("Part-time vs Full-time Differences")
-    axes[1].set_ylabel("Difference (No Care - Original)")
-    axes[1].legend()
-    axes[1].grid(True, alpha=0.3)
 
-    # Calculate common y-axis range for both plots
-    working_diff = differences["working_diff"].values
-    part_time_diff = differences["part_time_diff"].values
-    full_time_diff = differences["full_time_diff"].values
+    # Plot Part-time (JET_COLOR_MAP[2])
+    plt.plot(
+        differences["age"],
+        differences["part_time_diff"],
+        color=JET_COLOR_MAP[0],
+        linewidth=2,
+        label="Part Time",
+    )
 
-    # Find the overall min and max across all difference series
-    all_values = np.concatenate([working_diff, part_time_diff, full_time_diff])
-    common_min = np.min(all_values)
-    common_max = np.max(all_values)
+    # Add horizontal line at zero
+    plt.axhline(y=0, color="k", linestyle="--", alpha=0.5)
 
-    # Add padding
-    common_range = common_max - common_min
-    padding = common_range * 0.1
-    common_y_min = common_min - padding
-    common_y_max = common_max + padding
+    # Set labels and formatting with increased font sizes
+    plt.xlabel("Age", fontsize=16)
+    plt.ylabel("Proportion Working\nDeviation from Baseline", fontsize=16)
+    plt.xlim(30, 70)
+    plt.ylim(None, 0.05)  # Set upper y-limit to 0.05
+    plt.grid(True, alpha=0.3)
 
-    # Set x-axis properties and common y-axis range
-    axes[0].set_xlabel("Age")
-    axes[0].set_xlim(30, 70)
-    axes[0].set_ylim(common_y_min, common_y_max)
+    # Set tick font sizes
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
 
-    axes[1].set_xlabel("Age")
-    axes[1].set_xlim(30, 70)
-    axes[1].set_ylim(common_y_min, common_y_max)
+    # Add legend in specified order with increased font size
+    plt.legend(["Working", "Full Time", "Part Time"], prop={"size": 16})
 
     plt.tight_layout()
     plt.savefig(path_to_plot, dpi=300, bbox_inches="tight")
@@ -283,95 +257,119 @@ def create_labor_supply_difference_plot(
     print(f"Labor supply difference plot saved to: {path_to_plot}")
 
 
-def compute_labor_supply_percentage_deviations(
-    original_shares: pd.DataFrame, no_care_demand_shares: pd.DataFrame
+def compute_wealth_savings_by_age(df: pd.DataFrame, outcome_var: str) -> pd.DataFrame:
+    """Compute mean wealth or savings by age."""
+    df_local = df[["age", outcome_var]].copy()
+
+    # Compute mean by age
+    means_by_age = (
+        df_local.groupby("age", observed=False)[outcome_var].mean().reset_index()
+    )
+
+    return means_by_age
+
+
+def compute_wealth_savings_differences(
+    original_data: pd.DataFrame, no_care_demand_data: pd.DataFrame, outcome_var: str
 ) -> pd.DataFrame:
-    """Compute percentage deviations: (no_care - original) / original.
+    """Compute differences in wealth or savings between scenarios."""
 
-    Safely handles division by zero by leaving results at 0 when the
-    original share is 0.
-    """
+    # Compute means by age for both scenarios
+    original_means = compute_wealth_savings_by_age(original_data, outcome_var)
+    no_care_means = compute_wealth_savings_by_age(no_care_demand_data, outcome_var)
 
+    # Merge on age
     merged = pd.merge(
-        original_shares,
-        no_care_demand_shares,
+        original_means,
+        no_care_means,
         on=["age"],
         suffixes=("_original", "_no_care_demand"),
     )
 
-    def pct_diff(num, den):
-        out = np.zeros_like(num)
-        mask = den != 0
-        out[mask] = (num[mask] - den[mask]) / den[mask]
-        return out
-
-    merged["working_pct_diff"] = pct_diff(
-        merged["is_working_no_care_demand"].to_numpy(),
-        merged["is_working_original"].to_numpy(),
-    )
-    merged["part_time_pct_diff"] = pct_diff(
-        merged["is_part_time_no_care_demand"].to_numpy(),
-        merged["is_part_time_original"].to_numpy(),
-    )
-    merged["full_time_pct_diff"] = pct_diff(
-        merged["is_full_time_no_care_demand"].to_numpy(),
-        merged["is_full_time_original"].to_numpy(),
+    # Compute differences (original - no_care_demand)
+    merged[f"{outcome_var}_diff"] = (
+        merged[f"{outcome_var}_original"] - merged[f"{outcome_var}_no_care_demand"]
     )
 
     return merged
 
 
-def create_labor_supply_percentage_plot(
-    pct_devs: pd.DataFrame, path_to_plot: Path
+def create_wealth_difference_plot(
+    differences: pd.DataFrame, path_to_plot: Path
 ) -> None:
-    """Create plot showing percentage deviations by age.
+    """Create plot showing wealth differences by age."""
 
-    Percentage deviations are shown for working, part-time and full-time.
-    """
+    plt.figure(figsize=(10, 6))
 
-    fig, axes = plt.subplots(1, 2, figsize=(15, 6))
-    fig.suptitle(
-        "Labor Supply Percentage Deviations by Age: No Care vs Original (Women)",
-        fontsize=16,
-    )
-
-    # Working percentage deviation
-    axes[0].plot(pct_devs["age"], pct_devs["working_pct_diff"], "b-", linewidth=2)
-    axes[0].axhline(y=0, color="k", linestyle="--", alpha=0.5)
-    axes[0].set_title("Working Rate Percentage Deviation")
-    axes[0].set_ylabel("(No Care - Original) / Original")
-    axes[0].grid(True, alpha=0.3)
-
-    # Part-time vs Full-time percentage deviations
-    axes[1].plot(
-        pct_devs["age"],
-        pct_devs["part_time_pct_diff"],
-        "g-",
+    # Plot wealth difference
+    plt.plot(
+        differences["age"],
+        differences["wealth_at_beginning_diff"],
+        color="black",
         linewidth=2,
-        label="Part-time",
+        label="Wealth Difference",
     )
-    axes[1].plot(
-        pct_devs["age"],
-        pct_devs["full_time_pct_diff"],
-        "r-",
-        linewidth=2,
-        label="Full-time",
-    )
-    axes[1].axhline(y=0, color="k", linestyle="--", alpha=0.5)
-    axes[1].set_title("Part-time vs Full-time Percentage Deviations")
-    axes[1].set_ylabel("(No Care - Original) / Original")
-    axes[1].legend()
-    axes[1].grid(True, alpha=0.3)
 
-    # Set x-range consistent with other plots
-    axes[0].set_xlabel("Age")
-    axes[0].set_xlim(30, 67)
-    axes[1].set_xlabel("Age")
-    axes[1].set_xlim(30, 67)
+    # Add horizontal line at zero
+    plt.axhline(y=0, color="k", linestyle="--", alpha=0.5)
+
+    # Set labels and formatting with increased font sizes
+    plt.xlabel("Age", fontsize=16)
+    plt.ylabel("Wealth Difference\n(Original - No Care Demand)", fontsize=16)
+    plt.xlim(30, 70)
+    plt.grid(True, alpha=0.3)
+
+    # Set tick font sizes
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+
+    # Add legend with increased font size
+    plt.legend(prop={"size": 16})
 
     plt.tight_layout()
     plt.savefig(path_to_plot, dpi=300, bbox_inches="tight")
     plt.close()
+
+    print(f"Wealth difference plot saved to: {path_to_plot}")
+
+
+def create_savings_difference_plot(
+    differences: pd.DataFrame, path_to_plot: Path
+) -> None:
+    """Create plot showing savings differences by age."""
+
+    plt.figure(figsize=(10, 6))
+
+    # Plot savings difference
+    plt.plot(
+        differences["age"],
+        differences["savings_dec_diff"],
+        color="black",
+        linewidth=2,
+        label="Savings Difference",
+    )
+
+    # Add horizontal line at zero
+    plt.axhline(y=0, color="k", linestyle="--", alpha=0.5)
+
+    # Set labels and formatting with increased font sizes
+    plt.xlabel("Age", fontsize=16)
+    plt.ylabel("Savings Difference\n(Original - No Care Demand)", fontsize=16)
+    plt.xlim(30, 70)
+    plt.grid(True, alpha=0.3)
+
+    # Set tick font sizes
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+
+    # Add legend with increased font size
+    plt.legend(prop={"size": 16})
+
+    plt.tight_layout()
+    plt.savefig(path_to_plot, dpi=300, bbox_inches="tight")
+    plt.close()
+
+    print(f"Savings difference plot saved to: {path_to_plot}")
 
 
 def create_labor_supply_age_profile_plot(
@@ -521,253 +519,6 @@ def task_plot_labor_supply_age_profiles(
         df_no_care_demand=df_no_care_demand,
         path_to_plot=path_to_plot,
     )
-
-
-# # ===================================================================================
-# # Event study
-# # ===================================================================================
-
-
-# def _prepare_event_study_panel(
-#     df_original: pd.DataFrame,
-#     df_no_care_demand: pd.DataFrame,
-#     window: int = 16,
-#     ever_caregivers: bool = True,
-# ) -> pd.DataFrame:
-#     """Build stacked panel with event time around first caregiving start.
-
-#     - Computes first caregiving start in original per agent.
-#     - Attaches the same event time to the counterfactual rows.
-#     - Creates binary outcome `work`.
-#     - Trims to event time in [-window, window] and drops missing timing.
-#     """
-
-#     # Ensure 'agent' and 'period' columns exist
-#     for df in (df_original, df_no_care_demand):
-#         # Ensure agent
-#         if "agent" not in df.columns:
-#             if isinstance(df.index, pd.MultiIndex) and ("agent" in df.index.names):
-#                 df.reset_index(level=["agent"], inplace=True)
-#             else:
-#                 df.reset_index(inplace=True)
-#         # Ensure period
-#         if "period" not in df.columns:
-#             if isinstance(df.index, pd.MultiIndex) and ("period" in df.index.names):
-#                 df.reset_index(level=["period"], inplace=True)
-#             else:
-#                 if "age" in df.columns:
-#                     # Derive a pseudo-period anchored at each agent's min age
-#                     df["period"] = df.groupby("agent")["age"].transform(
-#                         lambda s: s - s.min()
-#                     )
-#                 else:
-#                     # Fallback: sequential period within agent
-#                     df["period"] = df.groupby("agent").cumcount()
-
-#     # After ensuring columns, fully reset any residual index to avoid
-#     # label/level ambiguity
-#     df_original = df_original.reset_index(drop=True)
-#     df_no_care_demand = df_no_care_demand.reset_index(drop=True)
-
-#     # Identify first caregiving start in original
-#     informal = np.asarray(INFORMAL_CARE).ravel().tolist()
-#     caregiving_mask = df_original["choice"].isin(informal)
-#     first_care = (
-#         df_original.loc[caregiving_mask, ["agent", "period"]]
-#         .sort_values(["agent", "period"])
-#         .drop_duplicates("agent")
-#         .rename(columns={"period": "treat_start"})
-#     )
-
-#     # Optional: restrict to ever caregivers
-#     if ever_caregivers:
-#         caregiver_ids = first_care["agent"].unique()
-#         df_original = df_original[df_original["agent"].isin(caregiver_ids)].copy()
-#         df_no_care_demand = df_no_care_demand[
-#             df_no_care_demand["agent"].isin(caregiver_ids)
-#         ].copy()
-
-#     # Attach treat_start to both datasets
-#     df_o = df_original.merge(first_care, on="agent", how="left")
-#     df_c = df_no_care_demand.merge(first_care, on="agent", how="left")
-
-#     # Compute event time
-#     for d in (df_o, df_c):
-#         d["event_time"] = d["period"] - d["treat_start"]
-
-#     # Outcome: work
-#     df_o["work"] = df_o["choice"].isin(np.asarray(WORK).ravel().tolist()).astype(int)
-#     df_c["work"] = (
-#         df_c["choice"]
-#         .isin(np.asarray(WORK_NO_CARE_DEMAND).ravel().tolist())
-#         .astype(int)
-#     )
-
-#     # Stack and keep within window, drop rows without timing
-#     panel = pd.concat(
-#         [
-#             df_o.assign(scenario="original"),
-#             df_c.assign(scenario="no_care"),
-#         ],
-#         ignore_index=True,
-#     )
-
-#     panel = panel[(panel["treat_start"].notna())].copy()
-#     panel = panel[(panel["event_time"] >= -window) & (panel["event_time"] <= window)]
-
-#     return panel
-
-
-# def _event_study_twfe(panel: pd.DataFrame, window: int = 16) -> pd.DataFrame:
-#     """Estimate TWFE event-study without baseline (-1) using OLS with dummies.
-
-#     Returns a DataFrame with columns: event_time, beta.
-#     """
-#     # Build design: dummies for event_time (exclude -1), individual FE, period FE
-#     evt_vals = list(range(-window, window + 1))
-#     baseline = -1
-#     evt_used = [k for k in evt_vals if k != baseline]
-
-#     # Dummies
-#     D_evt = pd.get_dummies(panel["event_time"]).reindex(
-#         columns=evt_used, fill_value=0
-#     )
-#     D_ind = pd.get_dummies(panel["agent"], drop_first=True)
-#     D_t = pd.get_dummies(panel["period"], drop_first=True)
-
-#     X = pd.concat([D_evt, D_ind, D_t], axis=1).astype(float).values
-#     y = panel["work"].astype(float).values
-
-#     # OLS via least squares
-#     beta_hat, *_ = np.linalg.lstsq(X, y, rcond=None)
-
-#     # First len(evt_used) coefficients correspond to event-time effects
-#     beta_evt = beta_hat[: len(evt_used)]
-#     out = pd.DataFrame({"event_time": evt_used, "beta": beta_evt})
-
-#     # Add baseline at zero for plotting convenience
-#     out = pd.concat(
-#         [out, pd.DataFrame({"event_time": [baseline], "beta": [0.0]})],
-#         ignore_index=True,
-#     ).sort_values("event_time")
-#     return out
-
-
-# def create_event_study_plot(estimates: pd.DataFrame, path_to_plot: Path) -> None:
-#     """Plot dynamic DiD event-study coefficients from -window to +window."""
-#     plt.figure(figsize=(12, 6))
-#     plt.axhline(y=0, color="k", linestyle="--", alpha=0.5)
-#     plt.axvline(x=0, color="k", linestyle=":", alpha=0.5)
-#     plt.plot(estimates["event_time"], estimates["beta"], marker="o")
-#     plt.xlabel("Event time (years from first caregiving start)")
-#     plt.ylabel("Effect on working (share)")
-#     plt.xlim(-16, 16)
-#     plt.grid(True, alpha=0.3)
-#     plt.tight_layout()
-#     plt.savefig(path_to_plot, dpi=300, bbox_inches="tight")
-#     plt.close()
-
-
-# def _event_study_twfe_lm(panel: pd.DataFrame, window: int = 16) -> pd.DataFrame:
-#     """Estimate TWFE event-study using linearmodels PanelOLS.
-
-#     Uses a categorical for event_time with baseline -1, and includes
-#     entity (agent) and time (period) fixed effects.
-#     """
-
-#     df = panel.copy()
-#     # Ensure required index
-#     if not ("agent" in df.columns and "period" in df.columns):
-#         raise ValueError("Panel must contain 'agent' and 'period' columns.")
-
-#     # Limit to window and drop missing timing
-#     df = df[df["treat_start"].notna()].copy()
-#     df = df[(df["event_time"] >= -window) & (df["event_time"] <= window)].copy()
-
-#     # Categorical event-time with baseline -1
-#     df["event_time_cat"] = df["event_time"].astype(int)
-
-#     # Build a MultiIndex (entity=time index order is important: time x entity)
-#     df = df.set_index(["period", "agent"]).sort_index()
-
-#     # Fit PanelOLS with entity and time effects; use formula with treatment coding
-#     # Patsy-compatible: C(event_time_cat, Treatment(reference=-1))
-#     mod = PanelOLS.from_formula(
-#         "work ~ 0 + C(event_time_cat, Treatment(reference=-1)) + "
-#         "EntityEffects + TimeEffects",
-#         data=df,
-#         drop_absorbed=True,
-#         check_rank=True,
-#     )
-#     res = mod.fit()
-
-#     # Extract event-time coefficients
-#     params = res.params
-#     evt_coefs = []
-#     for name, val in params.items():
-#         if name.startswith("C(event_time_cat, Treatment(reference=-1))["):
-#             # name like C(event_time_cat, Treatment(reference=-1))[T.-16]
-#             try:
-#                 key = name.split("[")[-1].strip("]")
-#                 # keys look like 'T.-16' or 'T.0' -> take after 'T.'
-#                 if key.startswith("T."):
-#                     key = key[2:]
-#                 evt = int(key)
-#                 evt_coefs.append((evt, float(val)))
-#             except Exception:
-#                 continue
-
-#     out = pd.DataFrame(evt_coefs, columns=["event_time", "beta"]).sort_values(
-#         "event_time"
-#     )
-#     # Ensure baseline -1 present at 0
-#     if (-1) not in set(out["event_time"].tolist()):
-#         out = pd.concat(
-#             [out, pd.DataFrame({"event_time": [-1], "beta": [0.0]})],
-#             ignore_index=True,
-#         ).sort_values("event_time")
-#     return out
-
-
-# # @pytask.mark.counterfactual_differences
-# def event_study_work(
-#     path_to_original_data: Path = BLD
-#     / "solve_and_simulate"
-#     / "simulated_data_estimated_params.pkl",
-#     path_to_no_care_demand_data: Path = BLD
-#     / "solve_and_simulate"
-#     / "simulated_data_no_care_demand.pkl",
-#     path_to_plot: Annotated[Path, Product] = BLD
-#     / "plots"
-#     / "counterfactual"
-#     / "event_study_work.png",
-#     ever_caregivers: bool = True,
-#     window: int = 16,
-# ) -> None:
-#     """Run and plot event-study (TWFE) using counterfactual controls.
-
-#     - Treatment timing: first caregiving start in the original scenario.
-#     - Controls: same agents in the no-care-demand model (true counterfactual).
-#     - FE: individual and period fixed effects.
-#     - Outcome: working indicator.
-#     """
-
-#     df_original = pd.read_pickle(path_to_original_data)
-#     df_no_care_demand = pd.read_pickle(path_to_no_care_demand_data)
-
-#     # Remove dead periods to focus on active horizon
-#     df_original = df_original[df_original["health"] != DEAD].copy()
-#     df_no_care_demand = df_no_care_demand[df_no_care_demand["health"] != DEAD].copy()
-
-#     panel = _prepare_event_study_panel(
-#         df_original=df_original,
-#         df_no_care_demand=df_no_care_demand,
-#         window=window,
-#         ever_caregivers=ever_caregivers,
-#     )
-
-#     est = _event_study_twfe(panel, window=window)
-#     create_event_study_plot(est, path_to_plot)
 
 
 # ===================================================================================
@@ -1003,7 +754,7 @@ def task_plot_outcomes_by_distance_to_first_care(
     )
 
 
-@pytask.mark.counterfactual_differences_matched
+@pytask.mark.counterfactual_differences
 def task_plot_matched_differences_by_distance(  # noqa: PLR0915
     path_to_original_data: Path = BLD
     / "solve_and_simulate"
@@ -1027,6 +778,7 @@ def task_plot_matched_differences_by_distance(  # noqa: PLR0915
       4) Merge on (agent, period) and compute differences.
       5) Compute distance_to_first_care from original, attach to merged.
       6) Average diffs by distance and plot three series.
+
     """
 
     # Load
@@ -1127,44 +879,55 @@ def task_plot_matched_differences_by_distance(  # noqa: PLR0915
 
     # Plot
     plt.figure(figsize=(12, 7))
-    plt.title("Matched Differences by Distance to First Care Spell")
 
     plt.plot(
         prof["distance_to_first_care"],
         prof["diff_work"],
-        label="Work (Orig - No Care)",
-        color="tab:blue",
+        label="Working",
+        color="black",
         linewidth=2,
+        linestyle="--",
     )
     plt.plot(
         prof["distance_to_first_care"],
         prof["diff_ft"],
-        label="FT (Orig - No Care)",
-        color="tab:red",
+        label="Full Time",
+        color=JET_COLOR_MAP[1],
         linewidth=2,
     )
     plt.plot(
         prof["distance_to_first_care"],
         prof["diff_pt"],
-        label="PT (Orig - No Care)",
-        color="tab:green",
+        label="Part Time",
+        color=JET_COLOR_MAP[0],
         linewidth=2,
     )
 
     plt.axvline(x=0, color="k", linestyle=":", alpha=0.5)
-    plt.xlabel("Distance to first care spell (periods)")
-    plt.ylabel("Mean difference (Original - No Care)")
+    plt.xlabel("Year relative to start of first care spell", fontsize=16)
+    plt.ylabel("Proportion Working\nDeviation from Baseline", fontsize=16)
     plt.xlim(-window, window)
     plt.ylim(-0.125, 0.025)
     plt.grid(True, alpha=0.3)
-    plt.legend(ncol=2)
+
+    # Set tick font sizes
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+
+    # Add legend with increased font size, positioned closer to (0,0) point
+    plt.legend(
+        ["Working", "Full Time", "Part Time"],
+        loc="lower left",
+        bbox_to_anchor=(0.05, 0.05),
+        prop={"size": 16},
+    )
     plt.tight_layout()
     plt.savefig(path_to_plot, dpi=300, bbox_inches="tight")
     plt.close()
 
 
-@pytask.mark.counterfactual_differences_matched
-def task_plot_matched_differences_by_distance_no_work(  # noqa: PLR0915
+@pytask.mark.counterfactual_differences
+def task_plot_wealth_differences(
     path_to_original_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
@@ -1174,136 +937,118 @@ def task_plot_matched_differences_by_distance_no_work(  # noqa: PLR0915
     path_to_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences_by_distance_no_work.png",
+    / "wealth_differences_by_age.png",
     ever_caregivers: bool = True,
-    window: int = 16,
 ) -> None:
-    """Matched differences for no-work outcomes: unemployed, retired, not working."""
+    """Plot differences in wealth by age between scenarios."""
 
-    # Load
-    df_o = pd.read_pickle(path_to_original_data)
-    df_c = pd.read_pickle(path_to_no_care_demand_data)
+    # Load data
+    df_original = pd.read_pickle(path_to_original_data)
+    df_no_care_demand = pd.read_pickle(path_to_no_care_demand_data)
 
-    # Alive restriction
-    df_o = df_o[df_o["health"] != DEAD].copy()
-    df_c = df_c[df_c["health"] != DEAD].copy()
+    df_original["sex"] = SEX
+    df_no_care_demand["sex"] = SEX
 
-    # Ensure agent/period and flatten any index
-    df_o = _ensure_agent_period(df_o)
-    df_c = _ensure_agent_period(df_c)
-    df_o = df_o.reset_index(drop=True)
-    df_c = df_c.reset_index(drop=True)
+    df_original = df_original[df_original["health"] != DEAD].copy()
+    df_no_care_demand = df_no_care_demand[df_no_care_demand["health"] != DEAD].copy()
 
-    # Ever-caregiver restriction
+    # Ensure an 'agent' column exists
+    if "agent" not in df_original.columns:
+        if isinstance(df_original.index, pd.MultiIndex) and (
+            "agent" in df_original.index.names
+        ):
+            df_original = df_original.reset_index(level=["agent"])
+        else:
+            df_original = df_original.reset_index()
+
+    if "agent" not in df_no_care_demand.columns:
+        if isinstance(df_no_care_demand.index, pd.MultiIndex) and (
+            "agent" in df_no_care_demand.index.names
+        ):
+            df_no_care_demand = df_no_care_demand.reset_index(level=["agent"])
+        else:
+            df_no_care_demand = df_no_care_demand.reset_index()
+
+    # Optional sample restriction to ever-caregivers in the original scenario
     if ever_caregivers:
-        care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
-        caregiver_ids = df_o.loc[df_o["choice"].isin(care_codes), "agent"].unique()
-        df_o = df_o[df_o["agent"].isin(caregiver_ids)].copy()
-        df_c = df_c[df_c["agent"].isin(caregiver_ids)].copy()
+        informal_care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
+        caregiver_ids = df_original.loc[
+            df_original["choice"].isin(informal_care_codes), "agent"
+        ].unique()
 
-    # No-work outcomes per period (0/1)
-    o_unemployed = (
-        df_o["choice"].isin(np.asarray(UNEMPLOYED).ravel().tolist()).astype(float)
-    )
-    o_retired = (
-        df_o["choice"].isin(np.asarray(RETIREMENT).ravel().tolist()).astype(float)
-    )
-    o_not_working = (
-        df_o["choice"].isin(np.asarray(NOT_WORKING).ravel().tolist()).astype(float)
-    )
+        df_original = df_original[df_original["agent"].isin(caregiver_ids)].copy()
+        df_no_care_demand = df_no_care_demand[
+            df_no_care_demand["agent"].isin(caregiver_ids)
+        ].copy()
 
-    c_unemployed = (
-        df_c["choice"]
-        .isin(np.asarray(UNEMPLOYED_NO_CARE_DEMAND).ravel().tolist())
-        .astype(float)
-    )
-    c_retired = (
-        df_c["choice"]
-        .isin(np.asarray(RETIREMENT_NO_CARE_DEMAND).ravel().tolist())
-        .astype(float)
-    )
-    c_not_working = (
-        df_c["choice"]
-        .isin(np.asarray(NOT_WORKING_NO_CARE_DEMAND).ravel().tolist())
-        .astype(float)
+    # Compute wealth differences
+    differences = compute_wealth_savings_differences(
+        df_original, df_no_care_demand, "wealth_at_beginning"
     )
 
-    # Build per-period frames
-    o_cols = df_o[["agent", "period"]].copy()
-    o_cols["unemployed_o"] = o_unemployed
-    o_cols["retired_o"] = o_retired
-    o_cols["not_working_o"] = o_not_working
+    # Create plot
+    create_wealth_difference_plot(differences, path_to_plot)
 
-    c_cols = df_c[["agent", "period"]].copy()
-    c_cols["unemployed_c"] = c_unemployed
-    c_cols["retired_c"] = c_retired
-    c_cols["not_working_c"] = c_not_working
 
-    # Merge on (agent, period) to get matched differences
-    merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
-    merged["diff_unemployed"] = merged["unemployed_o"] - merged["unemployed_c"]
-    merged["diff_retired"] = merged["retired_o"] - merged["retired_c"]
-    merged["diff_not_working"] = merged["not_working_o"] - merged["not_working_c"]
+@pytask.mark.counterfactual_differences
+def task_plot_savings_differences(
+    path_to_original_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params.pkl",
+    path_to_no_care_demand_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_no_care_demand.pkl",
+    path_to_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "savings_differences_by_age.png",
+    ever_caregivers: bool = True,
+) -> None:
+    """Plot differences in savings by age between scenarios."""
 
-    # Compute distance based on original
-    df_o_dist = _add_distance_to_first_care(df_o)
-    dist_map = (
-        df_o_dist.groupby("agent", observed=False)["first_care_period"]
-        .first()
-        .reset_index()
-    )
-    merged = merged.merge(dist_map, on="agent", how="left")
-    merged["distance_to_first_care"] = merged["period"] - merged["first_care_period"]
+    # Load data
+    df_original = pd.read_pickle(path_to_original_data)
+    df_no_care_demand = pd.read_pickle(path_to_no_care_demand_data)
 
-    # Trim to window
-    merged = merged[
-        (merged["distance_to_first_care"] >= -window)
-        & (merged["distance_to_first_care"] <= window)
-    ]
+    df_original["sex"] = SEX
+    df_no_care_demand["sex"] = SEX
 
-    # Average differences by distance
-    prof = (
-        merged.groupby("distance_to_first_care", observed=False)[
-            ["diff_unemployed", "diff_retired", "diff_not_working"]
-        ]
-        .mean()
-        .reset_index()
-        .sort_values("distance_to_first_care")
-    )
+    df_original = df_original[df_original["health"] != DEAD].copy()
+    df_no_care_demand = df_no_care_demand[df_no_care_demand["health"] != DEAD].copy()
 
-    # Plot
-    plt.figure(figsize=(12, 7))
-    plt.title("Matched Differences by Distance to First Care Spell (No-Work Outcomes)")
+    # Ensure an 'agent' column exists
+    if "agent" not in df_original.columns:
+        if isinstance(df_original.index, pd.MultiIndex) and (
+            "agent" in df_original.index.names
+        ):
+            df_original = df_original.reset_index(level=["agent"])
+        else:
+            df_original = df_original.reset_index()
 
-    plt.plot(
-        prof["distance_to_first_care"],
-        prof["diff_unemployed"],
-        label="Unemployed (Orig - No Care)",
-        color="tab:orange",
-        linewidth=2,
-    )
-    plt.plot(
-        prof["distance_to_first_care"],
-        prof["diff_retired"],
-        label="Retired (Orig - No Care)",
-        color="tab:purple",
-        linewidth=2,
-    )
-    plt.plot(
-        prof["distance_to_first_care"],
-        prof["diff_not_working"],
-        label="Not Working (Orig - No Care)",
-        color="tab:brown",
-        linewidth=2,
+    if "agent" not in df_no_care_demand.columns:
+        if isinstance(df_no_care_demand.index, pd.MultiIndex) and (
+            "agent" in df_no_care_demand.index.names
+        ):
+            df_no_care_demand = df_no_care_demand.reset_index(level=["agent"])
+        else:
+            df_no_care_demand = df_no_care_demand.reset_index()
+
+    # Optional sample restriction to ever-caregivers in the original scenario
+    if ever_caregivers:
+        informal_care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
+        caregiver_ids = df_original.loc[
+            df_original["choice"].isin(informal_care_codes), "agent"
+        ].unique()
+
+        df_original = df_original[df_original["agent"].isin(caregiver_ids)].copy()
+        df_no_care_demand = df_no_care_demand[
+            df_no_care_demand["agent"].isin(caregiver_ids)
+        ].copy()
+
+    # Compute savings differences
+    differences = compute_wealth_savings_differences(
+        df_original, df_no_care_demand, "savings_dec"
     )
 
-    plt.axvline(x=0, color="k", linestyle=":", alpha=0.5)
-    plt.xlabel("Distance to first care spell (periods)")
-    plt.ylabel("Mean difference (Original - No Care)")
-    plt.xlim(-window, window)
-    plt.ylim(-0.025, 0.125)
-    plt.grid(True, alpha=0.3)
-    plt.legend(ncol=2)
-    plt.tight_layout()
-    plt.savefig(path_to_plot, dpi=300, bbox_inches="tight")
-    plt.close()
+    # Create plot
+    create_savings_difference_plot(differences, path_to_plot)

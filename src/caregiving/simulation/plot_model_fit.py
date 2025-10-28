@@ -46,6 +46,7 @@ def plot_wealth_by_age_and_education(
     Plot average/median wealth by age and education (Observed vs Simulated),
     with education groups side by side, shared y-axis, y-labels on left for both
     panels, and internal x-padding near the vertical axes.
+
     """
     # ---------- 0. Setup ----------
     if age_min is None:
@@ -53,7 +54,6 @@ def plot_wealth_by_age_and_education(
     if age_max is None:
         age_max = specs["end_age_msm"]
     ages = range(age_min, age_max + 1)
-    stat_name = "Median" if median else "Average"
 
     n_edu = len(specs["education_labels"])
     fig, axs = plt.subplots(1, n_edu, figsize=(5 * n_edu, 4), sharex=True, sharey=True)
@@ -98,12 +98,12 @@ def plot_wealth_by_age_and_education(
         pad = int(0.05 * xrange)
         ax.set_xlim(age_min - pad, age_max + pad)
 
-        ax.set_xlabel("Age bin")
+        ax.set_xlabel("Age")
         ax.set_title(edu_label)
         ax.grid(True, alpha=0.2)
 
         if edu_idx == 0:
-            ax.set_ylabel(f"{stat_name} wealth")
+            ax.set_ylabel("Wealth (in 1000€)")
             ax.legend()
         else:
             # remove default left ticks
@@ -119,7 +119,7 @@ def plot_wealth_by_age_and_education(
     # ---------- 3. Add left y-axis to right panel too ----------
     axs[-1].yaxis.set_ticks_position("left")
     axs[-1].yaxis.set_label_position("left")
-    axs[-1].set_ylabel(f"{stat_name} wealth")
+    axs[-1].set_ylabel("Wealth (in 1000€)")
 
     plt.tight_layout()
 
@@ -138,12 +138,20 @@ def plot_wealth_by_age_bins_and_education(  # noqa: PLR0912, PLR0915
     age_min: int | None = None,
     age_max: int | None = None,
     bin_width: int = 5,
+    age_bin_ticks: bool = False,
     path_to_save_plot: str | None = None,
 ):
     """
     Plot average/median wealth by age bins and education (Observed vs Simulated),
     with education groups side by side, shared y-axis, y-labels on left for both
     panels, and internal x-padding near the vertical axes.
+
+    Parameters
+    ----------
+    age_bin_ticks : bool, default False
+        If True: X-axis labels are range-style (e.g., "55-59"), rotated 45°,
+        and shown at the bottom of every subplot with label "Age bin".
+        If False: X-axis ticks every 5 years (e.g., 40, 45, 50...) with label "Age".
     """
     # ---------- 0. Setup ----------
     if age_min is None:
@@ -162,7 +170,6 @@ def plot_wealth_by_age_bins_and_education(  # noqa: PLR0912, PLR0915
         f"{start}-{end - 1}" for start, end in zip(edges[:-1], edges[1:], strict=False)
     ]
 
-    stat_name = "Median" if median else "Average"
     agg = (
         (lambda s: s.median(skipna=True)) if median else (lambda s: s.mean(skipna=True))
     )
@@ -211,16 +218,24 @@ def plot_wealth_by_age_bins_and_education(  # noqa: PLR0912, PLR0915
             pad = 0.5 * bin_width
             ax.set_xlim(bin_starts[0] - pad, bin_starts[0] + pad)
 
-        # Set x-axis labels to bin ranges
-        ax.set_xticks(bin_starts)
-        ax.set_xticklabels(bin_labels, rotation=45, ha="right")
+        # --- Conditional x-axis tick behavior ---
+        if age_bin_ticks:
+            # Range-style x-axis labels (e.g., "55-59"), rotated 45°
+            ax.set_xticks(bin_starts)
+            ax.set_xticklabels(bin_labels, rotation=45, ha="right")
+            xlabel = "Age bin"
+        else:
+            # X-axis ticks every 5 years (e.g., 40, 45, 50...)
+            tick_positions = list(range(age_min, age_max + 1, 5))
+            ax.set_xticks(tick_positions)
+            xlabel = "Age"
 
-        ax.set_xlabel("Age")
+        ax.set_xlabel(xlabel)
         ax.set_title(edu_label)
         ax.grid(True, alpha=0.2)
 
         if edu_idx == 0:
-            ax.set_ylabel(f"{stat_name} wealth")
+            ax.set_ylabel("Wealth (in 1000€)")
             ax.legend()
         else:
             # remove default left ticks
@@ -236,7 +251,7 @@ def plot_wealth_by_age_bins_and_education(  # noqa: PLR0912, PLR0915
     # ---------- 3. Add left y-axis to right panel too ----------
     axs[-1].yaxis.set_ticks_position("left")
     axs[-1].yaxis.set_label_position("left")
-    axs[-1].set_ylabel(f"{stat_name} wealth")
+    axs[-1].set_ylabel("Wealth (in 1000€)")
 
     plt.tight_layout()
 
@@ -376,16 +391,16 @@ def plot_choice_shares_by_education(
             ax.plot(ages, vals_sim, label="Simulated")
             ax.plot(ages, vals_emp, ls="--", label="Observed")
 
-            ax.set_title(specs["choice_labels"][choice_var])
+            ax.set_title(specs["choice_labels"][choice_var], fontsize=14)
             ax.set_ylim(0, 1)
             ax.set_xlim(age_min, age_max)
 
             # if edu_var == n_edu - 1:
-            ax.set_xlabel("Age")
-            ax.tick_params(labelbottom=True)
+            ax.set_xlabel("Age", fontsize=12)
+            ax.tick_params(labelbottom=True, labelsize=11)
             if choice_var == 0:
-                ax.set_ylabel(f"{edu_label}\nShare")
-                ax.legend()
+                ax.set_ylabel(f"{edu_label}\nShare", fontsize=12)
+                ax.legend(prop={"size": 11})
 
     plt.tight_layout()
     if path_to_save_plot:
@@ -497,15 +512,19 @@ def plot_choice_shares_by_education_age_bins(  # noqa: PLR0912, PLR0915
     age_min: Optional[int] = None,
     age_max: Optional[int] = None,
     bin_width: int = 5,
+    age_bin_ticks: bool = False,
     path_to_save_plot: str | None = None,
 ):
     """
     Plot observed and simulated choice shares by age bins and education.
     Each panel contains one aggregated choice; rows are education groups.
 
-    X-axis labels are range-style (e.g., "55-59"), rotated 45°, and shown at the bottom
-    of every subplot. Adds small left/right/top/bottom whitespace so lines remain
-    visible when they hit the axes.
+    Parameters
+    ----------
+    age_bin_ticks : bool, default False
+        If True: X-axis labels are range-style (e.g., "55-59"), rotated 45°,
+        and shown at the bottom of every subplot with label "Age bin".
+        If False: X-axis ticks every 5 years (e.g., 40, 45, 50...) with label "Age".
     """
 
     # ── 1. Map raw choice codes → 4 aggregated groups ────────────────────────
@@ -605,7 +624,7 @@ def plot_choice_shares_by_education_age_bins(  # noqa: PLR0912, PLR0915
             ax.plot(bin_starts, sim_rates, label="Simulated")  # added
             ax.plot(bin_starts, emp_rates, ls="--", label="Observed")
 
-            ax.set_title(choice_labels[j])
+            ax.set_title(choice_labels[j], fontsize=14)
 
             # --- Uniform axes + whitespace on all sides ---
             ax.set_ylim(-y_pad, 1 + y_pad)  # bottom/top whitespace
@@ -617,22 +636,46 @@ def plot_choice_shares_by_education_age_bins(  # noqa: PLR0912, PLR0915
                 # single bin: give symmetric whitespace
                 ax.set_xlim(bin_starts[0] - x_pad, bin_starts[0] + x_pad)
 
-            # --- Range-style x-axis labels (e.g., "55-59"), rotated 45° ---
-            ax.set_xticks(bin_starts)
-            ax.set_xticklabels(bin_labels)
-            ax.tick_params(
-                axis="x", labelbottom=True, labeltop=False, bottom=True, top=False
-            )
-            for lbl in ax.get_xticklabels():
-                lbl.set_rotation(45)
-                lbl.set_ha("right")
-                lbl.set_rotation_mode("anchor")
+            # --- Conditional x-axis tick behavior ---
+            if age_bin_ticks:
+                # Range-style x-axis labels (e.g., "55-59"), rotated 45°
+                ax.set_xticks(bin_starts)
+                ax.set_xticklabels(bin_labels)
+                ax.tick_params(
+                    axis="x",
+                    labelbottom=True,
+                    labeltop=False,
+                    bottom=True,
+                    top=False,
+                    labelsize=11,
+                )
+                for lbl in ax.get_xticklabels():
+                    lbl.set_rotation(45)
+                    lbl.set_ha("right")
+                    lbl.set_rotation_mode("anchor")
+                xlabel = "Age bin"
+            else:
+                # X-axis ticks every 5 years (e.g., 40, 45, 50...)
+                tick_positions = list(range(age_min, age_max + 1, 5))
+                ax.set_xticks(tick_positions)
+                ax.tick_params(
+                    axis="x",
+                    labelbottom=True,
+                    labeltop=False,
+                    bottom=True,
+                    top=False,
+                    labelsize=11,
+                )
+                xlabel = "Age"
+
+            # Set y-axis tick font size
+            ax.tick_params(axis="y", labelsize=11)
 
             if i == n_edu - 1:
-                ax.set_xlabel("Age (bin range)")
+                ax.set_xlabel(xlabel, fontsize=12)
             if j == 0:
-                ax.set_ylabel(f"{edu_label}\nShare")
-                ax.legend()
+                ax.set_ylabel(f"{edu_label}\nShare", fontsize=12)
+                ax.legend(prop={"size": 11})
 
     plt.tight_layout()
 
@@ -1129,7 +1172,7 @@ def plot_caregiver_shares_by_age_bins(
     # --- 5d.  Cosmetics & extra whitespace --------------------------------
     pad = 2  # one age-unit padding on each side
     ax.set_xlabel("Age Bin")
-    ax.set_ylabel("Share (percent)")
+    ax.set_ylabel("Share")
     ax.set_xlim(bin_starts[0] - offset - pad, bin_starts[-1] + offset + pad)
     ax.set_ylim(0, 0.1)
     ax.legend()
