@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytask
+from linearmodels.panel import PanelOLS
 from pytask import Product
 
 from caregiving.config import BLD
@@ -415,3 +416,243 @@ def task_plot_labor_supply_age_profiles(
         df_no_care_demand=df_no_care_demand,
         path_to_plot=path_to_plot,
     )
+
+
+# ===================================================================================
+# Event study
+# ===================================================================================
+
+
+def _prepare_event_study_panel(
+    df_original: pd.DataFrame,
+    df_no_care_demand: pd.DataFrame,
+    window: int = 16,
+    ever_caregivers: bool = True,
+) -> pd.DataFrame:
+    """Build stacked panel with event time around first caregiving start.
+
+    - Computes first caregiving start in original per agent.
+    - Attaches the same event time to the counterfactual rows.
+    - Creates binary outcome `work`.
+    - Trims to event time in [-window, window] and drops missing timing.
+    """
+
+    # Ensure 'agent' and 'period' columns exist
+    for df in (df_original, df_no_care_demand):
+        # Ensure agent
+        if "agent" not in df.columns:
+            if isinstance(df.index, pd.MultiIndex) and ("agent" in df.index.names):
+                df.reset_index(level=["agent"], inplace=True)
+            else:
+                df.reset_index(inplace=True)
+        # Ensure period
+        if "period" not in df.columns:
+            if isinstance(df.index, pd.MultiIndex) and ("period" in df.index.names):
+                df.reset_index(level=["period"], inplace=True)
+            else:
+                if "age" in df.columns:
+                    # Derive a pseudo-period anchored at each agent's min age
+                    df["period"] = df.groupby("agent")["age"].transform(
+                        lambda s: s - s.min()
+                    )
+                else:
+                    # Fallback: sequential period within agent
+                    df["period"] = df.groupby("agent").cumcount()
+
+    # After ensuring columns, fully reset any residual index to avoid label/level ambiguity
+    df_original = df_original.reset_index(drop=True)
+    df_no_care_demand = df_no_care_demand.reset_index(drop=True)
+
+    # Identify first caregiving start in original
+    informal = np.asarray(INFORMAL_CARE).ravel().tolist()
+    caregiving_mask = df_original["choice"].isin(informal)
+    first_care = (
+        df_original.loc[caregiving_mask, ["agent", "period"]]
+        .sort_values(["agent", "period"])
+        .drop_duplicates("agent")
+        .rename(columns={"period": "treat_start"})
+    )
+
+    # Optional: restrict to ever caregivers
+    if ever_caregivers:
+        caregiver_ids = first_care["agent"].unique()
+        df_original = df_original[df_original["agent"].isin(caregiver_ids)].copy()
+        df_no_care_demand = df_no_care_demand[
+            df_no_care_demand["agent"].isin(caregiver_ids)
+        ].copy()
+
+    # Attach treat_start to both datasets
+    df_o = df_original.merge(first_care, on="agent", how="left")
+    df_c = df_no_care_demand.merge(first_care, on="agent", how="left")
+
+    # Compute event time
+    for d in (df_o, df_c):
+        d["event_time"] = d["period"] - d["treat_start"]
+
+    # Outcome: work
+    df_o["work"] = df_o["choice"].isin(np.asarray(WORK).ravel().tolist()).astype(int)
+    df_c["work"] = (
+        df_c["choice"]
+        .isin(np.asarray(WORK_NO_CARE_DEMAND).ravel().tolist())
+        .astype(int)
+    )
+
+    # Stack and keep within window, drop rows without timing
+    panel = pd.concat(
+        [
+            df_o.assign(scenario="original"),
+            df_c.assign(scenario="no_care"),
+        ],
+        ignore_index=True,
+    )
+
+    panel = panel[(panel["treat_start"].notna())].copy()
+    panel = panel[(panel["event_time"] >= -window) & (panel["event_time"] <= window)]
+
+    return panel
+
+
+def _event_study_twfe(panel: pd.DataFrame, window: int = 16) -> pd.DataFrame:
+    """Estimate TWFE event-study without baseline (-1) using OLS with dummies.
+
+    Returns a DataFrame with columns: event_time, beta.
+    """
+    # Build design: dummies for event_time (exclude -1), individual FE, period FE
+    evt_vals = list(range(-window, window + 1))
+    baseline = -1
+    evt_used = [k for k in evt_vals if k != baseline]
+
+    # Dummies
+    D_evt = pd.get_dummies(panel["event_time"]).reindex(columns=evt_used, fill_value=0)
+    D_ind = pd.get_dummies(panel["agent"], drop_first=True)
+    D_t = pd.get_dummies(panel["period"], drop_first=True)
+
+    X = pd.concat([D_evt, D_ind, D_t], axis=1).astype(float).values
+    y = panel["work"].astype(float).values
+
+    # OLS via least squares
+    beta_hat, *_ = np.linalg.lstsq(X, y, rcond=None)
+
+    # First len(evt_used) coefficients correspond to event-time effects
+    beta_evt = beta_hat[: len(evt_used)]
+    out = pd.DataFrame({"event_time": evt_used, "beta": beta_evt})
+
+    # Add baseline at zero for plotting convenience
+    out = pd.concat(
+        [out, pd.DataFrame({"event_time": [baseline], "beta": [0.0]})],
+        ignore_index=True,
+    ).sort_values("event_time")
+    return out
+
+
+def create_event_study_plot(estimates: pd.DataFrame, path_to_plot: Path) -> None:
+    """Plot dynamic DiD event-study coefficients from -window to +window."""
+    plt.figure(figsize=(12, 6))
+    plt.axhline(y=0, color="k", linestyle="--", alpha=0.5)
+    plt.axvline(x=0, color="k", linestyle=":", alpha=0.5)
+    plt.plot(estimates["event_time"], estimates["beta"], marker="o")
+    plt.xlabel("Event time (years from first caregiving start)")
+    plt.ylabel("Effect on working (share)")
+    plt.xlim(-16, 16)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(path_to_plot, dpi=300, bbox_inches="tight")
+    plt.close()
+
+
+def _event_study_twfe_lm(panel: pd.DataFrame, window: int = 16) -> pd.DataFrame:
+    """Estimate TWFE event-study using linearmodels PanelOLS.
+
+    Uses a categorical for event_time with baseline -1, and includes
+    entity (agent) and time (period) fixed effects.
+    """
+
+    df = panel.copy()
+    # Ensure required index
+    if not ("agent" in df.columns and "period" in df.columns):
+        raise ValueError("Panel must contain 'agent' and 'period' columns.")
+
+    # Limit to window and drop missing timing
+    df = df[df["treat_start"].notna()].copy()
+    df = df[(df["event_time"] >= -window) & (df["event_time"] <= window)].copy()
+
+    # Categorical event-time with baseline -1
+    df["event_time_cat"] = df["event_time"].astype(int)
+
+    # Build a MultiIndex (entity=time index order is important: time x entity)
+    df = df.set_index(["period", "agent"]).sort_index()
+
+    # Fit PanelOLS with entity and time effects; use formula with treatment coding
+    # Patsy-compatible: C(event_time_cat, Treatment(reference=-1))
+    mod = PanelOLS.from_formula(
+        "work ~ 0 + C(event_time_cat, Treatment(reference=-1)) + EntityEffects + TimeEffects",
+        data=df,
+    )
+    res = mod.fit()
+
+    # Extract event-time coefficients
+    params = res.params
+    evt_coefs = []
+    for name, val in params.items():
+        if name.startswith("C(event_time_cat, Treatment(reference=-1))["):
+            # name like C(event_time_cat, Treatment(reference=-1))[T.-16]
+            try:
+                key = name.split("[")[-1].strip("]")
+                # keys look like 'T.-16' or 'T.0' -> take after 'T.'
+                if key.startswith("T."):
+                    key = key[2:]
+                evt = int(key)
+                evt_coefs.append((evt, float(val)))
+            except Exception:
+                continue
+
+    out = pd.DataFrame(evt_coefs, columns=["event_time", "beta"]).sort_values(
+        "event_time"
+    )
+    # Ensure baseline -1 present at 0
+    if (-1) not in set(out["event_time"].tolist()):
+        out = pd.concat(
+            [out, pd.DataFrame({"event_time": [-1], "beta": [0.0]})], ignore_index=True
+        ).sort_values("event_time")
+    return out
+
+
+# @pytask.mark.counterfactual_differences
+def event_study_work(
+    path_to_original_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params.pkl",
+    path_to_no_care_demand_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_no_care_demand.pkl",
+    path_to_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "event_study_work.png",
+    ever_caregivers: bool = True,
+    window: int = 16,
+) -> None:
+    """Run and plot event-study (TWFE) using counterfactual controls.
+
+    - Treatment timing: first caregiving start in the original scenario.
+    - Controls: same agents in the no-care-demand model (true counterfactual).
+    - FE: individual and period fixed effects.
+    - Outcome: working indicator.
+    """
+
+    df_original = pd.read_pickle(path_to_original_data)
+    df_no_care_demand = pd.read_pickle(path_to_no_care_demand_data)
+
+    # Remove dead periods to focus on active horizon
+    df_original = df_original[df_original["health"] != DEAD].copy()
+    df_no_care_demand = df_no_care_demand[df_no_care_demand["health"] != DEAD].copy()
+
+    panel = _prepare_event_study_panel(
+        df_original=df_original,
+        df_no_care_demand=df_no_care_demand,
+        window=window,
+        ever_caregivers=ever_caregivers,
+    )
+
+    est = _event_study_twfe(panel, window=window)
+    create_event_study_plot(est, path_to_plot)
