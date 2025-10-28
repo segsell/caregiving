@@ -196,13 +196,11 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         bin_width=5,
         path_to_save_plot=path_to_save_wealth_age_bins_plot,
     )
-
     plot_average_savings_decision(df_sim, path_to_save_savings_plot)
 
     plot_choice_shares_by_education(
         df_emp, df_sim, specs, path_to_save_plot=path_to_save_labor_shares_by_educ_plot
     )
-
     test_choice_shares_sum_to_one(df_emp, df_sim, specs)
 
     plot_job_offer_share_by_age(

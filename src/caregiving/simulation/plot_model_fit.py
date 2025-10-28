@@ -103,7 +103,7 @@ def plot_wealth_by_age_and_education(
         ax.grid(True, alpha=0.2)
 
         if edu_idx == 0:
-            ax.set_ylabel("Wealth (in 1000€)")
+            ax.set_ylabel("Wealth (in 1000 €)")
             ax.legend()
         else:
             # remove default left ticks
@@ -119,7 +119,7 @@ def plot_wealth_by_age_and_education(
     # ---------- 3. Add left y-axis to right panel too ----------
     axs[-1].yaxis.set_ticks_position("left")
     axs[-1].yaxis.set_label_position("left")
-    axs[-1].set_ylabel("Wealth (in 1000€)")
+    axs[-1].set_ylabel("Wealth (in 1000 €)")
 
     plt.tight_layout()
 
@@ -235,7 +235,7 @@ def plot_wealth_by_age_bins_and_education(  # noqa: PLR0912, PLR0915
         ax.grid(True, alpha=0.2)
 
         if edu_idx == 0:
-            ax.set_ylabel("Wealth (in 1000€)")
+            ax.set_ylabel("Wealth (in 1000 €)")
             ax.legend()
         else:
             # remove default left ticks
@@ -251,7 +251,7 @@ def plot_wealth_by_age_bins_and_education(  # noqa: PLR0912, PLR0915
     # ---------- 3. Add left y-axis to right panel too ----------
     axs[-1].yaxis.set_ticks_position("left")
     axs[-1].yaxis.set_label_position("left")
-    axs[-1].set_ylabel("Wealth (in 1000€)")
+    axs[-1].set_ylabel("Wealth (in 1000 €)")
 
     plt.tight_layout()
 
