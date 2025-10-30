@@ -277,7 +277,9 @@ def build_simulation_df_with_income_components(sim_dict, options, params):
         education_array,
         income_shock_array,
     )
-    df["gross_labor_income"] = gross_labor_income_array * df["choice"].isin(work_values)
+    df["gross_labor_income"] = gross_labor_income_array * df["lagged_choice"].isin(
+        work_values
+    )
 
     # Female gross pension income
     vectorized_calc_gross_pension_income = jax.vmap(
@@ -292,7 +294,7 @@ def build_simulation_df_with_income_components(sim_dict, options, params):
         experience_years_array,
         education_array,
     )
-    df["gross_pension_income"] = gross_pension_income_array * df["choice"].isin(
+    df["gross_pension_income"] = gross_pension_income_array * df["lagged_choice"].isin(
         retirement_values
     )
 

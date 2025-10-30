@@ -11,8 +11,8 @@ import pandas as pd
 
 from caregiving.model.shared import DEAD, SEX
 from caregiving.model.shared_no_care_demand import (
-    FULL_TIME,
-    PART_TIME,
+    FULL_TIME_NO_CARE_DEMAND,
+    PART_TIME_NO_CARE_DEMAND,
     RETIREMENT_NO_CARE_DEMAND,
     UNEMPLOYED_NO_CARE_DEMAND,
     WORK_NO_CARE_DEMAND,
@@ -95,8 +95,8 @@ def simulate_scenario_no_care_demand(
 
     # Assign working hours
     df["working_hours"] = 0.0
-    part_time_values = PART_TIME.ravel().tolist()
-    full_time_values = FULL_TIME.ravel().tolist()
+    part_time_values = PART_TIME_NO_CARE_DEMAND.ravel().tolist()
+    full_time_values = FULL_TIME_NO_CARE_DEMAND.ravel().tolist()
 
     sex_var = SEX
     for edu_var in range(model_params["n_education_types"]):
@@ -194,8 +194,8 @@ def build_simulation_df_with_income_components_no_care_demand(
     df["working_hours"] = 0.0
 
     # Use no-care-demand choice arrays
-    part_time_values = PART_TIME.ravel().tolist()
-    full_time_values = FULL_TIME.ravel().tolist()
+    part_time_values = PART_TIME_NO_CARE_DEMAND.ravel().tolist()
+    full_time_values = FULL_TIME_NO_CARE_DEMAND.ravel().tolist()
     work_values = WORK_NO_CARE_DEMAND.ravel().tolist()
     retirement_values = RETIREMENT_NO_CARE_DEMAND.ravel().tolist()
 
@@ -246,7 +246,9 @@ def build_simulation_df_with_income_components_no_care_demand(
         education_array,
         income_shock_array,
     )
-    df["gross_labor_income"] = gross_labor_income_array * df["choice"].isin(work_values)
+    df["gross_labor_income"] = gross_labor_income_array * df["lagged_choice"].isin(
+        work_values
+    )
 
     # Female gross pension income
     vectorized_calc_gross_pension_income = jax.vmap(
@@ -261,7 +263,7 @@ def build_simulation_df_with_income_components_no_care_demand(
         experience_years_array,
         education_array,
     )
-    df["gross_pension_income"] = gross_pension_income_array * df["choice"].isin(
+    df["gross_pension_income"] = gross_pension_income_array * df["lagged_choice"].isin(
         retirement_values
     )
 
