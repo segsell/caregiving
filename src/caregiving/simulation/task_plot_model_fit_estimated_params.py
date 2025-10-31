@@ -170,6 +170,8 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
     ]
 
     df_emp_wealth = adjust_and_trim_wealth_data(df=df_emp_wealth, specs=specs)
+
+    # Wealth by age
     plot_wealth_by_age_and_education(
         data_emp=df_emp_wealth,
         data_sim=df_sim,
@@ -178,10 +180,9 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         wealth_var_sim="wealth_at_beginning",
         median=False,
         age_min=30,
-        age_max=100,
+        age_max=89,
         path_to_save_plot=path_to_save_wealth_plot,
     )
-
     # Wealth by age bins
     plot_wealth_by_age_bins_and_education(
         data_emp=df_emp_wealth,
@@ -191,17 +192,15 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         wealth_var_sim="wealth_at_beginning",
         median=False,
         age_min=30,
-        age_max=79,
+        age_max=89,
         bin_width=5,
         path_to_save_plot=path_to_save_wealth_age_bins_plot,
     )
-
     plot_average_savings_decision(df_sim, path_to_save_savings_plot)
 
     plot_choice_shares_by_education(
         df_emp, df_sim, specs, path_to_save_plot=path_to_save_labor_shares_by_educ_plot
     )
-
     test_choice_shares_sum_to_one(df_emp, df_sim, specs)
 
     plot_job_offer_share_by_age(
@@ -219,22 +218,38 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         path_to_save_plot=path_to_save_labor_shares_caregivers_by_age,
     )
 
+    # Define age range for caregivers (40-75) and use 3-year bins
+    start_age_caregivers = 40
+    end_age = 69
+
     plot_choice_shares_by_education_age_bins(
         df_emp_caregivers,
         df_sim_caregivers,
         specs,
+        age_min=start_age_caregivers,
+        age_max=end_age,
+        bin_width=3,
+        age_bin_ticks=False,
         path_to_save_plot=save_labor_shares_caregivers_by_educ_and_age_bin,
     )
     plot_choice_shares_by_education_age_bins(
         df_emp_light_caregivers,
         df_sim_light_caregivers,
         specs,
+        age_min=start_age_caregivers,
+        age_max=end_age,
+        bin_width=3,
+        age_bin_ticks=False,
         path_to_save_plot=save_labor_shares_light_caregivers_by_educ_and_age_bin,
     )
     plot_choice_shares_by_education_age_bins(
         df_emp_intensive_caregivers,
         df_sim_intensive_caregivers,
         specs,
+        age_min=start_age_caregivers,
+        age_max=end_age,
+        bin_width=3,
+        age_bin_ticks=False,
         path_to_save_plot=save_labor_shares_intensive_caregivers_by_educ_and_age_bin,
     )
 

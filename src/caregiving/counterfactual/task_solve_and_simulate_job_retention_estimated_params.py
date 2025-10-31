@@ -33,6 +33,7 @@ from caregiving.simulation.simulate import simulate_scenario
 jax.config.update("jax_enable_x64", True)
 
 
+@pytask.mark.skip()
 def task_solve_and_simulate_job_retention_estimated_params(
     path_to_solution_model: Path = BLD / "model" / "model_job_retention.pkl",
     path_to_options: Path = BLD / "model" / "options_job_retention.pkl",
