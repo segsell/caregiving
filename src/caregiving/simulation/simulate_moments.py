@@ -60,29 +60,9 @@ def simulate_moments_pandas(  # noqa: PLR0915
     age_range = range(start_age, end_age + 1)
     age_range_wealth = range(start_age, model_params["end_age_wealth"] + 1)
 
-    # Create 5-year bins from start_age_caregivers to end_age_msm
-    # If a remainder can't fit a 5-year bin, create a smaller bin
-    bin_edges_5year = []
-    bin_labels_5year = []
-    start = start_age_caregivers
-    while start <= end_age - 4:  # Need at least 5 years
-        end = start + 5
-        bin_edges_5year.append(start)
-        bin_labels_5year.append(f"{start}_{end-1}")
-        start = end
-    # If there's a remainder, add a final bin
-    if start <= end_age:
-        bin_edges_5year.append(start)
-        bin_labels_5year.append(f"{start}_{end_age}")
-        bin_edges_5year.append(end_age + 1)  # Right edge
-    else:
-        bin_edges_5year.append(start)  # Right edge for the last 5-year bin
-
-    age_bins_caregivers_5year = (bin_edges_5year, bin_labels_5year)
-    # age_bins_75 = (
-    #     list(range(40, 80, 5)),  # [40, 45, … , 70]
-    #     [f"{s}_{s+4}" for s in range(40, 75, 5)],  # "40_44", …a
-    # )
+    # Retrieve precomputed age bins from model_params
+    age_bins_caregivers_3year = model_params["age_bins_3year"]
+    age_bins_caregivers_5year = model_params["age_bins_5year"]
 
     df_full = df_full.loc[df_full["health"] != DEAD].copy()
     df_full["mother_age"] = (
@@ -186,26 +166,6 @@ def simulate_moments_pandas(  # noqa: PLR0915
     # ================================================================================
     moments["share_informal_care_high_educ"] = df_caregivers["education"].mean()
     # ================================================================================
-
-    # Labor caregiver shares using 3-year age bins
-    # Create 3-year bins from start_age_caregivers to end_age_caregiving
-    # If a remainder can't fit a 3-year bin, create a 2-year bin instead
-    bin_edges = []
-    bin_labels = []
-    start = start_age_caregivers
-    while start <= end_age_caregiving - 2:  # Need at least 3 years
-        end = start + 3
-        bin_edges.append(start)
-        bin_labels.append(f"{start}_{end-1}")
-        start = end
-    # If there's a remainder of 2 years, add a 2-year bin
-    if start <= end_age_caregiving:
-        bin_edges.append(start)
-        bin_labels.append(f"{start}_{end_age_caregiving}")
-        bin_edges.append(end_age_caregiving + 1)  # Right edge
-    else:
-        bin_edges.append(start)  # Right edge for the last 3-year bin
-    age_bins_caregivers_3year = (bin_edges, bin_labels)
 
     moments = create_labor_share_moments_by_age_bin_pandas(
         df_caregivers, moments, age_bins=age_bins_caregivers_3year, label="caregivers"

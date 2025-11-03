@@ -112,7 +112,7 @@ def task_plot_model_fit_no_care_demand(
         age_min=specs["start_age"],
         age_max=79,
         bin_width=5,
-        path_to_save_wealth_age_bins_plot=path_to_save_wealth_age_bins_plot,
+        path_to_save_plot=path_to_save_wealth_age_bins_plot,
     )
 
     # Savings
