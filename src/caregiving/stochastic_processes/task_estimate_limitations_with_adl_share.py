@@ -194,6 +194,7 @@ def task_plot_care_demand(
 ):
 
     specs = read_and_derive_specs(path_to_specs)
+    start_age = specs["start_age_parents"]
 
     health_trans_mat = pd.read_csv(path_to_health_transition_matrix)
     death_trans_mat = pd.read_csv(path_to_death_transition_matrix)
@@ -216,7 +217,6 @@ def task_plot_care_demand(
     # save hdeath_df to csv in the same folder as the other transition matrices
     hdeath_df.to_csv(path_to_health_death_transition_matrix_NEW, index=False)
 
-    start_age = 50
     plot_care_demand_from_hdeath_matrix(
         specs=specs,
         adl_transition_df=adl_transition_matrix,
@@ -307,10 +307,10 @@ def plot_care_demand_from_hdeath_matrix(
     # ───────────────── initial cohort vector  ────────────────────────────
     v0 = np.array(
         [
-            initial_alive_share[0] * initial_health_shares_alive[0],
-            initial_alive_share[0] * initial_health_shares_alive[1],
-            initial_alive_share[0] * initial_health_shares_alive[2],
-            1.0 - initial_alive_share[0],
+            initial_alive_share.iloc[0] * initial_health_shares_alive.iloc[0],
+            initial_alive_share.iloc[0] * initial_health_shares_alive.iloc[1],
+            initial_alive_share.iloc[0] * initial_health_shares_alive.iloc[2],
+            1.0 - initial_alive_share.iloc[0],
         ]
     )
 

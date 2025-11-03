@@ -104,7 +104,8 @@ def span_dataframe(df, start_year, end_year):
     full_container = pd.DataFrame(
         index=full_index, data=np.nan, dtype=float, columns=df.columns
     )
-    full_container.update(df)
+    # Use combine_first to avoid dtype incompatibility warnings
+    full_container = df.combine_first(full_container)
 
     if "hid" in full_container.columns.values:
         full_container["hid"] = full_container.groupby(["pid"])["hid"].transform("last")

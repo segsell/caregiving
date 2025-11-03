@@ -64,6 +64,7 @@ def task_create_soep_moments(  # noqa: PLR0915
     start_age = specs["start_age"]
     start_age_caregivers = start_age + START_PERIOD_CAREGIVING
     end_age = specs["end_age_msm"]
+    end_age_caregiving = specs["end_age_caregiving"]
     start_year = 2001
     end_year = 2019
 
@@ -119,6 +120,7 @@ def task_create_soep_moments(  # noqa: PLR0915
     _df_year_bad_health = df_year[df_year["health"] == BAD_HEALTH]
     _df_year_good_health = df_year[df_year["health"] == GOOD_HEALTH]
 
+    df = df.copy()
     df["kidage_youngest"] = df["kidage_youngest"] - 1
 
     df_low = df[df["education"] == 0].copy()
@@ -238,7 +240,7 @@ def task_create_soep_moments(  # noqa: PLR0915
 
     # =================================================================================
     caregiver_shares = {
-        "share_informal_care_age_bin_40_44": 0.02980982,
+        # "share_informal_care_age_bin_40_44": 0.02980982,
         "share_informal_care_age_bin_45_49": 0.04036255,
         "share_informal_care_age_bin_50_54": 0.05350986,
         "share_informal_care_age_bin_55_59": 0.06193384,
@@ -281,17 +283,36 @@ def task_create_soep_moments(  # noqa: PLR0915
         ddof=DEGREES_OF_FREEDOM
     )
 
-    # Caregiving labor shares using 3-year age bins
-    start_age_caregivers = start_age + START_PERIOD_CAREGIVING
-    age_bins_caregivers_3year = (
-        list(
-            range(start_age_caregivers, end_age + 1, 3)
-        ),  # bin edges: [40, 43, 46, 49, 52, 55, 58, 61, 64, 67, 70]
-        [
-            f"{s}_{s+2}" for s in range(start_age_caregivers, end_age - 1, 3)
-        ],  # bin labels: ["40_42", "43_45", "46_48", "49_51", "52_54", "55_57",
-        # "58_60", "61_63", "64_66", "67_69"]
-    )
+    # # Caregiving labor shares using 3-year age bins
+    # start_age_caregivers = start_age + START_PERIOD_CAREGIVING
+    # age_bins_caregivers_3year = (
+    #     list(
+    #         range(start_age_caregivers, end_age_caregiving + 1, 3)
+    #     ),  # bin edges: [40, 43, 46, 49, 52, 55, 58, 61, 64, 67, 70]
+    #     [
+    #         f"{s}_{s+2}" for s in range(start_age_caregivers, end_age_caregiving - 1, 3)
+    #     ],  # bin labels: ["40_42", "43_45", "46_48", "49_51", "52_54", "55_57",
+    #     # "58_60", "61_63", "64_66", "67_69"]
+    # )
+    # Labor caregiver shares using 3-year age bins
+    # Create 3-year bins from start_age_caregivers to end_age_caregiving
+    # If a remainder can't fit a 3-year bin, create a 2-year bin instead
+    bin_edges = []
+    bin_labels = []
+    start = start_age_caregivers
+    while start <= end_age_caregiving - 2:  # Need at least 3 years
+        end = start + 3
+        bin_edges.append(start)
+        bin_labels.append(f"{start}_{end-1}")
+        start = end
+    # If there's a remainder of 2 years, add a 2-year bin
+    if start <= end_age_caregiving:
+        bin_edges.append(start)
+        bin_labels.append(f"{start}_{end_age_caregiving}")
+        bin_edges.append(end_age_caregiving + 1)  # Right edge
+    else:
+        bin_edges.append(start)  # Right edge for the last 3-year bin
+    age_bins_caregivers_3year = (bin_edges, bin_labels)
 
     moments, variances = compute_labor_shares_by_age_bin(
         df_caregivers,

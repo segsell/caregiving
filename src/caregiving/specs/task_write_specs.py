@@ -10,6 +10,8 @@ import numpy as np
 import pandas as pd
 from pytask import Product
 
+import pytask
+
 from caregiving.config import BLD, SRC
 from caregiving.specs.caregiving_specs import (
     read_in_adl_transition_specs,
@@ -37,6 +39,7 @@ from caregiving.specs.income_specs import add_income_specs
 jax.config.update("jax_enable_x64", True)
 
 
+@pytask.mark.specs
 def task_write_specs(
     path_to_load_specs: Path = SRC / "specs.yaml",
     path_to_sample: Path = BLD / "data" / "soep_structural_estimation_sample.csv",

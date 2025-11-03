@@ -80,7 +80,9 @@ def task_plot_healthy_unhealthy(
         for edu_var, edu_label in enumerate(specs["education_labels"]):
             # Set the initial distribution for the Markov simulation
             # and assume nobody is dead
-            initial_dist[1] = edu_shares_healthy.loc[(sex_var, edu_var, start_age)]
+            initial_dist[1] = float(
+                edu_shares_healthy.loc[(sex_var, edu_var, start_age)].iloc[0]
+            )
             initial_dist[0] = 1 - initial_dist[1]
 
             # Simulate the Markov process and get health probabilities

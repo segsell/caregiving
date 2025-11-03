@@ -98,6 +98,7 @@ def task_create_soep_moments_no_care_demand(  # noqa: PLR0915
     _df_year_bad_health = df_year[df_year["health"] == BAD_HEALTH]
     _df_year_good_health = df_year[df_year["health"] == GOOD_HEALTH]
 
+    df = df.copy()
     df["kidage_youngest"] = df["kidage_youngest"] - 1
 
     df_low = df[df["education"] == 0].copy()
