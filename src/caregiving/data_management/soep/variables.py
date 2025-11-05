@@ -661,3 +661,106 @@ def create_nursing_home(data):
     )
 
     return data
+
+
+def create_inheritance(df):
+    """Create inheritance variables.
+
+    Creates two variables:
+    1. inheritance_this_year: Binary indicator (1 if inheritance received in syear, 0
+       otherwise)
+    2. inheritance_amount: Amount of inheritance in Euros (NaN for negative values)
+
+    Variables used:
+    - plc0376_v1: Year inheritance from person 1
+    - plc0386_v1: Year inheritance from person 2
+    - plc0396_v1: Year inheritance from person 3
+    - plc0383_h: Inheritance/gift amount in Euros
+
+    Note: Assumes pid and syear are always in MultiIndex.
+
+    """
+    # Get survey year from MultiIndex (always there)
+    syear = df.index.get_level_values("syear")
+
+    # List of inheritance year variables
+    inheritance_year_vars = ["plc0376_v1", "plc0386_v1", "plc0396_v1"]
+
+    # Filter to only existing variables
+    existing_vars = [var for var in inheritance_year_vars if var in df.columns]
+
+    # if not existing_vars:
+    #     # No inheritance variables found, return early with empty columns
+    #     df["inheritance_this_year"] = 0
+    #     df["year_inheritance"] = np.nan
+    #     df["inheritance_amount"] = np.nan
+    #     return df
+
+    # Print which years have non-missing inheritance data (before filling)
+    print("\n" + "=" * 70)
+    print("INHERITANCE YEAR VARIABLES: Survey years with data")
+    print("=" * 70)
+    years_with_data = (
+        df.loc[df[existing_vars].ge(0).any(axis=1)]
+        .index.get_level_values("syear")
+        .unique()
+    )
+    print(f"Years with data: {sorted(years_with_data)}")
+    print("=" * 70 + "\n")
+
+    # Vectorized: Convert negative values to NaN for all variables at once
+    df[existing_vars] = df[existing_vars].where(df[existing_vars] >= 0, np.nan)
+
+    # Vectorized: Create filled variables and apply filling strategy
+    # Strategy: Forward fill from 2001, then backward fill from 2019 (overriding)
+    filled_var_names = [var + "_filled" for var in existing_vars]
+
+    # Copy all at once
+    df[filled_var_names] = df[existing_vars].copy()
+
+    # Forward fill then backward fill for all variables at once
+    df[filled_var_names] = (
+        df.groupby(level="pid")[filled_var_names].ffill().groupby(level="pid").bfill()
+    )
+
+    # Vectorized: Check if any inheritance year matches syear
+    # Create boolean mask for each filled variable
+    inheritance_matches = df[filled_var_names].eq(syear.values[:, None])
+    df["inheritance_this_year"] = inheritance_matches.any(axis=1).astype(int)
+
+    # Vectorized: Get maximum year across all three filled variables
+    df["year_inheritance"] = df[filled_var_names].max(axis=1)
+
+    # Create inheritance amount variable (vectorized)
+    if "plc0383_h" in df.columns:
+        df["inheritance_amount"] = df["plc0383_h"].where(df["plc0383_h"] >= 0, np.nan)
+    else:
+        df["inheritance_amount"] = np.nan
+
+    # Print 20 largest inheritance amounts with year_inheritance
+    print("\n" + "=" * 70)
+    print("20 LARGEST INHERITANCE AMOUNTS")
+    print("=" * 70)
+    print(
+        df.nlargest(20, "inheritance_amount")[
+            ["inheritance_amount", "year_inheritance"]
+        ]
+    )
+
+    # Calculate and print 90th percentile threshold
+    p90_threshold = df["inheritance_amount"].quantile(0.90)
+    n_above_p90 = (df["inheritance_amount"] > p90_threshold).sum()
+    print(f"\n90th percentile threshold: €{p90_threshold:,.2f}")
+    print(f"Observations above 90th percentile: {n_above_p90}")
+    print("=" * 70 + "\n")
+
+    print("Number of unique individuals (pid) by year_inheritance (last 20 years):")
+    print(
+        df.reset_index()
+        .groupby("year_inheritance")["pid"]
+        .nunique()
+        .sort_index()
+        .tail(20)
+    )
+
+    return df
