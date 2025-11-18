@@ -14,7 +14,7 @@ import yaml
 from pytask import Product
 
 from caregiving.config import BLD, SRC
-from caregiving.model.shared import DEAD, INFORMAL_CARE, NPV_END_AGE, NPV_START_AGE
+from caregiving.model.shared import DEAD, INFORMAL_CARE, NPV_END_AGE
 from caregiving.simulation.simulate import (
     setup_model_for_simulation_baseline,
     simulate_career_costs,
@@ -182,7 +182,7 @@ def task_compute_career_costs(
     ].unique()
 
     df_original = df_original[df_original["agent"].isin(caregiver_ids)].copy()
-    df_no_care_demand = df_no_care_demand[
+    df_counterfactual = df_no_care_demand[
         df_no_care_demand["agent"].isin(caregiver_ids)
     ].copy()
 
@@ -191,11 +191,11 @@ def task_compute_career_costs(
 
     # Compute NPV for original scenario
     original_npv = compute_career_npv(df_original, beta)
-    # original_npv.to_csv(path_to_original_npv)
+    original_npv.to_csv(path_to_baseline_npv, index=False)
 
     # Compute NPV for no-care-demand scenario
-    no_care_demand_npv = compute_career_npv(df_no_care_demand, beta)
-    # no_care_demand_npv.to_csv(path_to_no_care_demand_npv)
+    no_care_demand_npv = compute_career_npv(df_counterfactual, beta)
+    no_care_demand_npv.to_csv(path_to_no_care_demand_npv, index=False)
 
     # Compute career costs (difference in NPV)
     # career_costs = compute_career_costs(original_npv, no_care_demand_npv)
@@ -240,13 +240,16 @@ def task_compute_career_costs(
 
 
 def compute_career_npv(df: pd.DataFrame, beta: float) -> pd.DataFrame:
-    """Compute net present value of total income from age 30 to 70."""
+    """Compute net present value of total income from age 40 to 70."""
 
-    # Filter data for ages 30-80
-    df_filtered = df[(df["age"] >= NPV_START_AGE) & (df["age"] <= NPV_END_AGE)].copy()
+    # Filter data for ages 40-70
+    NPV_START_AGE_LOCAL = 40
+    df_filtered = df[
+        (df["age"] >= NPV_START_AGE_LOCAL) & (df["age"] <= NPV_END_AGE)
+    ].copy()
 
-    # Create discount factors (beta^(age-30))
-    df_filtered["discount_factor"] = beta ** (df_filtered["age"] - NPV_START_AGE)
+    # Create discount factors (beta^(age-40))
+    df_filtered["discount_factor"] = beta ** (df_filtered["age"] - NPV_START_AGE_LOCAL)
 
     # Compute discounted income using total_income (individual income components)
     df_filtered["discounted_income"] = (
