@@ -238,6 +238,8 @@ def prepare_inheritance_data(df):
     # Previous period (last year) - lagged
     df["lagged_any_care"] = df.groupby("pid")["any_care"].shift(1)
     df["any_care_last_year"] = (df["lagged_any_care"] > 0).astype(int)
+    df["light_care_last_year"] = (df["lagged_light_care"] > 0).astype(int)
+    df["intensive_care_last_year"] = (df["lagged_intensive_care"] > 0).astype(int)
 
     # Recent period (t or t-1)
     df["light_care_recent"] = (
@@ -686,6 +688,287 @@ def estimate_ols_specification(
     return params
 
 
+def estimate_logit_specification_two_care(
+    df,
+    specs,
+    light_care_var,
+    intensive_care_var,
+    parent_var=None,
+    filter_condition=None,
+    spec_name="spec",
+):
+    """Estimate logit with separate light and intensive care variables.
+
+    Args:
+        df: DataFrame with prepared data
+        specs: Model specifications
+        light_care_var: Name of light caregiving variable
+        intensive_care_var: Name of intensive caregiving variable
+        parent_var: Name of parent death variable (None if using filter only)
+        filter_condition: Optional filtering condition
+        spec_name: Name for this specification
+
+    Returns:
+        DataFrame with estimated parameters (includes N)
+    """
+    index = pd.Index(specs["sex_labels"], name="sex")
+
+    # Build columns list
+    if parent_var is not None:
+        columns = [
+            "age",
+            "age_sq",
+            light_care_var,
+            intensive_care_var,
+            parent_var,
+            "education",
+            "const",
+            "N",
+        ]
+        exog_vars_base = [
+            "age",
+            "age_sq",
+            light_care_var,
+            intensive_care_var,
+            parent_var,
+            "education",
+        ]
+    else:
+        columns = [
+            "age",
+            "age_sq",
+            light_care_var,
+            intensive_care_var,
+            "education",
+            "const",
+            "N",
+        ]
+        exog_vars_base = [
+            "age",
+            "age_sq",
+            light_care_var,
+            intensive_care_var,
+            "education",
+        ]
+
+    params = pd.DataFrame(index=index, columns=columns)
+
+    # Apply filter
+    if filter_condition is not None:
+        df_filtered = df.query(filter_condition).copy()
+        filter_desc = filter_condition
+    else:
+        df_filtered = df.copy()
+        filter_desc = "None"
+
+    print("\n" + "=" * 70)
+    print(f"SPECIFICATION: {spec_name}")
+    print(f"Light care variable: {light_care_var}")
+    print(f"Intensive care variable: {intensive_care_var}")
+    print(f"Parent variable: {parent_var or 'N/A (filtered only)'}")
+    print(f"Filter: {filter_desc}")
+    print("=" * 70)
+    print(f"Total observations: {len(df_filtered)}")
+
+    for sex_var, sex_label in enumerate(specs["sex_labels"]):
+        df_sex = df_filtered[df_filtered["sex"] == sex_var].copy()
+
+        # Drop missing values
+        required_vars = [
+            "inheritance_this_year",
+            "age",
+            "age_sq",
+            light_care_var,
+            intensive_care_var,
+            "education",
+        ]
+        if parent_var is not None:
+            required_vars.append(parent_var)
+        df_sex = df_sex.dropna(subset=required_vars)
+
+        print(f"\n{sex_label}:")
+        print(f"  Observations: {len(df_sex)}")
+        print(f"  Inheritance rate: {df_sex['inheritance_this_year'].mean():.3f}")
+
+        if len(df_sex) < MIN_SAMPLE_SIZE:
+            print("  WARNING: Too few observations, skipping")
+            continue
+
+        # Estimate logit model
+        X = sm.add_constant(df_sex[exog_vars_base])
+        y = df_sex["inheritance_this_year"]
+
+        try:
+            model = sm.Logit(endog=y, exog=X)
+            results = model.fit(disp=False)
+
+            # Save parameters
+            params.loc[sex_label, "const"] = results.params["const"]
+            for var in exog_vars_base:
+                params.loc[sex_label, var] = results.params[var]
+            # Save sample size
+            params.loc[sex_label, "N"] = len(df_sex)
+
+            # Print summary
+            print(f"  Model converged: {results.mle_retvals['converged']}")
+            print(f"  Pseudo R-squared: {results.prsquared:.4f}")
+            print("  Key parameters:")
+            print(f"    {light_care_var:25s}: {results.params[light_care_var]:8.4f}")
+            print(
+                f"    {intensive_care_var:25s}: {results.params[intensive_care_var]:8.4f}"
+            )
+            if parent_var is not None:
+                print(f"    {parent_var:25s}: {results.params[parent_var]:8.4f}")
+
+        except Exception as e:
+            print(f"  ERROR: Model estimation failed: {e}")
+
+    return params
+
+
+def estimate_ols_specification_two_care(
+    df,
+    specs,
+    light_care_var,
+    intensive_care_var,
+    parent_var=None,
+    filter_condition=None,
+    spec_name="spec",
+):
+    """Estimate OLS with separate light and intensive care variables.
+
+    Args:
+        df: DataFrame with prepared data
+        specs: Model specifications
+        light_care_var: Name of light caregiving variable
+        intensive_care_var: Name of intensive caregiving variable
+        parent_var: Name of parent death variable (None if using filter only)
+        filter_condition: Optional filtering condition
+        spec_name: Name for this specification
+
+    Returns:
+        DataFrame with estimated parameters (includes N)
+    """
+    index = pd.Index(specs["sex_labels"], name="sex")
+
+    # Build columns list
+    if parent_var is not None:
+        columns = [
+            "age",
+            "age_sq",
+            light_care_var,
+            intensive_care_var,
+            parent_var,
+            "education",
+            "const",
+            "N",
+        ]
+        exog_vars_base = [
+            "age",
+            "age_sq",
+            light_care_var,
+            intensive_care_var,
+            parent_var,
+            "education",
+        ]
+    else:
+        columns = [
+            "age",
+            "age_sq",
+            light_care_var,
+            intensive_care_var,
+            "education",
+            "const",
+            "N",
+        ]
+        exog_vars_base = [
+            "age",
+            "age_sq",
+            light_care_var,
+            intensive_care_var,
+            "education",
+        ]
+
+    params = pd.DataFrame(index=index, columns=columns)
+
+    # Apply filter
+    if filter_condition is not None:
+        df_filtered = df.query(filter_condition).copy()
+        filter_desc = filter_condition
+    else:
+        df_filtered = df.copy()
+        filter_desc = "None"
+
+    # Additional filter: only positive inheritance
+    df_filtered = df_filtered[df_filtered["ln_inheritance_amount"].notna()].copy()
+
+    print("\n" + "=" * 70)
+    print(f"SPECIFICATION: {spec_name}")
+    print(f"Light care variable: {light_care_var}")
+    print(f"Intensive care variable: {intensive_care_var}")
+    print(f"Parent variable: {parent_var or 'N/A (filtered only)'}")
+    print(f"Filter: {filter_desc}")
+    print("=" * 70)
+    print(f"Total observations: {len(df_filtered)}")
+
+    for sex_var, sex_label in enumerate(specs["sex_labels"]):
+        df_sex = df_filtered[df_filtered["sex"] == sex_var].copy()
+
+        # Drop missing values
+        required_vars = [
+            "ln_inheritance_amount",
+            "age",
+            "age_sq",
+            light_care_var,
+            intensive_care_var,
+            "education",
+        ]
+        if parent_var is not None:
+            required_vars.append(parent_var)
+        df_sex = df_sex.dropna(subset=required_vars)
+
+        print(f"\n{sex_label}:")
+        print(f"  Observations: {len(df_sex)}")
+        if len(df_sex) > 0:
+            print(
+                f"  Mean ln(inheritance): {df_sex['ln_inheritance_amount'].mean():.3f}"
+            )
+
+        if len(df_sex) < MIN_SAMPLE_SIZE:
+            print("  WARNING: Too few observations, skipping")
+            continue
+
+        # Estimate OLS model
+        X = sm.add_constant(df_sex[exog_vars_base])
+        y = df_sex["ln_inheritance_amount"]
+
+        try:
+            model = sm.OLS(endog=y, exog=X)
+            results = model.fit()
+
+            # Save parameters
+            params.loc[sex_label, "const"] = results.params["const"]
+            for var in exog_vars_base:
+                params.loc[sex_label, var] = results.params[var]
+            # Save sample size
+            params.loc[sex_label, "N"] = len(df_sex)
+
+            # Print summary
+            print(f"  R-squared: {results.rsquared:.4f}")
+            print("  Key parameters:")
+            print(f"    {light_care_var:25s}: {results.params[light_care_var]:8.4f}")
+            print(
+                f"    {intensive_care_var:25s}: {results.params[intensive_care_var]:8.4f}"
+            )
+            if parent_var is not None:
+                print(f"    {parent_var:25s}: {results.params[parent_var]:8.4f}")
+
+        except Exception as e:
+            print(f"  ERROR: Model estimation failed: {e}")
+
+    return params
+
+
 @pytask.mark.inheritance
 def task_estimate_inheritance_amount_specifications(
     path_to_specs: Path = SRC / "specs.yaml",
@@ -829,5 +1112,323 @@ def task_estimate_inheritance_amount_specifications(
         for spec in specifications:
             f.write(f"  - {spec['name']}\n")
             f.write(f"    Care: {spec['care_var']}\n")
+            f.write(f"    Parent: {spec['parent_var']}\n")
+            f.write(f"    Filter: {spec['filter']}\n\n")
+
+
+@pytask.mark.inheritance
+def task_estimate_inheritance_prob_two_care_specifications(
+    path_to_specs: Path = SRC / "specs.yaml",
+    path_to_data: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
+    path_to_save_summary: Annotated[Path, Product] = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "inheritance_specs_two_care"
+    / "_specs_summary.txt",
+) -> None:
+    """Estimate 12 specifications with separate light/intensive care variables.
+
+    For inheritance probability (logit).
+    """
+    specs = read_and_derive_specs(path_to_specs)
+    df = pd.read_csv(path_to_data, index_col=0)
+
+    # Set values above 90th percentile to NaN
+    p90_threshold = df["inheritance_amount"].quantile(0.90)
+    df.loc[df["inheritance_amount"] > p90_threshold, "inheritance_amount"] = np.nan
+
+    # Prepare data
+    df = prepare_inheritance_data(df)
+
+    # Create output directory
+    path_to_save_dir = path_to_save_summary.parent
+    path_to_save_dir.mkdir(parents=True, exist_ok=True)
+
+    # Define specifications with two care variables
+    specifications = [
+        # Spec 1-3: No filtering
+        {
+            "name": "spec1_care_parent_this_year",
+            "light_var": "light_care",
+            "intensive_var": "intensive_care",
+            "parent_var": "parent_died_this_year",
+            "filter": None,
+        },
+        {
+            "name": "spec2_care_recent_parent_recent",
+            "light_var": "light_care_recent",
+            "intensive_var": "intensive_care_recent",
+            "parent_var": "parent_died_recent",
+            "filter": None,
+        },
+        {
+            "name": "spec3_care_last_year_parent_last_year",
+            "light_var": "light_care_last_year",
+            "intensive_var": "intensive_care_last_year",
+            "parent_var": "parent_died_last_year",
+            "filter": None,
+        },
+        # Spec 4-6: Filter on parent_died_this_year
+        {
+            "name": "spec4_care_last_year_filter_parent_this_year",
+            "light_var": "light_care_last_year",
+            "intensive_var": "intensive_care_last_year",
+            "parent_var": None,
+            "filter": "parent_died_this_year == 1",
+        },
+        {
+            "name": "spec7_care_this_year_filter_parent_this_year",
+            "light_var": "light_care",
+            "intensive_var": "intensive_care",
+            "parent_var": None,
+            "filter": "parent_died_this_year == 1",
+        },
+        {
+            "name": "spec10_care_recent_filter_parent_this_year",
+            "light_var": "light_care_recent",
+            "intensive_var": "intensive_care_recent",
+            "parent_var": None,
+            "filter": "parent_died_this_year == 1",
+        },
+        # Spec 5,8,11: Filter on parent_died_last_year
+        {
+            "name": "spec5_care_last_year_filter_parent_last_year",
+            "light_var": "light_care_last_year",
+            "intensive_var": "intensive_care_last_year",
+            "parent_var": None,
+            "filter": "parent_died_last_year == 1",
+        },
+        {
+            "name": "spec8_care_this_year_filter_parent_last_year",
+            "light_var": "light_care",
+            "intensive_var": "intensive_care",
+            "parent_var": None,
+            "filter": "parent_died_last_year == 1",
+        },
+        {
+            "name": "spec11_care_recent_filter_parent_last_year",
+            "light_var": "light_care_recent",
+            "intensive_var": "intensive_care_recent",
+            "parent_var": None,
+            "filter": "parent_died_last_year == 1",
+        },
+        # Spec 6,9,12: Filter on parent_died_recent
+        {
+            "name": "spec6_care_last_year_filter_parent_recent",
+            "light_var": "light_care_last_year",
+            "intensive_var": "intensive_care_last_year",
+            "parent_var": None,
+            "filter": "parent_died_recent == 1",
+        },
+        {
+            "name": "spec9_care_this_year_filter_parent_recent",
+            "light_var": "light_care",
+            "intensive_var": "intensive_care",
+            "parent_var": None,
+            "filter": "parent_died_recent == 1",
+        },
+        {
+            "name": "spec12_care_recent_filter_parent_recent",
+            "light_var": "light_care_recent",
+            "intensive_var": "intensive_care_recent",
+            "parent_var": None,
+            "filter": "parent_died_recent == 1",
+        },
+    ]
+
+    # Run all specifications
+    results = {}
+    for spec in specifications:
+        params = estimate_logit_specification_two_care(
+            df=df,
+            specs=specs,
+            light_care_var=spec["light_var"],
+            intensive_care_var=spec["intensive_var"],
+            parent_var=spec["parent_var"],
+            filter_condition=spec["filter"],
+            spec_name=spec["name"],
+        )
+
+        # Save results
+        output_path = path_to_save_dir / f"{spec['name']}_params.csv"
+        params.to_csv(output_path)
+        results[spec["name"]] = params
+
+    # Save summary
+    print("\n" + "=" * 70)
+    print("ALL TWO-CARE PROBABILITY SPECIFICATIONS COMPLETED")
+    print("=" * 70)
+    print(f"Results saved to: {path_to_save_dir}")
+
+    # Write summary file
+    with path_to_save_summary.open("w") as f:
+        f.write("Inheritance Probability (Two-Care) Specifications Summary\n")
+        f.write("=" * 70 + "\n\n")
+        f.write(f"Total specifications: {len(specifications)}\n")
+        f.write(f"Output directory: {path_to_save_dir}\n\n")
+        f.write("Specifications:\n")
+        for spec in specifications:
+            f.write(f"  - {spec['name']}\n")
+            f.write(f"    Light care: {spec['light_var']}\n")
+            f.write(f"    Intensive care: {spec['intensive_var']}\n")
+            f.write(f"    Parent: {spec['parent_var']}\n")
+            f.write(f"    Filter: {spec['filter']}\n\n")
+
+
+@pytask.mark.inheritance
+def task_estimate_inheritance_amount_two_care_specifications(
+    path_to_specs: Path = SRC / "specs.yaml",
+    path_to_data: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
+    path_to_save_summary: Annotated[Path, Product] = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "inheritance_amount_specs_two_care"
+    / "_specs_summary.txt",
+) -> None:
+    """Estimate 12 specifications with separate light/intensive care variables.
+
+    For ln(inheritance_amount) (OLS).
+    """
+    specs = read_and_derive_specs(path_to_specs)
+    df = pd.read_csv(path_to_data, index_col=0)
+
+    # Set values above 90th percentile to NaN
+    p90_threshold = df["inheritance_amount"].quantile(0.90)
+    df.loc[df["inheritance_amount"] > p90_threshold, "inheritance_amount"] = np.nan
+
+    # Prepare data
+    df = prepare_inheritance_data(df)
+
+    # Create output directory
+    path_to_save_dir = path_to_save_summary.parent
+    path_to_save_dir.mkdir(parents=True, exist_ok=True)
+
+    # Define specifications with two care variables
+    specifications = [
+        # Spec 1-3: No filtering
+        {
+            "name": "spec1_care_parent_this_year",
+            "light_var": "light_care",
+            "intensive_var": "intensive_care",
+            "parent_var": "parent_died_this_year",
+            "filter": None,
+        },
+        {
+            "name": "spec2_care_recent_parent_recent",
+            "light_var": "light_care_recent",
+            "intensive_var": "intensive_care_recent",
+            "parent_var": "parent_died_recent",
+            "filter": None,
+        },
+        {
+            "name": "spec3_care_last_year_parent_last_year",
+            "light_var": "light_care_last_year",
+            "intensive_var": "intensive_care_last_year",
+            "parent_var": "parent_died_last_year",
+            "filter": None,
+        },
+        # Spec 4-6: Filter on parent_died_this_year
+        {
+            "name": "spec4_care_last_year_filter_parent_this_year",
+            "light_var": "light_care_last_year",
+            "intensive_var": "intensive_care_last_year",
+            "parent_var": None,
+            "filter": "parent_died_this_year == 1",
+        },
+        {
+            "name": "spec7_care_this_year_filter_parent_this_year",
+            "light_var": "light_care",
+            "intensive_var": "intensive_care",
+            "parent_var": None,
+            "filter": "parent_died_this_year == 1",
+        },
+        {
+            "name": "spec10_care_recent_filter_parent_this_year",
+            "light_var": "light_care_recent",
+            "intensive_var": "intensive_care_recent",
+            "parent_var": None,
+            "filter": "parent_died_this_year == 1",
+        },
+        # Spec 5,8,11: Filter on parent_died_last_year
+        {
+            "name": "spec5_care_last_year_filter_parent_last_year",
+            "light_var": "light_care_last_year",
+            "intensive_var": "intensive_care_last_year",
+            "parent_var": None,
+            "filter": "parent_died_last_year == 1",
+        },
+        {
+            "name": "spec8_care_this_year_filter_parent_last_year",
+            "light_var": "light_care",
+            "intensive_var": "intensive_care",
+            "parent_var": None,
+            "filter": "parent_died_last_year == 1",
+        },
+        {
+            "name": "spec11_care_recent_filter_parent_last_year",
+            "light_var": "light_care_recent",
+            "intensive_var": "intensive_care_recent",
+            "parent_var": None,
+            "filter": "parent_died_last_year == 1",
+        },
+        # Spec 6,9,12: Filter on parent_died_recent
+        {
+            "name": "spec6_care_last_year_filter_parent_recent",
+            "light_var": "light_care_last_year",
+            "intensive_var": "intensive_care_last_year",
+            "parent_var": None,
+            "filter": "parent_died_recent == 1",
+        },
+        {
+            "name": "spec9_care_this_year_filter_parent_recent",
+            "light_var": "light_care",
+            "intensive_var": "intensive_care",
+            "parent_var": None,
+            "filter": "parent_died_recent == 1",
+        },
+        {
+            "name": "spec12_care_recent_filter_parent_recent",
+            "light_var": "light_care_recent",
+            "intensive_var": "intensive_care_recent",
+            "parent_var": None,
+            "filter": "parent_died_recent == 1",
+        },
+    ]
+
+    # Run all specifications
+    results = {}
+    for spec in specifications:
+        params = estimate_ols_specification_two_care(
+            df=df,
+            specs=specs,
+            light_care_var=spec["light_var"],
+            intensive_care_var=spec["intensive_var"],
+            parent_var=spec["parent_var"],
+            filter_condition=spec["filter"],
+            spec_name=spec["name"],
+        )
+
+        # Save results
+        output_path = path_to_save_dir / f"{spec['name']}_params.csv"
+        params.to_csv(output_path)
+        results[spec["name"]] = params
+
+    # Save summary
+    print("\n" + "=" * 70)
+    print("ALL TWO-CARE AMOUNT SPECIFICATIONS COMPLETED")
+    print("=" * 70)
+    print(f"Results saved to: {path_to_save_dir}")
+
+    # Write summary file
+    with path_to_save_summary.open("w") as f:
+        f.write("Inheritance Amount (Two-Care) Specifications Summary\n")
+        f.write("=" * 70 + "\n\n")
+        f.write(f"Total specifications: {len(specifications)}\n")
+        f.write(f"Output directory: {path_to_save_dir}\n\n")
+        f.write("Specifications:\n")
+        for spec in specifications:
+            f.write(f"  - {spec['name']}\n")
+            f.write(f"    Light care: {spec['light_var']}\n")
+            f.write(f"    Intensive care: {spec['intensive_var']}\n")
             f.write(f"    Parent: {spec['parent_var']}\n")
             f.write(f"    Filter: {spec['filter']}\n\n")
