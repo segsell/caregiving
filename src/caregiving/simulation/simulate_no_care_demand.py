@@ -8,9 +8,6 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pandas as pd
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.simulation.sim_utils import create_simulation_df
-from dcegm.simulation.simulate import simulate_all_periods
 
 from caregiving.model.shared import DEAD, SEX
 from caregiving.model.shared_no_care_demand import (
@@ -41,6 +38,9 @@ from caregiving.model.wealth_and_budget.transfers import (
 from caregiving.model.wealth_and_budget.wages_no_care_demand import (
     calculate_gross_labor_income,
 )
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.simulation.sim_utils import create_simulation_df
+from dcegm.simulation.simulate import simulate_all_periods
 
 
 def setup_model_for_simulation_no_care_demand(path_to_model, options):
@@ -307,17 +307,17 @@ def build_simulation_df_with_income_components_no_care_demand(
 
     # Calculate total individual income following budget equation logic
     # Total net income = labor income + pension income + child benefits
-    df["total_net_income"] = (
+    df["total_gross_income"] = (
         df["gross_labor_income"] + df["child_benefits"] + df["gross_pension_income"]
     )
 
     # Apply maximum with unemployment benefits (following budget equation)
     # df["total_income"] = np.maximum(
-    #     df["total_net_income"], df["unemployment_benefits"]
+    #     df["total_gross_income"], df["unemployment_benefits"]
     # ) * (df["health"] != DEAD)
     df["total_income"] = np.where(
         df["health"] != DEAD,
-        np.maximum(df["total_net_income"], df["unemployment_benefits"]),
+        np.maximum(df["total_gross_income"], df["unemployment_benefits"]),
         0,
     )
 

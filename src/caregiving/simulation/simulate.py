@@ -25,6 +25,9 @@ from caregiving.model.state_space import (
     construct_experience_years,
     create_state_space_functions,
 )
+from caregiving.model.state_space_job_retention import (
+    create_state_space_functions as create_state_space_functions_job_retention,
+)
 from caregiving.model.utility.bequest_utility import (
     create_final_period_utility_functions,
 )
@@ -56,6 +59,19 @@ def setup_model_for_simulation_baseline(path_to_model, options):
     return load_and_setup_model(
         options=options,
         state_space_functions=create_state_space_functions(),
+        utility_functions=create_utility_functions(),
+        utility_functions_final_period=create_final_period_utility_functions(),
+        budget_constraint=budget_constraint,
+        path=path_to_model,
+        sim_model=True,
+    )
+
+
+def setup_model_for_simulation_job_retention(path_to_model, options):
+    """Setup job retention model for simulation with correct utility functions."""
+    return load_and_setup_model(
+        options=options,
+        state_space_functions=create_state_space_functions_job_retention(),
         utility_functions=create_utility_functions(),
         utility_functions_final_period=create_final_period_utility_functions(),
         budget_constraint=budget_constraint,
@@ -358,7 +374,7 @@ def build_simulation_df_with_income_components(sim_dict, options, params):
 
     # Calculate total individual income following budget equation logic
     # Total net income = labor income + pension income + child benefits + care benefits
-    df["total_net_income"] = (
+    df["total_gross_income"] = (
         df["gross_labor_income"]
         + df["gross_pension_income"]
         + df["child_benefits"]
@@ -367,11 +383,11 @@ def build_simulation_df_with_income_components(sim_dict, options, params):
 
     # Apply maximum with unemployment benefits (following budget equation)
     # df["total_income"] = np.maximum(
-    #     df["total_net_income"], df["unemployment_benefits"]
+    #     df["total_gross_income"], df["unemployment_benefits"]
     # ) * (df["health"] != DEAD)
     df["total_income"] = np.where(
         df["health"] != DEAD,
-        np.maximum(df["total_net_income"], df["unemployment_benefits"]),
+        np.maximum(df["total_gross_income"], df["unemployment_benefits"]),
         0,
     )
 
