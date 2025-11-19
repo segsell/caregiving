@@ -4,9 +4,6 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pandas as pd
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.simulation.sim_utils import create_simulation_df
-from dcegm.simulation.simulate import simulate_all_periods
 
 from caregiving.model.shared import (
     DEAD,
@@ -47,6 +44,9 @@ from caregiving.model.wealth_and_budget.wages import (
     calculate_gross_labor_income,
 )
 from caregiving.utils import table
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.simulation.sim_utils import create_simulation_df
+from dcegm.simulation.simulate import simulate_all_periods
 
 jax.config.update("jax_enable_x64", True)
 
@@ -360,7 +360,7 @@ def build_simulation_df_with_income_components(sim_dict, options, params):
     # Total net income = labor income + pension income + child benefits + care benefits
     df["total_net_income"] = (
         df["gross_labor_income"]
-        # + df["gross_pension_income"]
+        + df["gross_pension_income"]
         + df["child_benefits"]
         + df["care_benefits_and_costs"]
     )

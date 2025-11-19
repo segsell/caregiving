@@ -308,9 +308,7 @@ def build_simulation_df_with_income_components_no_care_demand(
     # Calculate total individual income following budget equation logic
     # Total net income = labor income + pension income + child benefits
     df["total_net_income"] = (
-        df["gross_labor_income"]
-        + df["child_benefits"]
-        # df["gross_labor_income"] + df["gross_pension_income"] + df["child_benefits"]
+        df["gross_labor_income"] + df["child_benefits"] + df["gross_pension_income"]
     )
 
     # Apply maximum with unemployment benefits (following budget equation)

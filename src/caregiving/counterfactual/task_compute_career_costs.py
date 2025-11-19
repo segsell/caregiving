@@ -14,16 +14,19 @@ import yaml
 from pytask import Product
 
 from caregiving.config import BLD, SRC
-from caregiving.model.shared import DEAD, INFORMAL_CARE, NPV_END_AGE
+from caregiving.model.shared import (
+    DEAD,
+    INFORMAL_CARE,
+    NPV_END_AGE,
+    NPV_START_AGE,
+)
 from caregiving.simulation.simulate import (
     setup_model_for_simulation_baseline,
     simulate_career_costs,
-    simulate_scenario,
 )
 from caregiving.simulation.simulate_no_care_demand import (
     setup_model_for_simulation_no_care_demand,
     simulate_career_costs_no_care_demand,
-    simulate_scenario_no_care_demand,
 )
 
 
@@ -227,7 +230,6 @@ def task_compute_career_costs(
     pd.DataFrame({"agent": _merged_npv["agent"], "npv_care_ratio": _npv_care}).to_csv(
         path_to_npv_care_ratios, index=False
     )
-
     # Save summary statistics
     pd.DataFrame(
         {"metric": ["npv_care_mean", "npv_mean"], "value": [npv_care_mean, _npv_mean]}
@@ -240,16 +242,12 @@ def task_compute_career_costs(
 
 
 def compute_career_npv(df: pd.DataFrame, beta: float) -> pd.DataFrame:
-    """Compute net present value of total income from age 40 to 70."""
+    """Compute net present value of total income."""
 
-    # Filter data for ages 40-70
-    NPV_START_AGE_LOCAL = 40
-    df_filtered = df[
-        (df["age"] >= NPV_START_AGE_LOCAL) & (df["age"] <= NPV_END_AGE)
-    ].copy()
+    df_filtered = df[(df["age"] >= NPV_START_AGE) & (df["age"] <= NPV_END_AGE)].copy()
 
     # Create discount factors (beta^(age-40))
-    df_filtered["discount_factor"] = beta ** (df_filtered["age"] - NPV_START_AGE_LOCAL)
+    df_filtered["discount_factor"] = beta ** (df_filtered["age"] - NPV_START_AGE)
 
     # Compute discounted income using total_income (individual income components)
     df_filtered["discounted_income"] = (
