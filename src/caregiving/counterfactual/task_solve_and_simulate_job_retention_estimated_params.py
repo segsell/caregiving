@@ -4,6 +4,7 @@
 # from pathlib import Path
 # from typing import Annotated, Any, Dict, List, Tuple
 
+# <<<<<<< HEAD
 # import jax
 # import jax.numpy as jnp
 # import pandas as pd
@@ -24,11 +25,42 @@
 # from caregiving.model.utility.bequest_utility import (
 #     create_final_period_utility_functions,
 # )
-# from caregiving.model.utility.utility_functions_additive import create_utility_functions
+# from caregiving.model.utility.utility_functions_additive import (
+#     create_utility_functions
+# )
 # from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 # from caregiving.simulation.simulate import simulate_scenario
 # from dcegm.pre_processing.setup_model import load_and_setup_model
 # from dcegm.solve import get_solve_func_for_model
+# =======
+# import jax
+# import jax.numpy as jnp
+# import pandas as pd
+# import pytask
+# import yaml
+# from dcegm.pre_processing.setup_model import load_and_setup_model
+# from dcegm.solve import get_solve_func_for_model
+# from pytask import Product
+
+# from caregiving.config import BLD
+# from caregiving.counterfactual.simulate_counterfactual import (
+#     simulate_counterfactual_npv,
+# )
+# from caregiving.estimation.prepare_estimation import (
+#     load_and_setup_full_model_for_solution,
+# )
+# from caregiving.model.state_space_job_retention import (
+#     create_state_space_functions,
+# )
+# from caregiving.model.utility.bequest_utility import (
+#     create_final_period_utility_functions,
+# )
+# from caregiving.model.utility.utility_functions_additive import (
+#     create_utility_functions
+# )
+# from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
+# from caregiving.simulation.simulate import simulate_scenario
+# >>>>>>> 459cca794be87131df226f96a6af2940d295947c
 
 # jax.config.update("jax_enable_x64", True)
 
@@ -95,7 +127,9 @@
 
 #     # 2) Simulate
 #     initial_states = pickle.load(path_to_discrete_states.open("rb"))
-#     wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
+#     wealth_agents = jnp.array(
+#         pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze()
+#     )
 
 #     model_for_simulation = load_and_setup_model(
 #         options=options,

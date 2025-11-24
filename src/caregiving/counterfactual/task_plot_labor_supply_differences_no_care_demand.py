@@ -3,6 +3,7 @@
 Original and no-care-demand scenario.
 """
 
+import pickle
 from pathlib import Path
 from typing import Annotated
 
@@ -13,14 +14,22 @@ import pytask
 from pytask import Product
 
 from caregiving.config import BLD, JET_COLOR_MAP
+from caregiving.counterfactual.plotting_utils import (
+    _ensure_agent_period,
+    calculate_outcomes,
+    calculate_working_hours_weekly,
+    create_outcome_columns,
+    merge_and_compute_differences,
+    prepare_dataframes_for_comparison,
+)
 from caregiving.counterfactual.task_plot_labor_supply_differences import (
     _add_distance_to_first_care,
-    _ensure_agent_period,
 )
 from caregiving.model.shared import (
     DEAD,
     FULL_TIME,
     INFORMAL_CARE,
+    N_WEEKS_IN_YEAR,
     PART_TIME,
     WORK,
 )
@@ -47,7 +56,9 @@ def task_plot_matched_differences_by_distance(  # noqa: PLR0915
     ever_caregivers: bool = True,
     window: int = 20,
 ) -> None:
-    """Compute matched period differences (orig - no-care-demand), then average by distance.
+    """Compute matched period differences (orig - no-care-demand).
+
+    Averages by distance.
 
     Steps:
       1) Restrict to alive and (optionally) ever-caregivers.
@@ -223,9 +234,25 @@ def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915
     / "counterfactual"
     / "no_care_demand"
     / "matched_differences_full_time_by_age_at_first_care.png",
+    path_to_plot_work: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "no_care_demand"
+    / "matched_differences_employment_rate_by_age_at_first_care.png",
+    path_to_plot_job_offer: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "no_care_demand"
+    / "matched_differences_job_offer_by_age_at_first_care.png",
+    path_to_plot_working_hours: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "no_care_demand"
+    / "matched_differences_working_hours_by_age_at_first_care.png",
+    path_to_options: Path = BLD / "model" / "options.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
-    ages_at_first_care: list[int] = [50, 54, 58, 62],
+    ages_at_first_care: list[int] | None = None,
 ) -> None:
     """Compute matched period differences by age at first care spell.
 
@@ -243,67 +270,37 @@ def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915
       8) Plot separate figures for PT and FT with one line per starting age.
 
     """
-    # Load
-    df_o = pd.read_pickle(path_to_original_data)
-    df_c = pd.read_pickle(path_to_no_care_demand_data)
+    if ages_at_first_care is None:
+        ages_at_first_care = [45, 50, 54, 58, 62]
 
-    # Alive restriction
-    df_o = df_o[df_o["health"] != DEAD].copy()
-    df_c = df_c[df_c["health"] != DEAD].copy()
-
-    # Ensure agent/period
-    df_o = _ensure_agent_period(df_o)
-    df_c = _ensure_agent_period(df_c)
-
-    # Fully flatten any residual index levels named 'agent' or 'period'
-    if isinstance(df_o.index, pd.MultiIndex):
-        idx_names_o = {n for n in df_o.index.names if n is not None}
-        if ("agent" in idx_names_o) or ("period" in idx_names_o):
-            df_o = df_o.reset_index()
-    if isinstance(df_c.index, pd.MultiIndex):
-        idx_names_c = {n for n in df_c.index.names if n is not None}
-        if ("agent" in idx_names_c) or ("period" in idx_names_c):
-            df_c = df_c.reset_index()
-
-    # Ensure no index name collisions remain (fully flatten)
-    df_o = df_o.reset_index(drop=True)
-    df_c = df_c.reset_index(drop=True)
-
-    # Ever-caregiver restriction
-    if ever_caregivers:
-        care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
-        caregiver_ids = df_o.loc[df_o["choice"].isin(care_codes), "agent"].unique()
-        df_o = df_o[df_o["agent"].isin(caregiver_ids)].copy()
-        df_c = df_c[df_c["agent"].isin(caregiver_ids)].copy()
-
-    # Outcomes per period
-    o_ft = df_o["choice"].isin(np.asarray(FULL_TIME).ravel().tolist()).astype(float)
-    o_pt = df_o["choice"].isin(np.asarray(PART_TIME).ravel().tolist()).astype(float)
-
-    # No care demand uses reduced choice structure (4 choices)
-    c_ft = (
-        df_c["choice"]
-        .isin(np.asarray(FULL_TIME_NO_CARE_DEMAND).ravel().tolist())
-        .astype(float)
-    )
-    c_pt = (
-        df_c["choice"]
-        .isin(np.asarray(PART_TIME_NO_CARE_DEMAND).ravel().tolist())
-        .astype(float)
+    # Load and prepare data
+    df_o, df_c = prepare_dataframes_for_comparison(
+        pd.read_pickle(path_to_original_data),
+        pd.read_pickle(path_to_no_care_demand_data),
+        ever_caregivers=ever_caregivers,
     )
 
-    o_cols = df_o[["agent", "period"]].copy()
-    o_cols["ft_o"] = o_ft
-    o_cols["pt_o"] = o_pt
+    # Calculate outcomes
+    o_outcomes = calculate_outcomes(df_o, choice_set_type="original")
+    c_outcomes = calculate_outcomes(df_c, choice_set_type="no_care_demand")
 
-    c_cols = df_c[["agent", "period"]].copy()
-    c_cols["ft_c"] = c_ft
-    c_cols["pt_c"] = c_pt
+    # Calculate working hours
+    options = pickle.load(path_to_options.open("rb"))
+    model_params = options["model_params"]
+    o_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_o, model_params, choice_set_type="original"
+    )
+    c_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_c, model_params, choice_set_type="no_care_demand"
+    )
 
-    # Merge on (agent, period) to get matched differences
-    merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
-    merged["diff_ft"] = merged["ft_o"] - merged["ft_c"]
-    merged["diff_pt"] = merged["pt_o"] - merged["pt_c"]
+    # Create outcome columns and merge
+    o_cols = create_outcome_columns(df_o, o_outcomes, "_o")
+    c_cols = create_outcome_columns(df_c, c_outcomes, "_c")
+
+    # Merge and compute differences
+    outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly"]
+    merged = merge_and_compute_differences(o_cols, c_cols, outcome_names)
 
     # Compute distance and age at first care from original
     df_o_dist = _add_distance_to_first_care(df_o)
@@ -347,7 +344,7 @@ def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915
     # Average differences by distance and age_at_first_care
     prof = (
         merged.groupby(["distance_to_first_care", "age_at_first_care"], observed=False)[
-            ["diff_ft", "diff_pt"]
+            ["diff_work", "diff_ft", "diff_pt", "diff_job_offer", "diff_hours_weekly"]
         ]
         .mean()
         .reset_index()
@@ -435,6 +432,103 @@ def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915
     plt.savefig(path_to_plot_ft, dpi=300, bbox_inches="tight")
     plt.close()
 
+    # Plot Employment Rate (Working = FT or PT)
+    plt.figure(figsize=(12, 7))
+    for i, age in enumerate(sorted(ages_at_first_care)):
+        prof_age = prof[prof["age_at_first_care"] == age].sort_values(
+            "distance_to_first_care"
+        )
+        plt.plot(
+            prof_age["distance_to_first_care"],
+            prof_age["diff_work"],
+            label=f"Age {age}",
+            color=colors[i],
+            linewidth=2,
+        )
+
+    plt.axvline(x=0, color="k", linestyle=":", alpha=0.5)
+    plt.xlabel("Year relative to start of first care spell", fontsize=16)
+    plt.ylabel("Proportion Working\nDeviation from Counterfactual", fontsize=16)
+    plt.xlim(-window, window)
+    plt.grid(True, alpha=0.3)
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.legend(
+        loc="best",
+        prop={"size": 14},
+        title="Age at first care",
+        title_fontsize=14,
+    )
+    plt.tight_layout()
+    plt.savefig(path_to_plot_work, dpi=300, bbox_inches="tight")
+    plt.close()
+
+    # Plot Job Offer Probability
+    plt.figure(figsize=(12, 7))
+    for i, age in enumerate(sorted(ages_at_first_care)):
+        prof_age = prof[prof["age_at_first_care"] == age].sort_values(
+            "distance_to_first_care"
+        )
+        plt.plot(
+            prof_age["distance_to_first_care"],
+            prof_age["diff_job_offer"],
+            label=f"Age {age}",
+            color=colors[i],
+            linewidth=2,
+        )
+
+    plt.axvline(x=0, color="k", linestyle=":", alpha=0.5)
+    plt.xlabel("Year relative to start of first care spell", fontsize=16)
+    plt.ylabel(
+        "Job Offer Probability Difference\nDeviation from Counterfactual", fontsize=16
+    )
+    plt.xlim(-window, window)
+    plt.grid(True, alpha=0.3)
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.legend(
+        loc="best",
+        prop={"size": 14},
+        title="Age at first care",
+        title_fontsize=14,
+    )
+    plt.tight_layout()
+    plt.savefig(path_to_plot_job_offer, dpi=300, bbox_inches="tight")
+    plt.close()
+
+    # Plot Weekly Working Hours
+    plt.figure(figsize=(12, 7))
+    for i, age in enumerate(sorted(ages_at_first_care)):
+        prof_age = prof[prof["age_at_first_care"] == age].sort_values(
+            "distance_to_first_care"
+        )
+        plt.plot(
+            prof_age["distance_to_first_care"],
+            prof_age["diff_hours_weekly"],
+            label=f"Age {age}",
+            color=colors[i],
+            linewidth=2,
+        )
+
+    plt.axvline(x=0, color="k", linestyle=":", alpha=0.5)
+    plt.xlabel("Year relative to start of first care spell", fontsize=16)
+    plt.ylabel(
+        "Weekly Working Hours Difference\nDeviation from Counterfactual", fontsize=16
+    )
+    plt.xlim(-window, window)
+    plt.grid(True, alpha=0.3)
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.legend(
+        loc="best",
+        prop={"size": 14},
+        title="Age at first care",
+        title_fontsize=14,
+    )
+    plt.tight_layout()
+    plt.savefig(path_to_plot_working_hours, dpi=300, bbox_inches="tight")
+    plt.close()
+
 
 @pytask.mark.counterfactual_differences_no_care_demand
 def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915
@@ -454,6 +548,22 @@ def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915
     / "counterfactual"
     / "no_care_demand"
     / "matched_differences_full_time_by_age_bins_at_first_care.png",
+    path_to_plot_work: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "no_care_demand"
+    / "matched_differences_employment_rate_by_age_bins_at_first_care.png",
+    path_to_plot_job_offer: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "no_care_demand"
+    / "matched_differences_job_offer_by_age_bins_at_first_care.png",
+    path_to_plot_working_hours: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "no_care_demand"
+    / "matched_differences_working_hours_by_age_bins_at_first_care.png",
+    path_to_options: Path = BLD / "model" / "options.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
     min_age: int = 50,
@@ -476,67 +586,34 @@ def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915
       8) Plot separate figures for PT and FT with one line per age bin.
 
     """
-    # Load
-    df_o = pd.read_pickle(path_to_original_data)
-    df_c = pd.read_pickle(path_to_no_care_demand_data)
-
-    # Alive restriction
-    df_o = df_o[df_o["health"] != DEAD].copy()
-    df_c = df_c[df_c["health"] != DEAD].copy()
-
-    # Ensure agent/period
-    df_o = _ensure_agent_period(df_o)
-    df_c = _ensure_agent_period(df_c)
-
-    # Fully flatten any residual index levels named 'agent' or 'period'
-    if isinstance(df_o.index, pd.MultiIndex):
-        idx_names_o = {n for n in df_o.index.names if n is not None}
-        if ("agent" in idx_names_o) or ("period" in idx_names_o):
-            df_o = df_o.reset_index()
-    if isinstance(df_c.index, pd.MultiIndex):
-        idx_names_c = {n for n in df_c.index.names if n is not None}
-        if ("agent" in idx_names_c) or ("period" in idx_names_c):
-            df_c = df_c.reset_index()
-
-    # Ensure no index name collisions remain (fully flatten)
-    df_o = df_o.reset_index(drop=True)
-    df_c = df_c.reset_index(drop=True)
-
-    # Ever-caregiver restriction
-    if ever_caregivers:
-        care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
-        caregiver_ids = df_o.loc[df_o["choice"].isin(care_codes), "agent"].unique()
-        df_o = df_o[df_o["agent"].isin(caregiver_ids)].copy()
-        df_c = df_c[df_c["agent"].isin(caregiver_ids)].copy()
-
-    # Outcomes per period
-    o_ft = df_o["choice"].isin(np.asarray(FULL_TIME).ravel().tolist()).astype(float)
-    o_pt = df_o["choice"].isin(np.asarray(PART_TIME).ravel().tolist()).astype(float)
-
-    # No care demand uses reduced choice structure (4 choices)
-    c_ft = (
-        df_c["choice"]
-        .isin(np.asarray(FULL_TIME_NO_CARE_DEMAND).ravel().tolist())
-        .astype(float)
-    )
-    c_pt = (
-        df_c["choice"]
-        .isin(np.asarray(PART_TIME_NO_CARE_DEMAND).ravel().tolist())
-        .astype(float)
+    # Load and prepare data
+    df_o, df_c = prepare_dataframes_for_comparison(
+        pd.read_pickle(path_to_original_data),
+        pd.read_pickle(path_to_no_care_demand_data),
+        ever_caregivers=ever_caregivers,
     )
 
-    o_cols = df_o[["agent", "period"]].copy()
-    o_cols["ft_o"] = o_ft
-    o_cols["pt_o"] = o_pt
+    # Calculate outcomes
+    o_outcomes = calculate_outcomes(df_o, choice_set_type="original")
+    c_outcomes = calculate_outcomes(df_c, choice_set_type="no_care_demand")
 
-    c_cols = df_c[["agent", "period"]].copy()
-    c_cols["ft_c"] = c_ft
-    c_cols["pt_c"] = c_pt
+    # Calculate working hours
+    options = pickle.load(path_to_options.open("rb"))
+    model_params = options["model_params"]
+    o_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_o, model_params, choice_set_type="original"
+    )
+    c_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_c, model_params, choice_set_type="no_care_demand"
+    )
 
-    # Merge on (agent, period) to get matched differences
-    merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
-    merged["diff_ft"] = merged["ft_o"] - merged["ft_c"]
-    merged["diff_pt"] = merged["pt_o"] - merged["pt_c"]
+    # Create outcome columns and merge
+    o_cols = create_outcome_columns(df_o, o_outcomes, "_o")
+    c_cols = create_outcome_columns(df_c, c_outcomes, "_c")
+
+    # Merge and compute differences
+    outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly"]
+    merged = merge_and_compute_differences(o_cols, c_cols, outcome_names)
 
     # Compute distance and age at first care from original
     df_o_dist = _add_distance_to_first_care(df_o)
@@ -591,7 +668,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915
     # Average differences by distance and age_bin
     prof = (
         merged.groupby(["distance_to_first_care", "age_bin_label"], observed=False)[
-            ["diff_ft", "diff_pt"]
+            ["diff_work", "diff_ft", "diff_pt", "diff_job_offer", "diff_hours_weekly"]
         ]
         .mean()
         .reset_index()
@@ -686,6 +763,103 @@ def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915
     )
     plt.tight_layout()
     plt.savefig(path_to_plot_ft, dpi=300, bbox_inches="tight")
+    plt.close()
+
+    # Plot Employment Rate (Working = FT or PT)
+    plt.figure(figsize=(12, 7))
+    for i, age_bin in enumerate(unique_bins):
+        prof_bin = prof[prof["age_bin_label"] == age_bin].sort_values(
+            "distance_to_first_care"
+        )
+        plt.plot(
+            prof_bin["distance_to_first_care"],
+            prof_bin["diff_work"],
+            label=f"Age {age_bin}",
+            color=colors[i],
+            linewidth=2,
+        )
+
+    plt.axvline(x=0, color="k", linestyle=":", alpha=0.5)
+    plt.xlabel("Year relative to start of first care spell", fontsize=16)
+    plt.ylabel("Proportion Working\nDeviation from Counterfactual", fontsize=16)
+    plt.xlim(-window, window)
+    plt.grid(True, alpha=0.3)
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.legend(
+        loc="best",
+        prop={"size": 14},
+        title="Age at first care",
+        title_fontsize=14,
+    )
+    plt.tight_layout()
+    plt.savefig(path_to_plot_work, dpi=300, bbox_inches="tight")
+    plt.close()
+
+    # Plot Job Offer Probability
+    plt.figure(figsize=(12, 7))
+    for i, age_bin in enumerate(unique_bins):
+        prof_bin = prof[prof["age_bin_label"] == age_bin].sort_values(
+            "distance_to_first_care"
+        )
+        plt.plot(
+            prof_bin["distance_to_first_care"],
+            prof_bin["diff_job_offer"],
+            label=f"Age {age_bin}",
+            color=colors[i],
+            linewidth=2,
+        )
+
+    plt.axvline(x=0, color="k", linestyle=":", alpha=0.5)
+    plt.xlabel("Year relative to start of first care spell", fontsize=16)
+    plt.ylabel(
+        "Job Offer Probability Difference\nDeviation from Counterfactual", fontsize=16
+    )
+    plt.xlim(-window, window)
+    plt.grid(True, alpha=0.3)
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.legend(
+        loc="best",
+        prop={"size": 14},
+        title="Age at first care",
+        title_fontsize=14,
+    )
+    plt.tight_layout()
+    plt.savefig(path_to_plot_job_offer, dpi=300, bbox_inches="tight")
+    plt.close()
+
+    # Plot Weekly Working Hours
+    plt.figure(figsize=(12, 7))
+    for i, age_bin in enumerate(unique_bins):
+        prof_bin = prof[prof["age_bin_label"] == age_bin].sort_values(
+            "distance_to_first_care"
+        )
+        plt.plot(
+            prof_bin["distance_to_first_care"],
+            prof_bin["diff_hours_weekly"],
+            label=f"Age {age_bin}",
+            color=colors[i],
+            linewidth=2,
+        )
+
+    plt.axvline(x=0, color="k", linestyle=":", alpha=0.5)
+    plt.xlabel("Year relative to start of first care spell", fontsize=16)
+    plt.ylabel(
+        "Weekly Working Hours Difference\nDeviation from Counterfactual", fontsize=16
+    )
+    plt.xlim(-window, window)
+    plt.grid(True, alpha=0.3)
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.legend(
+        loc="best",
+        prop={"size": 14},
+        title="Age at first care",
+        title_fontsize=14,
+    )
+    plt.tight_layout()
+    plt.savefig(path_to_plot_working_hours, dpi=300, bbox_inches="tight")
     plt.close()
 
 
@@ -797,7 +971,10 @@ def task_plot_first_care_start_by_age(
 
 
 def _add_distance_to_first_care_demand(df_original: pd.DataFrame) -> pd.DataFrame:
-    """Add distance_to_first_care_demand column where 0 is first time care_demand > 0."""
+    """Add distance_to_first_care_demand column.
+
+    Sets 0 as first time care_demand > 0.
+    """
     # Flatten any existing index to avoid column/index name ambiguity
     df = df_original.reset_index(drop=True)
     df = _ensure_agent_period(df)
@@ -832,7 +1009,9 @@ def task_plot_matched_differences_by_distance_by_care_demand(  # noqa: PLR0915
     ever_caregivers: bool = True,
     window: int = 20,
 ) -> None:
-    """Compute matched period differences (orig - no-care-demand), then average by distance.
+    """Compute matched period differences (orig - no-care-demand).
+
+    Averages by distance.
 
     Uses t=0 as first time care_demand > 0 (instead of first caregiving spell).
 
@@ -1012,9 +1191,25 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915
     / "counterfactual"
     / "no_care_demand"
     / "matched_differences_full_time_by_age_at_first_care_demand.png",
+    path_to_plot_work: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "no_care_demand"
+    / "matched_differences_employment_rate_by_age_at_first_care_demand.png",
+    path_to_plot_job_offer: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "no_care_demand"
+    / "matched_differences_job_offer_by_age_at_first_care_demand.png",
+    path_to_plot_working_hours: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "no_care_demand"
+    / "matched_differences_working_hours_by_age_at_first_care_demand.png",
+    path_to_options: Path = BLD / "model" / "options.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
-    ages_at_first_care_demand: list[int] = [50, 54, 58, 62],
+    ages_at_first_care_demand: list[int] | None = None,
 ) -> None:
     """Compute matched period differences by age at first care demand.
 
@@ -1027,73 +1222,43 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915
       2) Ensure agent/period columns.
       3) Build per-period outcomes (ft, pt) for both scenarios.
       4) Merge on (agent, period) and compute differences.
-      5) Compute distance_to_first_care_demand and age_at_first_care_demand from original.
+      5) Compute distance_to_first_care_demand and age_at_first_care_demand.
       6) Filter to specific ages at first care demand.
       7) Average diffs by distance and age_at_first_care_demand.
       8) Plot separate figures for PT and FT with one line per starting age.
 
     """
-    # Load
-    df_o = pd.read_pickle(path_to_original_data)
-    df_c = pd.read_pickle(path_to_no_care_demand_data)
+    if ages_at_first_care_demand is None:
+        ages_at_first_care_demand = [45, 50, 55, 60, 65]
 
-    # Alive restriction
-    df_o = df_o[df_o["health"] != DEAD].copy()
-    df_c = df_c[df_c["health"] != DEAD].copy()
-
-    # Ensure agent/period
-    df_o = _ensure_agent_period(df_o)
-    df_c = _ensure_agent_period(df_c)
-
-    # Fully flatten any residual index levels named 'agent' or 'period'
-    if isinstance(df_o.index, pd.MultiIndex):
-        idx_names_o = {n for n in df_o.index.names if n is not None}
-        if ("agent" in idx_names_o) or ("period" in idx_names_o):
-            df_o = df_o.reset_index()
-    if isinstance(df_c.index, pd.MultiIndex):
-        idx_names_c = {n for n in df_c.index.names if n is not None}
-        if ("agent" in idx_names_c) or ("period" in idx_names_c):
-            df_c = df_c.reset_index()
-
-    # Ensure no index name collisions remain (fully flatten)
-    df_o = df_o.reset_index(drop=True)
-    df_c = df_c.reset_index(drop=True)
-
-    # Ever-caregiver restriction
-    if ever_caregivers:
-        care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
-        caregiver_ids = df_o.loc[df_o["choice"].isin(care_codes), "agent"].unique()
-        df_o = df_o[df_o["agent"].isin(caregiver_ids)].copy()
-        df_c = df_c[df_c["agent"].isin(caregiver_ids)].copy()
-
-    # Outcomes per period
-    o_ft = df_o["choice"].isin(np.asarray(FULL_TIME).ravel().tolist()).astype(float)
-    o_pt = df_o["choice"].isin(np.asarray(PART_TIME).ravel().tolist()).astype(float)
-
-    # No care demand uses reduced choice structure (4 choices)
-    c_ft = (
-        df_c["choice"]
-        .isin(np.asarray(FULL_TIME_NO_CARE_DEMAND).ravel().tolist())
-        .astype(float)
-    )
-    c_pt = (
-        df_c["choice"]
-        .isin(np.asarray(PART_TIME_NO_CARE_DEMAND).ravel().tolist())
-        .astype(float)
+    # Load and prepare data
+    df_o, df_c = prepare_dataframes_for_comparison(
+        pd.read_pickle(path_to_original_data),
+        pd.read_pickle(path_to_no_care_demand_data),
+        ever_caregivers=ever_caregivers,
     )
 
-    o_cols = df_o[["agent", "period"]].copy()
-    o_cols["ft_o"] = o_ft
-    o_cols["pt_o"] = o_pt
+    # Calculate outcomes
+    o_outcomes = calculate_outcomes(df_o, choice_set_type="original")
+    c_outcomes = calculate_outcomes(df_c, choice_set_type="no_care_demand")
 
-    c_cols = df_c[["agent", "period"]].copy()
-    c_cols["ft_c"] = c_ft
-    c_cols["pt_c"] = c_pt
+    # Calculate working hours
+    options = pickle.load(path_to_options.open("rb"))
+    model_params = options["model_params"]
+    o_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_o, model_params, choice_set_type="original"
+    )
+    c_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_c, model_params, choice_set_type="no_care_demand"
+    )
 
-    # Merge on (agent, period) to get matched differences
-    merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
-    merged["diff_ft"] = merged["ft_o"] - merged["ft_c"]
-    merged["diff_pt"] = merged["pt_o"] - merged["pt_c"]
+    # Create outcome columns and merge
+    o_cols = create_outcome_columns(df_o, o_outcomes, "_o")
+    c_cols = create_outcome_columns(df_c, c_outcomes, "_c")
+
+    # Merge and compute differences
+    outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly"]
+    merged = merge_and_compute_differences(o_cols, c_cols, outcome_names)
 
     # Compute distance and age at first care demand from original
     df_o_dist = _add_distance_to_first_care_demand(df_o)
@@ -1140,7 +1305,7 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915
         merged.groupby(
             ["distance_to_first_care_demand", "age_at_first_care_demand"],
             observed=False,
-        )[["diff_ft", "diff_pt"]]
+        )[["diff_work", "diff_ft", "diff_pt", "diff_job_offer", "diff_hours_weekly"]]
         .mean()
         .reset_index()
         .sort_values(["age_at_first_care_demand", "distance_to_first_care_demand"])
@@ -1225,6 +1390,103 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915
     plt.savefig(path_to_plot_ft, dpi=300, bbox_inches="tight")
     plt.close()
 
+    # Plot Employment Rate (Working = FT or PT)
+    plt.figure(figsize=(12, 7))
+    for i, age in enumerate(sorted(ages_at_first_care_demand)):
+        prof_age = prof[prof["age_at_first_care_demand"] == age].sort_values(
+            "distance_to_first_care_demand"
+        )
+        plt.plot(
+            prof_age["distance_to_first_care_demand"],
+            prof_age["diff_work"],
+            label=f"Age {age}",
+            color=colors[i],
+            linewidth=2,
+        )
+
+    plt.axvline(x=0, color="k", linestyle=":", alpha=0.5)
+    plt.xlabel("Year relative to first care demand", fontsize=16)
+    plt.ylabel("Proportion Working\nDeviation from Counterfactual", fontsize=16)
+    plt.xlim(-window, window)
+    plt.grid(True, alpha=0.3)
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.legend(
+        loc="best",
+        prop={"size": 14},
+        title="Age at first care demand",
+        title_fontsize=14,
+    )
+    plt.tight_layout()
+    plt.savefig(path_to_plot_work, dpi=300, bbox_inches="tight")
+    plt.close()
+
+    # Plot Job Offer Probability
+    plt.figure(figsize=(12, 7))
+    for i, age in enumerate(sorted(ages_at_first_care_demand)):
+        prof_age = prof[prof["age_at_first_care_demand"] == age].sort_values(
+            "distance_to_first_care_demand"
+        )
+        plt.plot(
+            prof_age["distance_to_first_care_demand"],
+            prof_age["diff_job_offer"],
+            label=f"Age {age}",
+            color=colors[i],
+            linewidth=2,
+        )
+
+    plt.axvline(x=0, color="k", linestyle=":", alpha=0.5)
+    plt.xlabel("Year relative to first care demand", fontsize=16)
+    plt.ylabel(
+        "Job Offer Probability Difference\nDeviation from Counterfactual", fontsize=16
+    )
+    plt.xlim(-window, window)
+    plt.grid(True, alpha=0.3)
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.legend(
+        loc="best",
+        prop={"size": 14},
+        title="Age at first care demand",
+        title_fontsize=14,
+    )
+    plt.tight_layout()
+    plt.savefig(path_to_plot_job_offer, dpi=300, bbox_inches="tight")
+    plt.close()
+
+    # Plot Weekly Working Hours
+    plt.figure(figsize=(12, 7))
+    for i, age in enumerate(sorted(ages_at_first_care_demand)):
+        prof_age = prof[prof["age_at_first_care_demand"] == age].sort_values(
+            "distance_to_first_care_demand"
+        )
+        plt.plot(
+            prof_age["distance_to_first_care_demand"],
+            prof_age["diff_hours_weekly"],
+            label=f"Age {age}",
+            color=colors[i],
+            linewidth=2,
+        )
+
+    plt.axvline(x=0, color="k", linestyle=":", alpha=0.5)
+    plt.xlabel("Year relative to first care demand", fontsize=16)
+    plt.ylabel(
+        "Weekly Working Hours Difference\nDeviation from Counterfactual", fontsize=16
+    )
+    plt.xlim(-window, window)
+    plt.grid(True, alpha=0.3)
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.legend(
+        loc="best",
+        prop={"size": 14},
+        title="Age at first care demand",
+        title_fontsize=14,
+    )
+    plt.tight_layout()
+    plt.savefig(path_to_plot_working_hours, dpi=300, bbox_inches="tight")
+    plt.close()
+
 
 @pytask.mark.counterfactual_differences_no_care_demand
 def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR0915
@@ -1244,6 +1506,22 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR
     / "counterfactual"
     / "no_care_demand"
     / "matched_differences_full_time_by_age_bins_at_first_care_demand.png",
+    path_to_plot_work: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "no_care_demand"
+    / "matched_differences_employment_rate_by_age_bins_at_first_care_demand.png",
+    path_to_plot_job_offer: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "no_care_demand"
+    / "matched_differences_job_offer_by_age_bins_at_first_care_demand.png",
+    path_to_plot_working_hours: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "no_care_demand"
+    / "matched_differences_working_hours_by_age_bins_at_first_care_demand.png",
+    path_to_options: Path = BLD / "model" / "options.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
     min_age: int = 50,
@@ -1261,73 +1539,40 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR
       2) Ensure agent/period columns.
       3) Build per-period outcomes (ft, pt) for both scenarios.
       4) Merge on (agent, period) and compute differences.
-      5) Compute distance_to_first_care_demand and age_at_first_care_demand from original.
+      5) Compute distance_to_first_care_demand and age_at_first_care_demand.
       6) Group ages into bins.
       7) Average diffs by distance and age_bin_at_first_care_demand.
       8) Plot separate figures for PT and FT with one line per age bin.
 
     """
-    # Load
-    df_o = pd.read_pickle(path_to_original_data)
-    df_c = pd.read_pickle(path_to_no_care_demand_data)
-
-    # Alive restriction
-    df_o = df_o[df_o["health"] != DEAD].copy()
-    df_c = df_c[df_c["health"] != DEAD].copy()
-
-    # Ensure agent/period
-    df_o = _ensure_agent_period(df_o)
-    df_c = _ensure_agent_period(df_c)
-
-    # Fully flatten any residual index levels named 'agent' or 'period'
-    if isinstance(df_o.index, pd.MultiIndex):
-        idx_names_o = {n for n in df_o.index.names if n is not None}
-        if ("agent" in idx_names_o) or ("period" in idx_names_o):
-            df_o = df_o.reset_index()
-    if isinstance(df_c.index, pd.MultiIndex):
-        idx_names_c = {n for n in df_c.index.names if n is not None}
-        if ("agent" in idx_names_c) or ("period" in idx_names_c):
-            df_c = df_c.reset_index()
-
-    # Ensure no index name collisions remain (fully flatten)
-    df_o = df_o.reset_index(drop=True)
-    df_c = df_c.reset_index(drop=True)
-
-    # Ever-caregiver restriction
-    if ever_caregivers:
-        care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
-        caregiver_ids = df_o.loc[df_o["choice"].isin(care_codes), "agent"].unique()
-        df_o = df_o[df_o["agent"].isin(caregiver_ids)].copy()
-        df_c = df_c[df_c["agent"].isin(caregiver_ids)].copy()
-
-    # Outcomes per period
-    o_ft = df_o["choice"].isin(np.asarray(FULL_TIME).ravel().tolist()).astype(float)
-    o_pt = df_o["choice"].isin(np.asarray(PART_TIME).ravel().tolist()).astype(float)
-
-    # No care demand uses reduced choice structure (4 choices)
-    c_ft = (
-        df_c["choice"]
-        .isin(np.asarray(FULL_TIME_NO_CARE_DEMAND).ravel().tolist())
-        .astype(float)
-    )
-    c_pt = (
-        df_c["choice"]
-        .isin(np.asarray(PART_TIME_NO_CARE_DEMAND).ravel().tolist())
-        .astype(float)
+    # Load and prepare data
+    df_o, df_c = prepare_dataframes_for_comparison(
+        pd.read_pickle(path_to_original_data),
+        pd.read_pickle(path_to_no_care_demand_data),
+        ever_caregivers=ever_caregivers,
     )
 
-    o_cols = df_o[["agent", "period"]].copy()
-    o_cols["ft_o"] = o_ft
-    o_cols["pt_o"] = o_pt
+    # Calculate outcomes
+    o_outcomes = calculate_outcomes(df_o, choice_set_type="original")
+    c_outcomes = calculate_outcomes(df_c, choice_set_type="no_care_demand")
 
-    c_cols = df_c[["agent", "period"]].copy()
-    c_cols["ft_c"] = c_ft
-    c_cols["pt_c"] = c_pt
+    # Calculate working hours
+    options = pickle.load(path_to_options.open("rb"))
+    model_params = options["model_params"]
+    o_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_o, model_params, choice_set_type="original"
+    )
+    c_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_c, model_params, choice_set_type="no_care_demand"
+    )
 
-    # Merge on (agent, period) to get matched differences
-    merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
-    merged["diff_ft"] = merged["ft_o"] - merged["ft_c"]
-    merged["diff_pt"] = merged["pt_o"] - merged["pt_c"]
+    # Create outcome columns and merge
+    o_cols = create_outcome_columns(df_o, o_outcomes, "_o")
+    c_cols = create_outcome_columns(df_c, c_outcomes, "_c")
+
+    # Merge and compute differences
+    outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly"]
+    merged = merge_and_compute_differences(o_cols, c_cols, outcome_names)
 
     # Compute distance and age at first care demand from original
     df_o_dist = _add_distance_to_first_care_demand(df_o)
@@ -1385,7 +1630,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR
     prof = (
         merged.groupby(
             ["distance_to_first_care_demand", "age_bin_label"], observed=False
-        )[["diff_ft", "diff_pt"]]
+        )[["diff_work", "diff_ft", "diff_pt", "diff_job_offer", "diff_hours_weekly"]]
         .mean()
         .reset_index()
     )
@@ -1479,6 +1724,103 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR
     )
     plt.tight_layout()
     plt.savefig(path_to_plot_ft, dpi=300, bbox_inches="tight")
+    plt.close()
+
+    # Plot Employment Rate (Working = FT or PT)
+    plt.figure(figsize=(12, 7))
+    for i, age_bin in enumerate(unique_bins):
+        prof_bin = prof[prof["age_bin_label"] == age_bin].sort_values(
+            "distance_to_first_care_demand"
+        )
+        plt.plot(
+            prof_bin["distance_to_first_care_demand"],
+            prof_bin["diff_work"],
+            label=f"Age {age_bin}",
+            color=colors[i],
+            linewidth=2,
+        )
+
+    plt.axvline(x=0, color="k", linestyle=":", alpha=0.5)
+    plt.xlabel("Year relative to first care demand", fontsize=16)
+    plt.ylabel("Proportion Working\nDeviation from Counterfactual", fontsize=16)
+    plt.xlim(-window, window)
+    plt.grid(True, alpha=0.3)
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.legend(
+        loc="best",
+        prop={"size": 14},
+        title="Age at first care demand",
+        title_fontsize=14,
+    )
+    plt.tight_layout()
+    plt.savefig(path_to_plot_work, dpi=300, bbox_inches="tight")
+    plt.close()
+
+    # Plot Job Offer Probability
+    plt.figure(figsize=(12, 7))
+    for i, age_bin in enumerate(unique_bins):
+        prof_bin = prof[prof["age_bin_label"] == age_bin].sort_values(
+            "distance_to_first_care_demand"
+        )
+        plt.plot(
+            prof_bin["distance_to_first_care_demand"],
+            prof_bin["diff_job_offer"],
+            label=f"Age {age_bin}",
+            color=colors[i],
+            linewidth=2,
+        )
+
+    plt.axvline(x=0, color="k", linestyle=":", alpha=0.5)
+    plt.xlabel("Year relative to first care demand", fontsize=16)
+    plt.ylabel(
+        "Job Offer Probability Difference\nDeviation from Counterfactual", fontsize=16
+    )
+    plt.xlim(-window, window)
+    plt.grid(True, alpha=0.3)
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.legend(
+        loc="best",
+        prop={"size": 14},
+        title="Age at first care demand",
+        title_fontsize=14,
+    )
+    plt.tight_layout()
+    plt.savefig(path_to_plot_job_offer, dpi=300, bbox_inches="tight")
+    plt.close()
+
+    # Plot Weekly Working Hours
+    plt.figure(figsize=(12, 7))
+    for i, age_bin in enumerate(unique_bins):
+        prof_bin = prof[prof["age_bin_label"] == age_bin].sort_values(
+            "distance_to_first_care_demand"
+        )
+        plt.plot(
+            prof_bin["distance_to_first_care_demand"],
+            prof_bin["diff_hours_weekly"],
+            label=f"Age {age_bin}",
+            color=colors[i],
+            linewidth=2,
+        )
+
+    plt.axvline(x=0, color="k", linestyle=":", alpha=0.5)
+    plt.xlabel("Year relative to first care demand", fontsize=16)
+    plt.ylabel(
+        "Weekly Working Hours Difference\nDeviation from Counterfactual", fontsize=16
+    )
+    plt.xlim(-window, window)
+    plt.grid(True, alpha=0.3)
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.legend(
+        loc="best",
+        prop={"size": 14},
+        title="Age at first care demand",
+        title_fontsize=14,
+    )
+    plt.tight_layout()
+    plt.savefig(path_to_plot_working_hours, dpi=300, bbox_inches="tight")
     plt.close()
 
 

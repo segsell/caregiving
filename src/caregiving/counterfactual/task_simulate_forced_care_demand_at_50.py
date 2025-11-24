@@ -9,7 +9,6 @@ import jax.numpy as jnp
 import pandas as pd
 import pytask
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
 from pytask import Product
 
 from caregiving.config import BLD
@@ -23,26 +22,22 @@ from caregiving.simulation.simulate import setup_model_for_simulation_baseline
 from caregiving.simulation.simulate_forced_care_demand_at_50 import (
     simulate_scenario_forced_care_demand_at_50,
 )
+from dcegm.pre_processing.setup_model import load_and_setup_model
 
 jax.config.update("jax_enable_x64", True)
 
 
-@pytask.mark.counterfactual_forced_care_demand_at_50
-def task_simulate_forced_care_demand_at_50(
-    path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
-    path_to_options: Path = BLD / "model" / "options.pkl",
-    path_to_params: Path = BLD / "model" / "params" / "estimated_params_model.yaml",
-    path_to_baseline_solution: Path = BLD
-    / "solve_and_simulate"
-    / "solution_estimated_params.pkl",
-    path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",
-    path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
-    path_to_save_simulated_data: Annotated[Path, Product] = BLD
-    / "solve_and_simulate"
-    / "simulated_data_forced_care_demand_at_50.pkl",
-    forced_age: int = 50,
+def _simulate_forced_care_demand(
+    path_to_solution_model: Path,
+    path_to_options: Path,
+    path_to_params: Path,
+    path_to_baseline_solution: Path,
+    path_to_discrete_states: Path,
+    path_to_wealth: Path,
+    path_to_save_simulated_data: Path,
+    forced_age: int,
 ) -> None:
-    """Simulate the counterfactual with forced care_demand == 2 at age 50.
+    """Helper function to simulate forced care demand at a given age.
 
     This uses the baseline solution and initial states, but forces care_demand = 2
     (care demand and no other supply) and mother_health = 0 (bad health) at the
@@ -89,3 +84,143 @@ def task_simulate_forced_care_demand_at_50(
 
     # Save simulation results
     sim_df.to_pickle(path_to_save_simulated_data)
+
+
+@pytask.mark.counterfactual_forced_care_demand_at_50
+def task_simulate_forced_care_demand_at_45(
+    path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
+    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_params: Path = BLD / "model" / "params" / "estimated_params_model.yaml",
+    path_to_baseline_solution: Path = BLD
+    / "solve_and_simulate"
+    / "solution_estimated_params.pkl",
+    path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",
+    path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
+    path_to_save_simulated_data: Annotated[Path, Product] = BLD
+    / "solve_and_simulate"
+    / "simulated_data_forced_care_demand_at_45.pkl",
+    forced_age: int = 45,
+) -> None:
+    """Simulate the counterfactual with forced care_demand == 2 at age 45."""
+    _simulate_forced_care_demand(
+        path_to_solution_model=path_to_solution_model,
+        path_to_options=path_to_options,
+        path_to_params=path_to_params,
+        path_to_baseline_solution=path_to_baseline_solution,
+        path_to_discrete_states=path_to_discrete_states,
+        path_to_wealth=path_to_wealth,
+        path_to_save_simulated_data=path_to_save_simulated_data,
+        forced_age=forced_age,
+    )
+
+
+@pytask.mark.counterfactual_forced_care_demand_at_50
+def task_simulate_forced_care_demand_at_50(
+    path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
+    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_params: Path = BLD / "model" / "params" / "estimated_params_model.yaml",
+    path_to_baseline_solution: Path = BLD
+    / "solve_and_simulate"
+    / "solution_estimated_params.pkl",
+    path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",
+    path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
+    path_to_save_simulated_data: Annotated[Path, Product] = BLD
+    / "solve_and_simulate"
+    / "simulated_data_forced_care_demand_at_50.pkl",
+    forced_age: int = 50,
+) -> None:
+    """Simulate the counterfactual with forced care_demand == 2 at age 50."""
+    _simulate_forced_care_demand(
+        path_to_solution_model=path_to_solution_model,
+        path_to_options=path_to_options,
+        path_to_params=path_to_params,
+        path_to_baseline_solution=path_to_baseline_solution,
+        path_to_discrete_states=path_to_discrete_states,
+        path_to_wealth=path_to_wealth,
+        path_to_save_simulated_data=path_to_save_simulated_data,
+        forced_age=forced_age,
+    )
+
+
+@pytask.mark.counterfactual_forced_care_demand_at_50
+def task_simulate_forced_care_demand_at_54(
+    path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
+    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_params: Path = BLD / "model" / "params" / "estimated_params_model.yaml",
+    path_to_baseline_solution: Path = BLD
+    / "solve_and_simulate"
+    / "solution_estimated_params.pkl",
+    path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",
+    path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
+    path_to_save_simulated_data: Annotated[Path, Product] = BLD
+    / "solve_and_simulate"
+    / "simulated_data_forced_care_demand_at_54.pkl",
+    forced_age: int = 54,
+) -> None:
+    """Simulate the counterfactual with forced care_demand == 2 at age 54."""
+    _simulate_forced_care_demand(
+        path_to_solution_model=path_to_solution_model,
+        path_to_options=path_to_options,
+        path_to_params=path_to_params,
+        path_to_baseline_solution=path_to_baseline_solution,
+        path_to_discrete_states=path_to_discrete_states,
+        path_to_wealth=path_to_wealth,
+        path_to_save_simulated_data=path_to_save_simulated_data,
+        forced_age=forced_age,
+    )
+
+
+@pytask.mark.counterfactual_forced_care_demand_at_50
+def task_simulate_forced_care_demand_at_58(
+    path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
+    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_params: Path = BLD / "model" / "params" / "estimated_params_model.yaml",
+    path_to_baseline_solution: Path = BLD
+    / "solve_and_simulate"
+    / "solution_estimated_params.pkl",
+    path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",
+    path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
+    path_to_save_simulated_data: Annotated[Path, Product] = BLD
+    / "solve_and_simulate"
+    / "simulated_data_forced_care_demand_at_58.pkl",
+    forced_age: int = 58,
+) -> None:
+    """Simulate the counterfactual with forced care_demand == 2 at age 58."""
+    _simulate_forced_care_demand(
+        path_to_solution_model=path_to_solution_model,
+        path_to_options=path_to_options,
+        path_to_params=path_to_params,
+        path_to_baseline_solution=path_to_baseline_solution,
+        path_to_discrete_states=path_to_discrete_states,
+        path_to_wealth=path_to_wealth,
+        path_to_save_simulated_data=path_to_save_simulated_data,
+        forced_age=forced_age,
+    )
+
+
+@pytask.mark.counterfactual_forced_care_demand_at_50
+def task_simulate_forced_care_demand_at_62(
+    path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
+    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_params: Path = BLD / "model" / "params" / "estimated_params_model.yaml",
+    path_to_baseline_solution: Path = BLD
+    / "solve_and_simulate"
+    / "solution_estimated_params.pkl",
+    path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",
+    path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
+    path_to_save_simulated_data: Annotated[Path, Product] = BLD
+    / "solve_and_simulate"
+    / "simulated_data_forced_care_demand_at_62.pkl",
+    forced_age: int = 62,
+) -> None:
+    """Simulate the counterfactual with forced care_demand == 2 at age 62."""
+    _simulate_forced_care_demand(
+        path_to_solution_model=path_to_solution_model,
+        path_to_options=path_to_options,
+        path_to_params=path_to_params,
+        path_to_baseline_solution=path_to_baseline_solution,
+        path_to_discrete_states=path_to_discrete_states,
+        path_to_wealth=path_to_wealth,
+        path_to_save_simulated_data=path_to_save_simulated_data,
+        forced_age=forced_age,
+    )
