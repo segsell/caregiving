@@ -1,4 +1,4 @@
-"""Specify model with lower retirement ages (min_SRA=60, max_ret_age=65)."""
+"""Specify model for higher formal care costs counterfactual."""
 
 import pickle
 from pathlib import Path
@@ -11,7 +11,7 @@ import yaml
 from pytask import Product
 
 from caregiving.config import BLD
-from caregiving.model.state_space_lower_ret_age import create_state_space_functions
+from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.stochastic_processes.caregiving_transition import (
     care_demand_and_supply_transition,
     health_transition_good_medium_bad,
@@ -27,31 +27,32 @@ from caregiving.model.utility.bequest_utility import (
     create_final_period_utility_functions,
 )
 from caregiving.model.utility.utility_functions_additive import create_utility_functions
-from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
+from caregiving.model.wealth_and_budget.budget_equation_higher_formal_care_costs import (  # noqa: E501
+    budget_constraint,
+)
 from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
 from dcegm.pre_processing.setup_model import setup_and_save_model
 
 
-@pytask.mark.skip()
-def task_specify_model_lower_ret_age(
+@pytask.mark.higher_formal_care_costs
+def task_specify_model_higher_formal_care_costs(
     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_start_params: Path = BLD / "model" / "params" / "start_params_updated.yaml",
     path_to_save_options: Annotated[Path, Product] = BLD
     / "model"
-    / "options_lower_ret_age.pkl",
+    / "options_higher_formal_care_costs.pkl",
     path_to_save_model: Annotated[Path, Product] = BLD
     / "model"
-    / "model_lower_ret_age.pkl",
+    / "model_higher_formal_care_costs.pkl",
     path_to_save_start_params: Annotated[Path, Product] = BLD
     / "model"
     / "params"
-    / "start_params_model_lower_ret_age.yaml",
+    / "start_params_model_higher_formal_care_costs.yaml",
 ):
-    """
-    Specify model with lower retirement ages.
+    """Generate model and options for higher formal care costs counterfactual.
 
-    This version enforces min_SRA=60 and max_ret_age=65 in the options used for
-    the state space and model functions.
+    This counterfactual implements a policy where formal care costs are increased by 50%
+    (multiplied by 1.5), making formal care more expensive.
     """
 
     with path_to_derived_specs.open("rb") as f:
@@ -59,7 +60,7 @@ def task_specify_model_lower_ret_age(
 
     params = yaml.safe_load(path_to_start_params.open("rb"))
 
-    # Assign key parameters sourced from derived specs
+    # Assign income shock scale to start_params_all
     params["sigma"] = float(specs["income_shock_scale"])
     params["interest_rate"] = float(specs["interest_rate"])
     params["beta"] = float(specs["discount_factor"])
@@ -67,16 +68,9 @@ def task_specify_model_lower_ret_age(
     with path_to_save_start_params.open("w") as f:
         yaml.dump(params, f)
 
-    # Load specifications and override retirement-related settings
+    # Load specifications
     n_periods = specs["n_periods"]
     choices = np.arange(specs["n_choices"], dtype=int)
-
-    # Override retirement policy ages
-    specs["min_SRA"] = 60
-    specs["max_ret_age"] = 65
-    # If present, also align minimum retirement age indicator
-    if "min_ret_age" in specs:
-        specs["min_ret_age"] = 60
 
     # Savings grid
     savings_grid = create_savings_grid()
@@ -91,8 +85,8 @@ def task_specify_model_lower_ret_age(
             "choices": choices,
             "endogenous_states": {
                 "education": np.arange(specs["n_education_types"], dtype=int),
-                "already_retired": np.arange(2, dtype=int),
                 "has_sister": np.arange(2, dtype=int),
+                "already_retired": np.arange(2, dtype=int),
             },
             "exogenous_processes": {
                 "job_offer": {
@@ -135,5 +129,5 @@ def task_specify_model_lower_ret_age(
         sim_model=False,
     )
 
-    print("Lower retirement age model specified.")
+    print("Higher formal care costs counterfactual model specified.")
     return model, params

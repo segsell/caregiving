@@ -287,10 +287,11 @@ def task_compute_career_costs_job_retention(
     / "counterfactual"
     / "npv_summary_job_retention.csv",
 ) -> None:
-    """Compute career costs as NPV difference between baseline and job retention counterfactual.
+    """Compute career costs as NPV difference between baseline and job retention.
 
-    The job retention counterfactual introduces a policy where caregivers can keep their jobs
-    (job offer probability = 1) if they provided care in the previous period.
+    The job retention counterfactual introduces a policy where caregivers can
+    keep their jobs (job offer probability = 1) if they provided care in the
+    previous period.
     """
 
     # ===============================================================================

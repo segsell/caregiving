@@ -642,6 +642,11 @@ def task_plot_matched_differences_by_distance_by_care_demand(  # noqa: PLR0915
     / "counterfactual"
     / "no_care_demand"
     / "matched_differences_by_distance_by_care_demand.png",
+    path_to_plot_care: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "no_care_demand"
+    / "matched_differences_care_by_distance_by_care_demand.png",
     ever_caregivers: bool = True,
     window: int = 20,
 ) -> None:
@@ -654,39 +659,31 @@ def task_plot_matched_differences_by_distance_by_care_demand(  # noqa: PLR0915
     Steps:
       1) Restrict to alive and (optionally) ever-caregivers.
       2) Ensure agent/period columns.
-      3) Build per-period outcomes (work, ft, pt) for both scenarios.
+      3) Build per-period outcomes (work, ft, pt, care) for both scenarios.
       4) Merge on (agent, period) and compute differences.
       5) Compute distance_to_first_care_demand from original, attach to merged.
-      6) Average diffs by distance and plot three series.
+      6) Average diffs by distance and plot three series for labor outcomes.
+      7) Plot care probability separately.
 
     """
     # Load and prepare data
-    df_o, df_c = prepare_dataframes_simple(
+    df_o, df_c = prepare_dataframes_for_comparison(
         pd.read_pickle(path_to_original_data),
         pd.read_pickle(path_to_no_care_demand_data),
-        ever_caregivers,
+        ever_caregivers=ever_caregivers,
     )
 
     # Calculate outcomes
-    o_work, o_ft, o_pt = calculate_simple_outcomes(df_o, "original")
-    c_work, c_ft, c_pt = calculate_simple_outcomes(df_c, "no_care_demand")
+    o_outcomes = calculate_outcomes(df_o, choice_set_type="original")
+    c_outcomes = calculate_outcomes(df_c, choice_set_type="no_care_demand")
 
     # Create outcome columns
-    o_cols = df_o[["agent", "period"]].copy()
-    o_cols["work_o"] = o_work
-    o_cols["ft_o"] = o_ft
-    o_cols["pt_o"] = o_pt
-
-    c_cols = df_c[["agent", "period"]].copy()
-    c_cols["work_c"] = c_work
-    c_cols["ft_c"] = c_ft
-    c_cols["pt_c"] = c_pt
+    o_cols = create_outcome_columns(df_o, o_outcomes, "_o")
+    c_cols = create_outcome_columns(df_c, c_outcomes, "_c")
 
     # Merge and compute differences
-    merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
-    merged["diff_work"] = merged["work_o"] - merged["work_c"]
-    merged["diff_ft"] = merged["ft_o"] - merged["ft_c"]
-    merged["diff_pt"] = merged["pt_o"] - merged["pt_c"]
+    outcome_names = ["work", "ft", "pt", "care"]
+    merged = merge_and_compute_differences(o_cols, c_cols, outcome_names)
 
     # Compute distance to first care demand in original and attach
     df_o_dist = _add_distance_to_first_care_demand(df_o)
@@ -716,7 +713,7 @@ def task_plot_matched_differences_by_distance_by_care_demand(  # noqa: PLR0915
         .sort_values("distance_to_first_care_demand")
     )
 
-    # Plot
+    # Plot labor outcomes
     plot_three_line_differences(
         prof=prof,
         x_col="distance_to_first_care_demand",
@@ -724,6 +721,38 @@ def task_plot_matched_differences_by_distance_by_care_demand(  # noqa: PLR0915
         xlabel="Year relative to first care demand",
         window=window,
     )
+
+    # Plot care probability
+    prof_care = (
+        merged.groupby("distance_to_first_care_demand", observed=False)[["diff_care"]]
+        .mean()
+        .reset_index()
+        .sort_values("distance_to_first_care_demand")
+    )
+
+    plt.figure(figsize=(12, 7))
+    plt.plot(
+        prof_care["distance_to_first_care_demand"],
+        prof_care["diff_care"],
+        label="Care",
+        color="green",
+        linewidth=2,
+    )
+    plt.axvline(x=0, color="k", linestyle=":", alpha=0.5)
+    plt.xlabel("Year relative to first care demand", fontsize=16)
+    plt.ylabel(
+        "Probability of Providing Care\nDeviation from Counterfactual", fontsize=16
+    )
+    plt.xlim(-window, window)
+    plt.grid(True, alpha=0.3)
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.legend(
+        ["Care"], loc="lower left", bbox_to_anchor=(0.05, 0.05), prop={"size": 16}
+    )
+    plt.tight_layout()
+    plt.savefig(path_to_plot_care, dpi=300, bbox_inches="tight")
+    plt.close()
 
 
 @pytask.mark.counterfactual_differences_no_care_demand
@@ -759,6 +788,11 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915
     / "counterfactual"
     / "no_care_demand"
     / "matched_differences_working_hours_by_age_at_first_care_demand.png",
+    path_to_plot_care: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "no_care_demand"
+    / "matched_differences_care_by_age_at_first_care_demand.png",
     path_to_options: Path = BLD / "model" / "options.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
@@ -810,7 +844,7 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915
     c_cols = create_outcome_columns(df_c, c_outcomes, "_c")
 
     # Merge and compute differences
-    outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly"]
+    outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly", "care"]
     merged = merge_and_compute_differences(o_cols, c_cols, outcome_names)
 
     # Compute distance and age at first care demand from original
@@ -850,7 +884,16 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915
         merged.groupby(
             ["distance_to_first_care_demand", "age_at_first_care_demand"],
             observed=False,
-        )[["diff_work", "diff_ft", "diff_pt", "diff_job_offer", "diff_hours_weekly"]]
+        )[
+            [
+                "diff_work",
+                "diff_ft",
+                "diff_pt",
+                "diff_job_offer",
+                "diff_hours_weekly",
+                "diff_care",
+            ]
+        ]
         .mean()
         .reset_index()
         .sort_values(["age_at_first_care_demand", "distance_to_first_care_demand"])
@@ -889,6 +932,12 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915
             "path": path_to_plot_working_hours,
             "ylabel": "Weekly Working Hours Difference\nDeviation from Counterfactual",
             "diff_col": "diff_hours_weekly",
+            "xlabel": "Year relative to first care demand",
+        },
+        "care": {
+            "path": path_to_plot_care,
+            "ylabel": "Probability of Providing Care\nDeviation from Counterfactual",
+            "diff_col": "diff_care",
             "xlabel": "Year relative to first care demand",
         },
     }
@@ -938,6 +987,11 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR
     / "counterfactual"
     / "no_care_demand"
     / "matched_differences_working_hours_by_age_bins_at_first_care_demand.png",
+    path_to_plot_care: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "no_care_demand"
+    / "matched_differences_care_by_age_bins_at_first_care_demand.png",
     path_to_options: Path = BLD / "model" / "options.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
@@ -988,7 +1042,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR
     c_cols = create_outcome_columns(df_c, c_outcomes, "_c")
 
     # Merge and compute differences
-    outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly"]
+    outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly", "care"]
     merged = merge_and_compute_differences(o_cols, c_cols, outcome_names)
 
     # Compute distance and age at first care demand from original
@@ -1039,7 +1093,16 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR
     prof = (
         merged.groupby(
             ["distance_to_first_care_demand", "age_bin_label"], observed=False
-        )[["diff_work", "diff_ft", "diff_pt", "diff_job_offer", "diff_hours_weekly"]]
+        )[
+            [
+                "diff_work",
+                "diff_ft",
+                "diff_pt",
+                "diff_job_offer",
+                "diff_hours_weekly",
+                "diff_care",
+            ]
+        ]
         .mean()
         .reset_index()
     )
@@ -1089,6 +1152,12 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR
             "path": path_to_plot_working_hours,
             "ylabel": "Weekly Working Hours Difference\nDeviation from Counterfactual",
             "diff_col": "diff_hours_weekly",
+            "xlabel": "Year relative to first care demand",
+        },
+        "care": {
+            "path": path_to_plot_care,
+            "ylabel": "Probability of Providing Care\nDeviation from Counterfactual",
+            "diff_col": "diff_care",
             "xlabel": "Year relative to first care demand",
         },
     }

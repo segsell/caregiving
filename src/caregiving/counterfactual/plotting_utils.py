@@ -131,31 +131,42 @@ def prepare_dataframes_for_comparison(
 
 def calculate_outcomes(
     df: pd.DataFrame,
-    choice_set_type: Literal["original", "no_care_demand"] = "original",
+    choice_set_type: Literal[
+        "original", "no_care_demand", "job_retention"
+    ] = "original",
 ) -> dict[str, np.ndarray]:
-    """Calculate work, ft, pt, and job_offer outcomes from choice data.
+    """Calculate work, ft, pt, job_offer, and care outcomes from choice data.
 
     Args:
         df: DataFrame with 'choice' and 'job_offer' columns
         choice_set_type: 'original' uses 8-choice structure,
-            'no_care_demand' uses 4-choice structure
+            'no_care_demand' uses 4-choice structure,
+            'job_retention' uses 8-choice structure (same as original)
 
     Returns:
-        Dictionary with keys: 'work', 'ft', 'pt', 'job_offer'
+        Dictionary with keys: 'work', 'ft', 'pt', 'job_offer', 'care'
         Values are numpy arrays of floats (0 or 1)
     """
     if choice_set_type == "original":
         work_values = np.asarray(WORK).ravel().tolist()
         ft_values = np.asarray(FULL_TIME).ravel().tolist()
         pt_values = np.asarray(PART_TIME).ravel().tolist()
+        care_values = np.asarray(INFORMAL_CARE).ravel().tolist()
     elif choice_set_type == "no_care_demand":
         work_values = np.asarray(WORK_NO_CARE_DEMAND).ravel().tolist()
         ft_values = np.asarray(FULL_TIME_NO_CARE_DEMAND).ravel().tolist()
         pt_values = np.asarray(PART_TIME_NO_CARE_DEMAND).ravel().tolist()
+        care_values = []  # No care choices in no_care_demand
+    elif choice_set_type == "job_retention":
+        # Job retention uses same choice structure as original
+        work_values = np.asarray(WORK).ravel().tolist()
+        ft_values = np.asarray(FULL_TIME).ravel().tolist()
+        pt_values = np.asarray(PART_TIME).ravel().tolist()
+        care_values = np.asarray(INFORMAL_CARE).ravel().tolist()
     else:
         raise ValueError(
-            f"choice_set_type must be 'original' or 'no_care_demand', "
-            f"got {choice_set_type}"
+            f"choice_set_type must be 'original', 'no_care_demand', "
+            f"or 'job_retention', got {choice_set_type}"
         )
 
     outcomes = {
@@ -163,6 +174,7 @@ def calculate_outcomes(
         "ft": df["choice"].isin(ft_values).astype(float).values,
         "pt": df["choice"].isin(pt_values).astype(float).values,
         "job_offer": (df["job_offer"] == 1).astype(float).values,
+        "care": df["choice"].isin(care_values).astype(float).values,
     }
 
     return outcomes

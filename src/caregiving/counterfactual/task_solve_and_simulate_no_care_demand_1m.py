@@ -38,7 +38,9 @@
 #     path_to_solution_model: Path = BLD / "model" / "model_no_care_demand.pkl",
 #     path_to_options: Path = BLD / "model" / "options_no_care_demand.pkl",
 #     path_to_params: Path = BLD / "model" / "params" / "estimated_params_model.yaml",
-#     path_to_solution: Path = BLD / "solve_and_simulate" / "solution_no_care_demand.pkl",
+#     path_to_solution: Path = (
+#         BLD / "solve_and_simulate" / "solution_no_care_demand.pkl"
+#     ),
 #     path_to_discrete_states: Path = BLD
 #     / "model"
 #     / "initial_conditions"
@@ -67,7 +69,9 @@
 
 #     # Simulate with 1m initial conditions
 #     initial_states = pickle.load(path_to_discrete_states.open("rb"))
-#     wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
+#     wealth_agents = jnp.array(
+#         pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze()
+#     )
 
 #     model_for_simulation = load_and_setup_model(
 #         options=options,

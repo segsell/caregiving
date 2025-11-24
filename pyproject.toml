@@ -8,6 +8,49 @@ write_to = "src/caregiving/_version.py"
 [tool.pytask.ini_options]
 paths = ["./src/caregiving"]
 
+[tool.pytask.ini_options.markers]
+# Data management
+wip = "Work in progress tasks"
+check = "Check tasks"
+soep_moments = "SOEP moments tasks"
+cip = "CIP tasks"
+dip = "DIP tasks"
+standard_errors = "Standard errors estimation tasks"
+# Model specification
+job_retention = "Job retention counterfactual tasks"
+lower_formal_care_costs = "Lower formal care costs counterfactual tasks"
+higher_formal_care_costs = "Higher formal care costs counterfactual tasks"
+# Simulation
+sim = "Simulation tasks"
+sim_estimated_params = "Simulation with estimated parameters"
+sim_job_retention_estimated_params = "Job retention simulation with estimated params"
+generate_initial_conditions_1m = "Generate initial conditions with 1 million agents"
+generate_initial_conditions_10k = "Generate initial conditions with 10k agents"
+# Solving
+solve_no_care_demand = "Solve no care demand counterfactual"
+solve_lower_formal_care_costs = "Solve lower formal care costs counterfactual"
+solve_higher_formal_care_costs = "Solve higher formal care costs counterfactual"
+# Model fit
+model_fit = "Model fit tasks"
+model_fit_estimated_params = "Model fit with estimated parameters"
+model_fit_job_retention = "Job retention model fit tasks"
+# Counterfactual analysis
+counterfactual_differences = "Counterfactual differences tasks"
+counterfactual_differences_new = "New counterfactual differences tasks"
+counterfactual_differences_no_care_demand = "No care demand counterfactual differences"
+counterfactual_differences_job_retention = "Job retention counterfactual differences"
+counterfactual_differences_lower_formal_care_costs = "Lower formal care costs counterfactual differences"
+counterfactual_differences_higher_formal_care_costs = "Higher formal care costs counterfactual differences"
+counterfactual_differences_forced_care_demand_at_50 = "Forced care demand at 50 counterfactual differences"
+counterfactual_forced_care_demand_at_50 = "Forced care demand at 50 counterfactual tasks"
+# Career costs
+career_costs = "Career costs computation tasks"
+# Plotting
+bar_chart = "Bar chart plotting tasks"
+bar_chart_emp = "Empirical bar chart plotting tasks"
+line_chart = "Line chart plotting tasks"
+line_chart_emp = "Empirical line chart plotting tasks"
+
 
 [tool.interrogate]
 ignore-init-module = true

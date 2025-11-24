@@ -1,6 +1,6 @@
-"""Plot differences in labor supply for job retention counterfactual.
+"""Plot differences in labor supply for lower formal care costs counterfactual.
 
-Compares job retention counterfactual vs:
+Compares lower formal care costs counterfactual vs:
 1. No care demand counterfactual
 2. Baseline scenario
 
@@ -42,24 +42,24 @@ from caregiving.counterfactual.task_plot_labor_supply_differences_no_care_demand
 from caregiving.model.shared import INFORMAL_CARE
 
 
-@pytask.mark.counterfactual_differences_job_retention
+@pytask.mark.counterfactual_differences_lower_formal_care_costs
 def task_plot_matched_differences_by_distance(  # noqa: PLR0915
-    path_to_job_retention_data: Path = BLD
+    path_to_lower_formal_care_costs_data: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_job_retention_estimated_params.pkl",
+    / "simulated_data_lower_formal_care_costs_estimated_params.pkl",
     path_to_no_care_demand_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_no_care_demand.pkl",
     path_to_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_no_care_demand"
-    / "matched_differences_by_distance_job_retention.png",
+    / "matched_differences_by_distance_lower_formal_care_costs.png",
     ever_caregivers: bool = True,
     window: int = 20,
 ) -> None:
-    """Compute matched period differences (job-retention - no-care-demand).
+    """Compute matched period differences (lower-formal-care-costs - no-care-demand).
 
     Averages by distance.
 
@@ -68,42 +68,42 @@ def task_plot_matched_differences_by_distance(  # noqa: PLR0915
       2) Ensure agent/period columns.
       3) Build per-period outcomes (work, ft, pt) for both scenarios.
       4) Merge on (agent, period) and compute differences.
-      5) Compute distance_to_first_care from job retention, attach to merged.
+      5) Compute distance_to_first_care from lower formal care costs, attach to merged.
       6) Average diffs by distance and plot three series.
 
     """
     # Load and prepare data
-    df_jr, df_ncd = prepare_dataframes_simple(
-        pd.read_pickle(path_to_job_retention_data),
+    df_lfc, df_ncd = prepare_dataframes_simple(
+        pd.read_pickle(path_to_lower_formal_care_costs_data),
         pd.read_pickle(path_to_no_care_demand_data),
         ever_caregivers,
     )
 
     # Calculate outcomes
-    jr_work, jr_ft, jr_pt = calculate_simple_outcomes(df_jr, "job_retention")
+    lfc_work, lfc_ft, lfc_pt = calculate_simple_outcomes(df_lfc, "original")
     ncd_work, ncd_ft, ncd_pt = calculate_simple_outcomes(df_ncd, "no_care_demand")
 
     # Create outcome columns
-    jr_cols = df_jr[["agent", "period"]].copy()
-    jr_cols["work_jr"] = jr_work
-    jr_cols["ft_jr"] = jr_ft
-    jr_cols["pt_jr"] = jr_pt
+    lfc_cols = df_lfc[["agent", "period"]].copy()
+    lfc_cols["work_lfc"] = lfc_work
+    lfc_cols["ft_lfc"] = lfc_ft
+    lfc_cols["pt_lfc"] = lfc_pt
 
     ncd_cols = df_ncd[["agent", "period"]].copy()
     ncd_cols["work_ncd"] = ncd_work
     ncd_cols["ft_ncd"] = ncd_ft
     ncd_cols["pt_ncd"] = ncd_pt
 
-    # Merge and compute differences (job retention - no care demand)
-    merged = jr_cols.merge(ncd_cols, on=["agent", "period"], how="inner")
-    merged["diff_work"] = merged["work_jr"] - merged["work_ncd"]
-    merged["diff_ft"] = merged["ft_jr"] - merged["ft_ncd"]
-    merged["diff_pt"] = merged["pt_jr"] - merged["pt_ncd"]
+    # Merge and compute differences (lower formal care costs - no care demand)
+    merged = lfc_cols.merge(ncd_cols, on=["agent", "period"], how="inner")
+    merged["diff_work"] = merged["work_lfc"] - merged["work_ncd"]
+    merged["diff_ft"] = merged["ft_lfc"] - merged["ft_ncd"]
+    merged["diff_pt"] = merged["pt_lfc"] - merged["pt_ncd"]
 
-    # Compute distance in job retention and attach
-    df_jr_dist = _add_distance_to_first_care(df_jr)
+    # Compute distance in lower formal care costs and attach
+    df_lfc_dist = _add_distance_to_first_care(df_lfc)
     dist_map = (
-        df_jr_dist.groupby("agent", observed=False)["first_care_period"]
+        df_lfc_dist.groupby("agent", observed=False)["first_care_period"]
         .first()
         .reset_index()
     )
@@ -136,42 +136,42 @@ def task_plot_matched_differences_by_distance(  # noqa: PLR0915
     )
 
 
-@pytask.mark.counterfactual_differences_job_retention
+@pytask.mark.counterfactual_differences_lower_formal_care_costs
 def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915
-    path_to_job_retention_data: Path = BLD
+    path_to_lower_formal_care_costs_data: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_job_retention_estimated_params.pkl",
+    / "simulated_data_lower_formal_care_costs_estimated_params.pkl",
     path_to_no_care_demand_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_no_care_demand.pkl",
     path_to_plot_pt: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_no_care_demand"
     / "matched_differences_part_time_by_age_at_first_care.png",
     path_to_plot_ft: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_no_care_demand"
     / "matched_differences_full_time_by_age_at_first_care.png",
     path_to_plot_work: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_no_care_demand"
     / "matched_differences_employment_rate_by_age_at_first_care.png",
     path_to_plot_job_offer: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_no_care_demand"
     / "matched_differences_job_offer_by_age_at_first_care.png",
     path_to_plot_working_hours: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_no_care_demand"
     / "matched_differences_working_hours_by_age_at_first_care.png",
     path_to_options: Path = BLD / "model" / "options.pkl",
@@ -181,7 +181,7 @@ def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915
 ) -> None:
     """Compute matched period differences by age at first care spell.
 
-    Compares job retention vs no care demand counterfactuals.
+    Compares lower formal care costs vs no care demand counterfactuals.
     Creates separate plots for part-time and full-time work, with separate lines
     for each age at which caregiving started.
 
@@ -190,7 +190,8 @@ def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915
       2) Ensure agent/period columns.
       3) Build per-period outcomes (ft, pt) for both scenarios.
       4) Merge on (agent, period) and compute differences.
-      5) Compute distance_to_first_care and age_at_first_care from job retention.
+       5) Compute distance_to_first_care and age_at_first_care from lower
+          formal care costs.
       6) Filter to specific ages at first care.
       7) Average diffs by distance and age_at_first_care.
       8) Plot separate figures for PT and FT with one line per starting age.
@@ -200,55 +201,55 @@ def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915
         ages_at_first_care = [45, 50, 54, 58, 62]
 
     # Load and prepare data
-    df_jr, df_ncd = prepare_dataframes_for_comparison(
-        pd.read_pickle(path_to_job_retention_data),
+    df_lfc, df_ncd = prepare_dataframes_for_comparison(
+        pd.read_pickle(path_to_lower_formal_care_costs_data),
         pd.read_pickle(path_to_no_care_demand_data),
         ever_caregivers=ever_caregivers,
     )
 
     # Calculate outcomes
-    jr_outcomes = calculate_outcomes(df_jr, choice_set_type="original")
+    lfc_outcomes = calculate_outcomes(df_lfc, choice_set_type="original")
     ncd_outcomes = calculate_outcomes(df_ncd, choice_set_type="no_care_demand")
 
     # Calculate working hours
     options = pickle.load(path_to_options.open("rb"))
     model_params = options["model_params"]
-    jr_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_jr, model_params, choice_set_type="original"
+    lfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_lfc, model_params, choice_set_type="original"
     )
     ncd_outcomes["hours_weekly"] = calculate_working_hours_weekly(
         df_ncd, model_params, choice_set_type="no_care_demand"
     )
 
     # Create outcome columns and merge
-    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_jr")
+    lfc_cols = create_outcome_columns(df_lfc, lfc_outcomes, "_lfc")
     ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_ncd")
 
     # Merge on (agent, period) to get matched differences
-    merged = jr_cols.merge(ncd_cols, on=["agent", "period"], how="inner")
+    merged = lfc_cols.merge(ncd_cols, on=["agent", "period"], how="inner")
 
-    # Compute differences (job retention - no care demand)
+    # Compute differences (lower formal care costs - no care demand)
     outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly"]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_jr"] - merged[f"{outcome_name}_ncd"]
+            merged[f"{outcome_name}_lfc"] - merged[f"{outcome_name}_ncd"]
         )
 
-    # Compute distance and age at first care from job retention
-    df_jr_dist = _add_distance_to_first_care(df_jr)
+    # Compute distance and age at first care from lower formal care costs
+    df_lfc_dist = _add_distance_to_first_care(df_lfc)
 
     # Get first care period for each agent
     dist_map = (
-        df_jr_dist.groupby("agent", observed=False)["first_care_period"]
+        df_lfc_dist.groupby("agent", observed=False)["first_care_period"]
         .first()
         .reset_index()
     )
 
     # Get age at first care period
     care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
-    caregiving_mask = df_jr["choice"].isin(care_codes)
+    caregiving_mask = df_lfc["choice"].isin(care_codes)
     first_care_with_age = get_age_at_first_event(
-        df_jr, caregiving_mask, "age_at_first_care"
+        df_lfc, caregiving_mask, "age_at_first_care"
     )
 
     # Merge distance and age information
@@ -319,42 +320,42 @@ def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915
     )
 
 
-@pytask.mark.counterfactual_differences_job_retention
+@pytask.mark.counterfactual_differences_lower_formal_care_costs
 def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915
-    path_to_job_retention_data: Path = BLD
+    path_to_lower_formal_care_costs_data: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_job_retention_estimated_params.pkl",
+    / "simulated_data_lower_formal_care_costs_estimated_params.pkl",
     path_to_no_care_demand_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_no_care_demand.pkl",
     path_to_plot_pt: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_no_care_demand"
     / "matched_differences_part_time_by_age_bins_at_first_care.png",
     path_to_plot_ft: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_no_care_demand"
     / "matched_differences_full_time_by_age_bins_at_first_care.png",
     path_to_plot_work: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_no_care_demand"
     / "matched_differences_employment_rate_by_age_bins_at_first_care.png",
     path_to_plot_job_offer: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_no_care_demand"
     / "matched_differences_job_offer_by_age_bins_at_first_care.png",
     path_to_plot_working_hours: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_no_care_demand"
     / "matched_differences_working_hours_by_age_bins_at_first_care.png",
     path_to_options: Path = BLD / "model" / "options.pkl",
@@ -366,7 +367,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915
 ) -> None:
     """Compute matched period differences by age bins at first care spell.
 
-    Compares job retention vs no care demand counterfactuals.
+    Compares lower formal care costs vs no care demand counterfactuals.
     Creates separate plots for part-time and full-time work, with separate lines
     for each age bin at which caregiving started (e.g., 50-53, 54-57, etc.).
 
@@ -375,62 +376,63 @@ def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915
       2) Ensure agent/period columns.
       3) Build per-period outcomes (ft, pt) for both scenarios.
       4) Merge on (agent, period) and compute differences.
-      5) Compute distance_to_first_care and age_at_first_care from job retention.
+       5) Compute distance_to_first_care and age_at_first_care from lower
+          formal care costs.
       6) Group ages into bins.
       7) Average diffs by distance and age_bin_at_first_care.
       8) Plot separate figures for PT and FT with one line per age bin.
 
     """
     # Load and prepare data
-    df_jr, df_ncd = prepare_dataframes_for_comparison(
-        pd.read_pickle(path_to_job_retention_data),
+    df_lfc, df_ncd = prepare_dataframes_for_comparison(
+        pd.read_pickle(path_to_lower_formal_care_costs_data),
         pd.read_pickle(path_to_no_care_demand_data),
         ever_caregivers=ever_caregivers,
     )
 
     # Calculate outcomes
-    jr_outcomes = calculate_outcomes(df_jr, choice_set_type="original")
+    lfc_outcomes = calculate_outcomes(df_lfc, choice_set_type="original")
     ncd_outcomes = calculate_outcomes(df_ncd, choice_set_type="no_care_demand")
 
     # Calculate working hours
     options = pickle.load(path_to_options.open("rb"))
     model_params = options["model_params"]
-    jr_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_jr, model_params, choice_set_type="original"
+    lfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_lfc, model_params, choice_set_type="original"
     )
     ncd_outcomes["hours_weekly"] = calculate_working_hours_weekly(
         df_ncd, model_params, choice_set_type="no_care_demand"
     )
 
     # Create outcome columns and merge
-    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_jr")
+    lfc_cols = create_outcome_columns(df_lfc, lfc_outcomes, "_lfc")
     ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_ncd")
 
     # Merge on (agent, period) to get matched differences
-    merged = jr_cols.merge(ncd_cols, on=["agent", "period"], how="inner")
+    merged = lfc_cols.merge(ncd_cols, on=["agent", "period"], how="inner")
 
-    # Compute differences (job retention - no care demand)
+    # Compute differences (lower formal care costs - no care demand)
     outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly"]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_jr"] - merged[f"{outcome_name}_ncd"]
+            merged[f"{outcome_name}_lfc"] - merged[f"{outcome_name}_ncd"]
         )
 
-    # Compute distance and age at first care from job retention
-    df_jr_dist = _add_distance_to_first_care(df_jr)
+    # Compute distance and age at first care from lower formal care costs
+    df_lfc_dist = _add_distance_to_first_care(df_lfc)
 
     # Get first care period for each agent
     dist_map = (
-        df_jr_dist.groupby("agent", observed=False)["first_care_period"]
+        df_lfc_dist.groupby("agent", observed=False)["first_care_period"]
         .first()
         .reset_index()
     )
 
     # Get age at first care period
     care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
-    caregiving_mask = df_jr["choice"].isin(care_codes)
+    caregiving_mask = df_lfc["choice"].isin(care_codes)
     first_care_with_age = get_age_at_first_event(
-        df_jr, caregiving_mask, "age_at_first_care"
+        df_lfc, caregiving_mask, "age_at_first_care"
     )
 
     # Merge distance and age information
@@ -529,24 +531,24 @@ def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915
 # ============================================================================
 
 
-@pytask.mark.counterfactual_differences_job_retention
+@pytask.mark.counterfactual_differences_lower_formal_care_costs
 def task_plot_matched_differences_by_distance_vs_baseline(  # noqa: PLR0915
-    path_to_job_retention_data: Path = BLD
+    path_to_lower_formal_care_costs_data: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_job_retention_estimated_params.pkl",
+    / "simulated_data_lower_formal_care_costs_estimated_params.pkl",
     path_to_baseline_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
     path_to_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_baseline"
-    / "matched_differences_by_distance_job_retention.png",
+    / "matched_differences_by_distance_lower_formal_care_costs.png",
     ever_caregivers: bool = True,
     window: int = 20,
 ) -> None:
-    """Compute matched period differences (job-retention - baseline).
+    """Compute matched period differences (lower-formal-care-costs - baseline).
 
     Averages by distance.
 
@@ -555,44 +557,44 @@ def task_plot_matched_differences_by_distance_vs_baseline(  # noqa: PLR0915
       2) Ensure agent/period columns.
       3) Build per-period outcomes (work, ft, pt) for both scenarios.
       4) Merge on (agent, period) and compute differences.
-      5) Compute distance_to_first_care from job retention, attach to merged.
+      5) Compute distance_to_first_care from lower formal care costs, attach to merged.
       6) Average diffs by distance and plot three series.
 
     """
     # Load and prepare data
-    df_jr, df_baseline = prepare_dataframes_simple(
-        pd.read_pickle(path_to_job_retention_data),
+    df_lfc, df_baseline = prepare_dataframes_simple(
+        pd.read_pickle(path_to_lower_formal_care_costs_data),
         pd.read_pickle(path_to_baseline_data),
         ever_caregivers,
     )
 
     # Calculate outcomes - both use same 8-choice structure
-    jr_work, jr_ft, jr_pt = calculate_simple_outcomes(df_jr, "job_retention")
+    lfc_work, lfc_ft, lfc_pt = calculate_simple_outcomes(df_lfc, "original")
     baseline_work, baseline_ft, baseline_pt = calculate_simple_outcomes(
         df_baseline, "original"
     )
 
     # Create outcome columns
-    jr_cols = df_jr[["agent", "period"]].copy()
-    jr_cols["work_jr"] = jr_work
-    jr_cols["ft_jr"] = jr_ft
-    jr_cols["pt_jr"] = jr_pt
+    lfc_cols = df_lfc[["agent", "period"]].copy()
+    lfc_cols["work_lfc"] = lfc_work
+    lfc_cols["ft_lfc"] = lfc_ft
+    lfc_cols["pt_lfc"] = lfc_pt
 
     baseline_cols = df_baseline[["agent", "period"]].copy()
     baseline_cols["work_baseline"] = baseline_work
     baseline_cols["ft_baseline"] = baseline_ft
     baseline_cols["pt_baseline"] = baseline_pt
 
-    # Merge and compute differences (job retention - baseline)
-    merged = jr_cols.merge(baseline_cols, on=["agent", "period"], how="inner")
-    merged["diff_work"] = merged["work_jr"] - merged["work_baseline"]
-    merged["diff_ft"] = merged["ft_jr"] - merged["ft_baseline"]
-    merged["diff_pt"] = merged["pt_jr"] - merged["pt_baseline"]
+    # Merge and compute differences (lower formal care costs - baseline)
+    merged = lfc_cols.merge(baseline_cols, on=["agent", "period"], how="inner")
+    merged["diff_work"] = merged["work_lfc"] - merged["work_baseline"]
+    merged["diff_ft"] = merged["ft_lfc"] - merged["ft_baseline"]
+    merged["diff_pt"] = merged["pt_lfc"] - merged["pt_baseline"]
 
-    # Compute distance in job retention and attach
-    df_jr_dist = _add_distance_to_first_care(df_jr)
+    # Compute distance in lower formal care costs and attach
+    df_lfc_dist = _add_distance_to_first_care(df_lfc)
     dist_map = (
-        df_jr_dist.groupby("agent", observed=False)["first_care_period"]
+        df_lfc_dist.groupby("agent", observed=False)["first_care_period"]
         .first()
         .reset_index()
     )
@@ -625,42 +627,42 @@ def task_plot_matched_differences_by_distance_vs_baseline(  # noqa: PLR0915
     )
 
 
-@pytask.mark.counterfactual_differences_job_retention
+@pytask.mark.counterfactual_differences_lower_formal_care_costs
 def task_plot_matched_differences_by_age_at_first_care_vs_baseline(  # noqa: PLR0915
-    path_to_job_retention_data: Path = BLD
+    path_to_lower_formal_care_costs_data: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_job_retention_estimated_params.pkl",
+    / "simulated_data_lower_formal_care_costs_estimated_params.pkl",
     path_to_baseline_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
     path_to_plot_pt: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_baseline"
     / "matched_differences_part_time_by_age_at_first_care.png",
     path_to_plot_ft: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_baseline"
     / "matched_differences_full_time_by_age_at_first_care.png",
     path_to_plot_work: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_baseline"
     / "matched_differences_employment_rate_by_age_at_first_care.png",
     path_to_plot_job_offer: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_baseline"
     / "matched_differences_job_offer_by_age_at_first_care.png",
     path_to_plot_working_hours: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_baseline"
     / "matched_differences_working_hours_by_age_at_first_care.png",
     path_to_options: Path = BLD / "model" / "options.pkl",
@@ -670,7 +672,7 @@ def task_plot_matched_differences_by_age_at_first_care_vs_baseline(  # noqa: PLR
 ) -> None:
     """Compute matched period differences by age at first care spell.
 
-    Compares job retention vs baseline counterfactuals.
+    Compares lower formal care costs vs baseline counterfactuals.
     Creates separate plots for part-time and full-time work, with separate lines
     for each age at which caregiving started.
 
@@ -679,7 +681,8 @@ def task_plot_matched_differences_by_age_at_first_care_vs_baseline(  # noqa: PLR
       2) Ensure agent/period columns.
       3) Build per-period outcomes (ft, pt) for both scenarios.
       4) Merge on (agent, period) and compute differences.
-      5) Compute distance_to_first_care and age_at_first_care from job retention.
+       5) Compute distance_to_first_care and age_at_first_care from lower
+          formal care costs.
       6) Filter to specific ages at first care.
       7) Average diffs by distance and age_at_first_care.
       8) Plot separate figures for PT and FT with one line per starting age.
@@ -689,55 +692,55 @@ def task_plot_matched_differences_by_age_at_first_care_vs_baseline(  # noqa: PLR
         ages_at_first_care = [45, 50, 54, 58, 62]
 
     # Load and prepare data
-    df_jr, df_baseline = prepare_dataframes_for_comparison(
-        pd.read_pickle(path_to_job_retention_data),
+    df_lfc, df_baseline = prepare_dataframes_for_comparison(
+        pd.read_pickle(path_to_lower_formal_care_costs_data),
         pd.read_pickle(path_to_baseline_data),
         ever_caregivers=ever_caregivers,
     )
 
     # Calculate outcomes - both use same 8-choice structure
-    jr_outcomes = calculate_outcomes(df_jr, choice_set_type="original")
+    lfc_outcomes = calculate_outcomes(df_lfc, choice_set_type="original")
     baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
 
     # Calculate working hours
     options = pickle.load(path_to_options.open("rb"))
     model_params = options["model_params"]
-    jr_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_jr, model_params, choice_set_type="original"
+    lfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_lfc, model_params, choice_set_type="original"
     )
     baseline_outcomes["hours_weekly"] = calculate_working_hours_weekly(
         df_baseline, model_params, choice_set_type="original"
     )
 
     # Create outcome columns and merge
-    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_jr")
+    lfc_cols = create_outcome_columns(df_lfc, lfc_outcomes, "_lfc")
     baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_baseline")
 
     # Merge on (agent, period) to get matched differences
-    merged = jr_cols.merge(baseline_cols, on=["agent", "period"], how="inner")
+    merged = lfc_cols.merge(baseline_cols, on=["agent", "period"], how="inner")
 
-    # Compute differences (job retention - baseline)
+    # Compute differences (lower formal care costs - baseline)
     outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly"]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_jr"] - merged[f"{outcome_name}_baseline"]
+            merged[f"{outcome_name}_lfc"] - merged[f"{outcome_name}_baseline"]
         )
 
-    # Compute distance and age at first care from job retention
-    df_jr_dist = _add_distance_to_first_care(df_jr)
+    # Compute distance and age at first care from lower formal care costs
+    df_lfc_dist = _add_distance_to_first_care(df_lfc)
 
     # Get first care period for each agent
     dist_map = (
-        df_jr_dist.groupby("agent", observed=False)["first_care_period"]
+        df_lfc_dist.groupby("agent", observed=False)["first_care_period"]
         .first()
         .reset_index()
     )
 
     # Get age at first care period
     care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
-    caregiving_mask = df_jr["choice"].isin(care_codes)
+    caregiving_mask = df_lfc["choice"].isin(care_codes)
     first_care_with_age = get_age_at_first_event(
-        df_jr, caregiving_mask, "age_at_first_care"
+        df_lfc, caregiving_mask, "age_at_first_care"
     )
 
     # Merge distance and age information
@@ -808,42 +811,42 @@ def task_plot_matched_differences_by_age_at_first_care_vs_baseline(  # noqa: PLR
     )
 
 
-@pytask.mark.counterfactual_differences_job_retention
+@pytask.mark.counterfactual_differences_lower_formal_care_costs
 def task_plot_matched_differences_by_age_bins_at_first_care_vs_baseline(  # noqa: PLR0915
-    path_to_job_retention_data: Path = BLD
+    path_to_lower_formal_care_costs_data: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_job_retention_estimated_params.pkl",
+    / "simulated_data_lower_formal_care_costs_estimated_params.pkl",
     path_to_baseline_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
     path_to_plot_pt: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_baseline"
     / "matched_differences_part_time_by_age_bins_at_first_care.png",
     path_to_plot_ft: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_baseline"
     / "matched_differences_full_time_by_age_bins_at_first_care.png",
     path_to_plot_work: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_baseline"
     / "matched_differences_employment_rate_by_age_bins_at_first_care.png",
     path_to_plot_job_offer: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_baseline"
     / "matched_differences_job_offer_by_age_bins_at_first_care.png",
     path_to_plot_working_hours: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_baseline"
     / "matched_differences_working_hours_by_age_bins_at_first_care.png",
     path_to_options: Path = BLD / "model" / "options.pkl",
@@ -855,7 +858,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_vs_baseline(  # noqa
 ) -> None:
     """Compute matched period differences by age bins at first care spell.
 
-    Compares job retention vs baseline counterfactuals.
+    Compares lower formal care costs vs baseline counterfactuals.
     Creates separate plots for part-time and full-time work, with separate lines
     for each age bin at which caregiving started (e.g., 50-53, 54-57, etc.).
 
@@ -864,62 +867,63 @@ def task_plot_matched_differences_by_age_bins_at_first_care_vs_baseline(  # noqa
       2) Ensure agent/period columns.
       3) Build per-period outcomes (ft, pt) for both scenarios.
       4) Merge on (agent, period) and compute differences.
-      5) Compute distance_to_first_care and age_at_first_care from job retention.
+       5) Compute distance_to_first_care and age_at_first_care from lower
+          formal care costs.
       6) Group ages into bins.
       7) Average diffs by distance and age_bin_at_first_care.
       8) Plot separate figures for PT and FT with one line per age bin.
 
     """
     # Load and prepare data
-    df_jr, df_baseline = prepare_dataframes_for_comparison(
-        pd.read_pickle(path_to_job_retention_data),
+    df_lfc, df_baseline = prepare_dataframes_for_comparison(
+        pd.read_pickle(path_to_lower_formal_care_costs_data),
         pd.read_pickle(path_to_baseline_data),
         ever_caregivers=ever_caregivers,
     )
 
     # Calculate outcomes - both use same 8-choice structure
-    jr_outcomes = calculate_outcomes(df_jr, choice_set_type="original")
+    lfc_outcomes = calculate_outcomes(df_lfc, choice_set_type="original")
     baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
 
     # Calculate working hours
     options = pickle.load(path_to_options.open("rb"))
     model_params = options["model_params"]
-    jr_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_jr, model_params, choice_set_type="original"
+    lfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_lfc, model_params, choice_set_type="original"
     )
     baseline_outcomes["hours_weekly"] = calculate_working_hours_weekly(
         df_baseline, model_params, choice_set_type="original"
     )
 
     # Create outcome columns and merge
-    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_jr")
+    lfc_cols = create_outcome_columns(df_lfc, lfc_outcomes, "_lfc")
     baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_baseline")
 
     # Merge on (agent, period) to get matched differences
-    merged = jr_cols.merge(baseline_cols, on=["agent", "period"], how="inner")
+    merged = lfc_cols.merge(baseline_cols, on=["agent", "period"], how="inner")
 
-    # Compute differences (job retention - baseline)
+    # Compute differences (lower formal care costs - baseline)
     outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly"]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_jr"] - merged[f"{outcome_name}_baseline"]
+            merged[f"{outcome_name}_lfc"] - merged[f"{outcome_name}_baseline"]
         )
 
-    # Compute distance and age at first care from job retention
-    df_jr_dist = _add_distance_to_first_care(df_jr)
+    # Compute distance and age at first care from lower formal care costs
+    df_lfc_dist = _add_distance_to_first_care(df_lfc)
 
     # Get first care period for each agent
     dist_map = (
-        df_jr_dist.groupby("agent", observed=False)["first_care_period"]
+        df_lfc_dist.groupby("agent", observed=False)["first_care_period"]
         .first()
         .reset_index()
     )
 
     # Get age at first care period
     care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
-    caregiving_mask = df_jr["choice"].isin(care_codes)
+    caregiving_mask = df_lfc["choice"].isin(care_codes)
     first_care_with_age = get_age_at_first_event(
-        df_jr, caregiving_mask, "age_at_first_care"
+        df_lfc, caregiving_mask, "age_at_first_care"
     )
 
     # Merge distance and age information
@@ -1018,30 +1022,33 @@ def task_plot_matched_differences_by_age_bins_at_first_care_vs_baseline(  # noqa
 # ============================================================================
 
 
-@pytask.mark.counterfactual_differences_job_retention
+@pytask.mark.counterfactual_differences_lower_formal_care_costs
 def task_plot_matched_differences_by_distance_by_care_demand(  # noqa: PLR0915
-    path_to_job_retention_data: Path = BLD
+    path_to_lower_formal_care_costs_data: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_job_retention_estimated_params.pkl",
+    / "simulated_data_lower_formal_care_costs_estimated_params.pkl",
     path_to_no_care_demand_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_no_care_demand.pkl",
     path_to_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_no_care_demand"
-    / "matched_differences_by_distance_by_care_demand_job_retention.png",
+    / "matched_differences_by_distance_by_care_demand_lower_formal_care_costs.png",
     path_to_plot_care: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_no_care_demand"
-    / "matched_differences_care_by_distance_by_care_demand_job_retention.png",
+    / (
+        "matched_differences_care_by_distance_by_care_demand_"
+        "lower_formal_care_costs.png"
+    ),
     ever_caregivers: bool = True,
     window: int = 20,
 ) -> None:
-    """Compute matched period differences (job-retention - no-care-demand).
+    """Compute matched period differences (lower-formal-care-costs - no-care-demand).
 
     Averages by distance to first care demand.
 
@@ -1052,38 +1059,39 @@ def task_plot_matched_differences_by_distance_by_care_demand(  # noqa: PLR0915
       2) Ensure agent/period columns.
       3) Build per-period outcomes (work, ft, pt, care) for both scenarios.
       4) Merge on (agent, period) and compute differences.
-      5) Compute distance_to_first_care_demand from job retention, attach to merged.
+       5) Compute distance_to_first_care_demand from lower formal care costs,
+          attach to merged.
       6) Average diffs by distance and plot three series for labor outcomes.
       7) Plot care probability separately.
 
     """
     # Load and prepare data
-    df_jr, df_ncd = prepare_dataframes_for_comparison(
-        pd.read_pickle(path_to_job_retention_data),
+    df_lfc, df_ncd = prepare_dataframes_for_comparison(
+        pd.read_pickle(path_to_lower_formal_care_costs_data),
         pd.read_pickle(path_to_no_care_demand_data),
         ever_caregivers=ever_caregivers,
     )
 
     # Calculate outcomes
-    jr_outcomes = calculate_outcomes(df_jr, choice_set_type="job_retention")
+    lfc_outcomes = calculate_outcomes(df_lfc, choice_set_type="original")
     ncd_outcomes = calculate_outcomes(df_ncd, choice_set_type="no_care_demand")
 
     # Create outcome columns
-    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_jr")
+    lfc_cols = create_outcome_columns(df_lfc, lfc_outcomes, "_lfc")
     ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_ncd")
 
     # Merge and compute differences
-    merged = jr_cols.merge(ncd_cols, on=["agent", "period"], how="inner")
+    merged = lfc_cols.merge(ncd_cols, on=["agent", "period"], how="inner")
     outcome_names = ["work", "ft", "pt", "care"]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_jr"] - merged[f"{outcome_name}_ncd"]
+            merged[f"{outcome_name}_lfc"] - merged[f"{outcome_name}_ncd"]
         )
 
-    # Compute distance to first care demand in job retention and attach
-    df_jr_dist = _add_distance_to_first_care_demand(df_jr)
+    # Compute distance to first care demand in lower formal care costs and attach
+    df_lfc_dist = _add_distance_to_first_care_demand(df_lfc)
     dist_map = (
-        df_jr_dist.groupby("agent", observed=False)["first_care_demand_period"]
+        df_lfc_dist.groupby("agent", observed=False)["first_care_demand_period"]
         .first()
         .reset_index()
     )
@@ -1150,48 +1158,48 @@ def task_plot_matched_differences_by_distance_by_care_demand(  # noqa: PLR0915
     plt.close()
 
 
-@pytask.mark.counterfactual_differences_job_retention
+@pytask.mark.counterfactual_differences_lower_formal_care_costs
 def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915
-    path_to_job_retention_data: Path = BLD
+    path_to_lower_formal_care_costs_data: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_job_retention_estimated_params.pkl",
+    / "simulated_data_lower_formal_care_costs_estimated_params.pkl",
     path_to_no_care_demand_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_no_care_demand.pkl",
     path_to_plot_pt: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_no_care_demand"
     / "matched_differences_part_time_by_age_at_first_care_demand.png",
     path_to_plot_ft: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_no_care_demand"
     / "matched_differences_full_time_by_age_at_first_care_demand.png",
     path_to_plot_work: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_no_care_demand"
     / "matched_differences_employment_rate_by_age_at_first_care_demand.png",
     path_to_plot_job_offer: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_no_care_demand"
     / "matched_differences_job_offer_by_age_at_first_care_demand.png",
     path_to_plot_working_hours: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_no_care_demand"
     / "matched_differences_working_hours_by_age_at_first_care_demand.png",
     path_to_plot_care: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_no_care_demand"
     / "matched_differences_care_by_age_at_first_care_demand.png",
     path_to_options: Path = BLD / "model" / "options.pkl",
@@ -1201,7 +1209,7 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915
 ) -> None:
     """Compute matched period differences by age at first care demand.
 
-    Compares job retention vs no care demand counterfactuals.
+    Compares lower formal care costs vs no care demand counterfactuals.
     Uses t=0 as first time care_demand > 0 (instead of first caregiving spell).
     Creates separate plots for part-time and full-time work, with separate lines
     for each age at which care demand first appeared.
@@ -1221,54 +1229,54 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915
         ages_at_first_care_demand = [45, 50, 55, 60]
 
     # Load and prepare data
-    df_jr, df_ncd = prepare_dataframes_for_comparison(
-        pd.read_pickle(path_to_job_retention_data),
+    df_lfc, df_ncd = prepare_dataframes_for_comparison(
+        pd.read_pickle(path_to_lower_formal_care_costs_data),
         pd.read_pickle(path_to_no_care_demand_data),
         ever_caregivers=ever_caregivers,
     )
 
     # Calculate outcomes
-    jr_outcomes = calculate_outcomes(df_jr, choice_set_type="original")
+    lfc_outcomes = calculate_outcomes(df_lfc, choice_set_type="original")
     ncd_outcomes = calculate_outcomes(df_ncd, choice_set_type="no_care_demand")
 
     # Calculate working hours
     options = pickle.load(path_to_options.open("rb"))
     model_params = options["model_params"]
-    jr_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_jr, model_params, choice_set_type="original"
+    lfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_lfc, model_params, choice_set_type="original"
     )
     ncd_outcomes["hours_weekly"] = calculate_working_hours_weekly(
         df_ncd, model_params, choice_set_type="no_care_demand"
     )
 
     # Create outcome columns and merge
-    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_jr")
+    lfc_cols = create_outcome_columns(df_lfc, lfc_outcomes, "_lfc")
     ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_ncd")
 
     # Merge on (agent, period) to get matched differences
-    merged = jr_cols.merge(ncd_cols, on=["agent", "period"], how="inner")
+    merged = lfc_cols.merge(ncd_cols, on=["agent", "period"], how="inner")
 
-    # Compute differences (job retention - no care demand)
+    # Compute differences (lower formal care costs - no care demand)
     outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly", "care"]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_jr"] - merged[f"{outcome_name}_ncd"]
+            merged[f"{outcome_name}_lfc"] - merged[f"{outcome_name}_ncd"]
         )
 
-    # Compute distance and age at first care demand from job retention
-    df_jr_dist = _add_distance_to_first_care_demand(df_jr)
+    # Compute distance and age at first care demand from lower formal care costs
+    df_lfc_dist = _add_distance_to_first_care_demand(df_lfc)
 
     # Get first care demand period for each agent
     dist_map = (
-        df_jr_dist.groupby("agent", observed=False)["first_care_demand_period"]
+        df_lfc_dist.groupby("agent", observed=False)["first_care_demand_period"]
         .first()
         .reset_index()
     )
 
     # Get age at first care demand period
-    care_demand_mask = df_jr["care_demand"] > 0
+    care_demand_mask = df_lfc["care_demand"] > 0
     first_care_demand_with_age = get_age_at_first_event(
-        df_jr, care_demand_mask, "age_at_first_care_demand"
+        df_lfc, care_demand_mask, "age_at_first_care_demand"
     )
 
     # Merge distance and age information
@@ -1362,48 +1370,48 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915
     )
 
 
-@pytask.mark.counterfactual_differences_job_retention
+@pytask.mark.counterfactual_differences_lower_formal_care_costs
 def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR0915
-    path_to_job_retention_data: Path = BLD
+    path_to_lower_formal_care_costs_data: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_job_retention_estimated_params.pkl",
+    / "simulated_data_lower_formal_care_costs_estimated_params.pkl",
     path_to_no_care_demand_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_no_care_demand.pkl",
     path_to_plot_pt: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_no_care_demand"
     / "matched_differences_part_time_by_age_bins_at_first_care_demand.png",
     path_to_plot_ft: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_no_care_demand"
     / "matched_differences_full_time_by_age_bins_at_first_care_demand.png",
     path_to_plot_work: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_no_care_demand"
     / "matched_differences_employment_rate_by_age_bins_at_first_care_demand.png",
     path_to_plot_job_offer: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_no_care_demand"
     / "matched_differences_job_offer_by_age_bins_at_first_care_demand.png",
     path_to_plot_working_hours: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_no_care_demand"
     / "matched_differences_working_hours_by_age_bins_at_first_care_demand.png",
     path_to_plot_care: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_no_care_demand"
     / "matched_differences_care_by_age_bins_at_first_care_demand.png",
     path_to_options: Path = BLD / "model" / "options.pkl",
@@ -1415,7 +1423,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR
 ) -> None:
     """Compute matched period differences by age bins at first care demand.
 
-    Compares job retention vs no care demand counterfactuals.
+    Compares lower formal care costs vs no care demand counterfactuals.
     Uses t=0 as first time care_demand > 0 (instead of first caregiving spell).
     Creates separate plots for part-time and full-time work, with separate lines
     for each age bin at which care demand first appeared (e.g., 50-53, 54-57, etc.).
@@ -1432,54 +1440,54 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR
 
     """
     # Load and prepare data
-    df_jr, df_ncd = prepare_dataframes_for_comparison(
-        pd.read_pickle(path_to_job_retention_data),
+    df_lfc, df_ncd = prepare_dataframes_for_comparison(
+        pd.read_pickle(path_to_lower_formal_care_costs_data),
         pd.read_pickle(path_to_no_care_demand_data),
         ever_caregivers=ever_caregivers,
     )
 
     # Calculate outcomes
-    jr_outcomes = calculate_outcomes(df_jr, choice_set_type="original")
+    lfc_outcomes = calculate_outcomes(df_lfc, choice_set_type="original")
     ncd_outcomes = calculate_outcomes(df_ncd, choice_set_type="no_care_demand")
 
     # Calculate working hours
     options = pickle.load(path_to_options.open("rb"))
     model_params = options["model_params"]
-    jr_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_jr, model_params, choice_set_type="original"
+    lfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_lfc, model_params, choice_set_type="original"
     )
     ncd_outcomes["hours_weekly"] = calculate_working_hours_weekly(
         df_ncd, model_params, choice_set_type="no_care_demand"
     )
 
     # Create outcome columns and merge
-    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_jr")
+    lfc_cols = create_outcome_columns(df_lfc, lfc_outcomes, "_lfc")
     ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_ncd")
 
     # Merge on (agent, period) to get matched differences
-    merged = jr_cols.merge(ncd_cols, on=["agent", "period"], how="inner")
+    merged = lfc_cols.merge(ncd_cols, on=["agent", "period"], how="inner")
 
-    # Compute differences (job retention - no care demand)
+    # Compute differences (lower formal care costs - no care demand)
     outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly", "care"]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_jr"] - merged[f"{outcome_name}_ncd"]
+            merged[f"{outcome_name}_lfc"] - merged[f"{outcome_name}_ncd"]
         )
 
-    # Compute distance and age at first care demand from job retention
-    df_jr_dist = _add_distance_to_first_care_demand(df_jr)
+    # Compute distance and age at first care demand from lower formal care costs
+    df_lfc_dist = _add_distance_to_first_care_demand(df_lfc)
 
     # Get first care demand period for each agent
     dist_map = (
-        df_jr_dist.groupby("agent", observed=False)["first_care_demand_period"]
+        df_lfc_dist.groupby("agent", observed=False)["first_care_demand_period"]
         .first()
         .reset_index()
     )
 
     # Get age at first care demand period
-    care_demand_mask = df_jr["care_demand"] > 0
+    care_demand_mask = df_lfc["care_demand"] > 0
     first_care_demand_with_age = get_age_at_first_event(
-        df_jr, care_demand_mask, "age_at_first_care_demand"
+        df_lfc, care_demand_mask, "age_at_first_care_demand"
     )
 
     # Merge distance and age information
@@ -1600,30 +1608,33 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR
 # ============================================================================
 
 
-@pytask.mark.counterfactual_differences_job_retention
+@pytask.mark.counterfactual_differences_lower_formal_care_costs
 def task_plot_matched_differences_by_distance_by_care_demand_vs_baseline(  # noqa: PLR0915
-    path_to_job_retention_data: Path = BLD
+    path_to_lower_formal_care_costs_data: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_job_retention_estimated_params.pkl",
+    / "simulated_data_lower_formal_care_costs_estimated_params.pkl",
     path_to_baseline_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
     path_to_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_baseline"
-    / "matched_differences_by_distance_by_care_demand_job_retention.png",
+    / "matched_differences_by_distance_by_care_demand_lower_formal_care_costs.png",
     path_to_plot_care: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_baseline"
-    / "matched_differences_care_by_distance_by_care_demand_job_retention.png",
+    / (
+        "matched_differences_care_by_distance_by_care_demand_"
+        "lower_formal_care_costs.png"
+    ),
     ever_caregivers: bool = True,
     window: int = 20,
 ) -> None:
-    """Compute matched period differences (job-retention - baseline).
+    """Compute matched period differences (lower-formal-care-costs - baseline).
 
     Averages by distance to first care demand.
 
@@ -1634,38 +1645,39 @@ def task_plot_matched_differences_by_distance_by_care_demand_vs_baseline(  # noq
       2) Ensure agent/period columns.
       3) Build per-period outcomes (work, ft, pt, care) for both scenarios.
       4) Merge on (agent, period) and compute differences.
-      5) Compute distance_to_first_care_demand from job retention, attach to merged.
+       5) Compute distance_to_first_care_demand from lower formal care costs,
+          attach to merged.
       6) Average diffs by distance and plot three series for labor outcomes.
       7) Plot care probability separately.
 
     """
     # Load and prepare data
-    df_jr, df_baseline = prepare_dataframes_for_comparison(
-        pd.read_pickle(path_to_job_retention_data),
+    df_lfc, df_baseline = prepare_dataframes_for_comparison(
+        pd.read_pickle(path_to_lower_formal_care_costs_data),
         pd.read_pickle(path_to_baseline_data),
         ever_caregivers=ever_caregivers,
     )
 
     # Calculate outcomes - both use same 8-choice structure
-    jr_outcomes = calculate_outcomes(df_jr, choice_set_type="job_retention")
+    lfc_outcomes = calculate_outcomes(df_lfc, choice_set_type="original")
     baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
 
     # Create outcome columns
-    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_jr")
+    lfc_cols = create_outcome_columns(df_lfc, lfc_outcomes, "_lfc")
     baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_baseline")
 
     # Merge and compute differences
-    merged = jr_cols.merge(baseline_cols, on=["agent", "period"], how="inner")
+    merged = lfc_cols.merge(baseline_cols, on=["agent", "period"], how="inner")
     outcome_names = ["work", "ft", "pt", "care"]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_jr"] - merged[f"{outcome_name}_baseline"]
+            merged[f"{outcome_name}_lfc"] - merged[f"{outcome_name}_baseline"]
         )
 
-    # Compute distance to first care demand in job retention and attach
-    df_jr_dist = _add_distance_to_first_care_demand(df_jr)
+    # Compute distance to first care demand in lower formal care costs and attach
+    df_lfc_dist = _add_distance_to_first_care_demand(df_lfc)
     dist_map = (
-        df_jr_dist.groupby("agent", observed=False)["first_care_demand_period"]
+        df_lfc_dist.groupby("agent", observed=False)["first_care_demand_period"]
         .first()
         .reset_index()
     )
@@ -1730,48 +1742,48 @@ def task_plot_matched_differences_by_distance_by_care_demand_vs_baseline(  # noq
     plt.close()
 
 
-@pytask.mark.counterfactual_differences_job_retention
+@pytask.mark.counterfactual_differences_lower_formal_care_costs
 def task_plot_matched_differences_by_age_at_first_care_demand_vs_baseline(  # noqa: PLR0915
-    path_to_job_retention_data: Path = BLD
+    path_to_lower_formal_care_costs_data: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_job_retention_estimated_params.pkl",
+    / "simulated_data_lower_formal_care_costs_estimated_params.pkl",
     path_to_baseline_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
     path_to_plot_pt: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_baseline"
     / "matched_differences_part_time_by_age_at_first_care_demand.png",
     path_to_plot_ft: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_baseline"
     / "matched_differences_full_time_by_age_at_first_care_demand.png",
     path_to_plot_work: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_baseline"
     / "matched_differences_employment_rate_by_age_at_first_care_demand.png",
     path_to_plot_job_offer: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_baseline"
     / "matched_differences_job_offer_by_age_at_first_care_demand.png",
     path_to_plot_working_hours: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_baseline"
     / "matched_differences_working_hours_by_age_at_first_care_demand.png",
     path_to_plot_care: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_baseline"
     / "matched_differences_care_by_age_at_first_care_demand.png",
     path_to_options: Path = BLD / "model" / "options.pkl",
@@ -1781,7 +1793,7 @@ def task_plot_matched_differences_by_age_at_first_care_demand_vs_baseline(  # no
 ) -> None:
     """Compute matched period differences by age at first care demand.
 
-    Compares job retention vs baseline counterfactuals.
+    Compares lower formal care costs vs baseline counterfactuals.
     Uses t=0 as first time care_demand > 0 (instead of first caregiving spell).
     Creates separate plots for part-time and full-time work, with separate lines
     for each age at which care demand first appeared.
@@ -1801,54 +1813,54 @@ def task_plot_matched_differences_by_age_at_first_care_demand_vs_baseline(  # no
         ages_at_first_care_demand = [45, 50, 55, 60]
 
     # Load and prepare data
-    df_jr, df_baseline = prepare_dataframes_for_comparison(
-        pd.read_pickle(path_to_job_retention_data),
+    df_lfc, df_baseline = prepare_dataframes_for_comparison(
+        pd.read_pickle(path_to_lower_formal_care_costs_data),
         pd.read_pickle(path_to_baseline_data),
         ever_caregivers=ever_caregivers,
     )
 
     # Calculate outcomes - both use same 8-choice structure
-    jr_outcomes = calculate_outcomes(df_jr, choice_set_type="original")
+    lfc_outcomes = calculate_outcomes(df_lfc, choice_set_type="original")
     baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
 
     # Calculate working hours
     options = pickle.load(path_to_options.open("rb"))
     model_params = options["model_params"]
-    jr_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_jr, model_params, choice_set_type="original"
+    lfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_lfc, model_params, choice_set_type="original"
     )
     baseline_outcomes["hours_weekly"] = calculate_working_hours_weekly(
         df_baseline, model_params, choice_set_type="original"
     )
 
     # Create outcome columns and merge
-    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_jr")
+    lfc_cols = create_outcome_columns(df_lfc, lfc_outcomes, "_lfc")
     baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_baseline")
 
     # Merge on (agent, period) to get matched differences
-    merged = jr_cols.merge(baseline_cols, on=["agent", "period"], how="inner")
+    merged = lfc_cols.merge(baseline_cols, on=["agent", "period"], how="inner")
 
-    # Compute differences (job retention - baseline)
+    # Compute differences (lower formal care costs - baseline)
     outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly", "care"]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_jr"] - merged[f"{outcome_name}_baseline"]
+            merged[f"{outcome_name}_lfc"] - merged[f"{outcome_name}_baseline"]
         )
 
-    # Compute distance and age at first care demand from job retention
-    df_jr_dist = _add_distance_to_first_care_demand(df_jr)
+    # Compute distance and age at first care demand from lower formal care costs
+    df_lfc_dist = _add_distance_to_first_care_demand(df_lfc)
 
     # Get first care demand period for each agent
     dist_map = (
-        df_jr_dist.groupby("agent", observed=False)["first_care_demand_period"]
+        df_lfc_dist.groupby("agent", observed=False)["first_care_demand_period"]
         .first()
         .reset_index()
     )
 
     # Get age at first care demand period
-    care_demand_mask = df_jr["care_demand"] > 0
+    care_demand_mask = df_lfc["care_demand"] > 0
     first_care_demand_with_age = get_age_at_first_event(
-        df_jr, care_demand_mask, "age_at_first_care_demand"
+        df_lfc, care_demand_mask, "age_at_first_care_demand"
     )
 
     # Merge distance and age information
@@ -1942,48 +1954,48 @@ def task_plot_matched_differences_by_age_at_first_care_demand_vs_baseline(  # no
     )
 
 
-@pytask.mark.counterfactual_differences_job_retention
+@pytask.mark.counterfactual_differences_lower_formal_care_costs
 def task_plot_matched_differences_by_age_bins_at_first_care_demand_vs_baseline(  # noqa: PLR0915
-    path_to_job_retention_data: Path = BLD
+    path_to_lower_formal_care_costs_data: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_job_retention_estimated_params.pkl",
+    / "simulated_data_lower_formal_care_costs_estimated_params.pkl",
     path_to_baseline_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
     path_to_plot_pt: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_baseline"
     / "matched_differences_part_time_by_age_bins_at_first_care_demand.png",
     path_to_plot_ft: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_baseline"
     / "matched_differences_full_time_by_age_bins_at_first_care_demand.png",
     path_to_plot_work: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_baseline"
     / "matched_differences_employment_rate_by_age_bins_at_first_care_demand.png",
     path_to_plot_job_offer: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_baseline"
     / "matched_differences_job_offer_by_age_bins_at_first_care_demand.png",
     path_to_plot_working_hours: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_baseline"
     / "matched_differences_working_hours_by_age_bins_at_first_care_demand.png",
     path_to_plot_care: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "job_retention"
+    / "lower_formal_care_costs"
     / "vs_baseline"
     / "matched_differences_care_by_age_bins_at_first_care_demand.png",
     path_to_options: Path = BLD / "model" / "options.pkl",
@@ -1995,7 +2007,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_vs_baseline( 
 ) -> None:
     """Compute matched period differences by age bins at first care demand.
 
-    Compares job retention vs baseline counterfactuals.
+    Compares lower formal care costs vs baseline counterfactuals.
     Uses t=0 as first time care_demand > 0 (instead of first caregiving spell).
     Creates separate plots for part-time and full-time work, with separate lines
     for each age bin at which care demand first appeared (e.g., 50-53, 54-57, etc.).
@@ -2012,54 +2024,54 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_vs_baseline( 
 
     """
     # Load and prepare data
-    df_jr, df_baseline = prepare_dataframes_for_comparison(
-        pd.read_pickle(path_to_job_retention_data),
+    df_lfc, df_baseline = prepare_dataframes_for_comparison(
+        pd.read_pickle(path_to_lower_formal_care_costs_data),
         pd.read_pickle(path_to_baseline_data),
         ever_caregivers=ever_caregivers,
     )
 
     # Calculate outcomes - both use same 8-choice structure
-    jr_outcomes = calculate_outcomes(df_jr, choice_set_type="original")
+    lfc_outcomes = calculate_outcomes(df_lfc, choice_set_type="original")
     baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
 
     # Calculate working hours
     options = pickle.load(path_to_options.open("rb"))
     model_params = options["model_params"]
-    jr_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_jr, model_params, choice_set_type="original"
+    lfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_lfc, model_params, choice_set_type="original"
     )
     baseline_outcomes["hours_weekly"] = calculate_working_hours_weekly(
         df_baseline, model_params, choice_set_type="original"
     )
 
     # Create outcome columns and merge
-    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_jr")
+    lfc_cols = create_outcome_columns(df_lfc, lfc_outcomes, "_lfc")
     baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_baseline")
 
     # Merge on (agent, period) to get matched differences
-    merged = jr_cols.merge(baseline_cols, on=["agent", "period"], how="inner")
+    merged = lfc_cols.merge(baseline_cols, on=["agent", "period"], how="inner")
 
-    # Compute differences (job retention - baseline)
+    # Compute differences (lower formal care costs - baseline)
     outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly", "care"]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_jr"] - merged[f"{outcome_name}_baseline"]
+            merged[f"{outcome_name}_lfc"] - merged[f"{outcome_name}_baseline"]
         )
 
-    # Compute distance and age at first care demand from job retention
-    df_jr_dist = _add_distance_to_first_care_demand(df_jr)
+    # Compute distance and age at first care demand from lower formal care costs
+    df_lfc_dist = _add_distance_to_first_care_demand(df_lfc)
 
     # Get first care demand period for each agent
     dist_map = (
-        df_jr_dist.groupby("agent", observed=False)["first_care_demand_period"]
+        df_lfc_dist.groupby("agent", observed=False)["first_care_demand_period"]
         .first()
         .reset_index()
     )
 
     # Get age at first care demand period
-    care_demand_mask = df_jr["care_demand"] > 0
+    care_demand_mask = df_lfc["care_demand"] > 0
     first_care_demand_with_age = get_age_at_first_event(
-        df_jr, care_demand_mask, "age_at_first_care_demand"
+        df_lfc, care_demand_mask, "age_at_first_care_demand"
     )
 
     # Merge distance and age information

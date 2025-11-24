@@ -1,52 +1,52 @@
-# """Initial conditions for the job retention simulation.
+"""Initial conditions for the job retention simulation.
 
-# This module creates initial conditions for the job retention counterfactual
-# by loading the baseline initial states and adding the job_before_caregiving variable.
-# """
+This module creates initial conditions for the job retention counterfactual
+by loading the baseline initial states and adding the job_before_caregiving variable.
+"""
 
-# import pickle
-# from pathlib import Path
-# from typing import Annotated
+import pickle
+from pathlib import Path
+from typing import Annotated
 
-# import jax.numpy as jnp
-# import pytask
-# from pytask import Product
+import jax.numpy as jnp
+import pytask
+from pytask import Product
 
-# from caregiving.config import BLD
+from caregiving.config import BLD
 
 
-# def task_generate_start_states_for_solution_job_retention(
-#     path_to_baseline_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",
-#     path_to_save_discrete_states: Annotated[Path, Product] = BLD
-#     / "model"
-#     / "initial_conditions"
-#     / "states_job_retention.pkl",
-# ) -> None:
-#     """Generate initial conditions for job retention model simulation.
+def task_generate_start_states_for_solution_job_retention(
+    path_to_baseline_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",
+    path_to_save_discrete_states: Annotated[Path, Product] = BLD
+    / "model"
+    / "initial_conditions"
+    / "states_job_retention.pkl",
+) -> None:
+    """Generate initial conditions for job retention model simulation.
 
-#     This function loads the baseline initial states and adds the
-#     job_before_caregiving state variable (initialized to zeros).
-#     Wealth is taken from the baseline wealth.csv file, so no wealth
-#     regeneration is needed.
+    This function loads the baseline initial states and adds the
+    job_before_caregiving state variable (initialized to zeros).
+    Wealth is taken from the baseline wealth.csv file, so no wealth
+    regeneration is needed.
 
-#     Args:
-#         path_to_baseline_states: Path to baseline initial states pickle file
-#         path_to_save_discrete_states: Path to save job retention initial states
-#     """
-#     # Load baseline states
-#     with path_to_baseline_states.open("rb") as f:
-#         states = pickle.load(f)
+    Args:
+        path_to_baseline_states: Path to baseline initial states pickle file
+        path_to_save_discrete_states: Path to save job retention initial states
+    """
+    # Load baseline states
+    with path_to_baseline_states.open("rb") as f:
+        states = pickle.load(f)
 
-#     # Add job_before_caregiving initialized to zeros
-#     # Use experience array as template for shape
-#     states["job_before_caregiving"] = jnp.zeros_like(
-#         states["experience"], dtype=jnp.uint8
-#     )
-#     states["job_offer"] = jnp.ones_like(states["experience"], dtype=jnp.uint8)
+    # Add job_before_caregiving initialized to zeros
+    # Use experience array as template for shape
+    states["job_before_caregiving"] = jnp.zeros_like(
+        states["experience"], dtype=jnp.uint8
+    )
+    states["job_offer"] = jnp.ones_like(states["experience"], dtype=jnp.uint8)
 
-#     # Save job retention states
-#     with path_to_save_discrete_states.open("wb") as f:
-#         pickle.dump(states, f)
+    # Save job retention states
+    with path_to_save_discrete_states.open("wb") as f:
+        pickle.dump(states, f)
 
 
 # """Initial conditions for the job retention simulation."""
@@ -85,7 +85,9 @@
 # from caregiving.model.utility.bequest_utility import (
 #     create_final_period_utility_functions,
 # )
-# from caregiving.model.utility.utility_functions_additive import create_utility_functions
+# from caregiving.model.utility.utility_functions_additive import (  # noqa: E501
+#     create_utility_functions
+# )
 # from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 # from caregiving.utils import table
 
@@ -149,10 +151,14 @@
 
 #     # Define start data and adjust wealth
 #     min_period = observed_data["period"].min()
-#     start_period_data = observed_data[observed_data["period"].isin([min_period])].copy()
-#     start_period_data = start_period_data[start_period_data["wealth"].notnull()].copy()
+#     start_period_data = observed_data[
+#         observed_data["period"].isin([min_period])
+#     ].copy()
+#     start_period_data = start_period_data[
+#         start_period_data["wealth"].notnull()
+#     ].copy()
 
-#     # =================================================================================
+#     # ============================================================
 #     # Static state variables
 #     sex_data = observed_data.loc[observed_data["sex"] == SEX]
 
@@ -177,13 +183,18 @@
 #         (1 - lifetable["death_prob"]).groupby(lifetable["sex"]).cumprod()
 #     )
 
-#     # =================================================================================
+#     # ============================================================
 
 #     states_dict = {
 #         name: start_period_data[name].values
 #         for name in model["model_structure"]["discrete_states_names"]
 #         if name
-#         not in ("mother_health", "care_demand", "care_supply", "job_before_caregiving")
+#         not in (
+#             "mother_health",
+#             "care_demand",
+#             "care_supply",
+#             "job_before_caregiving",
+#         )
 #     }
 
 #     states_dict["care_demand"] = np.zeros_like(start_period_data["wealth"])
@@ -247,7 +258,7 @@
 
 #         n_agents_edu = np.sum(type_mask)
 
-#         # =================================================================================
+#         # ============================================================
 
 #         # Generate has-sister indicator
 #         empirical_sister_probs = sister_shares.loc[edu].values
@@ -272,14 +283,16 @@
 #         # Wealth distribution
 #         wealth_start_edu = draw_start_wealth_dist(start_period_data_edu, n_agents_edu)
 #         wealth_agents[type_mask] = wealth_start_edu
-#         # =================================================================================
+#         # ============================================================
 
 #         # Generate type specific initial experience distribution
 #         exp_max_edu = start_period_data_edu["experience"].max()
 #         empirical_exp_probs = start_period_data_edu["experience"].value_counts(
 #             normalize=True
 #         )
-#         exp_probs = pd.Series(index=np.arange(0, exp_max_edu + 1), data=0, dtype=float)
+#         exp_probs = pd.Series(
+#             index=np.arange(0, exp_max_edu + 1), data=0, dtype=float
+#         )
 #         exp_probs.update(empirical_exp_probs)
 #         exp_agents[type_mask] = np.random.choice(
 #             exp_max_edu + 1, size=n_agents_edu, p=exp_probs.values

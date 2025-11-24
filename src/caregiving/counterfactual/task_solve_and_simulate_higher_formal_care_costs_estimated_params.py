@@ -1,4 +1,4 @@
-"""Solve and simulate the counterfactual without care demand."""
+"""Solve and simulate the higher formal care costs model for estimated parameters."""
 
 import pickle
 from pathlib import Path
@@ -12,49 +12,57 @@ import yaml
 from pytask import Product
 
 from caregiving.config import BLD
-from caregiving.model.state_space_no_care_demand import create_state_space_functions
+from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.utility.bequest_utility import (
     create_final_period_utility_functions,
 )
-from caregiving.model.utility.utility_functions_additive_no_care_demand import (
-    create_utility_functions,
-)
-from caregiving.model.wealth_and_budget.budget_equation_no_care_demand import (
+from caregiving.model.utility.utility_functions_additive import create_utility_functions
+from caregiving.model.wealth_and_budget.budget_equation_higher_formal_care_costs import (  # noqa: E501
     budget_constraint,
 )
-from caregiving.simulation.simulate_no_care_demand import (
-    simulate_scenario_no_care_demand,
-)
+from caregiving.simulation.simulate import simulate_scenario
 from dcegm.pre_processing.setup_model import load_and_setup_model
 from dcegm.solve import get_solve_func_for_model
 
 jax.config.update("jax_enable_x64", True)
 
 
-@pytask.mark.solve_no_care_demand
-def task_solve_and_simulate_no_care_demand(
-    path_to_solution_model: Path = BLD / "model" / "model_no_care_demand.pkl",
-    path_to_options: Path = BLD / "model" / "options_no_care_demand.pkl",
-    path_to_params: Path = BLD / "model" / "params" / "estimated_params_model.yaml",
-    path_to_discrete_states: Path = BLD
+@pytask.mark.solve_higher_formal_care_costs
+def task_solve_and_simulate_higher_formal_care_costs_estimated_params(
+    path_to_solution_model: Path = BLD / "model" / "model_higher_formal_care_costs.pkl",
+    path_to_options: Path = BLD / "model" / "options_higher_formal_care_costs.pkl",
+    path_to_estimated_params: Path = BLD
     / "model"
-    / "initial_conditions"
-    / "states_no_care_demand.pkl",
-    path_to_wealth: Path = BLD
-    / "model"
-    / "initial_conditions"
-    / "wealth_no_care_demand.csv",
+    / "params"
+    / "estimated_params_model.yaml",
+    path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",
+    path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
     path_to_save_solution: Annotated[Path, Product] = BLD
     / "solve_and_simulate"
-    / "solution_no_care_demand.pkl",
+    / "solution_higher_formal_care_costs_estimated_params.pkl",
     path_to_save_simulated_data: Annotated[Path, Product] = BLD
     / "solve_and_simulate"
-    / "simulated_data_no_care_demand.pkl",
-):
-    """Solve and simulate the counterfactual and save the DataFrame."""
+    / "simulated_data_higher_formal_care_costs_estimated_params.pkl",
+) -> None:
+    """Solve and simulate the higher formal care costs model with estimated parameters.
+
+    This function solves and simulates the higher formal care costs counterfactual model
+    using estimated parameters. The higher formal care costs model implements a policy
+    where formal care costs are increased by 50% (multiplied by 1.5), making formal care
+    more expensive.
+
+    Args:
+        path_to_solution_model: Path to the higher formal care costs model for solution
+        path_to_options: Path to the higher formal care costs model options
+        path_to_estimated_params: Path to the estimated parameters
+        path_to_discrete_states: Path to discrete initial states
+        path_to_wealth: Path to initial wealth data
+        path_to_save_solution: Path to save the solution
+        path_to_save_simulated_data: Path to save simulated data
+    """
 
     options = pickle.load(path_to_options.open("rb"))
-    params = yaml.safe_load(path_to_params.open("rb"))
+    params = yaml.safe_load(path_to_estimated_params.open("rb"))
 
     model_for_solution = load_and_setup_full_model_for_solution(
         options, path_to_model=path_to_solution_model
@@ -84,7 +92,7 @@ def task_solve_and_simulate_no_care_demand(
         sim_model=True,
     )
 
-    sim_df = simulate_scenario_no_care_demand(
+    sim_df = simulate_scenario(
         model_for_simulation,
         solution=solution_dict,
         initial_states=initial_states,
@@ -106,7 +114,6 @@ def load_and_setup_full_model_for_solution(options, path_to_model) -> Dict[str, 
         utility_functions=create_utility_functions(),
         utility_functions_final_period=create_final_period_utility_functions(),
         budget_constraint=budget_constraint,
-        # shock_functions=shock_function_dict(),
         path=path_to_model,
         sim_model=False,
     )
