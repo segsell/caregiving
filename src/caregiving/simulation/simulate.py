@@ -4,7 +4,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pandas as pd
-from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.pre_processing.setup_model import load_model_dict
 from dcegm.simulation.sim_utils import create_simulation_df
 from dcegm.simulation.simulate import simulate_all_periods
 
@@ -53,7 +53,7 @@ jax.config.update("jax_enable_x64", True)
 
 def setup_model_for_simulation_baseline(path_to_model, options):
     """Setup baseline model for simulation with correct utility functions."""
-    return load_and_setup_model(
+    return load_model_dict(
         options=options,
         state_space_functions=create_state_space_functions(),
         utility_functions=create_utility_functions(),
@@ -65,32 +65,33 @@ def setup_model_for_simulation_baseline(path_to_model, options):
 
 
 def simulate_scenario(
-    model,
-    # solution_endog_grid,
-    # solution_value,
-    # solution_policy,
-    solution,
-    initial_states,
-    wealth_agents,
+    df,
+    # model,
+    # # solution_endog_grid,
+    # # solution_value,
+    # # solution_policy,
+    # solution,
+    # initial_states,
+    # wealth_agents,
     params,
     options,
     seed,
 ) -> pd.DataFrame:
     """Simulate the model for given parametrization and model solution."""
 
-    sim_dict = simulate_all_periods(
-        states_initial=initial_states,
-        wealth_initial=wealth_agents,
-        n_periods=options["model_params"]["n_periods"],
-        params=params,
-        seed=seed,
-        endog_grid_solved=solution["endog_grid"],
-        value_solved=solution["value"],
-        policy_solved=solution["policy"],
-        model=model,
-        model_sim=model,
-    )
-    df = create_simulation_df(sim_dict)
+    # sim_dict = simulate_all_periods(
+    #     states_initial=initial_states,
+    #     wealth_initial=wealth_agents,
+    #     n_periods=options["model_params"]["n_periods"],
+    #     params=params,
+    #     seed=seed,
+    #     endog_grid_solved=solution["endog_grid"],
+    #     value_solved=solution["value"],
+    #     policy_solved=solution["policy"],
+    #     model=model,
+    #     model_sim=model,
+    # )
+    # df = create_simulation_df(sim_dict)
 
     # Create additional variables
     model_params = options["model_params"]

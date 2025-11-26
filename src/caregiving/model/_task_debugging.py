@@ -7,7 +7,7 @@
 # import jax.numpy as jnp
 # import pandas as pd
 # import pytask
-# from dcegm.pre_processing.setup_model import load_and_setup_model
+# from dcegm.pre_processing.setup_model import load_model_dict
 # from dcegm.simulation.sim_utils import create_simulation_df
 # from dcegm.simulation.simulate import simulate_all_periods
 # from dcegm.solve import get_solve_func_for_model
@@ -155,7 +155,7 @@
 
 #     params = START_PARAMS
 
-#     model_loaded = load_and_setup_model(
+#     model_loaded = load_model_dict(
 #         options=options,
 #         state_space_functions=create_state_space_functions(),
 #         utility_functions=create_utility_functions(),

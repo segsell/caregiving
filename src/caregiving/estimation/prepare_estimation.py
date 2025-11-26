@@ -4,8 +4,8 @@ from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
+from dcegm.pre_processing.setup_model import create_model_dict
+from dcegm.asset_correction import adjust_observed_assets
 
 from caregiving.model.shared import RETIREMENT
 from caregiving.model.state_space import create_state_space_functions
@@ -19,14 +19,34 @@ from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 def load_and_setup_full_model_for_solution(options, path_to_model) -> Dict[str, Any]:
     """Load and setup full caregiving model for solution."""
 
-    model_full = load_and_setup_model(
-        options=options,
+    # Adapt old options format to new dcegm API
+    model_config = options['state_space'].copy()
+    model_config['n_quad_points'] = options['model_params']['quadrature_points_stochastic']
+    
+    # Rename 'wealth' to 'assets_end_of_period' in continuous_states
+    if 'continuous_states' in model_config and 'wealth' in model_config['continuous_states']:
+        continuous_states = model_config['continuous_states'].copy()
+        continuous_states['assets_end_of_period'] = continuous_states.pop('wealth')
+        model_config['continuous_states'] = continuous_states
+    
+    # Add endogenous states to exogenous processes for new dcegm API
+    if 'endogenous_states' in model_config and 'exogenous_processes' in model_config:
+        exogenous_processes = model_config['exogenous_processes'].copy()
+        for state_name, state_values in model_config['endogenous_states'].items():
+            if state_name not in exogenous_processes:
+                exogenous_processes[state_name] = {
+                    'states': state_values,
+                    'transition': None  # These are typically time-invariant
+                }
+        model_config['exogenous_processes'] = exogenous_processes
+    
+    model_full = create_model_dict(
+        model_config=model_config,
+        model_specs=options['model_params'],
         state_space_functions=create_state_space_functions(),
         utility_functions=create_utility_functions(),
         utility_functions_final_period=create_final_period_utility_functions(),
         budget_constraint=budget_constraint,
-        path=path_to_model,
-        sim_model=False,
     )
 
     return model_full
@@ -71,7 +91,7 @@ def load_and_prep_data(data_emp, model, start_params, drop_retirees=True):
     states_dict["experience"] = data_emp["experience"].values
     states_dict["wealth"] = data_emp["wealth"].values / specs["wealth_unit"]
 
-    adjusted_wealth = adjust_observed_wealth(
+    adjusted_wealth = adjust_observed_assets(
         observed_states_dict=states_dict,
         params=start_params,
         model=model,

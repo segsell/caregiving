@@ -3,7 +3,7 @@
 # import jax
 # import numpy as np
 # import pytask
-# from dcegm.pre_processing.setup_model import load_and_setup_model
+# from dcegm.pre_processing.setup_model import load_model_dict
 # from dcegm.solve import get_solve_func_for_model
 
 # from caregiving.config import BLD, SRC
@@ -120,7 +120,7 @@
 #         "utility_combination_care_sibling": 1,
 #     }
 
-#     model_loaded = load_and_setup_model(
+#     model_loaded = load_model_dict(
 #         options=options,
 #         state_space_functions=create_state_space_functions(),
 #         utility_functions=create_utility_functions(),

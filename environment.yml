@@ -70,8 +70,7 @@ dependencies:
     # local installation
     - -e .
 
-    - git+https://github.com/OpenSourceEconomics/upper-envelope.git
-
     # either install the most recent version of dcegm from github, or clone the
     # repository to the parent folder and install in editable mode
     - -e dcegm
+    - git+https://github.com/OpenSourceEconomics/upper-envelope.git

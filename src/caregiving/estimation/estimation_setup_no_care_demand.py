@@ -10,7 +10,7 @@ import numpy as np
 import optimagic as om
 import pandas as pd
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.pre_processing.setup_model import load_model_dict
 from dcegm.wealth_correction import adjust_observed_wealth
 
 from caregiving.config import BLD, SRC
@@ -421,7 +421,7 @@ def load_and_setup_full_model_for_solution_no_care_demand(
 ) -> Dict[str, Any]:
     """Load and setup full model for solution (no care demand version)."""
 
-    model_full = load_and_setup_model(
+    model_full = load_model_dict(
         options=options,
         state_space_functions=create_state_space_functions(),
         utility_functions=create_utility_functions(),

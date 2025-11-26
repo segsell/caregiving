@@ -9,7 +9,7 @@
 # import numpy as np
 # import pytask
 # import yaml
-# from dcegm.pre_processing.setup_model import setup_and_save_model
+# from dcegm.pre_processing.setup_model import create_model_dict_and_save
 # from pytask import Product
 
 # from caregiving.config import BLD
@@ -125,7 +125,7 @@
 #     }
 #     pickle.dump(options, path_to_save_options.open("wb"))
 
-#     model = setup_and_save_model(
+#     model = create_model_dict_and_save(
 #         options=options,
 #         state_space_functions=create_state_space_functions_counterfactual(),
 #         utility_functions=create_utility_functions(),

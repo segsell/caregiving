@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.pre_processing.setup_model import load_model_dict
 from dcegm.wealth_correction import adjust_observed_wealth
 from pytask import Product
 from scipy import stats
@@ -77,7 +77,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     options = pickle.load(path_to_options.open("rb"))
     params = yaml.safe_load(path_to_start_params.open("rb"))
 
-    model = load_and_setup_model(
+    model = load_model_dict(
         options=options,
         state_space_functions=create_state_space_functions(),
         utility_functions=create_utility_functions(),

@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.pre_processing.setup_model import load_model_dict
 from dcegm.solve import get_solve_func_for_model
 from pytask import Product
 
@@ -77,7 +77,7 @@ def task_estimate_standard_errors(
 
     solve_func = get_solve_func_for_model(model_for_solution)
 
-    model_for_simulation = load_and_setup_model(
+    model_for_simulation = load_model_dict(
         options=options,
         state_space_functions=create_state_space_functions(),
         utility_functions=create_utility_functions(),

@@ -8,7 +8,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pandas as pd
-from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.pre_processing.setup_model import load_model_dict
 from dcegm.simulation.sim_utils import create_simulation_df
 from dcegm.simulation.simulate import simulate_all_periods
 
@@ -45,7 +45,7 @@ from caregiving.model.wealth_and_budget.wages_no_care_demand import (
 
 def setup_model_for_simulation_no_care_demand(path_to_model, options):
     """Setup no-care-demand model for simulation with correct utility functions."""
-    return load_and_setup_model(
+    return load_model_dict(
         options=options,
         state_space_functions=create_state_space_functions(),
         utility_functions=create_utility_functions(),

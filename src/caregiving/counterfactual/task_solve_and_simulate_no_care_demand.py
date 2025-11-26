@@ -9,7 +9,7 @@ import jax.numpy as jnp
 import pandas as pd
 import pytask
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.pre_processing.setup_model import load_model_dict
 from dcegm.solve import get_solve_func_for_model
 from pytask import Product
 
@@ -74,7 +74,7 @@ def task_solve_and_simulate_no_care_demand(
     initial_states = pickle.load(path_to_discrete_states.open("rb"))
     wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
 
-    model_for_simulation = load_and_setup_model(
+    model_for_simulation = load_model_dict(
         options=options,
         state_space_functions=create_state_space_functions(),
         utility_functions=create_utility_functions(),
@@ -100,7 +100,7 @@ def task_solve_and_simulate_no_care_demand(
 def load_and_setup_full_model_for_solution(options, path_to_model) -> Dict[str, Any]:
     """Load and setup full model for solution."""
 
-    model_full = load_and_setup_model(
+    model_full = load_model_dict(
         options=options,
         state_space_functions=create_state_space_functions(),
         utility_functions=create_utility_functions(),

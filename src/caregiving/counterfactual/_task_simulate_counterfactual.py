@@ -7,7 +7,7 @@ import jax.numpy as jnp
 import pandas as pd
 import pytask
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.pre_processing.setup_model import load_model_dict
 from dcegm.solve import get_solve_func_for_model
 from pytask import Product
 
@@ -83,7 +83,7 @@ def task_simulate_counterfactual(
     initial_states = pickle.load(path_to_discrete_states.open("rb"))
     wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
 
-    model_for_simulation_baseline = load_and_setup_model(
+    model_for_simulation_baseline = load_model_dict(
         options=options_baseline,
         state_space_functions=create_state_space_functions(),
         utility_functions=create_utility_functions(),
@@ -124,7 +124,7 @@ def task_simulate_counterfactual(
 
     # # Counterfactual simulation: No informal care
 
-    # model_for_solution_counterfactual = load_and_setup_model(
+    # model_for_solution_counterfactual = load_model_dict(
     #     options=options_counterfactual,
     #     state_space_functions=create_state_space_functions_counterfactual(),
     #     utility_functions=create_utility_functions(),
@@ -175,7 +175,7 @@ def task_solve_and_simulate_counterfactual(
     options_counterfactual = copy.deepcopy(options_baseline)
     options_counterfactual["model_params"]["formal_care_costs"] = 0
 
-    model_for_solution_counterfactual = load_and_setup_model(
+    model_for_solution_counterfactual = load_model_dict(
         options=options_counterfactual,
         state_space_functions=create_state_space_functions_counterfactual(),
         utility_functions=create_utility_functions(),
@@ -199,7 +199,7 @@ def task_solve_and_simulate_counterfactual(
     initial_states = pickle.load(path_to_discrete_states.open("rb"))
     wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
 
-    model_for_simulation_counterfactual = load_and_setup_model(
+    model_for_simulation_counterfactual = load_model_dict(
         options=options_counterfactual,
         state_space_functions=create_state_space_functions_counterfactual(),
         utility_functions=create_utility_functions(),

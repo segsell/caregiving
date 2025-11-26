@@ -9,8 +9,8 @@ import jax.numpy as jnp
 import pandas as pd
 import pytest
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.solve import get_solve_func_for_model
+from dcegm.pre_processing.setup_model import load_model_dict
+from dcegm.backward_induction import backward_induction
 from pytask import Product
 
 from caregiving.config import BLD, TESTS
@@ -45,7 +45,7 @@ def test_solve_and_simulate(
     _params = yaml.safe_load(path_to_start_params.open("rb"))
 
     # # 1) Solve
-    # model_full = load_and_setup_model(
+    # model_full = load_model_dict(
     #     options=options,
     #     state_space_functions=create_state_space_functions(),
     #     utility_functions=create_utility_functions(),
@@ -61,7 +61,7 @@ def test_solve_and_simulate(
     #     solution_dict["value"],
     #     solution_dict["policy"],
     #     solution_dict["endog_grid"],
-    # ) = get_solve_func_for_model(model_full)(params)
+    # ) = backward_induction(model_full)(params)
     # # pickle.dump(solution_dict, path_to_save_solution.open("wb"))
 
     # # 2) Simulate
@@ -69,7 +69,7 @@ def test_solve_and_simulate(
     # wealth_agents = jnp.array(pd.read_csv(path_to_wealth,
     # usecols=["wealth"]).squeeze())
 
-    # model_for_simulation = load_and_setup_model(
+    # model_for_simulation = load_model_dict(
     #     options=options,
     #     state_space_functions=create_state_space_functions(),
     #     utility_functions=create_utility_functions(),

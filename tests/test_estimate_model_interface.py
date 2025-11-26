@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import pytest
 import yaml
-from dcegm.solve import get_solve_func_for_model
+from dcegm.backward_induction import backward_induction
 
 from caregiving.config import BLD, SRC
 from caregiving.estimation.estimation_setup import estimate_model
@@ -136,7 +136,7 @@ def test_estimate_model_least_squares_interface(temp_test_dir):
 
     start_params, lower_bounds, upper_bounds = load_real_parameters()
 
-    solve_func = get_solve_func_for_model(model)
+    solve_func = backward_induction(model)
 
     # Create temporary files in the test temp directory
     temp_result_file = temp_test_dir("temp_result_ls.pkl")
@@ -207,7 +207,7 @@ def test_estimate_model_scalar_interface(temp_test_dir):
     )
 
     start_params, lower_bounds, upper_bounds = load_real_parameters()
-    solve_func = get_solve_func_for_model(model)
+    solve_func = backward_induction(model)
 
     # Create temporary files in the test temp directory
     temp_result_file = temp_test_dir("temp_result_scalar.pkl")
@@ -289,7 +289,7 @@ def test_estimate_model_with_timeout(temp_test_dir):
             test_param_keys=["sigma", "beta"]
         )
 
-        solve_func = get_solve_func_for_model(model)
+        solve_func = backward_induction(model)
 
         with patch("optimagic.minimize", side_effect=mock_minimize):
             result = estimate_model(
