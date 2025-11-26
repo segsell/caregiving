@@ -6,8 +6,6 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pandas as pd
-from dcegm.simulation.sim_utils import create_simulation_df
-from dcegm.simulation.simulate import simulate_all_periods
 
 from caregiving.model.shared import (
     CARE_DEMAND_AND_NO_OTHER_SUPPLY,
@@ -19,6 +17,7 @@ from caregiving.model.shared import (
     SEX,
 )
 from caregiving.model.state_space import construct_experience_years
+from caregiving.model.wealth_and_budget.wages import calc_labor_income_after_ssc
 from caregiving.simulation.simulation_utils import (
     convert_states_to_dtypes,
     extract_discrete_states_at_period,
@@ -28,6 +27,8 @@ from caregiving.simulation.simulation_utils import (
     find_continuous_state_names,
     override_forced_states,
 )
+from dcegm.simulation.sim_utils import create_simulation_df
+from dcegm.simulation.simulate import simulate_all_periods
 
 
 def simulate_scenario_forced_care_demand_at_50(
@@ -235,6 +236,38 @@ def simulate_scenario_forced_care_demand_at_50(
         + model_params["mother_age_diff"][
             df["has_sister"].to_numpy(), df["education"].to_numpy()
         ]
+    )
+
+    # ===============================================================================
+    # Gross labor income computation
+    # ===============================================================================
+    work_values = part_time_values + full_time_values
+
+    # Convert pandas Series to numpy arrays for JAX
+    lagged_choice_array = np.asarray(df["lagged_choice"])
+    experience_years_array = np.asarray(df["exp_years"])
+    education_array = np.asarray(df["education"])
+    income_shock_array = np.asarray(df["income_shock"])
+
+    # Vectorized gross labor income calculation
+    vectorized_calc_gross_labor_income = jax.vmap(
+        lambda lc, exp, edu, shock: calculate_gross_labor_income(
+            lagged_choice=lc,
+            experience_years=exp,
+            education=edu,
+            sex=sex_var,
+            income_shock=shock,
+            options=model_params,
+        )
+    )
+    gross_labor_income_array = vectorized_calc_gross_labor_income(
+        lagged_choice_array,
+        experience_years_array,
+        education_array,
+        income_shock_array,
+    )
+    df["gross_labor_income"] = gross_labor_income_array * df["lagged_choice"].isin(
+        work_values
     )
 
     return df

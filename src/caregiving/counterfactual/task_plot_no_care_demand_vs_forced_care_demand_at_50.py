@@ -78,6 +78,7 @@ def task_plot_differences_no_care_demand_vs_forced_care_demand_at_50(
         pd.read_pickle(path_to_no_care_demand_data),
         pd.read_pickle(path_to_forced_care_demand_data),
         ever_caregivers=False,
+        ever_care_demand=False,
     )
 
     # Filter to age range [start_age, end_age]

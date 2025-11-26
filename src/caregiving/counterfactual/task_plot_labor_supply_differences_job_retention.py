@@ -21,12 +21,14 @@ from caregiving.counterfactual.plotting_helpers import (
     calculate_simple_outcomes,
     get_age_at_first_event,
     get_distinct_colors,
+    plot_all_outcomes_by_age,
     plot_all_outcomes_by_group,
     plot_three_line_differences,
     prepare_dataframes_simple,
 )
 from caregiving.counterfactual.plotting_utils import (
     _ensure_agent_period,
+    calculate_additional_outcomes,
     calculate_outcomes,
     calculate_working_hours_weekly,
     create_outcome_columns,
@@ -83,22 +85,41 @@ def task_plot_matched_differences_by_distance(  # noqa: PLR0915
     jr_work, jr_ft, jr_pt = calculate_simple_outcomes(df_jr, "job_retention")
     ncd_work, ncd_ft, ncd_pt = calculate_simple_outcomes(df_ncd, "no_care_demand")
 
+    # Calculate additional outcomes (gross labor income, savings, wealth)
+    jr_additional = calculate_additional_outcomes(df_jr)
+    ncd_additional = calculate_additional_outcomes(df_ncd)
+
     # Create outcome columns
     jr_cols = df_jr[["agent", "period"]].copy()
     jr_cols["work_jr"] = jr_work
     jr_cols["ft_jr"] = jr_ft
     jr_cols["pt_jr"] = jr_pt
+    jr_cols["gross_labor_income_jr"] = jr_additional["gross_labor_income"]
+    jr_cols["savings_jr"] = jr_additional["savings"]
+    jr_cols["wealth_jr"] = jr_additional["wealth"]
+    jr_cols["savings_rate_jr"] = jr_additional["savings_rate"]
 
     ncd_cols = df_ncd[["agent", "period"]].copy()
     ncd_cols["work_ncd"] = ncd_work
     ncd_cols["ft_ncd"] = ncd_ft
     ncd_cols["pt_ncd"] = ncd_pt
+    ncd_cols["gross_labor_income_ncd"] = ncd_additional["gross_labor_income"]
+    ncd_cols["savings_ncd"] = ncd_additional["savings"]
+    ncd_cols["wealth_ncd"] = ncd_additional["wealth"]
+    ncd_cols["savings_rate_ncd"] = ncd_additional["savings_rate"]
 
     # Merge and compute differences (job retention - no care demand)
     merged = jr_cols.merge(ncd_cols, on=["agent", "period"], how="inner")
     merged["diff_work"] = merged["work_jr"] - merged["work_ncd"]
     merged["diff_ft"] = merged["ft_jr"] - merged["ft_ncd"]
     merged["diff_pt"] = merged["pt_jr"] - merged["pt_ncd"]
+    merged["diff_gross_labor_income"] = (
+        merged["gross_labor_income_jr"] - merged["gross_labor_income_ncd"]
+    )
+    merged["diff_savings"] = merged["savings_jr"] - merged["savings_ncd"]
+    merged["diff_wealth"] = merged["wealth_jr"] - merged["wealth_ncd"]
+    merged["diff_savings_rate"] = merged["savings_rate_jr"] - merged["savings_rate_ncd"]
+    merged["diff_savings_rate"] = merged["savings_rate_jr"] - merged["savings_rate_ncd"]
 
     # Compute distance in job retention and attach
     df_jr_dist = _add_distance_to_first_care(df_jr)
@@ -119,7 +140,15 @@ def task_plot_matched_differences_by_distance(  # noqa: PLR0915
     # Average differences by distance
     prof = (
         merged.groupby("distance_to_first_care", observed=False)[
-            ["diff_work", "diff_ft", "diff_pt"]
+            [
+                "diff_work",
+                "diff_ft",
+                "diff_pt",
+                "diff_gross_labor_income",
+                "diff_savings",
+                "diff_wealth",
+                "diff_savings_rate",
+            ]
         ]
         .mean()
         .reset_index()
@@ -204,6 +233,7 @@ def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915
         pd.read_pickle(path_to_job_retention_data),
         pd.read_pickle(path_to_no_care_demand_data),
         ever_caregivers=ever_caregivers,
+        ever_care_demand=False,
     )
 
     # Calculate outcomes
@@ -220,18 +250,34 @@ def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915
         df_ncd, model_params, choice_set_type="no_care_demand"
     )
 
+    # Calculate additional outcomes (gross labor income, savings, wealth)
+    jr_additional = calculate_additional_outcomes(df_jr)
+    ncd_additional = calculate_additional_outcomes(df_ncd)
+    jr_outcomes.update(jr_additional)
+    ncd_outcomes.update(ncd_additional)
+
     # Create outcome columns and merge
-    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_jr")
-    ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_ncd")
+    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_o")
+    ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_c")
 
     # Merge on (agent, period) to get matched differences
     merged = jr_cols.merge(ncd_cols, on=["agent", "period"], how="inner")
 
     # Compute differences (job retention - no care demand)
-    outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly"]
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "job_offer",
+        "hours_weekly",
+        "gross_labor_income",
+        "savings",
+        "wealth",
+        "savings_rate",
+    ]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_jr"] - merged[f"{outcome_name}_ncd"]
+            merged[f"{outcome_name}_o"] - merged[f"{outcome_name}_c"]
         )
 
     # Compute distance and age at first care from job retention
@@ -268,7 +314,17 @@ def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915
     # Average differences by distance and age_at_first_care
     prof = (
         merged.groupby(["distance_to_first_care", "age_at_first_care"], observed=False)[
-            ["diff_work", "diff_ft", "diff_pt", "diff_job_offer", "diff_hours_weekly"]
+            [
+                "diff_work",
+                "diff_ft",
+                "diff_pt",
+                "diff_job_offer",
+                "diff_hours_weekly",
+                "diff_gross_labor_income",
+                "diff_savings",
+                "diff_wealth",
+                "diff_savings_rate",
+            ]
         ]
         .mean()
         .reset_index()
@@ -304,6 +360,30 @@ def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915
             "path": path_to_plot_working_hours,
             "ylabel": "Weekly Working Hours Difference\nDeviation from No Care Demand",
             "diff_col": "diff_hours_weekly",
+        },
+        "gross_labor_income": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_gross_labor_income_by_age_at_first_care.png",
+            "ylabel": "Gross Labor Income (Monthly)\nDeviation from No Care Demand",
+            "diff_col": "diff_gross_labor_income",
+        },
+        "savings": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_by_age_at_first_care.png",
+            "ylabel": "Savings Decision\nDeviation from No Care Demand",
+            "diff_col": "diff_savings",
+        },
+        "wealth": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_wealth_by_age_at_first_care.png",
+            "ylabel": "Wealth at Beginning of Period\nDeviation from No Care Demand",
+            "diff_col": "diff_wealth",
+        },
+        "savings_rate": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_rate_by_age_at_first_care.png",
+            "ylabel": "Savings Rate\nDeviation from No Care Demand",
+            "diff_col": "diff_savings_rate",
         },
     }
 
@@ -386,6 +466,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915
         pd.read_pickle(path_to_job_retention_data),
         pd.read_pickle(path_to_no_care_demand_data),
         ever_caregivers=ever_caregivers,
+        ever_care_demand=False,
     )
 
     # Calculate outcomes
@@ -402,18 +483,34 @@ def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915
         df_ncd, model_params, choice_set_type="no_care_demand"
     )
 
+    # Calculate additional outcomes (gross labor income, savings, wealth)
+    jr_additional = calculate_additional_outcomes(df_jr)
+    ncd_additional = calculate_additional_outcomes(df_ncd)
+    jr_outcomes.update(jr_additional)
+    ncd_outcomes.update(ncd_additional)
+
     # Create outcome columns and merge
-    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_jr")
-    ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_ncd")
+    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_o")
+    ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_c")
 
     # Merge on (agent, period) to get matched differences
     merged = jr_cols.merge(ncd_cols, on=["agent", "period"], how="inner")
 
     # Compute differences (job retention - no care demand)
-    outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly"]
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "job_offer",
+        "hours_weekly",
+        "gross_labor_income",
+        "savings",
+        "wealth",
+        "savings_rate",
+    ]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_jr"] - merged[f"{outcome_name}_ncd"]
+            merged[f"{outcome_name}_o"] - merged[f"{outcome_name}_c"]
         )
 
     # Compute distance and age at first care from job retention
@@ -462,7 +559,17 @@ def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915
     # Average differences by distance and age_bin
     prof = (
         merged.groupby(["distance_to_first_care", "age_bin_label"], observed=False)[
-            ["diff_work", "diff_ft", "diff_pt", "diff_job_offer", "diff_hours_weekly"]
+            [
+                "diff_work",
+                "diff_ft",
+                "diff_pt",
+                "diff_job_offer",
+                "diff_hours_weekly",
+                "diff_gross_labor_income",
+                "diff_savings",
+                "diff_wealth",
+                "diff_savings_rate",
+            ]
         ]
         .mean()
         .reset_index()
@@ -572,22 +679,44 @@ def task_plot_matched_differences_by_distance_vs_baseline(  # noqa: PLR0915
         df_baseline, "original"
     )
 
+    # Calculate additional outcomes (gross labor income, savings, wealth, savings_rate)
+    jr_additional = calculate_additional_outcomes(df_jr)
+    baseline_additional = calculate_additional_outcomes(df_baseline)
+
     # Create outcome columns
     jr_cols = df_jr[["agent", "period"]].copy()
     jr_cols["work_jr"] = jr_work
     jr_cols["ft_jr"] = jr_ft
     jr_cols["pt_jr"] = jr_pt
+    jr_cols["gross_labor_income_jr"] = jr_additional["gross_labor_income"]
+    jr_cols["savings_jr"] = jr_additional["savings"]
+    jr_cols["wealth_jr"] = jr_additional["wealth"]
+    jr_cols["savings_rate_jr"] = jr_additional["savings_rate"]
 
     baseline_cols = df_baseline[["agent", "period"]].copy()
     baseline_cols["work_baseline"] = baseline_work
     baseline_cols["ft_baseline"] = baseline_ft
     baseline_cols["pt_baseline"] = baseline_pt
+    baseline_cols["gross_labor_income_baseline"] = baseline_additional[
+        "gross_labor_income"
+    ]
+    baseline_cols["savings_baseline"] = baseline_additional["savings"]
+    baseline_cols["wealth_baseline"] = baseline_additional["wealth"]
+    baseline_cols["savings_rate_baseline"] = baseline_additional["savings_rate"]
 
     # Merge and compute differences (job retention - baseline)
     merged = jr_cols.merge(baseline_cols, on=["agent", "period"], how="inner")
     merged["diff_work"] = merged["work_jr"] - merged["work_baseline"]
     merged["diff_ft"] = merged["ft_jr"] - merged["ft_baseline"]
     merged["diff_pt"] = merged["pt_jr"] - merged["pt_baseline"]
+    merged["diff_gross_labor_income"] = (
+        merged["gross_labor_income_jr"] - merged["gross_labor_income_baseline"]
+    )
+    merged["diff_savings"] = merged["savings_jr"] - merged["savings_baseline"]
+    merged["diff_wealth"] = merged["wealth_jr"] - merged["wealth_baseline"]
+    merged["diff_savings_rate"] = (
+        merged["savings_rate_jr"] - merged["savings_rate_baseline"]
+    )
 
     # Compute distance in job retention and attach
     df_jr_dist = _add_distance_to_first_care(df_jr)
@@ -608,7 +737,15 @@ def task_plot_matched_differences_by_distance_vs_baseline(  # noqa: PLR0915
     # Average differences by distance
     prof = (
         merged.groupby("distance_to_first_care", observed=False)[
-            ["diff_work", "diff_ft", "diff_pt"]
+            [
+                "diff_work",
+                "diff_ft",
+                "diff_pt",
+                "diff_gross_labor_income",
+                "diff_savings",
+                "diff_wealth",
+                "diff_savings_rate",
+            ]
         ]
         .mean()
         .reset_index()
@@ -709,18 +846,34 @@ def task_plot_matched_differences_by_age_at_first_care_vs_baseline(  # noqa: PLR
         df_baseline, model_params, choice_set_type="original"
     )
 
+    # Calculate additional outcomes (gross labor income, savings, wealth)
+    jr_additional = calculate_additional_outcomes(df_jr)
+    baseline_additional = calculate_additional_outcomes(df_baseline)
+    jr_outcomes.update(jr_additional)
+    baseline_outcomes.update(baseline_additional)
+
     # Create outcome columns and merge
-    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_jr")
-    baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_baseline")
+    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_o")
+    baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_c")
 
     # Merge on (agent, period) to get matched differences
     merged = jr_cols.merge(baseline_cols, on=["agent", "period"], how="inner")
 
     # Compute differences (job retention - baseline)
-    outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly"]
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "job_offer",
+        "hours_weekly",
+        "gross_labor_income",
+        "savings",
+        "wealth",
+        "savings_rate",
+    ]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_jr"] - merged[f"{outcome_name}_baseline"]
+            merged[f"{outcome_name}_o"] - merged[f"{outcome_name}_c"]
         )
 
     # Compute distance and age at first care from job retention
@@ -757,7 +910,17 @@ def task_plot_matched_differences_by_age_at_first_care_vs_baseline(  # noqa: PLR
     # Average differences by distance and age_at_first_care
     prof = (
         merged.groupby(["distance_to_first_care", "age_at_first_care"], observed=False)[
-            ["diff_work", "diff_ft", "diff_pt", "diff_job_offer", "diff_hours_weekly"]
+            [
+                "diff_work",
+                "diff_ft",
+                "diff_pt",
+                "diff_job_offer",
+                "diff_hours_weekly",
+                "diff_gross_labor_income",
+                "diff_savings",
+                "diff_wealth",
+                "diff_savings_rate",
+            ]
         ]
         .mean()
         .reset_index()
@@ -793,6 +956,30 @@ def task_plot_matched_differences_by_age_at_first_care_vs_baseline(  # noqa: PLR
             "path": path_to_plot_working_hours,
             "ylabel": "Weekly Working Hours Difference\nDeviation from Baseline",
             "diff_col": "diff_hours_weekly",
+        },
+        "gross_labor_income": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_gross_labor_income_by_age_at_first_care_vs_baseline.png",
+            "ylabel": "Gross Labor Income (Monthly)\nDeviation from Baseline",
+            "diff_col": "diff_gross_labor_income",
+        },
+        "savings": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_by_age_at_first_care_vs_baseline.png",
+            "ylabel": "Savings Decision\nDeviation from Baseline",
+            "diff_col": "diff_savings",
+        },
+        "wealth": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_wealth_by_age_at_first_care_vs_baseline.png",
+            "ylabel": "Wealth at Beginning of Period\nDeviation from Baseline",
+            "diff_col": "diff_wealth",
+        },
+        "savings_rate": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_rate_by_age_at_first_care_vs_baseline.png",
+            "ylabel": "Savings Rate\nDeviation from Baseline",
+            "diff_col": "diff_savings_rate",
         },
     }
 
@@ -891,18 +1078,34 @@ def task_plot_matched_differences_by_age_bins_at_first_care_vs_baseline(  # noqa
         df_baseline, model_params, choice_set_type="original"
     )
 
+    # Calculate additional outcomes (gross labor income, savings, wealth)
+    jr_additional = calculate_additional_outcomes(df_jr)
+    baseline_additional = calculate_additional_outcomes(df_baseline)
+    jr_outcomes.update(jr_additional)
+    baseline_outcomes.update(baseline_additional)
+
     # Create outcome columns and merge
-    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_jr")
-    baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_baseline")
+    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_o")
+    baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_c")
 
     # Merge on (agent, period) to get matched differences
     merged = jr_cols.merge(baseline_cols, on=["agent", "period"], how="inner")
 
     # Compute differences (job retention - baseline)
-    outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly"]
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "job_offer",
+        "hours_weekly",
+        "gross_labor_income",
+        "savings",
+        "wealth",
+        "savings_rate",
+    ]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_jr"] - merged[f"{outcome_name}_baseline"]
+            merged[f"{outcome_name}_o"] - merged[f"{outcome_name}_c"]
         )
 
     # Compute distance and age at first care from job retention
@@ -951,7 +1154,17 @@ def task_plot_matched_differences_by_age_bins_at_first_care_vs_baseline(  # noqa
     # Average differences by distance and age_bin
     prof = (
         merged.groupby(["distance_to_first_care", "age_bin_label"], observed=False)[
-            ["diff_work", "diff_ft", "diff_pt", "diff_job_offer", "diff_hours_weekly"]
+            [
+                "diff_work",
+                "diff_ft",
+                "diff_pt",
+                "diff_job_offer",
+                "diff_hours_weekly",
+                "diff_gross_labor_income",
+                "diff_savings",
+                "diff_wealth",
+                "diff_savings_rate",
+            ]
         ]
         .mean()
         .reset_index()
@@ -998,6 +1211,30 @@ def task_plot_matched_differences_by_age_bins_at_first_care_vs_baseline(  # noqa
             "path": path_to_plot_working_hours,
             "ylabel": "Weekly Working Hours Difference\nDeviation from Baseline",
             "diff_col": "diff_hours_weekly",
+        },
+        "gross_labor_income": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_gross_labor_income_by_age_bins_at_first_care_vs_baseline.png",
+            "ylabel": "Gross Labor Income (Monthly)\nDeviation from Baseline",
+            "diff_col": "diff_gross_labor_income",
+        },
+        "savings": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_by_age_bins_at_first_care_vs_baseline.png",
+            "ylabel": "Savings Decision\nDeviation from Baseline",
+            "diff_col": "diff_savings",
+        },
+        "wealth": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_wealth_by_age_bins_at_first_care_vs_baseline.png",
+            "ylabel": "Wealth at Beginning of Period\nDeviation from Baseline",
+            "diff_col": "diff_wealth",
+        },
+        "savings_rate": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_rate_by_age_bins_at_first_care_vs_baseline.png",
+            "ylabel": "Savings Rate\nDeviation from Baseline",
+            "diff_col": "diff_savings_rate",
         },
     }
 
@@ -1062,22 +1299,38 @@ def task_plot_matched_differences_by_distance_by_care_demand(  # noqa: PLR0915
         pd.read_pickle(path_to_job_retention_data),
         pd.read_pickle(path_to_no_care_demand_data),
         ever_caregivers=ever_caregivers,
+        ever_care_demand=False,
     )
 
     # Calculate outcomes
     jr_outcomes = calculate_outcomes(df_jr, choice_set_type="job_retention")
     ncd_outcomes = calculate_outcomes(df_ncd, choice_set_type="no_care_demand")
 
+    # Calculate additional outcomes (gross labor income, savings, wealth, savings_rate)
+    jr_additional = calculate_additional_outcomes(df_jr)
+    ncd_additional = calculate_additional_outcomes(df_ncd)
+    jr_outcomes.update(jr_additional)
+    ncd_outcomes.update(ncd_additional)
+
     # Create outcome columns
-    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_jr")
-    ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_ncd")
+    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_o")
+    ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_c")
 
     # Merge and compute differences
     merged = jr_cols.merge(ncd_cols, on=["agent", "period"], how="inner")
-    outcome_names = ["work", "ft", "pt", "care"]
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "care",
+        "gross_labor_income",
+        "savings",
+        "wealth",
+        "savings_rate",
+    ]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_jr"] - merged[f"{outcome_name}_ncd"]
+            merged[f"{outcome_name}_o"] - merged[f"{outcome_name}_c"]
         )
 
     # Compute distance to first care demand in job retention and attach
@@ -1101,7 +1354,15 @@ def task_plot_matched_differences_by_distance_by_care_demand(  # noqa: PLR0915
     # Average differences by distance
     prof = (
         merged.groupby("distance_to_first_care_demand", observed=False)[
-            ["diff_work", "diff_ft", "diff_pt"]
+            [
+                "diff_work",
+                "diff_ft",
+                "diff_pt",
+                "diff_gross_labor_income",
+                "diff_savings",
+                "diff_wealth",
+                "diff_savings_rate",
+            ]
         ]
         .mean()
         .reset_index()
@@ -1225,6 +1486,7 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915
         pd.read_pickle(path_to_job_retention_data),
         pd.read_pickle(path_to_no_care_demand_data),
         ever_caregivers=ever_caregivers,
+        ever_care_demand=False,
     )
 
     # Calculate outcomes
@@ -1241,18 +1503,35 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915
         df_ncd, model_params, choice_set_type="no_care_demand"
     )
 
+    # Calculate additional outcomes (gross labor income, savings, wealth)
+    jr_additional = calculate_additional_outcomes(df_jr)
+    ncd_additional = calculate_additional_outcomes(df_ncd)
+    jr_outcomes.update(jr_additional)
+    ncd_outcomes.update(ncd_additional)
+
     # Create outcome columns and merge
-    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_jr")
-    ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_ncd")
+    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_o")
+    ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_c")
 
     # Merge on (agent, period) to get matched differences
     merged = jr_cols.merge(ncd_cols, on=["agent", "period"], how="inner")
 
     # Compute differences (job retention - no care demand)
-    outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly", "care"]
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "job_offer",
+        "hours_weekly",
+        "care",
+        "gross_labor_income",
+        "savings",
+        "wealth",
+        "savings_rate",
+    ]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_jr"] - merged[f"{outcome_name}_ncd"]
+            merged[f"{outcome_name}_o"] - merged[f"{outcome_name}_c"]
         )
 
     # Compute distance and age at first care demand from job retention
@@ -1300,6 +1579,10 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915
                 "diff_job_offer",
                 "diff_hours_weekly",
                 "diff_care",
+                "diff_gross_labor_income",
+                "diff_savings",
+                "diff_wealth",
+                "diff_savings_rate",
             ]
         ]
         .mean()
@@ -1346,6 +1629,34 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915
             "path": path_to_plot_care,
             "ylabel": "Probability of Providing Care\nDeviation from No Care Demand",
             "diff_col": "diff_care",
+            "xlabel": "Year relative to first care demand",
+        },
+        "gross_labor_income": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_gross_labor_income_by_age_at_first_care_demand.png",
+            "ylabel": "Gross Labor Income (Monthly)\nDeviation from No Care Demand",
+            "diff_col": "diff_gross_labor_income",
+            "xlabel": "Year relative to first care demand",
+        },
+        "savings": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_by_age_at_first_care_demand.png",
+            "ylabel": "Savings Decision\nDeviation from No Care Demand",
+            "diff_col": "diff_savings",
+            "xlabel": "Year relative to first care demand",
+        },
+        "wealth": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_wealth_by_age_at_first_care_demand.png",
+            "ylabel": "Wealth at Beginning of Period\nDeviation from No Care Demand",
+            "diff_col": "diff_wealth",
+            "xlabel": "Year relative to first care demand",
+        },
+        "savings_rate": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_rate_by_age_at_first_care_demand.png",
+            "ylabel": "Savings Rate\nDeviation from No Care Demand",
+            "diff_col": "diff_savings_rate",
             "xlabel": "Year relative to first care demand",
         },
     }
@@ -1436,6 +1747,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR
         pd.read_pickle(path_to_job_retention_data),
         pd.read_pickle(path_to_no_care_demand_data),
         ever_caregivers=ever_caregivers,
+        ever_care_demand=False,
     )
 
     # Calculate outcomes
@@ -1452,18 +1764,35 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR
         df_ncd, model_params, choice_set_type="no_care_demand"
     )
 
+    # Calculate additional outcomes (gross labor income, savings, wealth)
+    jr_additional = calculate_additional_outcomes(df_jr)
+    ncd_additional = calculate_additional_outcomes(df_ncd)
+    jr_outcomes.update(jr_additional)
+    ncd_outcomes.update(ncd_additional)
+
     # Create outcome columns and merge
-    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_jr")
-    ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_ncd")
+    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_o")
+    ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_c")
 
     # Merge on (agent, period) to get matched differences
     merged = jr_cols.merge(ncd_cols, on=["agent", "period"], how="inner")
 
     # Compute differences (job retention - no care demand)
-    outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly", "care"]
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "job_offer",
+        "hours_weekly",
+        "care",
+        "gross_labor_income",
+        "savings",
+        "wealth",
+        "savings_rate",
+    ]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_jr"] - merged[f"{outcome_name}_ncd"]
+            merged[f"{outcome_name}_o"] - merged[f"{outcome_name}_c"]
         )
 
     # Compute distance and age at first care demand from job retention
@@ -1650,16 +1979,31 @@ def task_plot_matched_differences_by_distance_by_care_demand_vs_baseline(  # noq
     jr_outcomes = calculate_outcomes(df_jr, choice_set_type="job_retention")
     baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
 
+    # Calculate additional outcomes (gross labor income, savings, wealth, savings_rate)
+    jr_additional = calculate_additional_outcomes(df_jr)
+    baseline_additional = calculate_additional_outcomes(df_baseline)
+    jr_outcomes.update(jr_additional)
+    baseline_outcomes.update(baseline_additional)
+
     # Create outcome columns
-    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_jr")
-    baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_baseline")
+    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_o")
+    baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_c")
 
     # Merge and compute differences
     merged = jr_cols.merge(baseline_cols, on=["agent", "period"], how="inner")
-    outcome_names = ["work", "ft", "pt", "care"]
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "care",
+        "gross_labor_income",
+        "savings",
+        "wealth",
+        "savings_rate",
+    ]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_jr"] - merged[f"{outcome_name}_baseline"]
+            merged[f"{outcome_name}_o"] - merged[f"{outcome_name}_c"]
         )
 
     # Compute distance to first care demand in job retention and attach
@@ -1683,7 +2027,15 @@ def task_plot_matched_differences_by_distance_by_care_demand_vs_baseline(  # noq
     # Average differences by distance
     prof = (
         merged.groupby("distance_to_first_care_demand", observed=False)[
-            ["diff_work", "diff_ft", "diff_pt"]
+            [
+                "diff_work",
+                "diff_ft",
+                "diff_pt",
+                "diff_gross_labor_income",
+                "diff_savings",
+                "diff_wealth",
+                "diff_savings_rate",
+            ]
         ]
         .mean()
         .reset_index()
@@ -1821,18 +2173,35 @@ def task_plot_matched_differences_by_age_at_first_care_demand_vs_baseline(  # no
         df_baseline, model_params, choice_set_type="original"
     )
 
+    # Calculate additional outcomes (gross labor income, savings, wealth)
+    jr_additional = calculate_additional_outcomes(df_jr)
+    baseline_additional = calculate_additional_outcomes(df_baseline)
+    jr_outcomes.update(jr_additional)
+    baseline_outcomes.update(baseline_additional)
+
     # Create outcome columns and merge
-    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_jr")
-    baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_baseline")
+    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_o")
+    baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_c")
 
     # Merge on (agent, period) to get matched differences
     merged = jr_cols.merge(baseline_cols, on=["agent", "period"], how="inner")
 
     # Compute differences (job retention - baseline)
-    outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly", "care"]
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "job_offer",
+        "hours_weekly",
+        "care",
+        "gross_labor_income",
+        "savings",
+        "wealth",
+        "savings_rate",
+    ]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_jr"] - merged[f"{outcome_name}_baseline"]
+            merged[f"{outcome_name}_o"] - merged[f"{outcome_name}_c"]
         )
 
     # Compute distance and age at first care demand from job retention
@@ -1880,6 +2249,10 @@ def task_plot_matched_differences_by_age_at_first_care_demand_vs_baseline(  # no
                 "diff_job_offer",
                 "diff_hours_weekly",
                 "diff_care",
+                "diff_gross_labor_income",
+                "diff_savings",
+                "diff_wealth",
+                "diff_savings_rate",
             ]
         ]
         .mean()
@@ -2032,18 +2405,35 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_vs_baseline( 
         df_baseline, model_params, choice_set_type="original"
     )
 
+    # Calculate additional outcomes (gross labor income, savings, wealth)
+    jr_additional = calculate_additional_outcomes(df_jr)
+    baseline_additional = calculate_additional_outcomes(df_baseline)
+    jr_outcomes.update(jr_additional)
+    baseline_outcomes.update(baseline_additional)
+
     # Create outcome columns and merge
-    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_jr")
-    baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_baseline")
+    jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_o")
+    baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_c")
 
     # Merge on (agent, period) to get matched differences
     merged = jr_cols.merge(baseline_cols, on=["agent", "period"], how="inner")
 
     # Compute differences (job retention - baseline)
-    outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly", "care"]
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "job_offer",
+        "hours_weekly",
+        "care",
+        "gross_labor_income",
+        "savings",
+        "wealth",
+        "savings_rate",
+    ]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_jr"] - merged[f"{outcome_name}_baseline"]
+            merged[f"{outcome_name}_o"] - merged[f"{outcome_name}_c"]
         )
 
     # Compute distance and age at first care demand from job retention

@@ -21,12 +21,14 @@ from caregiving.counterfactual.plotting_helpers import (
     calculate_simple_outcomes,
     get_age_at_first_event,
     get_distinct_colors,
+    plot_all_outcomes_by_age,
     plot_all_outcomes_by_group,
     plot_three_line_differences,
     prepare_dataframes_simple,
 )
 from caregiving.counterfactual.plotting_utils import (
     _ensure_agent_period,
+    calculate_additional_outcomes,
     calculate_outcomes,
     calculate_working_hours_weekly,
     create_outcome_columns,
@@ -119,7 +121,16 @@ def task_plot_matched_differences_by_distance(  # noqa: PLR0915
     # Average differences by distance
     prof = (
         merged.groupby("distance_to_first_care", observed=False)[
-            ["diff_work", "diff_ft", "diff_pt"]
+            [
+                "diff_work",
+                "diff_ft",
+                "diff_pt",
+                # Temporarily removed until data recreation is complete:
+                # "diff_gross_labor_income",
+                # "diff_savings",
+                # "diff_wealth",
+                # "diff_savings_rate",
+            ]
         ]
         .mean()
         .reset_index()
@@ -205,6 +216,7 @@ def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915
         pd.read_pickle(path_to_higher_formal_care_costs_data),
         pd.read_pickle(path_to_no_care_demand_data),
         ever_caregivers=ever_caregivers,
+        ever_care_demand=False,
     )
 
     # Calculate outcomes
@@ -221,18 +233,35 @@ def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915
         df_ncd, model_params, choice_set_type="no_care_demand"
     )
 
+    # Calculate additional outcomes (gross labor income, savings, wealth)
+    hfc_additional = calculate_additional_outcomes(df_hfc)
+    ncd_additional = calculate_additional_outcomes(df_ncd)
+    hfc_outcomes.update(hfc_additional)
+    ncd_outcomes.update(ncd_additional)
+
     # Create outcome columns and merge
-    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_hfc")
-    ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_ncd")
+    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_o")
+    ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_c")
 
     # Merge on (agent, period) to get matched differences
     merged = hfc_cols.merge(ncd_cols, on=["agent", "period"], how="inner")
 
     # Compute differences (higher formal care costs - no care demand)
-    outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly"]
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "job_offer",
+        "hours_weekly",
+        # Temporarily removed until data recreation is complete:
+        # "gross_labor_income",
+        # "savings",
+        # "wealth",
+        # "savings_rate",
+    ]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_hfc"] - merged[f"{outcome_name}_ncd"]
+            merged[f"{outcome_name}_o"] - merged[f"{outcome_name}_c"]
         )
 
     # Compute distance and age at first care from higher formal care costs
@@ -269,7 +298,18 @@ def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915
     # Average differences by distance and age_at_first_care
     prof = (
         merged.groupby(["distance_to_first_care", "age_at_first_care"], observed=False)[
-            ["diff_work", "diff_ft", "diff_pt", "diff_job_offer", "diff_hours_weekly"]
+            [
+                "diff_work",
+                "diff_ft",
+                "diff_pt",
+                "diff_job_offer",
+                "diff_hours_weekly",
+                # Temporarily removed until data recreation is complete:
+                # "diff_gross_labor_income",
+                # "diff_savings",
+                # "diff_wealth",
+                # "diff_savings_rate",
+            ]
         ]
         .mean()
         .reset_index()
@@ -306,6 +346,31 @@ def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915
             "ylabel": "Weekly Working Hours Difference\nDeviation from No Care Demand",
             "diff_col": "diff_hours_weekly",
         },
+        # Temporarily removed until data recreation is complete:
+        # "gross_labor_income": {
+        #     "path": path_to_plot_work.parent
+        #     / "matched_differences_gross_labor_income_by_age_at_first_care.png",
+        #     "ylabel": "Gross Labor Income (Monthly)\nDeviation from No Care Demand",
+        #     "diff_col": "diff_gross_labor_income",
+        # },
+        # "savings": {
+        #     "path": path_to_plot_work.parent
+        #     / "matched_differences_savings_by_age_at_first_care.png",
+        #     "ylabel": "Savings Decision\nDeviation from No Care Demand",
+        #     "diff_col": "diff_savings",
+        # },
+        # "wealth": {
+        #     "path": path_to_plot_work.parent
+        #     / "matched_differences_wealth_by_age_at_first_care.png",
+        #     "ylabel": "Wealth at Beginning of Period\nDeviation from No Care Demand",
+        #     "diff_col": "diff_wealth",
+        # },
+        # "savings_rate": {
+        #     "path": path_to_plot_work.parent
+        #     / "matched_differences_savings_rate_by_age_at_first_care.png",
+        #     "ylabel": "Savings Rate\nDeviation from No Care Demand",
+        #     "diff_col": "diff_savings_rate",
+        # },
     }
 
     plot_all_outcomes_by_group(
@@ -388,6 +453,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915
         pd.read_pickle(path_to_higher_formal_care_costs_data),
         pd.read_pickle(path_to_no_care_demand_data),
         ever_caregivers=ever_caregivers,
+        ever_care_demand=False,
     )
 
     # Calculate outcomes
@@ -404,18 +470,35 @@ def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915
         df_ncd, model_params, choice_set_type="no_care_demand"
     )
 
+    # Calculate additional outcomes (gross labor income, savings, wealth)
+    hfc_additional = calculate_additional_outcomes(df_hfc)
+    ncd_additional = calculate_additional_outcomes(df_ncd)
+    hfc_outcomes.update(hfc_additional)
+    ncd_outcomes.update(ncd_additional)
+
     # Create outcome columns and merge
-    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_hfc")
-    ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_ncd")
+    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_o")
+    ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_c")
 
     # Merge on (agent, period) to get matched differences
     merged = hfc_cols.merge(ncd_cols, on=["agent", "period"], how="inner")
 
     # Compute differences (higher formal care costs - no care demand)
-    outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly"]
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "job_offer",
+        "hours_weekly",
+        # Temporarily removed until data recreation is complete:
+        # "gross_labor_income",
+        # "savings",
+        # "wealth",
+        # "savings_rate",
+    ]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_hfc"] - merged[f"{outcome_name}_ncd"]
+            merged[f"{outcome_name}_o"] - merged[f"{outcome_name}_c"]
         )
 
     # Compute distance and age at first care from higher formal care costs
@@ -464,7 +547,18 @@ def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915
     # Average differences by distance and age_bin
     prof = (
         merged.groupby(["distance_to_first_care", "age_bin_label"], observed=False)[
-            ["diff_work", "diff_ft", "diff_pt", "diff_job_offer", "diff_hours_weekly"]
+            [
+                "diff_work",
+                "diff_ft",
+                "diff_pt",
+                "diff_job_offer",
+                "diff_hours_weekly",
+                # Temporarily removed until data recreation is complete:
+                # "diff_gross_labor_income",
+                # "diff_savings",
+                # "diff_wealth",
+                # "diff_savings_rate",
+            ]
         ]
         .mean()
         .reset_index()
@@ -511,6 +605,30 @@ def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915
             "path": path_to_plot_working_hours,
             "ylabel": "Weekly Working Hours Difference\nDeviation from No Care Demand",
             "diff_col": "diff_hours_weekly",
+        },
+        "gross_labor_income": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_gross_labor_income_by_age_bins_at_first_care.png",
+            "ylabel": "Gross Labor Income (Monthly)\nDeviation from No Care Demand",
+            "diff_col": "diff_gross_labor_income",
+        },
+        "savings": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_by_age_bins_at_first_care.png",
+            "ylabel": "Savings Decision\nDeviation from No Care Demand",
+            "diff_col": "diff_savings",
+        },
+        "wealth": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_wealth_by_age_bins_at_first_care.png",
+            "ylabel": "Wealth at Beginning of Period\nDeviation from No Care Demand",
+            "diff_col": "diff_wealth",
+        },
+        "savings_rate": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_rate_by_age_bins_at_first_care.png",
+            "ylabel": "Savings Rate\nDeviation from No Care Demand",
+            "diff_col": "diff_savings_rate",
         },
     }
 
@@ -610,7 +728,16 @@ def task_plot_matched_differences_by_distance_vs_baseline(  # noqa: PLR0915
     # Average differences by distance
     prof = (
         merged.groupby("distance_to_first_care", observed=False)[
-            ["diff_work", "diff_ft", "diff_pt"]
+            [
+                "diff_work",
+                "diff_ft",
+                "diff_pt",
+                # Temporarily removed until data recreation is complete:
+                # "diff_gross_labor_income",
+                # "diff_savings",
+                # "diff_wealth",
+                # "diff_savings_rate",
+            ]
         ]
         .mean()
         .reset_index()
@@ -713,17 +840,28 @@ def task_plot_matched_differences_by_age_at_first_care_vs_baseline(  # noqa: PLR
     )
 
     # Create outcome columns and merge
-    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_hfc")
-    baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_baseline")
+    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_o")
+    baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_c")
 
     # Merge on (agent, period) to get matched differences
     merged = hfc_cols.merge(baseline_cols, on=["agent", "period"], how="inner")
 
     # Compute differences (higher formal care costs - baseline)
-    outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly"]
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "job_offer",
+        "hours_weekly",
+        # Temporarily removed until data recreation is complete:
+        # "gross_labor_income",
+        # "savings",
+        # "wealth",
+        # "savings_rate",
+    ]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_hfc"] - merged[f"{outcome_name}_baseline"]
+            merged[f"{outcome_name}_o"] - merged[f"{outcome_name}_c"]
         )
 
     # Compute distance and age at first care from higher formal care costs
@@ -760,7 +898,18 @@ def task_plot_matched_differences_by_age_at_first_care_vs_baseline(  # noqa: PLR
     # Average differences by distance and age_at_first_care
     prof = (
         merged.groupby(["distance_to_first_care", "age_at_first_care"], observed=False)[
-            ["diff_work", "diff_ft", "diff_pt", "diff_job_offer", "diff_hours_weekly"]
+            [
+                "diff_work",
+                "diff_ft",
+                "diff_pt",
+                "diff_job_offer",
+                "diff_hours_weekly",
+                # Temporarily removed until data recreation is complete:
+                # "diff_gross_labor_income",
+                # "diff_savings",
+                # "diff_wealth",
+                # "diff_savings_rate",
+            ]
         ]
         .mean()
         .reset_index()
@@ -796,6 +945,30 @@ def task_plot_matched_differences_by_age_at_first_care_vs_baseline(  # noqa: PLR
             "path": path_to_plot_working_hours,
             "ylabel": "Weekly Working Hours Difference\nDeviation from Baseline",
             "diff_col": "diff_hours_weekly",
+        },
+        "gross_labor_income": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_gross_labor_income_by_age_at_first_care_vs_baseline.png",
+            "ylabel": "Gross Labor Income (Monthly)\nDeviation from Baseline",
+            "diff_col": "diff_gross_labor_income",
+        },
+        "savings": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_by_age_at_first_care_vs_baseline.png",
+            "ylabel": "Savings Decision\nDeviation from Baseline",
+            "diff_col": "diff_savings",
+        },
+        "wealth": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_wealth_by_age_at_first_care_vs_baseline.png",
+            "ylabel": "Wealth at Beginning of Period\nDeviation from Baseline",
+            "diff_col": "diff_wealth",
+        },
+        "savings_rate": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_rate_by_age_at_first_care_vs_baseline.png",
+            "ylabel": "Savings Rate\nDeviation from Baseline",
+            "diff_col": "diff_savings_rate",
         },
     }
 
@@ -896,17 +1069,28 @@ def task_plot_matched_differences_by_age_bins_at_first_care_vs_baseline(  # noqa
     )
 
     # Create outcome columns and merge
-    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_hfc")
-    baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_baseline")
+    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_o")
+    baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_c")
 
     # Merge on (agent, period) to get matched differences
     merged = hfc_cols.merge(baseline_cols, on=["agent", "period"], how="inner")
 
     # Compute differences (higher formal care costs - baseline)
-    outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly"]
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "job_offer",
+        "hours_weekly",
+        # Temporarily removed until data recreation is complete:
+        # "gross_labor_income",
+        # "savings",
+        # "wealth",
+        # "savings_rate",
+    ]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_hfc"] - merged[f"{outcome_name}_baseline"]
+            merged[f"{outcome_name}_o"] - merged[f"{outcome_name}_c"]
         )
 
     # Compute distance and age at first care from higher formal care costs
@@ -955,7 +1139,18 @@ def task_plot_matched_differences_by_age_bins_at_first_care_vs_baseline(  # noqa
     # Average differences by distance and age_bin
     prof = (
         merged.groupby(["distance_to_first_care", "age_bin_label"], observed=False)[
-            ["diff_work", "diff_ft", "diff_pt", "diff_job_offer", "diff_hours_weekly"]
+            [
+                "diff_work",
+                "diff_ft",
+                "diff_pt",
+                "diff_job_offer",
+                "diff_hours_weekly",
+                # Temporarily removed until data recreation is complete:
+                # "diff_gross_labor_income",
+                # "diff_savings",
+                # "diff_wealth",
+                # "diff_savings_rate",
+            ]
         ]
         .mean()
         .reset_index()
@@ -1002,6 +1197,30 @@ def task_plot_matched_differences_by_age_bins_at_first_care_vs_baseline(  # noqa
             "path": path_to_plot_working_hours,
             "ylabel": "Weekly Working Hours Difference\nDeviation from Baseline",
             "diff_col": "diff_hours_weekly",
+        },
+        "gross_labor_income": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_gross_labor_income_by_age_bins_at_first_care_vs_baseline.png",
+            "ylabel": "Gross Labor Income (Monthly)\nDeviation from Baseline",
+            "diff_col": "diff_gross_labor_income",
+        },
+        "savings": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_by_age_bins_at_first_care_vs_baseline.png",
+            "ylabel": "Savings Decision\nDeviation from Baseline",
+            "diff_col": "diff_savings",
+        },
+        "wealth": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_wealth_by_age_bins_at_first_care_vs_baseline.png",
+            "ylabel": "Wealth at Beginning of Period\nDeviation from Baseline",
+            "diff_col": "diff_wealth",
+        },
+        "savings_rate": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_rate_by_age_bins_at_first_care_vs_baseline.png",
+            "ylabel": "Savings Rate\nDeviation from Baseline",
+            "diff_col": "diff_savings_rate",
         },
     }
 
@@ -1070,6 +1289,7 @@ def task_plot_matched_differences_by_distance_by_care_demand(  # noqa: PLR0915
         pd.read_pickle(path_to_higher_formal_care_costs_data),
         pd.read_pickle(path_to_no_care_demand_data),
         ever_caregivers=ever_caregivers,
+        ever_care_demand=False,
     )
 
     # Calculate outcomes
@@ -1077,15 +1297,25 @@ def task_plot_matched_differences_by_distance_by_care_demand(  # noqa: PLR0915
     ncd_outcomes = calculate_outcomes(df_ncd, choice_set_type="no_care_demand")
 
     # Create outcome columns
-    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_hfc")
-    ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_ncd")
+    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_o")
+    ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_c")
 
     # Merge and compute differences
     merged = hfc_cols.merge(ncd_cols, on=["agent", "period"], how="inner")
-    outcome_names = ["work", "ft", "pt", "care"]
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "care",
+        # Temporarily removed until data recreation is complete:
+        # "gross_labor_income",
+        # "savings",
+        # "wealth",
+        # "savings_rate",
+    ]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_hfc"] - merged[f"{outcome_name}_ncd"]
+            merged[f"{outcome_name}_o"] - merged[f"{outcome_name}_c"]
         )
 
     # Compute distance to first care demand in higher formal care costs and attach
@@ -1233,6 +1463,7 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915
         pd.read_pickle(path_to_higher_formal_care_costs_data),
         pd.read_pickle(path_to_no_care_demand_data),
         ever_caregivers=ever_caregivers,
+        ever_care_demand=False,
     )
 
     # Calculate outcomes
@@ -1249,18 +1480,36 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915
         df_ncd, model_params, choice_set_type="no_care_demand"
     )
 
+    # Calculate additional outcomes (gross labor income, savings, wealth)
+    hfc_additional = calculate_additional_outcomes(df_hfc)
+    ncd_additional = calculate_additional_outcomes(df_ncd)
+    hfc_outcomes.update(hfc_additional)
+    ncd_outcomes.update(ncd_additional)
+
     # Create outcome columns and merge
-    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_hfc")
-    ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_ncd")
+    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_o")
+    ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_c")
 
     # Merge on (agent, period) to get matched differences
     merged = hfc_cols.merge(ncd_cols, on=["agent", "period"], how="inner")
 
     # Compute differences (higher formal care costs - no care demand)
-    outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly", "care"]
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "job_offer",
+        "hours_weekly",
+        "care",
+        # Temporarily removed until data recreation is complete:
+        # "gross_labor_income",
+        # "savings",
+        # "wealth",
+        # "savings_rate",
+    ]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_hfc"] - merged[f"{outcome_name}_ncd"]
+            merged[f"{outcome_name}_o"] - merged[f"{outcome_name}_c"]
         )
 
     # Compute distance and age at first care demand from higher formal care costs
@@ -1308,6 +1557,11 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915
                 "diff_job_offer",
                 "diff_hours_weekly",
                 "diff_care",
+                # Temporarily removed until data recreation is complete:
+                # "diff_gross_labor_income",
+                # "diff_savings",
+                # "diff_wealth",
+                # "diff_savings_rate",
             ]
         ]
         .mean()
@@ -1356,6 +1610,34 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915
             "diff_col": "diff_care",
             "xlabel": "Year relative to first care demand",
         },
+        "gross_labor_income": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_gross_labor_income_by_age_at_first_care_demand.png",
+            "ylabel": "Gross Labor Income (Monthly)\nDeviation from No Care Demand",
+            "diff_col": "diff_gross_labor_income",
+            "xlabel": "Year relative to first care demand",
+        },
+        "savings": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_by_age_at_first_care_demand.png",
+            "ylabel": "Savings Decision\nDeviation from No Care Demand",
+            "diff_col": "diff_savings",
+            "xlabel": "Year relative to first care demand",
+        },
+        "wealth": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_wealth_by_age_at_first_care_demand.png",
+            "ylabel": "Wealth at Beginning of Period\nDeviation from No Care Demand",
+            "diff_col": "diff_wealth",
+            "xlabel": "Year relative to first care demand",
+        },
+        "savings_rate": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_rate_by_age_at_first_care_demand.png",
+            "ylabel": "Savings Rate\nDeviation from No Care Demand",
+            "diff_col": "diff_savings_rate",
+            "xlabel": "Year relative to first care demand",
+        },
     }
 
     plot_all_outcomes_by_group(
@@ -1367,6 +1649,285 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915
         plot_configs=plot_configs,
         window=window,
         legend_title="Age at first care demand",
+    )
+
+
+@pytask.mark.counterfactual_differences_higher_formal_care_costs
+def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915
+    path_to_higher_formal_care_costs_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_higher_formal_care_costs_estimated_params.pkl",
+    path_to_no_care_demand_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_no_care_demand.pkl",
+    path_to_plot_work: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "higher_formal_care_costs"
+    / "vs_no_care_demand"
+    / "matched_differences_work_by_age.png",
+    path_to_options: Path = BLD / "model" / "options.pkl",
+    ever_caregivers: bool = True,
+    age_min: int = 30,
+    age_max: int = 100,
+) -> None:
+    """Compute matched period differences (higher-formal-care-costs - no-care-demand) by age."""
+    # Load and prepare data
+    df_hfc, df_ncd = prepare_dataframes_for_comparison(
+        pd.read_pickle(path_to_higher_formal_care_costs_data),
+        pd.read_pickle(path_to_no_care_demand_data),
+        ever_caregivers=ever_caregivers,
+        ever_care_demand=False,
+    )
+
+    # Calculate outcomes
+    hfc_outcomes = calculate_outcomes(df_hfc, choice_set_type="original")
+    ncd_outcomes = calculate_outcomes(df_ncd, choice_set_type="no_care_demand")
+
+    # Calculate working hours
+    options = pickle.load(path_to_options.open("rb"))
+    model_params = options["model_params"]
+    hfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_hfc, model_params, choice_set_type="original"
+    )
+    ncd_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_ncd, model_params, choice_set_type="no_care_demand"
+    )
+
+    # Calculate additional outcomes
+    hfc_additional = calculate_additional_outcomes(df_hfc)
+    ncd_additional = calculate_additional_outcomes(df_ncd)
+    hfc_outcomes.update(hfc_additional)
+    ncd_outcomes.update(ncd_additional)
+
+    # Create outcome columns and merge
+    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_o")
+    ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_c")
+
+    # Merge and compute differences
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "job_offer",
+        "hours_weekly",
+        "care",
+        # Temporarily removed until data recreation is complete:
+        # "gross_labor_income", "savings", "wealth", "savings_rate",
+    ]
+    merged = merge_and_compute_differences(hfc_cols, ncd_cols, outcome_names)
+
+    # Filter to age range and average by age
+    merged = merged[(merged["age"] >= age_min) & (merged["age"] <= age_max)]
+
+    prof = (
+        merged.groupby("age", observed=False)[
+            [f"diff_{name}" for name in outcome_names]
+        ]
+        .mean()
+        .reset_index()
+        .sort_values("age")
+    )
+
+    # Plot all outcomes
+    plot_configs = {
+        "work": {
+            "path": path_to_plot_work,
+            "ylabel": "Proportion Working\nDeviation from No Care Demand",
+            "diff_col": "diff_work",
+        },
+        "ft": {
+            "path": path_to_plot_work.parent / "matched_differences_ft_by_age.png",
+            "ylabel": "Proportion Full-Time Working\nDeviation from No Care Demand",
+            "diff_col": "diff_ft",
+        },
+        "pt": {
+            "path": path_to_plot_work.parent / "matched_differences_pt_by_age.png",
+            "ylabel": "Proportion Part-Time Working\nDeviation from No Care Demand",
+            "diff_col": "diff_pt",
+        },
+        "job_offer": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_job_offer_by_age.png",
+            "ylabel": "Job Offer Probability\nDeviation from No Care Demand",
+            "diff_col": "diff_job_offer",
+        },
+        "hours_weekly": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_hours_weekly_by_age.png",
+            "ylabel": "Weekly Working Hours\nDeviation from No Care Demand",
+            "diff_col": "diff_hours_weekly",
+        },
+        "care": {
+            "path": path_to_plot_work.parent / "matched_differences_care_by_age.png",
+            "ylabel": "Probability of Providing Care\nDeviation from No Care Demand",
+            "diff_col": "diff_care",
+        },
+        "gross_labor_income": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_gross_labor_income_by_age.png",
+            "ylabel": "Gross Labor Income (Monthly)\nDeviation from No Care Demand",
+            "diff_col": "diff_gross_labor_income",
+        },
+        "savings": {
+            "path": path_to_plot_work.parent / "matched_differences_savings_by_age.png",
+            "ylabel": "Savings Decision\nDeviation from No Care Demand",
+            "diff_col": "diff_savings",
+        },
+        "wealth": {
+            "path": path_to_plot_work.parent / "matched_differences_wealth_by_age.png",
+            "ylabel": "Wealth at Beginning of Period\nDeviation from No Care Demand",
+            "diff_col": "diff_wealth",
+        },
+        "savings_rate": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_rate_by_age.png",
+            "ylabel": "Savings Rate\nDeviation from No Care Demand",
+            "diff_col": "diff_savings_rate",
+        },
+    }
+
+    plot_all_outcomes_by_age(
+        prof=prof, plot_configs=plot_configs, age_min=age_min, age_max=age_max
+    )
+
+
+@pytask.mark.counterfactual_differences_higher_formal_care_costs
+def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915
+    path_to_higher_formal_care_costs_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_higher_formal_care_costs_estimated_params.pkl",
+    path_to_baseline_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params.pkl",
+    path_to_plot_work: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "higher_formal_care_costs"
+    / "vs_baseline"
+    / "matched_differences_work_by_age.png",
+    path_to_options: Path = BLD / "model" / "options.pkl",
+    ever_caregivers: bool = True,
+    age_min: int = 30,
+    age_max: int = 100,
+) -> None:
+    """Compute matched period differences (higher-formal-care-costs - baseline) by age."""
+    # Load and prepare data
+    df_hfc, df_baseline = prepare_dataframes_for_comparison(
+        pd.read_pickle(path_to_higher_formal_care_costs_data),
+        pd.read_pickle(path_to_baseline_data),
+        ever_caregivers=ever_caregivers,
+    )
+
+    # Calculate outcomes
+    hfc_outcomes = calculate_outcomes(df_hfc, choice_set_type="original")
+    baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
+
+    # Calculate working hours
+    options = pickle.load(path_to_options.open("rb"))
+    model_params = options["model_params"]
+    hfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_hfc, model_params, choice_set_type="original"
+    )
+    baseline_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_baseline, model_params, choice_set_type="original"
+    )
+
+    # Calculate additional outcomes
+    hfc_additional = calculate_additional_outcomes(df_hfc)
+    baseline_additional = calculate_additional_outcomes(df_baseline)
+    hfc_outcomes.update(hfc_additional)
+    baseline_outcomes.update(baseline_additional)
+
+    # Create outcome columns and merge
+    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_o")
+    baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_c")
+
+    # Merge and compute differences
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "job_offer",
+        "hours_weekly",
+        "care",
+        # Temporarily removed until data recreation is complete:
+        # "gross_labor_income", "savings", "wealth", "savings_rate",
+    ]
+    merged = merge_and_compute_differences(hfc_cols, baseline_cols, outcome_names)
+
+    # Filter to age range and average by age
+    merged = merged[(merged["age"] >= age_min) & (merged["age"] <= age_max)]
+
+    prof = (
+        merged.groupby("age", observed=False)[
+            [f"diff_{name}" for name in outcome_names]
+        ]
+        .mean()
+        .reset_index()
+        .sort_values("age")
+    )
+
+    # Plot all outcomes
+    plot_configs = {
+        "work": {
+            "path": path_to_plot_work,
+            "ylabel": "Proportion Working\nDeviation from Baseline",
+            "diff_col": "diff_work",
+        },
+        "ft": {
+            "path": path_to_plot_work.parent / "matched_differences_ft_by_age.png",
+            "ylabel": "Proportion Full-Time Working\nDeviation from Baseline",
+            "diff_col": "diff_ft",
+        },
+        "pt": {
+            "path": path_to_plot_work.parent / "matched_differences_pt_by_age.png",
+            "ylabel": "Proportion Part-Time Working\nDeviation from Baseline",
+            "diff_col": "diff_pt",
+        },
+        "job_offer": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_job_offer_by_age.png",
+            "ylabel": "Job Offer Probability\nDeviation from Baseline",
+            "diff_col": "diff_job_offer",
+        },
+        "hours_weekly": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_hours_weekly_by_age.png",
+            "ylabel": "Weekly Working Hours\nDeviation from Baseline",
+            "diff_col": "diff_hours_weekly",
+        },
+        "care": {
+            "path": path_to_plot_work.parent / "matched_differences_care_by_age.png",
+            "ylabel": "Probability of Providing Care\nDeviation from Baseline",
+            "diff_col": "diff_care",
+        },
+        "gross_labor_income": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_gross_labor_income_by_age.png",
+            "ylabel": "Gross Labor Income (Monthly)\nDeviation from Baseline",
+            "diff_col": "diff_gross_labor_income",
+        },
+        "savings": {
+            "path": path_to_plot_work.parent / "matched_differences_savings_by_age.png",
+            "ylabel": "Savings Decision\nDeviation from Baseline",
+            "diff_col": "diff_savings",
+        },
+        "wealth": {
+            "path": path_to_plot_work.parent / "matched_differences_wealth_by_age.png",
+            "ylabel": "Wealth at Beginning of Period\nDeviation from Baseline",
+            "diff_col": "diff_wealth",
+        },
+        "savings_rate": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_rate_by_age.png",
+            "ylabel": "Savings Rate\nDeviation from Baseline",
+            "diff_col": "diff_savings_rate",
+        },
+    }
+
+    plot_all_outcomes_by_age(
+        prof=prof, plot_configs=plot_configs, age_min=age_min, age_max=age_max
     )
 
 
@@ -1444,6 +2005,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR
         pd.read_pickle(path_to_higher_formal_care_costs_data),
         pd.read_pickle(path_to_no_care_demand_data),
         ever_caregivers=ever_caregivers,
+        ever_care_demand=False,
     )
 
     # Calculate outcomes
@@ -1460,18 +2022,36 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR
         df_ncd, model_params, choice_set_type="no_care_demand"
     )
 
+    # Calculate additional outcomes (gross labor income, savings, wealth)
+    hfc_additional = calculate_additional_outcomes(df_hfc)
+    ncd_additional = calculate_additional_outcomes(df_ncd)
+    hfc_outcomes.update(hfc_additional)
+    ncd_outcomes.update(ncd_additional)
+
     # Create outcome columns and merge
-    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_hfc")
-    ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_ncd")
+    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_o")
+    ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_c")
 
     # Merge on (agent, period) to get matched differences
     merged = hfc_cols.merge(ncd_cols, on=["agent", "period"], how="inner")
 
     # Compute differences (higher formal care costs - no care demand)
-    outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly", "care"]
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "job_offer",
+        "hours_weekly",
+        "care",
+        # Temporarily removed until data recreation is complete:
+        # "gross_labor_income",
+        # "savings",
+        # "wealth",
+        # "savings_rate",
+    ]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_hfc"] - merged[f"{outcome_name}_ncd"]
+            merged[f"{outcome_name}_o"] - merged[f"{outcome_name}_c"]
         )
 
     # Compute distance and age at first care demand from higher formal care costs
@@ -1530,6 +2110,11 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR
                 "diff_job_offer",
                 "diff_hours_weekly",
                 "diff_care",
+                # Temporarily removed until data recreation is complete:
+                # "diff_gross_labor_income",
+                # "diff_savings",
+                # "diff_wealth",
+                # "diff_savings_rate",
             ]
         ]
         .mean()
@@ -1589,6 +2174,34 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR
             "diff_col": "diff_care",
             "xlabel": "Year relative to first care demand",
         },
+        "gross_labor_income": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_gross_labor_income_by_age_bins_at_first_care_demand.png",
+            "ylabel": "Gross Labor Income (Monthly)\nDeviation from No Care Demand",
+            "diff_col": "diff_gross_labor_income",
+            "xlabel": "Year relative to first care demand",
+        },
+        "savings": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_by_age_bins_at_first_care_demand.png",
+            "ylabel": "Savings Decision\nDeviation from No Care Demand",
+            "diff_col": "diff_savings",
+            "xlabel": "Year relative to first care demand",
+        },
+        "wealth": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_wealth_by_age_bins_at_first_care_demand.png",
+            "ylabel": "Wealth at Beginning of Period\nDeviation from No Care Demand",
+            "diff_col": "diff_wealth",
+            "xlabel": "Year relative to first care demand",
+        },
+        "savings_rate": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_rate_by_age_bins_at_first_care_demand.png",
+            "ylabel": "Savings Rate\nDeviation from No Care Demand",
+            "diff_col": "diff_savings_rate",
+            "xlabel": "Year relative to first care demand",
+        },
     }
 
     plot_all_outcomes_by_group(
@@ -1600,6 +2213,285 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR
         plot_configs=plot_configs,
         window=window,
         legend_title="Age at first care demand",
+    )
+
+
+@pytask.mark.counterfactual_differences_higher_formal_care_costs
+def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915
+    path_to_higher_formal_care_costs_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_higher_formal_care_costs_estimated_params.pkl",
+    path_to_no_care_demand_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_no_care_demand.pkl",
+    path_to_plot_work: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "higher_formal_care_costs"
+    / "vs_no_care_demand"
+    / "matched_differences_work_by_age.png",
+    path_to_options: Path = BLD / "model" / "options.pkl",
+    ever_caregivers: bool = True,
+    age_min: int = 30,
+    age_max: int = 100,
+) -> None:
+    """Compute matched period differences (higher-formal-care-costs - no-care-demand) by age."""
+    # Load and prepare data
+    df_hfc, df_ncd = prepare_dataframes_for_comparison(
+        pd.read_pickle(path_to_higher_formal_care_costs_data),
+        pd.read_pickle(path_to_no_care_demand_data),
+        ever_caregivers=ever_caregivers,
+        ever_care_demand=False,
+    )
+
+    # Calculate outcomes
+    hfc_outcomes = calculate_outcomes(df_hfc, choice_set_type="original")
+    ncd_outcomes = calculate_outcomes(df_ncd, choice_set_type="no_care_demand")
+
+    # Calculate working hours
+    options = pickle.load(path_to_options.open("rb"))
+    model_params = options["model_params"]
+    hfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_hfc, model_params, choice_set_type="original"
+    )
+    ncd_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_ncd, model_params, choice_set_type="no_care_demand"
+    )
+
+    # Calculate additional outcomes
+    hfc_additional = calculate_additional_outcomes(df_hfc)
+    ncd_additional = calculate_additional_outcomes(df_ncd)
+    hfc_outcomes.update(hfc_additional)
+    ncd_outcomes.update(ncd_additional)
+
+    # Create outcome columns and merge
+    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_o")
+    ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_c")
+
+    # Merge and compute differences
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "job_offer",
+        "hours_weekly",
+        "care",
+        # Temporarily removed until data recreation is complete:
+        # "gross_labor_income", "savings", "wealth", "savings_rate",
+    ]
+    merged = merge_and_compute_differences(hfc_cols, ncd_cols, outcome_names)
+
+    # Filter to age range and average by age
+    merged = merged[(merged["age"] >= age_min) & (merged["age"] <= age_max)]
+
+    prof = (
+        merged.groupby("age", observed=False)[
+            [f"diff_{name}" for name in outcome_names]
+        ]
+        .mean()
+        .reset_index()
+        .sort_values("age")
+    )
+
+    # Plot all outcomes
+    plot_configs = {
+        "work": {
+            "path": path_to_plot_work,
+            "ylabel": "Proportion Working\nDeviation from No Care Demand",
+            "diff_col": "diff_work",
+        },
+        "ft": {
+            "path": path_to_plot_work.parent / "matched_differences_ft_by_age.png",
+            "ylabel": "Proportion Full-Time Working\nDeviation from No Care Demand",
+            "diff_col": "diff_ft",
+        },
+        "pt": {
+            "path": path_to_plot_work.parent / "matched_differences_pt_by_age.png",
+            "ylabel": "Proportion Part-Time Working\nDeviation from No Care Demand",
+            "diff_col": "diff_pt",
+        },
+        "job_offer": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_job_offer_by_age.png",
+            "ylabel": "Job Offer Probability\nDeviation from No Care Demand",
+            "diff_col": "diff_job_offer",
+        },
+        "hours_weekly": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_hours_weekly_by_age.png",
+            "ylabel": "Weekly Working Hours\nDeviation from No Care Demand",
+            "diff_col": "diff_hours_weekly",
+        },
+        "care": {
+            "path": path_to_plot_work.parent / "matched_differences_care_by_age.png",
+            "ylabel": "Probability of Providing Care\nDeviation from No Care Demand",
+            "diff_col": "diff_care",
+        },
+        "gross_labor_income": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_gross_labor_income_by_age.png",
+            "ylabel": "Gross Labor Income (Monthly)\nDeviation from No Care Demand",
+            "diff_col": "diff_gross_labor_income",
+        },
+        "savings": {
+            "path": path_to_plot_work.parent / "matched_differences_savings_by_age.png",
+            "ylabel": "Savings Decision\nDeviation from No Care Demand",
+            "diff_col": "diff_savings",
+        },
+        "wealth": {
+            "path": path_to_plot_work.parent / "matched_differences_wealth_by_age.png",
+            "ylabel": "Wealth at Beginning of Period\nDeviation from No Care Demand",
+            "diff_col": "diff_wealth",
+        },
+        "savings_rate": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_rate_by_age.png",
+            "ylabel": "Savings Rate\nDeviation from No Care Demand",
+            "diff_col": "diff_savings_rate",
+        },
+    }
+
+    plot_all_outcomes_by_age(
+        prof=prof, plot_configs=plot_configs, age_min=age_min, age_max=age_max
+    )
+
+
+@pytask.mark.counterfactual_differences_higher_formal_care_costs
+def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915
+    path_to_higher_formal_care_costs_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_higher_formal_care_costs_estimated_params.pkl",
+    path_to_baseline_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params.pkl",
+    path_to_plot_work: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "higher_formal_care_costs"
+    / "vs_baseline"
+    / "matched_differences_work_by_age.png",
+    path_to_options: Path = BLD / "model" / "options.pkl",
+    ever_caregivers: bool = True,
+    age_min: int = 30,
+    age_max: int = 100,
+) -> None:
+    """Compute matched period differences (higher-formal-care-costs - baseline) by age."""
+    # Load and prepare data
+    df_hfc, df_baseline = prepare_dataframes_for_comparison(
+        pd.read_pickle(path_to_higher_formal_care_costs_data),
+        pd.read_pickle(path_to_baseline_data),
+        ever_caregivers=ever_caregivers,
+    )
+
+    # Calculate outcomes
+    hfc_outcomes = calculate_outcomes(df_hfc, choice_set_type="original")
+    baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
+
+    # Calculate working hours
+    options = pickle.load(path_to_options.open("rb"))
+    model_params = options["model_params"]
+    hfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_hfc, model_params, choice_set_type="original"
+    )
+    baseline_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_baseline, model_params, choice_set_type="original"
+    )
+
+    # Calculate additional outcomes
+    hfc_additional = calculate_additional_outcomes(df_hfc)
+    baseline_additional = calculate_additional_outcomes(df_baseline)
+    hfc_outcomes.update(hfc_additional)
+    baseline_outcomes.update(baseline_additional)
+
+    # Create outcome columns and merge
+    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_o")
+    baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_c")
+
+    # Merge and compute differences
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "job_offer",
+        "hours_weekly",
+        "care",
+        # Temporarily removed until data recreation is complete:
+        # "gross_labor_income", "savings", "wealth", "savings_rate",
+    ]
+    merged = merge_and_compute_differences(hfc_cols, baseline_cols, outcome_names)
+
+    # Filter to age range and average by age
+    merged = merged[(merged["age"] >= age_min) & (merged["age"] <= age_max)]
+
+    prof = (
+        merged.groupby("age", observed=False)[
+            [f"diff_{name}" for name in outcome_names]
+        ]
+        .mean()
+        .reset_index()
+        .sort_values("age")
+    )
+
+    # Plot all outcomes
+    plot_configs = {
+        "work": {
+            "path": path_to_plot_work,
+            "ylabel": "Proportion Working\nDeviation from Baseline",
+            "diff_col": "diff_work",
+        },
+        "ft": {
+            "path": path_to_plot_work.parent / "matched_differences_ft_by_age.png",
+            "ylabel": "Proportion Full-Time Working\nDeviation from Baseline",
+            "diff_col": "diff_ft",
+        },
+        "pt": {
+            "path": path_to_plot_work.parent / "matched_differences_pt_by_age.png",
+            "ylabel": "Proportion Part-Time Working\nDeviation from Baseline",
+            "diff_col": "diff_pt",
+        },
+        "job_offer": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_job_offer_by_age.png",
+            "ylabel": "Job Offer Probability\nDeviation from Baseline",
+            "diff_col": "diff_job_offer",
+        },
+        "hours_weekly": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_hours_weekly_by_age.png",
+            "ylabel": "Weekly Working Hours\nDeviation from Baseline",
+            "diff_col": "diff_hours_weekly",
+        },
+        "care": {
+            "path": path_to_plot_work.parent / "matched_differences_care_by_age.png",
+            "ylabel": "Probability of Providing Care\nDeviation from Baseline",
+            "diff_col": "diff_care",
+        },
+        "gross_labor_income": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_gross_labor_income_by_age.png",
+            "ylabel": "Gross Labor Income (Monthly)\nDeviation from Baseline",
+            "diff_col": "diff_gross_labor_income",
+        },
+        "savings": {
+            "path": path_to_plot_work.parent / "matched_differences_savings_by_age.png",
+            "ylabel": "Savings Decision\nDeviation from Baseline",
+            "diff_col": "diff_savings",
+        },
+        "wealth": {
+            "path": path_to_plot_work.parent / "matched_differences_wealth_by_age.png",
+            "ylabel": "Wealth at Beginning of Period\nDeviation from Baseline",
+            "diff_col": "diff_wealth",
+        },
+        "savings_rate": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_rate_by_age.png",
+            "ylabel": "Savings Rate\nDeviation from Baseline",
+            "diff_col": "diff_savings_rate",
+        },
+    }
+
+    plot_all_outcomes_by_age(
+        prof=prof, plot_configs=plot_configs, age_min=age_min, age_max=age_max
     )
 
 
@@ -1662,16 +2554,32 @@ def task_plot_matched_differences_by_distance_by_care_demand_vs_baseline(  # noq
     hfc_outcomes = calculate_outcomes(df_hfc, choice_set_type="original")
     baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
 
+    # Calculate additional outcomes (gross labor income, savings, wealth, savings_rate)
+    hfc_additional = calculate_additional_outcomes(df_hfc)
+    baseline_additional = calculate_additional_outcomes(df_baseline)
+    hfc_outcomes.update(hfc_additional)
+    baseline_outcomes.update(baseline_additional)
+
     # Create outcome columns
-    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_hfc")
-    baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_baseline")
+    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_o")
+    baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_c")
 
     # Merge and compute differences
     merged = hfc_cols.merge(baseline_cols, on=["agent", "period"], how="inner")
-    outcome_names = ["work", "ft", "pt", "care"]
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "care",
+        # Temporarily removed until data recreation is complete:
+        # "gross_labor_income",
+        # "savings",
+        # "wealth",
+        # "savings_rate",
+    ]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_hfc"] - merged[f"{outcome_name}_baseline"]
+            merged[f"{outcome_name}_o"] - merged[f"{outcome_name}_c"]
         )
 
     # Compute distance to first care demand in higher formal care costs and attach
@@ -1834,17 +2742,29 @@ def task_plot_matched_differences_by_age_at_first_care_demand_vs_baseline(  # no
     )
 
     # Create outcome columns and merge
-    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_hfc")
-    baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_baseline")
+    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_o")
+    baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_c")
 
     # Merge on (agent, period) to get matched differences
     merged = hfc_cols.merge(baseline_cols, on=["agent", "period"], how="inner")
 
     # Compute differences (higher formal care costs - baseline)
-    outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly", "care"]
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "job_offer",
+        "hours_weekly",
+        "care",
+        # Temporarily removed until data recreation is complete:
+        # "gross_labor_income",
+        # "savings",
+        # "wealth",
+        # "savings_rate",
+    ]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_hfc"] - merged[f"{outcome_name}_baseline"]
+            merged[f"{outcome_name}_o"] - merged[f"{outcome_name}_c"]
         )
 
     # Compute distance and age at first care demand from higher formal care costs
@@ -1892,6 +2812,11 @@ def task_plot_matched_differences_by_age_at_first_care_demand_vs_baseline(  # no
                 "diff_job_offer",
                 "diff_hours_weekly",
                 "diff_care",
+                # Temporarily removed until data recreation is complete:
+                # "diff_gross_labor_income",
+                # "diff_savings",
+                # "diff_wealth",
+                # "diff_savings_rate",
             ]
         ]
         .mean()
@@ -1951,6 +2876,285 @@ def task_plot_matched_differences_by_age_at_first_care_demand_vs_baseline(  # no
         plot_configs=plot_configs,
         window=window,
         legend_title="Age at first care demand",
+    )
+
+
+@pytask.mark.counterfactual_differences_higher_formal_care_costs
+def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915
+    path_to_higher_formal_care_costs_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_higher_formal_care_costs_estimated_params.pkl",
+    path_to_no_care_demand_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_no_care_demand.pkl",
+    path_to_plot_work: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "higher_formal_care_costs"
+    / "vs_no_care_demand"
+    / "matched_differences_work_by_age.png",
+    path_to_options: Path = BLD / "model" / "options.pkl",
+    ever_caregivers: bool = True,
+    age_min: int = 30,
+    age_max: int = 100,
+) -> None:
+    """Compute matched period differences (higher-formal-care-costs - no-care-demand) by age."""
+    # Load and prepare data
+    df_hfc, df_ncd = prepare_dataframes_for_comparison(
+        pd.read_pickle(path_to_higher_formal_care_costs_data),
+        pd.read_pickle(path_to_no_care_demand_data),
+        ever_caregivers=ever_caregivers,
+        ever_care_demand=False,
+    )
+
+    # Calculate outcomes
+    hfc_outcomes = calculate_outcomes(df_hfc, choice_set_type="original")
+    ncd_outcomes = calculate_outcomes(df_ncd, choice_set_type="no_care_demand")
+
+    # Calculate working hours
+    options = pickle.load(path_to_options.open("rb"))
+    model_params = options["model_params"]
+    hfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_hfc, model_params, choice_set_type="original"
+    )
+    ncd_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_ncd, model_params, choice_set_type="no_care_demand"
+    )
+
+    # Calculate additional outcomes
+    hfc_additional = calculate_additional_outcomes(df_hfc)
+    ncd_additional = calculate_additional_outcomes(df_ncd)
+    hfc_outcomes.update(hfc_additional)
+    ncd_outcomes.update(ncd_additional)
+
+    # Create outcome columns and merge
+    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_o")
+    ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_c")
+
+    # Merge and compute differences
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "job_offer",
+        "hours_weekly",
+        "care",
+        # Temporarily removed until data recreation is complete:
+        # "gross_labor_income", "savings", "wealth", "savings_rate",
+    ]
+    merged = merge_and_compute_differences(hfc_cols, ncd_cols, outcome_names)
+
+    # Filter to age range and average by age
+    merged = merged[(merged["age"] >= age_min) & (merged["age"] <= age_max)]
+
+    prof = (
+        merged.groupby("age", observed=False)[
+            [f"diff_{name}" for name in outcome_names]
+        ]
+        .mean()
+        .reset_index()
+        .sort_values("age")
+    )
+
+    # Plot all outcomes
+    plot_configs = {
+        "work": {
+            "path": path_to_plot_work,
+            "ylabel": "Proportion Working\nDeviation from No Care Demand",
+            "diff_col": "diff_work",
+        },
+        "ft": {
+            "path": path_to_plot_work.parent / "matched_differences_ft_by_age.png",
+            "ylabel": "Proportion Full-Time Working\nDeviation from No Care Demand",
+            "diff_col": "diff_ft",
+        },
+        "pt": {
+            "path": path_to_plot_work.parent / "matched_differences_pt_by_age.png",
+            "ylabel": "Proportion Part-Time Working\nDeviation from No Care Demand",
+            "diff_col": "diff_pt",
+        },
+        "job_offer": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_job_offer_by_age.png",
+            "ylabel": "Job Offer Probability\nDeviation from No Care Demand",
+            "diff_col": "diff_job_offer",
+        },
+        "hours_weekly": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_hours_weekly_by_age.png",
+            "ylabel": "Weekly Working Hours\nDeviation from No Care Demand",
+            "diff_col": "diff_hours_weekly",
+        },
+        "care": {
+            "path": path_to_plot_work.parent / "matched_differences_care_by_age.png",
+            "ylabel": "Probability of Providing Care\nDeviation from No Care Demand",
+            "diff_col": "diff_care",
+        },
+        "gross_labor_income": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_gross_labor_income_by_age.png",
+            "ylabel": "Gross Labor Income (Monthly)\nDeviation from No Care Demand",
+            "diff_col": "diff_gross_labor_income",
+        },
+        "savings": {
+            "path": path_to_plot_work.parent / "matched_differences_savings_by_age.png",
+            "ylabel": "Savings Decision\nDeviation from No Care Demand",
+            "diff_col": "diff_savings",
+        },
+        "wealth": {
+            "path": path_to_plot_work.parent / "matched_differences_wealth_by_age.png",
+            "ylabel": "Wealth at Beginning of Period\nDeviation from No Care Demand",
+            "diff_col": "diff_wealth",
+        },
+        "savings_rate": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_rate_by_age.png",
+            "ylabel": "Savings Rate\nDeviation from No Care Demand",
+            "diff_col": "diff_savings_rate",
+        },
+    }
+
+    plot_all_outcomes_by_age(
+        prof=prof, plot_configs=plot_configs, age_min=age_min, age_max=age_max
+    )
+
+
+@pytask.mark.counterfactual_differences_higher_formal_care_costs
+def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915
+    path_to_higher_formal_care_costs_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_higher_formal_care_costs_estimated_params.pkl",
+    path_to_baseline_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params.pkl",
+    path_to_plot_work: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "higher_formal_care_costs"
+    / "vs_baseline"
+    / "matched_differences_work_by_age.png",
+    path_to_options: Path = BLD / "model" / "options.pkl",
+    ever_caregivers: bool = True,
+    age_min: int = 30,
+    age_max: int = 100,
+) -> None:
+    """Compute matched period differences (higher-formal-care-costs - baseline) by age."""
+    # Load and prepare data
+    df_hfc, df_baseline = prepare_dataframes_for_comparison(
+        pd.read_pickle(path_to_higher_formal_care_costs_data),
+        pd.read_pickle(path_to_baseline_data),
+        ever_caregivers=ever_caregivers,
+    )
+
+    # Calculate outcomes
+    hfc_outcomes = calculate_outcomes(df_hfc, choice_set_type="original")
+    baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
+
+    # Calculate working hours
+    options = pickle.load(path_to_options.open("rb"))
+    model_params = options["model_params"]
+    hfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_hfc, model_params, choice_set_type="original"
+    )
+    baseline_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_baseline, model_params, choice_set_type="original"
+    )
+
+    # Calculate additional outcomes
+    hfc_additional = calculate_additional_outcomes(df_hfc)
+    baseline_additional = calculate_additional_outcomes(df_baseline)
+    hfc_outcomes.update(hfc_additional)
+    baseline_outcomes.update(baseline_additional)
+
+    # Create outcome columns and merge
+    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_o")
+    baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_c")
+
+    # Merge and compute differences
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "job_offer",
+        "hours_weekly",
+        "care",
+        # Temporarily removed until data recreation is complete:
+        # "gross_labor_income", "savings", "wealth", "savings_rate",
+    ]
+    merged = merge_and_compute_differences(hfc_cols, baseline_cols, outcome_names)
+
+    # Filter to age range and average by age
+    merged = merged[(merged["age"] >= age_min) & (merged["age"] <= age_max)]
+
+    prof = (
+        merged.groupby("age", observed=False)[
+            [f"diff_{name}" for name in outcome_names]
+        ]
+        .mean()
+        .reset_index()
+        .sort_values("age")
+    )
+
+    # Plot all outcomes
+    plot_configs = {
+        "work": {
+            "path": path_to_plot_work,
+            "ylabel": "Proportion Working\nDeviation from Baseline",
+            "diff_col": "diff_work",
+        },
+        "ft": {
+            "path": path_to_plot_work.parent / "matched_differences_ft_by_age.png",
+            "ylabel": "Proportion Full-Time Working\nDeviation from Baseline",
+            "diff_col": "diff_ft",
+        },
+        "pt": {
+            "path": path_to_plot_work.parent / "matched_differences_pt_by_age.png",
+            "ylabel": "Proportion Part-Time Working\nDeviation from Baseline",
+            "diff_col": "diff_pt",
+        },
+        "job_offer": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_job_offer_by_age.png",
+            "ylabel": "Job Offer Probability\nDeviation from Baseline",
+            "diff_col": "diff_job_offer",
+        },
+        "hours_weekly": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_hours_weekly_by_age.png",
+            "ylabel": "Weekly Working Hours\nDeviation from Baseline",
+            "diff_col": "diff_hours_weekly",
+        },
+        "care": {
+            "path": path_to_plot_work.parent / "matched_differences_care_by_age.png",
+            "ylabel": "Probability of Providing Care\nDeviation from Baseline",
+            "diff_col": "diff_care",
+        },
+        "gross_labor_income": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_gross_labor_income_by_age.png",
+            "ylabel": "Gross Labor Income (Monthly)\nDeviation from Baseline",
+            "diff_col": "diff_gross_labor_income",
+        },
+        "savings": {
+            "path": path_to_plot_work.parent / "matched_differences_savings_by_age.png",
+            "ylabel": "Savings Decision\nDeviation from Baseline",
+            "diff_col": "diff_savings",
+        },
+        "wealth": {
+            "path": path_to_plot_work.parent / "matched_differences_wealth_by_age.png",
+            "ylabel": "Wealth at Beginning of Period\nDeviation from Baseline",
+            "diff_col": "diff_wealth",
+        },
+        "savings_rate": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_rate_by_age.png",
+            "ylabel": "Savings Rate\nDeviation from Baseline",
+            "diff_col": "diff_savings_rate",
+        },
+    }
+
+    plot_all_outcomes_by_age(
+        prof=prof, plot_configs=plot_configs, age_min=age_min, age_max=age_max
     )
 
 
@@ -2045,17 +3249,29 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_vs_baseline( 
     )
 
     # Create outcome columns and merge
-    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_hfc")
-    baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_baseline")
+    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_o")
+    baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_c")
 
     # Merge on (agent, period) to get matched differences
     merged = hfc_cols.merge(baseline_cols, on=["agent", "period"], how="inner")
 
     # Compute differences (higher formal care costs - baseline)
-    outcome_names = ["work", "ft", "pt", "job_offer", "hours_weekly", "care"]
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "job_offer",
+        "hours_weekly",
+        "care",
+        # Temporarily removed until data recreation is complete:
+        # "gross_labor_income",
+        # "savings",
+        # "wealth",
+        # "savings_rate",
+    ]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
-            merged[f"{outcome_name}_hfc"] - merged[f"{outcome_name}_baseline"]
+            merged[f"{outcome_name}_o"] - merged[f"{outcome_name}_c"]
         )
 
     # Compute distance and age at first care demand from higher formal care costs
@@ -2114,6 +3330,11 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_vs_baseline( 
                 "diff_job_offer",
                 "diff_hours_weekly",
                 "diff_care",
+                # Temporarily removed until data recreation is complete:
+                # "diff_gross_labor_income",
+                # "diff_savings",
+                # "diff_wealth",
+                # "diff_savings_rate",
             ]
         ]
         .mean()
@@ -2173,6 +3394,34 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_vs_baseline( 
             "diff_col": "diff_care",
             "xlabel": "Year relative to first care demand",
         },
+        "gross_labor_income": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_gross_labor_income_by_age_bins_at_first_care_demand_vs_baseline.png",
+            "ylabel": "Gross Labor Income (Monthly)\nDeviation from Baseline",
+            "diff_col": "diff_gross_labor_income",
+            "xlabel": "Year relative to first care demand",
+        },
+        "savings": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_by_age_bins_at_first_care_demand_vs_baseline.png",
+            "ylabel": "Savings Decision\nDeviation from Baseline",
+            "diff_col": "diff_savings",
+            "xlabel": "Year relative to first care demand",
+        },
+        "wealth": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_wealth_by_age_bins_at_first_care_demand_vs_baseline.png",
+            "ylabel": "Wealth at Beginning of Period\nDeviation from Baseline",
+            "diff_col": "diff_wealth",
+            "xlabel": "Year relative to first care demand",
+        },
+        "savings_rate": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_rate_by_age_bins_at_first_care_demand_vs_baseline.png",
+            "ylabel": "Savings Rate\nDeviation from Baseline",
+            "diff_col": "diff_savings_rate",
+            "xlabel": "Year relative to first care demand",
+        },
     }
 
     plot_all_outcomes_by_group(
@@ -2184,4 +3433,283 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_vs_baseline( 
         plot_configs=plot_configs,
         window=window,
         legend_title="Age at first care demand",
+    )
+
+
+@pytask.mark.counterfactual_differences_higher_formal_care_costs
+def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915
+    path_to_higher_formal_care_costs_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_higher_formal_care_costs_estimated_params.pkl",
+    path_to_no_care_demand_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_no_care_demand.pkl",
+    path_to_plot_work: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "higher_formal_care_costs"
+    / "vs_no_care_demand"
+    / "matched_differences_work_by_age.png",
+    path_to_options: Path = BLD / "model" / "options.pkl",
+    ever_caregivers: bool = True,
+    age_min: int = 30,
+    age_max: int = 100,
+) -> None:
+    """Compute matched period differences (higher-formal-care-costs - no-care-demand) by age."""
+    # Load and prepare data
+    df_hfc, df_ncd = prepare_dataframes_for_comparison(
+        pd.read_pickle(path_to_higher_formal_care_costs_data),
+        pd.read_pickle(path_to_no_care_demand_data),
+        ever_caregivers=ever_caregivers,
+        ever_care_demand=False,
+    )
+
+    # Calculate outcomes
+    hfc_outcomes = calculate_outcomes(df_hfc, choice_set_type="original")
+    ncd_outcomes = calculate_outcomes(df_ncd, choice_set_type="no_care_demand")
+
+    # Calculate working hours
+    options = pickle.load(path_to_options.open("rb"))
+    model_params = options["model_params"]
+    hfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_hfc, model_params, choice_set_type="original"
+    )
+    ncd_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_ncd, model_params, choice_set_type="no_care_demand"
+    )
+
+    # Calculate additional outcomes
+    hfc_additional = calculate_additional_outcomes(df_hfc)
+    ncd_additional = calculate_additional_outcomes(df_ncd)
+    hfc_outcomes.update(hfc_additional)
+    ncd_outcomes.update(ncd_additional)
+
+    # Create outcome columns and merge
+    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_o")
+    ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_c")
+
+    # Merge and compute differences
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "job_offer",
+        "hours_weekly",
+        "care",
+        # Temporarily removed until data recreation is complete:
+        # "gross_labor_income", "savings", "wealth", "savings_rate",
+    ]
+    merged = merge_and_compute_differences(hfc_cols, ncd_cols, outcome_names)
+
+    # Filter to age range and average by age
+    merged = merged[(merged["age"] >= age_min) & (merged["age"] <= age_max)]
+
+    prof = (
+        merged.groupby("age", observed=False)[
+            [f"diff_{name}" for name in outcome_names]
+        ]
+        .mean()
+        .reset_index()
+        .sort_values("age")
+    )
+
+    # Plot all outcomes
+    plot_configs = {
+        "work": {
+            "path": path_to_plot_work,
+            "ylabel": "Proportion Working\nDeviation from No Care Demand",
+            "diff_col": "diff_work",
+        },
+        "ft": {
+            "path": path_to_plot_work.parent / "matched_differences_ft_by_age.png",
+            "ylabel": "Proportion Full-Time Working\nDeviation from No Care Demand",
+            "diff_col": "diff_ft",
+        },
+        "pt": {
+            "path": path_to_plot_work.parent / "matched_differences_pt_by_age.png",
+            "ylabel": "Proportion Part-Time Working\nDeviation from No Care Demand",
+            "diff_col": "diff_pt",
+        },
+        "job_offer": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_job_offer_by_age.png",
+            "ylabel": "Job Offer Probability\nDeviation from No Care Demand",
+            "diff_col": "diff_job_offer",
+        },
+        "hours_weekly": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_hours_weekly_by_age.png",
+            "ylabel": "Weekly Working Hours\nDeviation from No Care Demand",
+            "diff_col": "diff_hours_weekly",
+        },
+        "care": {
+            "path": path_to_plot_work.parent / "matched_differences_care_by_age.png",
+            "ylabel": "Probability of Providing Care\nDeviation from No Care Demand",
+            "diff_col": "diff_care",
+        },
+        "gross_labor_income": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_gross_labor_income_by_age.png",
+            "ylabel": "Gross Labor Income (Monthly)\nDeviation from No Care Demand",
+            "diff_col": "diff_gross_labor_income",
+        },
+        "savings": {
+            "path": path_to_plot_work.parent / "matched_differences_savings_by_age.png",
+            "ylabel": "Savings Decision\nDeviation from No Care Demand",
+            "diff_col": "diff_savings",
+        },
+        "wealth": {
+            "path": path_to_plot_work.parent / "matched_differences_wealth_by_age.png",
+            "ylabel": "Wealth at Beginning of Period\nDeviation from No Care Demand",
+            "diff_col": "diff_wealth",
+        },
+        "savings_rate": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_rate_by_age.png",
+            "ylabel": "Savings Rate\nDeviation from No Care Demand",
+            "diff_col": "diff_savings_rate",
+        },
+    }
+
+    plot_all_outcomes_by_age(
+        prof=prof, plot_configs=plot_configs, age_min=age_min, age_max=age_max
+    )
+
+
+@pytask.mark.counterfactual_differences_higher_formal_care_costs
+def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915
+    path_to_higher_formal_care_costs_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_higher_formal_care_costs_estimated_params.pkl",
+    path_to_baseline_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params.pkl",
+    path_to_plot_work: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "higher_formal_care_costs"
+    / "vs_baseline"
+    / "matched_differences_work_by_age.png",
+    path_to_options: Path = BLD / "model" / "options.pkl",
+    ever_caregivers: bool = True,
+    age_min: int = 30,
+    age_max: int = 100,
+) -> None:
+    """Compute matched period differences (higher-formal-care-costs - baseline) by age."""
+    # Load and prepare data
+    df_hfc, df_baseline = prepare_dataframes_for_comparison(
+        pd.read_pickle(path_to_higher_formal_care_costs_data),
+        pd.read_pickle(path_to_baseline_data),
+        ever_caregivers=ever_caregivers,
+    )
+
+    # Calculate outcomes
+    hfc_outcomes = calculate_outcomes(df_hfc, choice_set_type="original")
+    baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
+
+    # Calculate working hours
+    options = pickle.load(path_to_options.open("rb"))
+    model_params = options["model_params"]
+    hfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_hfc, model_params, choice_set_type="original"
+    )
+    baseline_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_baseline, model_params, choice_set_type="original"
+    )
+
+    # Calculate additional outcomes
+    hfc_additional = calculate_additional_outcomes(df_hfc)
+    baseline_additional = calculate_additional_outcomes(df_baseline)
+    hfc_outcomes.update(hfc_additional)
+    baseline_outcomes.update(baseline_additional)
+
+    # Create outcome columns and merge
+    hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_o")
+    baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_c")
+
+    # Merge and compute differences
+    outcome_names = [
+        "work",
+        "ft",
+        "pt",
+        "job_offer",
+        "hours_weekly",
+        "care",
+        # Temporarily removed until data recreation is complete:
+        # "gross_labor_income", "savings", "wealth", "savings_rate",
+    ]
+    merged = merge_and_compute_differences(hfc_cols, baseline_cols, outcome_names)
+
+    # Filter to age range and average by age
+    merged = merged[(merged["age"] >= age_min) & (merged["age"] <= age_max)]
+
+    prof = (
+        merged.groupby("age", observed=False)[
+            [f"diff_{name}" for name in outcome_names]
+        ]
+        .mean()
+        .reset_index()
+        .sort_values("age")
+    )
+
+    # Plot all outcomes
+    plot_configs = {
+        "work": {
+            "path": path_to_plot_work,
+            "ylabel": "Proportion Working\nDeviation from Baseline",
+            "diff_col": "diff_work",
+        },
+        "ft": {
+            "path": path_to_plot_work.parent / "matched_differences_ft_by_age.png",
+            "ylabel": "Proportion Full-Time Working\nDeviation from Baseline",
+            "diff_col": "diff_ft",
+        },
+        "pt": {
+            "path": path_to_plot_work.parent / "matched_differences_pt_by_age.png",
+            "ylabel": "Proportion Part-Time Working\nDeviation from Baseline",
+            "diff_col": "diff_pt",
+        },
+        "job_offer": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_job_offer_by_age.png",
+            "ylabel": "Job Offer Probability\nDeviation from Baseline",
+            "diff_col": "diff_job_offer",
+        },
+        "hours_weekly": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_hours_weekly_by_age.png",
+            "ylabel": "Weekly Working Hours\nDeviation from Baseline",
+            "diff_col": "diff_hours_weekly",
+        },
+        "care": {
+            "path": path_to_plot_work.parent / "matched_differences_care_by_age.png",
+            "ylabel": "Probability of Providing Care\nDeviation from Baseline",
+            "diff_col": "diff_care",
+        },
+        "gross_labor_income": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_gross_labor_income_by_age.png",
+            "ylabel": "Gross Labor Income (Monthly)\nDeviation from Baseline",
+            "diff_col": "diff_gross_labor_income",
+        },
+        "savings": {
+            "path": path_to_plot_work.parent / "matched_differences_savings_by_age.png",
+            "ylabel": "Savings Decision\nDeviation from Baseline",
+            "diff_col": "diff_savings",
+        },
+        "wealth": {
+            "path": path_to_plot_work.parent / "matched_differences_wealth_by_age.png",
+            "ylabel": "Wealth at Beginning of Period\nDeviation from Baseline",
+            "diff_col": "diff_wealth",
+        },
+        "savings_rate": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_rate_by_age.png",
+            "ylabel": "Savings Rate\nDeviation from Baseline",
+            "diff_col": "diff_savings_rate",
+        },
+    }
+
+    plot_all_outcomes_by_age(
+        prof=prof, plot_configs=plot_configs, age_min=age_min, age_max=age_max
     )

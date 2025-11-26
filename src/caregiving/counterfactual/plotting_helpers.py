@@ -71,6 +71,7 @@ def prepare_dataframes_simple(
     df_o: pd.DataFrame,
     df_c: pd.DataFrame,
     ever_caregivers: bool,
+    ever_care_demand: bool = True,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Prepare DataFrames with simple outcome calculation pattern.
 
@@ -81,6 +82,7 @@ def prepare_dataframes_simple(
         df_o: Original DataFrame
         df_c: Counterfactual DataFrame
         ever_caregivers: If True, filter to ever-caregivers
+        ever_care_demand: If True, filter to agents who ever experienced care demand
 
     Returns:
         Tuple of prepared DataFrames
@@ -113,6 +115,12 @@ def prepare_dataframes_simple(
         caregiver_ids = df_o.loc[df_o["choice"].isin(care_codes), "agent"].unique()
         df_o = df_o[df_o["agent"].isin(caregiver_ids)].copy()
         df_c = df_c[df_c["agent"].isin(caregiver_ids)].copy()
+
+    # Ever-care-demand restriction
+    if ever_care_demand:
+        care_demand_ids = df_o.loc[df_o["care_demand"] > 0, "agent"].unique()
+        df_o = df_o[df_o["agent"].isin(care_demand_ids)].copy()
+        df_c = df_c[df_c["agent"].isin(care_demand_ids)].copy()
 
     return df_o, df_c
 
@@ -334,11 +342,17 @@ def plot_all_outcomes_by_group(
         default_xlabel: Default xlabel if not specified in config
     """
     for config in plot_configs.values():
+        # Skip configurations where the diff_col doesn't exist in the dataframe
+        diff_col = config["diff_col"]
+        if diff_col not in prof.columns:
+            print(f"Skipping plot for {diff_col} - column not found in dataframe")
+            continue
+
         plot_multi_line_differences_by_group(
             prof=prof,
             x_col=x_col,
             group_col=group_col,
-            diff_col=config["diff_col"],
+            diff_col=diff_col,
             groups=groups,
             colors=colors,
             path_to_plot=config["path"],
@@ -347,3 +361,80 @@ def plot_all_outcomes_by_group(
             window=window,
             legend_title=legend_title,
         )
+
+
+def plot_all_outcomes_by_age(
+    prof: pd.DataFrame,
+    plot_configs: dict[str, dict],
+    age_min: int = 30,
+    age_max: int = 100,
+) -> None:
+    """Plot all outcomes by age using the configurations provided.
+
+    Args:
+        prof: DataFrame with aggregated differences by age
+        plot_configs: Dictionary with plot configurations for each outcome
+        age_min: Minimum age for x-axis
+        age_max: Maximum age for x-axis
+    """
+    for config in plot_configs.values():
+        # Skip configurations where the diff_col doesn't exist in the dataframe
+        diff_col = config["diff_col"]
+        if diff_col not in prof.columns:
+            print(f"Skipping plot for {diff_col} - column not found in dataframe")
+            continue
+
+        plot_single_line_differences_by_age(
+            prof=prof,
+            path_to_plot=config["path"],
+            ylabel=config["ylabel"],
+            diff_col=diff_col,
+            age_min=age_min,
+            age_max=age_max,
+        )
+
+
+def plot_single_line_differences_by_age(
+    prof: pd.DataFrame,
+    path_to_plot: Path,
+    ylabel: str,
+    diff_col: str,
+    age_min: int = 30,
+    age_max: int = 100,
+) -> None:
+    """Plot a single outcome difference by age.
+
+    Args:
+        prof: DataFrame with age and difference columns
+        path_to_plot: Path to save the plot
+        ylabel: Y-axis label
+        diff_col: Column name for the difference values
+        age_min: Minimum age for x-axis
+        age_max: Maximum age for x-axis
+    """
+    plt.figure(figsize=(12, 7))
+
+    # Sort by age for proper line plotting
+    prof_sorted = prof.sort_values("age")
+
+    plt.plot(
+        prof_sorted["age"],
+        prof_sorted[diff_col],
+        color="black",
+        linewidth=2,
+        marker="o",
+        markersize=4,
+        markerfacecolor="black",
+        markeredgecolor="black",
+    )
+
+    plt.axhline(y=0, color="k", linestyle=":", alpha=0.5, linewidth=1)
+    plt.xlabel("Age", fontsize=14, fontweight="bold")
+    plt.ylabel(ylabel, fontsize=14, fontweight="bold")
+    plt.xlim(age_min, age_max)
+    plt.grid(True, alpha=0.2, linestyle="-", linewidth=0.5)
+    plt.tick_params(labelsize=12)
+
+    plt.tight_layout()
+    plt.savefig(path_to_plot, dpi=300, bbox_inches="tight", facecolor="white")
+    plt.close()

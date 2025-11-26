@@ -43,6 +43,13 @@ counterfactual_differences_lower_formal_care_costs = "Lower formal care costs co
 counterfactual_differences_higher_formal_care_costs = "Higher formal care costs counterfactual differences"
 counterfactual_differences_forced_care_demand_at_50 = "Forced care demand at 50 counterfactual differences"
 counterfactual_forced_care_demand_at_50 = "Forced care demand at 50 counterfactual tasks"
+# Age profile analysis
+counterfactual_differences_job_retention_age_profiles = "Job retention counterfactual age profile differences"
+counterfactual_differences_no_care_demand_age_profiles = "No care demand counterfactual age profile differences"
+counterfactual_differences_lower_formal_care_costs_age_profiles = "Lower formal care costs counterfactual age profile differences"
+counterfactual_differences_higher_formal_care_costs_age_profiles = "Higher formal care costs counterfactual age profile differences"
+# Temporary tasks
+temp_recreate_data = "Temporary data recreation tasks"
 # Career costs
 career_costs = "Career costs computation tasks"
 # Plotting

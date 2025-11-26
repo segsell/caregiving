@@ -46,8 +46,8 @@ def calc_care_benefits_and_costs_higher_formal_care_costs(
         + annual_care_benefits * informal_care_solo
     )
 
-    # Formal care costs are 50% more expensive (multiply by 1.5)
-    annual_care_costs = options["formal_care_costs"] * 12 * 1.5
+    # Formal care costs are 100% more expensive (multiply by 2.0)
+    annual_care_costs = options["formal_care_costs"] * 12 * 2.0
     annual_care_costs_weighted = (
         annual_care_costs * 0.5 * has_sister + annual_care_costs * (1 - has_sister)
     ) * formal_care

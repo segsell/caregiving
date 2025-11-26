@@ -124,11 +124,11 @@ def simulate_scenario(
 
     part_time_values = PART_TIME.ravel().tolist()
     full_time_values = FULL_TIME.ravel().tolist()
+    work_values = part_time_values + full_time_values
 
     sex_var = SEX
 
     for edu_var in range(model_params["n_education_types"]):
-
         # full-time
         df.loc[
             df["choice"].isin(full_time_values) & (df["education"] == edu_var),
@@ -157,6 +157,37 @@ def simulate_scenario(
     # periodic savings and savings rate
     df["savings_dec"] = df["total_income"] - df["consumption"]
     df["savings_rate"] = df["savings_dec"] / df["total_income"]
+
+    # ===============================================================================
+    # Gross labor income computation
+    # ===============================================================================
+
+    # Convert pandas Series to numpy arrays for JAX
+    lagged_choice_array = np.asarray(df["lagged_choice"])
+    experience_years_array = np.asarray(df["exp_years"])
+    education_array = np.asarray(df["education"])
+    income_shock_array = np.asarray(df["income_shock"])
+
+    # Vectorized gross labor income calculation
+    vectorized_calc_gross_labor_income = jax.vmap(
+        lambda lc, exp, edu, shock: calculate_gross_labor_income(
+            lagged_choice=lc,
+            experience_years=exp,
+            education=edu,
+            sex=sex_var,
+            income_shock=shock,
+            options=model_params,
+        )
+    )
+    gross_labor_income_array = vectorized_calc_gross_labor_income(
+        lagged_choice_array,
+        experience_years_array,
+        education_array,
+        income_shock_array,
+    )
+    df["gross_labor_income"] = gross_labor_income_array * df["lagged_choice"].isin(
+        work_values
+    )
 
     # # Caregiving
     # df["informal_care"] = np.nan

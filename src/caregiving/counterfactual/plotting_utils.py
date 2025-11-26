@@ -79,7 +79,8 @@ def prepare_single_dataframe(
 def prepare_dataframes_for_comparison(
     df_o: pd.DataFrame,
     df_c: pd.DataFrame,
-    ever_caregivers: bool = True,
+    ever_caregivers: bool = False,
+    ever_care_demand: bool = True,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Prepare DataFrames for comparison by standardizing structure.
 
@@ -88,11 +89,13 @@ def prepare_dataframes_for_comparison(
     2. Ensures agent/period columns exist
     3. Flattens MultiIndex if needed
     4. Optionally filters to ever-caregivers
+    5. Optionally filters to agents who ever experience care demand
 
     Args:
         df_o: Original scenario DataFrame
         df_c: Counterfactual scenario DataFrame
         ever_caregivers: If True, filter to agents who ever provided care
+        ever_care_demand: If True, filter to agents who ever experienced care demand
 
     Returns:
         Tuple of (df_o_prepared, df_c_prepared)
@@ -125,6 +128,12 @@ def prepare_dataframes_for_comparison(
         caregiver_ids = df_o.loc[df_o["choice"].isin(care_codes), "agent"].unique()
         df_o = df_o[df_o["agent"].isin(caregiver_ids)].copy()
         df_c = df_c[df_c["agent"].isin(caregiver_ids)].copy()
+
+    # Ever-care-demand restriction
+    if ever_care_demand:
+        care_demand_ids = df_o.loc[df_o["care_demand"] > 0, "agent"].unique()
+        df_o = df_o[df_o["agent"].isin(care_demand_ids)].copy()
+        df_c = df_c[df_c["agent"].isin(care_demand_ids)].copy()
 
     return df_o, df_c
 
@@ -176,6 +185,49 @@ def calculate_outcomes(
         "job_offer": (df["job_offer"] == 1).astype(float).values,
         "care": df["choice"].isin(care_values).astype(float).values,
     }
+
+    return outcomes
+
+
+def calculate_additional_outcomes(df: pd.DataFrame) -> dict[str, np.ndarray]:
+    """Extract additional outcomes (gross labor income, savings, wealth, savings_rate).
+
+    Args:
+        df: DataFrame with 'gross_labor_income', 'savings_dec', 'wealth_at_beginning',
+            'savings_rate'
+
+    Returns:
+        Dictionary with keys: 'gross_labor_income', 'savings', 'wealth', 'savings_rate'
+        Values are numpy arrays
+    """
+    outcomes = {}
+
+    # Gross labor income (convert from annual to monthly)
+    # Note: gross_labor_income is ALWAYS stored as ANNUAL in the simulated data
+    # (calculated using av_annual_hours_pt/ft), so we always divide by 12
+    if "gross_labor_income" in df.columns:
+        outcomes["gross_labor_income"] = (df["gross_labor_income"] / 12).values
+    else:
+        # If column doesn't exist, create zeros
+        outcomes["gross_labor_income"] = np.zeros(len(df))
+
+    # Savings decision
+    if "savings_dec" in df.columns:
+        outcomes["savings"] = df["savings_dec"].values
+    else:
+        outcomes["savings"] = np.zeros(len(df))
+
+    # Wealth at beginning of period
+    if "wealth_at_beginning" in df.columns:
+        outcomes["wealth"] = df["wealth_at_beginning"].values
+    else:
+        outcomes["wealth"] = np.zeros(len(df))
+
+    # Savings rate
+    if "savings_rate" in df.columns:
+        outcomes["savings_rate"] = df["savings_rate"].values
+    else:
+        outcomes["savings_rate"] = np.zeros(len(df))
 
     return outcomes
 
@@ -247,7 +299,7 @@ def create_outcome_columns(
     Returns:
         DataFrame with agent, period, and outcome columns with suffix
     """
-    cols = df[["agent", "period"]].copy()
+    cols = df[["agent", "period", "age"]].copy()
 
     for outcome_name, outcome_array in outcomes_dict.items():
         cols[f"{outcome_name}{suffix}"] = outcome_array
@@ -270,8 +322,8 @@ def merge_and_compute_differences(
     Returns:
         Merged DataFrame with difference columns (diff_*)
     """
-    # Merge on (agent, period) to get matched differences
-    merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
+    # Merge on (agent, period, age) to get matched differences
+    merged = o_cols.merge(c_cols, on=["agent", "period", "age"], how="inner")
 
     # Compute differences (original - counterfactual)
     for outcome_name in outcome_names:

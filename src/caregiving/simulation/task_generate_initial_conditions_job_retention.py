@@ -42,7 +42,6 @@ def task_generate_start_states_for_solution_job_retention(
     states["job_before_caregiving"] = jnp.zeros_like(
         states["experience"], dtype=jnp.uint8
     )
-    states["job_offer"] = jnp.ones_like(states["experience"], dtype=jnp.uint8)
 
     # Save job retention states
     with path_to_save_discrete_states.open("wb") as f:
