@@ -74,4 +74,5 @@ dependencies:
 
     # either install the most recent version of dcegm from github, or clone the
     # repository to the parent folder and install in editable mode
+    # - git+https://github.com/OpenSourceEconomics/dcegm.git@54b9cbb
     - -e dcegm
