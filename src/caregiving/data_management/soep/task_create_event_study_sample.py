@@ -386,6 +386,19 @@ def create_parent_info(df, filter_missing=False):
         df_age["father_alive"] == 1, df_age["father_age"], np.nan
     )
 
+    # Create death indicators: 1 if parent died this year (syear == death year)
+    df_age["mother_died_this_year"] = 0
+    df_age.loc[
+        (df_age["mydeath"].notna()) & (df_age["syear"] == df_age["mydeath"]),
+        "mother_died_this_year",
+    ] = 1
+
+    df_age["father_died_this_year"] = 0
+    df_age.loc[
+        (df_age["fydeath"].notna()) & (df_age["syear"] == df_age["fydeath"]),
+        "father_died_this_year",
+    ] = 1
+
     df_age.set_index(["pid", "syear"], inplace=True)
 
     return df_age

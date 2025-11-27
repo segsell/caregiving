@@ -114,7 +114,9 @@ jax.config.update("jax_enable_x64", True)
 #         ].copy()
 
 #     # Compute labor supply shares by age for both scenarios
-#     original_shares = compute_labor_supply_shares_by_age(df_original, is_original=True)
+#     original_shares = compute_labor_supply_shares_by_age(
+#         df_original, is_original=True
+#     )
 #     no_care_demand_shares = compute_labor_supply_shares_by_age(
 #         df_no_care_demand, is_original=False
 #     )
@@ -171,7 +173,9 @@ jax.config.update("jax_enable_x64", True)
 #         df_local.groupby("age", observed=False)["choice_group"]
 #         .value_counts(normalize=True)
 #         .unstack(fill_value=0)
-#         .rename(columns={0: "retired", 1: "unemployed", 2: "part_time", 3: "full_time"})
+#         .rename(
+#             columns={0: "retired", 1: "unemployed", 2: "part_time", 3: "full_time"}
+#         )
 #         .reset_index()
 #     )
 
@@ -404,7 +408,9 @@ jax.config.update("jax_enable_x64", True)
 #     df_original = df_original[df_original["health"] != DEAD].copy()
 #     df_no_care_demand = df_no_care_demand[df_no_care_demand["health"] != DEAD].copy()
 
-#     shares_original = compute_labor_supply_shares_by_age(df_original, is_original=True)
+#     shares_original = compute_labor_supply_shares_by_age(
+#         df_original, is_original=True
+#     )
 #     shares_ncd = compute_labor_supply_shares_by_age(
 #         df_no_care_demand, is_original=False
 #     )
@@ -666,7 +672,9 @@ jax.config.update("jax_enable_x64", True)
 #         else np.asarray(df["choice"])
 #     )
 #     has_sister_array = np.asarray(df.get("has_sister", np.zeros(len(df), dtype=int)))
-#     care_demand_array = np.asarray(df.get("care_demand", np.zeros(len(df), dtype=int)))
+#     care_demand_array = np.asarray(
+#         df.get("care_demand", np.zeros(len(df), dtype=int))
+#     )
 
 #     # unemployment benefits
 #     v_unemp = jax.vmap(
@@ -773,7 +781,9 @@ jax.config.update("jax_enable_x64", True)
 #     return df
 
 
-# def _compute_hourly_wage(df: pd.DataFrame, gross_col: str, hours_col: str) -> pd.Series:
+# def _compute_hourly_wage(
+#     df: pd.DataFrame, gross_col: str, hours_col: str
+# ) -> pd.Series:
 #     hours = df[hours_col]
 #     return np.where(hours > 0, df[gross_col] / hours, np.nan)
 
@@ -870,7 +880,8 @@ jax.config.update("jax_enable_x64", True)
 #     path_to_plot: Path,
 #     x_window: int = 16,
 # ) -> None:
-#     """Plot mean work, ft, pt by distance_to_first_care for both scenarios (6 lines)."""
+#     """Plot mean work, ft, pt by distance_to_first_care for both
+#     scenarios (6 lines)."""
 
 #     # Build indicators
 #     work_o = (
@@ -1710,7 +1721,11 @@ jax.config.update("jax_enable_x64", True)
 #     for curr in curr_order:
 #         vals = table[curr].to_numpy()
 #         plt.bar(
-#             valid_prev, vals, bottom=bottom, color=colors.get(curr, "gray"), label=curr
+#             valid_prev,
+#             vals,
+#             bottom=bottom,
+#             color=colors.get(curr, "gray"),
+#             label=curr
 #         )
 #         bottom += vals
 
@@ -1782,7 +1797,8 @@ jax.config.update("jax_enable_x64", True)
 #         & (df["distance_to_first_care"] <= window)
 #     ]
 
-#     # Compute normalized shares by distance using a simple value_counts(normalize=True)
+#     # Compute normalized shares by distance using
+#     # a simple value_counts(normalize=True)
 #     order = ["Retired", "Unemployed", "Part-time", "Full-time"]
 #     shares = (
 #         df.groupby("distance_to_first_care", observed=False)["group"]
@@ -2028,7 +2044,11 @@ jax.config.update("jax_enable_x64", True)
 #     for curr in curr_order:
 #         vals = tab[curr].to_numpy()
 #         plt.bar(
-#             prev_order, vals, bottom=bottom, color=colors.get(curr, "gray"), label=curr
+#             prev_order,
+#             vals,
+#             bottom=bottom,
+#             color=colors.get(curr, "gray"),
+#             label=curr
 #         )
 #         bottom += vals
 

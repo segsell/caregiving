@@ -93,11 +93,12 @@ def create_age_bins(start_age, end_age, bin_size, min_remainder_size=2):
             - If jax_format=True: list of (start, end) tuples
 
     Examples:
-        >>> create_age_bins(45, 68, 3, 2)
+        >>> create_age_bins(45, 68, 3, 2)  # doctest: +NORMALIZE_WHITESPACE
         ([45, 48, 51, 54, 57, 60, 63, 66, 69],
-         ['45_47', '48_50', '51_53', '54_56', '57_59', '60_62', '63_65', '66_68'])
+         ['45_47', '48_50', '51_53', '54_56', '57_59',
+          '60_62', '63_65', '66_68'])
 
-        >>> create_age_bins(45, 69, 5, 2)
+        >>> create_age_bins(45, 69, 5, 2)  # doctest: +NORMALIZE_WHITESPACE
         ([45, 50, 55, 60, 65, 70],
          ['45_49', '50_54', '55_59', '60_64', '65_69'])
 
