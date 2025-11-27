@@ -360,7 +360,7 @@ def build_simulation_df_with_income_components(sim_dict, options, params):
     # Total net income = labor income + pension income + child benefits + care benefits
     df["total_net_income"] = (
         df["gross_labor_income"]
-        # + df["gross_pension_income"]
+        + df["gross_pension_income"]
         + df["child_benefits"]
         + df["care_benefits_and_costs"]
     )
