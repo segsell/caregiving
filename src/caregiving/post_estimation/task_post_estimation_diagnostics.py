@@ -19,7 +19,7 @@ from caregiving.model.shared import (
 )
 
 
-@pytask.mark.post_estimation
+# @pytask.mark.post_estimation
 def task_post_estimation_diagnostics(
     path_to_simulated_data: Path = BLD
     / "solve_and_simulate"
@@ -27,9 +27,30 @@ def task_post_estimation_diagnostics(
     path_to_save_summary: Annotated[Path, Product] = BLD
     / "post_estimation"
     / "summary_statistics.csv",
-    path_to_save_plots_dir: Annotated[Path, Product] = BLD
+    path_to_care_demand_plot: Annotated[Path, Product] = BLD
     / "post_estimation"
-    / "plots",
+    / "plots"
+    / "care_demand_by_age_detailed.png",
+    path_to_choice_plot: Annotated[Path, Product] = BLD
+    / "post_estimation"
+    / "plots"
+    / "choice_distribution_by_age.png",
+    path_to_wealth_plot: Annotated[Path, Product] = BLD
+    / "post_estimation"
+    / "plots"
+    / "wealth_by_age.png",
+    path_to_demographics_plot: Annotated[Path, Product] = BLD
+    / "post_estimation"
+    / "plots"
+    / "care_demand_by_demographics.png",
+    path_to_health_plot: Annotated[Path, Product] = BLD
+    / "post_estimation"
+    / "plots"
+    / "health_patterns_by_age.png",
+    path_to_experience_plot: Annotated[Path, Product] = BLD
+    / "post_estimation"
+    / "plots"
+    / "experience_patterns_by_age.png",
 ) -> None:
     """Generate comprehensive post-estimation diagnostics.
 
@@ -45,7 +66,7 @@ def task_post_estimation_diagnostics(
     df = pd.read_pickle(path_to_simulated_data)
 
     # Create output directories
-    path_to_save_plots_dir.mkdir(parents=True, exist_ok=True)
+    path_to_care_demand_plot.parent.mkdir(parents=True, exist_ok=True)
 
     # Filter to alive agents
     df_alive = df[df["health"] != DEAD].copy()
@@ -60,10 +81,18 @@ def task_post_estimation_diagnostics(
     summary_stats.to_csv(path_to_save_summary, index=True)
 
     # Generate diagnostic plots
-    create_diagnostic_plots(df_alive, path_to_save_plots_dir)
+    plot_paths = {
+        "care_demand": path_to_care_demand_plot,
+        "choice": path_to_choice_plot,
+        "wealth": path_to_wealth_plot,
+        "demographics": path_to_demographics_plot,
+        "health": path_to_health_plot,
+        "experience": path_to_experience_plot,
+    }
+    create_diagnostic_plots(df_alive, plot_paths)
 
     print(f"Summary statistics saved to: {path_to_save_summary}")
-    print(f"Diagnostic plots saved to: {path_to_save_plots_dir}")
+    print(f"Diagnostic plots saved to: {path_to_care_demand_plot.parent}")
 
 
 def generate_summary_statistics(df: pd.DataFrame) -> pd.DataFrame:
@@ -132,7 +161,7 @@ def generate_summary_statistics(df: pd.DataFrame) -> pd.DataFrame:
     return summary_df
 
 
-def create_diagnostic_plots(df: pd.DataFrame, output_dir: Path) -> None:
+def create_diagnostic_plots(df: pd.DataFrame, plot_paths: dict[str, Path]) -> None:
     """Create comprehensive diagnostic plots."""
 
     # Set style
@@ -140,25 +169,25 @@ def create_diagnostic_plots(df: pd.DataFrame, output_dir: Path) -> None:
     sns.set_palette("husl")
 
     # 1. Care demand by age (detailed)
-    create_care_demand_by_age_plot(df, output_dir)
+    create_care_demand_by_age_plot(df, plot_paths["care_demand"])
 
     # 2. Choice distribution by age
-    create_choice_distribution_by_age_plot(df, output_dir)
+    create_choice_distribution_by_age_plot(df, plot_paths["choice"])
 
     # 3. Wealth accumulation by age
-    create_wealth_by_age_plot(df, output_dir)
+    create_wealth_by_age_plot(df, plot_paths["wealth"])
 
     # 4. Care demand by demographics
-    create_care_demand_by_demographics_plot(df, output_dir)
+    create_care_demand_by_demographics_plot(df, plot_paths["demographics"])
 
     # 5. Health transition patterns
-    create_health_patterns_plot(df, output_dir)
+    create_health_patterns_plot(df, plot_paths["health"])
 
     # 6. Experience accumulation
-    create_experience_patterns_plot(df, output_dir)
+    create_experience_patterns_plot(df, plot_paths["experience"])
 
 
-def create_care_demand_by_age_plot(df: pd.DataFrame, output_dir: Path) -> None:
+def create_care_demand_by_age_plot(df: pd.DataFrame, output_path: Path) -> None:
     """Create detailed care demand by age plot."""
 
     # Calculate shares by age
@@ -230,13 +259,11 @@ def create_care_demand_by_age_plot(df: pd.DataFrame, output_dir: Path) -> None:
     ax2.grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig(
-        output_dir / "care_demand_by_age_detailed.png", dpi=300, bbox_inches="tight"
-    )
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close()
 
 
-def create_choice_distribution_by_age_plot(df: pd.DataFrame, output_dir: Path) -> None:
+def create_choice_distribution_by_age_plot(df: pd.DataFrame, output_path: Path) -> None:
     """Create choice distribution by age plot."""
 
     # Calculate choice shares by age
@@ -268,13 +295,11 @@ def create_choice_distribution_by_age_plot(df: pd.DataFrame, output_dir: Path) -
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y:.0%}"))
 
     plt.tight_layout()
-    plt.savefig(
-        output_dir / "choice_distribution_by_age.png", dpi=300, bbox_inches="tight"
-    )
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close()
 
 
-def create_wealth_by_age_plot(df: pd.DataFrame, output_dir: Path) -> None:
+def create_wealth_by_age_plot(df: pd.DataFrame, output_path: Path) -> None:
     """Create wealth accumulation by age plot."""
 
     if "savings" not in df.columns or "consumption" not in df.columns:
@@ -321,11 +346,13 @@ def create_wealth_by_age_plot(df: pd.DataFrame, output_dir: Path) -> None:
     ax.grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig(output_dir / "wealth_by_age.png", dpi=300, bbox_inches="tight")
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close()
 
 
-def create_care_demand_by_demographics_plot(df: pd.DataFrame, output_dir: Path) -> None:
+def create_care_demand_by_demographics_plot(
+    df: pd.DataFrame, output_path: Path
+) -> None:
     """Create care demand by demographics plot."""
 
     fig, axes = plt.subplots(2, 2, figsize=(15, 12))
@@ -372,13 +399,11 @@ def create_care_demand_by_demographics_plot(df: pd.DataFrame, output_dir: Path) 
     axes[1, 1].yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y:.1%}"))
 
     plt.tight_layout()
-    plt.savefig(
-        output_dir / "care_demand_by_demographics.png", dpi=300, bbox_inches="tight"
-    )
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close()
 
 
-def create_health_patterns_plot(df: pd.DataFrame, output_dir: Path) -> None:
+def create_health_patterns_plot(df: pd.DataFrame, output_path: Path) -> None:
     """Create health transition patterns plot."""
 
     # Health distribution by age
@@ -415,11 +440,11 @@ def create_health_patterns_plot(df: pd.DataFrame, output_dir: Path) -> None:
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y:.0%}"))
 
     plt.tight_layout()
-    plt.savefig(output_dir / "health_patterns_by_age.png", dpi=300, bbox_inches="tight")
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close()
 
 
-def create_experience_patterns_plot(df: pd.DataFrame, output_dir: Path) -> None:
+def create_experience_patterns_plot(df: pd.DataFrame, output_path: Path) -> None:
     """Create experience accumulation patterns plot."""
 
     if "experience" not in df.columns:
@@ -464,7 +489,5 @@ def create_experience_patterns_plot(df: pd.DataFrame, output_dir: Path) -> None:
     ax.grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig(
-        output_dir / "experience_patterns_by_age.png", dpi=300, bbox_inches="tight"
-    )
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close()
