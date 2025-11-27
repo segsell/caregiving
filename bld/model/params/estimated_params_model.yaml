@@ -58,8 +58,10 @@ disutil_pt_work_high_bad: 0.029511234012173773
 disutil_pt_work_high_good: 0.6203954063226882
 disutil_pt_work_low_bad: 0.16169432917255835
 disutil_pt_work_low_good: 0.41353654980260945
-disutil_unemployed_high_women: 0.5474194233240322
-disutil_unemployed_low_women: 0.47471439866090204
+disutil_unemployed_high: 0.5474194233240322
+disutil_unemployed_low: 0.47471439866090204
+# disutil_unemployed_high_women: 0.5474194233240322
+# disutil_unemployed_low_women: 0.47471439866090204
 disutil_children_ft_work_high_informal_care: 0.15198791954515214
 disutil_children_ft_work_low_informal_care: 0.030996509210490453
 disutil_children_pt_work_high_informal_care: -0.00637550149479095

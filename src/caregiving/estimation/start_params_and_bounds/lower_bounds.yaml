@@ -33,12 +33,10 @@ disutil_pt_work_low_good: 1.0e-12
 disutil_pt_work_low_bad: 1.0e-12
 disutil_pt_work_low: 1.0e-12
 
-disutil_unemployed_low_women: 1.0e-12
-disutil_unemployed_high_women: 1.0e-12
-disutil_unemployed_high_bad_women: 1.0e-12
-disutil_unemployed_high_good_women: 1.0e-12
-disutil_unemployed_low_bad_women: 1.0e-12
-disutil_unemployed_low_good_women: 1.0e-12
+disutil_unemployed_high_bad: 1.0e-12
+disutil_unemployed_high_good: 1.0e-12
+disutil_unemployed_low_bad: 1.0e-12
+disutil_unemployed_low_good: 1.0e-12
 
 disutil_children_unemployed_low: -5
 disutil_children_unemployed_high: -5
