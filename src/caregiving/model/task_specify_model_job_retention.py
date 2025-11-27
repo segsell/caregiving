@@ -8,7 +8,6 @@ import jax.numpy as jnp
 import numpy as np
 import pytask
 import yaml
-from dcegm.pre_processing.setup_model import setup_and_save_model
 from pytask import Product
 
 from caregiving.config import BLD
@@ -30,8 +29,10 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
+from dcegm.pre_processing.setup_model import setup_and_save_model
 
 
+@pytask.mark.skip()
 @pytask.mark.job_retention
 def task_specify_model_job_retention(
     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",

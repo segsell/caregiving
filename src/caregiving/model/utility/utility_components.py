@@ -58,30 +58,31 @@ def disutility_work(
     # =================================================================================
 
     disutil_ft_work = (
-        params["disutil_ft_work_high_bad"] * bad_health * education
-        + params["disutil_ft_work_low_bad"] * bad_health * (1 - education)
-        + params["disutil_ft_work_high_good"] * good_health * education
-        + params["disutil_ft_work_low_good"] * good_health * (1 - education)
-        # + params["disutil_ft_work_low"] * (1 - education)
+        params["disutil_ft_work_bad"] * bad_health
+        + params["disutil_ft_work_good"] * good_health
+        # params["disutil_ft_work_high_bad"] * bad_health * education
+        # + params["disutil_ft_work_low_bad"] * bad_health * (1 - education)
+        # + params["disutil_ft_work_high_good"] * good_health * education
+        # + params["disutil_ft_work_low_good"] * good_health * (1 - education)
     )
     disutil_pt_work = (
-        params["disutil_pt_work_high_bad"] * bad_health * education
-        + params["disutil_pt_work_low_bad"] * bad_health * (1 - education)
-        + params["disutil_pt_work_high_good"] * good_health * education
-        + params["disutil_pt_work_low_good"] * good_health * (1 - education)
-        # + params["disutil_pt_work_low"] * (1 - education)
+        params["disutil_pt_work_bad"] * bad_health
+        + params["disutil_pt_work_good"] * good_health
+        # params["disutil_pt_work_high_bad"] * bad_health * education
+        # + params["disutil_pt_work_low_bad"] * bad_health * (1 - education)
+        # + params["disutil_pt_work_high_good"] * good_health * education
+        # + params["disutil_pt_work_low_good"] * good_health * (1 - education)
     )
     disutil_unemployed = (
-        params["disutil_unemployed_low_women"] * (1 - education)
-        + params["disutil_unemployed_high_women"] * education
+        params["disutil_unemployed_bad"] * bad_health
+        + params["disutil_unemployed_good"] * good_health
+        # params["disutil_unemployed_low_women"] * (1 - education)
+        # + params["disutil_unemployed_high_women"] * education
         # params["disutil_unemployed_high_bad_women"] * bad_health * education
         # + params["disutil_unemployed_low_bad_women"] * bad_health * (1 - education)
         # + params["disutil_unemployed_high_good_women"] * good_health * education
         # + params["disutil_unemployed_low_good_women"] * good_health * (1 - education)
     )
-
-    # disutil_children_ue_low = params["disutil_children_unemployed_low"]*nb_children
-    # disutil_children_ue_high = params["disutil_children_unemployed_high"]*nb_children
 
     disutil_children_pt_low = params["disutil_children_pt_work_low"] * nb_children
     disutil_children_pt_high = params["disutil_children_pt_work_high"] * nb_children
@@ -110,34 +111,44 @@ def disutility_work(
     # Caregiving
     # =================================================================================
 
+    # disutil_ft_work_informal_care = (
+    #     params["disutil_ft_work_high_bad_informal_care"] * bad_health * education
+    #     + params["disutil_ft_work_low_bad_informal_care"]
+    #     * bad_health
+    #     * (1 - education)
+    #     + params["disutil_ft_work_high_good_informal_care"] * good_health * education
+    #     + params["disutil_ft_work_low_good_informal_care"]
+    #     * good_health
+    #     * (1 - education)
+    #     # + params["disutil_ft_work_low_informal_care"] * (1 - education)
+    # )
+    # disutil_pt_work_informal_care = (
+    #     params["disutil_pt_work_high_bad_informal_care"] * bad_health * education
+    #     + params["disutil_pt_work_low_bad_informal_care"]
+    #     * bad_health
+    #     * (1 - education)
+    #     + params["disutil_pt_work_high_good_informal_care"] * good_health * education
+    #     + params["disutil_pt_work_low_good_informal_care"]
+    #     * good_health
+    #     * (1 - education)
+    #     # + params["disutil_pt_work_low_informal_care"] * (1 - education)
+    # )
+    # disutil_unemployed_informal_care = (
+    #     params["disutil_unemployed_low_women_informal_care"] * (1 - education)
+    #     + params["disutil_unemployed_high_women_informal_care"] * education
+    # )
+
     disutil_ft_work_informal_care = (
-        params["disutil_ft_work_high_bad_informal_care"] * bad_health * education
-        + params["disutil_ft_work_low_bad_informal_care"] * bad_health * (1 - education)
-        + params["disutil_ft_work_high_good_informal_care"] * good_health * education
-        + params["disutil_ft_work_low_good_informal_care"]
-        * good_health
-        * (1 - education)
-        # + params["disutil_ft_work_low_informal_care"] * (1 - education)
+        params["disutil_ft_work_bad_informal_care"] * bad_health
+        + params["disutil_ft_work_good_informal_care"] * good_health
     )
     disutil_pt_work_informal_care = (
-        params["disutil_pt_work_high_bad_informal_care"] * bad_health * education
-        + params["disutil_pt_work_low_bad_informal_care"] * bad_health * (1 - education)
-        + params["disutil_pt_work_high_good_informal_care"] * good_health * education
-        + params["disutil_pt_work_low_good_informal_care"]
-        * good_health
-        * (1 - education)
-        # + params["disutil_pt_work_low_informal_care"] * (1 - education)
+        params["disutil_pt_work_bad_informal_care"] * bad_health
+        + params["disutil_pt_work_good_informal_care"] * good_health
     )
-    # disutil_ft_work_informal_care = params[
-    #     "disutil_ft_work_high_informal_care"
-    # ] * education + params["disutil_ft_work_low_informal_care"] * (1 - education)
-    # disutil_pt_work_informal_care = params[
-    #     "disutil_pt_work_high_informal_care"
-    # ] * education + params["disutil_pt_work_low_informal_care"] * (1 - education)
-
     disutil_unemployed_informal_care = (
-        params["disutil_unemployed_low_women_informal_care"] * (1 - education)
-        + params["disutil_unemployed_high_women_informal_care"] * education
+        params["disutil_unemployed_bad_informal_care"] * bad_health
+        + params["disutil_unemployed_good_informal_care"] * good_health
     )
 
     disutil_children_ft_low_informal_care = (
