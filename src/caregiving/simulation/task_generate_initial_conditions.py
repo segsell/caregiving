@@ -358,7 +358,6 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         "education": jnp.array(education_agents, dtype=jnp.uint8),
         "health": jnp.array(health_agents, dtype=jnp.uint8),
         "lagged_choice": jnp.array(lagged_choice_model, dtype=jnp.uint8),
-        # "policy_state": jnp.array(drawn_sras, dtype=jnp.uint8),
         "already_retired": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
         "experience": jnp.array(exp_agents, dtype=jnp.float64),
         "job_offer": jnp.array(job_offer_agents, dtype=jnp.uint8),
