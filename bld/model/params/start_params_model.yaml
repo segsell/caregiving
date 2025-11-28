@@ -2,9 +2,13 @@ bequest_scale_high: 2.4
 bequest_scale_low: 2.4
 beta: 0.97
 disutil_children_ft_work_high: 0.1
+disutil_children_ft_work_high_informal_care: 0.1
 disutil_children_ft_work_low: 0.1
+disutil_children_ft_work_low_informal_care: 0.1
 disutil_children_pt_work_high: 0.1
+disutil_children_pt_work_high_informal_care: 0.1
 disutil_children_pt_work_low: 0.1
+disutil_children_pt_work_low_informal_care: 0.1
 disutil_ft_work_high_bad: 1.3
 disutil_ft_work_high_bad_informal_care: 1.3
 disutil_ft_work_high_good: 1.3
@@ -23,7 +27,9 @@ disutil_pt_work_low_bad_informal_care: 0.4
 disutil_pt_work_low_good: 0.4
 disutil_pt_work_low_good_informal_care: 0.4
 disutil_unemployed_high: 0.2
+disutil_unemployed_high_informal_care: 0.1
 disutil_unemployed_low: 0.2
+disutil_unemployed_low_informal_care: 0.1
 interest_rate: 0.04
 job_finding_logit_age_cubed_women: -0.0003358997316583
 job_finding_logit_age_squared_women: 0.0481994001877842
