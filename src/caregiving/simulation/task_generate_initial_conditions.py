@@ -9,8 +9,6 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
@@ -37,8 +35,11 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.utils import table
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 
+@pytask.mark.initial_conditions
 def task_generate_start_states_for_solution(  # noqa: PLR0915
     path_to_sample: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
     path_to_lifetable: Path = BLD
