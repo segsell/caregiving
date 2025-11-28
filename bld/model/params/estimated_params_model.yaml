@@ -60,12 +60,11 @@ disutil_pt_work_low_bad: 0.16169432917255835
 disutil_pt_work_low_good: 0.41353654980260945
 disutil_unemployed_high: 0.5474194233240322
 disutil_unemployed_low: 0.47471439866090204
-# disutil_unemployed_high_women: 0.5474194233240322
-# disutil_unemployed_low_women: 0.47471439866090204
-# disutil_children_ft_work_high_informal_care: 0.15198791954515214
-# disutil_children_ft_work_low_informal_care: 0.030996509210490453
-# disutil_children_pt_work_high_informal_care: -0.00637550149479095
-# disutil_children_pt_work_low_informal_care: 0.027397799622084537
+# caregiving parameters
+disutil_children_ft_work_high_informal_care: 0.15198791954515214
+disutil_children_ft_work_low_informal_care: 0.030996509210490453
+disutil_children_pt_work_high_informal_care: -0.00637550149479095
+disutil_children_pt_work_low_informal_care: 0.027397799622084537
 disutil_ft_work_high_bad_informal_care: 1.89861063388902
 disutil_ft_work_high_good_informal_care: 0.3623993411354807
 disutil_ft_work_low_bad_informal_care: 0.023284869621334286
@@ -74,10 +73,8 @@ disutil_pt_work_high_bad_informal_care: 0.18640648292170503
 disutil_pt_work_high_good_informal_care: 0.5686729226945039
 disutil_pt_work_low_bad_informal_care: 0.008308393138188213
 disutil_pt_work_low_good_informal_care: 0.5854220929131388
-# disutil_unemployed_high_informal_care: 0.35063795723185265
-# disutil_unemployed_low_informal_care: 0.2127921419323405
-# disutil_unemployed_high_women_informal_care: 0.35063795723185265
-# disutil_unemployed_low_women_informal_care: 0.2127921419323405
+disutil_unemployed_high_informal_care: 0.35063795723185265
+disutil_unemployed_low_informal_care: 0.2127921419323405
 beta: 0.97
 interest_rate: 0.03
 job_finding_logit_age_cubed_women: -3.162982266453729e-05
