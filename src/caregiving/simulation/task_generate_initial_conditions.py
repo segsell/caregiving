@@ -49,6 +49,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     path_to_health_sample: Path = BLD
     / "data"
     / "health_transition_estimation_sample_good_medium_bad.pkl",
+    path_to_parent_child_data: Path = BLD / "data" / "share_parent_child_data.csv",
     path_to_options: Path = BLD / "model" / "options.pkl",
     path_to_model: Path = BLD / "model" / "model_for_solution.pkl",
     path_to_start_params: Path = BLD / "model" / "params" / "start_params_model.yaml",
@@ -74,6 +75,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     observed_data = pd.read_csv(path_to_sample, index_col=[0])
     lifetable = pd.read_csv(path_to_lifetable)
     health_sample = pd.read_pickle(path_to_health_sample)
+    parent_child_data = pd.read_csv(path_to_parent_child_data)
 
     options = pickle.load(path_to_options.open("rb"))
     params = yaml.safe_load(path_to_start_params.open("rb"))
@@ -130,7 +132,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     states_dict = {
         name: start_period_data[name].values
         for name in model["model_structure"]["discrete_states_names"]
-        if name not in ("mother_health", "care_demand", "care_supply")
+        if name not in ("mother_adl", "mother_health", "care_demand", "care_supply")
     }
 
     states_dict["care_demand"] = np.zeros_like(start_period_data["wealth"])
@@ -239,7 +241,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     health_agents = np.empty(n_agents, np.uint8)
     job_offer_agents = np.empty(n_agents, np.uint8)
     has_sister_agents = np.empty(n_agents, np.uint8)
-    mother_health_agents = np.empty(n_agents, np.uint8)
+    adl_cat_agents = np.empty(n_agents, np.uint8)
 
     # for sex_var in range(specs["n_sexes"]):
     for edu in range(specs["n_education_types"]):
@@ -263,14 +265,14 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         )
         has_sister_agents[type_mask] = has_sister_edu
 
-        # mother health
+        # ADL category for mothers (5 states: No ADL, ADL 1, ADL 2, ADL 3, Death)
         mother_age_diff = specs["mother_age_diff"][has_sister_edu, edu]
         mother_age = specs["start_age"] + mother_age_diff.round().astype(int)
 
-        mother_health_agents[type_mask] = draw_mother_health(
+        adl_cat_agents[type_mask] = draw_mother_adl_cat(
             mother_age,
             survival_by_age,
-            health_prob_by_age,
+            parent_child_data,
         )
 
         # Wealth distribution
@@ -364,7 +366,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         "job_offer": jnp.array(job_offer_agents, dtype=jnp.uint8),
         "partner_state": jnp.array(partner_states, dtype=jnp.uint8),
         "has_sister": jnp.array(has_sister_agents, dtype=jnp.uint8),
-        "mother_health": jnp.array(mother_health_agents, dtype=jnp.uint8),
+        "mother_adl": jnp.array(adl_cat_agents, dtype=jnp.uint8),
         "care_demand": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
     }
 
@@ -438,36 +440,77 @@ def draw_start_wealth_dist(start_period_data_edu, n_agents_edu, method="kde"):
     return wealth_start_clipped
 
 
-def draw_mother_health(
-    mother_age: int,
+def draw_mother_adl_cat(
+    mother_age: np.ndarray,
     survival_by_age: pd.Series,
-    health_prob_by_age: pd.DataFrame,
-) -> int:
+    parent_child_data: pd.DataFrame,
+) -> np.ndarray:
     """
-    Draw one of the four mother-health states for a single age.
+    Draw one of the five ADL category states for mothers at given ages.
+
+    Parameters
+    ----------
+    mother_age : np.ndarray
+        Array of mother ages (one per agent).
+    survival_by_age : pd.Series
+        Survival probabilities indexed by age.
+    parent_child_data : pd.DataFrame
+        Parent-child dataset with columns 'age', 'sex', 'adl_cat'.
 
     Returns
     -------
-    int  -  0: good, 1: medium, 2: bad, 3: dead
+    np.ndarray
+        Array of ADL category states (0: No ADL, 1: ADL 1, 2: ADL 2, 3: ADL 3, 4: Death)
     """
     rng = np.random.default_rng()
 
+    # Filter for mothers (sex == 1 in parent_child_data corresponds to MOTHER)
+    mothers_data = parent_child_data[parent_child_data["sex"] == 1].copy()
+
+    # Remove NaN values in adl_cat
+    mothers_data = mothers_data[mothers_data["adl_cat"].notna()].copy()
+
     ages = np.asarray(mother_age, dtype=int)
 
+    # Get ADL category shares by age for mothers
+    adl_prob_by_age = (
+        mothers_data.groupby("age")["adl_cat"]
+        .value_counts(normalize=True)
+        .unstack(fill_value=0)
+        .sort_index()
+    )
+    adl_prob_by_age.index = adl_prob_by_age.index.astype(int)
+
+    # Ensure all ADL categories (0, 1, 2, 3) are present as columns
+    for adl_cat in [0, 1, 2, 3]:
+        if adl_cat not in adl_prob_by_age.columns:
+            adl_prob_by_age[adl_cat] = 0.0
+
+    # Reorder columns to ensure correct order (0, 1, 2, 3)
+    adl_prob_by_age = adl_prob_by_age[[0, 1, 2, 3]]
+
+    # Reindex to include all ages in the range, forward fill missing ages
+    min_age = adl_prob_by_age.index.min()
+    max_age = adl_prob_by_age.index.max()
+    age_range = pd.Index(range(min_age, max_age + 1), name="age")
+    adl_prob_by_age = adl_prob_by_age.reindex(age_range, method="ffill").fillna(0.0)
+
+    # Get survival probabilities for each age
     prob_alive = pd.Series(ages).map(survival_by_age).to_numpy()
-    health = health_prob_by_age.reindex(ages).to_numpy()  # shape (n, 3)
 
-    # 3 ── full 4-state probability rows
-    probs_alive = health * prob_alive[:, None]  # (n, 3)
-    probs = np.hstack(
-        [probs_alive, (1 - prob_alive)[:, None]]
-    )  # add “dead”, shape (n, 4)
+    # Get ADL probabilities for each age
+    adl_probs = adl_prob_by_age.reindex(ages).to_numpy()  # shape (n, 4)
 
-    # probs /= probs.sum(axis=1, keepdims=True)  # row-wise normalise
-    if not np.allclose(probs.sum(axis=1), 1.0, atol=1e-12):
-        raise ValueError("Probability rows do not sum to 1 after normalisation.")
+    # Multiply ADL probabilities by survival probability
+    probs_alive = adl_probs * prob_alive[:, None]  # (n, 4)
 
-    # 4 ── sample one state per agent (readable version)
-    mother_health = np.array([rng.choice(4, p=row) for row in probs], dtype=np.uint8)
+    # Add death as 5th state
+    probs = np.hstack([probs_alive, (1 - prob_alive)[:, None]])  # shape (n, 5)
 
-    return mother_health
+    # Normalize to ensure rows sum to 1 (in case of numerical issues)
+    probs = probs / probs.sum(axis=1, keepdims=True)
+
+    # Sample one state per agent
+    adl_cat = np.array([rng.choice(5, p=row) for row in probs], dtype=np.uint8)
+
+    return adl_cat

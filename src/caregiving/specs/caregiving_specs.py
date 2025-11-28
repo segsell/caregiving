@@ -134,6 +134,185 @@ def read_in_adl_transition_specs_binary(adl_trans_df, specs):
     return jnp.asarray(adl_trans_mat)
 
 
+def read_in_adl_state_transition_specs_with_death(
+    adl_state_trans_df, survival_by_age, specs
+):
+    """
+    Build a 4-d transition array for ADL states with death.
+
+    [sex, period (age), adl_lag_state, adl_next_state]
+    where both adl_lag_state and adl_next_state have 5 states:
+        - 0: No ADL (conditional on alive)
+        - 1: ADL 1 (conditional on alive)
+        - 2: ADL 2 (conditional on alive)
+        - 3: ADL 3 (conditional on alive)
+        - 4: Death
+
+    The first 4 lag states transition to the 4 ADL states (weighted by survival)
+    or to death. Death is an absorbing state: P(death -> death) = 1,
+    P(death -> any other state) = 0.
+
+    Parameters
+    ----------
+    adl_state_trans_df : pandas.DataFrame
+        Long table with columns
+        ['sex', 'age', 'adl_lag', 'adl_next', 'transition_prob'].
+        Contains conditional probabilities P(adl_next | adl_lag, sex, age, alive).
+    survival_by_age : pandas.Series
+        Index: age, Values: cumulative survival probability.
+        Only for women (MOTHER).
+    specs : dict
+        Master spec-dictionary.
+
+    Returns
+    -------
+    jax.numpy.ndarray
+        Shape = (n_sexes, n_periods, 5, 5)
+        where both dimensions 5 = [No ADL, ADL 1, ADL 2, ADL 3, Death]
+    """
+    from caregiving.model.shared import FEMALE, MOTHER
+
+    # ──────────────────────────────────────────────────────────────────
+    # sizes
+    # ──────────────────────────────────────────────────────────────────
+    start_age = specs["start_age_parents"]
+    end_age = specs["end_age"]
+    n_periods = end_age - start_age + 1
+    n_sexes = len(specs["sex_labels"])  # 2 (Men, Women)
+    n_adl_lag_states = 5  # No ADL, ADL 1, ADL 2, ADL 3, Death
+    n_adl_next_states = 5  # No ADL, ADL 1, ADL 2, ADL 3, Death
+
+    adl_trans_mat = np.zeros(
+        (n_sexes, n_periods, n_adl_lag_states, n_adl_next_states),
+        dtype=float,
+    )
+
+    # ──────────────────────────────────────────────────────────────────
+    # fill cube
+    # ──────────────────────────────────────────────────────────────────
+    for sex_idx, sex_label in enumerate(specs["sex_labels"]):
+        for period in range(n_periods):
+            age = start_age + period
+
+            # Get survival probability (only for women/MOTHER)
+            if sex_label == "Women" or sex_idx == MOTHER:
+                # Get survival probability for this age
+                if age in survival_by_age.index:
+                    surv_prob = survival_by_age.loc[age]
+                else:
+                    # Extrapolate if age not in index
+                    if age < survival_by_age.index.min():
+                        surv_prob = survival_by_age.iloc[0]
+                    elif age > survival_by_age.index.max():
+                        surv_prob = survival_by_age.iloc[-1]
+                    else:
+                        # Interpolate
+                        surv_prob = survival_by_age.reindex(
+                            range(survival_by_age.index.min(), age + 1)
+                        ).iloc[-1]
+            else:
+                # For men, use 1.0 (no death in this model, or use same as women)
+                # Actually, let's use the same survival for men too
+                if age in survival_by_age.index:
+                    surv_prob = survival_by_age.loc[age]
+                else:
+                    if age < survival_by_age.index.min():
+                        surv_prob = survival_by_age.iloc[0]
+                    elif age > survival_by_age.index.max():
+                        surv_prob = survival_by_age.iloc[-1]
+                    else:
+                        surv_prob = survival_by_age.reindex(
+                            range(survival_by_age.index.min(), age + 1)
+                        ).iloc[-1]
+
+            death_prob = 1.0 - surv_prob
+
+            for lag_idx, lag_label in enumerate(specs["adl_labels"]):
+                # Get conditional ADL transition probabilities (given alive)
+                for next_idx, next_label in enumerate(specs["adl_labels"]):
+                    cond_prob = adl_state_trans_df.loc[
+                        (adl_state_trans_df["sex"] == sex_label)
+                        & (adl_state_trans_df["age"] == age)
+                        & (adl_state_trans_df["adl_lag"] == lag_label)
+                        & (adl_state_trans_df["adl_next"] == next_label),
+                        "transition_prob",
+                    ].values[0]
+
+                    # Weight by survival probability
+                    adl_trans_mat[sex_idx, period, lag_idx, next_idx] = (
+                        cond_prob * surv_prob
+                    )
+
+                # Death state (5th state, index 4)
+                adl_trans_mat[sex_idx, period, lag_idx, 4] = death_prob
+
+            # Death as lag state (5th lag state, index 4): absorbing state
+            # P(death -> death) = 1, P(death -> any other state) = 0
+            adl_trans_mat[sex_idx, period, 4, 4] = 1.0
+            # All other transitions from death are already 0 (initialized)
+
+    # ──────────────────────────────────────────────────────────────────
+    # sanity check: rows must sum to 1 (within numerical tolerance)
+    # ──────────────────────────────────────────────────────────────────
+    row_sums = adl_trans_mat.sum(axis=-1)
+    if not np.allclose(row_sums, 1.0, atol=1e-10):
+        max_diff = np.abs(row_sums - 1.0).max()
+        raise ValueError(
+            f"ADL state transition rows do not sum to 1. "
+            f"Max difference: {max_diff:.2e}"
+        )
+
+    return jnp.asarray(adl_trans_mat)
+
+
+def convert_adl_state_transition_array_to_df(adl_trans_mat, specs):
+    """
+    Convert ADL state transition array to DataFrame format.
+
+    Parameters
+    ----------
+    adl_trans_mat : jax.numpy.ndarray
+        Shape = (n_sexes, n_periods, 5, 5)
+        where both dimensions 5 = [No ADL, ADL 1, ADL 2, ADL 3, Death]
+    specs : dict
+        Master spec-dictionary.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Long format with columns: sex, age, adl_lag, adl_next, transition_prob
+    """
+    import pandas as pd
+
+    start_age = specs["start_age_parents"]
+    end_age = specs["end_age"]
+    n_periods = end_age - start_age + 1
+
+    # ADL lag states: 4 ADL states + Death
+    adl_lag_labels = list(specs["adl_labels"]) + ["Death"]
+    # ADL next states: 4 ADL states + Death
+    adl_next_labels = list(specs["adl_labels"]) + ["Death"]
+
+    records = []
+    for sex_idx, sex_label in enumerate(specs["sex_labels"]):
+        for period in range(n_periods):
+            age = start_age + period
+            for lag_idx, lag_label in enumerate(adl_lag_labels):
+                for next_idx, next_label in enumerate(adl_next_labels):
+                    prob = float(adl_trans_mat[sex_idx, period, lag_idx, next_idx])
+                    records.append(
+                        {
+                            "sex": sex_label,
+                            "age": age,
+                            "adl_lag": lag_label,
+                            "adl_next": next_label,
+                            "transition_prob": prob,
+                        }
+                    )
+
+    return pd.DataFrame.from_records(records)
+
+
 def read_in_care_supply_transition_specs(exog_care_df, specs):
     """
     Build a 4-d array of exogenous-care supply probabilities

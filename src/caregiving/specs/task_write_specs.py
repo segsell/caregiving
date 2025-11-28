@@ -13,8 +13,8 @@ from pytask import Product
 
 from caregiving.config import BLD, SRC
 from caregiving.specs.caregiving_specs import (
-    read_in_adl_transition_specs,
-    read_in_adl_transition_specs_binary,
+    convert_adl_state_transition_array_to_df,
+    read_in_adl_state_transition_specs_with_death,
     read_in_care_supply_transition_specs,
     read_in_mother_age_diff_specs,
 )
@@ -27,11 +27,8 @@ from caregiving.specs.family_specs import (
 )
 from caregiving.specs.health_specs import (
     plot_health_death_transitions_good_bad,
-    plot_health_death_transitions_good_medium_bad,
     read_in_health_transition_specs,
     read_in_health_transition_specs_df,
-    read_in_health_transition_specs_good_medium_bad,
-    read_in_health_transition_specs_good_medium_bad_df,
 )
 from caregiving.specs.income_specs import add_income_specs
 from caregiving.utils import create_age_bins
@@ -87,14 +84,14 @@ def task_write_specs(
     / "estimation"
     / "stochastic_processes"
     / "health_transition_matrix_good_medium_bad.csv",
-    path_to_mortality_transition_mat_good_medium_bad: Path = BLD
+    path_to_adl_state_transition_matrix: Path = BLD
     / "estimation"
     / "stochastic_processes"
-    / "mortality_transition_matrix_logit_good_medium_bad.csv",
-    path_to_limitations_with_adl_transition: Path = BLD
-    / "estimation"
-    / "stochastic_processes"
-    / "adl_transition_matrix.csv",
+    / "adl_state_transition_matrix.csv",
+    path_to_survival_by_age: Path = BLD
+    / "model"
+    / "initial_conditions"
+    / "survival_by_age.csv",
     path_to_exogenous_care_supply_transition: Path = BLD
     / "estimation"
     / "stochastic_processes"
@@ -110,20 +107,10 @@ def task_write_specs(
     / "estimation"
     / "stochastic_processes"
     / "health_death_transition_matrix_good_bad.csv",
-    path_to_save_health_death_transition_matrix_good_medium_bad: Annotated[
-        Path, Product
-    ] = BLD
-    / "estimation"
-    / "stochastic_processes"
-    / "health_death_transition_matrix_good_medium_bad.csv",
     path_to_save_health_death_transition_good_bad: Annotated[Path, Product] = BLD
     / "plots"
     / "stochastic_processes"
     / "health_death_transition_good_bad.png",
-    path_to_save_health_death_transition_good_medium_bad: Annotated[Path, Product] = BLD
-    / "plots"
-    / "stochastic_processes"
-    / "health_death_transition_good_medium_bad.png",
     path_to_save_max_exp_diff: Annotated[Path, Product] = BLD
     / "model"
     / "specs"
@@ -132,6 +119,10 @@ def task_write_specs(
     / "model"
     / "specs"
     / "specs_full.pkl",
+    path_to_save_adl_state_transition_with_death: Annotated[Path, Product] = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "adl_state_transition_matrix_with_death.csv",
 ) -> Dict[str, Any]:
     """Read in specs and add specs from first-step estimation."""
 
@@ -198,39 +189,59 @@ def task_write_specs(
         path_to_save_plot=path_to_save_health_death_transition_good_bad,
     )
 
-    if "health_labels_three" in specs.keys():
-        # Read in health transition matrix including death probabilities
-        health_trans_probs_df = pd.read_csv(
-            path_to_health_transition_mat_good_medium_bad,
-        )
-        death_prob_df = pd.read_csv(path_to_mortality_transition_mat_good_medium_bad)
-        specs["health_trans_mat_three"] = (
-            read_in_health_transition_specs_good_medium_bad(
-                health_trans_probs_df, death_prob_df, specs
-            )
-        )
+    # if "health_labels_three" in specs.keys():
+    #     # Read in health transition matrix including death probabilities
+    #     health_trans_probs_df = pd.read_csv(
+    #         path_to_health_transition_mat_good_medium_bad,
+    #     )
+    #     death_prob_df = pd.read_csv(path_to_mortality_transition_mat_good_medium_bad)
+    #     specs["health_trans_mat_three"] = (
+    #         read_in_health_transition_specs_good_medium_bad(
+    #             health_trans_probs_df, death_prob_df, specs
+    #         )
+    #     )
 
-        health_death_trans_mat_three = (
-            read_in_health_transition_specs_good_medium_bad_df(
-                health_trans_probs_df=health_trans_probs_df,
-                death_prob_df=death_prob_df,
-                specs=specs,
-            )
-        )
-        health_death_trans_mat_three.to_csv(
-            path_to_save_health_death_transition_matrix_good_medium_bad
-        )
-        plot_health_death_transitions_good_medium_bad(
-            specs=specs,
-            df=health_death_trans_mat_three,
-            path_to_save_plot=path_to_save_health_death_transition_good_medium_bad,
-        )
+    #     health_death_trans_mat_three = (
+    #         read_in_health_transition_specs_good_medium_bad_df(
+    #             health_trans_probs_df=health_trans_probs_df,
+    #             death_prob_df=death_prob_df,
+    #             specs=specs,
+    #         )
+    #     )
+    #     health_death_trans_mat_three.to_csv(
+    #         path_to_save_health_death_transition_matrix_good_medium_bad
+    #     )
+    #     plot_health_death_transitions_good_medium_bad(
+    #         specs=specs,
+    #         df=health_death_trans_mat_three,
+    #         path_to_save_plot=path_to_save_health_death_transition_good_medium_bad,
+    #     )
 
+    # =================================================================================
     if "adl_labels" in specs.keys():
-        # adl_labels = ["No limitations", "Limitations"]
-        adl_transitions = pd.read_csv(path_to_limitations_with_adl_transition)
-        specs["limitations_with_adl_mat"] = read_in_adl_transition_specs_binary(
-            adl_transitions, specs
+        # # adl_labels = ["No limitations", "Limitations"]
+        # adl_transitions = pd.read_csv(path_to_limitations_with_adl_transition)
+        # specs["limitations_with_adl_mat"] = read_in_adl_transition_specs_binary(
+        #     adl_transitions, specs
+        # )
+
+        # Read in ADL state transitions with death (no health dependence)
+        adl_state_transitions = pd.read_csv(path_to_adl_state_transition_matrix)
+        survival_by_age = pd.read_csv(path_to_survival_by_age, index_col=0).squeeze(
+            "columns"
+        )
+        survival_by_age.index = survival_by_age.index.astype(int)
+        adl_state_trans_mat_with_death = read_in_adl_state_transition_specs_with_death(
+            adl_state_transitions, survival_by_age, specs
+        )
+        specs["adl_state_transition_mat_with_death"] = adl_state_trans_mat_with_death
+
+        # Convert to DataFrame and save as CSV
+        adl_state_trans_df_with_death = convert_adl_state_transition_array_to_df(
+            adl_state_trans_mat_with_death, specs
+        )
+        adl_state_trans_df_with_death.to_csv(
+            path_to_save_adl_state_transition_with_death, index=False
         )
 
         exogenous_care_supply = pd.read_csv(
@@ -241,6 +252,8 @@ def task_write_specs(
         )
         # make sure output is uin8
         specs["mother_age_diff"] = read_in_mother_age_diff_specs(estimation_sample)
+
+    # =================================================================================
 
     specs["job_sep_probs"] = jnp.asarray(
         pkl.load(path_to_job_separation_probs.open("rb"))

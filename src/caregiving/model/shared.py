@@ -113,6 +113,7 @@ ADL_0 = 0
 ADL_1 = 1
 ADL_2 = 2
 ADL_3 = 3
+ADL_DEAD = 4
 
 
 NO_CARE_DEMAND = 0

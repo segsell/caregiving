@@ -1,8 +1,8 @@
 import jax.numpy as jnp
 
 from caregiving.model.shared import (
+    ADL_DEAD,
     MOTHER,
-    PARENT_DEAD,
     SHARE_CARE_TO_MOTHER,
     START_PERIOD_CAREGIVING,
 )
@@ -33,10 +33,10 @@ def health_transition_good_medium_bad(
 
 
 def care_demand_and_supply_transition(
-    mother_health, period, has_sister, education, options
+    mother_adl, period, has_sister, education, options
 ):
     """Transition probability for next period care demand."""
-    # limitations_with_adl_mat is indexed by periods 0-50 for ages 50-100
+    # adl_state_transition_mat_with_death is indexed by periods 0-50 for ages 50-100
     # mother_period = (child_age + mother_age_diff) - start_age_parents
     # where child_age = start_age + period
     mother_period = (
@@ -46,16 +46,23 @@ def care_demand_and_supply_transition(
     )
     end_age_caregiving = options["end_age_msm"] - options["start_age"]
 
-    adl_mat = options["limitations_with_adl_mat"]
-    limitations_with_adl = adl_mat[MOTHER, mother_period, mother_health, :]
+    # Get ADL transition probabilities: [sex, period, adl_lag_state, adl_next_state]
+    # adl_next_state: 0=No ADL, 1=ADL 1, 2=ADL 2, 3=ADL 3, 4=Death
+    adl_trans_mat = options["adl_state_transition_mat_with_death"]
+    adl_trans_probs = adl_trans_mat[MOTHER, mother_period, mother_adl, :]
+
+    # Care demand occurs if next ADL state is 1, 2, or 3 (any ADL, not death)
+    prob_any_adl = (
+        adl_trans_probs[1] + adl_trans_probs[2] + adl_trans_probs[3]
+    )  # P(ADL 1, 2, or 3)
 
     exog_care_supply_mat = options["exog_care_supply"]
     prob_other_care_supply = exog_care_supply_mat[period, has_sister, education]
 
-    # no_care_demand = prob_other_care * limitations_with_adl[0]
+    # Care demand only if mother is not dead
     care_demand = (
-        limitations_with_adl[1]
-        * (mother_health != PARENT_DEAD)
+        prob_any_adl
+        * (mother_adl != ADL_DEAD)
         * (period >= START_PERIOD_CAREGIVING - 1)
         * (period < end_age_caregiving)
     )
@@ -71,38 +78,44 @@ def care_demand_and_supply_transition(
     return prob_vector
 
 
-def care_demand_transition(mother_health, period, has_sister, education, options):
+def care_demand_transition(mother_adl, period, has_sister, education, options):
     """Transition probability for next period care demand."""
-    # limitations_with_adl_mat is indexed by periods 0-50 for ages 50-100
+    # adl_state_transition_mat_with_death is indexed by periods 0-50 for ages 50-100
     # mother_period = (child_age + mother_age_diff) - start_age_parents
     # where child_age = start_age + period
-    adl_mat = options["limitations_with_adl_mat"]
     mother_period = (
         period
         + (options["start_age"] - options["start_age_parents"])
         + options["mother_age_diff"][has_sister, education]
     )
 
-    limitations_with_adl = adl_mat[MOTHER, mother_period, mother_health, :]
+    # Get ADL transition probabilities: [sex, period, adl_lag_state, adl_next_state]
+    adl_trans_mat = options["adl_state_transition_mat_with_death"]
+    adl_trans_probs = adl_trans_mat[MOTHER, mother_period, mother_adl, :]
+
+    # Care demand occurs if next ADL state is 1, 2, or 3 (any ADL, not death)
+    prob_any_adl = (
+        adl_trans_probs[1] + adl_trans_probs[2] + adl_trans_probs[3]
+    )  # P(ADL 1, 2, or 3)
 
     # no_care_demand = prob_other_care * limitations_with_adl[0]
     care_demand = (
-        limitations_with_adl[1]
-        * (mother_health != PARENT_DEAD)
+        prob_any_adl
+        * (mother_adl != ADL_DEAD)
         * (period >= START_PERIOD_CAREGIVING - 1)
     )
 
     return jnp.array([1 - care_demand, care_demand])
 
 
-def exog_care_supply_transition(mother_health, has_sister, education, period, options):
+def exog_care_supply_transition(mother_adl, has_sister, education, period, options):
     """Transition probability for next period family care supply."""
     exog_care_supply_mat = options["exog_care_supply"]
     exog_care_supply = exog_care_supply_mat[period, has_sister, education]
 
     care_supply = (
         exog_care_supply
-        * (mother_health != PARENT_DEAD)
+        * (mother_adl != ADL_DEAD)
         * (period >= START_PERIOD_CAREGIVING)
     )
     # SHARE_CARE_TO_MOTHER *
@@ -111,19 +124,26 @@ def exog_care_supply_transition(mother_health, has_sister, education, period, op
 
 
 def _care_demand_with_exog_supply_transition(
-    mother_health, period, has_sister, education, options
+    mother_adl, period, has_sister, education, options
 ):
     """Transition probability for next period care demand."""
-    # limitations_with_adl_mat is indexed by periods 0-50 for ages 50-100
+    # adl_state_transition_mat_with_death is indexed by periods 0-50 for ages 50-100
     # mother_period = (child_age + mother_age_diff) - start_age_parents
     # where child_age = start_age + period
-    adl_mat = options["limitations_with_adl_mat"]
     mother_period = (
         period
         + (options["start_age"] - options["start_age_parents"])
         + options["mother_age_diff"][has_sister, education]
     )
-    limitations_with_adl = adl_mat[MOTHER, mother_period, mother_health, :]
+
+    # Get ADL transition probabilities: [sex, period, adl_lag_state, adl_next_state]
+    adl_trans_mat = options["adl_state_transition_mat_with_death"]
+    adl_trans_probs = adl_trans_mat[MOTHER, mother_period, mother_adl, :]
+
+    # Care demand occurs if next ADL state is 1, 2, or 3 (any ADL, not death)
+    prob_any_adl = (
+        adl_trans_probs[1] + adl_trans_probs[2] + adl_trans_probs[3]
+    )  # P(ADL 1, 2, or 3)
 
     exog_care_supply_mat = options["exog_care_supply"]
     prob_other_care_supply = exog_care_supply_mat[period, has_sister, education]
@@ -131,8 +151,8 @@ def _care_demand_with_exog_supply_transition(
     # no_care_demand = prob_other_care * limitations_with_adl[0]
     care_demand = (
         (1 - (prob_other_care_supply * SHARE_CARE_TO_MOTHER))
-        * limitations_with_adl[1]
-        * (mother_health != PARENT_DEAD)
+        * prob_any_adl
+        * (mother_adl != ADL_DEAD)
     )
 
     return jnp.array([1 - care_demand, care_demand])
