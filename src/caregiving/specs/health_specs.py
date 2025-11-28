@@ -355,6 +355,63 @@ def read_in_health_transition_specs_good_medium_bad_df(
     return df
 
 
+def read_in_health_death_transition_by_age(health_death_df, specs):
+    """
+    Convert health-death transition DataFrame (indexed by age) to JAX array.
+
+    The DataFrame has columns: ['sex', 'age', 'health', 'lead_health', 'transition_prob']
+    and is indexed by age (not period).
+
+    Returns a JAX array with shape: (n_sexes, n_ages, n_health_states, n_health_states)
+    where n_ages = end_age - start_age + 1.
+
+    Parameters
+    ----------
+    health_death_df : pd.DataFrame
+        DataFrame with columns ['sex', 'age', 'health', 'lead_health', 'transition_prob']
+    specs : dict
+        Model specifications containing age ranges and health labels.
+
+    Returns
+    -------
+    jax.numpy.ndarray
+        Array of shape (n_sexes, n_ages, n_health_states, n_health_states)
+    """
+    health_labels = specs["health_labels_three"]
+    sex_labels = specs["sex_labels"]
+    start_age = specs["start_age"]
+    end_age = specs["end_age"]
+    n_ages = end_age - start_age + 1
+    n_health_states = len(health_labels)
+
+    # Create array indexed by (sex, age, health, lead_health)
+    health_death_mat = np.zeros(
+        (len(sex_labels), n_ages, n_health_states, n_health_states),
+        dtype=float,
+    )
+
+    for sex_idx, sex_label in enumerate(sex_labels):
+        sex_block = health_death_df[health_death_df["sex"] == sex_label]
+        for age in range(start_age, end_age + 1):
+            age_block = sex_block[sex_block["age"] == age]
+            if age_block.empty:
+                # Use last available age if current age not found
+                available_ages = sex_block["age"].unique()
+                if len(available_ages) > 0:
+                    age = int(available_ages.max())
+                    age_block = sex_block[sex_block["age"] == age]
+
+            for _, row in age_block.iterrows():
+                health_idx = health_labels.index(row["health"])
+                lead_health_idx = health_labels.index(row["lead_health"])
+                age_idx = age - start_age
+                health_death_mat[sex_idx, age_idx, health_idx, lead_health_idx] = row[
+                    "transition_prob"
+                ]
+
+    return jnp.asarray(health_death_mat)
+
+
 # =====================================================================================
 # Plotting
 # =====================================================================================

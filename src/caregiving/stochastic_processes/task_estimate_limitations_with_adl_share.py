@@ -155,9 +155,9 @@ def task_estimate_adl_transitions_one_logit(  # noqa: PLR0912
 
     adl_transition_matrix.to_csv(path_to_save)
 
-    # plot_adl_probabilities_by_health(
-    #     df, adl_transition_matrix, specs, path_to_save_plot=path_to_save_plot
-    # )
+    plot_adl_probabilities_by_health(
+        df, adl_transition_matrix, specs, path_to_save_plot=path_to_save_plot
+    )
 
 
 @pytask.mark.dip

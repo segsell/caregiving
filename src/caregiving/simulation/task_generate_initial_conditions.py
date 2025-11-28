@@ -9,8 +9,6 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
@@ -37,6 +35,8 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.utils import table
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 
 @pytask.mark.initial_conditions
@@ -241,6 +241,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     health_agents = np.empty(n_agents, np.uint8)
     job_offer_agents = np.empty(n_agents, np.uint8)
     has_sister_agents = np.empty(n_agents, np.uint8)
+    mother_health_agents = np.empty(n_agents, np.uint8)
     adl_cat_agents = np.empty(n_agents, np.uint8)
 
     # for sex_var in range(specs["n_sexes"]):
@@ -265,10 +266,18 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         )
         has_sister_agents[type_mask] = has_sister_edu
 
-        # ADL category for mothers (5 states: No ADL, ADL 1, ADL 2, ADL 3, Death)
+        # Mother health and ADL category (based on mother age)
         mother_age_diff = specs["mother_age_diff"][has_sister_edu, edu]
         mother_age = specs["start_age"] + mother_age_diff.round().astype(int)
 
+        # Mother health (4 states: Bad=0, Medium=1, Good=2, Death=3)
+        mother_health_agents[type_mask] = draw_mother_health(
+            mother_age,
+            survival_by_age,
+            health_prob_by_age,
+        )
+
+        # ADL category for mothers (5 states: No ADL, ADL 1, ADL 2, ADL 3, Death)
         adl_cat_agents[type_mask] = draw_mother_adl_cat(
             mother_age,
             survival_by_age,
@@ -366,6 +375,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         "job_offer": jnp.array(job_offer_agents, dtype=jnp.uint8),
         "partner_state": jnp.array(partner_states, dtype=jnp.uint8),
         "has_sister": jnp.array(has_sister_agents, dtype=jnp.uint8),
+        "mother_health": jnp.array(mother_health_agents, dtype=jnp.uint8),
         "mother_adl": jnp.array(adl_cat_agents, dtype=jnp.uint8),
         "care_demand": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
     }
@@ -438,6 +448,41 @@ def draw_start_wealth_dist(start_period_data_edu, n_agents_edu, method="kde"):
     )
 
     return wealth_start_clipped
+
+
+def draw_mother_health(
+    mother_age: int,
+    survival_by_age: pd.Series,
+    health_prob_by_age: pd.DataFrame,
+) -> int:
+    """
+    Draw one of the four mother-health states for a single age.
+
+    Returns
+    -------
+    int  -  0: good, 1: medium, 2: bad, 3: dead
+    """
+    rng = np.random.default_rng()
+
+    ages = np.asarray(mother_age, dtype=int)
+
+    prob_alive = pd.Series(ages).map(survival_by_age).to_numpy()
+    health = health_prob_by_age.reindex(ages).to_numpy()  # shape (n, 3)
+
+    # 3 ── full 4-state probability rows
+    probs_alive = health * prob_alive[:, None]  # (n, 3)
+    probs = np.hstack(
+        [probs_alive, (1 - prob_alive)[:, None]]
+    )  # add “dead”, shape (n, 4)
+
+    # probs /= probs.sum(axis=1, keepdims=True)  # row-wise normalise
+    if not np.allclose(probs.sum(axis=1), 1.0, atol=1e-12):
+        raise ValueError("Probability rows do not sum to 1 after normalisation.")
+
+    # 4 ── sample one state per agent (readable version)
+    mother_health = np.array([rng.choice(4, p=row) for row in probs], dtype=np.uint8)
+
+    return mother_health
 
 
 def draw_mother_adl_cat(
