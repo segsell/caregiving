@@ -5,18 +5,19 @@
 quadrature_points_stochastic: 5
 n_experience_grid_points: 11
 # Fixed structural parameters, we will not estimate
-interest_rate: 0.03 # 0.03
+interest_rate: 0.04
 discount_factor: 0.97
 
 # economic model parameters
-start_age: 30
+start_age: 40
 end_age: 100
+start_age_caregiving: 45
+end_age_caregiving: 71
 end_age_msm: 70
 end_age_wealth: 80
 start_age_parents: 50
 start_age_msm: 40
 end_age_children_in_household: 60
-end_age_caregiving: 80
 
 choice_labels: ["Retired", "Unemployed", "Part-time", "Full-time"]
 # caregiving_labels: ["No Care", "Light Informal Care", "Intensive Informal Care", "Nursing Home Care"]

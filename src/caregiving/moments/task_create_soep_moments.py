@@ -38,7 +38,7 @@ from caregiving.model.shared import (
     WORK_CHOICES,
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
-from caregiving.utils import table
+from caregiving.utils import create_age_bins, table
 
 DEGREES_OF_FREEDOM = 1
 
@@ -64,6 +64,7 @@ def task_create_soep_moments(  # noqa: PLR0915
     start_age = specs["start_age"]
     start_age_caregivers = start_age + START_PERIOD_CAREGIVING
     end_age = specs["end_age_msm"]
+    end_age_caregiving = specs["end_age_caregiving"]
     start_year = 2001
     end_year = 2019
 
@@ -119,6 +120,7 @@ def task_create_soep_moments(  # noqa: PLR0915
     _df_year_bad_health = df_year[df_year["health"] == BAD_HEALTH]
     _df_year_good_health = df_year[df_year["health"] == GOOD_HEALTH]
 
+    df = df.copy()
     df["kidage_youngest"] = df["kidage_youngest"] - 1
 
     df_low = df[df["education"] == 0].copy()
@@ -238,7 +240,7 @@ def task_create_soep_moments(  # noqa: PLR0915
 
     # =================================================================================
     caregiver_shares = {
-        "share_informal_care_age_bin_40_44": 0.02980982,
+        # "share_informal_care_age_bin_40_44": 0.02980982,
         "share_informal_care_age_bin_45_49": 0.04036255,
         "share_informal_care_age_bin_50_54": 0.05350986,
         "share_informal_care_age_bin_55_59": 0.06193384,
@@ -281,16 +283,9 @@ def task_create_soep_moments(  # noqa: PLR0915
         ddof=DEGREES_OF_FREEDOM
     )
 
-    # Caregiving labor shares using 3-year age bins
-    start_age_caregivers = start_age + START_PERIOD_CAREGIVING
-    age_bins_caregivers_3year = (
-        list(
-            range(start_age_caregivers, end_age + 1, 3)
-        ),  # bin edges: [40, 43, 46, 49, 52, 55, 58, 61, 64, 67, 70]
-        [
-            f"{s}_{s+2}" for s in range(start_age_caregivers, end_age - 1, 3)
-        ],  # bin labels: ["40_42", "43_45", "46_48", "49_51", "52_54", "55_57",
-        # "58_60", "61_63", "64_66", "67_69"]
+    # Labor caregiver shares using 3-year age bins
+    age_bins_caregivers_3year = create_age_bins(
+        start_age_caregivers, end_age_caregiving, bin_size=3, min_remainder_size=2
     )
 
     moments, variances = compute_labor_shares_by_age_bin(

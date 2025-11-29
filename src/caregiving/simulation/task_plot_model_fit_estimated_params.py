@@ -179,7 +179,7 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         wealth_var_emp="adjusted_wealth",
         wealth_var_sim="wealth_at_beginning",
         median=False,
-        age_min=30,
+        age_min=specs["start_age"],
         age_max=89,
         path_to_save_plot=path_to_save_wealth_plot,
     )
@@ -191,7 +191,7 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         wealth_var_emp="adjusted_wealth",
         wealth_var_sim="wealth_at_beginning",
         median=False,
-        age_min=30,
+        age_min=specs["start_age"],
         age_max=89,
         bin_width=5,
         path_to_save_plot=path_to_save_wealth_age_bins_plot,
@@ -263,7 +263,6 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         scale=SCALE_CAREGIVER_SHARE,
         path_to_save_plot=path_to_save_caregiver_share_by_age_bin_plot,
     )
-
     plot_simulated_care_demand_by_age(
         df_sim,
         specs,

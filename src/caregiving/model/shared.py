@@ -7,9 +7,9 @@ MACHINE_ZERO = 1e-12
 FILL_VALUE = 0
 MISSING_VALUE = -99
 BASE_YEAR = 2010  # 2015
-MAX_SYEAR = 2023  # Maximum year in thhe SOEP
+MAX_SYEAR = 2023  # Maximum survey year in the SOEP
 
-START_PERIOD_CAREGIVING = 10  # period when caregiving starts (age 45)
+START_PERIOD_CAREGIVING = 5  # period when caregiving starts (age 45)
 PERIOD_SCALE = 10  # to rescale age in utility functions
 
 PARENT_WEIGHTS_SHARE = {
@@ -108,6 +108,12 @@ PARENT_BAD_HEALTH = 0
 PARENT_MEDIUM_HEALTH = 1
 PARENT_GOOD_HEALTH = 2
 PARENT_DEAD = 3
+
+ADL_0 = 0
+ADL_1 = 1
+ADL_2 = 2
+ADL_3 = 3
+
 
 NO_CARE_DEMAND = 0
 CARE_DEMAND_AND_OTHER_SUPPLY = 1

@@ -7,11 +7,13 @@ from typing import Annotated
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pytask
 from pytask import Product
 
 from caregiving.config import BLD, JET_COLOR_MAP, SRC
 
 
+@pytask.mark.plot_children
 def task_plot_children(
     path_to_full_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_data: Path = BLD / "data" / "soep_partner_transition_data.csv",
@@ -182,7 +184,7 @@ def task_plot_partner_transitions(
                 share_data_container.update(edu_shares_obs)
 
                 # Assign only single and married shares at start
-                initial_dist[0] = partner_shares_obs.loc[(sex_var, edu, 30, 0)]
+                initial_dist[0] = partner_shares_obs.loc[(sex_var, edu, start_age, 0)]
                 initial_dist[1] = 1 - initial_dist[0]
                 shares_over_time = _markov_simulator(
                     initial_dist,

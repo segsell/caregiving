@@ -11,6 +11,16 @@ beta: 0.999999999999
 
 disutil_partner_retired: 5
 
+# Health-dependent disutility parameters
+disutil_ft_work_bad: 5
+disutil_ft_work_good: 5
+disutil_pt_work_bad: 5
+disutil_pt_work_good: 5
+disutil_unemployed_bad: 5
+disutil_unemployed_good: 5
+disutil_unemployed_low: 5
+disutil_unemployed_high: 5
+
 disutil_ft_work_high_good: 5
 disutil_ft_work_high_bad: 5
 disutil_ft_work_low_good: 5
@@ -23,20 +33,27 @@ disutil_pt_work_low_good: 5
 disutil_pt_work_low_bad: 5
 disutil_pt_work_low: 5
 
-disutil_unemployed_low_women: 5
-disutil_unemployed_high_women: 5
-disutil_unemployed_high_bad_women: 5
-disutil_unemployed_high_good_women: 5
-disutil_unemployed_low_bad_women: 5
-disutil_unemployed_low_good_women: 5
+disutil_unemployed_high_bad: 5
+disutil_unemployed_high_good: 5
+disutil_unemployed_low_bad: 5
+disutil_unemployed_low_good: 5
 
-disutil_children_unemployed_low: 5
-disutil_children_unemployed_high: 5
 disutil_children_pt_work_low: 5
 disutil_children_pt_work_high: 5
 disutil_children_ft_work_low: 5
 disutil_children_ft_work_high: 5
 #
+
+# Health-dependent disutility parameters
+disutil_ft_work_bad_informal_care: 5
+disutil_ft_work_good_informal_care: 5
+disutil_pt_work_bad_informal_care: 5
+disutil_pt_work_good_informal_care: 5
+disutil_unemployed_bad_informal_care: 5
+disutil_unemployed_good_informal_care: 5
+disutil_unemployed_low_informal_care: 5
+disutil_unemployed_high_informal_care: 5
+
 
 disutil_ft_work_high_good_informal_care: 5
 disutil_ft_work_high_bad_informal_care: 5

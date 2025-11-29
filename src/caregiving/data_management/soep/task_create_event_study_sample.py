@@ -96,10 +96,12 @@ def task_create_event_study_sample(
         Indicator for whether the person provided any (light or intensive) care.
 
     light_care
-        Indicator for whether the person provided “light” care only (== 1 hour per day)
+        Indicator for whether the person provided "light" care only
+        (== 1 hour per day)
 
     intensive_care
-        Indicator for whether the person provided “intensive” care (>= 2 hours per day).
+        Indicator for whether the person provided "intensive" care
+        (>= 2 hours per day).
 
     n_sisters
         Number of sisters the individual has.
@@ -114,7 +116,8 @@ def task_create_event_study_sample(
         Age of the individual's father in the given survey year (if alive).
 
     mother_alive
-        Indicator for whether the individual's mother is alive in the given survey year.
+        Indicator for whether the individual's mother is alive in the
+        given survey year.
 
     father_alive
         Indicator for whether the individual's father is alive in the given survey year.

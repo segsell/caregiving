@@ -30,6 +30,7 @@ from caregiving.simulation.simulate_no_care_demand import (
 )
 
 
+@pytask.mark.skip()
 @pytask.mark.career_costs
 def task_compute_career_costs(
     # Baseline

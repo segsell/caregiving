@@ -22,14 +22,20 @@ def predict_children_by_state(params, specs):
         for edu in range(specs["n_education_types"]):
             for has_partner in (0, 1):
                 for period in range(n_periods):
-                    predicted_nb_children = (
-                        params.loc[(sex, edu, has_partner), "const"]
-                        + params.loc[(sex, edu, has_partner), "period"] * period
-                        + params.loc[(sex, edu, has_partner), "period_sq"] * period**2
-                    )
-                    children[sex, edu, has_partner, period] = np.maximum(
-                        0, predicted_nb_children
-                    )
+
+                    if (
+                        specs["start_age"] + period
+                        <= specs["end_age_children_in_household"]
+                    ):
+                        predicted_nb_children = (
+                            params.loc[(sex, edu, has_partner), "const"]
+                            + params.loc[(sex, edu, has_partner), "period"] * period
+                            + params.loc[(sex, edu, has_partner), "period_sq"]
+                            * period**2
+                        )
+                        children[sex, edu, has_partner, period] = np.maximum(
+                            0, predicted_nb_children
+                        )
 
     return jnp.asarray(children)
 

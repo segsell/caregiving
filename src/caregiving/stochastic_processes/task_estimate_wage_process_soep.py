@@ -111,7 +111,7 @@ def task_estimate_wage_parameters(
             )
 
             wage_data_type = wage_data_type[
-                wage_data_type["age"] < specs["max_est_age_labor"]
+                wage_data_type["age"] <= specs["max_est_age_labor"]
             ]
             # Plot
             ax.plot(
