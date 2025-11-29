@@ -56,6 +56,7 @@ def plot_expected_care_demand_share_by_age(
     )
 
     specs = options["model_params"]
+
     edu_labels = specs.get("education_labels", ["Low edu", "High edu"])
 
     fig, ax = plt.subplots(figsize=(8, 4))
@@ -174,6 +175,7 @@ def _expected_care_demand_share_by_age(
         Initial discrete state arrays as stored in
         ``bld/model/initial_conditions/states.pkl``. Must contain
         ``period``, ``education``, ``has_sister`` and ``mother_health``.
+
     """
     specs = options["model_params"]
 
