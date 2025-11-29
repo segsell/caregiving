@@ -287,13 +287,13 @@ def task_plot_model_fit(  # noqa: PLR0915
         path_to_save_plot=path_to_save_caregiver_share_by_age_bin_plot,
     )
 
-    # plot_simulated_care_demand_by_age(
-    #     df_sim,
-    #     specs,
-    #     age_min=40,
-    #     age_max=80,
-    #     path_to_save_plot=path_to_save_care_demand_by_age_plot,
-    # )
+    plot_simulated_care_demand_by_age(
+        df_sim,
+        specs,
+        age_min=40,
+        age_max=80,
+        path_to_save_plot=path_to_save_care_demand_by_age_plot,
+    )
 
     # AGE_FOCUS = 75
     # # Drop invalid!?

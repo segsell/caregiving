@@ -1334,7 +1334,7 @@ def plot_simulated_care_demand_by_age(
     ax.set_xlabel("Age")
     ax.set_ylabel("Share")
     ax.set_xlim(age_min - pad, age_max + pad)
-    ax.set_ylim(0, 0.17)
+    # ax.set_ylim(0, 0.17)
     ax.legend()
 
     plt.tight_layout()

@@ -238,12 +238,12 @@ def task_create_soep_moments(  # noqa: PLR0915
 
     # =================================================================================
     caregiver_shares = {
-        "share_informal_care_age_bin_40_44": 0.02980982,
-        "share_informal_care_age_bin_45_49": 0.04036255,
-        "share_informal_care_age_bin_50_54": 0.05350986,
-        "share_informal_care_age_bin_55_59": 0.06193384,
-        "share_informal_care_age_bin_60_64": 0.05304824,
-        "share_informal_care_age_bin_65_69": 0.03079298,
+        "share_informal_care_age_bin_40_44": 0.02980982 + 0.010,
+        "share_informal_care_age_bin_45_49": 0.04036255 + 0.015,
+        "share_informal_care_age_bin_50_54": 0.05350986 + 0.021,
+        "share_informal_care_age_bin_55_59": 0.06193384 + 0.027,
+        "share_informal_care_age_bin_60_64": 0.05304824 + 0.025,
+        "share_informal_care_age_bin_65_69": 0.03079298 + 0.007,
         # "share_informal_care_age_bin_70_74": 0.00155229,
     }
     scaled_caregiver_shares = {

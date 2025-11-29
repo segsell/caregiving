@@ -129,6 +129,10 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
     / "plots"
     / "model_fit_estimated_params"
     / "work_transitions_by_edu_and_age_bin.png",
+    path_to_save_avg_caregiving_years: Annotated[Path, Product] = BLD
+    / "plots"
+    / "model_fit_estimated_params"
+    / "average_caregiving_years.csv",
 ) -> None:
     """Plot model fit using estimated parameters."""
 
@@ -183,7 +187,6 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         age_max=89,
         path_to_save_plot=path_to_save_wealth_plot,
     )
-    # Wealth by age bins
     plot_wealth_by_age_bins_and_education(
         data_emp=df_emp_wealth,
         data_sim=df_sim,
@@ -271,6 +274,36 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         age_max=80,
         path_to_save_plot=path_to_save_care_demand_by_age_plot,
     )
+
+    # Calculate average number of caregiving years, conditional on being a caregiver
+    AGE_FOCUS = 75
+    # 1. Agents alive / observed at the focus age
+    ids_at_age = df_sim.loc[
+        (df_sim["age"] == AGE_FOCUS) & (df_sim["health"] != DEAD), "agent"
+    ].unique()
+
+    # 2. Keep their entire life histories
+    sub = df_sim.loc[df_sim["agent"].isin(ids_at_age)].copy()
+
+    # 3. Flag caregiver years via choice ∈ INFORMAL_CARE
+    care_codes = np.asarray(INFORMAL_CARE).tolist()
+    sub["is_care"] = sub["choice"].isin(care_codes)
+
+    # 4. Person-level aggregates
+    agg = sub.groupby("agent")["is_care"].agg(
+        care_sum="sum", care_ever="any"  # years with is_care == True
+    )  # at least one caregiver year
+
+    mean_care_years = agg.loc[agg["care_ever"], "care_sum"].mean()
+
+    # Save to CSV
+    result_df = pd.DataFrame(
+        {
+            "age_focus": [AGE_FOCUS],
+            "average_caregiving_years_conditional_on_caregiver": [mean_care_years],
+        }
+    )
+    result_df.to_csv(path_to_save_avg_caregiving_years, index=False)
 
     df_sim["informal_care"] = df_sim["choice"].isin(np.asarray(INFORMAL_CARE))
     share_informal_care = df_sim.loc[df_sim["care_demand"] == 1, "informal_care"].mean()
