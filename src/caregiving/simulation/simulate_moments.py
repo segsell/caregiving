@@ -28,6 +28,8 @@ from caregiving.model.shared import (  # NURSING_HOME_CARE,
     NOT_WORKING,
     NOT_WORKING_CARE,
     PARENT_BAD_HEALTH,
+    PARENT_DEAD,
+    PARENT_MEDIUM_HEALTH,
     PART_TIME,
     RETIREMENT,
     SCALE_CAREGIVER_SHARE,
@@ -113,14 +115,14 @@ def simulate_moments_pandas(  # noqa: PLR0915
     #     df_intensive_caregivers["education"] == 1
     # ]
 
-    # # includes "no care", which means other informal care if positive care demand
-    # # if other care_supply == 0 and no personal care provided
-    # # --> formal home care (implicit)
-    # df_domestic = df.loc[
-    #     (df["choice"].isin(
-    # np.asarray(NO_NURSING_HOME_CARE))) & (df["care_demand"] >= 1)
+    # includes "no care", which means other informal care if positive care demand
+    # if other care_supply == 0 and no personal care provided
+    # --> formal home care (implicit)
+    # df_domestic = df_full.loc[
+    #     (df_full["choice"].isin(
+    # np.asarray(NO_NURSING_HOME_CARE))) & (df_full["care_demand"] >= 1)
     # ].copy()
-    # df_parent_bad_health = df[df["mother_health"] == PARENT_BAD_HEALTH].copy()
+    # df_parent_bad_health = df_full[df_full["mother_health"] == PARENT_BAD_HEALTH].copy()
     # =================================================================================
 
     moments = {}
@@ -297,16 +299,33 @@ def simulate_moments_pandas(  # noqa: PLR0915
     # ==================================================================================
     # Care mix by parent age
 
-    # age_bins_parents_to_agent = (AGE_BINS_PARENTS, AGE_LABELS_PARENTS)
-    # # TO-DO: nursing home
-    # moments = create_choice_shares_by_age_bin_pandas(
-    #     df_parent_bad_health,
-    #     moments,
-    #     choice_set=NURSING_HOME_CARE,
-    #     age_bins_and_labels=age_bins_parents_to_agent,
-    #     label="nursing_home",
-    #     age_var="mother_age",
-    # )
+    age_bins_parents_to_agent = (AGE_BINS_PARENTS, AGE_LABELS_PARENTS)
+
+    # Create nursing_home indicator: formal care occurs when care_demand exists
+    # and no one else provides care (CARE_DEMAND_AND_NO_OTHER_SUPPLY) AND
+    # the agent chooses NO_CARE (meaning formal care is organized)
+
+    df_parent_bad_health = df_full[
+        (df_full["mother_health"] != PARENT_DEAD)
+        & (df_full["mother_health"] == PARENT_BAD_HEALTH)
+        & (df_full["care_demand"] > 0)
+    ].copy()
+    no_care_choices = np.asarray(NO_CARE).tolist()
+    df_parent_bad_health["nursing_home"] = (
+        df_parent_bad_health["choice"].isin(no_care_choices)
+        & (df_parent_bad_health["care_demand"] == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
+    ).astype(int)
+
+    # Compute shares by age bin for nursing home (matching empirical moment creation)
+    moments = compute_shares_by_age_bin_pandas(
+        df_parent_bad_health,
+        moments,
+        variable="nursing_home",
+        age_bins=age_bins_parents_to_agent,
+        label="parents_nursing_home",
+        age_var="mother_age",
+    )
+
     # ==================================================================================
 
     # # moments = create_choice_shares_by_age_bin_pandas(
@@ -727,6 +746,76 @@ def create_choice_shares_by_age_bin_pandas(
     # -------- 3. Write into *moments* --------------------------------------------
     for age_bin in bin_labels:
         moments[f"share{label}_age_bin_{age_bin}"] = share_by_bin.loc[age_bin] * scale
+
+    return moments
+
+
+def compute_shares_by_age_bin_pandas(
+    df: pd.DataFrame,
+    moments: dict,
+    *,
+    variable: str,
+    age_bins: tuple[list[int], list[str]] | None = None,
+    label: str | None = None,
+    age_var: str = "age",
+):
+    """
+    Compute shares and sample variances by age-bin for an indicator variable.
+
+    This function mirrors the empirical moment creation function `compute_shares_by_age_bin`
+    from task_create_soep_moments.py.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Must contain columns with the age variable and the indicator column given by
+        *variable*. Indicator should be boolean or 0/1.
+    moments : dict
+        Dictionary updated **in-place** with the new statistics.
+    variable : str
+        Name of the indicator column in `df` (e.g., "nursing_home").
+    age_bins : tuple[list[int], list[str]] | None
+        Optional ``(bin_edges, bin_labels)``. If *None*, defaults to:
+        edges ``[40, 45, 50, 55, 60, 65, 70]`` and labels ``["40_44", …, "65_69"]``.
+        *bin_edges* must include the left edge of the first bin and the right edge
+        of the last bin, exactly as required by ``pd.cut``.
+    label : str | None
+        Optional extra label inserted in every key (prefixed with "_" if given).
+    age_var : str
+        Name of the age variable column (default: "age").
+
+    Returns
+    -------
+    dict
+        The same *moments* dict (for convenience).
+    """
+    # 1. Prepare labels and default bin specification
+    label = f"_{label}" if label else ""
+
+    if age_bins is None:
+        bin_edges = list(range(40, 75, 5))
+        bin_labels = [f"{s}_{s+4}" for s in bin_edges[:-1]]
+    else:
+        bin_edges, bin_labels = age_bins
+
+    # 2. Keep only ages we care about and create an "age_bin" column
+    df = df[df[age_var].between(bin_edges[0], bin_edges[-1] - 1)].copy()
+    df["age_bin"] = pd.cut(
+        df[age_var],
+        bins=bin_edges,
+        labels=bin_labels,
+        right=False,  # left-closed / right-open ⇒ 40-44, 45-49, …
+    )
+
+    # 3. Group by bins and compute shares (means) of the indicator
+    grouped = df.groupby("age_bin", observed=False)[variable]
+    shares = grouped.mean().reindex(bin_labels, fill_value=np.nan)
+
+    # 4. Store results with keys mirroring empirical moment style
+    #    Keys: share<label>_age_bin_<binlabel>
+    #    Note: label already includes the variable name (e.g., "parents_nursing_home")
+    for bin_label in bin_labels:
+        moments[f"share{label}_age_bin_{bin_label}"] = shares.loc[bin_label]
 
     return moments
 
@@ -1444,18 +1533,31 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
     # Care mix
     age_bins_parents = [(a, a + 5) for a in range(65, 90, 5)]
     age_bins_parents.append((90, np.inf))
-    arr_parent_bad_health = arr[arr[:, idx["mother_health"]] == PARENT_BAD_HEALTH]
-    # _mask_no_nursing = jnp.isin(arr[:, idx["choice"]], NO_NURSING_HOME_CARE)
-    # _mask_demand = arr[:, idx["care_demand"]] == 1
-    # arr_domestic_care = arr[_mask_no_nursing & _mask_demand]
+    # Condition on parent being alive and in medium or bad health
+    alive_mask = arr_all[:, idx["mother_health"]] != PARENT_DEAD
+    medium_or_bad_mask = jnp.isin(
+        arr_all[:, idx["mother_health"]],
+        jnp.array([PARENT_BAD_HEALTH, PARENT_MEDIUM_HEALTH]),
+    )
+    arr_parent_bad_health = arr_all[alive_mask & medium_or_bad_mask]
 
-    # # share_nursing_home_by_parent_age_bin = get_share_by_age_bin(
-    # #     arr_parent_bad_health,
-    # #     ind=idx,
-    # #     choice=NURSING_HOME_CARE,
-    # #     bins=AGE_BINS_PARENTS,
-    # #     age_var="mother_age",
-    # # )
+    # Create nursing_home indicator: formal care occurs when care_demand exists
+    # and no one else provides care (CARE_DEMAND_AND_NO_OTHER_SUPPLY) AND
+    # the agent chooses NO_CARE (meaning formal care is organized)
+    no_care_mask = jnp.isin(arr_parent_bad_health[:, idx["choice"]], NO_CARE)
+    care_demand_mask = (
+        arr_parent_bad_health[:, idx["care_demand"]] == CARE_DEMAND_AND_NO_OTHER_SUPPLY
+    )
+    nursing_home_mask = no_care_mask & care_demand_mask
+
+    # Compute shares by age bin for nursing home (matching empirical moment creation)
+    share_nursing_home_by_parent_age_bin = get_share_by_age_bin_with_extra_mask(
+        arr_parent_bad_health,
+        ind=idx,
+        bins=age_bins_parents,
+        extra_mask=nursing_home_mask,
+        age_var="mother_age",
+    )
 
     # # share_pure_informal_care_by_parent_age_bin = get_share_by_age_bin(
     # #     arr_domestic_care,
@@ -1633,7 +1735,8 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
         # + full_time_to_no_work
         # + full_time_to_part_time
         # + full_time_to_full_time
-        # + share_nursing_home_by_parent_age_bin
+        # care mix by parent age
+        + share_nursing_home_by_parent_age_bin
         # + share_pure_informal_care_by_parent_age_bin
         # + share_combination_care_by_parent_age_bin
         # + share_pure_formal_care_by_parent_age_bin

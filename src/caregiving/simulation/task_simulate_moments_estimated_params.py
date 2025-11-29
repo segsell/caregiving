@@ -84,7 +84,6 @@ def task_simulate_moments_estimated_params(
 
     # aaae(sim_moms_jax, sim_moms_pandas, decimal=12)
     assert np.equal(emp_moms.shape, sim_moms_pandas.shape)
-
     # states = {
     #     "not_working": NOT_WORKING,
     #     "part_time": PART_TIME,

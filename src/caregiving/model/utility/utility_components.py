@@ -172,21 +172,66 @@ def disutility_work(
     )
 
     # =================================================================================
+    # Care utility (based on agent's own health)
+    # =================================================================================
+    #
+    # Four care demand scenarios:
+    # 1. care_demand == CARE_DEMAND_AND_OTHER_SUPPLY (1):
+    #    - If agent chooses informal care → joint informal care (util_joint_informal_care_good/bad)
+    #    - If agent chooses no informal care → only other family member provides care (utility = 0)
+    # 2. care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY (2):
+    #    - If agent chooses informal care → solo informal care (util_informal_care_good/bad)
+    #    - If agent chooses no care → formal care (util_formal_care_good/bad)
 
-    # Compute eta
+    # Compute utility from solo informal care (varies by agent's health and education)
+    # Used when care_demand == 2 and agent chooses informal care
+    util_informal_care = (
+        params["util_informal_care_high_good"] * good_health * education
+        + params["util_informal_care_high_bad"] * bad_health * education
+        + params["util_informal_care_low_good"] * good_health * (1 - education)
+        + params["util_informal_care_low_bad"] * bad_health * (1 - education)
+    )
+
+    # Compute utility from formal care (varies by agent's health)
+    # Used when care_demand == 2 and agent chooses no care (formal care is organized)
+    util_formal_care = (
+        params["util_formal_care_good"] * good_health
+        + params["util_formal_care_bad"] * bad_health
+    )
+
+    # Compute utility from joint informal care (varies by agent's health)
+    # Used when care_demand == 1 and agent chooses informal care
+    util_joint_informal_care = (
+        params["util_joint_informal_care_good"] * good_health
+        + params["util_joint_informal_care_bad"] * bad_health
+    )
+
+    # Utility from care arrangements
+    utility_from_care = (
+        # Scenario 2a: care_demand == 2, agent chooses informal care → solo informal care
+        (care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
+        * informal_care
+        * util_informal_care
+        # Scenario 2b: care_demand == 2, agent chooses no care → formal care
+        + (care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
+        * (1 - informal_care)
+        * util_formal_care
+        # Scenario 1a: care_demand == 1, agent chooses informal care → joint informal care
+        + (care_demand == CARE_DEMAND_AND_OTHER_SUPPLY)
+        * informal_care
+        * util_joint_informal_care
+        # Scenario 1b: care_demand == 1, agent chooses no informal care → utility = 0 (implicit)
+    )
+
+    # =================================================================================
+    # Compute total disutility
+    # =================================================================================
+
     disutility = (
         -disutility_no_caregiving * (1 - informal_care)
         - disutility_informal_care * informal_care
         - partner_retired * retired * params["disutil_partner_retired"]
-        + (care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
-        * informal_care
-        * params["util_informal_care"]
-        + (care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
-        * (1 - informal_care)
-        * params["util_formal_care"]
-        + (care_demand == CARE_DEMAND_AND_OTHER_SUPPLY)
-        * informal_care
-        * params["util_joint_informal_care"]
+        + utility_from_care
     )
 
     return disutility

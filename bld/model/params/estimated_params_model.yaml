@@ -89,6 +89,14 @@ rho_bequest_low: 2.7956967216191377
 rho_high: 3.9465364634189437
 rho_low: 2.8391844082512145
 sigma: 0.16471062648214
-util_informal_care: 0.3177944935709474
-util_formal_care: -0.12415610541940258
-util_joint_informal_care: -0.05655925241251682
+util_informal_care_high_good: 0.2177944935709474
+util_informal_care_high_bad: 0.0077944935709474
+util_informal_care_low_good: 0.0577944935709474
+util_informal_care_low_bad: 0.0577944935709474
+util_joint_informal_care_good: 0.05655925241251682
+util_joint_informal_care_bad: -0.05655925241251682
+util_formal_care_good: -0.12415610541940258
+util_formal_care_bad: 0.11241561054194025
+# util_informal_care: 0.3177944935709474
+# util_joint_informal_care: -0.05655925241251682
+# util_formal_care: -0.12415610541940258

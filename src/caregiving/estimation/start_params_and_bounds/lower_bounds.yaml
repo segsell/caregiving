@@ -85,9 +85,14 @@ disutil_ft_work_low_age_squared: -5
 disutil_ft_work_high_age: 1.0e-12
 disutil_ft_work_high_age_squared: -5
 
-util_informal_care: -5
-util_formal_care: -5
-util_joint_informal_care: -5
+util_informal_care_high_good: -5
+util_informal_care_high_bad: -5
+util_informal_care_low_good: -5
+util_informal_care_low_bad: -5
+util_joint_informal_care_good: -5
+util_joint_informal_care_bad: -5
+util_formal_care_good: -5
+util_formal_care_bad: -5
 
 # # Caregiving
 # # util_intensive_informal_care_low: -5

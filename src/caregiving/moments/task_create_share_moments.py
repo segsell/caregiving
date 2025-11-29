@@ -54,8 +54,8 @@ def task_add_share_moments(
     soep_moments = pd.read_csv(path_to_soep_moments, index_col=[0])
     soep_variances = pd.read_csv(path_to_soep_variances, index_col=[0])
 
-    _share_moments = {}
-    _share_variances = {}
+    share_moments = {}
+    share_variances = {}
 
     dat = pd.read_csv(path_to_share_parent_child_sample, index_col=[0])
     dat = dat[dat["sex"] == 1].copy()  # Mothers only
@@ -64,13 +64,13 @@ def task_add_share_moments(
         dat["age"], bins=AGE_BINS_PARENTS, labels=AGE_LABELS_PARENTS, right=False
     )
 
-    _shares_weighted_hh = weighted_shares_and_counts(
+    shares_weighted_hh = weighted_shares_and_counts(
         dat,
         care_cols=CARE_COLS,
         weight_col="hh_weight",
         group_cols=["age_group"],
     )
-    _variances_weighted_hh = weighted_shares_and_counts(
+    variances_weighted_hh = weighted_shares_and_counts(
         dat,
         care_cols=CARE_COLS,
         weight_col="hh_weight",
@@ -78,44 +78,44 @@ def task_add_share_moments(
         show_variances=True,
     )
 
-    # _shares_w_ind = weighted_shares_and_counts(
-    #     dat,
-    #     CARE_COLS,
-    #     weight_col="ind_weight",
-    #     group_cols=["sex", "age_group"],
-    # )
-    # _shares_w_design = weighted_shares_and_counts(
-    #     dat, CARE_COLS, weight_col="design_weight", group_cols=["sex", "age_group"]
-    # )
+    shares_w_ind = weighted_shares_and_counts(
+        dat,
+        CARE_COLS,
+        weight_col="ind_weight",
+        group_cols=["sex", "age_group"],
+    )
+    shares_w_design = weighted_shares_and_counts(
+        dat, CARE_COLS, weight_col="design_weight", group_cols=["sex", "age_group"]
+    )
 
-    # _shares_child_w_hh = weighted_shares_and_counts(
-    #     dat,
-    #     care_cols=CHILD_CARE_COLS,
-    #     weight_col="hh_weight",
-    #     group_cols=["sex", "age_group"],
-    #     show_counts=True,
-    # )
-    # _shares_child_w_ind = weighted_shares_and_counts(
-    #     dat, CHILD_CARE_COLS, weight_col="ind_weight", group_cols=["sex", "age_group"]
-    # )
-    # _shares_child_w_design = weighted_shares_and_counts(
-    #     dat,
-    #     CHILD_CARE_COLS,
-    #     weight_col="design_weight",
-    #     group_cols=["sex", "age_group"],
-    # )
+    shares_child_w_hh = weighted_shares_and_counts(
+        dat,
+        care_cols=CHILD_CARE_COLS,
+        weight_col="hh_weight",
+        group_cols=["sex", "age_group"],
+        show_counts=True,
+    )
+    shares_child_w_ind = weighted_shares_and_counts(
+        dat, CHILD_CARE_COLS, weight_col="ind_weight", group_cols=["sex", "age_group"]
+    )
+    shares_child_w_design = weighted_shares_and_counts(
+        dat,
+        CHILD_CARE_COLS,
+        weight_col="design_weight",
+        group_cols=["sex", "age_group"],
+    )
 
     # ==================================================================================
-    # _strip_suffix = "_general"
-    # for col in shares_weighted_hh.columns:
-    #     for age_group, val in shares_weighted_hh[col].items():
-    #         col_stripped = col.replace(_strip_suffix, "")
-    #         share_moments[f"{col_stripped}_age_bin_{age_group}"] = val
+    _strip_suffix = "_general"
+    for col in shares_weighted_hh.columns:
+        for age_group, val in shares_weighted_hh[col].items():
+            col_stripped = col.replace(_strip_suffix, "")
+            share_moments[f"{col_stripped}_age_bin_{age_group}"] = val
 
-    # for col in variances_weighted_hh.columns:
-    #     for age_group, val in variances_weighted_hh[col].items():
-    #         col_stripped = col.replace(_strip_suffix, "")
-    #         share_variances[f"{col_stripped}_age_bin_{age_group}"] = val
+    for col in variances_weighted_hh.columns:
+        for age_group, val in variances_weighted_hh[col].items():
+            col_stripped = col.replace(_strip_suffix, "")
+            share_variances[f"{col_stripped}_age_bin_{age_group}"] = val
 
     # moments = pd.concat(
     #     [soep_moments, pd.Series(share_moments, name="value").to_frame()]
@@ -128,3 +128,5 @@ def task_add_share_moments(
     # Save
     soep_moments.to_csv(path_to_save_full_moments)
     soep_variances.to_csv(path_to_save_full_variances)
+    # moments.to_csv(path_to_save_full_moments)
+    # variances.to_csv(path_to_save_full_variances)
