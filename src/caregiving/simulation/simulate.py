@@ -110,6 +110,8 @@ def simulate_scenario(
 
     # Create additional variables
     model_params = options["model_params"]
+    max_ret_age = model_params["max_ret_age"]
+
     df["age"] = df.index.get_level_values("period") + model_params["start_age"]
 
     # Create experience years
@@ -124,6 +126,7 @@ def simulate_scenario(
 
     part_time_values = PART_TIME.ravel().tolist()
     full_time_values = FULL_TIME.ravel().tolist()
+    retirement_values = RETIREMENT.ravel().tolist()
     work_values = part_time_values + full_time_values
 
     sex_var = SEX
@@ -212,6 +215,17 @@ def simulate_scenario(
             df["has_sister"].to_numpy(), df["education"].to_numpy()
         ]
     )
+
+    # Drop all agents (entirely) who work after the maximum retirement age
+    # Identify agents who work (not retired) after max_ret_age
+    agents_working_after_ret = (
+        df.loc[(~df["choice"].isin(retirement_values)) & (df["age"] > max_ret_age)]
+        .index.get_level_values("agent")
+        .unique()
+    )
+
+    # Drop all rows for those agents
+    df = df[~df.index.get_level_values("agent").isin(agents_working_after_ret)]
 
     return df
 

@@ -138,6 +138,7 @@ def utility_func_alive(
         education=education,
         partner_state=partner_state,
         health=health,
+        care_demand=care_demand,
         params=params,
         options=options,
     )
@@ -281,6 +282,7 @@ def marginal_utility_function_alive(
         education=education,
         partner_state=partner_state,
         health=health,
+        care_demand=care_demand,
         params=params,
         options=options,
     )
@@ -338,6 +340,7 @@ def inverse_marginal(
         education=education,
         partner_state=partner_state,
         health=health,
+        care_demand=care_demand,
         params=params,
         options=options,
     )

@@ -105,10 +105,15 @@ def create_test_params(disutil_work, disutil_unemployed, rho):
         "disutil_children_pt_work_high_informal_care": 0,
         "disutil_children_ft_work_low_informal_care": 0.1,
         "disutil_children_ft_work_high_informal_care": 0.2,
-        # type of care
-        "util_informal_care": 0,
-        "util_formal_care": 0,
-        "util_joint_informal_care": 0,
+        # type of care (varies by health and education)
+        "util_informal_care_high_good": 0,
+        "util_informal_care_high_bad": 0,
+        "util_informal_care_low_good": 0,
+        "util_informal_care_low_bad": 0,
+        "util_formal_care_good": 0,
+        "util_formal_care_bad": 0,
+        "util_joint_informal_care_good": 0,
+        "util_joint_informal_care_bad": 0,
     }
 
 

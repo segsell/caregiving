@@ -28,6 +28,8 @@ from caregiving.model.shared import (  # NURSING_HOME_CARE,
     NOT_WORKING,
     NOT_WORKING_CARE,
     PARENT_BAD_HEALTH,
+    PARENT_DEAD,
+    PARENT_MEDIUM_HEALTH,
     PART_TIME,
     RETIREMENT,
     SCALE_CAREGIVER_SHARE,
@@ -113,14 +115,16 @@ def simulate_moments_pandas(  # noqa: PLR0915
     #     df_intensive_caregivers["education"] == 1
     # ]
 
-    # # includes "no care", which means other informal care if positive care demand
-    # # if other care_supply == 0 and no personal care provided
-    # # --> formal home care (implicit)
-    # df_domestic = df.loc[
-    #     (df["choice"].isin(
-    # np.asarray(NO_NURSING_HOME_CARE))) & (df["care_demand"] >= 1)
+    # includes "no care", which means other informal care if positive care demand
+    # if other care_supply == 0 and no personal care provided
+    # --> formal home care (implicit)
+    # df_domestic = df_full.loc[
+    #     (df_full["choice"].isin(
+    # np.asarray(NO_NURSING_HOME_CARE))) & (df_full["care_demand"] >= 1)
     # ].copy()
-    # df_parent_bad_health = df[df["mother_health"] == PARENT_BAD_HEALTH].copy()
+    # df_parent_bad_health = df_full[
+    #     df_full["mother_health"] == PARENT_BAD_HEALTH
+    # ].copy()
     # =================================================================================
 
     moments = {}
@@ -260,22 +264,46 @@ def simulate_moments_pandas(  # noqa: PLR0915
     # }
     # moments = compute_transition_moments_pandas(df, moments, age_range, states=states)
 
-    _states_work_no_work = {
+    states_work_no_work = {
         "not_working": NOT_WORKING,
         "working": WORK,
     }
-    # moments = compute_transition_moments_pandas_for_age_bins(
-    #     df_low, moments, age_range, states=states_work_no_work, label="low_education"
-    # )
-    # moments = compute_transition_moments_pandas_for_age_bins(
-    #     df_high, moments, age_range, states=states_work_no_work,
-    # label="high_education"
-    # )
+    # Use df_with_caregivers to match empirical data (task_create_soep_moments.py)
+    # Create df_with_caregivers equivalent (all observations, not just non-caregivers)
+    df_with_caregivers = df_full.copy()  # Pooled across all education levels
+    df_with_caregivers_low = df_full[df_full["education"] == 0]
+    df_with_caregivers_high = df_full[df_full["education"] == 1]
 
-    # states_informal_care = {
-    #     "no_informal_care": NOT_WORKING_CARE,
-    #     "informal_care": INFORMAL_CARE,
-    # }
+    moments = compute_transition_moments_pandas_for_age_bins(
+        df_with_caregivers_low,
+        moments,
+        age_range,
+        states=states_work_no_work,
+        label="low_education",
+    )
+    moments = compute_transition_moments_pandas_for_age_bins(
+        df_with_caregivers_high,
+        moments,
+        age_range,
+        states=states_work_no_work,
+        label="high_education",
+    )
+
+    # Caregiving transitions (informal care to informal care)
+    # Use age_range_caregivers (starts at start_age_caregivers) instead of age_range
+    # Pool across education levels (all_education) to match empirical moment creation
+    # Note: Only compute "caregiving to caregiving" transitions to match empirical
+    # (which uses states_caregiving = {"caregiving": 1})
+    states_caregiving = {
+        "caregiving": INFORMAL_CARE,
+    }
+    moments = compute_transition_moments_pandas_for_age_bins(
+        df_with_caregivers,  # Pooled across all education levels
+        moments,
+        age_range_caregivers,
+        states=states_caregiving,
+        label="all_education",
+    )
     # states_light_informal = {
     #     "no_light_informal_care": NO_LIGHT_INFORMAL_CARE,
     #     "light_informal_care": LIGHT_INFORMAL_CARE
@@ -294,20 +322,36 @@ def simulate_moments_pandas(  # noqa: PLR0915
     #     df, moments, age_range, states=states_intensive_informal_care
     # )
 
-    # ==================================================================================
-    # Care mix by parent age
+    # # ================================================================================
+    # # Care mix by parent age
 
     # age_bins_parents_to_agent = (AGE_BINS_PARENTS, AGE_LABELS_PARENTS)
-    # # TO-DO: nursing home
-    # moments = create_choice_shares_by_age_bin_pandas(
+
+    # # Create nursing_home indicator: formal care occurs when care_demand exists
+    # # and no one else provides care (CARE_DEMAND_AND_NO_OTHER_SUPPLY) AND
+    # # the agent chooses NO_CARE (meaning formal care is organized)
+
+    # df_parent_bad_health = df_full[
+    #     (df_full["mother_health"] != PARENT_DEAD)
+    #     & (df_full["mother_health"] == PARENT_BAD_HEALTH)
+    #     & (df_full["care_demand"] > 0)
+    # ].copy()
+    # no_care_choices = np.asarray(NO_CARE).tolist()
+    # df_parent_bad_health["nursing_home"] = (
+    #     df_parent_bad_health["choice"].isin(no_care_choices)
+    #     & (df_parent_bad_health["care_demand"] == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
+    # ).astype(int)
+
+    # # Compute shares by age bin for nursing home (matching empirical moment creation)
+    # moments = compute_shares_by_age_bin_pandas(
     #     df_parent_bad_health,
     #     moments,
-    #     choice_set=NURSING_HOME_CARE,
-    #     age_bins_and_labels=age_bins_parents_to_agent,
-    #     label="nursing_home",
+    #     variable="nursing_home",
+    #     age_bins=age_bins_parents_to_agent,
+    #     label="parents_nursing_home",
     #     age_var="mother_age",
     # )
-    # ==================================================================================
+    # # ================================================================================
 
     # # moments = create_choice_shares_by_age_bin_pandas(
     # #     df_domestic_care,
@@ -731,6 +775,76 @@ def create_choice_shares_by_age_bin_pandas(
     return moments
 
 
+def compute_shares_by_age_bin_pandas(
+    df: pd.DataFrame,
+    moments: dict,
+    *,
+    variable: str,
+    age_bins: tuple[list[int], list[str]] | None = None,
+    label: str | None = None,
+    age_var: str = "age",
+):
+    """
+    Compute shares and sample variances by age-bin for an indicator variable.
+
+    This function mirrors the empirical moment creation function
+    `compute_shares_by_age_bin` from task_create_soep_moments.py.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Must contain columns with the age variable and the indicator column given by
+        *variable*. Indicator should be boolean or 0/1.
+    moments : dict
+        Dictionary updated **in-place** with the new statistics.
+    variable : str
+        Name of the indicator column in `df` (e.g., "nursing_home").
+    age_bins : tuple[list[int], list[str]] | None
+        Optional ``(bin_edges, bin_labels)``. If *None*, defaults to:
+        edges ``[40, 45, 50, 55, 60, 65, 70]`` and labels ``["40_44", …, "65_69"]``.
+        *bin_edges* must include the left edge of the first bin and the right edge
+        of the last bin, exactly as required by ``pd.cut``.
+    label : str | None
+        Optional extra label inserted in every key (prefixed with "_" if given).
+    age_var : str
+        Name of the age variable column (default: "age").
+
+    Returns
+    -------
+    dict
+        The same *moments* dict (for convenience).
+    """
+    # 1. Prepare labels and default bin specification
+    label = f"_{label}" if label else ""
+
+    if age_bins is None:
+        bin_edges = list(range(40, 75, 5))
+        bin_labels = [f"{s}_{s+4}" for s in bin_edges[:-1]]
+    else:
+        bin_edges, bin_labels = age_bins
+
+    # 2. Keep only ages we care about and create an "age_bin" column
+    df = df[df[age_var].between(bin_edges[0], bin_edges[-1] - 1)].copy()
+    df["age_bin"] = pd.cut(
+        df[age_var],
+        bins=bin_edges,
+        labels=bin_labels,
+        right=False,  # left-closed / right-open ⇒ 40-44, 45-49, …
+    )
+
+    # 3. Group by bins and compute shares (means) of the indicator
+    grouped = df.groupby("age_bin", observed=False)[variable]
+    shares = grouped.mean().reindex(bin_labels, fill_value=np.nan)
+
+    # 4. Store results with keys mirroring empirical moment style
+    #    Keys: share<label>_age_bin_<binlabel>
+    #    Note: label already includes the variable name (e.g., "parents_nursing_home")
+    for bin_label in bin_labels:
+        moments[f"share{label}_age_bin_{bin_label}"] = shares.loc[bin_label]
+
+    return moments
+
+
 # =====================================================================================
 # Wealth
 # =====================================================================================
@@ -863,16 +977,19 @@ def compute_transition_moments_pandas_for_age_bins(
     states,
     label=None,
     bin_width: int = 5,
+    choice="choice",
+    lagged_choice="lagged_choice",
 ):
     """
-    Compute same-state transition probabilities aggregated into 5-year age bins.
+    Compute same-state transition probabilities aggregated into age bins.
 
-    Processes one state fully across all bins before moving to the next.
+    Matches the logic of compute_transition_moments_and_variances_for_age_bins
+    in task_create_soep_moments.py, but only returns moments (no variances).
 
     Parameters
     ----------
     df : pd.DataFrame
-        Must contain columns 'age', 'lagged_choice', and 'choice'.
+        Must contain columns for age, lagged_choice, and choice.
     moments : dict
         Pre-existing moments dict to append to.
     age_range : iterable of int
@@ -880,37 +997,50 @@ def compute_transition_moments_pandas_for_age_bins(
     states : dict
         Mapping of state labels to their codes in the data.
     label : str, optional
-        Suffix label for keys.
+        Suffix label for keys (e.g. education level).
     bin_width : int, default 5
-        Width of each age bin.
+        Width of each age bin (in years).
+    choice : str, default "choice"
+        Column name for current year's labor supply choice.
+    lagged_choice : str, default "lagged_choice"
+        Column name for previous year's labor supply choice.
 
     Returns
     -------
     moments : dict
         Updated with keys 'trans_<state>_to_<state>_<label>_age_<start>_<end>'.
     """
+    # Prepare label suffix (matches empirical version)
     suffix = f"_{label}" if label else ""
-    start_age = min(age_range)
-    end_age = max(age_range)
 
-    # Build complete bins
+    # Extract min_age and max_age from age_range (matches empirical structure)
+    min_age = min(age_range)
+    max_age = max(age_range)
+
+    # Define age bins (exactly as in empirical version)
     bins = []
-    start = start_age
-    while start + bin_width - 1 <= end_age:
+    start = min_age
+    while start + bin_width - 1 <= max_age:
         end = start + bin_width - 1
         bins.append((start, end))
         start += bin_width
 
-    # Compute transitions per state then per bin
+    # Loop over states and age bins (matches empirical version)
     for state_label, state_val in states.items():
         for start, end in bins:
+            # Filter df for this age bin (matches empirical version)
             df_bin = df[(df["age"] >= start) & (df["age"] <= end)]
-            subset = df_bin[df_bin["lagged_choice"].isin(np.atleast_1d(state_val))]
+
+            # Subset where last year's state matches (matches empirical version)
+            subset = df_bin[df_bin[lagged_choice].isin(np.atleast_1d(state_val))]
             if len(subset) > 0:
-                prob = subset["choice"].isin(np.atleast_1d(state_val)).mean()
+                is_same = subset[choice].isin(np.atleast_1d(state_val))
+                prob = is_same.mean()
             else:
                 prob = np.nan
 
+            # Construct keys including bin range and optional suffix
+            # (matches empirical version)
             key = f"trans_{state_label}_to_{state_label}{suffix}_age_{start}_{end}"
             moments[key] = prob
 
@@ -1415,47 +1545,47 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
     # )
 
     # Caregiving transitions by age bin
-    # informal_to_informal_by_age_bin = get_transition_for_age_bins(
-    #     arr,
-    #     ind=idx,
-    #     lagged_choice=INFORMAL_CARE,
-    #     current_choice=INFORMAL_CARE,
-    #     min_age=min_age,
-    #     max_age=max_age,
-    # )
-    # light_informal_to_light_informal_by_age_bin = get_transition_for_age_bins(
-    #     arr,
-    #     ind=idx,
-    #     lagged_choice=LIGHT_INFORMAL_CARE,
-    #     current_choice=LIGHT_INFORMAL_CARE,
-    #     min_age=min_age,
-    #     max_age=max_age,
-    # )
-    # intensive_informal_to_intensive_informal_by_age_bin = get_transition_for_age_bins(
-    #     arr,
-    #     ind=idx,
-    #     lagged_choice=INTENSIVE_INFORMAL_CARE,
-    #     current_choice=INTENSIVE_INFORMAL_CARE,
-    #     min_age=min_age,
-    #     max_age=max_age,
-    # )
+    # Pool across education levels (use arr_all) and start at min_age_caregivers
+    # Note: Only compute "caregiving to caregiving" transitions to match empirical
+    # (which uses states_caregiving = {"caregiving": 1})
+    informal_to_informal_all_educ_by_age_bin = get_transition_for_age_bins(
+        arr_all,  # Pooled across all education levels
+        ind=idx,
+        lagged_choice=INFORMAL_CARE,
+        current_choice=INFORMAL_CARE,
+        min_age=min_age_caregivers,
+        max_age=max_age,
+    )
 
     # ==================================================================================
     # Care mix
     age_bins_parents = [(a, a + 5) for a in range(65, 90, 5)]
     age_bins_parents.append((90, np.inf))
-    arr_parent_bad_health = arr[arr[:, idx["mother_health"]] == PARENT_BAD_HEALTH]
-    # _mask_no_nursing = jnp.isin(arr[:, idx["choice"]], NO_NURSING_HOME_CARE)
-    # _mask_demand = arr[:, idx["care_demand"]] == 1
-    # arr_domestic_care = arr[_mask_no_nursing & _mask_demand]
+    # Condition on parent being alive and in medium or bad health
+    alive_mask = arr_all[:, idx["mother_health"]] != PARENT_DEAD
+    medium_or_bad_mask = jnp.isin(
+        arr_all[:, idx["mother_health"]],
+        jnp.array([PARENT_BAD_HEALTH, PARENT_MEDIUM_HEALTH]),
+    )
+    arr_parent_bad_health = arr_all[alive_mask & medium_or_bad_mask]
 
-    # # share_nursing_home_by_parent_age_bin = get_share_by_age_bin(
-    # #     arr_parent_bad_health,
-    # #     ind=idx,
-    # #     choice=NURSING_HOME_CARE,
-    # #     bins=AGE_BINS_PARENTS,
-    # #     age_var="mother_age",
-    # # )
+    # Create nursing_home indicator: formal care occurs when care_demand exists
+    # and no one else provides care (CARE_DEMAND_AND_NO_OTHER_SUPPLY) AND
+    # the agent chooses NO_CARE (meaning formal care is organized)
+    no_care_mask = jnp.isin(arr_parent_bad_health[:, idx["choice"]], NO_CARE)
+    care_demand_mask = (
+        arr_parent_bad_health[:, idx["care_demand"]] == CARE_DEMAND_AND_NO_OTHER_SUPPLY
+    )
+    nursing_home_mask = no_care_mask & care_demand_mask
+
+    # Compute shares by age bin for nursing home (matching empirical moment creation)
+    share_nursing_home_by_parent_age_bin = get_share_by_age_bin_with_extra_mask(
+        arr_parent_bad_health,
+        ind=idx,
+        bins=age_bins_parents,
+        extra_mask=nursing_home_mask,
+        age_var="mother_age",
+    )
 
     # # share_pure_informal_care_by_parent_age_bin = get_share_by_age_bin(
     # #     arr_domestic_care,
@@ -1610,10 +1740,15 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
         #
         # #
         # # transitions
-        # + no_work_to_no_work_low_educ_by_age_bin
-        # + work_to_work_low_educ_by_age_bin
-        # + no_work_to_no_work_high_educ_by_age_bin
-        # + work_to_work_high_educ_by_age_bin
+        # Work transitions (by education)
+        + no_work_to_no_work_low_educ_by_age_bin
+        + work_to_work_low_educ_by_age_bin
+        + no_work_to_no_work_high_educ_by_age_bin
+        + work_to_work_high_educ_by_age_bin
+        # Caregiving transitions (pooled across education,
+        # starting at min_age_caregivers)
+        # Note: Only "caregiving to caregiving" to match empirical
+        + informal_to_informal_all_educ_by_age_bin
         # #
         # # work to work transitions
         # + no_work_to_no_work_low_educ_by_age
@@ -1633,6 +1768,7 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
         # + full_time_to_no_work
         # + full_time_to_part_time
         # + full_time_to_full_time
+        # # care mix by parent age
         # + share_nursing_home_by_parent_age_bin
         # + share_pure_informal_care_by_parent_age_bin
         # + share_combination_care_by_parent_age_bin
