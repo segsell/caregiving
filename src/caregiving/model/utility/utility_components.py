@@ -177,10 +177,13 @@ def disutility_work(
     #
     # Four care demand scenarios:
     # 1. care_demand == CARE_DEMAND_AND_OTHER_SUPPLY (1):
-    #    - If agent chooses informal care → joint informal care (util_joint_informal_care_good/bad)
-    #    - If agent chooses no informal care → only other family member provides care (utility = 0)
+    #    - If agent chooses informal care → joint informal care
+    #      (util_joint_informal_care_good/bad)
+    #    - If agent chooses no informal care → only other family member
+    #      provides care (utility = 0)
     # 2. care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY (2):
-    #    - If agent chooses informal care → solo informal care (util_informal_care_good/bad)
+    #    - If agent chooses informal care → solo informal care
+    #      (util_informal_care_good/bad)
     #    - If agent chooses no care → formal care (util_formal_care_good/bad)
 
     # Compute utility from solo informal care (varies by agent's health and education)
@@ -208,7 +211,8 @@ def disutility_work(
 
     # Utility from care arrangements
     utility_from_care = (
-        # Scenario 2a: care_demand == 2, agent chooses informal care → solo informal care
+        # Scenario 2a: care_demand == 2, agent chooses informal care
+        # → solo informal care
         (care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
         * informal_care
         * util_informal_care
@@ -216,11 +220,13 @@ def disutility_work(
         + (care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
         * (1 - informal_care)
         * util_formal_care
-        # Scenario 1a: care_demand == 1, agent chooses informal care → joint informal care
+        # Scenario 1a: care_demand == 1, agent chooses informal care
+        # → joint informal care
         + (care_demand == CARE_DEMAND_AND_OTHER_SUPPLY)
         * informal_care
         * util_joint_informal_care
-        # Scenario 1b: care_demand == 1, agent chooses no informal care → utility = 0 (implicit)
+        # Scenario 1b: care_demand == 1, agent chooses no informal care
+        # → utility = 0 (implicit)
     )
 
     # =================================================================================

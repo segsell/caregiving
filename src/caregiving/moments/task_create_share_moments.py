@@ -78,32 +78,32 @@ def task_add_share_moments(
         show_variances=True,
     )
 
-    shares_w_ind = weighted_shares_and_counts(
-        dat,
-        CARE_COLS,
-        weight_col="ind_weight",
-        group_cols=["sex", "age_group"],
-    )
-    shares_w_design = weighted_shares_and_counts(
-        dat, CARE_COLS, weight_col="design_weight", group_cols=["sex", "age_group"]
-    )
+    # shares_w_ind = weighted_shares_and_counts(
+    #     dat,
+    #     CARE_COLS,
+    #     weight_col="ind_weight",
+    #     group_cols=["sex", "age_group"],
+    # )
+    # shares_w_design = weighted_shares_and_counts(
+    #     dat, CARE_COLS, weight_col="design_weight", group_cols=["sex", "age_group"]
+    # )
 
-    shares_child_w_hh = weighted_shares_and_counts(
-        dat,
-        care_cols=CHILD_CARE_COLS,
-        weight_col="hh_weight",
-        group_cols=["sex", "age_group"],
-        show_counts=True,
-    )
-    shares_child_w_ind = weighted_shares_and_counts(
-        dat, CHILD_CARE_COLS, weight_col="ind_weight", group_cols=["sex", "age_group"]
-    )
-    shares_child_w_design = weighted_shares_and_counts(
-        dat,
-        CHILD_CARE_COLS,
-        weight_col="design_weight",
-        group_cols=["sex", "age_group"],
-    )
+    # shares_child_w_hh = weighted_shares_and_counts(
+    #     dat,
+    #     care_cols=CHILD_CARE_COLS,
+    #     weight_col="hh_weight",
+    #     group_cols=["sex", "age_group"],
+    #     show_counts=True,
+    # )
+    # shares_child_w_ind = weighted_shares_and_counts(
+    #     dat, CHILD_CARE_COLS, weight_col="ind_weight", group_cols=["sex", "age_group"]
+    # )
+    # shares_child_w_design = weighted_shares_and_counts(
+    #     dat,
+    #     CHILD_CARE_COLS,
+    #     weight_col="design_weight",
+    #     group_cols=["sex", "age_group"],
+    # )
 
     # ==================================================================================
     _strip_suffix = "_general"

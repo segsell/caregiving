@@ -113,7 +113,7 @@ def task_plot_mother_health_shares_by_age(
 # ============================================================================
 
 
-def plot_simulated_care_demand_by_age_2_by_2(
+def plot_simulated_care_demand_by_age_2_by_2(  # noqa: PLR0915
     df_sim, specs, age_min=None, age_max=None, path_to_save_plot=None
 ):
     """
@@ -267,7 +267,8 @@ def plot_simulated_care_demand_by_age_2_by_2(
             )
 
             # Plot stacked area for care mix (below the curve)
-            # Stack from bottom to top: solo informal, joint informal, formal, other family only
+            # Stack from bottom to top: solo informal, joint informal, formal,
+            # other family only
             bottom = 0
             ax.fill_between(
                 ages,
@@ -328,8 +329,11 @@ def plot_simulated_care_demand_by_age_2_by_2(
             # Separate care demand from care types
             care_demand_idx = labels.index("Care demand")
             care_handles = [h for i, h in enumerate(handles) if i != care_demand_idx]
-            care_labels = [l for i, l in enumerate(labels) if i != care_demand_idx]
-            # Reverse care types so legend shows from bottom to top (other family only at top)
+            care_labels = [
+                label for i, label in enumerate(labels) if i != care_demand_idx
+            ]
+            # Reverse care types so legend shows from bottom to top
+            # (other family only at top)
             care_handles_reversed = care_handles[::-1]
             care_labels_reversed = care_labels[::-1]
             # Combine: care demand first, then reversed care types
@@ -352,7 +356,8 @@ def plot_mother_health_shares_by_age(
     Parameters
     ----------
     df_sim : pd.DataFrame
-        Simulated data with columns: mother_health, mother_age (or age + mother_age_diff)
+        Simulated data with columns: mother_health, mother_age
+        (or age + mother_age_diff)
     specs : dict
         Model specifications
     age_min : int, optional
@@ -398,7 +403,7 @@ def plot_mother_health_shares_by_age(
 
     # Calculate shares by mother age
     health_shares = {}
-    for health_type in ["health_good", "health_medium", "health_bad", "health_dead"]:
+    for health_type in ("health_good", "health_medium", "health_bad", "health_dead"):
         shares = (
             df_plot.groupby("mother_age", observed=False)[health_type]
             .mean()
@@ -426,7 +431,7 @@ def plot_mother_health_shares_by_age(
 
     # Plot stacked area chart (from bottom to top: good, medium, bad, dead)
     bottom = np.zeros(len(mother_ages))
-    for health_type in ["health_good", "health_medium", "health_bad", "health_dead"]:
+    for health_type in ("health_good", "health_medium", "health_bad", "health_dead"):
         ax.fill_between(
             mother_ages,
             bottom,
