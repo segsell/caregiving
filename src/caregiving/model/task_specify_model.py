@@ -32,8 +32,6 @@ from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
 
 
 def task_specify_model(
-    # load_model=False,
-    # model_type="solution",
     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_start_params: Path = (
         BLD / "model" / "params" / "start_params_updated.yaml"
