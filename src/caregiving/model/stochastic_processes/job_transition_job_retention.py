@@ -10,6 +10,7 @@ from caregiving.model.shared import (
     SEX,
     had_job_before_caregiving,
     is_informal_care,
+    is_part_time,
     is_retired,
     is_unemployed,
     is_working,
@@ -31,10 +32,16 @@ def job_offer_process_transition_with_job_retention(
     Job Retention Policy:
     - For people who are caregiving AND had a job before caregiving started,
       job_sep_prob = 0
-    - For people who are caregiving AND had a job before caregiving,
-      job_finding_prob is increased
-    - This allows caregivers to keep their previous job and return to it
-      after caregiving ends
+    - For people who are caregiving AND had a job before caregiving AND
+      on "caregiving leave" (unemployed or part-time):
+      job_finding_prob = 1.0 (guaranteed job offer after caregiving ends)
+    - For people who are caregiving AND had a job before caregiving AND
+      working full-time: job_finding_prob = normal probability
+      (no special benefit, treated like non-caregiving)
+    - Retired caregivers are excluded from the job retention benefit because
+      retirement already sets job offer probability to 0 in the final calculation
+    - This allows caregivers on leave to keep their previous job and return to it
+      after caregiving ends, but full-time workers receive normal job offer probability
 
     """
 
@@ -45,25 +52,36 @@ def job_offer_process_transition_with_job_retention(
     caregiving_choice = is_informal_care(choice)
     employed_before_caregiving = had_job_before_caregiving(job_before_caregiving)
 
-    # Job separation policy: if caregiving + had job before caregiving,
-    # no job separation
-    labor_and_caregiving_with_previous_job = (
-        employed_before_caregiving & caregiving_choice
-    )
-
     job_sep_prob = options["job_sep_probs"][SEX, education, period]
     job_finding_prob = calc_job_finding_prob_women(period, education, params, options)
 
-    # Apply job retention policy: if caregiving + had job before caregiving,
+    # Job separation policy: if caregiving + had job before caregiving,
     # no job separation
+    caregiver_with_previous_job = employed_before_caregiving & caregiving_choice
     job_sep_prob_with_caregiver_retention = jnp.where(
-        labor_and_caregiving_with_previous_job, 0.0, job_sep_prob
+        caregiver_with_previous_job, 0.0, job_sep_prob
     )
 
+    # Check if person is on "caregiving leave"
+    # (unemployed or part-time while caregiving)
+    # Note: Retired caregivers are excluded because retirement already sets
+    # prob_no_job = 1 (prob_job = 0) in the final calculation, so the job
+    # retention benefit doesn't apply
+    caregiving_leave = caregiving_choice & (
+        is_unemployed(choice) | is_part_time(choice)
+    )
+
+    # Job finding probability modification:
+    # - If caregiving + had job before + on caregiving leave (unemployed/part-time):
+    #   guaranteed job offer (prob = 1.0)
+    # - If caregiving + had job before + full-time: normal job finding probability
+    # - If caregiving + had job before + retired: normal job finding probability
+    #   (but retirement term in prob_no_job calculation will override to prob_job = 0)
+    # - Otherwise: use normal job finding probability
     job_finding_prob_with_caregiver_retention = jnp.where(
-        labor_and_caregiving_with_previous_job,
-        1.0,
-        job_finding_prob,
+        caregiving_leave & employed_before_caregiving,
+        1.0,  # Guaranteed job offer for caregiving leave
+        job_finding_prob,  # Normal job finding probability
     )
 
     # Transition probability

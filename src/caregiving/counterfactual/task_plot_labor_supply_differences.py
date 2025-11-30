@@ -65,7 +65,8 @@ def task_plot_labor_supply_differences(
     / "plots"
     / "counterfactual"
     / "labor_supply_differences_by_age.png",
-    ever_caregivers: bool = True,
+    ever_caregivers: bool = False,
+    ever_care_demand: bool = True,
 ) -> None:
     """Plot differences in labor supply by age between scenarios."""
 
@@ -111,6 +112,17 @@ def task_plot_labor_supply_differences(
         df_original = df_original[df_original["agent"].isin(caregiver_ids)].copy()
         df_no_care_demand = df_no_care_demand[
             df_no_care_demand["agent"].isin(caregiver_ids)
+        ].copy()
+
+    # Optional sample restriction to agents who ever experience care demand
+    if ever_care_demand:
+        care_demand_ids = df_original.loc[
+            df_original["care_demand"] > 0, "agent"
+        ].unique()
+
+        df_original = df_original[df_original["agent"].isin(care_demand_ids)].copy()
+        df_no_care_demand = df_no_care_demand[
+            df_no_care_demand["agent"].isin(care_demand_ids)
         ].copy()
 
     # Compute labor supply shares by age for both scenarios
@@ -493,7 +505,8 @@ def task_plot_labor_supply_age_profiles(
     / "plots"
     / "counterfactual"
     / "labor_supply_age_profiles.png",
-    ever_caregivers: bool = True,
+    ever_caregivers: bool = False,
+    ever_care_demand: bool = True,
 ) -> None:
     """Task: plot FT, PT, Not Working age profiles for both scenarios."""
 
@@ -531,6 +544,17 @@ def task_plot_labor_supply_age_profiles(
         df_original = df_original[df_original["agent"].isin(caregiver_ids)].copy()
         df_no_care_demand = df_no_care_demand[
             df_no_care_demand["agent"].isin(caregiver_ids)
+        ].copy()
+
+    # Optional sample restriction to agents who ever experience care demand
+    if ever_care_demand:
+        care_demand_ids = df_original.loc[
+            df_original["care_demand"] > 0, "agent"
+        ].unique()
+
+        df_original = df_original[df_original["agent"].isin(care_demand_ids)].copy()
+        df_no_care_demand = df_no_care_demand[
+            df_no_care_demand["agent"].isin(care_demand_ids)
         ].copy()
 
     create_labor_supply_age_profile_plot(
@@ -785,6 +809,7 @@ def _matched_diff_profile_by_distance(
     outcome_col_c: str,
     *,
     ever_caregivers: bool,
+    ever_care_demand: bool,
     window: int,
 ) -> pd.DataFrame:
     """Generic matched-diff-by-distance builder for a numeric outcome."""
@@ -806,6 +831,12 @@ def _matched_diff_profile_by_distance(
         caregiver_ids = df_o.loc[df_o["choice"].isin(care_codes), "agent"].unique()
         df_o = df_o[df_o["agent"].isin(caregiver_ids)].copy()
         df_c = df_c[df_c["agent"].isin(caregiver_ids)].copy()
+
+    # Optional sample restriction to agents who ever experience care demand
+    if ever_care_demand:
+        care_demand_ids = df_o.loc[df_o["care_demand"] > 0, "agent"].unique()
+        df_o = df_o[df_o["agent"].isin(care_demand_ids)].copy()
+        df_c = df_c[df_c["agent"].isin(care_demand_ids)].copy()
 
     # Keep required columns and avoid name collisions by renaming outcome columns
     o_cols = df_o[["agent", "period", outcome_col_o]].copy()
@@ -1005,7 +1036,8 @@ def task_plot_outcomes_by_distance_to_first_care(
     / "plots"
     / "counterfactual"
     / "outcomes_by_distance_to_first_care.png",
-    ever_caregivers: bool = True,
+    ever_caregivers: bool = False,
+    ever_care_demand: bool = True,
     window: int = 16,
 ) -> None:
     """Create distance_to_first_care and plot mean outcomes by distance (6 lines)."""
@@ -1030,6 +1062,16 @@ def task_plot_outcomes_by_distance_to_first_care(
         df_original = df_original[df_original["agent"].isin(caregiver_ids)].copy()
         df_no_care_demand = df_no_care_demand[
             df_no_care_demand["agent"].isin(caregiver_ids)
+        ].copy()
+
+    # Optional sample restriction to agents who ever experience care demand
+    if ever_care_demand:
+        care_demand_ids = df_original.loc[
+            df_original["care_demand"] > 0, "agent"
+        ].unique()
+        df_original = df_original[df_original["agent"].isin(care_demand_ids)].copy()
+        df_no_care_demand = df_no_care_demand[
+            df_no_care_demand["agent"].isin(care_demand_ids)
         ].copy()
 
     # Compute distance in original and copy to counterfactual
@@ -1066,7 +1108,8 @@ def task_plot_matched_differences_by_distance(  # noqa: PLR0915
     / "plots"
     / "counterfactual"
     / "matched_differences_by_distance.png",
-    ever_caregivers: bool = True,
+    ever_caregivers: bool = False,
+    ever_care_demand: bool = True,
     window: int = 20,
 ) -> None:
     """Compute matched period differences (orig - no-care), then average by distance.
@@ -1113,6 +1156,12 @@ def task_plot_matched_differences_by_distance(  # noqa: PLR0915
         caregiver_ids = df_o.loc[df_o["choice"].isin(care_codes), "agent"].unique()
         df_o = df_o[df_o["agent"].isin(caregiver_ids)].copy()
         df_c = df_c[df_c["agent"].isin(caregiver_ids)].copy()
+
+    # Optional sample restriction to agents who ever experience care demand
+    if ever_care_demand:
+        care_demand_ids = df_o.loc[df_o["care_demand"] > 0, "agent"].unique()
+        df_o = df_o[df_o["agent"].isin(care_demand_ids)].copy()
+        df_c = df_c[df_c["agent"].isin(care_demand_ids)].copy()
 
     # Outcomes per period
     o_work = df_o["choice"].isin(np.asarray(WORK).ravel().tolist()).astype(float)
@@ -1238,7 +1287,8 @@ def task_plot_wealth_differences(
     / "plots"
     / "counterfactual"
     / "wealth_differences_by_age.png",
-    ever_caregivers: bool = True,
+    ever_caregivers: bool = False,
+    ever_care_demand: bool = True,
 ) -> None:
     """Plot differences in wealth by age between scenarios."""
 
@@ -1281,6 +1331,16 @@ def task_plot_wealth_differences(
             df_no_care_demand["agent"].isin(caregiver_ids)
         ].copy()
 
+    # Optional sample restriction to agents who ever experience care demand
+    if ever_care_demand:
+        care_demand_ids = df_original.loc[
+            df_original["care_demand"] > 0, "agent"
+        ].unique()
+        df_original = df_original[df_original["agent"].isin(care_demand_ids)].copy()
+        df_no_care_demand = df_no_care_demand[
+            df_no_care_demand["agent"].isin(care_demand_ids)
+        ].copy()
+
     # Compute wealth differences
     differences = compute_wealth_savings_differences(
         df_original, df_no_care_demand, "wealth_at_beginning"
@@ -1302,7 +1362,8 @@ def task_plot_savings_differences(
     / "plots"
     / "counterfactual"
     / "savings_differences_by_age.png",
-    ever_caregivers: bool = True,
+    ever_caregivers: bool = False,
+    ever_care_demand: bool = True,
 ) -> None:
     """Plot differences in savings by age between scenarios."""
 
@@ -1345,6 +1406,16 @@ def task_plot_savings_differences(
             df_no_care_demand["agent"].isin(caregiver_ids)
         ].copy()
 
+    # Optional sample restriction to agents who ever experience care demand
+    if ever_care_demand:
+        care_demand_ids = df_original.loc[
+            df_original["care_demand"] > 0, "agent"
+        ].unique()
+        df_original = df_original[df_original["agent"].isin(care_demand_ids)].copy()
+        df_no_care_demand = df_no_care_demand[
+            df_no_care_demand["agent"].isin(care_demand_ids)
+        ].copy()
+
     # Compute savings differences
     differences = compute_wealth_savings_differences(
         df_original, df_no_care_demand, "savings_dec"
@@ -1369,7 +1440,8 @@ def task_plot_total_income_matched_differences_by_distance(
     / "plots"
     / "counterfactual"
     / "matched_differences_total_income_by_distance.png",
-    ever_caregivers: bool = True,
+    ever_caregivers: bool = False,
+    ever_care_demand: bool = True,
     window: int = 20,
 ) -> None:
     """Matched diffs (orig - no-care) of total_income by distance to first care."""
@@ -1396,6 +1468,7 @@ def task_plot_total_income_matched_differences_by_distance(
         outcome_col_o="total_income_calc",
         outcome_col_c="total_income_calc",
         ever_caregivers=ever_caregivers,
+        ever_care_demand=ever_care_demand,
         window=window,
     )
 
@@ -1418,7 +1491,8 @@ def task_plot_gross_income_matched_differences_by_distance(
     / "plots"
     / "counterfactual"
     / "matched_differences_gross_income_by_distance.png",
-    ever_caregivers: bool = True,
+    ever_caregivers: bool = False,
+    ever_care_demand: bool = True,
     window: int = 20,
 ) -> None:
     """Matched diffs (orig - no-care) of gross labor income by distance."""
@@ -1442,6 +1516,7 @@ def task_plot_gross_income_matched_differences_by_distance(
         outcome_col_o="gross_labor_income_calc",
         outcome_col_c="gross_labor_income_calc",
         ever_caregivers=ever_caregivers,
+        ever_care_demand=ever_care_demand,
         window=window,
     )
 
@@ -1470,7 +1545,8 @@ def task_plot_hourly_wage_matched_differences_by_distance(
     / "plots"
     / "counterfactual"
     / "matched_differences_hourly_wage_by_distance.png",
-    ever_caregivers: bool = True,
+    ever_caregivers: bool = False,
+    ever_care_demand: bool = True,
     window: int = 20,
 ) -> None:
     """Matched diffs (orig - no-care) of hourly wage by distance.
@@ -1511,6 +1587,7 @@ def task_plot_hourly_wage_matched_differences_by_distance(
         outcome_col_o="hourly_wage_calc",
         outcome_col_c="hourly_wage_calc",
         ever_caregivers=ever_caregivers,
+        ever_care_demand=ever_care_demand,
         window=window,
     )
 
@@ -1531,7 +1608,8 @@ def task_plot_retired_matched_differences_by_distance(
     / "plots"
     / "counterfactual"
     / "matched_differences_retired_by_distance.png",
-    ever_caregivers: bool = True,
+    ever_caregivers: bool = False,
+    ever_care_demand: bool = True,
     window: int = 20,
 ) -> None:
     """Matched diffs (orig - no-care) of retired indicator by distance."""
@@ -1555,6 +1633,7 @@ def task_plot_retired_matched_differences_by_distance(
         outcome_col_o="retired_ind",
         outcome_col_c="retired_ind",
         ever_caregivers=ever_caregivers,
+        ever_care_demand=ever_care_demand,
         window=window,
     )
 
@@ -1575,7 +1654,8 @@ def task_plot_savings_rate_matched_differences_by_distance(
     / "plots"
     / "counterfactual"
     / "matched_differences_savings_rate_by_distance.png",
-    ever_caregivers: bool = True,
+    ever_caregivers: bool = False,
+    ever_care_demand: bool = True,
     window: int = 20,
 ) -> None:
     """Matched diffs (orig - no-care) of savings_rate by distance."""
@@ -1588,6 +1668,7 @@ def task_plot_savings_rate_matched_differences_by_distance(
         outcome_col_o="savings_rate",
         outcome_col_c="savings_rate",
         ever_caregivers=ever_caregivers,
+        ever_care_demand=ever_care_demand,
         window=window,
     )
 
@@ -1608,7 +1689,8 @@ def task_plot_savings_dec_matched_differences_by_distance(
     / "plots"
     / "counterfactual"
     / "matched_differences_savings_dec_by_distance.png",
-    ever_caregivers: bool = True,
+    ever_caregivers: bool = False,
+    ever_care_demand: bool = True,
     window: int = 20,
 ) -> None:
     """Matched diffs (orig - no-care) of savings_dec by distance."""
@@ -1621,6 +1703,7 @@ def task_plot_savings_dec_matched_differences_by_distance(
         outcome_col_o="savings_dec",
         outcome_col_c="savings_dec",
         ever_caregivers=ever_caregivers,
+        ever_care_demand=ever_care_demand,
         window=window,
     )
 
@@ -2167,7 +2250,8 @@ def task_plot_total_income_matched_differences_by_distance_from_df(
     / "plots"
     / "counterfactual"
     / "matched_differences_total_income_by_distance_from_df.png",
-    ever_caregivers: bool = True,
+    ever_caregivers: bool = False,
+    ever_care_demand: bool = True,
     window: int = 20,
 ) -> None:
     """Matched diffs (orig - no-care) of total_income (from df) by distance."""
@@ -2180,6 +2264,7 @@ def task_plot_total_income_matched_differences_by_distance_from_df(
         outcome_col_o="total_income",
         outcome_col_c="total_income",
         ever_caregivers=ever_caregivers,
+        ever_care_demand=ever_care_demand,
         window=window,
     )
 

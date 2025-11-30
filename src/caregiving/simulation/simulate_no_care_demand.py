@@ -121,6 +121,38 @@ def simulate_scenario_no_care_demand(
     df["savings_dec"] = df["total_income"] - df["consumption"]
     df["savings_rate"] = df["savings_dec"] / df["total_income"]
 
+    # ===============================================================================
+    # Gross labor income computation
+    # ===============================================================================
+    work_values = part_time_values + full_time_values
+
+    # Convert pandas Series to numpy arrays for JAX
+    lagged_choice_array = np.asarray(df["lagged_choice"])
+    experience_years_array = np.asarray(df["exp_years"])
+    education_array = np.asarray(df["education"])
+    income_shock_array = np.asarray(df["income_shock"])
+
+    # Vectorized gross labor income calculation
+    vectorized_calc_gross_labor_income = jax.vmap(
+        lambda lc, exp, edu, shock: calculate_gross_labor_income(
+            lagged_choice=lc,
+            experience_years=exp,
+            education=edu,
+            sex=sex_var,
+            income_shock=shock,
+            options=model_params,
+        )
+    )
+    gross_labor_income_array = vectorized_calc_gross_labor_income(
+        lagged_choice_array,
+        experience_years_array,
+        education_array,
+        income_shock_array,
+    )
+    df["gross_labor_income"] = gross_labor_income_array * df["lagged_choice"].isin(
+        work_values
+    )
+
     # Mother age
     df["mother_age"] = (
         df["age"].to_numpy()
@@ -307,17 +339,17 @@ def build_simulation_df_with_income_components_no_care_demand(
 
     # Calculate total individual income following budget equation logic
     # Total net income = labor income + pension income + child benefits
-    df["total_net_income"] = (
+    df["total_gross_income"] = (
         df["gross_labor_income"] + df["child_benefits"] + df["gross_pension_income"]
     )
 
     # Apply maximum with unemployment benefits (following budget equation)
     # df["total_income"] = np.maximum(
-    #     df["total_net_income"], df["unemployment_benefits"]
+    #     df["total_gross_income"], df["unemployment_benefits"]
     # ) * (df["health"] != DEAD)
     df["total_income"] = np.where(
         df["health"] != DEAD,
-        np.maximum(df["total_net_income"], df["unemployment_benefits"]),
+        np.maximum(df["total_gross_income"], df["unemployment_benefits"]),
         0,
     )
 

@@ -132,9 +132,8 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
     # ================================================================================
     elif (age > options["end_age_msm"] + 1) & is_informal_care(lagged_choice):
         return False
-    # ================================================================================
-    elif (age > options["end_age_msm"] + 1) & (job_before_caregiving == 1):
-        return False
+    # elif (age > options["end_age_msm"] + 1) & (job_before_caregiving == 1):
+    #     return False
     # ================================================================================
     # After the maximum retirement age, you must be retired.
     elif (age > max_ret_age) & (not is_retired(lagged_choice)) & (is_alive(health)):
@@ -144,8 +143,8 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
     # ================================================================================
     elif (age <= start_age + START_PERIOD_CAREGIVING) & is_informal_care(lagged_choice):
         return False
-    elif (age <= start_age + START_PERIOD_CAREGIVING) & (job_before_caregiving == 1):
-        return False
+    # elif (age <= start_age + START_PERIOD_CAREGIVING) & (job_before_caregiving == 1):
+    #     return False
     elif (not is_informal_care(lagged_choice)) & (job_before_caregiving == 1):
         return False
     # ================================================================================
