@@ -20,16 +20,24 @@ from caregiving.model.shared import (
     INFORMAL_CARE,
     INTENSIVE_INFORMAL_CARE,
     LIGHT_INFORMAL_CARE,
+    NO_INFORMAL_CARE,
     NOT_WORKING,
     NOT_WORKING_CHOICES,
     PARENT_DEAD,
+    RETIREMENT,
     SCALE_CAREGIVER_SHARE,
     SEX,
+    START_PERIOD_CAREGIVING,
     WEALTH_QUANTILE_CUTOFF,
     WORK,
     WORK_CHOICES,
 )
-from caregiving.moments.task_create_soep_moments import adjust_and_trim_wealth_data
+from caregiving.moments.task_create_soep_moments import (
+    create_df_caregivers,
+    create_df_non_caregivers,
+    create_df_wealth,
+    create_df_with_caregivers,
+)
 from caregiving.simulation.plot_model_fit import (
     plot_average_savings_decision,
     plot_average_wealth,
@@ -44,6 +52,7 @@ from caregiving.simulation.plot_model_fit import (
     plot_job_offer_share_by_age,
     plot_simulated_care_demand_by_age,
     plot_states,
+    plot_transition_counts_by_age,
     plot_transitions_by_age,
     plot_transitions_by_age_bins,
     plot_wealth_by_age_and_education,
@@ -129,6 +138,18 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
     / "plots"
     / "model_fit_estimated_params"
     / "work_transitions_by_edu_and_age_bin.png",
+    path_to_save_work_transition_counts_age_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "model_fit_estimated_params"
+    / "work_transition_counts_by_edu_and_age.png",
+    path_to_save_caregiving_transition_age_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "model_fit_estimated_params"
+    / "caregiving_transitions_by_age.png",
+    path_to_save_caregiving_transition_age_bin_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "model_fit_estimated_params"
+    / "caregiving_transitions_by_age_bin.png",
     path_to_save_avg_caregiving_years: Annotated[Path, Product] = BLD
     / "plots"
     / "model_fit_estimated_params"
@@ -143,18 +164,51 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
     )
     specs = model_full["options"]["model_params"]
 
+    start_age = specs["start_age"]
+    start_age_caregivers = start_age + START_PERIOD_CAREGIVING
+    end_age = specs["end_age_msm"]
+    start_year = 2001
+    end_year = 2019
+
     emp_moms = pd.read_csv(path_to_empirical_moments, index_col=[0]).squeeze("columns")
 
-    df_emp = pd.read_csv(path_to_empirical_data, index_col=[0])
-    df_emp_wealth = df_emp[(df_emp["wealth"].notna()) & (df_emp["sex"] == 1)].copy()
+    # Load full datasets
+    df_emp_full = pd.read_csv(path_to_empirical_data, index_col=[0])
+    df_caregivers_full = pd.read_csv(path_to_caregivers_sample, index_col=[0])
 
-    df_caregivers = pd.read_csv(path_to_caregivers_sample, index_col=[0])
+    # Create standardized subsamples using shared functions
+    df_emp = create_df_non_caregivers(
+        df_full=df_emp_full,
+        specs=specs,
+        start_year=start_year,
+        end_year=end_year,
+        end_age=end_age,
+    )
+    df_emp_with_caregivers = create_df_with_caregivers(
+        df_full=df_emp_full,
+        specs=specs,
+        start_year=start_year,
+        end_year=end_year,
+        end_age=end_age,
+    )
+    df_emp_caregivers = create_df_caregivers(
+        df_caregivers_full=df_caregivers_full,
+        specs=specs,
+        start_year=start_year,
+        end_year=end_year,
+        end_age=end_age,
+    )
+    df_emp_wealth = create_df_wealth(df_full=df_emp_full, specs=specs)
+
+    # =================================================================================
+    # Simulated data
+    # =================================================================================
+
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
     df_sim["sex"] = SEX
     df_sim = df_sim[df_sim["health"] != DEAD].copy()
 
     # Subsets empirical
-    df_emp_caregivers = df_caregivers.loc[df_caregivers["any_care"] == 1].copy()
 
     df_emp_light_caregivers = df_emp_caregivers.loc[
         df_emp_caregivers["light_care"] == 1
@@ -172,8 +226,6 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
     df_sim_intensive_caregivers = df_sim.loc[
         df_sim["choice"].isin(np.asarray(INTENSIVE_INFORMAL_CARE).tolist())
     ]
-
-    df_emp_wealth = adjust_and_trim_wealth_data(df=df_emp_wealth, specs=specs)
 
     # Wealth by age
     plot_wealth_by_age_and_education(
@@ -202,7 +254,10 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
     plot_average_savings_decision(df_sim, path_to_save_savings_plot)
 
     plot_choice_shares_by_education(
-        df_emp, df_sim, specs, path_to_save_plot=path_to_save_labor_shares_by_educ_plot
+        df_emp,
+        df_sim,
+        specs,
+        path_to_save_plot=path_to_save_labor_shares_by_educ_plot,
     )
     test_choice_shares_sum_to_one(df_emp, df_sim, specs)
 
@@ -222,7 +277,6 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
     )
 
     # Define age range for caregivers (40-75) and use 3-year bins
-    start_age_caregivers = 40
     end_age = 69
 
     plot_choice_shares_by_education_age_bins(
@@ -314,6 +368,22 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
     ].mean()
     print(f"Share high education (cond. on informal care): {share_caregivers_high_edu}")
 
+    # =================================================================================
+    # Transition probabilities
+    # =================================================================================
+    _working_counts = count_working_after_max_ret_age(df_sim, specs)
+
+    # Drop all agents (entirely) who work after the maximum retirement age
+    # Identify agents who work (not retired) after max_ret_age
+    retirement_values = RETIREMENT.ravel().tolist()
+    max_ret_age = specs["max_ret_age"]
+    agents_working_after_ret = df_sim.loc[
+        (~df_sim["choice"].isin(retirement_values)) & (df_sim["age"] > max_ret_age)
+    ]["agent"].unique()
+
+    # Drop all rows for those agents
+    df_sim = df_sim[~df_sim["agent"].isin(agents_working_after_ret)]
+
     states_sim = {
         "not_working": NOT_WORKING,
         "working": WORK,
@@ -326,9 +396,8 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         "not_working": "Not Working",
         "working": "Work",
     }
-
     plot_transitions_by_age(
-        df_emp,
+        df_emp_with_caregivers,
         df_sim,
         specs,
         state_labels,
@@ -338,7 +407,7 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         path_to_save_plot=path_to_save_work_transition_age_plot,
     )
     plot_transitions_by_age_bins(
-        df_emp,
+        df_emp_with_caregivers,
         df_sim,
         specs,
         state_labels,
@@ -348,6 +417,124 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         one_way=True,
         path_to_save_plot=path_to_save_work_transition_age_bin_plot,
     )
+    plot_transition_counts_by_age(
+        df_emp_with_caregivers,
+        df_sim,
+        specs,
+        state_labels,
+        states_emp=states_emp,
+        states_sim=states_sim,
+        one_way=True,
+        path_to_save_plot=path_to_save_work_transition_counts_age_plot,
+    )
+
+    # =================================================================================
+    # Caregiving transitions
+    # =================================================================================
+    # Create temporary choice columns for empirical data (from any_care)
+    df_emp_care = df_emp_with_caregivers.copy()
+    if "any_care" in df_emp_care.columns and "lagged_any_care" in df_emp_care.columns:
+        df_emp_care["choice"] = df_emp_care["any_care"]
+        df_emp_care["lagged_choice"] = df_emp_care["lagged_any_care"]
+    else:
+        # If columns don't exist, create them (assuming they should be there)
+        raise ValueError(
+            "df_emp_with_caregivers must have 'any_care' and 'lagged_any_care' columns"
+        )
+
+    # Caregiving states: empirical uses binary (0/1), simulated uses choice codes
+    states_caregiving_emp = {
+        "no_informal_care": [0],  # any_care == 0
+        "informal_care": [1],  # any_care == 1
+    }
+    states_caregiving_sim = {
+        "no_informal_care": NO_INFORMAL_CARE,
+        "informal_care": INFORMAL_CARE,
+    }
+    state_labels_caregiving = {
+        "no_informal_care": "No Informal Care",
+        "informal_care": "Informal Care",
+    }
+
+    # Use start_age_caregivers for caregiving transitions
+    start_age_caregivers = start_age + START_PERIOD_CAREGIVING
+
+    plot_transitions_by_age(
+        df_emp_care,
+        df_sim,
+        specs,
+        state_labels_caregiving,
+        states_emp=states_caregiving_emp,
+        states_sim=states_caregiving_sim,
+        age_min=start_age_caregivers,
+        one_way=True,
+        path_to_save_plot=path_to_save_caregiving_transition_age_plot,
+    )
+    plot_transitions_by_age_bins(
+        df_emp_care,
+        df_sim,
+        specs,
+        state_labels_caregiving,
+        states_emp=states_caregiving_emp,
+        states_sim=states_caregiving_sim,
+        age_min=start_age_caregivers,
+        bin_width=5,
+        one_way=True,
+        path_to_save_plot=path_to_save_caregiving_transition_age_bin_plot,
+    )
+
+
+def count_working_after_max_ret_age(data_sim, specs, max_ret_age=None):
+    """
+    Count the number of working individuals per age and education type
+    after the maximum retirement age.
+
+    Parameters
+    ----------
+    data_sim : pd.DataFrame
+        Simulated data with columns "age", "choice", "education", and "agent".
+    specs : dict
+        Model specifications. Must contain "max_ret_age" if max_ret_age is None.
+    max_ret_age : int, optional
+        Maximum retirement age. If None, uses specs["max_ret_age"].
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with columns "age", "education", and "n_working_individuals",
+        showing the count of unique working individuals per age and education type.
+    """
+    if max_ret_age is None:
+        max_ret_age = specs["max_ret_age"]
+
+    # Filter for ages after max_ret_age
+    df_after_ret = data_sim[data_sim["age"] >= max_ret_age].copy()
+
+    # Filter for working individuals (choice in WORK)
+    work_codes = np.asarray(WORK).tolist()
+    df_working = df_after_ret[df_after_ret["choice"].isin(work_codes)].copy()
+
+    # Count unique individuals per age and education
+    counts = (
+        df_working.groupby(["age", "education"])["agent"]
+        .nunique()
+        .reset_index(name="n_working_individuals")
+    )
+
+    # Ensure both education types are represented for each age (fill with 0 if missing)
+    if len(counts) > 0:
+        all_ages = counts["age"].unique()
+        all_educations = [0, 1]  # Low and high education
+        full_index = pd.MultiIndex.from_product(
+            [all_ages, all_educations], names=["age", "education"]
+        )
+        counts = (
+            counts.set_index(["age", "education"])
+            .reindex(full_index, fill_value=0)
+            .reset_index()
+        )
+
+    return counts
 
 
 def test_choice_shares_sum_to_one(data_emp, data_sim, specs):

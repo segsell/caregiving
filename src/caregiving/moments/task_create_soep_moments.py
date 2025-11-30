@@ -76,36 +76,38 @@ def task_create_soep_moments(  # noqa: PLR0915
     )
 
     df_full = pd.read_csv(path_to_main_sample, index_col=[0])
-    df = df_full[
-        (df_full["gebjahr"] >= specs["min_birth_year"])
-        & (df_full["gebjahr"] <= specs["max_birth_year"])
-        & (df_full["syear"] >= start_year)
-        & (df_full["syear"] <= end_year)
-        & (df_full["sex"] == 1)
-        & (df_full["age"] <= end_age + 10)
-        & (df_full["any_care"] == 0)
-    ]  # women only and non-caregivers
+    df_caregivers_full = pd.read_csv(path_to_caregivers_sample, index_col=[0])
+
+    # Create standardized subsamples using shared functions
+    df = create_df_non_caregivers(
+        df_full=df_full,
+        specs=specs,
+        start_year=start_year,
+        end_year=end_year,
+        end_age=end_age,
+    )
+    df_with_caregivers = create_df_with_caregivers(
+        df_full=df_full,
+        specs=specs,
+        start_year=start_year,
+        end_year=end_year,
+        end_age=end_age,
+    )
+    df_caregivers = create_df_caregivers(
+        df_caregivers_full=df_caregivers_full,
+        specs=specs,
+        start_year=start_year,
+        end_year=end_year,
+        end_age=end_age,
+    )
+    df_wealth = create_df_wealth(df_full=df_full, specs=specs)
 
     _df_alive = df[df["health"] != DEAD].copy()
     _df_good_health = df[df["health"] == GOOD_HEALTH].copy()
     _df_bad_health = df[df["health"] == BAD_HEALTH].copy()
 
-    df_wealth = df_full[df_full["sex"] == SEX].copy()
-    df_wealth = adjust_and_trim_wealth_data(df=df_wealth, specs=specs)
-
     df_wealth_low = df_wealth[df_wealth["education"] == 0].copy()
     df_wealth_high = df_wealth[df_wealth["education"] == 1].copy()
-
-    df_caregivers_full = pd.read_csv(path_to_caregivers_sample, index_col=[0])
-    df_caregivers = df_caregivers_full[
-        (df_caregivers_full["any_care"] == 1)
-        # & (df_caregivers_full["gebjahr"] >= specs["min_birth_year"])
-        # & (df_caregivers_full["gebjahr"] <= specs["max_birth_year"])
-        & (df_caregivers_full["syear"] >= start_year)
-        & (df_caregivers_full["syear"] <= end_year)
-        & (df_caregivers_full["sex"] == 1)
-        & (df_caregivers_full["age"] <= end_age + 10)
-    ]
     _df_caregivers_alive = df_caregivers[df_caregivers["health"] != DEAD].copy()
     # df_light_caregivers = df_caregivers[df_caregivers["light_care"] == 1].copy()
     df_intensive_caregivers = df_caregivers[df_caregivers["intensive_care"] == 1].copy()
@@ -123,6 +125,12 @@ def task_create_soep_moments(  # noqa: PLR0915
 
     df_low = df[df["education"] == 0].copy()
     df_high = df[df["education"] == 1].copy()
+    df_with_caregivers_low = df_with_caregivers[
+        df_with_caregivers["education"] == 0
+    ].copy()
+    df_with_caregivers_high = df_with_caregivers[
+        df_with_caregivers["education"] == 1
+    ].copy()
 
     df_caregivers_low = df_caregivers[df_caregivers["education"] == 0].copy()
     df_caregivers_high = df_caregivers[df_caregivers["education"] == 1].copy()
@@ -377,34 +385,34 @@ def task_create_soep_moments(  # noqa: PLR0915
     # )
     # =================================================================================
 
-    # # E) Year-to-year labor supply transitions
-    # states_work_no_work = {
-    #     "not_working": NOT_WORKING_CHOICES,
-    #     "working": WORK_CHOICES,
-    # }
-    # transition_moments, transition_variances = (
-    #     compute_transition_moments_and_variances_for_age_bins(
-    #         df_low,
-    #         min_age=start_age,
-    #         max_age=end_age,
-    #         states=states_work_no_work,
-    #         label="low_education",
-    #     )
-    # )
-    # moments.update(transition_moments)
-    # variances.update(transition_variances)
+    # E) Year-to-year labor supply transitions
+    states_work_no_work = {
+        "not_working": NOT_WORKING_CHOICES,
+        "working": WORK_CHOICES,
+    }
+    transition_moments, transition_variances = (
+        compute_transition_moments_and_variances_for_age_bins(
+            df_with_caregivers_low,
+            min_age=start_age,
+            max_age=end_age,
+            states=states_work_no_work,
+            label="low_education",
+        )
+    )
+    moments.update(transition_moments)
+    variances.update(transition_variances)
 
-    # transition_moments, transition_variances = (
-    #     compute_transition_moments_and_variances_for_age_bins(
-    #         df_high,
-    #         min_age=start_age,
-    #         max_age=end_age,
-    #         states=states_work_no_work,
-    #         label="high_education",
-    #     )
-    # )
-    # moments.update(transition_moments)
-    # variances.update(transition_variances)
+    transition_moments, transition_variances = (
+        compute_transition_moments_and_variances_for_age_bins(
+            df_with_caregivers_high,
+            min_age=start_age,
+            max_age=end_age,
+            states=states_work_no_work,
+            label="high_education",
+        )
+    )
+    moments.update(transition_moments)
+    variances.update(transition_variances)
 
     # states = {
     #     "not_working": NOT_WORKING,
@@ -423,23 +431,51 @@ def task_create_soep_moments(  # noqa: PLR0915
     # moments.update(trans_moments)
     # variances.update(trans_variances)
 
-    # states_care_to_care = {
-    #     "caregiving": 1,
-    #     "not_caregiving": 0,
-    # }
+    # Compute caregiving to caregiving transition probability by age bin
+    states_caregiving = {
+        "caregiving": 1,
+    }
     # transition_moments, transition_variances = (
     #     compute_transition_moments_and_variances_for_age_bins(
-    #         df_low,
+    #         df_with_caregivers_low,
     #         min_age=start_age,
     #         max_age=end_age,
-    #         states=states_care_to_care,
-    #         # label="low_education",
+    #         states=states_caregiving,
     #         choice="any_care",
-    #         lagged_choice="lagged_care",
+    #         lagged_choice="lagged_any_care",
+    #         label="low_education",
     #     )
     # )
     # moments.update(transition_moments)
     # variances.update(transition_variances)
+
+    # transition_moments, transition_variances = (
+    #     compute_transition_moments_and_variances_for_age_bins(
+    #         df_with_caregivers_high,
+    #         min_age=start_age,
+    #         max_age=end_age,
+    #         states=states_caregiving,
+    #         choice="any_care",
+    #         lagged_choice="lagged_any_care",
+    #         label="high_education",
+    #     )
+    # )
+    # moments.update(transition_moments)
+    # variances.update(transition_variances)
+    # Use start_age_caregivers for caregiving transitions (not start_age)
+    transition_moments, transition_variances = (
+        compute_transition_moments_and_variances_for_age_bins(
+            df_with_caregivers,
+            min_age=start_age_caregivers,
+            max_age=end_age,
+            states=states_caregiving,
+            choice="any_care",
+            lagged_choice="lagged_any_care",
+            label="all_education",
+        )
+    )
+    moments.update(transition_moments)
+    variances.update(transition_variances)
 
     # F) Wealth moments by age and education (NEW)
     # wealth_moments_edu_low, wealth_variances_edu_low = (
@@ -459,21 +495,22 @@ def task_create_soep_moments(  # noqa: PLR0915
     # plot_wealth_by_age(df, start_age=30, end_age=70, educ_val=1)
     # plot_wealth_by_5yr_bins(df, start_age=30, end_age=70, educ_val=1)
 
-    # =================================================================================
-    df_bad_health = df_caregivers_full.loc[
-        (df_caregivers_full["health"] == BAD_HEALTH)
-        & (df_caregivers_full["age"] > AGE_BINS_PARENTS[0])
-    ].copy()
+    # # ================================================================================
+    # # Care mix
+    # df_bad_health = df_caregivers_full.loc[
+    #     (df_caregivers_full["health"] == BAD_HEALTH)
+    #     & (df_caregivers_full["age"] > AGE_BINS_PARENTS[0])
+    # ].copy()
 
-    moments, variances = compute_shares_by_age_bin(
-        df_bad_health,
-        moments,
-        variances,
-        variable="nursing_home",
-        age_bins=(AGE_BINS_PARENTS, AGE_LABELS_PARENTS),
-        label="parents_nursing_home",
-    )
-    # =================================================================================
+    # moments, variances = compute_shares_by_age_bin(
+    #     df_bad_health,
+    #     moments,
+    #     variances,
+    #     variable="nursing_home",
+    #     age_bins=(AGE_BINS_PARENTS, AGE_LABELS_PARENTS),
+    #     label="parents_nursing_home",
+    # )
+    # # ================================================================================
 
     moments_df = pd.DataFrame({"value": pd.Series(moments)})
     moments_df.index.name = "moment"
@@ -1836,3 +1873,146 @@ def plot_wealth_by_5yr_bins(df, start_age, end_age, educ_val=None):
     plt.grid(True)
     plt.tight_layout()
     plt.show()
+
+
+# =====================================================================================
+# Data preparation functions - shared between moments and plotting
+# =====================================================================================
+
+
+def create_df_non_caregivers(
+    df_full: pd.DataFrame,
+    specs: dict,
+    start_year: int,
+    end_year: int,
+    end_age: int,
+) -> pd.DataFrame:
+    """
+    Create dataframe of non-caregivers (women only, excluding caregivers).
+
+    Parameters
+    ----------
+    df_full : pd.DataFrame
+        Full dataset loaded from CSV
+    specs : dict
+        Specifications dictionary
+    start_year : int
+        Start year for filtering
+    end_year : int
+        End year for filtering
+    end_age : int
+        Maximum age (plus buffer)
+
+    Returns
+    -------
+    pd.DataFrame
+        Filtered dataframe of non-caregivers
+    """
+    return df_full[
+        (df_full["gebjahr"] >= specs["min_birth_year"])
+        & (df_full["gebjahr"] <= specs["max_birth_year"])
+        & (df_full["syear"] >= start_year)
+        & (df_full["syear"] <= end_year)
+        & (df_full["sex"] == 1)
+        & (df_full["age"] <= end_age + 10)
+        & (df_full["any_care"] == 0)
+    ].copy()
+
+
+def create_df_with_caregivers(
+    df_full: pd.DataFrame,
+    specs: dict,
+    start_year: int,
+    end_year: int,
+    end_age: int,
+) -> pd.DataFrame:
+    """
+    Create dataframe including caregivers (women only, all caregiving statuses).
+
+    Parameters
+    ----------
+    df_full : pd.DataFrame
+        Full dataset loaded from CSV
+    specs : dict
+        Specifications dictionary
+    start_year : int
+        Start year for filtering
+    end_year : int
+        End year for filtering
+    end_age : int
+        Maximum age (plus buffer)
+
+    Returns
+    -------
+    pd.DataFrame
+        Filtered dataframe including caregivers
+    """
+    return df_full[
+        (df_full["gebjahr"] >= specs["min_birth_year"])
+        & (df_full["gebjahr"] <= specs["max_birth_year"])
+        & (df_full["syear"] >= start_year)
+        & (df_full["syear"] <= end_year)
+        & (df_full["sex"] == 1)
+        & (df_full["age"] <= end_age + 10)
+    ].copy()
+
+
+def create_df_caregivers(
+    df_caregivers_full: pd.DataFrame,
+    specs: dict,
+    start_year: int,
+    end_year: int,
+    end_age: int,
+) -> pd.DataFrame:
+    """
+    Create dataframe of caregivers only.
+
+    Parameters
+    ----------
+    df_caregivers_full : pd.DataFrame
+        Full caregivers dataset loaded from CSV
+    specs : dict
+        Specifications dictionary
+    start_year : int
+        Start year for filtering
+    end_year : int
+        End year for filtering
+    end_age : int
+        Maximum age (plus buffer)
+
+    Returns
+    -------
+    pd.DataFrame
+        Filtered dataframe of caregivers
+    """
+    return df_caregivers_full[
+        (df_caregivers_full["any_care"] == 1)
+        & (df_caregivers_full["syear"] >= start_year)
+        & (df_caregivers_full["syear"] <= end_year)
+        & (df_caregivers_full["sex"] == 1)
+        & (df_caregivers_full["age"] <= end_age + 10)
+    ].copy()
+
+
+def create_df_wealth(
+    df_full: pd.DataFrame,
+    specs: dict,
+) -> pd.DataFrame:
+    """
+    Create and adjust wealth dataframe.
+
+    Parameters
+    ----------
+    df_full : pd.DataFrame
+        Full dataset loaded from CSV
+    specs : dict
+        Specifications dictionary
+
+    Returns
+    -------
+    pd.DataFrame
+        Adjusted wealth dataframe (filtered for non-null wealth and sex == SEX)
+    """
+    df_wealth = df_full[(df_full["wealth"].notna()) & (df_full["sex"] == SEX)].copy()
+    df_wealth = adjust_and_trim_wealth_data(df=df_wealth, specs=specs)
+    return df_wealth

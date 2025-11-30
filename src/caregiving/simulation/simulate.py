@@ -4,9 +4,6 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pandas as pd
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.simulation.sim_utils import create_simulation_df
-from dcegm.simulation.simulate import simulate_all_periods
 
 from caregiving.model.shared import (
     DEAD,
@@ -47,6 +44,9 @@ from caregiving.model.wealth_and_budget.wages import (
     calculate_gross_labor_income,
 )
 from caregiving.utils import table
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.simulation.sim_utils import create_simulation_df
+from dcegm.simulation.simulate import simulate_all_periods
 
 jax.config.update("jax_enable_x64", True)
 
@@ -94,6 +94,8 @@ def simulate_scenario(
 
     # Create additional variables
     model_params = options["model_params"]
+    max_ret_age = model_params["max_ret_age"]
+
     df["age"] = df.index.get_level_values("period") + model_params["start_age"]
 
     # Create experience years
@@ -108,6 +110,7 @@ def simulate_scenario(
 
     part_time_values = PART_TIME.ravel().tolist()
     full_time_values = FULL_TIME.ravel().tolist()
+    retirement_values = RETIREMENT.ravel().tolist()
 
     sex_var = SEX
 
@@ -165,6 +168,17 @@ def simulate_scenario(
             df["has_sister"].to_numpy(), df["education"].to_numpy()
         ]
     )
+
+    # Drop all agents (entirely) who work after the maximum retirement age
+    # Identify agents who work (not retired) after max_ret_age
+    agents_working_after_ret = (
+        df.loc[(~df["choice"].isin(retirement_values)) & (df["age"] > max_ret_age)]
+        .index.get_level_values("agent")
+        .unique()
+    )
+
+    # Drop all rows for those agents
+    df = df[~df.index.get_level_values("agent").isin(agents_working_after_ret)]
 
     return df
 

@@ -1817,6 +1817,228 @@ def plot_transitions_by_age(  # noqa: PLR0912, PLR0915
     plt.close(fig)
 
 
+def plot_transition_counts_by_age(  # noqa: PLR0912, PLR0915
+    data_emp,
+    data_sim,
+    specs,
+    state_labels,
+    states_emp,
+    states_sim,
+    *,
+    age_min=None,
+    age_max=None,
+    one_way=False,
+    path_to_save_plot=None,
+):
+    """
+    Plot age-specific transition counts (absolute numbers) by education.
+
+    Layout: 4 rows x 2 columns
+    - Rows alternate between empirical and simulated data
+    - Columns represent different transitions
+    - Each education level gets 2 rows (empirical, simulated)
+
+    Similar to plot_transitions_by_age, but plots the absolute number of
+    observations that transition from lagged_choice → choice at each age,
+    rather than the transition rate.
+
+    Supports different code mappings for empirical vs simulated data via
+    `states_emp` and `states_sim`.
+    """
+
+    if set(states_emp.keys()) != set(states_sim.keys()):
+        raise ValueError(
+            "states_emp and states_sim must have the same keys (state labels)."
+        )
+
+    label_order = list(state_labels.keys())
+    if set(label_order) != set(states_emp.keys()):
+        label_order = list(states_emp.keys())
+
+    emp = data_emp.copy()
+    sim = data_sim.loc[data_sim["health"] != DEAD].copy()
+
+    sex = SEX
+    edu_labels = specs["education_labels"]
+    from_states = label_order
+    to_states = label_order
+
+    transitions = (
+        [(s, s) for s in from_states]
+        if one_way
+        else list(product(from_states, to_states))
+    )
+
+    if age_min is None:
+        age_min = specs["start_age"]
+    if age_max is None:
+        age_max = specs["end_age_msm"]
+    all_ages = list(range(age_min, age_max + 1))
+
+    # Layout: 4 rows (2 education levels × 2 data types) x 2 columns (transitions)
+    n_rows = len(edu_labels) * 2  # Each education gets 2 rows (empirical, simulated)
+    n_cols = len(transitions)
+
+    fig, axes = plt.subplots(
+        n_rows,
+        n_cols,
+        figsize=(8 * n_cols, 4 * n_rows),  # Wider to accommodate rotated age labels
+        sharey=False,  # Don't share y-axis since sample sizes differ
+    )
+
+    # Padding knobs
+    y_pad_frac = 0.05  # 5% padding above and below
+    x_pad_default = 0.5  # fallback if we can't infer a step from data
+
+    if n_rows == n_cols == 1:
+        axes = np.array([[axes]])
+    elif n_rows == 1:
+        axes = axes[np.newaxis, :]
+    elif n_cols == 1:
+        axes = axes[:, np.newaxis]
+
+    # Store all y-values to set consistent ylim per panel type
+    all_emp_vals = []
+    all_sim_vals = []
+
+    for i, edu_label in enumerate(edu_labels):
+        emp_sub = emp[
+            (emp["sex"] == sex) & (emp["education"] == i) & (emp["age"] <= age_max)
+        ]
+        sim_sub = sim[
+            (sim["sex"] == sex) & (sim["education"] == i) & (sim["age"] <= age_max)
+        ]
+
+        for j, (from_label, to_label) in enumerate(transitions):
+            # Row for empirical data: i * 2
+            ax_emp = axes[i * 2, j]
+            # Row for simulated data: i * 2 + 1
+            ax_sim = axes[i * 2 + 1, j]
+
+            emp_counts, sim_counts = [], []
+            for age in all_ages:
+                emp_from = emp_sub[
+                    (emp_sub["age"] == age)
+                    & (
+                        emp_sub["lagged_choice"].isin(
+                            np.atleast_1d(states_emp[from_label])
+                        )
+                    )
+                ]
+                sim_from = sim_sub[
+                    (sim_sub["age"] == age)
+                    & (
+                        sim_sub["lagged_choice"].isin(
+                            np.atleast_1d(states_sim[from_label])
+                        )
+                    )
+                ]
+                # Count transitions (sum of boolean) instead of mean
+                emp_counts.append(
+                    emp_from["choice"].isin(np.atleast_1d(states_emp[to_label])).sum()
+                    if len(emp_from)
+                    else np.nan
+                )
+                sim_counts.append(
+                    sim_from["choice"].isin(np.atleast_1d(states_sim[to_label])).sum()
+                    if len(sim_from)
+                    else np.nan
+                )
+
+            emp_ages = [
+                a for a, c in zip(all_ages, emp_counts, strict=False) if not np.isnan(c)
+            ]
+            emp_vals = [c for c in emp_counts if not np.isnan(c)]
+            sim_ages = [
+                a for a, c in zip(all_ages, sim_counts, strict=False) if not np.isnan(c)
+            ]
+            sim_vals = [c for c in sim_counts if not np.isnan(c)]
+
+            # Plot empirical data
+            if emp_vals:
+                ax_emp.plot(emp_ages, emp_vals, ls="--", color="blue", label="Observed")
+                all_emp_vals.extend(emp_vals)
+
+            # Plot simulated data
+            if sim_vals:
+                ax_sim.plot(sim_ages, sim_vals, color="orange", label="Simulated")
+                all_sim_vals.extend(sim_vals)
+
+            # Set titles
+            title = f"{state_labels[from_label]} → {state_labels[to_label]}"
+            ax_emp.set_title(f"{title} - Observed ({edu_label})")
+            ax_sim.set_title(f"{title} - Simulated ({edu_label})")
+
+            ax_emp.tick_params(labelbottom=True)
+            ax_sim.tick_params(labelbottom=True)
+
+            # Left/right padding (x) - same for both panels
+            if emp_ages or sim_ages:
+                ages_all = sorted(set(emp_ages + sim_ages))
+                if len(ages_all) > 1:
+                    diffs = np.diff(ages_all)
+                    step = float(np.median(diffs)) if len(diffs) > 0 else 1.0
+                else:
+                    step = 1.0
+                x_pad = 0.35 * step
+                xmin, xmax = min(ages_all), max(ages_all)
+                ax_emp.set_xlim(xmin - x_pad, xmax + x_pad)
+                ax_sim.set_xlim(xmin - x_pad, xmax + x_pad)
+            else:
+                ax_emp.set_xlim(age_min - x_pad_default, age_max + x_pad_default)
+                ax_sim.set_xlim(age_min - x_pad_default, age_max + x_pad_default)
+
+            ax_emp.set_xlabel("Age")
+            ax_sim.set_xlabel("Age")
+
+            # Set x-axis ticks to all ages and rotate labels
+            ax_emp.set_xticks(all_ages)
+            ax_emp.set_xticklabels(all_ages, rotation=90)
+            ax_sim.set_xticks(all_ages)
+            ax_sim.set_xticklabels(all_ages, rotation=90)
+
+            # Set ylim endogenously for each panel
+            # Empirical panel
+            if emp_vals:
+                y_min_emp = min(emp_vals)
+                y_max_emp = max(emp_vals)
+                y_range_emp = (
+                    y_max_emp - y_min_emp if y_max_emp > y_min_emp else y_max_emp
+                )
+                ax_emp.set_ylim(
+                    max(0, y_min_emp - y_pad_frac * y_range_emp),
+                    y_max_emp + y_pad_frac * y_range_emp,
+                )
+            else:
+                ax_emp.set_ylim(0, 1)
+
+            # Simulated panel
+            if sim_vals:
+                y_min_sim = min(sim_vals)
+                y_max_sim = max(sim_vals)
+                y_range_sim = (
+                    y_max_sim - y_min_sim if y_max_sim > y_min_sim else y_max_sim
+                )
+                ax_sim.set_ylim(
+                    max(0, y_min_sim - y_pad_frac * y_range_sim),
+                    y_max_sim + y_pad_frac * y_range_sim,
+                )
+            else:
+                ax_sim.set_ylim(0, 1)
+
+            # Set ylabel and legend only for first column
+            if j == 0:
+                ax_emp.set_ylabel(f"{edu_label}\nNumber of Transitions")
+                ax_sim.set_ylabel(f"{edu_label}\nNumber of Transitions")
+                ax_emp.legend()
+                ax_sim.legend()
+
+    fig.tight_layout()
+    if path_to_save_plot:
+        fig.savefig(path_to_save_plot, dpi=300, transparent=False)
+    plt.close(fig)
+
+
 def plot_transitions_by_age_bins(  # noqa: PLR0912, PLR0915
     data_emp,
     data_sim,
@@ -1878,11 +2100,25 @@ def plot_transitions_by_age_bins(  # noqa: PLR0912, PLR0915
     if age_max is None:
         age_max = specs["end_age_msm"]
 
+    # max_ret_age = specs["max_ret_age"]
+
+    # edges = list(range(age_min, age_max + 1, bin_width))
+    # # Adjust the last bin to end at max_ret_age (exclusive, open interval)
+    # if edges[-1] < max_ret_age:
+    #     # If the last edge is before max_ret_age, add max_ret_age as the final edge
+    #     edges.append(max_ret_age)
+    # else:
+    #     # If the last edge is at or beyond max_ret_age, replace it with max_ret_age
+    #     edges[-1] = max_ret_age
+
+    # bin_starts = edges[:-1]
+
     edges = list(range(age_min, age_max + 1, bin_width))
     if edges[-1] <= age_max:
         edges.append(age_max + 1)
 
     bin_starts = edges[:-1]
+
     bin_labels = [
         f"{start}-{end - 1}" for start, end in zip(edges[:-1], edges[1:], strict=False)
     ]

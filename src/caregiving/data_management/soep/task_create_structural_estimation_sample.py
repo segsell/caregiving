@@ -71,7 +71,9 @@ def task_create_main_estimation_sample(
     df = create_lagged_and_lead_variables(
         df, specs, lead_job_sep=True, drop_missing_lagged_choice=True
     )
-    # df["lagged_care"] = df.groupby(["pid"])["any_care"].shift(1)
+    # Create lagged_any_care variable from any_care
+    # pid is in the index (level 0)
+    df["lagged_any_care"] = df.groupby(level=0)["any_care"].shift(1)
 
     df = create_alreay_retired_variable(df)
     # df = df.reset_index()
@@ -126,7 +128,7 @@ def task_create_main_estimation_sample(
         "age": "int8",
         "period": "int8",
         "choice": "int8",
-        "lagged_choice": "float32",  # can be na
+        "lagged_choice": "float32",  # can be NA
         "policy_state": "int8",
         "policy_state_value": "int8",
         "already_retired": "int8",
@@ -142,6 +144,7 @@ def task_create_main_estimation_sample(
         "kidage_youngest": "int8",
         # caregiving, contains nans
         "any_care": "float32",
+        "lagged_any_care": "float32",
         "light_care": "float32",
         "intensive_care": "float32",
         "has_sister": "float32",
@@ -204,7 +207,9 @@ def task_create_caregivers_sample(
         start_year=2001,
         end_year=2023,
     )
-    # df["lagged_care"] = df.groupby(["pid"])["any_care"].shift(1)
+    # Create lagged_any_care variable from any_care
+    # pid is in the index (level 0)
+    df["lagged_any_care"] = df.groupby(level=0)["any_care"].shift(1)
 
     df = create_alreay_retired_variable(df)
     # df = df.reset_index()
@@ -273,6 +278,7 @@ def task_create_caregivers_sample(
         "kidage_youngest": "int8",
         # caregiving, contains nans
         "any_care": "float32",
+        "lagged_any_care": "float32",  # can be NA
         "light_care": "float32",
         "intensive_care": "float32",
         "has_sister": "float32",
