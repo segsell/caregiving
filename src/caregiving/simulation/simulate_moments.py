@@ -292,15 +292,16 @@ def simulate_moments_pandas(  # noqa: PLR0915
     # Caregiving transitions (informal care to informal care)
     # Use age_range_caregivers (starts at start_age_caregivers) instead of age_range
     # Pool across education levels (all_education) to match empirical moment creation
-    states_informal_care = {
-        "no_informal_care": NO_INFORMAL_CARE,
-        "informal_care": INFORMAL_CARE,
+    # Note: Only compute "caregiving to caregiving" transitions to match empirical
+    # (which uses states_caregiving = {"caregiving": 1})
+    states_caregiving = {
+        "caregiving": INFORMAL_CARE,
     }
     moments = compute_transition_moments_pandas_for_age_bins(
         df_with_caregivers,  # Pooled across all education levels
         moments,
         age_range_caregivers,
-        states=states_informal_care,
+        states=states_caregiving,
         label="all_education",
     )
     # states_light_informal = {
@@ -1545,14 +1546,8 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
 
     # Caregiving transitions by age bin
     # Pool across education levels (use arr_all) and start at min_age_caregivers
-    no_informal_to_no_informal_all_educ_by_age_bin = get_transition_for_age_bins(
-        arr_all,  # Pooled across all education levels
-        ind=idx,
-        lagged_choice=NO_INFORMAL_CARE,
-        current_choice=NO_INFORMAL_CARE,
-        min_age=min_age_caregivers,
-        max_age=max_age,
-    )
+    # Note: Only compute "caregiving to caregiving" transitions to match empirical
+    # (which uses states_caregiving = {"caregiving": 1})
     informal_to_informal_all_educ_by_age_bin = get_transition_for_age_bins(
         arr_all,  # Pooled across all education levels
         ind=idx,
@@ -1752,7 +1747,7 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
         + work_to_work_high_educ_by_age_bin
         # Caregiving transitions (pooled across education,
         # starting at min_age_caregivers)
-        + no_informal_to_no_informal_all_educ_by_age_bin
+        # Note: Only "caregiving to caregiving" to match empirical
         + informal_to_informal_all_educ_by_age_bin
         # #
         # # work to work transitions
