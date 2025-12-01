@@ -875,7 +875,6 @@ def plot_choice_shares_overall_age_bins(
     plt.tight_layout()
     if path_to_save_plot:
         fig.savefig(path_to_save_plot, dpi=300)
-    plt.close(fig)
 
 
 # =====================================================================================
@@ -1340,7 +1339,6 @@ def plot_simulated_care_demand_by_age(
     plt.tight_layout()
     if path_to_save_plot:
         plt.savefig(path_to_save_plot, dpi=300, transparent=False)
-    plt.close(fig)
 
 
 def plot_choice_shares_single(data_emp, data_sim, specs, path_to_save_plot):
@@ -1522,7 +1520,6 @@ def _plot_transitions_by_age(
     fig.tight_layout()
     if path_to_save_plot:
         fig.savefig(path_to_save_plot, dpi=300, transparent=False)
-    plt.close(fig)
 
 
 def _plot_transitions_by_age_bins(
@@ -1663,7 +1660,6 @@ def _plot_transitions_by_age_bins(
     plt.tight_layout()
     if path_to_save_plot:
         fig.savefig(path_to_save_plot, dpi=300)
-    plt.close(fig)
 
 
 def plot_transitions_by_age(  # noqa: PLR0912, PLR0915
@@ -1814,7 +1810,6 @@ def plot_transitions_by_age(  # noqa: PLR0912, PLR0915
     fig.tight_layout()
     if path_to_save_plot:
         fig.savefig(path_to_save_plot, dpi=300, transparent=False)
-    plt.close(fig)
 
 
 def plot_transition_counts_by_age(  # noqa: PLR0912, PLR0915
@@ -2036,7 +2031,6 @@ def plot_transition_counts_by_age(  # noqa: PLR0912, PLR0915
     fig.tight_layout()
     if path_to_save_plot:
         fig.savefig(path_to_save_plot, dpi=300, transparent=False)
-    plt.close(fig)
 
 
 def plot_transitions_by_age_bins(  # noqa: PLR0912, PLR0915
@@ -2231,7 +2225,6 @@ def plot_transitions_by_age_bins(  # noqa: PLR0912, PLR0915
     plt.tight_layout()
     if path_to_save_plot:
         fig.savefig(path_to_save_plot, dpi=300)
-    plt.close(fig)
 
 
 def plot_choice_shares(data_emp, data_sim, specs):
@@ -2344,4 +2337,3 @@ def plot_job_offer_share_by_age(df, min_age=30, max_age=75, path_to_save_plot=No
     plt.tight_layout()
     if path_to_save_plot:
         plt.savefig(path_to_save_plot, transparent=False, dpi=300)
-    plt.close()

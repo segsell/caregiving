@@ -1,0 +1,138 @@
+# """Specify model with higher retirement ages (min_SRA=69, max_ret_age=72)."""
+
+# import pickle
+# from pathlib import Path
+# from typing import Annotated
+
+# import jax.numpy as jnp
+# import numpy as np
+# import pytask
+# import yaml
+# from pytask import Product
+
+# from caregiving.config import BLD
+# from caregiving.model.state_space_higher_ret_age import create_state_space_functions
+# from caregiving.model.stochastic_processes.caregiving_transition import (
+#     care_demand_and_supply_transition,
+#     health_transition_good_medium_bad,
+# )
+# from caregiving.model.stochastic_processes.health_transition import (
+#     health_transition,
+# )
+# from caregiving.model.stochastic_processes.job_transition import (
+#     job_offer_process_transition,
+# )
+# from caregiving.model.stochastic_processes.partner_transition import partner_transition
+# from caregiving.model.utility.bequest_utility import (
+#     create_final_period_utility_functions,
+# )
+# from caregiving.model.utility.utility_functions_additive import create_utility_functions
+# from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
+# from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
+# from dcegm.pre_processing.setup_model import setup_and_save_model
+
+
+# @pytask.mark.higher_ret_age
+# def task_specify_model_higher_ret_age(
+#     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+#     path_to_start_params: Path = BLD / "model" / "params" / "start_params_updated.yaml",
+#     path_to_save_options: Annotated[Path, Product] = BLD
+#     / "model"
+#     / "options_higher_ret_age.pkl",
+#     path_to_save_model: Annotated[Path, Product] = BLD
+#     / "model"
+#     / "model_higher_ret_age.pkl",
+#     path_to_save_start_params: Annotated[Path, Product] = BLD
+#     / "model"
+#     / "params"
+#     / "start_params_model_higher_ret_age.yaml",
+# ):
+#     """
+#     Specify model with higher retirement ages.
+
+#     This version enforces min_SRA=69 and max_ret_age=72 in the options used for
+#     the state space and model functions.
+#     """
+
+#     with path_to_derived_specs.open("rb") as f:
+#         specs = pickle.load(f)
+
+#     params = yaml.safe_load(path_to_start_params.open("rb"))
+
+#     # Assign key parameters sourced from derived specs
+#     params["sigma"] = float(specs["income_shock_scale"])
+#     params["interest_rate"] = float(specs["interest_rate"])
+#     params["beta"] = float(specs["discount_factor"])
+
+#     with path_to_save_start_params.open("w", encoding="utf-8") as f:
+#         yaml.dump(params, f)
+
+#     # Load specifications and override retirement-related settings
+#     n_periods = specs["n_periods"]
+#     choices = np.arange(specs["n_choices"], dtype=int)
+
+#     # Override retirement policy ages
+#     specs["min_SRA"] = 69
+#     specs["max_ret_age"] = 72
+#     specs["min_ret_age"] = 65
+#     # if "min_ret_age" in specs:
+
+#     # Savings grid
+#     savings_grid = create_savings_grid()
+
+#     # Experience grid
+#     experience_grid = jnp.linspace(0, 1, specs["n_experience_grid_points"])
+
+#     options = {
+#         "state_space": {
+#             "min_period_batch_segments": [33, 44],
+#             "n_periods": n_periods,
+#             "choices": choices,
+#             "endogenous_states": {
+#                 "education": np.arange(specs["n_education_types"], dtype=int),
+#                 "already_retired": np.arange(2, dtype=int),
+#                 "has_sister": np.arange(2, dtype=int),
+#             },
+#             "exogenous_processes": {
+#                 "job_offer": {
+#                     "transition": job_offer_process_transition,
+#                     "states": np.arange(2, dtype=int),
+#                 },
+#                 "partner_state": {
+#                     "transition": partner_transition,
+#                     "states": np.arange(specs["n_partner_states"], dtype=int),
+#                 },
+#                 "health": {
+#                     "transition": health_transition,
+#                     "states": np.arange(specs["n_health_states"], dtype=int),
+#                 },
+#                 "mother_health": {
+#                     "transition": health_transition_good_medium_bad,
+#                     "states": np.arange(specs["n_health_states_three"], dtype=int),
+#                 },
+#                 "care_demand": {
+#                     "transition": care_demand_and_supply_transition,
+#                     "states": np.arange(3, dtype=int),
+#                 },
+#             },
+#             "continuous_states": {
+#                 "wealth": savings_grid,
+#                 "experience": experience_grid,
+#             },
+#         },
+#         "model_params": specs,
+#     }
+#     pickle.dump(options, path_to_save_options.open("wb"))
+
+#     model = setup_and_save_model(
+#         options=options,
+#         state_space_functions=create_state_space_functions(),
+#         utility_functions=create_utility_functions(),
+#         utility_functions_final_period=create_final_period_utility_functions(),
+#         budget_constraint=budget_constraint,
+#         path=path_to_save_model,
+#         sim_model=False,
+#     )
+
+#     print("Higher retirement age model specified.")
+#     return model, params
