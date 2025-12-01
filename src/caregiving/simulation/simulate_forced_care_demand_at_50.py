@@ -6,8 +6,6 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pandas as pd
-from dcegm.simulation.sim_utils import create_simulation_df
-from dcegm.simulation.simulate import simulate_all_periods
 
 from caregiving.model.shared import (
     CARE_DEMAND_AND_NO_OTHER_SUPPLY,
@@ -19,7 +17,10 @@ from caregiving.model.shared import (
     SEX,
 )
 from caregiving.model.state_space import construct_experience_years
-from caregiving.model.wealth_and_budget.wages import calc_labor_income_after_ssc
+from caregiving.model.wealth_and_budget.wages import (
+    calc_labor_income_after_ssc,
+    calculate_gross_labor_income,
+)
 from caregiving.simulation.simulation_utils import (
     convert_states_to_dtypes,
     extract_discrete_states_at_period,
@@ -29,9 +30,11 @@ from caregiving.simulation.simulation_utils import (
     find_continuous_state_names,
     override_forced_states,
 )
+from dcegm.simulation.sim_utils import create_simulation_df
+from dcegm.simulation.simulate import simulate_all_periods
 
 
-def simulate_scenario_forced_care_demand_at_50(
+def simulate_scenario_forced_care_demand_at_50(  # noqa: PLR0915
     model,
     solution,
     initial_states,

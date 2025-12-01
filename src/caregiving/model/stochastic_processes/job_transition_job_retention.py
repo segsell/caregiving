@@ -9,6 +9,7 @@ import jax.numpy as jnp
 from caregiving.model.shared import (
     SEX,
     had_job_before_caregiving,
+    is_full_time,
     is_informal_care,
     is_part_time,
     is_retired,
@@ -68,7 +69,7 @@ def job_offer_process_transition_with_job_retention(
     # prob_no_job = 1 (prob_job = 0) in the final calculation, so the job
     # retention benefit doesn't apply
     caregiving_leave = caregiving_choice & (
-        is_unemployed(choice) | is_part_time(choice)
+        is_unemployed(choice) | is_part_time(choice) | is_full_time(choice)
     )
 
     # Job finding probability modification:

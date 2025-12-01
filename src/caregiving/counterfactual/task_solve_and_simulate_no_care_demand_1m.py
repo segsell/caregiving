@@ -69,7 +69,7 @@
 
 #     # Simulate with 1m initial conditions
 #     initial_states = pickle.load(path_to_discrete_states.open("rb"))
-#     wealth_agents = jnp.array(
+#     wealth_agents = jnp.array(  # noqa: E501
 #         pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze()
 #     )
 
