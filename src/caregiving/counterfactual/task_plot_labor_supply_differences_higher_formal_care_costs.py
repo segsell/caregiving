@@ -304,11 +304,10 @@ def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915
                 "diff_pt",
                 "diff_job_offer",
                 "diff_hours_weekly",
-                # Temporarily removed until data recreation is complete:
-                # "diff_gross_labor_income",
-                # "diff_savings",
-                # "diff_wealth",
-                # "diff_savings_rate",
+                "diff_gross_labor_income",
+                "diff_savings",
+                "diff_wealth",
+                "diff_savings_rate",
             ]
         ]
         .mean()
@@ -346,31 +345,30 @@ def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915
             "ylabel": "Weekly Working Hours Difference\nDeviation from No Care Demand",
             "diff_col": "diff_hours_weekly",
         },
-        # Temporarily removed until data recreation is complete:
-        # "gross_labor_income": {
-        #     "path": path_to_plot_work.parent
-        #     / "matched_differences_gross_labor_income_by_age_at_first_care.png",
-        #     "ylabel": "Gross Labor Income (Monthly)\nDeviation from No Care Demand",
-        #     "diff_col": "diff_gross_labor_income",
-        # },
-        # "savings": {
-        #     "path": path_to_plot_work.parent
-        #     / "matched_differences_savings_by_age_at_first_care.png",
-        #     "ylabel": "Savings Decision\nDeviation from No Care Demand",
-        #     "diff_col": "diff_savings",
-        # },
-        # "wealth": {
-        #     "path": path_to_plot_work.parent
-        #     / "matched_differences_wealth_by_age_at_first_care.png",
-        #     "ylabel": "Wealth at Beginning of Period\nDeviation from No Care Demand",
-        #     "diff_col": "diff_wealth",
-        # },
-        # "savings_rate": {
-        #     "path": path_to_plot_work.parent
-        #     / "matched_differences_savings_rate_by_age_at_first_care.png",
-        #     "ylabel": "Savings Rate\nDeviation from No Care Demand",
-        #     "diff_col": "diff_savings_rate",
-        # },
+        "gross_labor_income": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_gross_labor_income_by_age_at_first_care.png",
+            "ylabel": "Gross Labor Income (Monthly)\nDeviation from No Care Demand",
+            "diff_col": "diff_gross_labor_income",
+        },
+        "savings": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_by_age_at_first_care.png",
+            "ylabel": "Savings Decision\nDeviation from No Care Demand",
+            "diff_col": "diff_savings",
+        },
+        "wealth": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_wealth_by_age_at_first_care.png",
+            "ylabel": "Wealth at Beginning of Period\nDeviation from No Care Demand",
+            "diff_col": "diff_wealth",
+        },
+        "savings_rate": {
+            "path": path_to_plot_work.parent
+            / "matched_differences_savings_rate_by_age_at_first_care.png",
+            "ylabel": "Savings Rate\nDeviation from No Care Demand",
+            "diff_col": "diff_savings_rate",
+        },
     }
 
     plot_all_outcomes_by_group(

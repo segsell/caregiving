@@ -33,60 +33,70 @@ def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915
     / "counterfactual"
     / "job_retention"
     / "vs_no_care_demand"
+    / "age_profiles"
     / "matched_differences_employment_rate_by_age.png",
     path_to_plot_ft: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "job_retention"
     / "vs_no_care_demand"
+    / "age_profiles"
     / "matched_differences_full_time_by_age.png",
     path_to_plot_pt: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "job_retention"
     / "vs_no_care_demand"
+    / "age_profiles"
     / "matched_differences_part_time_by_age.png",
     path_to_plot_job_offer: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "job_retention"
     / "vs_no_care_demand"
+    / "age_profiles"
     / "matched_differences_job_offer_by_age.png",
     path_to_plot_hours_weekly: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "job_retention"
     / "vs_no_care_demand"
+    / "age_profiles"
     / "matched_differences_hours_weekly_by_age.png",
     path_to_plot_care: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "job_retention"
     / "vs_no_care_demand"
+    / "age_profiles"
     / "matched_differences_care_by_age.png",
     path_to_plot_gross_labor_income: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "job_retention"
     / "vs_no_care_demand"
+    / "age_profiles"
     / "matched_differences_gross_labor_income_by_age.png",
     path_to_plot_savings: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "job_retention"
     / "vs_no_care_demand"
+    / "age_profiles"
     / "matched_differences_savings_by_age.png",
     path_to_plot_wealth: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "job_retention"
     / "vs_no_care_demand"
+    / "age_profiles"
     / "matched_differences_wealth_by_age.png",
     path_to_plot_savings_rate: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "job_retention"
     / "vs_no_care_demand"
+    / "age_profiles"
     / "matched_differences_savings_rate_by_age.png",
     ever_caregivers: bool = False,
     ever_care_demand: bool = True,
@@ -115,7 +125,7 @@ def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915
     jr_outcomes = calculate_outcomes(df_jr, choice_set_type="original")
     ncd_outcomes = calculate_outcomes(df_ncd, choice_set_type="no_care_demand")
 
-    # Calculate additional outcomes
+    # Calculate additional outcomes (includes consumption if available)
     jr_additional = calculate_additional_outcomes(df_jr)
     ncd_additional = calculate_additional_outcomes(df_ncd)
     jr_outcomes.update(jr_additional)
@@ -156,6 +166,7 @@ def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915
         "savings",
         "wealth",
         "savings_rate",
+        "consumption",
     ]
     merged = merge_and_compute_differences(jr_cols, ncd_cols, outcome_names)
 
@@ -176,6 +187,7 @@ def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915
                 "diff_savings",
                 "diff_wealth",
                 "diff_savings_rate",
+                "diff_consumption",
             ]
         ]
         .mean()
@@ -244,6 +256,13 @@ def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915
             "diff_col": "diff_savings_rate",
             "path": path_to_plot_savings_rate,
         },
+        "consumption": {
+            "ylabel": "Consumption\nDeviation from Counterfactual",
+            "title": "Consumption by Age",
+            "diff_col": "diff_consumption",
+            "path": path_to_plot_savings.parent
+            / "matched_differences_consumption_by_age.png",
+        },
     }
 
     plot_all_outcomes_by_age(
@@ -267,60 +286,70 @@ def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915
     / "counterfactual"
     / "job_retention"
     / "vs_baseline"
+    / "age_profiles"
     / "matched_differences_employment_rate_by_age.png",
     path_to_plot_ft: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "job_retention"
     / "vs_baseline"
+    / "age_profiles"
     / "matched_differences_full_time_by_age.png",
     path_to_plot_pt: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "job_retention"
     / "vs_baseline"
+    / "age_profiles"
     / "matched_differences_part_time_by_age.png",
     path_to_plot_job_offer: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "job_retention"
     / "vs_baseline"
+    / "age_profiles"
     / "matched_differences_job_offer_by_age.png",
     path_to_plot_hours_weekly: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "job_retention"
     / "vs_baseline"
+    / "age_profiles"
     / "matched_differences_hours_weekly_by_age.png",
     path_to_plot_care: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "job_retention"
     / "vs_baseline"
+    / "age_profiles"
     / "matched_differences_care_by_age.png",
     path_to_plot_gross_labor_income: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "job_retention"
     / "vs_baseline"
+    / "age_profiles"
     / "matched_differences_gross_labor_income_by_age.png",
     path_to_plot_savings: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "job_retention"
     / "vs_baseline"
+    / "age_profiles"
     / "matched_differences_savings_by_age.png",
     path_to_plot_wealth: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "job_retention"
     / "vs_baseline"
+    / "age_profiles"
     / "matched_differences_wealth_by_age.png",
     path_to_plot_savings_rate: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "job_retention"
     / "vs_baseline"
+    / "age_profiles"
     / "matched_differences_savings_rate_by_age.png",
     ever_caregivers: bool = False,
     ever_care_demand: bool = True,
@@ -349,7 +378,7 @@ def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915
     jr_outcomes = calculate_outcomes(df_jr, choice_set_type="original")
     baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
 
-    # Calculate additional outcomes
+    # Calculate additional outcomes (includes consumption if available)
     jr_additional = calculate_additional_outcomes(df_jr)
     baseline_additional = calculate_additional_outcomes(df_baseline)
     jr_outcomes.update(jr_additional)
@@ -390,6 +419,7 @@ def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915
         "savings",
         "wealth",
         "savings_rate",
+        "consumption",
     ]
     merged = merge_and_compute_differences(jr_cols, baseline_cols, outcome_names)
 
@@ -410,6 +440,7 @@ def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915
                 "diff_savings",
                 "diff_wealth",
                 "diff_savings_rate",
+                "diff_consumption",
             ]
         ]
         .mean()
@@ -477,6 +508,13 @@ def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915
             "title": "Savings Rate by Age",
             "diff_col": "diff_savings_rate",
             "path": path_to_plot_savings_rate,
+        },
+        "consumption": {
+            "ylabel": "Consumption\nDeviation from Baseline",
+            "title": "Consumption by Age",
+            "diff_col": "diff_consumption",
+            "path": path_to_plot_savings.parent
+            / "matched_differences_consumption_by_age.png",
         },
     }
 

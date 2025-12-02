@@ -190,17 +190,19 @@ def calculate_outcomes(
 
 
 def calculate_additional_outcomes(df: pd.DataFrame) -> dict[str, np.ndarray]:
-    """Extract additional outcomes (gross labor income, savings, wealth, savings_rate).
+    """Extract additional outcomes for plotting.
 
     Args:
         df: DataFrame with 'gross_labor_income', 'savings_dec', 'wealth_at_beginning',
-            'savings_rate'
+            'savings_rate', and optionally 'consumption'.
 
     Returns:
-        Dictionary with keys: 'gross_labor_income', 'savings', 'wealth', 'savings_rate'
-        Values are numpy arrays
+        Dictionary with keys:
+            'gross_labor_income', 'savings', 'wealth', 'savings_rate', 'consumption'
+        Values are numpy arrays (zeros if the underlying column is missing).
     """
     outcomes = {}
+    n = len(df)
 
     # Gross labor income (convert from annual to monthly)
     # Note: gross_labor_income is ALWAYS stored as ANNUAL in the simulated data
@@ -209,25 +211,33 @@ def calculate_additional_outcomes(df: pd.DataFrame) -> dict[str, np.ndarray]:
         outcomes["gross_labor_income"] = (df["gross_labor_income"] / 12).values
     else:
         # If column doesn't exist, create zeros
-        outcomes["gross_labor_income"] = np.zeros(len(df))
+        outcomes["gross_labor_income"] = np.zeros(n)
 
     # Savings decision
     if "savings_dec" in df.columns:
         outcomes["savings"] = df["savings_dec"].values
     else:
-        outcomes["savings"] = np.zeros(len(df))
+        outcomes["savings"] = np.zeros(n)
 
     # Wealth at beginning of period
     if "wealth_at_beginning" in df.columns:
         outcomes["wealth"] = df["wealth_at_beginning"].values
     else:
-        outcomes["wealth"] = np.zeros(len(df))
+        outcomes["wealth"] = np.zeros(n)
 
     # Savings rate
     if "savings_rate" in df.columns:
         outcomes["savings_rate"] = df["savings_rate"].values
     else:
-        outcomes["savings_rate"] = np.zeros(len(df))
+        outcomes["savings_rate"] = np.zeros(n)
+
+    # Consumption (level)
+    # If consumption is not available in the simulated data, fall back to zeros so
+    # that plots are still generated but flat at 0.
+    if "consumption" in df.columns:
+        outcomes["consumption"] = df["consumption"].values
+    else:
+        outcomes["consumption"] = np.zeros(n)
 
     return outcomes
 

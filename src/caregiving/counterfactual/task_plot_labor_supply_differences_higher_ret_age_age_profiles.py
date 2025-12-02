@@ -138,7 +138,7 @@ def task_plot_matched_differences_by_age_higher_ret_age_vs_baseline(  # noqa: PL
         df_baseline, model_params, choice_set_type="original"
     )
 
-    # Calculate additional outcomes (gross labor income, savings, wealth, savings_rate)
+    # Calculate additional outcomes (gross labor income, savings, wealth, savings_rate, consumption)
     hr_additional = calculate_additional_outcomes(df_hr)
     baseline_additional = calculate_additional_outcomes(df_baseline)
     hr_outcomes.update(hr_additional)
@@ -164,6 +164,7 @@ def task_plot_matched_differences_by_age_higher_ret_age_vs_baseline(  # noqa: PL
         "savings",
         "wealth",
         "savings_rate",
+        "consumption",
     ]
     merged = merge_and_compute_differences(hr_cols, baseline_cols, outcome_names)
 
@@ -184,6 +185,7 @@ def task_plot_matched_differences_by_age_higher_ret_age_vs_baseline(  # noqa: PL
                 "diff_savings",
                 "diff_wealth",
                 "diff_savings_rate",
+                "diff_consumption",
             ]
         ]
         .mean()
@@ -251,6 +253,13 @@ def task_plot_matched_differences_by_age_higher_ret_age_vs_baseline(  # noqa: PL
             "title": "Savings Rate by Age",
             "diff_col": "diff_savings_rate",
             "path": path_to_plot_savings_rate,
+        },
+        "consumption": {
+            "ylabel": "Consumption\nDeviation from Baseline",
+            "title": "Consumption by Age",
+            "diff_col": "diff_consumption",
+            "path": path_to_plot_savings.parent
+            / "matched_differences_consumption_by_age.png",
         },
     }
 
