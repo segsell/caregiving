@@ -439,6 +439,205 @@ def task_compute_career_costs_job_retention(
     print(f"Summary saved to {path_to_npv_summary_jr}")
 
 
+@pytask.mark.career_costs
+def task_compute_career_costs_job_retention_vs_no_care_demand(
+    # No care demand (reference scenario)
+    path_to_no_care_demand_options: Path = BLD / "model" / "options_no_care_demand.pkl",
+    path_to_no_care_demand_model: Path = BLD / "model" / "model_no_care_demand.pkl",
+    path_to_no_care_demand_solution: Path = BLD
+    / "solve_and_simulate"
+    / "solution_no_care_demand.pkl",
+    path_to_no_care_demand_initial_states: Path = BLD
+    / "model"
+    / "initial_conditions"
+    / "states_no_care_demand.pkl",
+    path_to_no_care_demand_wealth_agents: Path = BLD
+    / "model"
+    / "initial_conditions"
+    / "wealth_no_care_demand.csv",
+    # Job retention counterfactual
+    path_to_job_retention_options: Path = BLD / "model" / "options_job_retention.pkl",
+    path_to_job_retention_model: Path = BLD / "model" / "model_job_retention.pkl",
+    path_to_job_retention_solution: Path = BLD
+    / "solve_and_simulate"
+    / "solution_job_retention_estimated_params.pkl",
+    path_to_job_retention_initial_states: Path = BLD
+    / "model"
+    / "initial_conditions"
+    / "states_job_retention.pkl",
+    path_to_job_retention_wealth_agents: Path = BLD
+    / "model"
+    / "initial_conditions"
+    / "wealth.csv",
+    # Shared parameters
+    path_to_baseline_params: Path = BLD
+    / "model"
+    / "params"
+    / "estimated_params_model.yaml",
+    # Outputs
+    path_to_no_care_demand_npv_jr: Annotated[Path, Product] = BLD
+    / "counterfactual"
+    / "career_npv_no_care_demand_for_job_retention.csv",
+    path_to_job_retention_npv_ncd: Annotated[Path, Product] = BLD
+    / "counterfactual"
+    / "career_npv_job_retention_vs_no_care_demand.csv",
+    path_to_npv_care_ratios_jr_ncd: Annotated[Path, Product] = BLD
+    / "counterfactual"
+    / "npv_care_ratios_job_retention_vs_no_care_demand.csv",
+    path_to_npv_summary_jr_ncd: Annotated[Path, Product] = BLD
+    / "counterfactual"
+    / "npv_summary_job_retention_vs_no_care_demand.csv",
+) -> None:
+    """Compute career costs: job retention vs no care demand counterfactual.
+
+    The no-care-demand scenario is the reference, and job retention is the
+    counterfactual policy. We compare the NPV of income for ever-caregivers
+    between these two scenarios.
+    """
+
+    # ===========================================================================
+    # Load options, params, and solutions
+    # ===========================================================================
+
+    options_no_care_demand = pkl.load(path_to_no_care_demand_options.open("rb"))
+    options_job_retention = pkl.load(path_to_job_retention_options.open("rb"))
+
+    params = yaml.safe_load(path_to_baseline_params.open("rb"))
+
+    solution_no_care_demand = pkl.load(path_to_no_care_demand_solution.open("rb"))
+    initial_states_no_care_demand = pkl.load(
+        path_to_no_care_demand_initial_states.open("rb")
+    )
+    wealth_agents_no_care_demand = np.array(
+        pd.read_csv(path_to_no_care_demand_wealth_agents, usecols=["wealth"]).squeeze()
+    )
+
+    solution_job_retention = pkl.load(path_to_job_retention_solution.open("rb"))
+    initial_states_job_retention = pkl.load(
+        path_to_job_retention_initial_states.open("rb")
+    )
+    wealth_agents_job_retention = np.array(
+        pd.read_csv(path_to_job_retention_wealth_agents, usecols=["wealth"]).squeeze()
+    )
+
+    # ===========================================================================
+    # Setup models and simulate both scenarios
+    # ===========================================================================
+
+    model_no_care_demand_for_simulation = setup_model_for_simulation_no_care_demand(
+        path_to_model=path_to_no_care_demand_model,
+        options=options_no_care_demand,
+    )
+
+    model_job_retention_for_simulation = setup_model_for_simulation_job_retention(
+        path_to_model=path_to_job_retention_model,
+        options=options_job_retention,
+    )
+
+    # Simulate no-care-demand scenario
+    df_no_care_demand = simulate_career_costs_no_care_demand(
+        model=model_no_care_demand_for_simulation,
+        solution=solution_no_care_demand,
+        initial_states=initial_states_no_care_demand,
+        wealth_agents=wealth_agents_no_care_demand,
+        params=params,
+        options=options_no_care_demand,
+        seed=options_no_care_demand["model_params"]["seed"],
+    )
+
+    # Simulate job-retention scenario
+    df_job_retention = simulate_career_costs(
+        model=model_job_retention_for_simulation,
+        solution=solution_job_retention,
+        initial_states=initial_states_job_retention,
+        wealth_agents=wealth_agents_job_retention,
+        params=params,
+        options=options_job_retention,
+        seed=options_job_retention["model_params"]["seed"],
+    )
+
+    # ===========================================================================
+    # Prepare data: alive periods and ever-caregivers
+    # ===========================================================================
+
+    df_no_care_demand = df_no_care_demand[df_no_care_demand["health"] != DEAD].copy()
+    df_job_retention = df_job_retention[df_job_retention["health"] != DEAD].copy()
+
+    # Ensure 'agent' column exists
+    if "agent" not in df_no_care_demand.columns:
+        if isinstance(df_no_care_demand.index, pd.MultiIndex) and (
+            "agent" in df_no_care_demand.index.names
+        ):
+            df_no_care_demand = df_no_care_demand.reset_index(level=["agent"])
+        else:
+            df_no_care_demand = df_no_care_demand.reset_index()
+
+    if "agent" not in df_job_retention.columns:
+        if isinstance(df_job_retention.index, pd.MultiIndex) and (
+            "agent" in df_job_retention.index.names
+        ):
+            df_job_retention = df_job_retention.reset_index(level=["agent"])
+        else:
+            df_job_retention = df_job_retention.reset_index()
+
+    # Restrict to ever-caregivers based on job-retention scenario
+    informal_care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
+    caregiver_ids = df_job_retention.loc[
+        df_job_retention["choice"].isin(informal_care_codes), "agent"
+    ].unique()
+
+    df_no_care_demand = df_no_care_demand[
+        df_no_care_demand["agent"].isin(caregiver_ids)
+    ].copy()
+    df_job_retention = df_job_retention[
+        df_job_retention["agent"].isin(caregiver_ids)
+    ].copy()
+
+    # ===========================================================================
+    # Compute NPVs and career costs
+    # ===========================================================================
+
+    # Reference: no-care-demand scenario
+    no_care_demand_npv = compute_career_npv(df_no_care_demand, BETA_NPV)
+    no_care_demand_npv.to_csv(path_to_no_care_demand_npv_jr, index=False)
+
+    # Counterfactual: job-retention scenario
+    job_retention_npv = compute_career_npv(df_job_retention, BETA_NPV)
+    job_retention_npv.to_csv(path_to_job_retention_npv_ncd, index=False)
+
+    # Align by agent to ensure correct ratios
+    _merged_npv = pd.merge(
+        no_care_demand_npv,
+        job_retention_npv,
+        on="agent",
+        suffixes=("_no_care_demand", "_job_retention"),
+    )
+    _npv_care = 1 - (
+        _merged_npv["career_npv_job_retention"]
+        / _merged_npv["career_npv_no_care_demand"]
+    )
+    _npv_mean = 1 - (
+        _merged_npv["career_npv_job_retention"].mean()
+        / _merged_npv["career_npv_no_care_demand"].mean()
+    )
+
+    # Save results to CSV files
+    npv_care_mean = _npv_care.mean()
+
+    pd.DataFrame({"agent": _merged_npv["agent"], "npv_care_ratio": _npv_care}).to_csv(
+        path_to_npv_care_ratios_jr_ncd, index=False
+    )
+
+    pd.DataFrame(
+        {"metric": ["npv_care_mean", "npv_mean"], "value": [npv_care_mean, _npv_mean]}
+    ).to_csv(path_to_npv_summary_jr_ncd, index=False)
+
+    print(f"NPV care mean (job retention vs no care demand): {npv_care_mean:.4f}")
+    print(f"NPV mean (job retention vs no care demand): {_npv_mean:.4f}")
+    print(f"Results saved to {path_to_npv_care_ratios_jr_ncd}")
+    print(f"Summary saved to {path_to_npv_summary_jr_ncd}")
+
+
 def compute_career_npv(df: pd.DataFrame, beta: float) -> pd.DataFrame:
     """Compute net present value of total income."""
 

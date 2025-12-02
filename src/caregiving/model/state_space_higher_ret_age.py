@@ -129,10 +129,11 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
     options,
 ):
     start_age = options["start_age"]
+    # min_ret_age_state_space = 63  # earliest retirement in state space
+    min_ret_age_state_space = options["min_ret_age"]
     # max_ret_age = options["max_ret_age"]
-    # min_ret_age_state_space = options["min_ret_age"]
+
     max_ret_age = 72  # hard-coded override for higher retirement age
-    min_ret_age_state_space = 65  # earliest retirement in state space
     options["min_SRA"] = 69
 
     SRA_pol_state = options["min_SRA"]  # + policy_state
@@ -268,7 +269,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
 
 
 def apply_retirement_constraint_for_SRA(SRA, options):
-    return np.maximum(SRA - options["ret_years_before_SRA"], 65)
+    return np.maximum(SRA - options["ret_years_before_SRA"], 63)
 
 
 def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912
@@ -279,7 +280,7 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912
 
     age = period + options["start_age"]
     SRA_pol_state = options["min_SRA"]  # + policy_state  # * options["SRA_grid_size"]
-    min_ret_age_pol_state = apply_retirement_constraint_for_SRA(SRA_pol_state, options)
+    min_ret_age_pol_state = options["min_ret_age"]
 
     # if is_dead(health):
     #     return RETIREMENT
