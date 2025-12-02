@@ -518,8 +518,20 @@ def is_dead(health):
 # ==============================================================================
 
 
+def had_no_job_before_caregiving(job_before_caregiving):
+    return jnp.any(job_before_caregiving == 0)
+
+
 def had_job_before_caregiving(job_before_caregiving):
     return jnp.any(job_before_caregiving == 1)
+
+
+def had_pt_job_before_caregiving(job_before_caregiving):
+    return jnp.any(job_before_caregiving == 1)
+
+
+def had_ft_job_before_caregiving(job_before_caregiving):
+    return jnp.any(job_before_caregiving == 2)
 
 
 # ==============================================================================
