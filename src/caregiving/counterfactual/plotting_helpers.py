@@ -373,9 +373,11 @@ def plot_all_outcomes_by_age(
 
     Args:
         prof: DataFrame with aggregated differences by age
-        plot_configs: Dictionary with plot configurations for each outcome
-        age_min: Minimum age for x-axis
-        age_max: Maximum age for x-axis
+        plot_configs: Dictionary with plot configurations for each outcome.
+            Each config can optionally include an "age_max" key to override
+            the default age_max for that specific outcome.
+        age_min: Minimum age for x-axis (default for all outcomes)
+        age_max: Maximum age for x-axis (default, can be overridden per outcome)
     """
     for config in plot_configs.values():
         # Skip configurations where the diff_col doesn't exist in the dataframe
@@ -384,13 +386,16 @@ def plot_all_outcomes_by_age(
             print(f"Skipping plot for {diff_col} - column not found in dataframe")
             continue
 
+        # Use outcome-specific age_max if provided, otherwise use default
+        outcome_age_max = config.get("age_max", age_max)
+
         plot_single_line_differences_by_age(
             prof=prof,
             path_to_plot=config["path"],
             ylabel=config["ylabel"],
             diff_col=diff_col,
             age_min=age_min,
-            age_max=age_max,
+            age_max=outcome_age_max,
         )
 
 
@@ -422,18 +427,16 @@ def plot_single_line_differences_by_age(
         prof_sorted[diff_col],
         color="black",
         linewidth=2,
-        marker="o",
-        markersize=4,
-        markerfacecolor="black",
-        markeredgecolor="black",
     )
 
     plt.axhline(y=0, color="k", linestyle=":", alpha=0.5, linewidth=1)
-    plt.xlabel("Age", fontsize=14, fontweight="bold")
-    plt.ylabel(ylabel, fontsize=14, fontweight="bold")
+    plt.xlabel("Age", fontsize=20)
+    plt.ylabel(ylabel, fontsize=20)
     plt.xlim(age_min, age_max)
     plt.grid(True, alpha=0.2, linestyle="-", linewidth=0.5)
-    plt.tick_params(labelsize=12)
+    plt.tick_params(labelsize=18)
+    plt.xticks(fontsize=18)
+    plt.yticks(fontsize=18)
 
     plt.tight_layout()
     plt.savefig(path_to_plot, dpi=300, bbox_inches="tight", facecolor="white")

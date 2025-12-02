@@ -36,6 +36,78 @@ from caregiving.model.shared import (
 )
 
 
+@pytask.mark.counterfactual_differences_no_care_demand
+@pytask.mark.counterfactual_differences
+@pytask.mark.counterfactual_differences_pre_ls
+def task_plot_matched_differences_condition_on_pre_ls(
+    path_to_original_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params.pkl",
+    path_to_no_care_demand_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_no_care_demand.pkl",
+    path_to_options: Path = BLD / "model" / "options.pkl",
+    ever_caregivers: bool = False,
+    ever_care_demand: bool = True,
+    window: int = 20,
+    ages: list[int] | None = None,
+) -> None:
+    """Create event study plots conditioned on pre-labor supply.
+
+    Creates plots for baseline vs no care demand, conditioned on labor supply
+    at t=-1 (unemployed, part-time, full-time). Plots outcomes by age at first
+    care spell or first care demand.
+
+    Args:
+        path_to_original_data: Path to baseline simulated data
+        path_to_no_care_demand_data: Path to no care demand simulated data
+        path_to_options: Path to model options
+        ever_caregivers: Whether to filter to ever-caregivers
+        ever_care_demand: Whether to filter to ever-care-demand
+        window: Window size for event study
+        ages: List of ages at first event (default: [45, 50, 55, 60, 65])
+    """
+    if ages is None:
+        ages = [45, 50, 55, 60, 65]
+
+    # Load and prepare data
+    df_o, df_c = prepare_dataframes_for_comparison(
+        pd.read_pickle(path_to_original_data),
+        pd.read_pickle(path_to_no_care_demand_data),
+        ever_caregivers=ever_caregivers,
+        ever_care_demand=ever_care_demand,
+    )
+
+    # Load options
+    options = pickle.load(path_to_options.open("rb"))
+
+    # Create output directory
+    output_dir = (
+        BLD / "plots" / "counterfactual" / "no_care_demand" / "condition_on_pre_ls"
+    )
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Labor supply states to condition on
+    labor_supply_states = ["unemployed", "part_time", "full_time"]
+
+    # Event types
+    event_types = ["care", "care_demand"]
+
+    # Create plots for each combination
+    for event_type in event_types:
+        for ls_state in labor_supply_states:
+            create_event_study_plots(
+                df_o=df_o,
+                df_c=df_c,
+                options=options,
+                event_type=event_type,
+                labor_supply_state=ls_state,
+                ages=ages,
+                window=window,
+                output_dir=output_dir,
+            )
+
+
 def _add_distance_to_first_care(df_original: pd.DataFrame) -> pd.DataFrame:
     """Add distance_to_first_care column to original data where 0 is first care."""
     # Flatten any existing index to avoid column/index name ambiguity
@@ -394,74 +466,3 @@ def create_event_study_plots(
             title=title,
             window=window,
         )
-
-
-@pytask.mark.counterfactual_differences_no_care_demand
-@pytask.mark.counterfactual_differences_pre_ls
-def task_plot_matched_differences_condition_on_pre_ls(
-    path_to_original_data: Path = BLD
-    / "solve_and_simulate"
-    / "simulated_data_estimated_params.pkl",
-    path_to_no_care_demand_data: Path = BLD
-    / "solve_and_simulate"
-    / "simulated_data_no_care_demand.pkl",
-    path_to_options: Path = BLD / "model" / "options.pkl",
-    ever_caregivers: bool = False,
-    ever_care_demand: bool = True,
-    window: int = 20,
-    ages: list[int] | None = None,
-) -> None:
-    """Create event study plots conditioned on pre-labor supply.
-
-    Creates plots for baseline vs no care demand, conditioned on labor supply
-    at t=-1 (unemployed, part-time, full-time). Plots outcomes by age at first
-    care spell or first care demand.
-
-    Args:
-        path_to_original_data: Path to baseline simulated data
-        path_to_no_care_demand_data: Path to no care demand simulated data
-        path_to_options: Path to model options
-        ever_caregivers: Whether to filter to ever-caregivers
-        ever_care_demand: Whether to filter to ever-care-demand
-        window: Window size for event study
-        ages: List of ages at first event (default: [45, 50, 55, 60, 65])
-    """
-    if ages is None:
-        ages = [45, 50, 55, 60, 65]
-
-    # Load and prepare data
-    df_o, df_c = prepare_dataframes_for_comparison(
-        pd.read_pickle(path_to_original_data),
-        pd.read_pickle(path_to_no_care_demand_data),
-        ever_caregivers=ever_caregivers,
-        ever_care_demand=ever_care_demand,
-    )
-
-    # Load options
-    options = pickle.load(path_to_options.open("rb"))
-
-    # Create output directory
-    output_dir = (
-        BLD / "plots" / "counterfactual" / "no_care_demand" / "condition_on_pre_ls"
-    )
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    # Labor supply states to condition on
-    labor_supply_states = ["unemployed", "part_time", "full_time"]
-
-    # Event types
-    event_types = ["care", "care_demand"]
-
-    # Create plots for each combination
-    for event_type in event_types:
-        for ls_state in labor_supply_states:
-            create_event_study_plots(
-                df_o=df_o,
-                df_c=df_c,
-                options=options,
-                event_type=event_type,
-                labor_supply_state=ls_state,
-                ages=ages,
-                window=window,
-                output_dir=output_dir,
-            )

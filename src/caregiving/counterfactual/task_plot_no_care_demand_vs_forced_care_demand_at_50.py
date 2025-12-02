@@ -36,6 +36,7 @@ from caregiving.model.shared_no_care_demand import (
 )
 
 
+@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_forced_care_demand_at_50
 def task_plot_differences_no_care_demand_vs_forced_care_demand_at_50(
     path_to_no_care_demand_data: Path = BLD
@@ -174,6 +175,7 @@ def task_plot_differences_no_care_demand_vs_forced_care_demand_at_50(
     plt.close()
 
 
+@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_forced_care_demand_at_50
 def task_plot_full_time_differences_by_forced_age(
     path_to_no_care_demand_data: Path = BLD
@@ -330,6 +332,7 @@ def task_plot_full_time_differences_by_forced_age(
     plt.close()
 
 
+@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_forced_care_demand_at_50
 def task_plot_employment_rate_differences_by_forced_age(
     path_to_no_care_demand_data: Path = BLD
@@ -484,6 +487,7 @@ def task_plot_employment_rate_differences_by_forced_age(
     plt.close()
 
 
+@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_forced_care_demand_at_50
 def task_plot_part_time_differences_by_forced_age(
     path_to_no_care_demand_data: Path = BLD
@@ -640,6 +644,7 @@ def task_plot_part_time_differences_by_forced_age(
     plt.close()
 
 
+@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_forced_care_demand_at_50
 def task_plot_informal_care_differences_by_forced_age(
     path_to_no_care_demand_data: Path = BLD
@@ -793,6 +798,7 @@ def task_plot_informal_care_differences_by_forced_age(
     plt.close()
 
 
+@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_forced_care_demand_at_50
 def task_plot_job_offer_probability_differences_by_forced_age(
     path_to_no_care_demand_data: Path = BLD
@@ -946,6 +952,7 @@ def task_plot_job_offer_probability_differences_by_forced_age(
     plt.close()
 
 
+@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_forced_care_demand_at_50
 def task_plot_working_hours_differences_by_forced_age(
     path_to_no_care_demand_data: Path = BLD

@@ -1,5 +1,6 @@
 """Age-based plotting functions for job retention counterfactual."""
 
+import pickle
 from pathlib import Path
 from typing import Annotated
 
@@ -13,6 +14,7 @@ from caregiving.counterfactual.plotting_helpers import plot_all_outcomes_by_age
 from caregiving.counterfactual.plotting_utils import (
     calculate_additional_outcomes,
     calculate_outcomes,
+    calculate_working_hours_weekly,
     create_outcome_columns,
     merge_and_compute_differences,
     prepare_dataframes_for_comparison,
@@ -20,6 +22,8 @@ from caregiving.counterfactual.plotting_utils import (
 from caregiving.model.shared import INFORMAL_CARE
 
 
+@pytask.mark.counterfactual_differences
+@pytask.mark.counterfactual_differences_age_profiles
 @pytask.mark.counterfactual_differences_job_retention_age_profiles
 def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915
     path_to_job_retention_data: Path = BLD
@@ -98,6 +102,7 @@ def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915
     / "vs_no_care_demand"
     / "age_profiles"
     / "matched_differences_savings_rate_by_age.png",
+    path_to_options: Path = BLD / "model" / "options.pkl",
     ever_caregivers: bool = False,
     ever_care_demand: bool = True,
     age_min: int = 30,
@@ -131,20 +136,15 @@ def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915
     jr_outcomes.update(jr_additional)
     ncd_outcomes.update(ncd_additional)
 
-    # Add working hours (use existing working_hours column if available)
-    if "working_hours" in df_jr.columns:
-        jr_outcomes["hours_weekly"] = (
-            df_jr["working_hours"].values / 52
-        )  # Convert annual to weekly
-    else:
-        jr_outcomes["hours_weekly"] = np.zeros(len(df_jr))
-
-    if "working_hours" in df_ncd.columns:
-        ncd_outcomes["hours_weekly"] = (
-            df_ncd["working_hours"].values / 52
-        )  # Convert annual to weekly
-    else:
-        ncd_outcomes["hours_weekly"] = np.zeros(len(df_ncd))
+    # Working hours (weekly) using standard helper
+    options = pickle.load(path_to_options.open("rb"))
+    model_params = options["model_params"]
+    jr_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_jr, model_params, choice_set_type="original"
+    )
+    ncd_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_ncd, model_params, choice_set_type="no_care_demand"
+    )
 
     # Create outcome columns and merge
     jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_o")
@@ -201,67 +201,78 @@ def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915
             "title": "Employment Rate by Age",
             "diff_col": "diff_work",
             "path": path_to_plot_work,
+            "age_max": 70,
         },
         "ft": {
             "ylabel": "Proportion Full-time\nDeviation from Counterfactual",
             "title": "Full-time Employment by Age",
             "diff_col": "diff_ft",
             "path": path_to_plot_ft,
+            "age_max": 70,
         },
         "pt": {
             "ylabel": "Proportion Part-time\nDeviation from Counterfactual",
             "title": "Part-time Employment by Age",
             "diff_col": "diff_pt",
             "path": path_to_plot_pt,
+            "age_max": 70,
         },
         "job_offer": {
             "ylabel": "Job Offer Probability\nDeviation from Counterfactual",
             "title": "Job Offer Probability by Age",
             "diff_col": "diff_job_offer",
             "path": path_to_plot_job_offer,
+            "age_max": 70,
         },
         "hours_weekly": {
             "ylabel": "Weekly Hours\nDeviation from Counterfactual",
             "title": "Weekly Working Hours by Age",
             "diff_col": "diff_hours_weekly",
             "path": path_to_plot_hours_weekly,
+            "age_max": 70,
         },
         "care": {
             "ylabel": "Care Probability\nDeviation from Counterfactual",
             "title": "Care Probability by Age",
             "diff_col": "diff_care",
             "path": path_to_plot_care,
+            "age_max": 70,
         },
         "gross_labor_income": {
             "ylabel": "Gross Labor Income\nDeviation from Counterfactual",
             "title": "Gross Labor Income by Age",
             "diff_col": "diff_gross_labor_income",
             "path": path_to_plot_gross_labor_income,
+            "age_max": 90,
         },
         "savings": {
-            "ylabel": "Savings\nDeviation from Counterfactual",
+            "ylabel": "Savings (in 1,000€)\nDeviation from Counterfactual",
             "title": "Savings by Age",
             "diff_col": "diff_savings",
             "path": path_to_plot_savings,
+            "age_max": 90,
         },
         "wealth": {
-            "ylabel": "Wealth\nDeviation from Counterfactual",
+            "ylabel": "Wealth (in 1,000€)\nDeviation from Counterfactual",
             "title": "Wealth by Age",
             "diff_col": "diff_wealth",
             "path": path_to_plot_wealth,
+            "age_max": 90,
         },
         "savings_rate": {
             "ylabel": "Savings Rate\nDeviation from Counterfactual",
             "title": "Savings Rate by Age",
             "diff_col": "diff_savings_rate",
             "path": path_to_plot_savings_rate,
+            "age_max": 90,
         },
         "consumption": {
-            "ylabel": "Consumption\nDeviation from Counterfactual",
+            "ylabel": "Consumption (in 1,000€)\nDeviation from Counterfactual",
             "title": "Consumption by Age",
             "diff_col": "diff_consumption",
             "path": path_to_plot_savings.parent
             / "matched_differences_consumption_by_age.png",
+            "age_max": 90,
         },
     }
 
@@ -273,6 +284,8 @@ def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915
     )
 
 
+@pytask.mark.counterfactual_differences
+@pytask.mark.counterfactual_differences_age_profiles
 @pytask.mark.counterfactual_differences_job_retention_age_profiles
 def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915
     path_to_job_retention_data: Path = BLD
@@ -351,6 +364,7 @@ def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915
     / "vs_baseline"
     / "age_profiles"
     / "matched_differences_savings_rate_by_age.png",
+    path_to_options: Path = BLD / "model" / "options.pkl",
     ever_caregivers: bool = False,
     ever_care_demand: bool = True,
     age_min: int = 30,
@@ -384,20 +398,15 @@ def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915
     jr_outcomes.update(jr_additional)
     baseline_outcomes.update(baseline_additional)
 
-    # Add working hours (use existing working_hours column if available)
-    if "working_hours" in df_jr.columns:
-        jr_outcomes["hours_weekly"] = (
-            df_jr["working_hours"].values / 52
-        )  # Convert annual to weekly
-    else:
-        jr_outcomes["hours_weekly"] = np.zeros(len(df_jr))
-
-    if "working_hours" in df_baseline.columns:
-        baseline_outcomes["hours_weekly"] = (
-            df_baseline["working_hours"].values / 52
-        )  # Convert annual to weekly
-    else:
-        baseline_outcomes["hours_weekly"] = np.zeros(len(df_baseline))
+    # Working hours (weekly) using standard helper
+    options = pickle.load(path_to_options.open("rb"))
+    model_params = options["model_params"]
+    jr_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_jr, model_params, choice_set_type="original"
+    )
+    baseline_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_baseline, model_params, choice_set_type="original"
+    )
 
     # Create outcome columns and merge
     jr_cols = create_outcome_columns(df_jr, jr_outcomes, "_o")
@@ -492,13 +501,13 @@ def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915
             "path": path_to_plot_gross_labor_income,
         },
         "savings": {
-            "ylabel": "Savings\nDeviation from Baseline",
+            "ylabel": "Savings (in 1,000€)\nDeviation from Baseline",
             "title": "Savings by Age",
             "diff_col": "diff_savings",
             "path": path_to_plot_savings,
         },
         "wealth": {
-            "ylabel": "Wealth\nDeviation from Baseline",
+            "ylabel": "Wealth (in 1,000€)\nDeviation from Baseline",
             "title": "Wealth by Age",
             "diff_col": "diff_wealth",
             "path": path_to_plot_wealth,
@@ -510,7 +519,7 @@ def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915
             "path": path_to_plot_savings_rate,
         },
         "consumption": {
-            "ylabel": "Consumption\nDeviation from Baseline",
+            "ylabel": "Consumption (in 1,000€)\nDeviation from Baseline",
             "title": "Consumption by Age",
             "diff_col": "diff_consumption",
             "path": path_to_plot_savings.parent

@@ -22,6 +22,8 @@ from caregiving.counterfactual.plotting_utils import (
 from caregiving.model.shared import INFORMAL_CARE
 
 
+@pytask.mark.counterfactual_differences
+@pytask.mark.counterfactual_differences_age_profiles
 @pytask.mark.counterfactual_differences_no_care_demand_age_profiles
 def task_plot_matched_differences_by_age(  # noqa: PLR0915
     path_to_original_data: Path = BLD
@@ -142,7 +144,7 @@ def task_plot_matched_differences_by_age(  # noqa: PLR0915
     if "age" in df_o.columns:
         o_cols["age"] = df_o["age"].values
 
-    # Merge and compute differences
+    # Merge and compute differences (include full set of outcomes incl. consumption)
     outcome_names = [
         "work",
         "ft",
@@ -154,6 +156,7 @@ def task_plot_matched_differences_by_age(  # noqa: PLR0915
         "savings",
         "wealth",
         "savings_rate",
+        "consumption",
     ]
     merged = merge_and_compute_differences(o_cols, c_cols, outcome_names)
 
@@ -174,6 +177,7 @@ def task_plot_matched_differences_by_age(  # noqa: PLR0915
                 "diff_savings",
                 "diff_wealth",
                 "diff_savings_rate",
+                "diff_consumption",
             ]
         ]
         .mean()
@@ -187,60 +191,78 @@ def task_plot_matched_differences_by_age(  # noqa: PLR0915
             "title": "Employment Rate by Age",
             "diff_col": "diff_work",
             "path": path_to_plot_work,
+            "age_max": 70,
         },
         "ft": {
             "ylabel": "Proportion Full-time\nDeviation from Counterfactual",
             "title": "Full-time Employment by Age",
             "diff_col": "diff_ft",
             "path": path_to_plot_ft,
+            "age_max": 70,
         },
         "pt": {
             "ylabel": "Proportion Part-time\nDeviation from Counterfactual",
             "title": "Part-time Employment by Age",
             "diff_col": "diff_pt",
             "path": path_to_plot_pt,
+            "age_max": 70,
         },
         "job_offer": {
             "ylabel": "Job Offer Probability\nDeviation from Counterfactual",
             "title": "Job Offer Probability by Age",
             "diff_col": "diff_job_offer",
             "path": path_to_plot_job_offer,
+            "age_max": 70,
         },
         "hours_weekly": {
             "ylabel": "Weekly Hours\nDeviation from Counterfactual",
             "title": "Weekly Working Hours by Age",
             "diff_col": "diff_hours_weekly",
             "path": path_to_plot_hours_weekly,
+            "age_max": 70,
         },
         "care": {
             "ylabel": "Care Probability\nDeviation from Counterfactual",
             "title": "Care Probability by Age",
             "diff_col": "diff_care",
             "path": path_to_plot_care,
+            "age_max": 70,
         },
         "gross_labor_income": {
             "ylabel": "Gross Labor Income\nDeviation from Counterfactual",
             "title": "Gross Labor Income by Age",
             "diff_col": "diff_gross_labor_income",
             "path": path_to_plot_gross_labor_income,
+            "age_max": 90,
         },
         "savings": {
-            "ylabel": "Savings\nDeviation from Counterfactual",
+            "ylabel": "Savings (in 1,000€)\nDeviation from Counterfactual",
             "title": "Savings by Age",
             "diff_col": "diff_savings",
             "path": path_to_plot_savings,
+            "age_max": 90,
         },
         "wealth": {
-            "ylabel": "Wealth\nDeviation from Counterfactual",
+            "ylabel": "Wealth (in 1,000€)\nDeviation from Counterfactual",
             "title": "Wealth by Age",
             "diff_col": "diff_wealth",
             "path": path_to_plot_wealth,
+            "age_max": 90,
         },
         "savings_rate": {
             "ylabel": "Savings Rate\nDeviation from Counterfactual",
             "title": "Savings Rate by Age",
             "diff_col": "diff_savings_rate",
             "path": path_to_plot_savings_rate,
+            "age_max": 90,
+        },
+        "consumption": {
+            "ylabel": "Consumption (in 1,000€)\nDeviation from Counterfactual",
+            "title": "Consumption by Age",
+            "diff_col": "diff_consumption",
+            "path": path_to_plot_savings.parent
+            / "matched_differences_consumption_by_age.png",
+            "age_max": 90,
         },
     }
 

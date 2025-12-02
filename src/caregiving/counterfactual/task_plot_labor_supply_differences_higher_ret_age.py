@@ -31,6 +31,7 @@ from caregiving.counterfactual.plotting_utils import (
 from caregiving.model.shared import INFORMAL_CARE
 
 
+@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_ret_age
 def task_plot_matched_differences_by_distance_higher_ret_age(  # noqa: PLR0915
     path_to_higher_ret_age_data: Path = BLD
@@ -151,6 +152,7 @@ def task_plot_matched_differences_by_distance_higher_ret_age(  # noqa: PLR0915
     )
 
 
+@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_ret_age
 def task_plot_matched_differences_by_age_at_first_care_higher_ret_age_vs_baseline(  # noqa: PLR0915
     path_to_higher_ret_age_data: Path = BLD
@@ -363,6 +365,7 @@ def task_plot_matched_differences_by_age_at_first_care_higher_ret_age_vs_baselin
     )
 
 
+@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_ret_age
 def task_plot_matched_differences_by_age_bins_at_first_care_higher_ret_age_vs_baseline(  # noqa: PLR0915
     path_to_higher_ret_age_data: Path = BLD
@@ -587,6 +590,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_higher_ret_age_vs_ba
     )
 
 
+@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_ret_age
 def task_plot_matched_differences_by_age_at_first_care_demand_higher_ret_age_vs_baseline(  # noqa: PLR0915
     path_to_higher_ret_age_data: Path = BLD

@@ -43,6 +43,7 @@ from caregiving.counterfactual.task_plot_labor_supply_differences_no_care_demand
 from caregiving.model.shared import INFORMAL_CARE
 
 
+@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_caregiving_leave_with_job_retention
 def task_plot_matched_differences_by_distance_caregiving_leave(  # noqa: PLR0915
     path_to_cg_leave_data: Path = BLD
@@ -150,6 +151,7 @@ def task_plot_matched_differences_by_distance_caregiving_leave(  # noqa: PLR0915
     )
 
 
+@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_caregiving_leave_with_job_retention
 def task_plot_matched_differences_by_age_at_first_care_cg_leave(  # noqa: PLR0915
     path_to_cg_leave_data: Path = BLD

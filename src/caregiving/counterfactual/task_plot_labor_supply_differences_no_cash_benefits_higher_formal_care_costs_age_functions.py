@@ -1,4 +1,4 @@
-"""Age-based plotting functions for lower formal care costs counterfactual."""
+"""Age-based plotting functions for no-cash-benefits higher formal care costs."""
 
 import pickle
 from pathlib import Path
@@ -24,81 +24,81 @@ from caregiving.model.shared import INFORMAL_CARE
 
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_age_profiles
-@pytask.mark.counterfactual_differences_lower_formal_care_costs_age_profiles
+@pytask.mark.counterfactual_differences_no_cash_benefits_higher_formal_care_costs_age_profiles
 def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915
-    path_to_lower_formal_care_costs_data: Path = BLD
+    path_to_no_cash_benefits_data: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_lower_formal_care_costs_estimated_params.pkl",
+    / "simulated_data_no_cash_benefits_higher_formal_care_costs_estimated_params.pkl",
     path_to_no_care_demand_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_no_care_demand.pkl",
     path_to_plot_work: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "lower_formal_care_costs"
+    / "no_cash_benefits_higher_formal_care_costs"
     / "vs_no_care_demand"
     / "age_profiles"
     / "matched_differences_work_by_age.png",
     path_to_plot_ft: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "lower_formal_care_costs"
+    / "no_cash_benefits_higher_formal_care_costs"
     / "vs_no_care_demand"
     / "age_profiles"
     / "matched_differences_full_time_by_age.png",
     path_to_plot_pt: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "lower_formal_care_costs"
+    / "no_cash_benefits_higher_formal_care_costs"
     / "vs_no_care_demand"
     / "age_profiles"
     / "matched_differences_part_time_by_age.png",
     path_to_plot_job_offer: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "lower_formal_care_costs"
+    / "no_cash_benefits_higher_formal_care_costs"
     / "vs_no_care_demand"
     / "age_profiles"
     / "matched_differences_job_offer_by_age.png",
     path_to_plot_hours_weekly: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "lower_formal_care_costs"
+    / "no_cash_benefits_higher_formal_care_costs"
     / "vs_no_care_demand"
     / "age_profiles"
     / "matched_differences_working_hours_by_age.png",
     path_to_plot_care: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "lower_formal_care_costs"
+    / "no_cash_benefits_higher_formal_care_costs"
     / "vs_no_care_demand"
     / "age_profiles"
     / "matched_differences_care_by_age.png",
     path_to_plot_gross_labor_income: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "lower_formal_care_costs"
+    / "no_cash_benefits_higher_formal_care_costs"
     / "vs_no_care_demand"
     / "age_profiles"
     / "matched_differences_gross_labor_income_by_age.png",
     path_to_plot_savings: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "lower_formal_care_costs"
+    / "no_cash_benefits_higher_formal_care_costs"
     / "vs_no_care_demand"
     / "age_profiles"
     / "matched_differences_savings_by_age.png",
     path_to_plot_wealth: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "lower_formal_care_costs"
+    / "no_cash_benefits_higher_formal_care_costs"
     / "vs_no_care_demand"
     / "age_profiles"
     / "matched_differences_wealth_by_age.png",
     path_to_plot_savings_rate: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "lower_formal_care_costs"
+    / "no_cash_benefits_higher_formal_care_costs"
     / "vs_no_care_demand"
     / "age_profiles"
     / "matched_differences_savings_rate_by_age.png",
@@ -108,42 +108,42 @@ def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915
     age_min: int = 30,
     age_max: int = 100,
 ) -> None:
-    """Compute matched period differences (lower-formal-care-costs - no-care-demand) by age."""
+    """Compute matched differences (no-cash-benefits - no-care-demand) by age."""
     # Load and prepare data
-    df_lfc, df_ncd = prepare_dataframes_for_comparison(
-        pd.read_pickle(path_to_lower_formal_care_costs_data),
+    df_ncb, df_ncd = prepare_dataframes_for_comparison(
+        pd.read_pickle(path_to_no_cash_benefits_data),
         pd.read_pickle(path_to_no_care_demand_data),
         ever_caregivers=ever_caregivers,
         ever_care_demand=ever_care_demand,
     )
 
     # Calculate outcomes
-    lfc_outcomes = calculate_outcomes(df_lfc, choice_set_type="original")
+    ncb_outcomes = calculate_outcomes(df_ncb, choice_set_type="original")
     ncd_outcomes = calculate_outcomes(df_ncd, choice_set_type="no_care_demand")
 
     # Calculate working hours
     options = pickle.load(path_to_options.open("rb"))
     model_params = options["model_params"]
-    lfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_lfc, model_params, choice_set_type="original"
+    ncb_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_ncb, model_params, choice_set_type="original"
     )
     ncd_outcomes["hours_weekly"] = calculate_working_hours_weekly(
         df_ncd, model_params, choice_set_type="no_care_demand"
     )
 
     # Calculate additional outcomes
-    lfc_additional = calculate_additional_outcomes(df_lfc)
+    ncb_additional = calculate_additional_outcomes(df_ncb)
     ncd_additional = calculate_additional_outcomes(df_ncd)
-    lfc_outcomes.update(lfc_additional)
+    ncb_outcomes.update(ncb_additional)
     ncd_outcomes.update(ncd_additional)
 
     # Create outcome columns and merge
-    lfc_cols = create_outcome_columns(df_lfc, lfc_outcomes, "_o")
+    ncb_cols = create_outcome_columns(df_ncb, ncb_outcomes, "_o")
     ncd_cols = create_outcome_columns(df_ncd, ncd_outcomes, "_c")
 
     # Add age column for age-based filtering
-    if "age" in df_lfc.columns:
-        lfc_cols["age"] = df_lfc["age"].values
+    if "age" in df_ncb.columns:
+        ncb_cols["age"] = df_ncb["age"].values
 
     # Merge and compute differences (include full set of outcomes incl. consumption)
     outcome_names = [
@@ -159,7 +159,7 @@ def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915
         "savings_rate",
         "consumption",
     ]
-    merged = merge_and_compute_differences(lfc_cols, ncd_cols, outcome_names)
+    merged = merge_and_compute_differences(ncb_cols, ncd_cols, outcome_names)
 
     # Filter to age range and average by age
     merged = merged[(merged["age"] >= age_min) & (merged["age"] <= age_max)]
@@ -277,81 +277,81 @@ def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915
 
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_age_profiles
-@pytask.mark.counterfactual_differences_lower_formal_care_costs_age_profiles
+@pytask.mark.counterfactual_differences_no_cash_benefits_higher_formal_care_costs_age_profiles
 def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915
-    path_to_lower_formal_care_costs_data: Path = BLD
+    path_to_no_cash_benefits_data: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_lower_formal_care_costs_estimated_params.pkl",
+    / "simulated_data_no_cash_benefits_higher_formal_care_costs_estimated_params.pkl",
     path_to_baseline_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
     path_to_plot_work: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "lower_formal_care_costs"
+    / "no_cash_benefits_higher_formal_care_costs"
     / "vs_baseline"
     / "age_profiles"
     / "matched_differences_work_by_age.png",
     path_to_plot_ft: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "lower_formal_care_costs"
+    / "no_cash_benefits_higher_formal_care_costs"
     / "vs_baseline"
     / "age_profiles"
     / "matched_differences_full_time_by_age.png",
     path_to_plot_pt: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "lower_formal_care_costs"
+    / "no_cash_benefits_higher_formal_care_costs"
     / "vs_baseline"
     / "age_profiles"
     / "matched_differences_part_time_by_age.png",
     path_to_plot_job_offer: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "lower_formal_care_costs"
+    / "no_cash_benefits_higher_formal_care_costs"
     / "vs_baseline"
     / "age_profiles"
     / "matched_differences_job_offer_by_age.png",
     path_to_plot_hours_weekly: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "lower_formal_care_costs"
+    / "no_cash_benefits_higher_formal_care_costs"
     / "vs_baseline"
     / "age_profiles"
     / "matched_differences_working_hours_by_age.png",
     path_to_plot_care: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "lower_formal_care_costs"
+    / "no_cash_benefits_higher_formal_care_costs"
     / "vs_baseline"
     / "age_profiles"
     / "matched_differences_care_by_age.png",
     path_to_plot_gross_labor_income: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "lower_formal_care_costs"
+    / "no_cash_benefits_higher_formal_care_costs"
     / "vs_baseline"
     / "age_profiles"
     / "matched_differences_gross_labor_income_by_age.png",
     path_to_plot_savings: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "lower_formal_care_costs"
+    / "no_cash_benefits_higher_formal_care_costs"
     / "vs_baseline"
     / "age_profiles"
     / "matched_differences_savings_by_age.png",
     path_to_plot_wealth: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "lower_formal_care_costs"
+    / "no_cash_benefits_higher_formal_care_costs"
     / "vs_baseline"
     / "age_profiles"
     / "matched_differences_wealth_by_age.png",
     path_to_plot_savings_rate: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "lower_formal_care_costs"
+    / "no_cash_benefits_higher_formal_care_costs"
     / "vs_baseline"
     / "age_profiles"
     / "matched_differences_savings_rate_by_age.png",
@@ -361,42 +361,42 @@ def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915
     age_min: int = 30,
     age_max: int = 100,
 ) -> None:
-    """Compute matched period differences (lower-formal-care-costs - baseline) by age."""
+    """Compute matched differences (no-cash-benefits - baseline) by age."""
     # Load and prepare data
-    df_lfc, df_baseline = prepare_dataframes_for_comparison(
-        pd.read_pickle(path_to_lower_formal_care_costs_data),
+    df_ncb, df_baseline = prepare_dataframes_for_comparison(
+        pd.read_pickle(path_to_no_cash_benefits_data),
         pd.read_pickle(path_to_baseline_data),
         ever_caregivers=ever_caregivers,
         ever_care_demand=ever_care_demand,
     )
 
     # Calculate outcomes
-    lfc_outcomes = calculate_outcomes(df_lfc, choice_set_type="original")
+    ncb_outcomes = calculate_outcomes(df_ncb, choice_set_type="original")
     baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
 
     # Calculate working hours
     options = pickle.load(path_to_options.open("rb"))
     model_params = options["model_params"]
-    lfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_lfc, model_params, choice_set_type="original"
+    ncb_outcomes["hours_weekly"] = calculate_working_hours_weekly(
+        df_ncb, model_params, choice_set_type="original"
     )
     baseline_outcomes["hours_weekly"] = calculate_working_hours_weekly(
         df_baseline, model_params, choice_set_type="original"
     )
 
     # Calculate additional outcomes
-    lfc_additional = calculate_additional_outcomes(df_lfc)
+    ncb_additional = calculate_additional_outcomes(df_ncb)
     baseline_additional = calculate_additional_outcomes(df_baseline)
-    lfc_outcomes.update(lfc_additional)
+    ncb_outcomes.update(ncb_additional)
     baseline_outcomes.update(baseline_additional)
 
     # Create outcome columns and merge
-    lfc_cols = create_outcome_columns(df_lfc, lfc_outcomes, "_o")
+    ncb_cols = create_outcome_columns(df_ncb, ncb_outcomes, "_o")
     baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_c")
 
     # Add age column for age-based filtering
-    if "age" in df_lfc.columns:
-        lfc_cols["age"] = df_lfc["age"].values
+    if "age" in df_ncb.columns:
+        ncb_cols["age"] = df_ncb["age"].values
 
     # Merge and compute differences (include full set of outcomes incl. consumption)
     outcome_names = [
@@ -412,7 +412,7 @@ def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915
         "savings_rate",
         "consumption",
     ]
-    merged = merge_and_compute_differences(lfc_cols, baseline_cols, outcome_names)
+    merged = merge_and_compute_differences(ncb_cols, baseline_cols, outcome_names)
 
     # Filter to age range and average by age
     merged = merged[(merged["age"] >= age_min) & (merged["age"] <= age_max)]

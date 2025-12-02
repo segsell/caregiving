@@ -42,6 +42,7 @@ from caregiving.model.shared import DEAD, INFORMAL_CARE
 # ============================================================================
 
 
+@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_no_care_demand
 def task_plot_matched_differences_by_distance(  # noqa: PLR0915
     path_to_original_data: Path = BLD
@@ -163,6 +164,7 @@ def task_plot_matched_differences_by_distance(  # noqa: PLR0915
     )
 
 
+@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_no_care_demand
 def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915
     path_to_original_data: Path = BLD
@@ -386,6 +388,7 @@ def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915
     )
 
 
+@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_no_care_demand
 def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915
     path_to_original_data: Path = BLD
@@ -631,6 +634,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915
     )
 
 
+@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_no_care_demand
 def task_plot_first_care_start_by_age(
     path_to_original_data: Path = BLD
@@ -763,6 +767,7 @@ def _add_distance_to_first_care_demand(df_original: pd.DataFrame) -> pd.DataFram
     return out
 
 
+@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_no_care_demand
 def task_plot_matched_differences_by_distance_by_care_demand(  # noqa: PLR0915
     path_to_original_data: Path = BLD
@@ -914,6 +919,7 @@ def task_plot_matched_differences_by_distance_by_care_demand(  # noqa: PLR0915
     plt.close()
 
 
+@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_no_care_demand
 def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915
     path_to_original_data: Path = BLD
@@ -1164,6 +1170,7 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915
     )
 
 
+@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_no_care_demand
 def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR0915
     path_to_original_data: Path = BLD
@@ -1435,6 +1442,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR
     )
 
 
+@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_no_care_demand
 def task_plot_first_care_demand_start_by_age(
     path_to_original_data: Path = BLD
@@ -1548,6 +1556,7 @@ def task_plot_first_care_demand_start_by_age(
     plt.close()
 
 
+@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_no_care_demand
 def task_plot_matched_differences_forced_care_demand_at_50(  # noqa: PLR0915
     path_to_original_data: Path = BLD
