@@ -433,6 +433,28 @@ def plot_single_line_differences_by_age(
     plt.xlabel("Age", fontsize=20)
     plt.ylabel(ylabel, fontsize=20)
     plt.xlim(age_min, age_max)
+
+    # Calculate ylim from data endogenously (with padding)
+    # Ensure zero line is always visible
+    filtered_data = prof_sorted[
+        (prof_sorted["age"] >= age_min) & (prof_sorted["age"] <= age_max)
+    ][diff_col]
+    if len(filtered_data) > 0 and not filtered_data.isna().all():
+        y_min = filtered_data.min()
+        y_max = filtered_data.max()
+
+        # Ensure zero is always included in the range
+        y_min = min(y_min, 0)
+        y_max = max(y_max, 0)
+
+        # Add 10% padding on both sides
+        y_range = y_max - y_min
+        padding = max(y_range * 0.1, 0.01)  # At least 0.01 padding
+        plt.ylim(y_min - padding, y_max + padding)
+    else:
+        # If no data, set a default range that includes zero
+        plt.ylim(-0.1, 0.1)
+
     plt.grid(True, alpha=0.2, linestyle="-", linewidth=0.5)
     plt.tick_params(labelsize=18)
     plt.xticks(fontsize=18)

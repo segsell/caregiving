@@ -34,6 +34,7 @@ solve_higher_formal_care_costs = "Solve higher formal care costs counterfactual"
 model_fit = "Model fit tasks"
 model_fit_estimated_params = "Model fit with estimated parameters"
 model_fit_job_retention = "Job retention model fit tasks"
+model_fit_caregiving_leave_with_job_retention = "Caregiving leave with job retention model fit tasks"
 # Counterfactual analysis
 counterfactual_differences = "Counterfactual differences tasks"
 counterfactual_differences_new = "New counterfactual differences tasks"

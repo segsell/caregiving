@@ -255,11 +255,11 @@ def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915
         "pt",
         "job_offer",
         "hours_weekly",
-        # Temporarily removed until data recreation is complete:
-        # "gross_labor_income",
-        # "savings",
-        # "wealth",
-        # "savings_rate",
+        "gross_labor_income",
+        "savings",
+        "wealth",
+        "savings_rate",
+        "consumption",
     ]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
@@ -310,6 +310,7 @@ def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915
                 "diff_savings",
                 "diff_wealth",
                 "diff_savings_rate",
+                "diff_consumption",
             ]
         ]
         .mean()
@@ -491,11 +492,11 @@ def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915
         "pt",
         "job_offer",
         "hours_weekly",
-        # Temporarily removed until data recreation is complete:
-        # "gross_labor_income",
-        # "savings",
-        # "wealth",
-        # "savings_rate",
+        "gross_labor_income",
+        "savings",
+        "wealth",
+        "savings_rate",
+        "consumption",
     ]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
@@ -554,11 +555,11 @@ def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915
                 "diff_pt",
                 "diff_job_offer",
                 "diff_hours_weekly",
-                # Temporarily removed until data recreation is complete:
-                # "diff_gross_labor_income",
-                # "diff_savings",
-                # "diff_wealth",
-                # "diff_savings_rate",
+                "diff_gross_labor_income",
+                "diff_savings",
+                "diff_wealth",
+                "diff_savings_rate",
+                "diff_consumption",
             ]
         ]
         .mean()
@@ -842,6 +843,12 @@ def task_plot_matched_differences_by_age_at_first_care_vs_baseline(  # noqa: PLR
         df_baseline, model_params, choice_set_type="original"
     )
 
+    # Calculate additional outcomes (gross labor income, savings, wealth)
+    hfc_additional = calculate_additional_outcomes(df_hfc)
+    baseline_additional = calculate_additional_outcomes(df_baseline)
+    hfc_outcomes.update(hfc_additional)
+    baseline_outcomes.update(baseline_additional)
+
     # Create outcome columns and merge
     hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_o")
     baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_c")
@@ -856,11 +863,11 @@ def task_plot_matched_differences_by_age_at_first_care_vs_baseline(  # noqa: PLR
         "pt",
         "job_offer",
         "hours_weekly",
-        # Temporarily removed until data recreation is complete:
-        # "gross_labor_income",
-        # "savings",
-        # "wealth",
-        # "savings_rate",
+        "gross_labor_income",
+        "savings",
+        "wealth",
+        "savings_rate",
+        "consumption",
     ]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
@@ -907,11 +914,11 @@ def task_plot_matched_differences_by_age_at_first_care_vs_baseline(  # noqa: PLR
                 "diff_pt",
                 "diff_job_offer",
                 "diff_hours_weekly",
-                # Temporarily removed until data recreation is complete:
-                # "diff_gross_labor_income",
-                # "diff_savings",
-                # "diff_wealth",
-                # "diff_savings_rate",
+                "diff_gross_labor_income",
+                "diff_savings",
+                "diff_wealth",
+                "diff_savings_rate",
+                "diff_consumption",
             ]
         ]
         .mean()
@@ -1072,6 +1079,12 @@ def task_plot_matched_differences_by_age_bins_at_first_care_vs_baseline(  # noqa
         df_baseline, model_params, choice_set_type="original"
     )
 
+    # Calculate additional outcomes (gross labor income, savings, wealth)
+    hfc_additional = calculate_additional_outcomes(df_hfc)
+    baseline_additional = calculate_additional_outcomes(df_baseline)
+    hfc_outcomes.update(hfc_additional)
+    baseline_outcomes.update(baseline_additional)
+
     # Create outcome columns and merge
     hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_o")
     baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_c")
@@ -1086,11 +1099,11 @@ def task_plot_matched_differences_by_age_bins_at_first_care_vs_baseline(  # noqa
         "pt",
         "job_offer",
         "hours_weekly",
-        # Temporarily removed until data recreation is complete:
-        # "gross_labor_income",
-        # "savings",
-        # "wealth",
-        # "savings_rate",
+        "gross_labor_income",
+        "savings",
+        "wealth",
+        "savings_rate",
+        "consumption",
     ]
     for outcome_name in outcome_names:
         merged[f"diff_{outcome_name}"] = (
@@ -1149,11 +1162,11 @@ def task_plot_matched_differences_by_age_bins_at_first_care_vs_baseline(  # noqa
                 "diff_pt",
                 "diff_job_offer",
                 "diff_hours_weekly",
-                # Temporarily removed until data recreation is complete:
-                # "diff_gross_labor_income",
-                # "diff_savings",
-                # "diff_wealth",
-                # "diff_savings_rate",
+                "diff_gross_labor_income",
+                "diff_savings",
+                "diff_wealth",
+                "diff_savings_rate",
+                "diff_consumption",
             ]
         ]
         .mean()
@@ -2754,6 +2767,12 @@ def task_plot_matched_differences_by_age_at_first_care_demand_vs_baseline(  # no
         df_baseline, model_params, choice_set_type="original"
     )
 
+    # Calculate additional outcomes (gross labor income, savings, wealth)
+    hfc_additional = calculate_additional_outcomes(df_hfc)
+    baseline_additional = calculate_additional_outcomes(df_baseline)
+    hfc_outcomes.update(hfc_additional)
+    baseline_outcomes.update(baseline_additional)
+
     # Create outcome columns and merge
     hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_o")
     baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_c")
@@ -3264,6 +3283,12 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_vs_baseline( 
         df_baseline, model_params, choice_set_type="original"
     )
 
+    # Calculate additional outcomes (gross labor income, savings, wealth)
+    hfc_additional = calculate_additional_outcomes(df_hfc)
+    baseline_additional = calculate_additional_outcomes(df_baseline)
+    hfc_outcomes.update(hfc_additional)
+    baseline_outcomes.update(baseline_additional)
+
     # Create outcome columns and merge
     hfc_cols = create_outcome_columns(df_hfc, hfc_outcomes, "_o")
     baseline_cols = create_outcome_columns(df_baseline, baseline_outcomes, "_c")
@@ -3731,3 +3756,283 @@ def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915
     plot_all_outcomes_by_age(
         prof=prof, plot_configs=plot_configs, age_min=age_min, age_max=age_max
     )
+
+
+@pytask.mark.counterfactual_differences
+@pytask.mark.counterfactual_differences_higher_formal_care_costs
+def task_plot_matched_differences_first_care_start_by_age_higher_formal_care_costs(  # noqa: PLR0915
+    path_to_higher_formal_care_costs_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_higher_formal_care_costs_estimated_params.pkl",
+    path_to_no_care_demand_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_no_care_demand.pkl",
+    path_to_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "higher_formal_care_costs"
+    / "vs_no_care_demand"
+    / "matched_differences_first_care_start_by_age.png",
+    min_age: int = 40,
+    max_age: int = 69,
+) -> None:
+    """Plot matched differences in distribution of first care start ages (Higher Formal Care Costs vs no care)."""
+    from caregiving.model.shared import DEAD
+
+    # Load data
+    df_cf = pd.read_pickle(path_to_higher_formal_care_costs_data)
+    df_ncd = pd.read_pickle(path_to_no_care_demand_data)
+
+    # Alive restriction
+    df_cf = df_cf[df_cf["health"] != DEAD].copy()
+    df_ncd = df_ncd[df_ncd["health"] != DEAD].copy()
+
+    # Ensure agent/period
+    df_cf = _ensure_agent_period(df_cf)
+    df_ncd = _ensure_agent_period(df_ncd)
+
+    # Fully flatten any residual index levels
+    for df in (df_cf, df_ncd):
+        if isinstance(df.index, pd.MultiIndex):
+            idx_names = {n for n in df.index.names if n is not None}
+            if ("agent" in idx_names) or ("period" in idx_names):
+                df.reset_index(inplace=True)
+        df.reset_index(drop=True, inplace=True)
+
+    # Check for age column
+    if "age" not in df_cf.columns or "age" not in df_ncd.columns:
+        raise ValueError("Age column required but not found in data")
+
+    # Find first care period for each agent
+    care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
+
+    # For counterfactual
+    caregiving_mask_cf = df_cf["choice"].isin(care_codes)
+    first_care_cf = (
+        df_cf.loc[caregiving_mask_cf, ["agent", "period", "age"]]
+        .sort_values(["agent", "period"])
+        .drop_duplicates("agent", keep="first")
+        .rename(columns={"period": "first_care_period", "age": "age_at_first_care"})
+    )
+
+    # For no_care_demand (should be empty, but calculate for consistency)
+    caregiving_mask_ncd = df_ncd["choice"].isin(care_codes)
+    first_care_ncd = (
+        df_ncd.loc[caregiving_mask_ncd, ["agent", "period", "age"]]
+        .sort_values(["agent", "period"])
+        .drop_duplicates("agent", keep="first")
+        .rename(columns={"period": "first_care_period", "age": "age_at_first_care"})
+    )
+
+    # Filter to age range
+    first_care_cf = first_care_cf[
+        (first_care_cf["age_at_first_care"] >= min_age)
+        & (first_care_cf["age_at_first_care"] <= max_age)
+    ]
+    first_care_ncd = first_care_ncd[
+        (first_care_ncd["age_at_first_care"] >= min_age)
+        & (first_care_ncd["age_at_first_care"] <= max_age)
+    ]
+
+    # Count by age
+    counts_cf = (
+        first_care_cf["age_at_first_care"]
+        .value_counts()
+        .sort_index()
+        .reset_index(name="count_cf")
+        .rename(columns={"age_at_first_care": "age"})
+    )
+    counts_ncd = (
+        first_care_ncd["age_at_first_care"]
+        .value_counts()
+        .sort_index()
+        .reset_index(name="count_ncd")
+        .rename(columns={"age_at_first_care": "age"})
+    )
+
+    # Ensure all ages in range are represented (fill missing with 0)
+    all_ages = pd.DataFrame({"age": range(min_age, max_age + 1)})
+    counts_cf = all_ages.merge(counts_cf, on="age", how="left").fillna(0)
+    counts_ncd = all_ages.merge(counts_ncd, on="age", how="left").fillna(0)
+    counts_cf["count_cf"] = counts_cf["count_cf"].astype(int)
+    counts_ncd["count_ncd"] = counts_ncd["count_ncd"].astype(int)
+
+    # Calculate difference
+    counts_diff = counts_cf.copy()
+    counts_diff["count_diff"] = counts_diff["count_cf"] - counts_ncd["count_ncd"]
+
+    # Plot
+    plt.figure(figsize=(12, 7))
+    colors = ["#2E86AB" if x >= 0 else "#A23B72" for x in counts_diff["count_diff"]]
+    plt.bar(
+        counts_diff["age"],
+        counts_diff["count_diff"],
+        color=colors,
+        alpha=0.7,
+        edgecolor="black",
+        linewidth=0.5,
+    )
+    plt.axhline(y=0, color="k", linestyle="-", linewidth=1)
+    plt.xlabel("Age at first care spell", fontsize=16)
+    plt.ylabel(
+        "Difference in number of people\n(Higher Formal Care Costs - No Care Demand)",
+        fontsize=16,
+    )
+    plt.title("Matched Differences in First Care Start by Age", fontsize=18)
+    plt.grid(True, alpha=0.3, axis="y")
+    plt.xticks(fontsize=14)
+    plt.yticks(fontsize=14)
+    plt.tight_layout()
+    plt.savefig(path_to_plot, dpi=300, bbox_inches="tight")
+    plt.close()
+
+
+@pytask.mark.counterfactual_differences
+@pytask.mark.counterfactual_differences_higher_formal_care_costs
+def task_plot_matched_differences_first_care_demand_start_by_age_higher_formal_care_costs(  # noqa: PLR0915
+    path_to_higher_formal_care_costs_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_higher_formal_care_costs_estimated_params.pkl",
+    path_to_no_care_demand_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_no_care_demand.pkl",
+    path_to_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "higher_formal_care_costs"
+    / "vs_no_care_demand"
+    / "matched_differences_first_care_demand_start_by_age.png",
+    min_age: int = 40,
+    max_age: int = 69,
+) -> None:
+    """Plot matched differences in distribution of first care demand start ages (Higher Formal Care Costs vs no care)."""
+    from caregiving.model.shared import DEAD
+
+    # Load data
+    df_cf = pd.read_pickle(path_to_higher_formal_care_costs_data)
+    df_ncd = pd.read_pickle(path_to_no_care_demand_data)
+
+    # Alive restriction
+    df_cf = df_cf[df_cf["health"] != DEAD].copy()
+    df_ncd = df_ncd[df_ncd["health"] != DEAD].copy()
+
+    # Ensure agent/period
+    df_cf = _ensure_agent_period(df_cf)
+    df_ncd = _ensure_agent_period(df_ncd)
+
+    # Fully flatten any residual index levels
+    for df in [df_cf, df_ncd]:
+        if isinstance(df.index, pd.MultiIndex):
+            idx_names = {n for n in df.index.names if n is not None}
+            if ("agent" in idx_names) or ("period" in idx_names):
+                df.reset_index(inplace=True)
+        df.reset_index(drop=True, inplace=True)
+
+    # Check for age column
+    if "age" not in df_cf.columns or "age" not in df_ncd.columns:
+        raise ValueError("Age column required but not found in data")
+
+    # Find first period where care_demand > 0 for each agent
+    care_demand_mask_cf = df_cf["care_demand"] > 0
+
+    first_care_demand_cf = (
+        df_cf.loc[care_demand_mask_cf, ["agent", "period", "age"]]
+        .sort_values(["agent", "period"])
+        .drop_duplicates("agent", keep="first")
+        .rename(
+            columns={
+                "period": "first_care_demand_period",
+                "age": "age_at_first_care_demand",
+            }
+        )
+    )
+
+    # For no_care_demand scenario, there is no care_demand column, so create empty dataframe
+    if "care_demand" in df_ncd.columns:
+        care_demand_mask_ncd = df_ncd["care_demand"] > 0
+        first_care_demand_ncd = (
+            df_ncd.loc[care_demand_mask_ncd, ["agent", "period", "age"]]
+            .sort_values(["agent", "period"])
+            .drop_duplicates("agent", keep="first")
+            .rename(
+                columns={
+                    "period": "first_care_demand_period",
+                    "age": "age_at_first_care_demand",
+                }
+            )
+        )
+    else:
+        # No care demand scenario - create empty dataframe with correct structure
+        first_care_demand_ncd = pd.DataFrame(
+            columns=["agent", "first_care_demand_period", "age_at_first_care_demand"]
+        )
+
+    # Filter to age range
+    first_care_demand_cf = first_care_demand_cf[
+        (first_care_demand_cf["age_at_first_care_demand"] >= min_age)
+        & (first_care_demand_cf["age_at_first_care_demand"] <= max_age)
+    ]
+    if len(first_care_demand_ncd) > 0:
+        first_care_demand_ncd = first_care_demand_ncd[
+            (first_care_demand_ncd["age_at_first_care_demand"] >= min_age)
+            & (first_care_demand_ncd["age_at_first_care_demand"] <= max_age)
+        ]
+
+    # Count by age
+    if len(first_care_demand_cf) > 0:
+        counts_cf = (
+            first_care_demand_cf["age_at_first_care_demand"]
+            .value_counts()
+            .sort_index()
+            .reset_index(name="count_cf")
+            .rename(columns={"age_at_first_care_demand": "age"})
+        )
+    else:
+        counts_cf = pd.DataFrame(columns=["age", "count_cf"])
+
+    if len(first_care_demand_ncd) > 0:
+        counts_ncd = (
+            first_care_demand_ncd["age_at_first_care_demand"]
+            .value_counts()
+            .sort_index()
+            .reset_index(name="count_ncd")
+            .rename(columns={"age_at_first_care_demand": "age"})
+        )
+    else:
+        counts_ncd = pd.DataFrame(columns=["age", "count_ncd"])
+
+    # Ensure all ages in range are represented (fill missing with 0)
+    all_ages = pd.DataFrame({"age": range(min_age, max_age + 1)})
+    counts_cf = all_ages.merge(counts_cf, on="age", how="left").fillna(0)
+    counts_ncd = all_ages.merge(counts_ncd, on="age", how="left").fillna(0)
+    counts_cf["count_cf"] = counts_cf["count_cf"].astype(int)
+    counts_ncd["count_ncd"] = counts_ncd["count_ncd"].astype(int)
+
+    # Calculate difference
+    counts_diff = counts_cf.copy()
+    counts_diff["count_diff"] = counts_diff["count_cf"] - counts_ncd["count_ncd"]
+
+    # Plot
+    plt.figure(figsize=(12, 7))
+    colors = ["#2E86AB" if x >= 0 else "#A23B72" for x in counts_diff["count_diff"]]
+    plt.bar(
+        counts_diff["age"],
+        counts_diff["count_diff"],
+        color=colors,
+        alpha=0.7,
+        edgecolor="black",
+        linewidth=0.5,
+    )
+    plt.axhline(y=0, color="k", linestyle="-", linewidth=1)
+    plt.xlabel("Age at first care demand", fontsize=16)
+    plt.ylabel(
+        "Difference in number of people\n(Higher Formal Care Costs - No Care Demand)",
+        fontsize=16,
+    )
+    plt.title("Matched Differences in First Care Demand Start by Age", fontsize=18)
+    plt.grid(True, alpha=0.3, axis="y")
+    plt.xticks(fontsize=14)
+    plt.yticks(fontsize=14)
+    plt.tight_layout()
+    plt.savefig(path_to_plot, dpi=300, bbox_inches="tight")
+    plt.close()

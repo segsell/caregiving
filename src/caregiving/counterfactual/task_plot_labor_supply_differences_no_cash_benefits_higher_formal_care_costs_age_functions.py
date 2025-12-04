@@ -109,6 +109,10 @@ def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915
     age_max: int = 100,
 ) -> None:
     """Compute matched differences (no-cash-benefits - no-care-demand) by age."""
+    # Skip if required data file doesn't exist
+    if not path_to_no_cash_benefits_data.exists():
+        return
+
     # Load and prepare data
     df_ncb, df_ncd = prepare_dataframes_for_comparison(
         pd.read_pickle(path_to_no_cash_benefits_data),
@@ -362,6 +366,10 @@ def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915
     age_max: int = 100,
 ) -> None:
     """Compute matched differences (no-cash-benefits - baseline) by age."""
+    # Skip if required data file doesn't exist
+    if not path_to_no_cash_benefits_data.exists():
+        return
+
     # Load and prepare data
     df_ncb, df_baseline = prepare_dataframes_for_comparison(
         pd.read_pickle(path_to_no_cash_benefits_data),
