@@ -40,10 +40,7 @@ def task_solve_and_simulate_no_care_demand(
     / "model"
     / "initial_conditions"
     / "states_no_care_demand.pkl",
-    path_to_wealth: Path = BLD
-    / "model"
-    / "initial_conditions"
-    / "wealth_no_care_demand.csv",
+    path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
     path_to_save_solution: Annotated[Path, Product] = BLD
     / "solve_and_simulate"
     / "solution_no_care_demand.pkl",
