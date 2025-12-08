@@ -25,7 +25,7 @@ from caregiving.model.shared import INFORMAL_CARE
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_age_profiles
 @pytask.mark.counterfactual_differences_job_retention_age_profiles
-def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915
+def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915, E501
     path_to_job_retention_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_job_retention_estimated_params.pkl",
@@ -287,7 +287,7 @@ def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_age_profiles
 @pytask.mark.counterfactual_differences_job_retention_age_profiles
-def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915
+def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915, E501
     path_to_job_retention_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_job_retention_estimated_params.pkl",

@@ -10,7 +10,9 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from caregiving.model.shared import (  # BAD_HEALTH,; CARE_AND_NO_CARE,; FORMAL_CARE,; FORMAL_CARE_AND_NO_CARE,; NO_CARE,; is_formal_care,; care demand == 1 and care supply == 1
+# BAD_HEALTH, CARE_AND_NO_CARE, FORMAL_CARE, FORMAL_CARE_AND_NO_CARE,
+# NO_CARE, is_formal_care, care demand == 1 and care supply == 1
+from caregiving.model.shared import (
     ALL,
     ALL_CARE,
     ALL_NO_CARE,
@@ -474,7 +476,10 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912
 #     #     fresh_retired, experience_years_with_penalty, exp_new_period
 #     # )
 
-#     return (1 / (period + options["max_exp_diffs_per_period"][period])) * exp_new_period
+#     return (
+#         (1 / (period + options["max_exp_diffs_per_period"][period]))
+#         * exp_new_period
+#     )
 
 
 def get_next_period_experience(
@@ -559,7 +564,8 @@ def calc_experience_years_for_pension_adjustment(
     )
     # retirement age is last periods age
     actual_retirement_age = options["start_age"] + period - 1
-    # SRA at retirement, difference to actual retirement age and boolean for early retirement
+    # SRA at retirement, difference to actual retirement age
+    # and boolean for early retirement
     # SRA_at_retirement = options["min_SRA"]
     SRA_at_retirement = options["min_SRA"]
     retirement_age_difference = jnp.abs(SRA_at_retirement - actual_retirement_age)

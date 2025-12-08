@@ -30,7 +30,7 @@ from caregiving.counterfactual.plotting_utils import (
     merge_and_compute_differences,
     prepare_dataframes_for_comparison,
 )
-from caregiving.counterfactual.task_plot_labor_supply_differences_no_care_demand import (
+from caregiving.counterfactual.task_plot_labor_supply_differences_no_care_demand import (  # noqa: E501
     _add_distance_to_first_care_demand,
 )
 

@@ -44,7 +44,7 @@ from caregiving.model.shared import DEAD, INFORMAL_CARE
 
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_no_care_demand
-def task_plot_matched_differences_by_distance(  # noqa: PLR0915
+def task_plot_matched_differences_by_distance(  # noqa: PLR0915, E501
     path_to_original_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
@@ -166,7 +166,7 @@ def task_plot_matched_differences_by_distance(  # noqa: PLR0915
 
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_no_care_demand
-def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915
+def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915, E501
     path_to_original_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
@@ -351,26 +351,34 @@ def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915
             "diff_col": "diff_hours_weekly",
         },
         "gross_labor_income": {
-            "path": path_to_plot_work.parent
-            / "matched_differences_gross_labor_income_by_age_at_first_care.png",
+            "path": (
+                path_to_plot_work.parent
+                / "matched_differences_gross_labor_income_by_age_at_first_care.png"
+            ),
             "ylabel": "Gross Labor Income (Monthly)\nDeviation from Counterfactual",
             "diff_col": "diff_gross_labor_income",
         },
         "savings": {
-            "path": path_to_plot_work.parent
-            / "matched_differences_savings_by_age_at_first_care.png",
+            "path": (
+                path_to_plot_work.parent
+                / "matched_differences_savings_by_age_at_first_care.png"
+            ),
             "ylabel": "Savings Decision\nDeviation from Counterfactual",
             "diff_col": "diff_savings",
         },
         "wealth": {
-            "path": path_to_plot_work.parent
-            / "matched_differences_wealth_by_age_at_first_care.png",
+            "path": (
+                path_to_plot_work.parent
+                / "matched_differences_wealth_by_age_at_first_care.png"
+            ),
             "ylabel": "Wealth at Beginning of Period\nDeviation from Counterfactual",
             "diff_col": "diff_wealth",
         },
         "savings_rate": {
-            "path": path_to_plot_work.parent
-            / "matched_differences_savings_rate_by_age_at_first_care.png",
+            "path": (
+                path_to_plot_work.parent
+                / "matched_differences_savings_rate_by_age_at_first_care.png"
+            ),
             "ylabel": "Savings Rate\nDeviation from Counterfactual",
             "diff_col": "diff_savings_rate",
         },
@@ -390,7 +398,7 @@ def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915
 
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_no_care_demand
-def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915
+def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915, E501
     path_to_original_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
@@ -597,26 +605,34 @@ def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915
             "diff_col": "diff_hours_weekly",
         },
         "gross_labor_income": {
-            "path": path_to_plot_work.parent
-            / "matched_differences_gross_labor_income_by_age_bins_at_first_care.png",
+            "path": (
+                path_to_plot_work.parent
+                / "matched_differences_gross_labor_income_by_age_bins_at_first_care.png"
+            ),
             "ylabel": "Gross Labor Income (Monthly)\nDeviation from Counterfactual",
             "diff_col": "diff_gross_labor_income",
         },
         "savings": {
-            "path": path_to_plot_work.parent
-            / "matched_differences_savings_by_age_bins_at_first_care.png",
+            "path": (
+                path_to_plot_work.parent
+                / "matched_differences_savings_by_age_bins_at_first_care.png"
+            ),
             "ylabel": "Savings Decision\nDeviation from Counterfactual",
             "diff_col": "diff_savings",
         },
         "wealth": {
-            "path": path_to_plot_work.parent
-            / "matched_differences_wealth_by_age_bins_at_first_care.png",
+            "path": (
+                path_to_plot_work.parent
+                / "matched_differences_wealth_by_age_bins_at_first_care.png"
+            ),
             "ylabel": "Wealth at Beginning of Period\nDeviation from Counterfactual",
             "diff_col": "diff_wealth",
         },
         "savings_rate": {
-            "path": path_to_plot_work.parent
-            / "matched_differences_savings_rate_by_age_bins_at_first_care.png",
+            "path": (
+                path_to_plot_work.parent
+                / "matched_differences_savings_rate_by_age_bins_at_first_care.png"
+            ),
             "ylabel": "Savings Rate\nDeviation from Counterfactual",
             "diff_col": "diff_savings_rate",
         },
@@ -769,7 +785,7 @@ def _add_distance_to_first_care_demand(df_original: pd.DataFrame) -> pd.DataFram
 
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_no_care_demand
-def task_plot_matched_differences_by_distance_by_care_demand(  # noqa: PLR0915
+def task_plot_matched_differences_by_distance_by_care_demand(  # noqa: PLR0915, E501
     path_to_original_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
@@ -921,7 +937,7 @@ def task_plot_matched_differences_by_distance_by_care_demand(  # noqa: PLR0915
 
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_no_care_demand
-def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915
+def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915, E501
     path_to_original_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
@@ -1129,29 +1145,40 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915
             "xlabel": "Year relative to first care demand",
         },
         "gross_labor_income": {
-            "path": path_to_plot_work.parent
-            / "matched_differences_gross_labor_income_by_age_at_first_care_demand.png",
+            "path": (
+                path_to_plot_work.parent
+                / (
+                    "matched_differences_gross_labor_income_by_age_at_first_care"
+                    "_demand.png"
+                )
+            ),
             "ylabel": "Gross Labor Income (Monthly)\nDeviation from Counterfactual",
             "diff_col": "diff_gross_labor_income",
             "xlabel": "Year relative to first care demand",
         },
         "savings": {
-            "path": path_to_plot_work.parent
-            / "matched_differences_savings_by_age_at_first_care_demand.png",
+            "path": (
+                path_to_plot_work.parent
+                / "matched_differences_savings_by_age_at_first_care_demand.png"
+            ),
             "ylabel": "Savings Decision\nDeviation from Counterfactual",
             "diff_col": "diff_savings",
             "xlabel": "Year relative to first care demand",
         },
         "wealth": {
-            "path": path_to_plot_work.parent
-            / "matched_differences_wealth_by_age_at_first_care_demand.png",
+            "path": (
+                path_to_plot_work.parent
+                / "matched_differences_wealth_by_age_at_first_care_demand.png"
+            ),
             "ylabel": "Wealth at Beginning of Period\nDeviation from Counterfactual",
             "diff_col": "diff_wealth",
             "xlabel": "Year relative to first care demand",
         },
         "savings_rate": {
-            "path": path_to_plot_work.parent
-            / "matched_differences_savings_rate_by_age_at_first_care_demand.png",
+            "path": (
+                path_to_plot_work.parent
+                / "matched_differences_savings_rate_by_age_at_first_care_demand.png"
+            ),
             "ylabel": "Savings Rate\nDeviation from Counterfactual",
             "diff_col": "diff_savings_rate",
             "xlabel": "Year relative to first care demand",
@@ -1172,7 +1199,7 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915
 
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_no_care_demand
-def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR0915
+def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR0915, E501
     path_to_original_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
@@ -1401,29 +1428,43 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR
             "xlabel": "Year relative to first care demand",
         },
         "gross_labor_income": {
-            "path": path_to_plot_work.parent
-            / "matched_differences_gross_labor_income_by_age_bins_at_first_care_demand.png",
+            "path": (
+                path_to_plot_work.parent
+                / (
+                    "matched_differences_gross_labor_income_by_age_bins_at_first_care"
+                    "_demand.png"
+                )
+            ),
             "ylabel": "Gross Labor Income (Monthly)\nDeviation from Counterfactual",
             "diff_col": "diff_gross_labor_income",
             "xlabel": "Year relative to first care demand",
         },
         "savings": {
-            "path": path_to_plot_work.parent
-            / "matched_differences_savings_by_age_bins_at_first_care_demand.png",
+            "path": (
+                path_to_plot_work.parent
+                / "matched_differences_savings_by_age_bins_at_first_care_demand.png"
+            ),
             "ylabel": "Savings Decision\nDeviation from Counterfactual",
             "diff_col": "diff_savings",
             "xlabel": "Year relative to first care demand",
         },
         "wealth": {
-            "path": path_to_plot_work.parent
-            / "matched_differences_wealth_by_age_bins_at_first_care_demand.png",
+            "path": (
+                path_to_plot_work.parent
+                / "matched_differences_wealth_by_age_bins_at_first_care_demand.png"
+            ),
             "ylabel": "Wealth at Beginning of Period\nDeviation from Counterfactual",
             "diff_col": "diff_wealth",
             "xlabel": "Year relative to first care demand",
         },
         "savings_rate": {
-            "path": path_to_plot_work.parent
-            / "matched_differences_savings_rate_by_age_bins_at_first_care_demand.png",
+            "path": (
+                path_to_plot_work.parent
+                / (
+                    "matched_differences_savings_rate_by_age_bins_at_first_care"
+                    "_demand.png"
+                )
+            ),
             "ylabel": "Savings Rate\nDeviation from Counterfactual",
             "diff_col": "diff_savings_rate",
             "xlabel": "Year relative to first care demand",
@@ -1558,7 +1599,7 @@ def task_plot_first_care_demand_start_by_age(
 
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_no_care_demand
-def task_plot_matched_differences_forced_care_demand_at_50(  # noqa: PLR0915
+def task_plot_matched_differences_forced_care_demand_at_50(  # noqa: PLR0915, E501
     path_to_original_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
@@ -1676,7 +1717,7 @@ def task_plot_matched_differences_forced_care_demand_at_50(  # noqa: PLR0915
 
 @pytask.mark.counterfactual_differences_no_care_demand
 @pytask.mark.skip()  # Temporarily skip to avoid conflict with age_functions module
-def task_plot_matched_differences_by_age(  # noqa: PLR0915
+def task_plot_matched_differences_by_age(  # noqa: PLR0915, E501
     path_to_original_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
@@ -1797,14 +1838,16 @@ def task_plot_matched_differences_by_age(  # noqa: PLR0915
             "diff_col": "diff_pt",
         },
         "job_offer": {
-            "path": path_to_plot_work.parent
-            / "matched_differences_job_offer_by_age.png",
+            "path": (
+                path_to_plot_work.parent / "matched_differences_job_offer_by_age.png"
+            ),
             "ylabel": "Job Offer Probability\nDeviation from Counterfactual",
             "diff_col": "diff_job_offer",
         },
         "hours_weekly": {
-            "path": path_to_plot_work.parent
-            / "matched_differences_hours_weekly_by_age.png",
+            "path": (
+                path_to_plot_work.parent / "matched_differences_hours_weekly_by_age.png"
+            ),
             "ylabel": "Weekly Working Hours\nDeviation from Counterfactual",
             "diff_col": "diff_hours_weekly",
         },
@@ -1814,8 +1857,10 @@ def task_plot_matched_differences_by_age(  # noqa: PLR0915
             "diff_col": "diff_care",
         },
         "gross_labor_income": {
-            "path": path_to_plot_work.parent
-            / "matched_differences_gross_labor_income_by_age.png",
+            "path": (
+                path_to_plot_work.parent
+                / "matched_differences_gross_labor_income_by_age.png"
+            ),
             "ylabel": "Gross Labor Income (Monthly)\nDeviation from Counterfactual",
             "diff_col": "diff_gross_labor_income",
         },
@@ -1830,8 +1875,9 @@ def task_plot_matched_differences_by_age(  # noqa: PLR0915
             "diff_col": "diff_wealth",
         },
         "savings_rate": {
-            "path": path_to_plot_work.parent
-            / "matched_differences_savings_rate_by_age.png",
+            "path": (
+                path_to_plot_work.parent / "matched_differences_savings_rate_by_age.png"
+            ),
             "ylabel": "Savings Rate\nDeviation from Counterfactual",
             "diff_col": "diff_savings_rate",
         },

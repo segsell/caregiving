@@ -19,7 +19,9 @@
 # from caregiving.model.utility.bequest_utility import (
 #     create_final_period_utility_functions,
 # )
-# from caregiving.model.utility.utility_functions_additive import create_utility_functions
+# from caregiving.model.utility.utility_functions_additive import (
+#     create_utility_functions,
+# )
 # from caregiving.model.wealth_and_budget.budget_equation_no_cash_benefits import (
 #     budget_constraint,
 # )
@@ -31,7 +33,7 @@
 
 
 # @pytask.mark.sim_estimated_params_no_cash_benefits_higher_formal_care_costs
-# def task_solve_and_simulate_no_cash_benefits_higher_formal_care_costs_estimated_params(
+# def task_solve_and_simulate_no_cash_benefits_higher_formal_care_costs_estimated_params(  # noqa: E501
 #     path_to_solution_model: Path = BLD
 #     / "model"
 #     / "model_no_cash_benefits_higher_formal_care_costs.pkl",
@@ -42,7 +44,9 @@
 #     / "model"
 #     / "params"
 #     / "estimated_params_model.yaml",
-#     path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",
+#     path_to_discrete_states: Path = (
+#         BLD / "model" / "initial_conditions" / "states.pkl"
+#     ),
 #     path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
 #     path_to_save_solution: Annotated[Path, Product] = BLD
 #     / "solve_and_simulate"
@@ -72,7 +76,9 @@
 
 #     # 2) Simulate
 #     initial_states = pickle.load(path_to_discrete_states.open("rb"))
-#     wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
+#     wealth_agents = jnp.array(
+#         pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze()
+#     )
 
 #     model_for_simulation = load_and_setup_model(
 #         options=options,

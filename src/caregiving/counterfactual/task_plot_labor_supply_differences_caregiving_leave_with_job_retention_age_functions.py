@@ -1,4 +1,7 @@
-"""Age-based plotting functions for caregiving-leave-with-job-retention counterfactual."""
+"""Age-based plotting functions for caregiving-leave-with-job-retention.
+
+Counterfactual.
+"""
 
 import pickle
 from pathlib import Path
@@ -24,7 +27,7 @@ from caregiving.counterfactual.plotting_utils import (
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_age_profiles
 @pytask.mark.counterfactual_differences_cg_leave_age_profiles
-def task_plot_matched_differences_by_age_cg_leave_vs_no_care_demand(  # noqa: PLR0915
+def task_plot_matched_differences_by_age_cg_leave_vs_no_care_demand(  # noqa: PLR0915, E501
     path_to_cg_leave_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_caregiving_leave_with_job_retention_estimated_params.pkl",
@@ -269,7 +272,7 @@ def task_plot_matched_differences_by_age_cg_leave_vs_no_care_demand(  # noqa: PL
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_age_profiles
 @pytask.mark.counterfactual_differences_cg_leave_age_profiles
-def task_plot_matched_differences_by_age_cg_leave_vs_baseline(  # noqa: PLR0915
+def task_plot_matched_differences_by_age_cg_leave_vs_baseline(  # noqa: PLR0915, E501
     path_to_cg_leave_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_caregiving_leave_with_job_retention_estimated_params.pkl",

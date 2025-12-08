@@ -25,12 +25,16 @@
 # from caregiving.model.stochastic_processes.job_transition_job_retention import (
 #     job_offer_process_transition_leave_with_job_retention,
 # )
-# from caregiving.model.stochastic_processes.partner_transition import partner_transition
+# from caregiving.model.stochastic_processes.partner_transition import (
+#     partner_transition,
+# )
 # from caregiving.model.utility.bequest_utility import (
 #     create_final_period_utility_functions,
 # )
-# from caregiving.model.utility.utility_functions_additive import create_utility_functions
-# from caregiving.model.wealth_and_budget.budget_equation_caregiving_leave_with_job_retention import (
+# from caregiving.model.utility.utility_functions_additive import (
+#     create_utility_functions,
+# )
+# from caregiving.model.wealth_and_budget.budget_equation_caregiving_leave_with_job_retention import (  # noqa: E501
 #     budget_constraint,
 # )
 # from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
@@ -39,7 +43,9 @@
 # @pytask.mark.caregiving_leave_with_job_retention
 # def task_specify_model_caregiving_leave_with_job_retention(
 #     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
-#     path_to_start_params: Path = BLD / "model" / "params" / "start_params_updated.yaml",
+#     path_to_start_params: Path = (
+#         BLD / "model" / "params" / "start_params_updated.yaml"
+#     ),
 #     path_to_save_options: Annotated[Path, Product] = BLD
 #     / "model"
 #     / "options_caregiving_leave_with_job_retention.pkl",
@@ -51,7 +57,9 @@
 #     / "params"
 #     / "start_params_model_caregiving_leave_with_job_retention.yaml",
 # ):
-#     """Generate model and options dictionaries for leave-with-job-retention counterfactual.
+#     """Generate model and options dictionaries.
+
+#     For leave-with-job-retention counterfactual.
 
 #     This counterfactual is based on the job-retention setup, but separated so that
 #     it can be combined with a leave policy (e.g. care leave with guaranteed job
@@ -94,7 +102,9 @@
 #             },
 #             "exogenous_processes": {
 #                 "job_offer": {
-#                     "transition": job_offer_process_transition_leave_with_job_retention,
+#                     "transition": (
+#                         job_offer_process_transition_leave_with_job_retention
+#                     ),
 #                     "states": np.arange(2, dtype=int),
 #                 },
 #                 "partner_state": {

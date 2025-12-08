@@ -1,4 +1,7 @@
-"""Plot model fit between empirical and simulated data using higher-retirement-age model."""
+"""Plot model fit between empirical and simulated data.
+
+Uses higher-retirement-age model.
+"""
 
 import pickle
 from pathlib import Path
@@ -146,7 +149,8 @@ def task_plot_model_fit_higher_ret_age(  # noqa: PLR0915
 
     # Load full datasets
     df_emp_full = pd.read_csv(path_to_empirical_data, index_col=[0])
-    df_caregivers_full = pd.read_csv(path_to_caregivers_sample, index_col=[0])
+    # df_caregivers_full is loaded but not used in this function
+    _df_caregivers_full = pd.read_csv(path_to_caregivers_sample, index_col=[0])
 
     # Create standardized subsamples using shared functions
     df_emp_with_caregivers = create_df_with_caregivers(

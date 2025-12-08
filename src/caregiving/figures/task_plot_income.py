@@ -20,7 +20,7 @@ from caregiving.model.shared import (
     UNEMPLOYED_CARE,
 )
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
-from caregiving.model.wealth_and_budget.budget_equation_caregiving_leave_with_job_retention import (
+from caregiving.model.wealth_and_budget.budget_equation_caregiving_leave_with_job_retention import (  # noqa: E501
     calc_caregiving_leave_top_up,
 )
 from caregiving.model.wealth_and_budget.pensions import (
@@ -33,9 +33,12 @@ from caregiving.model.wealth_and_budget.wages import (
     calculate_gross_labor_income,
 )
 
+EXP_MOD_5 = 5
+EXP_MOD_7 = 7
+
 
 @pytask.mark.budget_constraint
-def task_plot_caregiving_leave_top_ups(
+def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
     path_to_full_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_save: Annotated[Path, Product] = BLD
     / "plots"
@@ -156,7 +159,8 @@ def task_plot_caregiving_leave_top_ups(
         experience_years = float(exp)
         income_shock = 0.0
 
-        # Labor income for unemployed caregiver (should be zero but computed for clarity)
+        # Labor income for unemployed caregiver
+        # (should be zero but computed for clarity)
         labor_unemp_care = calc_labor_income_after_ssc(
             lagged_choice=choice_unemp_care,
             experience_years=experience_years,
@@ -241,9 +245,9 @@ def task_plot_caregiving_leave_top_ups(
     )
 
     # Precompute masks for specific experience years
-    mask_triangles = exp_levels % 10 == 5  # 5, 15, 25, ...
+    mask_triangles = exp_levels % 10 == EXP_MOD_5  # 5, 15, 25, ...
     mask_circles = exp_levels % 10 == 0  # 0, 10, 20, ...
-    mask_baseline = exp_levels % 10 == 7  # 7, 17, 27, ...
+    mask_baseline = exp_levels % 10 == EXP_MOD_7  # 7, 17, 27, ...
 
     # 2) Labor income without top-ups (dashed lines, plus triangles at odd years)
     ax.plot(

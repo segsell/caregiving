@@ -27,6 +27,7 @@ from caregiving.counterfactual.plotting_utils import (
     prepare_dataframes_for_comparison,
 )
 from caregiving.model.shared import (
+    CARE_DEMAND_AND_NO_OTHER_SUPPLY,
     DEAD,
     FULL_TIME,
     INFORMAL_CARE,
@@ -182,17 +183,20 @@ def filter_by_labor_supply_at_t_minus_5_both_scenarios(
     distance_col: str,
     labor_supply_state: str,
 ) -> pd.DataFrame:
-    """Filter merged DataFrame to agents with same labor supply at t=-5 in both scenarios.
+    """Filter merged DataFrame to agents with same labor supply at t=-5.
 
     Conditions on BOTH baseline and counterfactual scenarios having the same
     labor supply at t=-5, and that labor supply matches the specified state.
 
     Args:
-        merged_df: Merged DataFrame with differences (from merge_and_compute_differences)
+        merged_df: Merged DataFrame with differences
+            (from merge_and_compute_differences)
         df_baseline: Baseline DataFrame with choice column
-        df_counterfactual: Counterfactual (no care demand) DataFrame with choice column
+        df_counterfactual: Counterfactual (no care demand) DataFrame
+            with choice column
         distance_col: Name of distance column (e.g., 'distance_to_first_care')
-        labor_supply_state: Labor supply state to filter on ('unemployed', 'part_time', 'full_time')
+        labor_supply_state: Labor supply state to filter on
+            ('unemployed', 'part_time', 'full_time')
 
     Returns:
         Filtered merged DataFrame
@@ -221,13 +225,14 @@ def filter_by_labor_supply_at_t_minus_5_both_scenarios(
     )
 
     # Get labor supply at t=-5 from both scenarios
-    df_baseline_t_minus_5 = df_baseline[df_baseline[distance_col] == -5].copy()
+    T_MINUS_5 = -5
+    df_baseline_t_minus_5 = df_baseline[df_baseline[distance_col] == T_MINUS_5].copy()
     df_baseline_t_minus_5 = df_baseline_t_minus_5[
         ["agent", "labor_supply_state"]
     ].rename(columns={"labor_supply_state": "baseline_labor_supply_t_minus_5"})
 
     df_counterfactual_t_minus_5 = df_counterfactual[
-        df_counterfactual[distance_col] == -5
+        df_counterfactual[distance_col] == T_MINUS_5
     ].copy()
     df_counterfactual_t_minus_5 = df_counterfactual_t_minus_5[
         ["agent", "labor_supply_state"]
@@ -383,8 +388,9 @@ def create_event_study_plots(
         period_col = "first_care_demand_period"
         age_col_name = "age_at_first_care_demand"
         # CARE_DEMAND_AND_NO_OTHER_SUPPLY: care_demand == 2
-        # Filter to first occurrence where care_demand == 2
-        care_demand_mask = df_o["care_demand"] == 2
+        # Filter to first occurrence where care_demand ==
+        # CARE_DEMAND_AND_NO_OTHER_SUPPLY
+        care_demand_mask = df_o["care_demand"] == CARE_DEMAND_AND_NO_OTHER_SUPPLY
 
     # Get first event period for each agent
     dist_map = (
@@ -412,7 +418,8 @@ def create_event_study_plots(
     ]
 
     # Filter by labor supply at t=-5 in BOTH scenarios
-    # This conditions on both baseline and counterfactual having the same labor supply at t=-5
+    # This conditions on both baseline and counterfactual having
+    # the same labor supply at t=-5
     merged_filtered = filter_by_labor_supply_at_t_minus_5_both_scenarios(
         merged, df_o, df_c, distance_col, labor_supply_state
     )
@@ -451,7 +458,10 @@ def create_event_study_plots(
 
     for outcome_name, outcome_info in outcomes_to_plot.items():
         xlabel = f"Year relative to {event_label.lower()}"
-        title = f"{outcome_info['ylabel'].split(chr(10))[0]}\nConditioned on {ls_label} at t=-1"
+        title = (
+            f"{outcome_info['ylabel'].split(chr(10))[0]}\n"
+            f"Conditioned on {ls_label} at t=-1"
+        )
 
         plot_event_study_by_age(
             prof_data=prof,

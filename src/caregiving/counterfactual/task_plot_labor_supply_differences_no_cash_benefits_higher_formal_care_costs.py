@@ -39,7 +39,7 @@ from caregiving.counterfactual.plotting_utils import (
 from caregiving.counterfactual.task_plot_labor_supply_differences import (
     _add_distance_to_first_care,
 )
-from caregiving.counterfactual.task_plot_labor_supply_differences_no_care_demand import (  # noqa: E501
+from caregiving.counterfactual.task_plot_labor_supply_differences_no_care_demand import (  # noqa: E402, E501
     _add_distance_to_first_care_demand,
 )
 from caregiving.model.shared import INFORMAL_CARE
@@ -47,7 +47,7 @@ from caregiving.model.shared import INFORMAL_CARE
 
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_no_cash_benefits_higher_formal_care_costs
-def task_plot_matched_differences_by_distance_vs_no_care_demand(  # noqa: PLR0915
+def task_plot_matched_differences_by_distance_vs_no_care_demand(  # noqa: PLR0915, E501
     path_to_no_cash_benefits_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_no_cash_benefits_higher_formal_care_costs_estimated_params.pkl",
@@ -63,7 +63,9 @@ def task_plot_matched_differences_by_distance_vs_no_care_demand(  # noqa: PLR091
     ever_caregivers: bool = True,
     window: int = 20,
 ) -> None:
-    """Compute matched period differences (no-cash-benefits - no-care-demand) by distance.
+    """Compute matched period differences by distance.
+
+    Compares no-cash-benefits vs no-care-demand.
 
     Averages by distance to first caregiving spell in the no-cash-benefits scenario.
     """
@@ -141,7 +143,7 @@ def task_plot_matched_differences_by_distance_vs_no_care_demand(  # noqa: PLR091
 
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_no_cash_benefits_higher_formal_care_costs
-def task_plot_matched_differences_by_distance_vs_baseline(  # noqa: PLR0915
+def task_plot_matched_differences_by_distance_vs_baseline(  # noqa: PLR0915, E501
     path_to_no_cash_benefits_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_no_cash_benefits_higher_formal_care_costs_estimated_params.pkl",
@@ -232,7 +234,7 @@ def task_plot_matched_differences_by_distance_vs_baseline(  # noqa: PLR0915
 
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_no_cash_benefits_higher_formal_care_costs
-def task_plot_matched_differences_by_age_at_first_care_vs_no_care_demand(  # noqa: PLR0915
+def task_plot_matched_differences_by_age_at_first_care_vs_no_care_demand(  # noqa: PLR0915, E501
     path_to_no_cash_benefits_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_no_cash_benefits_higher_formal_care_costs_estimated_params.pkl",
@@ -274,7 +276,10 @@ def task_plot_matched_differences_by_age_at_first_care_vs_no_care_demand(  # noq
     window: int = 20,
     ages_at_first_care: list[int] | None = None,
 ) -> None:
-    """Compute matched differences by age at first care (no-cash-benefits - no-care-demand)."""
+    """Compute matched differences by age at first care.
+
+    Compares no-cash-benefits vs no-care-demand.
+    """
     # Skip if required data file doesn't exist
     if not path_to_no_cash_benefits_data.exists():
         return
@@ -423,7 +428,7 @@ def task_plot_matched_differences_by_age_at_first_care_vs_no_care_demand(  # noq
 
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_no_cash_benefits_higher_formal_care_costs
-def task_plot_matched_differences_by_age_at_first_care_vs_baseline(  # noqa: PLR0915
+def task_plot_matched_differences_by_age_at_first_care_vs_baseline(  # noqa: PLR0915, E501
     path_to_no_cash_benefits_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_no_cash_benefits_higher_formal_care_costs_estimated_params.pkl",
@@ -465,7 +470,10 @@ def task_plot_matched_differences_by_age_at_first_care_vs_baseline(  # noqa: PLR
     window: int = 20,
     ages_at_first_care: list[int] | None = None,
 ) -> None:
-    """Compute matched differences by age at first care (no-cash-benefits - baseline)."""
+    """Compute matched differences by age at first care.
+
+    Compares no-cash-benefits vs baseline.
+    """
     # Skip if required data file doesn't exist
     if not path_to_no_cash_benefits_data.exists():
         return
@@ -614,7 +622,7 @@ def task_plot_matched_differences_by_age_at_first_care_vs_baseline(  # noqa: PLR
 
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_no_cash_benefits_higher_formal_care_costs
-def task_plot_matched_differences_first_care_start_by_age_no_cash_benefits_higher_formal_care_costs(  # noqa: PLR0915
+def task_plot_matched_differences_first_care_start_by_age_no_cash_benefits_higher_formal_care_costs(  # noqa: PLR0915, E501
     path_to_no_cash_benefits_higher_formal_care_costs_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_no_cash_benefits_higher_formal_care_costs_estimated_params.pkl",
@@ -630,7 +638,10 @@ def task_plot_matched_differences_first_care_start_by_age_no_cash_benefits_highe
     min_age: int = 40,
     max_age: int = 69,
 ) -> None:
-    """Plot matched differences in distribution of first care start ages (No Cash Benefits Higher Formal Care Costs vs no care)."""
+    """Plot matched differences in distribution of first care start ages.
+
+    Compares No Cash Benefits Higher Formal Care Costs vs no care.
+    """
     from caregiving.model.shared import DEAD
 
     # Load data
@@ -729,7 +740,10 @@ def task_plot_matched_differences_first_care_start_by_age_no_cash_benefits_highe
     plt.axhline(y=0, color="k", linestyle="-", linewidth=1)
     plt.xlabel("Age at first care spell", fontsize=16)
     plt.ylabel(
-        "Difference in number of people\n(No Cash Benefits Higher Formal Care Costs - No Care Demand)",
+        (
+            "Difference in number of people\n"
+            "(No Cash Benefits Higher Formal Care Costs - No Care Demand)"
+        ),
         fontsize=16,
     )
     plt.title("Matched Differences in First Care Start by Age", fontsize=18)
@@ -743,7 +757,7 @@ def task_plot_matched_differences_first_care_start_by_age_no_cash_benefits_highe
 
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_no_cash_benefits_higher_formal_care_costs
-def task_plot_matched_differences_first_care_demand_start_by_age_no_cash_benefits_higher_formal_care_costs(  # noqa: PLR0915
+def task_plot_matched_differences_first_care_demand_start_by_age_no_cash_benefits_higher_formal_care_costs(  # noqa: PLR0915, E501
     path_to_no_cash_benefits_higher_formal_care_costs_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_no_cash_benefits_higher_formal_care_costs_estimated_params.pkl",
@@ -759,7 +773,10 @@ def task_plot_matched_differences_first_care_demand_start_by_age_no_cash_benefit
     min_age: int = 40,
     max_age: int = 69,
 ) -> None:
-    """Plot matched differences in distribution of first care demand start ages (No Cash Benefits Higher Formal Care Costs vs no care)."""
+    """Plot matched differences in distribution of first care demand start ages.
+
+    Compares No Cash Benefits Higher Formal Care Costs vs no care scenarios.
+    """
     from caregiving.model.shared import DEAD
 
     # Load data
@@ -801,7 +818,8 @@ def task_plot_matched_differences_first_care_demand_start_by_age_no_cash_benefit
         )
     )
 
-    # For no_care_demand scenario, there is no care_demand column, so create empty dataframe
+    # For no_care_demand scenario, there is no care_demand column,
+    # so create empty dataframe
     if "care_demand" in df_ncd.columns:
         care_demand_mask_ncd = df_ncd["care_demand"] > 0
         first_care_demand_ncd = (
@@ -880,7 +898,10 @@ def task_plot_matched_differences_first_care_demand_start_by_age_no_cash_benefit
     plt.axhline(y=0, color="k", linestyle="-", linewidth=1)
     plt.xlabel("Age at first care demand", fontsize=16)
     plt.ylabel(
-        "Difference in number of people\n(No Cash Benefits Higher Formal Care Costs - No Care Demand)",
+        (
+            "Difference in number of people\n"
+            "(No Cash Benefits Higher Formal Care Costs - No Care Demand)"
+        ),
         fontsize=16,
     )
     plt.title("Matched Differences in First Care Demand Start by Age", fontsize=18)

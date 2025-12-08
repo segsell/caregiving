@@ -119,6 +119,8 @@ RETIREMENT_AGE = 65
 
 PARTNER_RETIRED = 2
 
+JOB_RETENTION_PART_TIME = 1
+JOB_RETENTION_FULL_TIME = 2
 
 TOTAL_WEEKLY_HOURS = 80
 WEEKLY_HOURS_PART_TIME = 20
@@ -527,11 +529,11 @@ def had_job_before_caregiving(job_before_caregiving):
 
 
 def had_pt_job_before_caregiving(job_before_caregiving):
-    return jnp.any(job_before_caregiving == 1)
+    return jnp.any(job_before_caregiving == JOB_RETENTION_PART_TIME)
 
 
 def had_ft_job_before_caregiving(job_before_caregiving):
-    return jnp.any(job_before_caregiving == 2)
+    return jnp.any(job_before_caregiving == JOB_RETENTION_FULL_TIME)
 
 
 # ==============================================================================

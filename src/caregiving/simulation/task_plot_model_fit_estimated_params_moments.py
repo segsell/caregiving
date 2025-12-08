@@ -245,7 +245,10 @@ def plot_caregiver_shares_by_age_bin_from_moments(
     path_to_save_plot: Path | None = None,
     scale: float = 1.0,
 ) -> None:
-    """Plot share of informal caregivers by age bin from empirical and simulated moments."""
+    """Plot share of informal caregivers by age bin.
+
+    Uses empirical and simulated moments.
+    """
 
     prefix = "share_informal_care_age_bin_"
 
@@ -268,7 +271,9 @@ def plot_caregiver_shares_by_age_bin_from_moments(
 
     # Align bins present in both empirical and simulated and drop 75–79 bin
     common_bins = np.intersect1d(bin_starts_emp, bin_starts_sim)
-    keep_mask = common_bins < 75  # match main plot that drops 75–79
+    # match main plot that drops 75–79
+    max_age_threshold = 75
+    keep_mask = common_bins < max_age_threshold
     bin_starts = common_bins[keep_mask]
     emp_values = emp_values[np.isin(bin_starts_emp, bin_starts)]
     sim_values = sim_values[np.isin(bin_starts_sim, bin_starts)]
@@ -381,7 +386,10 @@ def plot_caregiving_transitions_by_age_bin_from_moments(
     moms_sim: pd.Series,
     path_to_save_plot: Path | None = None,
 ) -> None:
-    """Plot caregiving→caregiving transition probabilities by age bin (pooled education)."""
+    """Plot caregiving→caregiving transition probabilities by age bin.
+
+    Pooled education.
+    """
 
     prefix = "trans_caregiving_to_caregiving_all_education_age_"
 

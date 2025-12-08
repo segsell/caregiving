@@ -1,4 +1,7 @@
-"""Plot model fit between empirical and simulated data using caregiving leave with job retention model."""
+"""Plot model fit between empirical and simulated data.
+
+Uses caregiving leave with job retention model.
+"""
 
 import pickle
 from pathlib import Path
@@ -126,7 +129,9 @@ def task_plot_model_fit_caregiving_leave_with_job_retention(  # noqa: PLR0915
     / "model_fit_caregiving_leave_with_job_retention"
     / "work_transitions_by_edu_and_age_bin.png",
 ) -> None:
-    """Plot model fit using caregiving leave with job retention model with estimated parameters.
+    """Plot model fit using caregiving leave with job retention model.
+
+    Uses estimated parameters.
 
     This function generates plots comparing empirical and simulated data
     for the caregiving leave with job retention counterfactual model. The
@@ -136,10 +141,13 @@ def task_plot_model_fit_caregiving_leave_with_job_retention(  # noqa: PLR0915
     caregiving activities.
 
     Args:
-        path_to_options: Path to the caregiving leave with job retention model options
-        path_to_solution_model: Path to the caregiving leave with job retention model for solution
+        path_to_options: Path to the caregiving leave with job retention model
+            options
+        path_to_solution_model: Path to the caregiving leave with job retention
+            model for solution
         path_to_estimated_params: Path to the estimated parameters
-        path_to_simulated_data: Path to simulated data from caregiving leave with job retention model
+        path_to_simulated_data: Path to simulated data from caregiving leave
+            with job retention model
         path_to_empirical_moments: Path to empirical moments
         path_to_empirical_data: Path to empirical data
         path_to_caregivers_sample: Path to caregivers sample data

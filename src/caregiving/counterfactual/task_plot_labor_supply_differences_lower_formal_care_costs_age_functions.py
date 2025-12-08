@@ -25,7 +25,7 @@ from caregiving.model.shared import INFORMAL_CARE
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_age_profiles
 @pytask.mark.counterfactual_differences_lower_formal_care_costs_age_profiles
-def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915
+def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915, E501
     path_to_lower_formal_care_costs_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_lower_formal_care_costs_estimated_params.pkl",
@@ -108,7 +108,10 @@ def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915
     age_min: int = 30,
     age_max: int = 100,
 ) -> None:
-    """Compute matched period differences (lower-formal-care-costs - no-care-demand) by age."""
+    """Compute matched period differences by age.
+
+    Compares lower-formal-care-costs vs no-care-demand.
+    """
     # Load and prepare data
     df_lfc, df_ncd = prepare_dataframes_for_comparison(
         pd.read_pickle(path_to_lower_formal_care_costs_data),
@@ -278,7 +281,7 @@ def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_age_profiles
 @pytask.mark.counterfactual_differences_lower_formal_care_costs_age_profiles
-def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915
+def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915, E501
     path_to_lower_formal_care_costs_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_lower_formal_care_costs_estimated_params.pkl",
@@ -361,7 +364,10 @@ def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915
     age_min: int = 30,
     age_max: int = 100,
 ) -> None:
-    """Compute matched period differences (lower-formal-care-costs - baseline) by age."""
+    """Compute matched period differences by age.
+
+    Compares lower-formal-care-costs vs baseline.
+    """
     # Load and prepare data
     df_lfc, df_baseline = prepare_dataframes_for_comparison(
         pd.read_pickle(path_to_lower_formal_care_costs_data),

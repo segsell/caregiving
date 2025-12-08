@@ -472,7 +472,9 @@ def plot_simulated_care_demand_by_age_pooled(  # noqa: PLR0915
     df_sim, specs, age_min=None, age_max=None, path_to_save_plot=None
 ):
     """
-    Plot the yearly share with care_demand > 0 pooled across all education and sister groups.
+    Plot the yearly share with care_demand > 0.
+
+    Pooled across all education and sister groups.
 
     Shows all four types of care choices upon positive care demand:
     1. Solo informal care (care_demand == 2, agent chooses informal care)
@@ -523,7 +525,8 @@ def plot_simulated_care_demand_by_age_pooled(  # noqa: PLR0915
         & (df_sim["choice"].isin(no_care_choices))
     ).astype(int)
 
-    # Calculate shares for care demand (any care demand) - pooled across education and sister
+    # Calculate shares for care demand (any care demand)
+    # Pooled across education and sister
     care_demand_shares = (
         df_sim.groupby("age", observed=False)["care_demand"]
         .apply(lambda x: (x > 0).mean())
@@ -742,7 +745,8 @@ def plot_simulated_care_demand_by_age_2_by_2_combined(  # noqa: PLR0915
 
     # Colors for care mix (stacked from bottom to top)
     care_colors = {
-        "informal_care": "#2E86AB",  # Greenish/turquoise (original solo informal care color)
+        "informal_care": "#2E86AB",  # Greenish/turquoise
+        # (original solo informal care color)
         "other_family_only": "#F9A825",  # Yellow
         "formal_care": "#A23B72",  # Purple
     }
@@ -911,7 +915,8 @@ def plot_simulated_care_demand_by_age_pooled_combined(  # noqa: PLR0915
 
     # Colors for care mix (stacked from bottom to top)
     care_colors = {
-        "informal_care": "#2E86AB",  # Greenish/turquoise (original solo informal care color)
+        "informal_care": "#2E86AB",  # Greenish/turquoise
+        # (original solo informal care color)
         "other_family_only": "#F9A825",  # Yellow
         "formal_care": "#A23B72",  # Purple
     }

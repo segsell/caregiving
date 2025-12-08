@@ -18,8 +18,10 @@
 # from caregiving.model.utility.bequest_utility import (
 #     create_final_period_utility_functions,
 # )
-# from caregiving.model.utility.utility_functions_additive import create_utility_functions
-# from caregiving.model.wealth_and_budget.budget_equation_lower_formal_care_costs import (
+# from caregiving.model.utility.utility_functions_additive import (
+#     create_utility_functions,
+# )
+# from caregiving.model.wealth_and_budget.budget_equation_lower_formal_care_costs import (  # noqa: E501
 #     budget_constraint,
 # )
 # from caregiving.simulation.simulate import simulate_scenario
@@ -29,13 +31,19 @@
 
 # @pytask.mark.solve_lower_formal_care_costs
 # def task_solve_and_simulate_lower_formal_care_costs_estimated_params(
-#     path_to_solution_model: Path = BLD / "model" / "model_lower_formal_care_costs.pkl",
-#     path_to_options: Path = BLD / "model" / "options_lower_formal_care_costs.pkl",
+#     path_to_solution_model: Path = (
+#         BLD / "model" / "model_lower_formal_care_costs.pkl"
+#     ),
+#     path_to_options: Path = (
+#         BLD / "model" / "options_lower_formal_care_costs.pkl"
+#     ),
 #     path_to_estimated_params: Path = BLD
 #     / "model"
 #     / "params"
 #     / "estimated_params_model.yaml",
-#     path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",
+#     path_to_discrete_states: Path = (
+#         BLD / "model" / "initial_conditions" / "states.pkl"
+#     ),
 #     path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
 #     path_to_save_solution: Annotated[Path, Product] = BLD
 #     / "solve_and_simulate"
@@ -44,12 +52,12 @@
 #     / "solve_and_simulate"
 #     / "simulated_data_lower_formal_care_costs_estimated_params.pkl",
 # ) -> None:
-#     """Solve and simulate the lower formal care costs model with estimated parameters.
+#     """Solve and simulate the lower formal care costs model.
 
-#     This function solves and simulates the lower formal care costs counterfactual model
-#     using estimated parameters. The lower formal care costs model implements a policy
-#     where formal care costs are reduced by 50% (multiplied by 0.5), making formal care
-#     more affordable.
+#     This function solves and simulates the lower formal care costs
+#     counterfactual model using estimated parameters. The lower formal care
+#     costs model implements a policy where formal care costs are reduced by
+#     50% (multiplied by 0.5), making formal care more affordable.
 
 #     Args:
 #         path_to_solution_model: Path to the lower formal care costs model for solution
@@ -80,7 +88,9 @@
 
 #     # 2) Simulate
 #     initial_states = pickle.load(path_to_discrete_states.open("rb"))
-#     wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
+#     wealth_agents = jnp.array(
+#         pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze()
+#     )
 
 #     model_for_simulation = load_and_setup_model(
 #         options=options,

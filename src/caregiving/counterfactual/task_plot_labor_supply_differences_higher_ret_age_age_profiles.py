@@ -25,7 +25,7 @@ from caregiving.model.shared import INFORMAL_CARE
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_age_profiles
 @pytask.mark.counterfactual_differences_higher_ret_age_age_profiles
-def task_plot_matched_differences_by_age_higher_ret_age_vs_baseline(  # noqa: PLR0915
+def task_plot_matched_differences_by_age_higher_ret_age_vs_baseline(  # noqa: PLR0915, E501
     path_to_higher_ret_age_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_higher_ret_age_estimated_params.pkl",
@@ -140,7 +140,8 @@ def task_plot_matched_differences_by_age_higher_ret_age_vs_baseline(  # noqa: PL
         df_baseline, model_params, choice_set_type="original"
     )
 
-    # Calculate additional outcomes (gross labor income, savings, wealth, savings_rate, consumption)
+    # Calculate additional outcomes (gross labor income, savings, wealth,
+    # savings_rate, consumption)
     hr_additional = calculate_additional_outcomes(df_hr)
     baseline_additional = calculate_additional_outcomes(df_baseline)
     hr_outcomes.update(hr_additional)

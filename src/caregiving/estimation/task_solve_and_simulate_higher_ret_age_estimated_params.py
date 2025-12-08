@@ -21,7 +21,9 @@
 # from caregiving.model.utility.bequest_utility import (
 #     create_final_period_utility_functions,
 # )
-# from caregiving.model.utility.utility_functions_additive import create_utility_functions
+# from caregiving.model.utility.utility_functions_additive import (
+#     create_utility_functions,
+# )
 # from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 # from caregiving.simulation.simulate import simulate_scenario
 
@@ -36,7 +38,9 @@
 #     / "model"
 #     / "params"
 #     / "estimated_params_model.yaml",
-#     path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",
+#     path_to_discrete_states: Path = (
+#         BLD / "model" / "initial_conditions" / "states.pkl"
+#     ),
 #     path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
 #     path_to_save_solution: Annotated[Path, Product] = BLD
 #     / "solve_and_simulate"
@@ -45,7 +49,10 @@
 #     / "solve_and_simulate"
 #     / "simulated_data_higher_ret_age_estimated_params.pkl",
 # ) -> None:
-#     """Solve and simulate the higher-retirement-age model with estimated parameters."""
+#     """Solve and simulate the higher-retirement-age model.
+
+#     Uses estimated parameters.
+#     """
 
 #     options = pickle.load(path_to_options.open("rb"))
 #     params = yaml.safe_load(path_to_estimated_params.open("rb"))
@@ -66,7 +73,9 @@
 
 #     # 2) Simulate
 #     initial_states = pickle.load(path_to_discrete_states.open("rb"))
-#     wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
+#     wealth_agents = jnp.array(
+#         pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze()
+#     )
 
 #     model_for_simulation = load_and_setup_model(
 #         options=options,
