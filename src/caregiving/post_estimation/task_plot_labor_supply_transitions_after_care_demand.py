@@ -188,12 +188,12 @@ def task_plot_labor_supply_transitions_after_care_demand(
     }
 
     # Create plots for each time point
-    for time_point, path_to_plot in [
+    for time_point, path_to_plot in (
         (1, path_to_plot_t1),
         (3, path_to_plot_t3),
         (5, path_to_plot_t5),
         (10, path_to_plot_t10),
-    ]:
+    ):
         # Filter to this time point
         df_time = df_with_t_minus_5[
             df_with_t_minus_5["distance_to_first_care_demand"] == time_point
@@ -358,12 +358,12 @@ def task_plot_labor_supply_transitions_after_caregiving_t_minus_5(
     }
 
     # Create plots for each time point
-    for time_point, path_to_plot in [
+    for time_point, path_to_plot in (
         (1, path_to_plot_t1),
         (3, path_to_plot_t3),
         (5, path_to_plot_t5),
         (10, path_to_plot_t10),
-    ]:
+    ):
         # Filter to this time point
         df_time = df_with_t_minus_5[
             df_with_t_minus_5["distance_to_first_care"] == time_point
@@ -528,12 +528,12 @@ def task_plot_labor_supply_transitions_after_caregiving_t_minus_1(
     }
 
     # Create plots for each time point
-    for time_point, path_to_plot in [
+    for time_point, path_to_plot in (
         (1, path_to_plot_t1),
         (3, path_to_plot_t3),
         (5, path_to_plot_t5),
         (10, path_to_plot_t10),
-    ]:
+    ):
         # Filter to this time point
         df_time = df_with_t_minus_1[
             df_with_t_minus_1["distance_to_first_care"] == time_point
@@ -700,12 +700,12 @@ def task_plot_labor_supply_transitions_after_care_demand_t_minus_1(
     }
 
     # Create plots for each time point
-    for time_point, path_to_plot in [
+    for time_point, path_to_plot in (
         (1, path_to_plot_t1),
         (3, path_to_plot_t3),
         (5, path_to_plot_t5),
         (10, path_to_plot_t10),
-    ]:
+    ):
         # Filter to this time point
         df_time = df_with_t_minus_1[
             df_with_t_minus_1["distance_to_first_care_demand"] == time_point
@@ -870,12 +870,12 @@ def task_plot_labor_supply_transitions_after_caregiving_t_minus_5(
     }
 
     # Create plots for each time point
-    for time_point, path_to_plot in [
+    for time_point, path_to_plot in (
         (1, path_to_plot_t1),
         (3, path_to_plot_t3),
         (5, path_to_plot_t5),
         (10, path_to_plot_t10),
-    ]:
+    ):
         # Filter to this time point
         df_time = df_with_t_minus_5[
             df_with_t_minus_5["distance_to_first_care"] == time_point
@@ -1040,12 +1040,12 @@ def task_plot_labor_supply_transitions_after_caregiving_t_minus_1(
     }
 
     # Create plots for each time point
-    for time_point, path_to_plot in [
+    for time_point, path_to_plot in (
         (1, path_to_plot_t1),
         (3, path_to_plot_t3),
         (5, path_to_plot_t5),
         (10, path_to_plot_t10),
-    ]:
+    ):
         # Filter to this time point
         df_time = df_with_t_minus_1[
             df_with_t_minus_1["distance_to_first_care"] == time_point

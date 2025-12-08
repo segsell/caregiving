@@ -2739,7 +2739,7 @@ def task_plot_matched_differences_first_care_demand_start_by_age_job_retention( 
     df_ncd = _ensure_agent_period(df_ncd)
 
     # Fully flatten any residual index levels
-    for df in [df_cf, df_ncd]:
+    for df in (df_cf, df_ncd):
         if isinstance(df.index, pd.MultiIndex):
             idx_names = {n for n in df.index.names if n is not None}
             if ("agent" in idx_names) or ("period" in idx_names):
