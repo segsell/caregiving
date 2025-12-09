@@ -28,6 +28,9 @@ from caregiving.model.state_space import (
     construct_experience_years,
     create_state_space_functions,
 )
+from caregiving.model.state_space_job_retention import (
+    create_state_space_functions as create_state_space_functions_job_retention,
+)
 from caregiving.model.utility.bequest_utility import (
     create_final_period_utility_functions,
 )
@@ -56,6 +59,19 @@ def setup_model_for_simulation_baseline(path_to_model, options):
     return load_and_setup_model(
         options=options,
         state_space_functions=create_state_space_functions(),
+        utility_functions=create_utility_functions(),
+        utility_functions_final_period=create_final_period_utility_functions(),
+        budget_constraint=budget_constraint,
+        path=path_to_model,
+        sim_model=True,
+    )
+
+
+def setup_model_for_simulation_job_retention(path_to_model, options):
+    """Setup job retention model for simulation with correct utility functions."""
+    return load_and_setup_model(
+        options=options,
+        state_space_functions=create_state_space_functions_job_retention(),
         utility_functions=create_utility_functions(),
         utility_functions_final_period=create_final_period_utility_functions(),
         budget_constraint=budget_constraint,
@@ -111,11 +127,11 @@ def simulate_scenario(
     part_time_values = PART_TIME.ravel().tolist()
     full_time_values = FULL_TIME.ravel().tolist()
     retirement_values = RETIREMENT.ravel().tolist()
+    work_values = part_time_values + full_time_values
 
     sex_var = SEX
 
     for edu_var in range(model_params["n_education_types"]):
-
         # full-time
         df.loc[
             df["choice"].isin(full_time_values) & (df["education"] == edu_var),
@@ -144,6 +160,37 @@ def simulate_scenario(
     # periodic savings and savings rate
     df["savings_dec"] = df["total_income"] - df["consumption"]
     df["savings_rate"] = df["savings_dec"] / df["total_income"]
+
+    # ===============================================================================
+    # Gross labor income computation
+    # ===============================================================================
+
+    # Convert pandas Series to numpy arrays for JAX
+    lagged_choice_array = np.asarray(df["lagged_choice"])
+    experience_years_array = np.asarray(df["exp_years"])
+    education_array = np.asarray(df["education"])
+    income_shock_array = np.asarray(df["income_shock"])
+
+    # Vectorized gross labor income calculation
+    vectorized_calc_gross_labor_income = jax.vmap(
+        lambda lc, exp, edu, shock: calculate_gross_labor_income(
+            lagged_choice=lc,
+            experience_years=exp,
+            education=edu,
+            sex=sex_var,
+            income_shock=shock,
+            options=model_params,
+        )
+    )
+    gross_labor_income_array = vectorized_calc_gross_labor_income(
+        lagged_choice_array,
+        experience_years_array,
+        education_array,
+        income_shock_array,
+    )
+    df["gross_labor_income"] = gross_labor_income_array * df["lagged_choice"].isin(
+        work_values
+    )
 
     # # Caregiving
     # df["informal_care"] = np.nan
@@ -372,7 +419,7 @@ def build_simulation_df_with_income_components(sim_dict, options, params):
 
     # Calculate total individual income following budget equation logic
     # Total net income = labor income + pension income + child benefits + care benefits
-    df["total_net_income"] = (
+    df["total_gross_income"] = (
         df["gross_labor_income"]
         + df["gross_pension_income"]
         + df["child_benefits"]
@@ -381,11 +428,11 @@ def build_simulation_df_with_income_components(sim_dict, options, params):
 
     # Apply maximum with unemployment benefits (following budget equation)
     # df["total_income"] = np.maximum(
-    #     df["total_net_income"], df["unemployment_benefits"]
+    #     df["total_gross_income"], df["unemployment_benefits"]
     # ) * (df["health"] != DEAD)
     df["total_income"] = np.where(
         df["health"] != DEAD,
-        np.maximum(df["total_net_income"], df["unemployment_benefits"]),
+        np.maximum(df["total_gross_income"], df["unemployment_benefits"]),
         0,
     )
 

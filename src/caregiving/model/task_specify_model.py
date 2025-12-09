@@ -63,7 +63,6 @@ def task_specify_model(
     # Load specifications
     n_periods = specs["n_periods"]
     choices = np.arange(specs["n_choices"], dtype=int)
-    # n_policy_states = specs["n_policy_states"]
 
     # Savings grid
     savings_grid = create_savings_grid()

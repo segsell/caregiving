@@ -98,6 +98,7 @@ AGE_BIN_7_TO_9 = 2
 
 NPV_START_AGE = 40
 NPV_END_AGE = 100  # 80
+BETA_NPV = 0.97  # 0.95
 
 BAD_HEALTH = 0
 GOOD_HEALTH = 1
@@ -118,6 +119,8 @@ RETIREMENT_AGE = 65
 
 PARTNER_RETIRED = 2
 
+JOB_RETENTION_PART_TIME = 1
+JOB_RETENTION_FULL_TIME = 2
 
 TOTAL_WEEKLY_HOURS = 80
 WEEKLY_HOURS_PART_TIME = 20
@@ -517,8 +520,20 @@ def is_dead(health):
 # ==============================================================================
 
 
+def had_no_job_before_caregiving(job_before_caregiving):
+    return jnp.any(job_before_caregiving == 0)
+
+
 def had_job_before_caregiving(job_before_caregiving):
     return jnp.any(job_before_caregiving == 1)
+
+
+def had_pt_job_before_caregiving(job_before_caregiving):
+    return jnp.any(job_before_caregiving == JOB_RETENTION_PART_TIME)
+
+
+def had_ft_job_before_caregiving(job_before_caregiving):
+    return jnp.any(job_before_caregiving == JOB_RETENTION_FULL_TIME)
 
 
 # ==============================================================================
