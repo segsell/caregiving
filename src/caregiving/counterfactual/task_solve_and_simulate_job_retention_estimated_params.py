@@ -33,7 +33,6 @@ from caregiving.simulation.simulate import simulate_scenario
 jax.config.update("jax_enable_x64", True)
 
 
-@pytask.mark.skip()
 def task_solve_and_simulate_job_retention_estimated_params(
     path_to_solution_model: Path = BLD / "model" / "model_job_retention.pkl",
     path_to_options: Path = BLD / "model" / "options_job_retention.pkl",
@@ -45,10 +44,7 @@ def task_solve_and_simulate_job_retention_estimated_params(
     / "model"
     / "initial_conditions"
     / "states_job_retention.pkl",
-    path_to_wealth: Path = BLD
-    / "model"
-    / "initial_conditions"
-    / "wealth_job_retention.csv",
+    path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
     path_to_save_solution: Annotated[Path, Product] = BLD
     / "solve_and_simulate"
     / "solution_job_retention_estimated_params.pkl",

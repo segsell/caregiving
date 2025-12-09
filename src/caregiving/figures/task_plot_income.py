@@ -7,10 +7,22 @@ from typing import Annotated
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pytask
+from matplotlib.lines import Line2D
 from pytask import Product
 
 from caregiving.config import BLD, JET_COLOR_MAP
+from caregiving.model.shared import (
+    FULL_TIME,
+    FULL_TIME_CARE,
+    PART_TIME,
+    PART_TIME_CARE,
+    UNEMPLOYED_CARE,
+)
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
+from caregiving.model.wealth_and_budget.budget_equation_caregiving_leave_with_job_retention import (  # noqa: E501
+    calc_caregiving_leave_top_up,
+)
 from caregiving.model.wealth_and_budget.pensions import (
     calc_gross_pension_income,
     calc_pensions_after_ssc,
@@ -20,6 +32,493 @@ from caregiving.model.wealth_and_budget.wages import (
     calc_labor_income_after_ssc,
     calculate_gross_labor_income,
 )
+
+EXP_MOD_5 = 5
+EXP_MOD_7 = 7
+
+
+@pytask.mark.budget_constraint
+def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
+    path_to_full_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_save: Annotated[Path, Product] = BLD
+    / "plots"
+    / "wealth_and_budget"
+    / "caregiving_leave_top_ups.png",
+):
+    """Plot caregiving-leave wage top-ups by experience and prior job status.
+
+    For a representative sex and education type, we plot the annual top-up amounts
+    across experience years for the following combinations:
+
+    - Prior none, now unemployed caregiver
+    - Prior PT, now unemployed caregiver
+    - Prior FT, now unemployed caregiver
+    - Prior FT, now PT caregiver
+    """
+
+    with path_to_full_specs.open("rb") as file:
+        specs = pkl.load(file)
+
+    # Representative sex and education (e.g. women, medium education)
+    sex_var = 1  # as in task_plot_total_household_income
+    edu_var = 1 if len(specs["education_labels"]) > 1 else 0
+
+    # Experience years grid
+    exp_levels = np.arange(0, 51)
+
+    # Representative caregiving choices (with informal care)
+    choice_unemp_care = int(UNEMPLOYED_CARE[0])
+    choice_pt_care = int(PART_TIME_CARE[0])
+    # Representative non-caregiving work choices
+    choice_pt_noncg = int(PART_TIME[0])
+    choice_ft_noncg = int(FULL_TIME[0])
+
+    # Containers for top-ups
+    topup_prior_none_unemp = np.zeros_like(exp_levels, dtype=float)
+    topup_prior_pt_unemp = np.zeros_like(exp_levels, dtype=float)
+    topup_prior_ft_unemp = np.zeros_like(exp_levels, dtype=float)
+    topup_prior_ft_pt = np.zeros_like(exp_levels, dtype=float)
+
+    for i, exp in enumerate(exp_levels):
+        experience_years = float(exp)
+        income_shock = 0.0
+
+        # Labor income for PT caregiving (used for FT→PT gap)
+        labor_income_pt_care = calc_labor_income_after_ssc(
+            lagged_choice=choice_pt_care,
+            experience_years=experience_years,
+            education=edu_var,
+            sex=sex_var,
+            income_shock=income_shock,
+            options=specs,
+        )
+
+        # Prior none (0), now unemployed caregiver
+        topup_prior_none_unemp[i] = float(
+            calc_caregiving_leave_top_up(
+                lagged_choice=choice_unemp_care,
+                education=edu_var,
+                job_before_caregiving=0,
+                experience_years=experience_years,
+                income_shock_previous_period=income_shock,
+                sex=sex_var,
+                labor_income_after_ssc=0.0,
+                options=specs,
+            )
+        )
+
+        # Prior PT (1), now unemployed caregiver
+        topup_prior_pt_unemp[i] = float(
+            calc_caregiving_leave_top_up(
+                lagged_choice=choice_unemp_care,
+                education=edu_var,
+                job_before_caregiving=1,
+                experience_years=experience_years,
+                income_shock_previous_period=income_shock,
+                sex=sex_var,
+                labor_income_after_ssc=0.0,
+                options=specs,
+            )
+        )
+
+        # Prior FT (2), now unemployed caregiver
+        topup_prior_ft_unemp[i] = float(
+            calc_caregiving_leave_top_up(
+                lagged_choice=choice_unemp_care,
+                education=edu_var,
+                job_before_caregiving=2,
+                experience_years=experience_years,
+                income_shock_previous_period=income_shock,
+                sex=sex_var,
+                labor_income_after_ssc=0.0,
+                options=specs,
+            )
+        )
+
+        # Prior FT (2), now PT caregiver
+        topup_prior_ft_pt[i] = float(
+            calc_caregiving_leave_top_up(
+                lagged_choice=choice_pt_care,
+                education=edu_var,
+                job_before_caregiving=2,
+                experience_years=experience_years,
+                income_shock_previous_period=income_shock,
+                sex=sex_var,
+                labor_income_after_ssc=labor_income_pt_care,
+                options=specs,
+            )
+        )
+
+    # Baseline labor income (after SSC) in the caregiving states
+    labor_prior_none_unemp = np.zeros_like(exp_levels, dtype=float)
+    labor_prior_pt_unemp = np.zeros_like(exp_levels, dtype=float)
+    labor_prior_ft_unemp = np.zeros_like(exp_levels, dtype=float)
+    labor_prior_ft_pt = np.zeros_like(exp_levels, dtype=float)
+
+    for i, exp in enumerate(exp_levels):
+        experience_years = float(exp)
+        income_shock = 0.0
+
+        # Labor income for unemployed caregiver
+        # (should be zero but computed for clarity)
+        labor_unemp_care = calc_labor_income_after_ssc(
+            lagged_choice=choice_unemp_care,
+            experience_years=experience_years,
+            education=edu_var,
+            sex=sex_var,
+            income_shock=income_shock,
+            options=specs,
+        )
+
+        labor_pt_care = calc_labor_income_after_ssc(
+            lagged_choice=choice_pt_care,
+            experience_years=experience_years,
+            education=edu_var,
+            sex=sex_var,
+            income_shock=income_shock,
+            options=specs,
+        )
+
+        labor_prior_none_unemp[i] = labor_unemp_care
+        labor_prior_pt_unemp[i] = labor_unemp_care
+        labor_prior_ft_unemp[i] = labor_unemp_care
+        labor_prior_ft_pt[i] = labor_pt_care
+
+    # Baseline non-caregiving wages (after SSC) for PT and FT work
+    wage_pt_noncg = np.zeros_like(exp_levels, dtype=float)
+    wage_ft_noncg = np.zeros_like(exp_levels, dtype=float)
+
+    for i, exp in enumerate(exp_levels):
+        experience_years = float(exp)
+        income_shock = 0.0
+
+        wage_pt_noncg[i] = calc_labor_income_after_ssc(
+            lagged_choice=choice_pt_noncg,
+            experience_years=experience_years,
+            education=edu_var,
+            sex=sex_var,
+            income_shock=income_shock,
+            options=specs,
+        )
+
+        wage_ft_noncg[i] = calc_labor_income_after_ssc(
+            lagged_choice=choice_ft_noncg,
+            experience_years=experience_years,
+            education=edu_var,
+            sex=sex_var,
+            income_shock=income_shock,
+            options=specs,
+        )
+
+    # Combined income = labor income + top-up
+    total_prior_none_unemp = labor_prior_none_unemp + topup_prior_none_unemp
+    total_prior_pt_unemp = labor_prior_pt_unemp + topup_prior_pt_unemp
+    total_prior_ft_unemp = labor_prior_ft_unemp + topup_prior_ft_unemp
+    total_prior_ft_pt = labor_prior_ft_pt + topup_prior_ft_pt
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    # 1) Pure top-ups (solid)
+    ax.plot(
+        exp_levels,
+        topup_prior_none_unemp,
+        label="Top-up: prior none, now unemployed",
+        color=JET_COLOR_MAP[0],
+    )
+    ax.plot(
+        exp_levels,
+        topup_prior_pt_unemp,
+        label="Top-up: prior PT, now unemployed",
+        color=JET_COLOR_MAP[1],
+    )
+    ax.plot(
+        exp_levels,
+        topup_prior_ft_unemp,
+        label="Top-up: prior FT, now unemployed",
+        color=JET_COLOR_MAP[2],
+    )
+    ax.plot(
+        exp_levels,
+        topup_prior_ft_pt,
+        label="Top-up: prior FT, now PT",
+        color=JET_COLOR_MAP[3],
+    )
+
+    # Precompute masks for specific experience years
+    mask_triangles = exp_levels % 10 == EXP_MOD_5  # 5, 15, 25, ...
+    mask_circles = exp_levels % 10 == 0  # 0, 10, 20, ...
+    mask_baseline = exp_levels % 10 == EXP_MOD_7  # 7, 17, 27, ...
+
+    # 2) Labor income without top-ups (dashed lines, plus triangles at odd years)
+    ax.plot(
+        exp_levels,
+        labor_prior_none_unemp,
+        label="Labor income: prior none, now unemployed",
+        color=JET_COLOR_MAP[0],
+        linestyle="--",
+    )
+    ax.plot(
+        exp_levels,
+        labor_prior_pt_unemp,
+        label="Labor income: prior PT, now unemployed",
+        color=JET_COLOR_MAP[1],
+        linestyle="--",
+    )
+    ax.plot(
+        exp_levels,
+        labor_prior_ft_unemp,
+        label="Labor income: prior FT, now unemployed",
+        color=JET_COLOR_MAP[2],
+        linestyle="--",
+    )
+    ax.plot(
+        exp_levels,
+        labor_prior_ft_pt,
+        label="Labor income: prior FT, now PT",
+        color=JET_COLOR_MAP[3],
+        linestyle="--",
+    )
+    # Triangular markers at specific experience years (5, 15, 25, ...)
+    ax.scatter(
+        exp_levels[mask_triangles],
+        labor_prior_none_unemp[mask_triangles],
+        color=JET_COLOR_MAP[0],
+        marker="^",
+        s=15,
+    )
+    ax.scatter(
+        exp_levels[mask_triangles],
+        labor_prior_pt_unemp[mask_triangles],
+        color=JET_COLOR_MAP[1],
+        marker="^",
+        s=15,
+    )
+    ax.scatter(
+        exp_levels[mask_triangles],
+        labor_prior_ft_unemp[mask_triangles],
+        color=JET_COLOR_MAP[2],
+        marker="^",
+        s=15,
+    )
+    ax.scatter(
+        exp_levels[mask_triangles],
+        labor_prior_ft_pt[mask_triangles],
+        color=JET_COLOR_MAP[3],
+        marker="^",
+        s=15,
+    )
+
+    # 3) Labor income + top-ups (solid lines, plus dots at even years)
+    ax.plot(
+        exp_levels,
+        total_prior_none_unemp,
+        label="Total: prior none, now unemployed",
+        color=JET_COLOR_MAP[0],
+        linestyle="-",
+    )
+    ax.plot(
+        exp_levels,
+        total_prior_pt_unemp,
+        label="Total: prior PT, now unemployed",
+        color=JET_COLOR_MAP[1],
+        linestyle="-",
+    )
+    ax.plot(
+        exp_levels,
+        total_prior_ft_unemp,
+        label="Total: prior FT, now unemployed",
+        color=JET_COLOR_MAP[2],
+        linestyle="-",
+    )
+    ax.plot(
+        exp_levels,
+        total_prior_ft_pt,
+        label="Total: prior FT, now PT",
+        color=JET_COLOR_MAP[3],
+        linestyle="-",
+    )
+    # Dot markers at specific experience years (0, 10, 20, ...)
+    ax.scatter(
+        exp_levels[mask_circles],
+        total_prior_none_unemp[mask_circles],
+        color=JET_COLOR_MAP[0],
+        marker="o",
+        s=15,
+    )
+    ax.scatter(
+        exp_levels[mask_circles],
+        total_prior_pt_unemp[mask_circles],
+        color=JET_COLOR_MAP[1],
+        marker="o",
+        s=15,
+    )
+    ax.scatter(
+        exp_levels[mask_circles],
+        total_prior_ft_unemp[mask_circles],
+        color=JET_COLOR_MAP[2],
+        marker="o",
+        s=15,
+    )
+    ax.scatter(
+        exp_levels[mask_circles],
+        total_prior_ft_pt[mask_circles],
+        color=JET_COLOR_MAP[3],
+        marker="o",
+        s=15,
+    )
+
+    # 4) Baseline non-caregiving PT and FT wages (dotted lines + square markers)
+    ax.plot(
+        exp_levels,
+        wage_pt_noncg,
+        label="Baseline PT wage (no caregiving)",
+        color="black",
+        linestyle=":",
+    )
+    ax.plot(
+        exp_levels,
+        wage_ft_noncg,
+        label="Baseline FT wage (no caregiving)",
+        color="gray",
+        linestyle=":",
+    )
+    ax.scatter(
+        exp_levels[mask_baseline],
+        wage_pt_noncg[mask_baseline],
+        color="black",
+        marker="s",
+        s=20,
+    )
+    ax.scatter(
+        exp_levels[mask_baseline],
+        wage_ft_noncg[mask_baseline],
+        color="gray",
+        marker="D",
+        s=20,
+    )
+
+    ax.set_xlabel("Experience years")
+    ax.set_ylabel("Annual amount (EUR)")
+    ax.set_title("Caregiving leave wage top-ups and labor income by experience")
+
+    # Custom legend: one entry per scenario and type, with matching styles
+    legend_handles = [
+        # Top-ups (solid)
+        Line2D([0], [0], color=JET_COLOR_MAP[0], linestyle="-"),
+        Line2D([0], [0], color=JET_COLOR_MAP[1], linestyle="-"),
+        Line2D([0], [0], color=JET_COLOR_MAP[2], linestyle="-"),
+        Line2D([0], [0], color=JET_COLOR_MAP[3], linestyle="-"),
+        # Labor income (dashed + triangles)
+        Line2D(
+            [0],
+            [0],
+            color=JET_COLOR_MAP[0],
+            linestyle="--",
+            marker="^",
+            markersize=5,
+        ),
+        Line2D(
+            [0],
+            [0],
+            color=JET_COLOR_MAP[1],
+            linestyle="--",
+            marker="^",
+            markersize=5,
+        ),
+        Line2D(
+            [0],
+            [0],
+            color=JET_COLOR_MAP[2],
+            linestyle="--",
+            marker="^",
+            markersize=5,
+        ),
+        Line2D(
+            [0],
+            [0],
+            color=JET_COLOR_MAP[3],
+            linestyle="--",
+            marker="^",
+            markersize=5,
+        ),
+        # Total income (solid + dots)
+        Line2D(
+            [0],
+            [0],
+            color=JET_COLOR_MAP[0],
+            linestyle="-",
+            marker="o",
+            markersize=5,
+        ),
+        Line2D(
+            [0],
+            [0],
+            color=JET_COLOR_MAP[1],
+            linestyle="-",
+            marker="o",
+            markersize=5,
+        ),
+        Line2D(
+            [0],
+            [0],
+            color=JET_COLOR_MAP[2],
+            linestyle="-",
+            marker="o",
+            markersize=5,
+        ),
+        Line2D(
+            [0],
+            [0],
+            color=JET_COLOR_MAP[3],
+            linestyle="-",
+            marker="o",
+            markersize=5,
+        ),
+        # Baseline PT and FT wages
+        Line2D(
+            [0],
+            [0],
+            color="black",
+            linestyle=":",
+            marker="s",
+            markersize=5,
+        ),
+        Line2D(
+            [0],
+            [0],
+            color="gray",
+            linestyle=":",
+            marker="D",
+            markersize=5,
+        ),
+    ]
+    legend_labels = [
+        # Top-ups
+        "Top-up: prior none, now unemployed",
+        "Top-up: prior PT, now unemployed",
+        "Top-up: prior FT, now unemployed",
+        "Top-up: prior FT, now PT",
+        # Labor income
+        "Labor income: prior none, now unemployed",
+        "Labor income: prior PT, now unemployed",
+        "Labor income: prior FT, now unemployed",
+        "Labor income: prior FT, now PT",
+        # Total income
+        "Total: prior none, now unemployed",
+        "Total: prior PT, now unemployed",
+        "Total: prior FT, now unemployed",
+        "Total: prior FT, now PT",
+        # Baseline wages
+        "Baseline PT wage (no caregiving)",
+        "Baseline FT wage (no caregiving)",
+    ]
+    ax.legend(legend_handles, legend_labels, loc="best")
+
+    ax.grid(True, alpha=0.3)
+
+    fig.tight_layout()
+    fig.savefig(path_to_save, dpi=300)
+    plt.close(fig)
 
 
 def task_plot_incomes(

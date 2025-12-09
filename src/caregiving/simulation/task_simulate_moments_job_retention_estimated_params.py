@@ -53,10 +53,10 @@ def task_simulate_moments_job_retention_estimated_params(
     / "plots"
     / "model_fit_job_retention"
     / "simulated_labor_shares_jax_job_retention_estimated_params.png",
-    path_to_save_transitions_pandas: Annotated[Path, Product] = BLD
-    / "plots"
-    / "model_fit_job_retention"
-    / "simulated_work_transitions_pandas_job_retention_estimated_params.png",
+    # path_to_save_transitions_pandas: Annotated[Path, Product] = BLD
+    # / "plots"
+    # / "model_fit_job_retention"
+    # / "simulated_work_transitions_pandas_job_retention_estimated_params.png",
     path_to_save_labor_shares_with_caregivers_pandas: Annotated[Path, Product] = BLD
     / "plots"
     / "model_fit_job_retention"
@@ -82,7 +82,6 @@ def task_simulate_moments_job_retention_estimated_params(
         path_to_save_jax_moments: Path to save JAX moments
         path_to_save_labor_shares_pandas: Path to save pandas labor shares plot
         path_to_save_labor_shares_jax: Path to save JAX labor shares plot
-        path_to_save_transitions_pandas: Path to save transitions plot
         path_to_save_labor_shares_with_caregivers_pandas: Path to save pandas labor
             shares plot including caregivers
         path_to_save_labor_shares_with_caregivers_jax: Path to save JAX labor shares

@@ -18,19 +18,52 @@ dip = "DIP tasks"
 standard_errors = "Standard errors estimation tasks"
 # Model specification
 job_retention = "Job retention counterfactual tasks"
+lower_formal_care_costs = "Lower formal care costs counterfactual tasks"
+higher_formal_care_costs = "Higher formal care costs counterfactual tasks"
+no_cash_benefits_higher_formal_care_costs = "No cash benefits higher formal care costs counterfactual tasks"
 # Simulation
 sim = "Simulation tasks"
 sim_estimated_params = "Simulation with estimated parameters"
 sim_job_retention_estimated_params = "Job retention simulation with estimated params"
+sim_estimated_params_caregiving_leave_with_job_retention = "Caregiving leave with job retention simulation with estimated params"
+generate_initial_conditions_1m = "Generate initial conditions with 1 million agents"
+generate_initial_conditions_10k = "Generate initial conditions with 10k agents"
 # Solving
 solve_no_care_demand = "Solve no care demand counterfactual"
+solve_lower_formal_care_costs = "Solve lower formal care costs counterfactual"
+solve_higher_formal_care_costs = "Solve higher formal care costs counterfactual"
 # Model fit
 model_fit = "Model fit tasks"
 model_fit_estimated_params = "Model fit with estimated parameters"
+model_fit_estimated_params_moments = "Model fit estimated params moments tasks"
 model_fit_job_retention = "Job retention model fit tasks"
+model_fit_caregiving_leave_with_job_retention = "Caregiving leave with job retention model fit tasks"
+model_fit_higher_ret_age = "Higher retirement age model fit tasks"
 # Counterfactual analysis
 counterfactual_differences = "Counterfactual differences tasks"
 counterfactual_differences_new = "New counterfactual differences tasks"
+counterfactual_differences_no_care_demand = "No care demand counterfactual differences"
+counterfactual_differences_job_retention = "Job retention counterfactual differences"
+counterfactual_differences_lower_formal_care_costs = "Lower formal care costs counterfactual differences"
+counterfactual_differences_higher_formal_care_costs = "Higher formal care costs counterfactual differences"
+counterfactual_differences_forced_care_demand_at_50 = "Forced care demand at 50 counterfactual differences"
+counterfactual_forced_care_demand_at_50 = "Forced care demand at 50 counterfactual tasks"
+counterfactual_differences_caregiving_leave_with_job_retention = "Caregiving leave with job retention counterfactual differences"
+counterfactual_differences_no_cash_benefits_higher_formal_care_costs = "No cash benefits higher formal care costs counterfactual differences"
+counterfactual_differences_higher_ret_age = "Higher retirement age counterfactual differences"
+counterfactual_differences_higher_ret_age_vs_no_care_demand = "Higher retirement age vs no care demand counterfactual differences"
+counterfactual_differences_pre_ls = "Counterfactual differences conditioned on pre-labor supply"
+# Age profile analysis
+counterfactual_differences_age_profiles = "Counterfactual age profile differences (all counterfactuals)"
+counterfactual_differences_job_retention_age_profiles = "Job retention counterfactual age profile differences"
+counterfactual_differences_no_care_demand_age_profiles = "No care demand counterfactual age profile differences"
+counterfactual_differences_lower_formal_care_costs_age_profiles = "Lower formal care costs counterfactual age profile differences"
+counterfactual_differences_higher_formal_care_costs_age_profiles = "Higher formal care costs counterfactual age profile differences"
+counterfactual_differences_cg_leave_age_profiles = "Caregiving leave with job retention counterfactual age profile differences"
+counterfactual_differences_no_cash_benefits_higher_formal_care_costs_age_profiles = "No cash benefits higher formal care costs counterfactual age profile differences"
+counterfactual_differences_higher_ret_age_age_profiles = "Higher retirement age counterfactual age profile differences"
+# Temporary tasks
+temp_recreate_data = "Temporary data recreation tasks"
 # Career costs
 career_costs = "Career costs computation tasks"
 # Plotting
@@ -38,6 +71,10 @@ bar_chart = "Bar chart plotting tasks"
 bar_chart_emp = "Empirical bar chart plotting tasks"
 line_chart = "Line chart plotting tasks"
 line_chart_emp = "Empirical line chart plotting tasks"
+budget_constraint = "Budget constraint plotting tasks"
+# Post estimation
+post_estimation = "Post estimation tasks"
+care_demand_post_estimation = "Care demand post estimation tasks"
 
 
 [tool.interrogate]

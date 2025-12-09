@@ -83,9 +83,9 @@ def task_specify_model_job_retention(
             "choices": choices,
             "endogenous_states": {
                 "education": np.arange(specs["n_education_types"], dtype=int),
+                "has_sister": np.arange(2, dtype=int),
                 "already_retired": np.arange(2, dtype=int),
                 "job_before_caregiving": np.arange(2, dtype=int),
-                "has_sister": np.arange(2, dtype=int),
             },
             "exogenous_processes": {
                 "job_offer": {
