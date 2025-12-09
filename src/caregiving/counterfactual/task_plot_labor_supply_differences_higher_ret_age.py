@@ -30,7 +30,13 @@ from caregiving.counterfactual.plotting_utils import (
     create_outcome_columns,
     prepare_dataframes_for_comparison,
 )
-from caregiving.model.shared import INFORMAL_CARE
+from caregiving.counterfactual.task_plot_labor_supply_differences import (
+    _add_distance_to_first_care,
+)
+from caregiving.counterfactual.task_plot_labor_supply_differences_no_care_demand import (  # noqa: E501
+    _add_distance_to_first_care_demand,
+)
+from caregiving.model.shared import DEAD, INFORMAL_CARE
 
 
 @pytask.mark.counterfactual_differences
@@ -107,9 +113,6 @@ def task_plot_matched_differences_by_distance_higher_ret_age(  # noqa: PLR0915, 
     )
 
     # Distance to first care: use helper from baseline counterfactual module
-    from caregiving.counterfactual.task_plot_labor_supply_differences import (  # noqa: E402
-        _add_distance_to_first_care,
-    )
 
     df_hr_dist = _add_distance_to_first_care(df_hr)
     dist_map = (
@@ -253,9 +256,6 @@ def task_plot_matched_differences_by_age_at_first_care_higher_ret_age_vs_baselin
         )
 
     # Distance and age at first care from higher-ret-age simulation
-    from caregiving.counterfactual.task_plot_labor_supply_differences import (  # noqa: E402
-        _add_distance_to_first_care,
-    )
 
     df_hr_dist = _add_distance_to_first_care(df_hr)
     dist_map = (
@@ -473,10 +473,6 @@ def task_plot_matched_differences_by_age_bins_at_first_care_higher_ret_age_vs_ba
         merged[f"diff_{outcome_name}"] = (
             merged[f"{outcome_name}_o"] - merged[f"{outcome_name}_c"]
         )
-
-    from caregiving.counterfactual.task_plot_labor_supply_differences import (  # noqa: E402
-        _add_distance_to_first_care,
-    )
 
     df_hr_dist = _add_distance_to_first_care(df_hr)
     dist_map = (
@@ -726,10 +722,6 @@ def task_plot_matched_differences_by_age_at_first_care_demand_higher_ret_age_vs_
             merged[f"{outcome_name}_o"] - merged[f"{outcome_name}_c"]
         )
 
-    from caregiving.counterfactual.task_plot_labor_supply_differences_no_care_demand import (  # noqa: E402, E501
-        _add_distance_to_first_care_demand,
-    )
-
     df_hr_dist = _add_distance_to_first_care_demand(df_hr)
     dist_map = (
         df_hr_dist.groupby("agent", observed=False)["first_care_demand_period"]
@@ -896,8 +888,6 @@ def task_plot_matched_differences_first_care_start_by_age_higher_ret_age(  # noq
 
     Compares Higher Retirement Age vs no care.
     """
-    from caregiving.model.shared import DEAD
-
     # Load data
     df_cf = pd.read_pickle(path_to_higher_ret_age_data)
     df_ncd = pd.read_pickle(path_to_no_care_demand_data)
@@ -1028,8 +1018,6 @@ def task_plot_matched_differences_first_care_demand_start_by_age_higher_ret_age(
 
     Compares Higher Retirement Age vs no care.
     """
-    from caregiving.model.shared import DEAD
-
     # Load data
     df_cf = pd.read_pickle(path_to_higher_ret_age_data)
     df_ncd = pd.read_pickle(path_to_no_care_demand_data)

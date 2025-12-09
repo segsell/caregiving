@@ -41,7 +41,7 @@ from caregiving.counterfactual.task_plot_labor_supply_differences import (
 from caregiving.counterfactual.task_plot_labor_supply_differences_no_care_demand import (  # noqa: E402, E501
     _add_distance_to_first_care_demand,
 )
-from caregiving.model.shared import INFORMAL_CARE
+from caregiving.model.shared import DEAD, INFORMAL_CARE
 
 
 @pytask.mark.counterfactual_differences
@@ -3051,8 +3051,6 @@ def task_plot_matched_differences_first_care_start_by_age_higher_formal_care_cos
 
     Compares Higher Formal Care Costs vs no care.
     """
-    from caregiving.model.shared import DEAD
-
     # Load data
     df_cf = pd.read_pickle(path_to_higher_formal_care_costs_data)
     df_ncd = pd.read_pickle(path_to_no_care_demand_data)
@@ -3183,8 +3181,6 @@ def task_plot_matched_differences_first_care_demand_start_by_age_higher_formal_c
 
     Compares Higher Formal Care Costs vs no care.
     """
-    from caregiving.model.shared import DEAD
-
     # Load data
     df_cf = pd.read_pickle(path_to_higher_formal_care_costs_data)
     df_ncd = pd.read_pickle(path_to_no_care_demand_data)

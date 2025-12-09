@@ -4,6 +4,7 @@ This module compares the no care demand counterfactual (baseline) to the forced 
 demand at age 50 counterfactual, plotting labor supply differences from age 50 to 70.
 """
 
+import pickle
 from pathlib import Path
 from typing import Annotated
 
@@ -999,8 +1000,6 @@ def task_plot_working_hours_differences_by_forced_age(
         start_age: Starting age for the plot (default: 43)
         end_age: Ending age for the plot (default: 73)
     """
-    import pickle
-
     # Load options to access model_params for working hours
     options = pickle.load(path_to_options.open("rb"))
     model_params = options["model_params"]

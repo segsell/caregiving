@@ -688,8 +688,6 @@ def task_plot_first_care_start_by_age(
     df_o = df_o[df_o["health"] != DEAD].copy()
 
     # Ensure agent/period
-    from caregiving.counterfactual.plotting_utils import _ensure_agent_period
-
     df_o = _ensure_agent_period(df_o)
 
     # Fully flatten any residual index levels
@@ -1521,8 +1519,6 @@ def task_plot_first_care_demand_start_by_age(
     df_o = df_o[df_o["health"] != DEAD].copy()
 
     # Ensure agent/period
-    from caregiving.counterfactual.plotting_utils import _ensure_agent_period
-
     df_o = _ensure_agent_period(df_o)
 
     # Fully flatten any residual index levels

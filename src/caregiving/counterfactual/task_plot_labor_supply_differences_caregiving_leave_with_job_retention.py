@@ -42,7 +42,7 @@ from caregiving.counterfactual.task_plot_labor_supply_differences import (
 from caregiving.counterfactual.task_plot_labor_supply_differences_no_care_demand import (  # noqa: E501
     _add_distance_to_first_care_demand,
 )
-from caregiving.model.shared import INFORMAL_CARE
+from caregiving.model.shared import DEAD, INFORMAL_CARE
 
 
 @pytask.mark.counterfactual_differences
@@ -2801,8 +2801,6 @@ def task_plot_matched_differences_first_care_start_by_age_cg_leave(  # noqa: PLR
 
     Compares cg-leave vs no care.
     """
-    from caregiving.model.shared import DEAD
-
     # Load data
     df_cg = pd.read_pickle(path_to_cg_leave_data)
     df_ncd = pd.read_pickle(path_to_no_care_demand_data)
@@ -2933,8 +2931,6 @@ def task_plot_matched_differences_first_care_demand_start_by_age_cg_leave(  # no
 
     Compares cg-leave vs no care.
     """
-    from caregiving.model.shared import DEAD
-
     # Load data
     df_cg = pd.read_pickle(path_to_cg_leave_data)
     df_ncd = pd.read_pickle(path_to_no_care_demand_data)
