@@ -16,6 +16,7 @@ from sklearn.neighbors import KernelDensity
 from caregiving.config import BLD
 from caregiving.model.shared import (
     ALL_NO_CARE,
+    END_YEAR_PARENT_GENERATION,
     INITIAL_CONDITIONS_AGE_HIGH,
     INITIAL_CONDITIONS_AGE_LOW,
     INITIAL_CONDITIONS_COHORT_HIGH,
@@ -39,6 +40,7 @@ from dcegm.pre_processing.setup_model import load_and_setup_model
 from dcegm.wealth_correction import adjust_observed_wealth
 
 
+@pytask.mark.initial_conditions
 def task_generate_start_states_for_solution(  # noqa: PLR0915
     path_to_sample: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
     path_to_lifetable: Path = BLD
@@ -48,6 +50,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     path_to_health_sample: Path = BLD
     / "data"
     / "health_transition_estimation_sample_good_medium_bad.pkl",
+    path_to_parent_child_sample: Path = BLD / "data" / "share_parent_child_data.csv",
     path_to_options: Path = BLD / "model" / "options.pkl",
     path_to_model: Path = BLD / "model" / "model_for_solution.pkl",
     path_to_start_params: Path = BLD / "model" / "params" / "start_params_model.yaml",
@@ -73,6 +76,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     observed_data = pd.read_csv(path_to_sample, index_col=[0])
     lifetable = pd.read_csv(path_to_lifetable)
     health_sample = pd.read_pickle(path_to_health_sample)
+    parent_child_data = pd.read_csv(path_to_parent_child_sample)
 
     options = pickle.load(path_to_options.open("rb"))
     params = yaml.safe_load(path_to_start_params.open("rb"))
@@ -129,7 +133,14 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     states_dict = {
         name: start_period_data[name].values
         for name in model["model_structure"]["discrete_states_names"]
-        if name not in ("mother_health", "care_demand", "care_supply")
+        if name
+        not in (
+            "mother_health",
+            "mother_adl",
+            "mother_dead",
+            "care_demand",
+            "care_supply",
+        )
     }
 
     states_dict["care_demand"] = np.zeros_like(start_period_data["wealth"])
@@ -239,6 +250,10 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     job_offer_agents = np.empty(n_agents, np.uint8)
     has_sister_agents = np.empty(n_agents, np.uint8)
     mother_health_agents = np.empty(n_agents, np.uint8)
+    mother_dead_agents = np.zeros(n_agents, dtype=np.uint8)
+    mother_adl_agents = np.zeros(
+        n_agents, dtype=np.uint8
+    )  # Initialize to 0 (dead = no ADL)
 
     # for sex_var in range(specs["n_sexes"]):
     for edu in range(specs["n_education_types"]):
@@ -270,6 +285,20 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
             mother_age,
             survival_by_age,
             health_prob_by_age,
+        )
+
+        # mother_dead: 1 if mother_health == PARENT_DEAD (3), else 0
+        mother_dead_agents[type_mask] = (
+            mother_health_agents[type_mask] == PARENT_DEAD
+        ).astype(np.uint8)
+
+        # mother_adl: draw from empirical ADL distribution by age in parent_child data
+        # If dead, ADL = 0 (No ADL). If alive, draw from empirical distribution
+        mother_adl_agents[type_mask] = draw_mother_adl(
+            mother_age,
+            mother_dead_agents[type_mask],
+            parent_child_data,
+            specs,
         )
 
         # Wealth distribution
@@ -364,8 +393,8 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         "partner_state": jnp.array(partner_states, dtype=jnp.uint8),
         "has_sister": jnp.array(has_sister_agents, dtype=jnp.uint8),
         "mother_health": jnp.array(mother_health_agents, dtype=jnp.uint8),
-        # Mother dead
-        # ADL states
+        "mother_dead": jnp.array(mother_dead_agents, dtype=jnp.uint8),
+        "mother_adl": jnp.array(mother_adl_agents, dtype=jnp.uint8),
         "care_demand": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
     }
 
@@ -375,6 +404,156 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
 
     wealth_agents = pd.DataFrame(wealth_agents, columns=["wealth"])
     wealth_agents.to_csv(path_to_save_wealth, index=False)
+
+
+def draw_mother_adl(
+    mother_age: np.ndarray,
+    mother_dead: np.ndarray,
+    parent_child_data: pd.DataFrame,
+    specs: dict,
+) -> np.ndarray:
+    """
+    Draw initial ADL states for mothers using empirical distribution from parent_child data.
+
+    Parameters
+    ----------
+    mother_age : np.ndarray
+        Array of mother ages
+    mother_dead : np.ndarray
+        Array of mother death status (1=dead, 0=alive)
+    parent_child_data : pd.DataFrame
+        Parent-child dataset with columns: age, gender, adl_cat, yrbirth
+    specs : dict
+        Specs dictionary (not used currently, but kept for consistency)
+
+    Returns
+    -------
+    np.ndarray
+        Array of ADL states (0=No ADL, 1=ADL 1, 2=ADL 2 or ADL 3)
+    """
+    rng = np.random.default_rng()
+
+    # For alive mothers, draw from empirical ADL distribution by age
+    # Dead mothers will have ADL = 0 (initialized in result array below)
+    alive_mask = mother_dead == 0
+
+    # Filter parent_child data to women only and valid ADL categories (once)
+    df_obs = parent_child_data[
+        (parent_child_data["gender"] == 2)
+        & (parent_child_data["yrbirth"] < END_YEAR_PARENT_GENERATION)
+        & (parent_child_data["adl_cat"].notna())
+    ].copy()
+
+    # Precompute ADL distributions by age using groupby (efficient)
+    # Map to collapsed categories: 0=No ADL, 1=ADL 1, 2=ADL 2 or ADL 3
+    df_obs["adl_collapsed"] = df_obs["adl_cat"].replace({3: 2})  # Combine 2 and 3
+
+    # Compute probabilities by age
+    age_adl_probs = (
+        df_obs.groupby("age")["adl_collapsed"]
+        .value_counts(normalize=True)
+        .unstack(fill_value=0.0)
+        .sort_index()
+    )
+
+    # Ensure all 3 categories (0, 1, 2) are present
+    for col in [0, 1, 2]:
+        if col not in age_adl_probs.columns:
+            age_adl_probs[col] = 0.0
+
+    age_adl_probs = age_adl_probs[[0, 1, 2]]  # Ensure correct order
+
+    # Convert index to int to ensure consistent indexing
+    age_adl_probs.index = age_adl_probs.index.astype(int)
+
+    # Get overall distribution as fallback
+    overall_probs = (
+        df_obs["adl_collapsed"]
+        .value_counts(normalize=True)
+        .sort_index()
+        .reindex([0, 1, 2], fill_value=0.0)
+    )
+    overall_probs = overall_probs.values
+
+    # Get unique ages for lookup (convert index to numpy array of ints)
+    unique_ages = age_adl_probs.index.values.astype(int)
+
+    # For each alive mother, get ADL distribution at her age
+    alive_ages = mother_age[alive_mask]
+    mother_adl_alive = np.empty(len(alive_ages), dtype=np.uint8)
+
+    # Convert unique_ages to a set for faster lookup
+    unique_ages_set = set(unique_ages)
+
+    for i, age in enumerate(alive_ages):
+        # Convert to Python int for pandas indexing
+        age_int = int(age)
+
+        # Find closest age in data
+        if age_int in unique_ages_set:
+            # Age exists in data, use it directly
+            # Use .loc with explicit index access
+            try:
+                probs = age_adl_probs.loc[age_int].values
+            except (KeyError, IndexError):
+                # Fallback: use overall distribution
+                probs = overall_probs.copy()
+        else:
+            # Find closest age
+            age_idx = np.argmin(np.abs(unique_ages - age_int))
+            age_to_use = unique_ages[age_idx]
+            try:
+                probs = age_adl_probs.loc[age_to_use].values
+            except (KeyError, IndexError):
+                # Fallback: use overall distribution
+                probs = overall_probs.copy()
+
+        # Normalize probabilities (in case they don't sum to 1 due to rounding)
+        probs = probs / probs.sum() if probs.sum() > 0 else overall_probs
+
+        # Sample ADL state
+        mother_adl_alive[i] = rng.choice(3, p=probs)
+
+    # Create result array (dead mothers = 0, alive mothers = sampled values)
+    mother_adl = np.zeros(len(mother_age), dtype=np.uint8)
+    mother_adl[alive_mask] = mother_adl_alive
+
+    return mother_adl
+
+
+def draw_mother_health(
+    mother_age: int,
+    survival_by_age: pd.Series,
+    health_prob_by_age: pd.DataFrame,
+) -> int:
+    """
+    Draw one of the four mother-health states for a single age.
+
+    Returns
+    -------
+    int  -  0: good, 1: medium, 2: bad, 3: dead
+    """
+    rng = np.random.default_rng()
+
+    ages = np.asarray(mother_age, dtype=int)
+
+    prob_alive = pd.Series(ages).map(survival_by_age).to_numpy()
+    health = health_prob_by_age.reindex(ages).to_numpy()  # shape (n, 3)
+
+    # 3 ── full 4-state probability rows
+    probs_alive = health * prob_alive[:, None]  # (n, 3)
+    probs = np.hstack(
+        [probs_alive, (1 - prob_alive)[:, None]]
+    )  # add “dead”, shape (n, 4)
+
+    # probs /= probs.sum(axis=1, keepdims=True)  # row-wise normalise
+    if not np.allclose(probs.sum(axis=1), 1.0, atol=1e-12):
+        raise ValueError("Probability rows do not sum to 1 after normalisation.")
+
+    # 4 ── sample one state per agent (readable version)
+    mother_health = np.array([rng.choice(4, p=row) for row in probs], dtype=np.uint8)
+
+    return mother_health
 
 
 def draw_start_wealth_dist(start_period_data_edu, n_agents_edu, method="kde"):
@@ -437,38 +616,3 @@ def draw_start_wealth_dist(start_period_data_edu, n_agents_edu, method="kde"):
     )
 
     return wealth_start_clipped
-
-
-def draw_mother_health(
-    mother_age: int,
-    survival_by_age: pd.Series,
-    health_prob_by_age: pd.DataFrame,
-) -> int:
-    """
-    Draw one of the four mother-health states for a single age.
-
-    Returns
-    -------
-    int  -  0: good, 1: medium, 2: bad, 3: dead
-    """
-    rng = np.random.default_rng()
-
-    ages = np.asarray(mother_age, dtype=int)
-
-    prob_alive = pd.Series(ages).map(survival_by_age).to_numpy()
-    health = health_prob_by_age.reindex(ages).to_numpy()  # shape (n, 3)
-
-    # 3 ── full 4-state probability rows
-    probs_alive = health * prob_alive[:, None]  # (n, 3)
-    probs = np.hstack(
-        [probs_alive, (1 - prob_alive)[:, None]]
-    )  # add “dead”, shape (n, 4)
-
-    # probs /= probs.sum(axis=1, keepdims=True)  # row-wise normalise
-    if not np.allclose(probs.sum(axis=1), 1.0, atol=1e-12):
-        raise ValueError("Probability rows do not sum to 1 after normalisation.")
-
-    # 4 ── sample one state per agent (readable version)
-    mother_health = np.array([rng.choice(4, p=row) for row in probs], dtype=np.uint8)
-
-    return mother_health
