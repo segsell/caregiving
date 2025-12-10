@@ -25,6 +25,7 @@ education_labels: ["Low Education", "High Education"]
 health_labels: ["Bad Health", "Good Health", "Death"]
 health_labels_three: ["Bad Health", "Medium Health", "Good Health", "Death"]
 adl_labels: ["No ADL", "ADL 1", "ADL 2", "ADL 3"]
+adl_labels_light_intensive: ["No ADL", "ADL 1", "ADL 2 or ADL 3"]
 sex_labels: ["Men", "Women"]
 partner_labels: ["Single","Working Partner", "Retired Partner"]
 

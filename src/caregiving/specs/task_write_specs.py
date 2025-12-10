@@ -18,6 +18,7 @@ from caregiving.specs.caregiving_specs import (
     read_in_adl_transition_specs,
     read_in_adl_transition_specs_binary,
     read_in_care_supply_transition_specs,
+    read_in_death_transition_specs,
     read_in_mother_age_diff_specs,
     read_in_survival_by_age_specs,
     weight_adl_transitions_by_survival,
@@ -157,6 +158,10 @@ def task_write_specs(  # noqa: PLR0915
     / "estimation"
     / "stochastic_processes"
     / "adl_state_transition_mat_light_intensive.csv",
+    path_to_save_death_transition_mat: Annotated[Path, Product] = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "death_transition_mat.csv",
 ) -> Dict[str, Any]:
     """Read in specs and add specs from first-step estimation."""
 
@@ -261,11 +266,18 @@ def task_write_specs(  # noqa: PLR0915
     survival_by_age_df = survival_by_age_df.sort_values(["sex", "age"])
     survival_by_age_df.to_csv(path_to_save_survival_by_age, index=False)
 
+    # Create death transition matrix from lifetable
+    death_transition_df = lifetable[["sex", "age", "death_prob"]].copy()
+    death_transition_df = death_transition_df.sort_values(["sex", "age"])
+    specs["death_transition_mat"] = read_in_death_transition_specs(
+        death_transition_df, specs, path_to_save=path_to_save_death_transition_mat
+    )
+
     # Read survival by age into specs
     specs["survival_by_age_mat"] = read_in_survival_by_age_specs(
         survival_by_age_df, specs
     )
-    # Store minimum age for age-to-index conversion
+    # Store minimum age for age-to-index conversion (same for death and survival)
     specs["survival_min_age"] = min(survival_by_age_df["age"].unique())
 
     if "adl_labels" in specs.keys():

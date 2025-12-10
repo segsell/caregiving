@@ -101,8 +101,12 @@
 #                     "transition": health_transition_good_medium_bad,
 #                     "states": np.arange(specs["n_health_states_three"], dtype=int),
 #                 },
+#                 "mother_adl": {
+#                     "transition": health_transition_good_medium_bad,
+#                     "states": np.arange(specs["n_adl_states_light_intensive"], dtype=int),
+#                 },
 #                 "care_demand": {
-#                     "transition": care_demand_and_supply_transition,
+#                     "transition": care_demand_and_supply_transition_adl,
 #                     "states": np.arange(3, dtype=int),
 #                 },
 #             },

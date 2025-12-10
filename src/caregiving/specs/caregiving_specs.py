@@ -497,6 +497,73 @@ def read_in_survival_by_age_specs(survival_df, specs):
     return jnp.asarray(survival_mat)
 
 
+def read_in_death_transition_specs(
+    death_df, specs, path_to_save: Optional[Path] = None
+):
+    """
+    Build a 2-d array of death probabilities
+        [sex, age_index]
+
+    Parameters
+    ----------
+    death_df : pandas.DataFrame
+        Long table with columns
+        ['sex', 'age', 'death_prob'].
+        • sex: 0 = Men, 1 = Women (numeric)
+        • age: integer age
+        • death_prob: death probability
+    specs : dict
+        Master spec-dictionary that already contains the label lists
+        used elsewhere in your model code.
+    path_to_save : Optional[Path]
+        Optional path to save the death transition matrix as a CSV file.
+        If provided, saves in long format with columns:
+        ['sex', 'age', 'death_prob'].
+
+    Returns
+    -------
+    jax.numpy.ndarray
+        Array of shape (n_sexes, n_ages)
+        where first dimension is sex (0=Men, 1=Women) and
+        second dimension is age_index (0=min_age, 1=min_age+1, ...)
+    """
+    # Get unique ages and sort them
+    ages = sorted(death_df["age"].unique())
+    min_age = min(ages)
+    n_ages = len(ages)
+    n_sexes = len(specs["sex_labels"])  # 2
+
+    # Create array: (n_sexes, n_ages) where [sex_idx, age_idx]
+    # age_idx = 0 corresponds to min_age, age_idx = 1 to min_age+1, etc.
+    death_mat = np.zeros((n_sexes, n_ages), dtype=float)
+
+    # Create age to index mapping (age_index = age - min_age)
+    age_to_idx = {age: age - min_age for age in ages}
+
+    # Map sex: 0 = Men, 1 = Women
+    for sex_num in (0, 1):
+        sex_data = death_df[death_df["sex"] == sex_num]
+        for _, row in sex_data.iterrows():
+            age = row["age"]
+            prob = row["death_prob"]
+            age_idx = age_to_idx[age]
+            death_mat[sex_num, age_idx] = prob
+
+    # Save to CSV if path provided
+    if path_to_save is not None:
+        sex_labels = specs["sex_labels"]
+        rows = []
+        for sex_idx, sex_label in enumerate(sex_labels):
+            for age_idx, age in enumerate(ages):
+                death_prob = death_mat[sex_idx, age_idx]
+                rows.append({"sex": sex_label, "age": age, "death_prob": death_prob})
+        save_df = pd.DataFrame(rows)
+        path_to_save.parent.mkdir(parents=True, exist_ok=True)
+        save_df.to_csv(path_to_save, index=False)
+
+    return jnp.asarray(death_mat)
+
+
 def weight_adl_transitions_by_survival(specs):
     """
     Weight ADL state transition probabilities by survival probabilities.
