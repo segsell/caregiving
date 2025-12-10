@@ -1,7 +1,11 @@
 """Create transition matrices for care demand and care supply."""
 
+from pathlib import Path
+from typing import Optional
+
 import jax.numpy as jnp
 import numpy as np
+import pandas as pd
 
 from caregiving.model.shared import (
     INITIAL_CONDITIONS_AGE_HIGH,
@@ -134,7 +138,9 @@ def read_in_adl_transition_specs_binary(adl_trans_df, specs):
     return jnp.asarray(adl_trans_mat)
 
 
-def read_in_adl_state_transition_specs(adl_state_trans_df, specs):
+def read_in_adl_state_transition_specs(
+    adl_state_trans_df, specs, path_to_save: Optional[Path] = None
+):
     """
     Build a 4-d transition array
         [sex, period (age), adl_lag, adl_next]
@@ -156,6 +162,10 @@ def read_in_adl_state_transition_specs(adl_state_trans_df, specs):
     specs : dict
         Master spec-dictionary that already contains the label lists
         used elsewhere in your model code.
+    path_to_save : Optional[Path]
+        Optional path to save the transition matrix as a CSV file.
+        If provided, saves in long format with columns:
+        ['sex', 'age', 'adl_lag', 'adl_next', 'transition_prob'].
 
     Returns
     -------
@@ -200,6 +210,188 @@ def read_in_adl_state_transition_specs(adl_state_trans_df, specs):
             "ADL state transition rows do not sum to 1. "
             "Check transition probabilities."
         )
+
+    # Save to CSV if path provided
+    if path_to_save is not None:
+        start_age = specs["start_age_parents"]
+        end_age = specs["end_age"]
+        ages = np.arange(start_age, end_age + 1)
+        sex_labels = specs["sex_labels"]
+        adl_labels = specs["adl_labels"]
+
+        rows = []
+        for sex_idx, sex_label in enumerate(sex_labels):
+            for period, age in enumerate(ages):
+                for adl_lag_idx, adl_lag_label in enumerate(adl_labels):
+                    for adl_next_idx, adl_next_label in enumerate(adl_labels):
+                        prob = adl_state_trans_mat[
+                            sex_idx, period, adl_lag_idx, adl_next_idx
+                        ]
+                        rows.append(
+                            {
+                                "sex": sex_label,
+                                "age": age,
+                                "adl_lag": adl_lag_label,
+                                "adl_next": adl_next_label,
+                                "transition_prob": prob,
+                            }
+                        )
+        adl_state_trans_df_save = pd.DataFrame(rows)
+        path_to_save.parent.mkdir(parents=True, exist_ok=True)
+        adl_state_trans_df_save.to_csv(path_to_save, index=False)
+
+    return jnp.asarray(adl_state_trans_mat)
+
+
+def read_in_adl_state_transition_specs_light_intensive(
+    adl_state_trans_df, specs, path_to_save: Optional[Path] = None
+):
+    """
+    Build a 4-d transition array with collapsed ADL categories
+        [sex, period (age), adl_lag, adl_next]
+    where ADL categories are:
+        - 0: 'No ADL'
+        - 1: 'ADL 1'
+        - 2: 'ADL 2' or 'ADL 3' (collapsed)
+
+    This is similar to read_in_adl_state_transition_specs but collapses
+    ADL 2 and ADL 3 into a single "intensive" category.
+
+    Parameters
+    ----------
+    adl_state_trans_df : pandas.DataFrame
+        Long table with columns
+        ['sex', 'age', 'adl_lag', 'adl_next', 'transition_prob'].
+        • sex: 'Men' or 'Women'
+        • age: integer age
+        • adl_lag: 'No ADL', 'ADL 1', 'ADL 2', 'ADL 3'
+        • adl_next: 'No ADL', 'ADL 1', 'ADL 2', 'ADL 3'
+        • transition_prob: probability of transitioning from adl_lag to adl_next
+    specs : dict
+        Master spec-dictionary that already contains the label lists
+        used elsewhere in your model code.
+    path_to_save : Optional[Path]
+        Optional path to save the transition matrix as a CSV file.
+        If provided, saves in long format with columns:
+        ['sex', 'age', 'adl_lag', 'adl_next', 'transition_prob'].
+
+    Returns
+    -------
+    jax.numpy.ndarray
+        Array of shape (n_sexes, n_periods, 3, 3)
+        where the last two dimensions are:
+        - 0: No ADL
+        - 1: ADL 1
+        - 2: ADL 2 or ADL 3 (intensive)
+    """
+    # unpack sizes straight from *specs*
+    start_age = specs["start_age_parents"]
+    end_age = specs["end_age"]
+    n_periods = end_age - start_age + 1
+    n_sexes = len(specs["sex_labels"])  # 2
+    n_adl_states_collapsed = 3  # No ADL, ADL 1, ADL 2+3
+
+    adl_state_trans_mat = np.zeros(
+        (n_sexes, n_periods, n_adl_states_collapsed, n_adl_states_collapsed),
+        dtype=float,
+    )
+
+    # Mapping from original ADL labels to collapsed indices
+    # 0: 'No ADL' -> 0
+    # 1: 'ADL 1' -> 1
+    # 2: 'ADL 2' -> 2
+    # 3: 'ADL 3' -> 2
+    adl_label_to_collapsed_idx = {
+        "No ADL": 0,
+        "ADL 1": 1,
+        "ADL 2": 2,
+        "ADL 3": 2,
+    }
+
+    for sex_idx, sex_label in enumerate(specs["sex_labels"]):
+        for period in range(n_periods):
+            age = start_age + period  # exact age in the table
+            for _adl_lag_idx, adl_lag_label in enumerate(specs["adl_labels"]):
+                # Map lag ADL to collapsed index
+                lag_collapsed_idx = adl_label_to_collapsed_idx[adl_lag_label]
+
+                for _adl_next_idx, adl_next_label in enumerate(specs["adl_labels"]):
+                    # Map next ADL to collapsed index
+                    next_collapsed_idx = adl_label_to_collapsed_idx[adl_next_label]
+
+                    # Get probability from original DataFrame
+                    prob = adl_state_trans_df.loc[
+                        (adl_state_trans_df["sex"] == sex_label)
+                        & (adl_state_trans_df["age"] == age)
+                        & (adl_state_trans_df["adl_lag"] == adl_lag_label)
+                        & (adl_state_trans_df["adl_next"] == adl_next_label),
+                        "transition_prob",
+                    ].values[0]
+
+                    # Aggregate probabilities into collapsed categories by addition:
+                    # - FROM collapsed state: add transitions from ADL 2 and 3
+                    # - TO collapsed state: add transitions to ADL 2 and 3
+                    # Example: P(ADL_1 -> ADL_2 or ADL_3) =
+                    # P(ADL_1 -> ADL_2) + P(ADL_1 -> ADL_3)
+                    adl_state_trans_mat[
+                        sex_idx, period, lag_collapsed_idx, next_collapsed_idx
+                    ] += prob
+
+    # ──────────────────────────────────────────────────────────────────
+    # Normalize rows to ensure they sum to 1
+    # Rows from non-collapsed states (No ADL=0, ADL 1=1) should already sum to 1
+    # Rows from collapsed state (ADL 2 or 3=2) will sum to 2 (since we summed
+    # two original rows that each sum to 1), so we need to normalize them
+    # ──────────────────────────────────────────────────────────────────
+    row_sums = adl_state_trans_mat.sum(axis=-1, keepdims=True)
+    # Avoid division by zero (shouldn't happen, but be safe)
+    row_sums = np.where(row_sums > 0, row_sums, 1.0)
+    adl_state_trans_mat = adl_state_trans_mat / row_sums
+
+    # ──────────────────────────────────────────────────────────────────
+    # sanity check: rows must sum to 1 (within numerical tolerance)
+    # ──────────────────────────────────────────────────────────────────
+    row_sums_check = adl_state_trans_mat.sum(axis=-1)
+    if not np.allclose(row_sums_check, 1.0, atol=1e-10):
+        raise ValueError(
+            "ADL state transition rows do not sum to 1 after collapsing and "
+            "normalization. Check transition probabilities."
+        )
+
+    # Save to CSV if path provided
+    if path_to_save is not None:
+        start_age = specs["start_age_parents"]
+        end_age = specs["end_age"]
+        ages = np.arange(start_age, end_age + 1)
+        sex_labels = specs["sex_labels"]
+        adl_labels_light_intensive = ["No ADL", "ADL 1", "ADL 2 or ADL 3"]
+
+        rows = []
+        for sex_idx, sex_label in enumerate(sex_labels):
+            for period, age in enumerate(ages):
+                for (
+                    adl_lag_idx,
+                    adl_lag_label,
+                ) in enumerate(adl_labels_light_intensive):
+                    for (
+                        adl_next_idx,
+                        adl_next_label,
+                    ) in enumerate(adl_labels_light_intensive):
+                        prob = adl_state_trans_mat[
+                            sex_idx, period, adl_lag_idx, adl_next_idx
+                        ]
+                        rows.append(
+                            {
+                                "sex": sex_label,
+                                "age": age,
+                                "adl_lag": adl_lag_label,
+                                "adl_next": adl_next_label,
+                                "transition_prob": prob,
+                            }
+                        )
+        adl_state_trans_df_save = pd.DataFrame(rows)
+        path_to_save.parent.mkdir(parents=True, exist_ok=True)
+        adl_state_trans_df_save.to_csv(path_to_save, index=False)
 
     return jnp.asarray(adl_state_trans_mat)
 

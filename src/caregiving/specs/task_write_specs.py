@@ -14,6 +14,7 @@ from pytask import Product
 from caregiving.config import BLD, SRC
 from caregiving.specs.caregiving_specs import (
     read_in_adl_state_transition_specs,
+    read_in_adl_state_transition_specs_light_intensive,
     read_in_adl_transition_specs,
     read_in_adl_transition_specs_binary,
     read_in_care_supply_transition_specs,
@@ -42,7 +43,7 @@ jax.config.update("jax_enable_x64", True)
 
 
 @pytask.mark.specs
-def task_write_specs(
+def task_write_specs(  # noqa: PLR0915
     path_to_load_specs: Path = SRC / "specs.yaml",
     path_to_sample: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
     path_to_wage_params: Path = BLD
@@ -146,6 +147,16 @@ def task_write_specs(
     / "model"
     / "specs"
     / "specs_full.pkl",
+    path_to_save_adl_state_transition_mat: Annotated[Path, Product] = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "adl_state_transition_mat.csv",
+    path_to_save_adl_state_transition_mat_light_intensive: Annotated[
+        Path, Product
+    ] = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "adl_state_transition_mat_light_intensive.csv",
 ) -> Dict[str, Any]:
     """Read in specs and add specs from first-step estimation."""
 
@@ -267,7 +278,19 @@ def task_write_specs(
         # Read ADL state transition matrix (simpler, no health dimension)
         adl_state_transitions = pd.read_csv(path_to_adl_state_transition_matrix)
         specs["adl_state_transition_mat"] = read_in_adl_state_transition_specs(
-            adl_state_transitions, specs
+            adl_state_transitions,
+            specs,
+            path_to_save=path_to_save_adl_state_transition_mat,
+        )
+
+        # Read ADL state transition matrix with collapsed categories
+        # (ADL 2 and ADL 3 collapsed into single "intensive" category)
+        specs["adl_state_transition_mat_light_intensive"] = (
+            read_in_adl_state_transition_specs_light_intensive(
+                adl_state_transitions,
+                specs,
+                path_to_save=path_to_save_adl_state_transition_mat_light_intensive,
+            )
         )
 
         # Weight ADL transitions by survival probabilities
@@ -297,5 +320,4 @@ def task_write_specs(
 
     with path_to_save_specs_dict.open("wb") as f:
         pkl.dump(specs, f)
-
     return specs
