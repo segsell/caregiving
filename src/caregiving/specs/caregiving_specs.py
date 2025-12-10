@@ -134,6 +134,76 @@ def read_in_adl_transition_specs_binary(adl_trans_df, specs):
     return jnp.asarray(adl_trans_mat)
 
 
+def read_in_adl_state_transition_specs(adl_state_trans_df, specs):
+    """
+    Build a 4-d transition array
+        [sex, period (age), adl_lag, adl_next]
+    out of the long DataFrame *adl_state_transitions*.
+
+    This is a simpler ADL transition matrix that doesn't condition on health,
+    only on sex, age, and lagged ADL state.
+
+    Parameters
+    ----------
+    adl_state_trans_df : pandas.DataFrame
+        Long table with columns
+        ['sex', 'age', 'adl_lag', 'adl_next', 'transition_prob'].
+        • sex: 'Men' or 'Women'
+        • age: integer age
+        • adl_lag: 'No ADL', 'ADL 1', 'ADL 2', 'ADL 3'
+        • adl_next: 'No ADL', 'ADL 1', 'ADL 2', 'ADL 3'
+        • transition_prob: probability of transitioning from adl_lag to adl_next
+    specs : dict
+        Master spec-dictionary that already contains the label lists
+        used elsewhere in your model code.
+
+    Returns
+    -------
+    jax.numpy.ndarray
+        Array of shape (n_sexes, n_periods, n_adl_states, n_adl_states)
+    """
+    # unpack sizes straight from *specs*
+    start_age = specs["start_age_parents"]
+    end_age = specs["end_age"]
+    n_periods = end_age - start_age + 1
+    n_sexes = len(specs["sex_labels"])  # 2
+    n_adl_states = len(specs["adl_labels"])  # 4
+
+    adl_state_trans_mat = np.zeros(
+        (n_sexes, n_periods, n_adl_states, n_adl_states),
+        dtype=float,
+    )
+
+    for sex_idx, sex_label in enumerate(specs["sex_labels"]):
+        for period in range(n_periods):
+            age = start_age + period  # exact age in the table
+            for adl_lag_idx, adl_lag_label in enumerate(specs["adl_labels"]):
+                for adl_next_idx, adl_next_label in enumerate(specs["adl_labels"]):
+                    prob = adl_state_trans_df.loc[
+                        (adl_state_trans_df["sex"] == sex_label)
+                        & (adl_state_trans_df["age"] == age)
+                        & (adl_state_trans_df["adl_lag"] == adl_lag_label)
+                        & (adl_state_trans_df["adl_next"] == adl_next_label),
+                        "transition_prob",
+                    ].values[0]
+
+                    adl_state_trans_mat[sex_idx, period, adl_lag_idx, adl_next_idx] = (
+                        prob
+                    )
+
+    # ──────────────────────────────────────────────────────────────────
+    # sanity check: rows must sum to 1 (within numerical tolerance)
+    # ──────────────────────────────────────────────────────────────────
+    row_sums = adl_state_trans_mat.sum(axis=-1)
+    if not np.allclose(row_sums, 1.0, atol=1e-12):
+        raise ValueError(
+            "ADL state transition rows do not sum to 1. "
+            "Check transition probabilities."
+        )
+
+    return jnp.asarray(adl_state_trans_mat)
+
+
 def read_in_care_supply_transition_specs(exog_care_df, specs):
     """
     Build a 4-d array of exogenous-care supply probabilities
@@ -184,6 +254,132 @@ def read_in_care_supply_transition_specs(exog_care_df, specs):
                 care_trans_mat[period, sister_idx, edu_idx] = prob
 
     return jnp.asarray(care_trans_mat)
+
+
+def read_in_survival_by_age_specs(survival_df, specs):
+    """
+    Build a 2-d array of survival probabilities
+        [sex, age_index]
+
+    Parameters
+    ----------
+    survival_df : pandas.DataFrame
+        Long table with columns
+        ['sex', 'age', 'cum_survival_prob'].
+        • sex: 0 = Men, 1 = Women (numeric)
+        • age: integer age
+        • cum_survival_prob: cumulative survival probability
+    specs : dict
+        Master spec-dictionary that already contains the label lists
+        used elsewhere in your model code.
+
+    Returns
+    -------
+    jax.numpy.ndarray
+        Array of shape (n_sexes, n_ages)
+        where first dimension is sex (0=Men, 1=Women) and
+        second dimension is age_index (0=min_age, 1=min_age+1, ...)
+    """
+    # Get unique ages and sort them
+    ages = sorted(survival_df["age"].unique())
+    min_age = min(ages)
+    n_ages = len(ages)
+    n_sexes = len(specs["sex_labels"])  # 2
+
+    # Create array: (n_sexes, n_ages) where [sex_idx, age_idx]
+    # age_idx = 0 corresponds to min_age, age_idx = 1 to min_age+1, etc.
+    survival_mat = np.zeros((n_sexes, n_ages), dtype=float)
+
+    # Create age to index mapping (age_index = age - min_age)
+    age_to_idx = {age: age - min_age for age in ages}
+
+    # Map sex: 0 = Men, 1 = Women
+    for sex_num in (0, 1):
+        sex_data = survival_df[survival_df["sex"] == sex_num]
+        for _, row in sex_data.iterrows():
+            age = row["age"]
+            prob = row["cum_survival_prob"]
+            age_idx = age_to_idx[age]
+            survival_mat[sex_num, age_idx] = prob
+
+    return jnp.asarray(survival_mat)
+
+
+def weight_adl_transitions_by_survival(specs):
+    """
+    Weight ADL state transition probabilities by survival probabilities.
+
+    Dead individuals are treated as ADL category 0. The weighted transitions:
+    - For transitions TO ADL 0: (1 - survival_prob) + survival_prob * original_prob
+      (includes both dead individuals and alive individuals with no ADL)
+    - For transitions TO ADL 1, 2, 3: survival_prob * original_prob
+      (only applies to alive population)
+
+    Parameters
+    ----------
+    specs : dict
+        Master spec-dictionary containing:
+        - adl_state_transition_mat: unweighted ADL state transition matrix
+        - survival_by_age_mat: survival matrix of shape [sex, age_index]
+        - survival_min_age: minimum age in survival matrix (age_index 0)
+        - start_age_parents, end_age: age range
+
+    Returns
+    -------
+    jax.numpy.ndarray
+        Weighted ADL state transition matrix of same shape as input
+    """
+
+    # Extract data from specs
+    adl_state_trans_mat = specs["adl_state_transition_mat"]
+    survival_mat = specs["survival_by_age_mat"]
+
+    start_age = specs["start_age_parents"]
+    end_age = specs["end_age"]
+
+    n_periods = end_age - start_age + 1
+    n_sexes = adl_state_trans_mat.shape[0]
+    n_adl_states = adl_state_trans_mat.shape[2]
+
+    # Convert to numpy for easier indexing
+    adl_mat_np = np.array(adl_state_trans_mat)
+    survival_mat_np = np.array(survival_mat)
+    survival_min_age = specs["survival_min_age"]
+    survival_max_age = survival_min_age + survival_mat_np.shape[1] - 1
+
+    weighted_mat = np.zeros_like(adl_mat_np)
+
+    for sex_idx in range(n_sexes):
+        for period in range(n_periods):
+            age = start_age + period
+            # Get cumulative survival probability at this age
+            # (matching the logic in the right panel plotting function)
+            if survival_min_age <= age <= survival_max_age:
+                age_idx = age - survival_min_age
+                survival_prob = survival_mat_np[sex_idx, age_idx]
+            else:
+                # If age not found, use 0.0 (all dead)
+                survival_prob = 0.0
+
+            for adl_lag_idx in range(n_adl_states):
+                for adl_next_idx in range(n_adl_states):
+                    original_prob = adl_mat_np[
+                        sex_idx, period, adl_lag_idx, adl_next_idx
+                    ]
+
+                    if adl_next_idx == 0:  # Transition to ADL 0 (No ADL)
+                        # Include dead (1 - survival_prob) + alive with no ADL
+                        # ADL 0 contains both alive with no ADL and dead
+                        weighted_mat[sex_idx, period, adl_lag_idx, adl_next_idx] = (
+                            1 - survival_prob
+                        ) + survival_prob * original_prob
+                    else:  # Transition to ADL 1, 2, 3
+                        # Weight by survival prob (only for alive population)
+                        weighted_mat[sex_idx, period, adl_lag_idx, adl_next_idx] = (
+                            survival_prob * original_prob
+                        )
+
+    return jnp.asarray(weighted_mat)
 
 
 def read_in_mother_age_diff_specs(sample):
