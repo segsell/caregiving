@@ -277,8 +277,8 @@ def task_write_specs(  # noqa: PLR0915
     specs["survival_by_age_mat"] = read_in_survival_by_age_specs(
         survival_by_age_df, specs
     )
-    # Store minimum age for age-to-index conversion (same for death and survival)
-    specs["survival_min_age"] = min(survival_by_age_df["age"].unique())
+    # # Store minimum age for age-to-index conversion (same for death and survival)
+    # specs["survival_min_age"] = min(survival_by_age_df["age"].unique())
 
     if "adl_labels" in specs.keys():
         # adl_labels = ["No limitations", "Limitations"]

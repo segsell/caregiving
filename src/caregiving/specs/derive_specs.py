@@ -15,6 +15,9 @@ def read_and_derive_specs(spec_path):
     specs["agent_to_parent_mat_age_offset"] = (
         specs["start_age_parents"] - specs["start_age"]
     )
+    specs["parent_to_survival_mat_age_offset"] = (
+        specs["start_age_parents"] - specs["survival_min_age"]
+    )
 
     # Number of education types and choices from labels
     specs["n_education_types"] = len(specs["education_labels"])

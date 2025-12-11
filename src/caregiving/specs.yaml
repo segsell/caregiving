@@ -14,6 +14,8 @@ end_age: 100
 end_age_msm: 70
 end_age_wealth: 80
 start_age_parents: 50
+survival_min_age: 16
+
 start_age_msm: 40
 end_age_children_in_household: 60
 end_age_caregiving: 80

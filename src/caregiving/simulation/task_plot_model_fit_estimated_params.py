@@ -60,6 +60,7 @@ from caregiving.simulation.plot_model_fit import (
 )
 
 
+@pytask.mark.baseline_model
 @pytask.mark.model_fit_estimated_params
 def task_plot_model_fit_estimated_params(  # noqa: PLR0915
     path_to_options: Path = BLD / "model" / "options.pkl",
@@ -209,7 +210,6 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
     df_sim = df_sim[df_sim["health"] != DEAD].copy()
 
     # Subsets empirical
-
     df_emp_light_caregivers = df_emp_caregivers.loc[
         df_emp_caregivers["light_care"] == 1
     ]

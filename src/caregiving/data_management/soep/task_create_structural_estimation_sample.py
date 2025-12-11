@@ -34,7 +34,11 @@
 #     determine_observed_job_offers,
 #     generate_job_separation_var,
 # )
-# from caregiving.model.shared import PART_TIME_CHOICES, RETIREMENT_CHOICES, WORK_CHOICES
+# from caregiving.model.shared import (
+#     PART_TIME_CHOICES,
+#     RETIREMENT_CHOICES,
+#     WORK_CHOICES,
+# )
 # from caregiving.specs.task_write_specs import read_and_derive_specs
 # from caregiving.utils import table
 
@@ -340,7 +344,8 @@
 
 #     retired_values = np.asarray(RETIREMENT_CHOICES).ravel().tolist()
 #     data["retire_flag"] = (
-#         data["lagged_choice"].isin(retired_values) & data["choice"].isin(retired_values)
+#         data["lagged_choice"].isin(retired_values)
+#         & data["choice"].isin(retired_values)
 #     ).astype(int)
 #     data["already_retired"] = data.groupby("pid")["retire_flag"].cummax()
 

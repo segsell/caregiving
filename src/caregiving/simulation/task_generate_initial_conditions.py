@@ -9,8 +9,6 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
@@ -19,6 +17,7 @@ from caregiving.config import BLD
 from caregiving.model.shared import (
     ALL_NO_CARE,
     END_YEAR_PARENT_GENERATION,
+    FEMALE,
     INITIAL_CONDITIONS_AGE_HIGH,
     INITIAL_CONDITIONS_AGE_LOW,
     INITIAL_CONDITIONS_COHORT_HIGH,
@@ -38,6 +37,8 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.utils import table
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 
 @pytask.mark.initial_conditions
@@ -398,7 +399,6 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         "care_demand": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
     }
 
-    # Save initial discrete states and wealth
     with path_to_save_discrete_states.open("wb") as f:
         pickle.dump(states, f)
 
@@ -413,7 +413,8 @@ def draw_mother_adl(
     specs: dict,
 ) -> np.ndarray:
     """
-    Draw initial ADL states for mothers using empirical distribution from parent_child data.
+    Draw initial ADL states for mothers using empirical distribution from
+    parent_child data.
 
     Parameters
     ----------
@@ -439,7 +440,7 @@ def draw_mother_adl(
 
     # Filter parent_child data to women only and valid ADL categories (once)
     df_obs = parent_child_data[
-        (parent_child_data["gender"] == 2)
+        (parent_child_data["gender"] == FEMALE)
         & (parent_child_data["yrbirth"] < END_YEAR_PARENT_GENERATION)
         & (parent_child_data["adl_cat"].notna())
     ].copy()
@@ -457,7 +458,7 @@ def draw_mother_adl(
     )
 
     # Ensure all 3 categories (0, 1, 2) are present
-    for col in [0, 1, 2]:
+    for col in (0, 1, 2):
         if col not in age_adl_probs.columns:
             age_adl_probs[col] = 0.0
 
