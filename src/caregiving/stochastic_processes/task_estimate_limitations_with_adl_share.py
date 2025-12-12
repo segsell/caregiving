@@ -155,9 +155,9 @@ def task_estimate_adl_transitions_one_logit(  # noqa: PLR0912
 
     adl_transition_matrix.to_csv(path_to_save)
 
-    # plot_adl_probabilities_by_health(
-    #     df, adl_transition_matrix, specs, path_to_save_plot=path_to_save_plot
-    # )
+    plot_adl_probabilities_by_health(
+        df, adl_transition_matrix, specs, path_to_save_plot=path_to_save_plot
+    )
 
 
 @pytask.mark.dip
@@ -655,7 +655,7 @@ def task_plot_adl_shares_by_age(
 #     )
 
 
-def plot_adl_state_transitions_by_origin(
+def _plot_adl_state_transitions_by_origin(
     df_sample: Optional[pd.DataFrame],
     adl_state_transition_matrix: pd.DataFrame,
     specs: dict,
@@ -735,8 +735,9 @@ def plot_adl_state_transitions_by_origin(
     df_pred = adl_mat.reset_index().rename(
         columns={"transition_prob": "prob", "adl_lag": "adl_from", "adl_next": "adl_to"}
     )
-    df_pred["adl_from_str"] = df_pred["adl_from"].map(adl_map_num_to_str)
-    df_pred["adl_to_str"] = df_pred["adl_to"].map(adl_map_num_to_str)
+    # adl_from and adl_to are already strings from the MultiIndex, no mapping needed
+    df_pred["adl_from_str"] = df_pred["adl_from"]
+    df_pred["adl_to_str"] = df_pred["adl_to"]
 
     # ──────────────────────────────────────────────────────────────────────
     # 3.  Plot – same overall style as plot_adl_probabilities_by_health
@@ -1099,7 +1100,7 @@ def task_plot_care_demand(
     )
 
 
-def plot_care_demand_from_hdeath_matrix(
+def plot_care_demand_from_hdeath_matrix(  # noqa: PLR0915
     specs: dict,
     adl_transition_df: pd.DataFrame,
     health_death_df: pd.DataFrame,
@@ -1150,6 +1151,19 @@ def plot_care_demand_from_hdeath_matrix(
         "ADL 3": "tab:red",
         any_label: "blue",
     }
+
+    # Convert defaults to pandas Series if needed
+    if isinstance(initial_alive_share, (int, float)):
+        initial_alive_share = pd.Series([initial_alive_share])
+    if isinstance(initial_health_shares_alive, dict):
+        # Convert dict to Series in the order: Bad Health, Medium Health, Good Health
+        initial_health_shares_alive = pd.Series(
+            [
+                initial_health_shares_alive.get("Bad Health", 0.0),
+                initial_health_shares_alive.get("Medium Health", 0.0),
+                initial_health_shares_alive.get("Good Health", 0.0),
+            ]
+        )
 
     # ─────────────────── build {sex → {age → 4×4 P}} ─────────────────────
     P = {}
