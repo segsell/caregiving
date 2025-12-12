@@ -14,6 +14,8 @@ end_age: 100
 end_age_msm: 70
 end_age_wealth: 80
 start_age_parents: 50
+survival_min_age: 16
+
 start_age_msm: 40
 end_age_children_in_household: 60
 end_age_caregiving: 80
@@ -25,6 +27,7 @@ education_labels: ["Low Education", "High Education"]
 health_labels: ["Bad Health", "Good Health", "Death"]
 health_labels_three: ["Bad Health", "Medium Health", "Good Health", "Death"]
 adl_labels: ["No ADL", "ADL 1", "ADL 2", "ADL 3"]
+adl_labels_light_intensive: ["No ADL", "ADL 1", "ADL 2 or ADL 3"]
 sex_labels: ["Men", "Women"]
 partner_labels: ["Single","Working Partner", "Retired Partner"]
 

@@ -11,6 +11,14 @@ def read_and_derive_specs(spec_path):
     # Number of periods in model
     specs["n_periods"] = specs["end_age"] - specs["start_age"] + 1
 
+    # Age offset between agent matrices and parent matrices
+    specs["agent_to_parent_mat_age_offset"] = (
+        specs["start_age_parents"] - specs["start_age"]
+    )
+    specs["parent_to_survival_mat_age_offset"] = (
+        specs["start_age_parents"] - specs["survival_min_age"]
+    )
+
     # Number of education types and choices from labels
     specs["n_education_types"] = len(specs["education_labels"])
     specs["n_sexes"] = len(specs["sex_labels"])
@@ -33,6 +41,9 @@ def read_and_derive_specs(spec_path):
         specs["death_health_var_three"] = np.where(
             np.array(specs["health_labels_three"]) == "Death"
         )[0][0]
+
+    if "adl_labels_light_intensive" in specs.keys():
+        specs["n_adl_states_light_intensive"] = len(specs["adl_labels_light_intensive"])
 
     # Partner states
     specs["n_partner_states"] = len(specs["partner_labels"])

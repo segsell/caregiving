@@ -33,7 +33,8 @@ from caregiving.simulation.simulate import simulate_scenario
 jax.config.update("jax_enable_x64", True)
 
 
-@pytask.mark.skip()
+# @pytask.mark.skip()
+@pytask.mark.baseline_model
 def task_solve_and_simulate_start_params(
     path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
     path_to_options: Path = BLD / "model" / "options.pkl",

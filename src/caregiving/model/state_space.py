@@ -126,7 +126,8 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
     has_sister,
     health,
     partner_state,
-    mother_health,
+    mother_dead,
+    mother_adl,
     care_demand,
     job_offer,
     options,
@@ -179,12 +180,13 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "has_sister": has_sister,
                 "health": health,
                 "partner_state": partner_state,
-                "mother_health": PARENT_DEAD,
+                "mother_dead": 1,
+                "mother_adl": 0,
                 "care_demand": 0,
                 "job_offer": 0,
             }
             return state_proxy
-        elif mother_health == PARENT_DEAD:
+        elif mother_dead:
             # If mother is dead, no care demand and supply
             state_proxy = {
                 "period": period,
@@ -194,7 +196,8 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "has_sister": has_sister,
                 "health": health,
                 "partner_state": partner_state,
-                "mother_health": mother_health,
+                "mother_dead": 1,
+                "mother_adl": 0,
                 "care_demand": 0,
                 "job_offer": job_offer,
             }
@@ -210,7 +213,8 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "has_sister": has_sister,
                 "health": health,
                 "partner_state": partner_state,
-                "mother_health": mother_health,
+                "mother_dead": mother_dead,
+                "mother_adl": mother_adl,
                 "care_demand": care_demand,
                 "job_offer": 0,
             }
@@ -226,7 +230,8 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "has_sister": has_sister,
                 "health": health,
                 "partner_state": partner_state,
-                "mother_health": mother_health,
+                "mother_dead": mother_dead,
+                "mother_adl": mother_adl,
                 "care_demand": care_demand,
                 "job_offer": 0,
             }

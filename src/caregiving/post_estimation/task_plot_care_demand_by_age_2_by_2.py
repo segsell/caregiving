@@ -28,6 +28,7 @@ from caregiving.model.shared import (
 )
 
 
+@pytask.mark.baseline_model
 @pytask.mark.post_estimation
 @pytask.mark.care_demand_post_estimation
 def task_plot_care_demand_by_age_2_by_2(
@@ -70,6 +71,7 @@ def task_plot_care_demand_by_age_2_by_2(
     )
 
 
+@pytask.mark.baseline_model
 @pytask.mark.post_estimation
 @pytask.mark.care_demand_post_estimation
 def task_plot_care_demand_by_age_pooled(
@@ -107,6 +109,7 @@ def task_plot_care_demand_by_age_pooled(
     )
 
 
+@pytask.mark.baseline_model
 @pytask.mark.post_estimation
 @pytask.mark.care_demand_post_estimation
 def task_plot_care_demand_by_age_2_by_2_combined(
@@ -149,6 +152,7 @@ def task_plot_care_demand_by_age_2_by_2_combined(
     )
 
 
+@pytask.mark.baseline_model
 @pytask.mark.post_estimation
 @pytask.mark.care_demand_post_estimation
 def task_plot_care_demand_by_age_pooled_combined(

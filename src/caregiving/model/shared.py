@@ -35,6 +35,9 @@ MAX_AGE = 70
 
 MIN_AGE_PARENTS = 50
 MAX_AGE_PARENTS = 100
+# Age offset between agent matrices (start_age=30) and parent matrices
+# (start_age_parents=50)
+AGENT_TO_PARENT_MAT_AGE_OFFSET = 20
 
 AGE_0 = 0
 AGE_4 = 4
@@ -109,6 +112,12 @@ PARENT_BAD_HEALTH = 0
 PARENT_MEDIUM_HEALTH = 1
 PARENT_GOOD_HEALTH = 2
 PARENT_DEAD = 3
+
+ADL_0 = 0
+ADL_1 = 1
+ADL_2 = 2
+ADL_3 = 3
+ADL_2_3 = 2
 
 NO_CARE_DEMAND = 0
 CARE_DEMAND_AND_OTHER_SUPPLY = 1

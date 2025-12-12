@@ -33,6 +33,7 @@ from caregiving.simulation.simulate import simulate_scenario
 jax.config.update("jax_enable_x64", True)
 
 
+@pytask.mark.baseline_model
 def task_solve_and_simulate_estimated_params(
     path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
     path_to_options: Path = BLD / "model" / "options.pkl",
@@ -57,6 +58,7 @@ def task_solve_and_simulate_estimated_params(
     # / "solve_and_simulate"
     # / "simulated_data_jax_estimated_params.pkl",
 ) -> None:
+    """Solve and simulate the model for estimated parameters."""
 
     options = pickle.load(path_to_options.open("rb"))
     params = yaml.safe_load(path_to_estimated_params.open("rb"))
