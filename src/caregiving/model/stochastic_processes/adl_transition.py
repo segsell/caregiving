@@ -4,7 +4,7 @@ import jax.numpy as jnp
 
 from caregiving.model.shared import MOTHER
 
-# PARENT_AGE_OFFSET = 1
+PARENT_AGE_OFFSET = 3
 
 
 def limitations_with_adl_transition(mother_adl, period, has_sister, education, options):
@@ -36,6 +36,7 @@ def limitations_with_adl_transition(mother_adl, period, has_sister, education, o
         period
         - options["agent_to_parent_mat_age_offset"]
         + options["mother_age_diff"][has_sister, education]
+        + PARENT_AGE_OFFSET
     )
 
     adl_trans_mat = options["adl_state_transition_mat_light_intensive"]
@@ -81,7 +82,7 @@ def death_transition(period, mother_dead, has_sister, education, options):
         period
         - options["agent_to_parent_mat_age_offset"]
         + options["mother_age_diff"][has_sister, education]
-        # + PARENT_AGE_OFFSET
+        + PARENT_AGE_OFFSET
     )
 
     # Convert to age_index for death_transition_mat
