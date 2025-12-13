@@ -8,7 +8,6 @@ import jax.numpy as jnp
 import numpy as np
 import pytask
 import yaml
-from dcegm.pre_processing.setup_model import setup_and_save_model
 from pytask import Product
 
 from caregiving.config import BLD
@@ -37,6 +36,7 @@ from caregiving.model.utility.utility_functions_additive import (
 )
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
+from dcegm.pre_processing.setup_model import setup_and_save_model
 
 
 @pytask.mark.baseline_model
@@ -85,10 +85,7 @@ def task_specify_model(
             "n_periods": n_periods,
             "choices": choices,
             "endogenous_states": {
-                # "education": np.arange(specs["n_education_types"], dtype=int),
-                "education": [0],
-                "partner_state": [0],
-                "mother_adl": [0],
+                "education": np.arange(specs["n_education_types"], dtype=int),
                 "caregiving_type": np.arange(2, dtype=int),
                 "already_retired": np.arange(2, dtype=int),
             },
@@ -97,15 +94,15 @@ def task_specify_model(
                     "transition": job_offer_process_transition,
                     "states": np.arange(2, dtype=int),
                 },
-                # "partner_state": {
-                #     "transition": partner_transition,
-                #     "states": np.arange(specs["n_partner_states"], dtype=int),
-                # },
+                "partner_state": {
+                    "transition": partner_transition,
+                    "states": np.arange(specs["n_partner_states"], dtype=int),
+                },
                 "health": {
                     "transition": health_transition,
                     "states": np.arange(specs["n_health_states"], dtype=int),
                 },
-                # "mother_health": {
+                # "_mother_health": {
                 #     "transition": health_transition_good_medium_bad,
                 #     "states": np.arange(specs["n_health_states_three"], dtype=int),
                 # },
@@ -113,12 +110,12 @@ def task_specify_model(
                     "transition": death_transition,
                     "states": np.arange(2, dtype=int),
                 },
-                # "mother_adl": {
-                #     "transition": limitations_with_adl_transition,
-                #     "states": np.arange(
-                #         specs["n_adl_states_light_intensive"], dtype=int
-                #     ),
-                # },
+                "mother_adl": {
+                    "transition": limitations_with_adl_transition,
+                    "states": np.arange(
+                        specs["n_adl_states_light_intensive"], dtype=int
+                    ),
+                },
                 "care_demand": {
                     "transition": care_demand_and_supply_transition_adl,
                     "states": np.arange(2, dtype=int),

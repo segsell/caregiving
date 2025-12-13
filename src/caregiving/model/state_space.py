@@ -9,8 +9,8 @@ from caregiving.model.shared import (  # BAD_HEALTH,; CARE_AND_NO_CARE,; FORMAL_
     ALL_CARE,
     ALL_INFORMAL_OR_FORMAL,
     ALL_NO_CARE,
-    ALL_NO_INFORMAL_CARE,
     ALL_NO_FORMAL_CARE,
+    ALL_NO_INFORMAL_CARE,
     CARE_DEMAND_AND_NO_OTHER_SUPPLY,
     CARE_DEMAND_AND_OTHER_SUPPLY,
     FORMAL_CARE,
@@ -19,34 +19,34 @@ from caregiving.model.shared import (  # BAD_HEALTH,; CARE_AND_NO_CARE,; FORMAL_
     NOT_WORKING_CARE,
     NOT_WORKING_INFORMAL_OR_FORMAL,
     NOT_WORKING_NO_CARE,
-    NOT_WORKING_NO_INFORMAL_CARE,
     NOT_WORKING_NO_FORMAL_CARE,
+    NOT_WORKING_NO_INFORMAL_CARE,
     PARENT_DEAD,
     RETIREMENT,
     RETIREMENT_CARE,
     RETIREMENT_INFORMAL_OR_FORMAL,
     RETIREMENT_NO_CARE,
-    RETIREMENT_NO_INFORMAL_CARE,
     RETIREMENT_NO_FORMAL_CARE,
+    RETIREMENT_NO_INFORMAL_CARE,
     SEX,
     UNEMPLOYED,
     UNEMPLOYED_CARE,
     UNEMPLOYED_INFORMAL_OR_FORMAL,
     UNEMPLOYED_NO_CARE,
-    UNEMPLOYED_NO_INFORMAL_CARE,
     UNEMPLOYED_NO_FORMAL_CARE,
+    UNEMPLOYED_NO_INFORMAL_CARE,
     WORK_AND_RETIREMENT,
     WORK_AND_RETIREMENT_CARE,
     WORK_AND_RETIREMENT_INFORMAL_OR_FORMAL,
     WORK_AND_RETIREMENT_NO_CARE,
-    WORK_AND_RETIREMENT_NO_INFORMAL_CARE,
     WORK_AND_RETIREMENT_NO_FORMAL_CARE,
+    WORK_AND_RETIREMENT_NO_INFORMAL_CARE,
     WORK_AND_UNEMPLOYED,
     WORK_AND_UNEMPLOYED_CARE,
     WORK_AND_UNEMPLOYED_INFORMAL_OR_FORMAL,
     WORK_AND_UNEMPLOYED_NO_CARE,
-    WORK_AND_UNEMPLOYED_NO_INFORMAL_CARE,
     WORK_AND_UNEMPLOYED_NO_FORMAL_CARE,
+    WORK_AND_UNEMPLOYED_NO_INFORMAL_CARE,
     is_alive,
     is_dead,
     is_formal_care,
@@ -188,6 +188,9 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
     elif (age <= start_age_caregiving) & (is_formal_care(lagged_choice)):
         return False
     # ================================================================================
+    elif (caregiving_type == 0) & (is_informal_care(lagged_choice)):
+        return False
+    # ================================================================================
     else:
         # Now turn to the states, where it is decided by the value of an exogenous
         # state if it is valid or not. For invalid states we provide a proxy child state
@@ -308,7 +311,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
         #     }
         #     return state_proxy
         # Care demand cannot be 1 before the start period for caregiving
-        elif age <= start_age_caregiving:
+        elif age < start_age_caregiving:
             # Proxy to state with care_demand = 0
             state_proxy = {
                 "period": period,
@@ -374,7 +377,7 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912
     period, lagged_choice, job_offer, health, caregiving_type, care_demand, options
 ):
     age = period + options["start_age"]
-    start_age_caregiving = options["start_age_caregiving"]
+    _start_age_caregiving = options["start_age_caregiving"]
     end_age_caregiving = options["end_age_msm"]
 
     SRA_pol_state = options["min_SRA"]  # + policy_state  # * options["SRA_grid_size"]
@@ -437,8 +440,13 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912
     #                 return NOT_WORKING_NO_CARE
     #             else:
     #                 return ALL_NO_CARE
-    # elif (care_demand == 1) & (age >= start_age_caregiving) & (caregiving_type == 1):
-    if (care_demand == 1) & (caregiving_type == 1) & (age <= end_age_caregiving):
+
+    if (
+        (care_demand == 1)
+        & (caregiving_type == 1)
+        # & (age >= start_age_caregiving)
+        & (age <= end_age_caregiving)
+    ):
         # care_demand == 1 & caregiving_type == 1:
         # Agent can choose:
         #   - INFORMAL_CARE (agent provides informal care)
@@ -470,8 +478,12 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912
                     return NOT_WORKING_INFORMAL_OR_FORMAL
                 else:
                     return ALL_INFORMAL_OR_FORMAL
-    # elif (care_demand == 1) & (age >= start_age_caregiving) & (caregiving_type == 0):
-    elif (care_demand == 1) & (caregiving_type == 0) & (age <= end_age_caregiving):
+    elif (
+        (care_demand == 1)
+        & (caregiving_type == 0)
+        # & (age >= start_age_caregiving)
+        & (age <= end_age_caregiving)
+    ):
         # Agent can choose:
         #   - NO_CARE (someone else provides informal care)
         #   - FORMAL_CARE (formal care is organized)

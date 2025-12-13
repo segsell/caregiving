@@ -9,8 +9,6 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
@@ -39,6 +37,8 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.utils import table
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 
 @pytask.mark.initial_conditions
@@ -141,6 +141,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
             "mother_dead",
             "care_demand",
             "care_supply",
+            "caregiving_type",
         )
     }
 
@@ -281,10 +282,14 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
 
         # mother health
         mother_age_diff = specs["mother_age_diff"][edu]
-        mother_age = specs["start_age"] + mother_age_diff.round().astype(int)
+        mother_age_scalar = int(
+            np.asarray(specs["start_age"] + mother_age_diff.round().astype(int))
+        )
+        # Create array of ages (one per agent in this education group)
+        mother_ages_array = np.full(n_agents_edu, mother_age_scalar, dtype=int)
 
         mother_health_agents[type_mask] = draw_mother_health(
-            mother_age,
+            mother_ages_array,
             survival_by_age,
             health_prob_by_age,
         )
@@ -297,7 +302,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         # mother_adl: draw from empirical ADL distribution by age in parent_child data
         # If dead, ADL = 0 (No ADL). If alive, draw from empirical distribution
         mother_adl_agents[type_mask] = draw_mother_adl(
-            mother_age,
+            mother_ages_array,
             mother_dead_agents[type_mask],
             parent_child_data,
             specs,
@@ -397,14 +402,13 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         "experience": jnp.array(exp_agents, dtype=jnp.float64),
         "job_offer": jnp.array(job_offer_agents, dtype=jnp.uint8),
         "partner_state": jnp.array(partner_states, dtype=jnp.uint8),
-        "has_sister": jnp.array(has_sister_agents, dtype=jnp.uint8),
-        "mother_health": jnp.array(mother_health_agents, dtype=jnp.uint8),
+        # "has_sister": jnp.array(has_sister_agents, dtype=jnp.uint8),
+        # "mother_health": jnp.array(mother_health_agents, dtype=jnp.uint8),
         "mother_dead": jnp.array(mother_dead_agents, dtype=jnp.uint8),
         "mother_adl": jnp.array(mother_adl_agents, dtype=jnp.uint8),
         "care_demand": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
         "caregiving_type": jnp.array(caregiving_type_agents, dtype=jnp.uint8),
     }
-    breakpoint()
 
     with path_to_save_discrete_states.open("wb") as f:
         pickle.dump(states, f)
@@ -486,8 +490,15 @@ def draw_mother_adl(
     # Get unique ages for lookup (convert index to numpy array of ints)
     unique_ages = age_adl_probs.index.values.astype(int)
 
+    # Convert mother_age to numpy array if it's a JAX array
+    mother_age_np = np.asarray(mother_age, dtype=int)
+    # Ensure it's 1D
+    if mother_age_np.ndim == 0:
+        mother_age_np = np.array([mother_age_np.item()])
+    mother_age_np = mother_age_np.flatten()
+
     # For each alive mother, get ADL distribution at her age
-    alive_ages = mother_age[alive_mask]
+    alive_ages = mother_age_np[alive_mask]
     mother_adl_alive = np.empty(len(alive_ages), dtype=np.uint8)
 
     # Convert unique_ages to a set for faster lookup
@@ -544,6 +555,10 @@ def draw_mother_health(
     rng = np.random.default_rng()
 
     ages = np.asarray(mother_age, dtype=int)
+    # Ensure ages is 1D array (handle scalar/0-d array case)
+    if ages.ndim == 0:
+        ages = np.array([ages.item()])
+    ages = ages.flatten()  # Ensure 1D
 
     prob_alive = pd.Series(ages).map(survival_by_age).to_numpy()
     health = health_prob_by_age.reindex(ages).to_numpy()  # shape (n, 3)

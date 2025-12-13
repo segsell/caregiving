@@ -44,7 +44,7 @@ def care_demand_and_supply_transition_adl(
         Probability vector [no_care_demand, care_demand_and_others_supply,
         care_demand_and_not_other]
     """
-    end_age_caregiving = options["end_age_msm"] - options["start_age"]
+    end_period_caregiving = options["end_age_msm"] - options["start_age"]
 
     # No ADL, ADL 1, ADL 2 or ADL 3 (three states)
     prob_adl = limitations_with_adl_transition(mother_adl, period, education, options)
@@ -55,7 +55,7 @@ def care_demand_and_supply_transition_adl(
         (prob_adl[1] + prob_adl[2])
         * (1 - mother_dead)
         * (period >= START_PERIOD_CAREGIVING - 1)
-        * (period < end_age_caregiving)
+        * (period < end_period_caregiving)
     )
 
     return jnp.array([1 - care_demand, care_demand])
@@ -102,7 +102,7 @@ def _care_demand_and_supply_transition_adl(
         Probability vector [no_care_demand, care_demand_and_others_supply,
         care_demand_and_not_other]
     """
-    end_age_caregiving = options["end_age_msm"] - options["start_age"]
+    end_period_caregiving = options["end_age_msm"] - options["start_age"]
 
     # No ADL, ADL 1, ADL 2 or ADL 3 (three states)
     prob_adl = limitations_with_adl_transition(mother_adl, period, education, options)
@@ -112,7 +112,7 @@ def _care_demand_and_supply_transition_adl(
         (prob_adl[1] + prob_adl[2])
         * (1 - mother_dead)
         * (period >= START_PERIOD_CAREGIVING - 1)
-        * (period < end_age_caregiving)
+        * (period < end_period_caregiving)
     )
 
     # Pre-compute care supply probability
@@ -140,7 +140,7 @@ def care_demand_and_supply_transition(mother_health, period, education, options)
         + options["mother_age_diff"][education]
         + PARENT_AGE_OFFSET
     )
-    end_age_caregiving = options["end_age_msm"] - options["start_age"]
+    end_period_caregiving = options["end_age_msm"] - options["start_age"]
 
     adl_mat = options["limitations_with_adl_mat"]
     limitations_with_adl = adl_mat[MOTHER, mother_age, mother_health, :]
@@ -155,7 +155,7 @@ def care_demand_and_supply_transition(mother_health, period, education, options)
         limitations_with_adl[1]
         * (mother_health != PARENT_DEAD)
         * (period >= START_PERIOD_CAREGIVING - 1)
-        * (period < end_age_caregiving)
+        * (period < end_period_caregiving)
         # * SCALE_DOWN_DEMAND
     )
 
