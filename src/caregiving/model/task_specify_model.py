@@ -85,10 +85,11 @@ def task_specify_model(
             "n_periods": n_periods,
             "choices": choices,
             "endogenous_states": {
-                "education": np.arange(specs["n_education_types"], dtype=int),
-                "has_sister": np.arange(2, dtype=int),
-                # "education": [0],
-                # "has_sister": [0],
+                # "education": np.arange(specs["n_education_types"], dtype=int),
+                "education": [0],
+                "partner_state": [0],
+                "mother_adl": [0],
+                "caregiving_type": np.arange(2, dtype=int),
                 "already_retired": np.arange(2, dtype=int),
             },
             "exogenous_processes": {
@@ -96,10 +97,10 @@ def task_specify_model(
                     "transition": job_offer_process_transition,
                     "states": np.arange(2, dtype=int),
                 },
-                "partner_state": {
-                    "transition": partner_transition,
-                    "states": np.arange(specs["n_partner_states"], dtype=int),
-                },
+                # "partner_state": {
+                #     "transition": partner_transition,
+                #     "states": np.arange(specs["n_partner_states"], dtype=int),
+                # },
                 "health": {
                     "transition": health_transition,
                     "states": np.arange(specs["n_health_states"], dtype=int),
@@ -112,15 +113,15 @@ def task_specify_model(
                     "transition": death_transition,
                     "states": np.arange(2, dtype=int),
                 },
-                "mother_adl": {
-                    "transition": limitations_with_adl_transition,
-                    "states": np.arange(
-                        specs["n_adl_states_light_intensive"], dtype=int
-                    ),
-                },
+                # "mother_adl": {
+                #     "transition": limitations_with_adl_transition,
+                #     "states": np.arange(
+                #         specs["n_adl_states_light_intensive"], dtype=int
+                #     ),
+                # },
                 "care_demand": {
                     "transition": care_demand_and_supply_transition_adl,
-                    "states": np.arange(3, dtype=int),
+                    "states": np.arange(2, dtype=int),
                 },
             },
             "continuous_states": {

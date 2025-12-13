@@ -3,6 +3,7 @@ from jax import numpy as jnp
 from caregiving.model.shared import (
     CARE_DEMAND_AND_NO_OTHER_SUPPLY,
     SEX,
+    is_formal_care,
     is_no_care,
     is_retired,
     is_working,
@@ -28,7 +29,8 @@ def calc_care_benefits_and_costs_no_cash_benefits(
 
     Formal care costs are multiplied by 1.5 (50% more expensive).
     """
-    formal_care = is_no_care(lagged_choice) & (
+    # Formal care is choices 8, 9, 10, 11 (FORMAL_CARE array)
+    formal_care = is_formal_care(lagged_choice) & (
         care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY
     )
 

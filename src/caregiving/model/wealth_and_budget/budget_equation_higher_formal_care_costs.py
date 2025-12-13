@@ -4,6 +4,7 @@ from caregiving.model.shared import (
     CARE_DEMAND_AND_NO_OTHER_SUPPLY,
     CARE_DEMAND_AND_OTHER_SUPPLY,
     SEX,
+    is_formal_care,
     is_informal_care,
     is_no_care,
     is_retired,
@@ -30,22 +31,12 @@ def calc_care_benefits_and_costs_higher_formal_care_costs(
 
     Formal care costs are multiplied by 1.5 (50% more expensive).
     """
-    informal_care_solo = is_informal_care(lagged_choice) * (
-        care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY
-    )
-    informal_care_joint = is_informal_care(lagged_choice) * (
-        care_demand == CARE_DEMAND_AND_OTHER_SUPPLY
-    )
-    formal_care = is_no_care(lagged_choice) & (
-        care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY
-    )
+    informal_care_solo = is_informal_care(lagged_choice)
+    # Formal care is choices 8, 9, 10, 11 (FORMAL_CARE array)
+    formal_care = is_formal_care(lagged_choice)
 
     annual_care_benefits = options["informal_care_cash_benefits"] * 12
-    annual_care_benefits_weighted = (
-        annual_care_benefits * 0.5 * informal_care_joint
-        + annual_care_benefits * informal_care_solo
-    )
-
+    annual_care_benefits_weighted = annual_care_benefits * informal_care_solo
     # Formal care costs are 100% more expensive (multiply by 2.0)
     annual_care_costs = options["formal_care_costs"] * 12 * 2.0
     annual_care_costs_weighted = (

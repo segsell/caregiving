@@ -255,6 +255,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     mother_adl_agents = np.zeros(
         n_agents, dtype=np.uint8
     )  # Initialize to 0 (dead = no ADL)
+    caregiving_type_agents = np.empty(n_agents, dtype=np.uint8)
 
     # for sex_var in range(specs["n_sexes"]):
     for edu in range(specs["n_education_types"]):
@@ -279,7 +280,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         has_sister_agents[type_mask] = has_sister_edu
 
         # mother health
-        mother_age_diff = specs["mother_age_diff"][has_sister_edu, edu]
+        mother_age_diff = specs["mother_age_diff"][edu]
         mother_age = specs["start_age"] + mother_age_diff.round().astype(int)
 
         mother_health_agents[type_mask] = draw_mother_health(
@@ -372,6 +373,10 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         )
         health_agents[type_mask] = health_states_edu
 
+        # Generate caregiving_type: 50% type 0, 50% type 1 (regardless of education)
+        caregiving_type_edu = np.random.choice([0, 1], size=n_agents_edu, p=[0.5, 0.5])
+        caregiving_type_agents[type_mask] = caregiving_type_edu
+
     # Transform it to be between 0 and 1
     exp_agents /= specs["max_exp_diffs_per_period"][0]
 
@@ -397,7 +402,9 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         "mother_dead": jnp.array(mother_dead_agents, dtype=jnp.uint8),
         "mother_adl": jnp.array(mother_adl_agents, dtype=jnp.uint8),
         "care_demand": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
+        "caregiving_type": jnp.array(caregiving_type_agents, dtype=jnp.uint8),
     }
+    breakpoint()
 
     with path_to_save_discrete_states.open("wb") as f:
         pickle.dump(states, f)

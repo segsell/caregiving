@@ -1027,9 +1027,7 @@ def plot_mother_health_shares_by_age(
     if "mother_age" not in df_sim.columns:
         df_sim["mother_age"] = (
             df_sim["age"].to_numpy()
-            + specs["mother_age_diff"][
-                df_sim["has_sister"].to_numpy(), df_sim["education"].to_numpy()
-            ]
+            + specs["mother_age_diff"][df_sim["education"].to_numpy()]
         )
 
     # Filter to relevant age range

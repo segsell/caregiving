@@ -211,9 +211,7 @@ def simulate_scenario(
 
     df["mother_age"] = (
         df["age"].to_numpy()
-        + model_params["mother_age_diff"][
-            df["has_sister"].to_numpy(), df["education"].to_numpy()
-        ]
+        + model_params["mother_age_diff"][df["education"].to_numpy()]
     )
 
     # Drop all agents (entirely) who work after the maximum retirement age
