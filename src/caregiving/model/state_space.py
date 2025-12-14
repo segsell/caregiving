@@ -11,8 +11,6 @@ from caregiving.model.shared import (  # BAD_HEALTH,; CARE_AND_NO_CARE,; FORMAL_
     ALL_NO_CARE,
     ALL_NO_FORMAL_CARE,
     ALL_NO_INFORMAL_CARE,
-    CARE_DEMAND_AND_NO_OTHER_SUPPLY,
-    CARE_DEMAND_AND_OTHER_SUPPLY,
     FORMAL_CARE,
     INFORMAL_CARE,
     NOT_WORKING,
@@ -231,21 +229,6 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "job_offer": job_offer,
             }
             return state_proxy
-        elif age > end_age_caregiving + 1:
-            # Proxy to state with care_demand = 0
-            state_proxy = {
-                "period": period,
-                "lagged_choice": lagged_choice,
-                "already_retired": already_retired,
-                "education": education,
-                "caregiving_type": caregiving_type,
-                "health": health,
-                "partner_state": partner_state,
-                "mother_dead": mother_dead,
-                "mother_adl": mother_adl,
-                "care_demand": 0,
-                "job_offer": job_offer,
-            }
             return state_proxy
         elif age > max_ret_age + 1:
             # If age is larger than max_ret_age + 1, the individual can only be
@@ -311,6 +294,21 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
         #     }
         #     return state_proxy
         # Care demand cannot be 1 before the start period for caregiving
+        elif age > end_age_caregiving + 1:
+            # Proxy to state with care_demand = 0
+            state_proxy = {
+                "period": period,
+                "lagged_choice": lagged_choice,
+                "already_retired": already_retired,
+                "education": education,
+                "caregiving_type": caregiving_type,
+                "health": health,
+                "partner_state": partner_state,
+                "mother_dead": mother_dead,
+                "mother_adl": mother_adl,
+                "care_demand": 0,
+                "job_offer": job_offer,
+            }
         elif age < start_age_caregiving:
             # Proxy to state with care_demand = 0
             state_proxy = {
@@ -377,7 +375,7 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912
     period, lagged_choice, job_offer, health, caregiving_type, care_demand, options
 ):
     age = period + options["start_age"]
-    _start_age_caregiving = options["start_age_caregiving"]
+    start_age_caregiving = options["start_age_caregiving"]
     end_age_caregiving = options["end_age_msm"]
 
     SRA_pol_state = options["min_SRA"]  # + policy_state  # * options["SRA_grid_size"]
@@ -444,7 +442,7 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912
     if (
         (care_demand == 1)
         & (caregiving_type == 1)
-        # & (age >= start_age_caregiving)
+        & (age >= start_age_caregiving)
         & (age <= end_age_caregiving)
     ):
         # care_demand == 1 & caregiving_type == 1:
@@ -481,7 +479,7 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912
     elif (
         (care_demand == 1)
         & (caregiving_type == 0)
-        # & (age >= start_age_caregiving)
+        & (age >= start_age_caregiving)
         & (age <= end_age_caregiving)
     ):
         # Agent can choose:

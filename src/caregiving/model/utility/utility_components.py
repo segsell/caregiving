@@ -50,8 +50,8 @@ def disutility_work(
     good_health = is_good_health(health)
 
     # Check care arrangement type based on choice
-    # NO_CARE (choices 0, 2, 4, 6): No formal care, someone else provides informal care
-    # INFORMAL_CARE (choices 1, 3, 5, 7): Agent provides informal care
+    # NO_CARE (choices 0, 1, 2, 3): No formal care, someone else provides informal care
+    # INFORMAL_CARE (choices 4, 5, 6, 7): Agent provides informal care
     # FORMAL_CARE (choices 8, 9, 10, 11): Formal care is organized
     no_care_choice = is_no_care(choice)  # NO_CARE choices
     informal_care = is_informal_care(choice)  # Agent provides informal care
@@ -210,8 +210,8 @@ def disutility_work(
     # Utility from care arrangements
     # When care_demand == 1:
     #   - FORMAL_CARE (choices 8, 9, 10, 11): Formal care is organized --> util_formal_care
-    #   - INFORMAL_CARE (choices 1, 3, 5, 7): Agent provides informal care --> util_informal_care
-    #   - NO_CARE (choices 0, 2, 4, 6): Someone else provides informal care --> reference category
+    #   - INFORMAL_CARE (choices 4, 5, 6, 7): Agent provides informal care --> util_informal_care
+    #   - NO_CARE (choices 0, 1, 2, 3): Someone else provides informal care --> reference category
     utility_from_care = (
         informal_care * util_informal_care + formal_care * util_formal_care
     )
@@ -219,8 +219,8 @@ def disutility_work(
     # =================================================================================
     # Compute total disutility
     # =================================================================================
-    # - NO_CARE (choices 0, 2, 4, 6): Someone else provides care → disutility_no_caregiving
-    # - INFORMAL_CARE (choices 1, 3, 5, 7): Agent provides care → disutility_informal_care
+    # - NO_CARE (choices 0, 1, 2, 3): Someone else provides care → disutility_no_caregiving
+    # - INFORMAL_CARE (choices 4, 5, 6, 7): Agent provides care → disutility_informal_care
     # - FORMAL_CARE (choices 8, 9, 10, 11): Formal care → disutility_no_caregiving
 
     disutility = (

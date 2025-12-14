@@ -1279,7 +1279,7 @@ def plot_simulated_care_demand_by_age(
     """
     Plot the yearly share with care_demand == 1, broken out by
     • education (0 = low, 1 = high) → colour
-    • has_sister (0 / 1)            → dashed / solid line
+    • caregiving_type (0 / 1)       → dashed / solid line
     """
 
     # ---- 1. Setup
@@ -1294,31 +1294,31 @@ def plot_simulated_care_demand_by_age(
     if "sex" in df_sim.columns:
         df_sim = df_sim.loc[df_sim["sex"] == SEX].copy()
 
-    # ---- 2. Share by (age, education, has_sister)
+    # ---- 2. Share by (age, education, caregiving_type)
     shares = (
-        df_sim.groupby(["age", "education", "has_sister"], observed=False)[
+        df_sim.groupby(["age", "education", "caregiving_type"], observed=False)[
             "care_demand"
         ]
         .mean()
         .reindex(ages, level="age")  # keep full age grid on level 0
     )
 
-    # ---- 3. Plot four lines (2 edu × 2 sister)
+    # ---- 3. Plot four lines (2 edu × 2 caregiving_type)
     fig, ax = plt.subplots()
 
-    for has_sister in (0, 1):
-        linestyle = "--" if has_sister == 0 else "-"
-        sister_lbl = "No sister" if has_sister == 0 else "Has sister"
+    for caregiving_type in (0, 1):
+        linestyle = "--" if caregiving_type == 0 else "-"
+        type_lbl = "Other provides informal care" if caregiving_type == 0 else "Agent provides informal care"
 
         for edu in (0, 1):
             colour = JET_COLOR_MAP[edu]
             edu_lbl = "Low education" if edu == 0 else "High education"
 
             share_series = shares.xs(
-                (edu, has_sister), level=("education", "has_sister")
+                (edu, caregiving_type), level=("education", "caregiving_type")
             )
 
-            label = f"{sister_lbl}, {edu_lbl}"
+            label = f"{type_lbl}, {edu_lbl}"
             ax.plot(
                 ages,
                 share_series,

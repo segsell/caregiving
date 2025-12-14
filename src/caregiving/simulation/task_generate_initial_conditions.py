@@ -40,6 +40,8 @@ from caregiving.utils import table
 from dcegm.pre_processing.setup_model import load_and_setup_model
 from dcegm.wealth_correction import adjust_observed_wealth
 
+from caregiving.moments.task_create_soep_moments import create_df_with_caregivers
+
 
 @pytask.mark.initial_conditions
 def task_generate_start_states_for_solution(  # noqa: PLR0915
@@ -102,6 +104,15 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     # Define start data and adjust wealth
     min_period = observed_data["period"].min()
     start_period_data = observed_data[observed_data["period"].isin([min_period])].copy()
+    # moments_data = create_df_with_caregivers(
+    #     df_full=observed_data,
+    #     specs=specs,
+    #     start_year=2001,
+    #     end_year=2019,
+    #     end_age=specs["end_age_msm"],
+    # )
+    # start_period_data = moments_data[moments_data["age"] == specs["start_age"]].copy()
+
     start_period_data = start_period_data[start_period_data["wealth"].notnull()].copy()
 
     # =================================================================================
@@ -389,20 +400,20 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     exp_zero_mask = exp_agents == 0
     lagged_choice[exp_zero_mask] = 1
 
-    n_care = len(specs["caregiving_labels"])
-    lagged_choice_model = lagged_choice * n_care
-
+    # In the first period, only NO_CARE choices are available (0, 1, 2, 3)
+    # which correspond to retirement, unemployed, part-time, full-time
+    # The empirical lagged_choice values (0=retirement, 1=unemployed, 2=part-time, 3=full-time)
+    # map directly to NO_CARE choices in the model (0, 1, 2, 3)
     states = {
         "period": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
         "education": jnp.array(education_agents, dtype=jnp.uint8),
         "health": jnp.array(health_agents, dtype=jnp.uint8),
-        "lagged_choice": jnp.array(lagged_choice_model, dtype=jnp.uint8),
+        "lagged_choice": jnp.array(lagged_choice, dtype=jnp.uint8),
         # "policy_state": jnp.array(drawn_sras, dtype=jnp.uint8),
         "already_retired": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
         "experience": jnp.array(exp_agents, dtype=jnp.float64),
         "job_offer": jnp.array(job_offer_agents, dtype=jnp.uint8),
         "partner_state": jnp.array(partner_states, dtype=jnp.uint8),
-        # "has_sister": jnp.array(has_sister_agents, dtype=jnp.uint8),
         # "mother_health": jnp.array(mother_health_agents, dtype=jnp.uint8),
         "mother_dead": jnp.array(mother_dead_agents, dtype=jnp.uint8),
         "mother_adl": jnp.array(mother_adl_agents, dtype=jnp.uint8),
