@@ -188,12 +188,16 @@ FULL_TIME_CHOICES = jnp.array([3])  # full-time
 ALL = jnp.arange(12)
 
 # Care arrangement types (when care_demand == 1):
-# - NO_CARE (choices 0, 1, 2, 3): No formal care, someone else provides informal care (when caregiving_type == 0)
-#   Order: retirement, unemployed, part-time, full-time
-# - INFORMAL_CARE (choices 4, 5, 6, 7): Agent provides informal care (when caregiving_type == 1)
-#   Order: retirement, unemployed, part-time, full-time
-# - FORMAL_CARE (choices 8, 9, 10, 11): Formal care is organized (available to both types)
-#   Order: retirement, unemployed, part-time, full-time
+# - NO_CARE (choices 0, 1, 2, 3):
+#   No formal care, someone else provides informal care
+#   (when caregiving_type == 0).
+#   Order: retirement, unemployed, part-time, full-time.
+# - INFORMAL_CARE (choices 4, 5, 6, 7):
+#   Agent provides informal care (when caregiving_type == 1).
+#   Order: retirement, unemployed, part-time, full-time.
+# - FORMAL_CARE (choices 8, 9, 10, 11):
+#   Formal care is organized (available to both types).
+#   Order: retirement, unemployed, part-time, full-time.
 
 NO_CARE = jnp.array(
     [0, 1, 2, 3]
@@ -506,10 +510,6 @@ def is_intensive_informal_care(choice):
 
 # def is_nursing_home_care(choice):
 #     return jnp.any(choice == NURSING_HOME_CARE)
-
-
-def is_no_care(choice):
-    return jnp.any(choice == NO_CARE)
 
 
 # def is_pure_informal_care(lagged_choice):

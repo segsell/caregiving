@@ -1308,7 +1308,11 @@ def plot_simulated_care_demand_by_age(
 
     for caregiving_type in (0, 1):
         linestyle = "--" if caregiving_type == 0 else "-"
-        type_lbl = "Other provides informal care" if caregiving_type == 0 else "Agent provides informal care"
+        type_lbl = (
+            "Other provides informal care"
+            if caregiving_type == 0
+            else "Agent provides informal care"
+        )
 
         for edu in (0, 1):
             colour = JET_COLOR_MAP[edu]

@@ -125,7 +125,6 @@ def task_specify_model(
                 "wealth": savings_grid,
                 "experience": experience_grid,
             },
-            #
         },
         "model_params": specs,
     }

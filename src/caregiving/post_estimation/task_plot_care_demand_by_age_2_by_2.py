@@ -26,6 +26,8 @@ from caregiving.model.shared import (
     SEX,
 )
 
+CARE_MIX_TOLERANCE = 1e-10
+
 
 @pytask.mark.baseline_model
 @pytask.mark.post_estimation
@@ -242,10 +244,16 @@ def plot_simulated_care_demand_by_age_2_by_2(  # noqa: PLR0915
     • caregiving_type (0 / 1)       → columns
 
     Shows care choices upon positive care demand (care_demand == 1):
-    1. Solo informal care (care_demand == 1, caregiving_type == 1, agent chooses informal care)
-    2. Formal care (care_demand == 1, agent chooses formal care)
-    3. Joint informal care (no longer applicable with binary care_demand, set to 0)
-    4. Other family member only (care_demand == 1, caregiving_type == 0, agent chooses no care)
+    1. Solo informal care:
+       care_demand == 1, caregiving_type == 1,
+       agent chooses informal care.
+    2. Formal care:
+       care_demand == 1, agent chooses formal care.
+    3. Joint informal care:
+       no longer applicable with binary care_demand, set to 0.
+    4. Other family member only:
+       care_demand == 1, caregiving_type == 0,
+       agent chooses no care.
 
     Layout:
     - Top left: Low education, No sister
@@ -272,26 +280,33 @@ def plot_simulated_care_demand_by_age_2_by_2(  # noqa: PLR0915
     formal_care_choices = np.asarray(FORMAL_CARE)
     no_care_choices = np.asarray(NO_CARE)
 
-    # Four types of care choices upon positive care demand (care_demand == 1):
+    # Four types of care choices upon positive care demand (care_demand == 1).
     # When caregiving_type == 1 (agent can provide informal care):
-    # 1. Solo informal care: care_demand == 1 AND caregiving_type == 1 AND agent chooses informal care
+    # 1. Solo informal care:
+    #    care_demand == 1 AND caregiving_type == 1
+    #    AND agent chooses informal care.
     df_sim["solo_informal_care"] = (
         (df_sim["care_demand"] == 1)
         & (df_sim["caregiving_type"] == 1)
         & (df_sim["choice"].isin(informal_care_choices))
     ).astype(int)
 
-    # 2. Formal care: care_demand == 1 AND agent chooses formal care (regardless of caregiving_type)
+    # 2. Formal care:
+    #    care_demand == 1 AND agent chooses formal care
+    #    (regardless of caregiving_type).
     df_sim["formal_care"] = (
         (df_sim["care_demand"] == 1) & (df_sim["choice"].isin(formal_care_choices))
     ).astype(int)
 
     # When caregiving_type == 0 (someone else provides informal care):
-    # 3. Joint informal care: This category no longer exists with binary care_demand
-    #    (keeping for backward compatibility, but should be 0)
+    # 3. Joint informal care:
+    #    This category no longer exists with binary care_demand
+    #    (keeping for backward compatibility, but should be 0).
     df_sim["joint_informal_care"] = np.zeros(len(df_sim), dtype=int)
 
-    # 4. Other family member only: care_demand == 1 AND caregiving_type == 0 AND agent chooses no care
+    # 4. Other family member only:
+    #    care_demand == 1 AND caregiving_type == 0
+    #    AND agent chooses no care.
     df_sim["other_family_only"] = (
         (df_sim["care_demand"] == 1)
         & (df_sim["caregiving_type"] == 0)
@@ -512,26 +527,32 @@ def plot_simulated_care_demand_by_age_pooled(  # noqa: PLR0915
     formal_care_choices = np.asarray(FORMAL_CARE)
     no_care_choices = np.asarray(NO_CARE)
 
-    # Four types of care choices upon positive care demand (care_demand == 1):
+    # Four types of care choices upon positive care demand (care_demand == 1).
     # When caregiving_type == 1 (agent can provide informal care):
-    # 1. Solo informal care: care_demand == 1 AND caregiving_type == 1 AND agent chooses informal care
+    # 1. Solo informal care:
+    #    care_demand == 1 AND caregiving_type == 1
+    #    AND agent chooses informal care.
     df_sim["solo_informal_care"] = (
         (df_sim["care_demand"] == 1)
         & (df_sim["caregiving_type"] == 1)
         & (df_sim["choice"].isin(informal_care_choices))
     ).astype(int)
 
-    # 2. Formal care: care_demand == 1 AND agent chooses formal care (regardless of caregiving_type)
+    # 2. Formal care:
+    #    care_demand == 1 AND agent chooses formal care
+    #    (regardless of caregiving_type).
     df_sim["formal_care"] = (
         (df_sim["care_demand"] == 1) & (df_sim["choice"].isin(formal_care_choices))
     ).astype(int)
 
     # When caregiving_type == 0 (someone else provides informal care):
-    # 3. Joint informal care: This category no longer exists with binary care_demand
-    #    (keeping for backward compatibility, but should be 0)
+    # 3. Joint informal care:
+    #    This category no longer exists with binary care_demand
+    #    (keeping for backward compatibility, but should be 0).
     df_sim["joint_informal_care"] = np.zeros(len(df_sim), dtype=int)
 
-    # 4. Other family care: care_demand == 1 AND caregiving_type == 0 AND agent chooses no care
+    # 4. Other family care:
+    # care_demand == 1 AND caregiving_type == 0 AND agent chooses no care
     df_sim["other_family_only"] = (
         (df_sim["care_demand"] == 1)
         & (df_sim["caregiving_type"] == 0)
@@ -1125,10 +1146,16 @@ def test_care_mix_sums_to_care_demand(df_sim, specs, age_min=None, age_max=None)
     at each given age.
 
     The four care modes are:
-    1. Solo informal care (care_demand == 1, caregiving_type == 1, agent chooses informal care)
-    2. Formal care (care_demand == 1, agent chooses formal care)
-    3. Joint informal care (no longer applicable with binary care_demand, set to 0)
-    4. Other family member only (care_demand == 1, caregiving_type == 0, agent chooses no care)
+    1. Solo informal care:
+       care_demand == 1, caregiving_type == 1,
+       agent chooses informal care.
+    2. Formal care:
+       care_demand == 1, agent chooses formal care.
+    3. Joint informal care:
+       no longer applicable with binary care_demand, set to 0.
+    4. Other family member only:
+       care_demand == 1, caregiving_type == 0,
+       agent chooses no care.
 
     This function asserts that the absolute counts of the four care modes sum to
     the number of agents with care demand.
@@ -1136,7 +1163,8 @@ def test_care_mix_sums_to_care_demand(df_sim, specs, age_min=None, age_max=None)
     Parameters
     ----------
     df_sim : pd.DataFrame
-        Simulated data with columns: age, education, caregiving_type, care_demand, choice
+        Simulated data with columns:
+        age, education, caregiving_type, care_demand, choice.
     specs : dict
         Model specifications
     age_min : int, optional
@@ -1200,9 +1228,18 @@ def test_care_mix_sums_to_care_demand(df_sim, specs, age_min=None, age_max=None)
     ) > 0
     uncategorized = df_test[care_demand_1_mask & ~categorized_mask]
     if len(uncategorized) > 0:
-        print(f"\nWARNING: {len(uncategorized)} agents with care_demand == 1 are not categorized!")
-        print("Sample uncategorized choices:", uncategorized["choice"].value_counts().head(10))
-        print("Sample uncategorized caregiving_type:", uncategorized["caregiving_type"].value_counts())
+        print(
+            f"\nWARNING: {len(uncategorized)} agents with care_demand == 1 "
+            f"are not categorized!"
+        )
+        print(
+            "Sample uncategorized choices:",
+            uncategorized["choice"].value_counts().head(10),
+        )
+        print(
+            "Sample uncategorized caregiving_type:",
+            uncategorized["caregiving_type"].value_counts(),
+        )
 
     # Calculate absolute counts by age, education, caregiving_type
     group_cols = ["age", "education", "caregiving_type"]
@@ -1237,12 +1274,12 @@ def test_care_mix_sums_to_care_demand(df_sim, specs, age_min=None, age_max=None)
     max_relative_diff = counts["relative_diff"].max()
 
     # Debug: Print problematic rows if test fails
-    if max_absolute_diff >= 1e-10:
-        problematic = counts[counts["absolute_diff"] >= 1e-10].copy()
+    if max_absolute_diff >= CARE_MIX_TOLERANCE:
+        problematic = counts[counts["absolute_diff"] >= CARE_MIX_TOLERANCE].copy()
         print("\nProblematic groups where care mix doesn't sum to care demand:")
         print(problematic.head(20))
         print(f"\nTotal problematic groups: {len(problematic)}")
-        print(f"\nSample of problematic data:")
+        print("\nSample of problematic data:")
         # Show a sample of the raw data for one problematic group
         if len(problematic) > 0:
             sample_idx = problematic.index[0]
@@ -1251,18 +1288,26 @@ def test_care_mix_sums_to_care_demand(df_sim, specs, age_min=None, age_max=None)
                 & (df_test["education"] == sample_idx[1])
                 & (df_test["caregiving_type"] == sample_idx[2])
             ]
-            print(f"\nSample group: age={sample_idx[0]}, education={sample_idx[1]}, caregiving_type={sample_idx[2]}")
+            print(
+                f"\nSample group: age={sample_idx[0]}, "
+                f"education={sample_idx[1]}, caregiving_type={sample_idx[2]}"
+            )
             print(f"care_demand == 1 count: {(sample_data['care_demand'] == 1).sum()}")
             print(f"solo_informal_care sum: {sample_data['solo_informal_care'].sum()}")
             print(f"formal_care sum: {sample_data['formal_care'].sum()}")
             print(f"other_family_only sum: {sample_data['other_family_only'].sum()}")
-            print(f"care_mix_sum: {sample_data['solo_informal_care'].sum() + sample_data['formal_care'].sum() + sample_data['other_family_only'].sum()}")
-            print(f"\nChoices when care_demand == 1:")
+            care_mix_sum_sample = (
+                sample_data["solo_informal_care"].sum()
+                + sample_data["formal_care"].sum()
+                + sample_data["other_family_only"].sum()
+            )
+            print(f"care_mix_sum: {care_mix_sum_sample}")
+            print("\nChoices when care_demand == 1:")
             care_demand_1 = sample_data[sample_data["care_demand"] == 1]
             print(care_demand_1["choice"].value_counts().sort_index())
 
     # Assert that the test passed
-    tolerance = 1e-10
+    tolerance = CARE_MIX_TOLERANCE
     assert max_absolute_diff < tolerance, (
         f"Care mix does not sum to care demand. "
         f"Max absolute difference: {max_absolute_diff}, "

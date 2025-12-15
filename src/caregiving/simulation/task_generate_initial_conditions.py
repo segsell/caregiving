@@ -36,11 +36,10 @@ from caregiving.model.utility.bequest_utility import (
 )
 from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
+from caregiving.moments.task_create_soep_moments import create_df_with_caregivers
 from caregiving.utils import table
 from dcegm.pre_processing.setup_model import load_and_setup_model
 from dcegm.wealth_correction import adjust_observed_wealth
-
-from caregiving.moments.task_create_soep_moments import create_df_with_caregivers
 
 
 @pytask.mark.initial_conditions
@@ -400,10 +399,11 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     exp_zero_mask = exp_agents == 0
     lagged_choice[exp_zero_mask] = 1
 
-    # In the first period, only NO_CARE choices are available (0, 1, 2, 3)
-    # which correspond to retirement, unemployed, part-time, full-time
-    # The empirical lagged_choice values (0=retirement, 1=unemployed, 2=part-time, 3=full-time)
-    # map directly to NO_CARE choices in the model (0, 1, 2, 3)
+    # In the first period, only NO_CARE choices are available (0, 1, 2, 3),
+    # which correspond to retirement, unemployed, part-time, full-time.
+    # The empirical lagged_choice values
+    # (0=retirement, 1=unemployed, 2=part-time, 3=full-time)
+    # map directly to NO_CARE choices in the model (0, 1, 2, 3).
     states = {
         "period": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
         "education": jnp.array(education_agents, dtype=jnp.uint8),

@@ -18,10 +18,10 @@ from caregiving.model.shared import (  # is_nursing_home_care,
     is_child_age_4_to_6,
     is_child_age_7_to_9,
     is_dead,
+    is_formal_care,
     is_full_time,
     is_good_health,
     is_informal_care,
-    is_formal_care,
     is_intensive_informal_care,
     is_light_informal_care,
     is_no_care,
@@ -50,10 +50,12 @@ def disutility_work(
     good_health = is_good_health(health)
 
     # Check care arrangement type based on choice
-    # NO_CARE (choices 0, 1, 2, 3): No formal care, someone else provides informal care
-    # INFORMAL_CARE (choices 4, 5, 6, 7): Agent provides informal care
-    # FORMAL_CARE (choices 8, 9, 10, 11): Formal care is organized
-    no_care_choice = is_no_care(choice)  # NO_CARE choices
+    # NO_CARE (choices 0, 1, 2, 3):
+    #   No formal care, someone else provides informal care.
+    # INFORMAL_CARE (choices 4, 5, 6, 7):
+    #   Agent provides informal care.
+    # FORMAL_CARE (choices 8, 9, 10, 11):
+    #   Formal care is organized.
     informal_care = is_informal_care(choice)  # Agent provides informal care
     formal_care = is_formal_care(choice)  # Formal care
 
@@ -207,11 +209,14 @@ def disutility_work(
         + params["util_formal_care_bad"] * bad_health
     )
 
-    # Utility from care arrangements
+    # Utility from care arrangements.
     # When care_demand == 1:
-    #   - FORMAL_CARE (choices 8, 9, 10, 11): Formal care is organized --> util_formal_care
-    #   - INFORMAL_CARE (choices 4, 5, 6, 7): Agent provides informal care --> util_informal_care
-    #   - NO_CARE (choices 0, 1, 2, 3): Someone else provides informal care --> reference category
+    #   - FORMAL_CARE (choices 8, 9, 10, 11):
+    #     Formal care is organized --> util_formal_care.
+    #   - INFORMAL_CARE (choices 4, 5, 6, 7):
+    #     Agent provides informal care --> util_informal_care.
+    #   - NO_CARE (choices 0, 1, 2, 3):
+    #     Someone else provides informal care --> reference category.
     utility_from_care = (
         informal_care * util_informal_care + formal_care * util_formal_care
     )
@@ -219,9 +224,12 @@ def disutility_work(
     # =================================================================================
     # Compute total disutility
     # =================================================================================
-    # - NO_CARE (choices 0, 1, 2, 3): Someone else provides care → disutility_no_caregiving
-    # - INFORMAL_CARE (choices 4, 5, 6, 7): Agent provides care → disutility_informal_care
-    # - FORMAL_CARE (choices 8, 9, 10, 11): Formal care → disutility_no_caregiving
+    # - NO_CARE (choices 0, 1, 2, 3):
+    #   Someone else provides care → disutility_no_caregiving.
+    # - INFORMAL_CARE (choices 4, 5, 6, 7):
+    #   Agent provides care → disutility_informal_care.
+    # - FORMAL_CARE (choices 8, 9, 10, 11):
+    #   Formal care → disutility_no_caregiving.
 
     disutility = (
         -disutility_work_and_no_informal_care * (1 - informal_care)

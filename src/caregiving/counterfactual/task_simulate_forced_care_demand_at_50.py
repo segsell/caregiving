@@ -9,7 +9,6 @@ import jax.numpy as jnp
 import pandas as pd
 import pytask
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
 from pytask import Product
 
 from caregiving.config import BLD
@@ -23,6 +22,7 @@ from caregiving.simulation.simulate import setup_model_for_simulation_baseline
 from caregiving.simulation.simulate_forced_care_demand_at_50 import (
     simulate_scenario_forced_care_demand_at_50,
 )
+from dcegm.pre_processing.setup_model import load_and_setup_model
 
 jax.config.update("jax_enable_x64", True)
 
