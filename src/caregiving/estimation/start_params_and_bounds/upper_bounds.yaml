@@ -201,6 +201,10 @@ bequest_scale: 50
 bequest_scale_low: 50
 bequest_scale_high: 50
 
+# Share unobserved type 1
+share_unobserved_type_low_educ: 0.999999999999
+share_unobserved_type_high_educ: 0.999999999999
+
 # Taste shock scale
 lambda: 2
 lambda_low: 2
