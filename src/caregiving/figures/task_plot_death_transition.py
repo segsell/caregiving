@@ -51,10 +51,6 @@ def task_plot_death_transition(  # noqa: PLR0915
 
     # Convert to numpy for fast aggregation
     mother_dead_initial = np.asarray(states["mother_dead"], dtype=np.uint8)
-    has_sister = np.asarray(states["has_sister"], dtype=np.uint8)
-    education = np.asarray(states["education"], dtype=np.uint8)
-
-    n_edu = specs["n_education_types"]
 
     # Initialize share arrays
     share_alive = np.zeros(n_periods)
@@ -64,19 +60,16 @@ def task_plot_death_transition(  # noqa: PLR0915
     share_alive[0] = np.mean(mother_dead_initial == 0)
     share_dead[0] = 1 - share_alive[0]
 
-    # Track alive and dead counts by group (hs, edu)
+    # Track alive and dead counts by education group only
     alive_by_group = {}
     dead_by_group = {}
-    for hs in (0, 1):
-        for edu in range(n_edu):
-            mask_alive = (
-                (has_sister == hs) & (education == edu) & (mother_dead_initial == 0)
-            )
-            mask_dead = (
-                (has_sister == hs) & (education == edu) & (mother_dead_initial == 1)
-            )
-            alive_by_group[(hs, edu)] = float(mask_alive.sum())
-            dead_by_group[(hs, edu)] = float(mask_dead.sum())
+    n_edu = specs["n_education_types"]
+    education = np.asarray(states["education"], dtype=np.uint8)
+    for edu in range(n_edu):
+        mask_alive = (education == edu) & (mother_dead_initial == 0)
+        mask_dead = (education == edu) & (mother_dead_initial == 1)
+        alive_by_group[edu] = float(mask_alive.sum())
+        dead_by_group[edu] = float(mask_dead.sum())
 
     n_agents = len(mother_dead_initial)
 
@@ -84,25 +77,24 @@ def task_plot_death_transition(  # noqa: PLR0915
     for period in range(1, n_periods):
         alive_next = {}
         dead_next = {}
-        for hs in (0, 1):
-            for edu in range(n_edu):
-                alive_curr = alive_by_group[(hs, edu)]
-                dead_curr = dead_by_group[(hs, edu)]
+        for edu in range(n_edu):
+            alive_curr = alive_by_group[edu]
+            dead_curr = dead_by_group[edu]
 
-                # Dead mothers stay dead
-                dead_next[(hs, edu)] = dead_curr
+            # Dead mothers stay dead
+            dead_next[edu] = dead_curr
 
-                # Calculate transitions for alive mothers
-                if alive_curr == 0:
-                    alive_next[(hs, edu)] = 0.0
-                else:
-                    # death_transition returns [alive_prob, dead_prob]
-                    # mother_dead=0 for currently alive mothers
-                    prob_vector = death_transition(period - 1, 0, hs, edu, specs)
-                    alive_prob = float(prob_vector[0])  # Extract alive probability
-                    dead_prob = float(prob_vector[1])  # Extract death probability
-                    alive_next[(hs, edu)] = alive_curr * alive_prob
-                    dead_next[(hs, edu)] = dead_curr + alive_curr * dead_prob
+            # Calculate transitions for alive mothers
+            if alive_curr == 0:
+                alive_next[edu] = 0.0
+            else:
+                # death_transition returns [alive_prob, dead_prob]
+                # mother_dead=0 for currently alive mothers
+                prob_vector = death_transition(period - 1, 0, edu, specs)
+                alive_prob = float(prob_vector[0])  # Extract alive probability
+                dead_prob = float(prob_vector[1])  # Extract death probability
+                alive_next[edu] = alive_curr * alive_prob
+                dead_next[edu] = dead_curr + alive_curr * dead_prob
 
         alive_by_group = alive_next
         dead_by_group = dead_next
