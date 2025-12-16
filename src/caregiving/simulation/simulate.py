@@ -211,9 +211,7 @@ def simulate_scenario(
 
     df["mother_age"] = (
         df["age"].to_numpy()
-        + model_params["mother_age_diff"][
-            df["has_sister"].to_numpy(), df["education"].to_numpy()
-        ]
+        + model_params["mother_age_diff"][df["education"].to_numpy()]
     )
 
     # Drop all agents (entirely) who work after the maximum retirement age
@@ -314,7 +312,6 @@ def build_simulation_df_with_income_components(sim_dict, options, params):
     savings_array = np.asarray(df["savings"])
     has_partner_int_array = np.asarray((df["partner_state"] > 0).astype(int))
     periods_array = np.asarray(df.index.get_level_values("period"))
-    has_sister_array = np.asarray(df["has_sister"])
     care_demand_array = np.asarray(df["care_demand"])
 
     # ===============================================================================
@@ -401,10 +398,9 @@ def build_simulation_df_with_income_components(sim_dict, options, params):
 
     # Care benefits and costs
     vectorized_calc_care_benefits_and_costs = jax.vmap(
-        lambda lc, edu, has_sister, care_demand: calc_care_benefits_and_costs(
+        lambda lc, edu, care_demand: calc_care_benefits_and_costs(
             lagged_choice=lc,
             education=edu,
-            has_sister=has_sister,
             care_demand=care_demand,
             options=model_params,
         )
@@ -412,7 +408,6 @@ def build_simulation_df_with_income_components(sim_dict, options, params):
     care_benefits_costs_array = vectorized_calc_care_benefits_and_costs(
         lagged_choice_array,
         education_array,
-        has_sister_array,
         care_demand_array,
     )
     df["care_benefits_and_costs"] = care_benefits_costs_array

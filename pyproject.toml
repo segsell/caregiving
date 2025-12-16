@@ -16,6 +16,7 @@ soep_moments = "SOEP moments tasks"
 cip = "CIP tasks"
 dip = "DIP tasks"
 standard_errors = "Standard errors estimation tasks"
+pre_estimation = "Pre-estimation analysis tasks"
 # Model specification
 baseline_model = "Baseline model tasks"
 job_retention = "Job retention counterfactual tasks"

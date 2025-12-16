@@ -38,6 +38,7 @@ from caregiving.model.utility.bequest_utility import (
 )
 from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
+from caregiving.moments.task_create_soep_moments import create_df_with_caregivers
 from caregiving.utils import table
 
 
@@ -102,6 +103,15 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     # Define start data and adjust wealth
     min_period = observed_data["period"].min()
     start_period_data = observed_data[observed_data["period"].isin([min_period])].copy()
+    # moments_data = create_df_with_caregivers(
+    #     df_full=observed_data,
+    #     specs=specs,
+    #     start_year=2001,
+    #     end_year=2019,
+    #     end_age=specs["end_age_msm"],
+    # )
+    # start_period_data = moments_data[moments_data["age"] == specs["start_age"]].copy()
+
     start_period_data = start_period_data[start_period_data["wealth"].notnull()].copy()
 
     # =================================================================================
@@ -141,6 +151,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
             "mother_dead",
             "care_demand",
             "care_supply",
+            "caregiving_type",
         )
     }
 
@@ -255,6 +266,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     mother_adl_agents = np.zeros(
         n_agents, dtype=np.uint8
     )  # Initialize to 0 (dead = no ADL)
+    caregiving_type_agents = np.empty(n_agents, dtype=np.uint8)
 
     # for sex_var in range(specs["n_sexes"]):
     for edu in range(specs["n_education_types"]):
@@ -279,11 +291,15 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         has_sister_agents[type_mask] = has_sister_edu
 
         # mother health
-        mother_age_diff = specs["mother_age_diff"][has_sister_edu, edu]
-        mother_age = specs["start_age"] + mother_age_diff.round().astype(int)
+        mother_age_diff = specs["mother_age_diff"][edu]
+        mother_age_scalar = int(
+            np.asarray(specs["start_age"] + mother_age_diff.round().astype(int))
+        )
+        # Create array of ages (one per agent in this education group)
+        mother_ages_array = np.full(n_agents_edu, mother_age_scalar, dtype=int)
 
         mother_health_agents[type_mask] = draw_mother_health(
-            mother_age,
+            mother_ages_array,
             survival_by_age,
             health_prob_by_age,
         )
@@ -296,7 +312,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         # mother_adl: draw from empirical ADL distribution by age in parent_child data
         # If dead, ADL = 0 (No ADL). If alive, draw from empirical distribution
         mother_adl_agents[type_mask] = draw_mother_adl(
-            mother_age,
+            mother_ages_array,
             mother_dead_agents[type_mask],
             parent_child_data,
             specs,
@@ -372,6 +388,10 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         )
         health_agents[type_mask] = health_states_edu
 
+        # Generate caregiving_type: 50% type 0, 50% type 1 (regardless of education)
+        caregiving_type_edu = np.random.choice([0, 1], size=n_agents_edu, p=[0.5, 0.5])
+        caregiving_type_agents[type_mask] = caregiving_type_edu
+
     # Transform it to be between 0 and 1
     exp_agents /= specs["max_exp_diffs_per_period"][0]
 
@@ -379,24 +399,26 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     exp_zero_mask = exp_agents == 0
     lagged_choice[exp_zero_mask] = 1
 
-    n_care = len(specs["caregiving_labels"])
-    lagged_choice_model = lagged_choice * n_care
-
+    # In the first period, only NO_CARE choices are available (0, 1, 2, 3),
+    # which correspond to retirement, unemployed, part-time, full-time.
+    # The empirical lagged_choice values
+    # (0=retirement, 1=unemployed, 2=part-time, 3=full-time)
+    # map directly to NO_CARE choices in the model (0, 1, 2, 3).
     states = {
         "period": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
         "education": jnp.array(education_agents, dtype=jnp.uint8),
         "health": jnp.array(health_agents, dtype=jnp.uint8),
-        "lagged_choice": jnp.array(lagged_choice_model, dtype=jnp.uint8),
+        "lagged_choice": jnp.array(lagged_choice, dtype=jnp.uint8),
         # "policy_state": jnp.array(drawn_sras, dtype=jnp.uint8),
         "already_retired": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
         "experience": jnp.array(exp_agents, dtype=jnp.float64),
         "job_offer": jnp.array(job_offer_agents, dtype=jnp.uint8),
         "partner_state": jnp.array(partner_states, dtype=jnp.uint8),
-        "has_sister": jnp.array(has_sister_agents, dtype=jnp.uint8),
-        "mother_health": jnp.array(mother_health_agents, dtype=jnp.uint8),
+        # "mother_health": jnp.array(mother_health_agents, dtype=jnp.uint8),
         "mother_dead": jnp.array(mother_dead_agents, dtype=jnp.uint8),
         "mother_adl": jnp.array(mother_adl_agents, dtype=jnp.uint8),
         "care_demand": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
+        "caregiving_type": jnp.array(caregiving_type_agents, dtype=jnp.uint8),
     }
 
     with path_to_save_discrete_states.open("wb") as f:
@@ -479,8 +501,15 @@ def draw_mother_adl(
     # Get unique ages for lookup (convert index to numpy array of ints)
     unique_ages = age_adl_probs.index.values.astype(int)
 
+    # Convert mother_age to numpy array if it's a JAX array
+    mother_age_np = np.asarray(mother_age, dtype=int)
+    # Ensure it's 1D
+    if mother_age_np.ndim == 0:
+        mother_age_np = np.array([mother_age_np.item()])
+    mother_age_np = mother_age_np.flatten()
+
     # For each alive mother, get ADL distribution at her age
-    alive_ages = mother_age[alive_mask]
+    alive_ages = mother_age_np[alive_mask]
     mother_adl_alive = np.empty(len(alive_ages), dtype=np.uint8)
 
     # Convert unique_ages to a set for faster lookup
@@ -537,6 +566,10 @@ def draw_mother_health(
     rng = np.random.default_rng()
 
     ages = np.asarray(mother_age, dtype=int)
+    # Ensure ages is 1D array (handle scalar/0-d array case)
+    if ages.ndim == 0:
+        ages = np.array([ages.item()])
+    ages = ages.flatten()  # Ensure 1D
 
     prob_alive = pd.Series(ages).map(survival_by_age).to_numpy()
     health = health_prob_by_age.reindex(ages).to_numpy()  # shape (n, 3)

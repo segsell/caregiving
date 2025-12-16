@@ -18,11 +18,12 @@ survival_min_age: 16
 
 start_age_msm: 40
 end_age_children_in_household: 60
+start_age_caregiving: 40
 end_age_caregiving: 80
 
 choice_labels: ["Retired", "Unemployed", "Part-time", "Full-time"]
 # caregiving_labels: ["No Care", "Light Informal Care", "Intensive Informal Care", "Nursing Home Care"]
-caregiving_labels: ["No Care", "Informal Care"]
+caregiving_labels: ["No Care", "Informal Care", "Formal Care"]
 education_labels: ["Low Education", "High Education"]
 health_labels: ["Bad Health", "Good Health", "Death"]
 health_labels_three: ["Bad Health", "Medium Health", "Good Health", "Death"]

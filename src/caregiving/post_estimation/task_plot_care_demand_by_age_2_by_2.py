@@ -15,9 +15,8 @@ from caregiving.estimation.prepare_estimation import (
     load_and_setup_full_model_for_solution,
 )
 from caregiving.model.shared import (
-    CARE_DEMAND_AND_NO_OTHER_SUPPLY,
-    CARE_DEMAND_AND_OTHER_SUPPLY,
     DEAD,
+    FORMAL_CARE,
     INFORMAL_CARE,
     NO_CARE,
     PARENT_BAD_HEALTH,
@@ -26,6 +25,8 @@ from caregiving.model.shared import (
     PARENT_MEDIUM_HEALTH,
     SEX,
 )
+
+CARE_MIX_TOLERANCE = 1e-10
 
 
 @pytask.mark.baseline_model
@@ -46,7 +47,7 @@ def task_plot_care_demand_by_age_2_by_2(
     / "post_estimation"
     / "care_demand_by_age_2_by_2.png",
 ) -> None:
-    """Plot care demand by age in a 2x2 grid (education × has_sister)."""
+    """Plot care demand by age in a 2x2 grid (education × caregiving_type)."""
 
     options = pickle.load(path_to_options.open("rb"))
     model_full = load_and_setup_full_model_for_solution(
@@ -240,13 +241,19 @@ def plot_simulated_care_demand_by_age_2_by_2(  # noqa: PLR0915
     Plot the yearly share with care_demand > 0 in a 2x2 grid,
     with one subplot for each combination of:
     • education (0 = low, 1 = high) → rows
-    • has_sister (0 / 1)            → columns
+    • caregiving_type (0 / 1)       → columns
 
-    Shows all four types of care choices upon positive care demand:
-    1. Solo informal care (care_demand == 2, agent chooses informal care)
-    2. Formal care (care_demand == 2, agent chooses no care)
-    3. Joint informal care (care_demand == 1, agent chooses informal care)
-    4. Other family member only (care_demand == 1, agent chooses no informal care)
+    Shows care choices upon positive care demand (care_demand == 1):
+    1. Solo informal care:
+       care_demand == 1, caregiving_type == 1,
+       agent chooses informal care.
+    2. Formal care:
+       care_demand == 1, agent chooses formal care.
+    3. Joint informal care:
+       no longer applicable with binary care_demand, set to 0.
+    4. Other family member only:
+       care_demand == 1, caregiving_type == 0,
+       agent chooses no care.
 
     Layout:
     - Top left: Low education, No sister
@@ -270,42 +277,51 @@ def plot_simulated_care_demand_by_age_2_by_2(  # noqa: PLR0915
     # ---- 2. Calculate care type indicators for all four scenarios
     # Convert JAX arrays to numpy arrays for pandas compatibility
     informal_care_choices = np.asarray(INFORMAL_CARE)
+    formal_care_choices = np.asarray(FORMAL_CARE)
     no_care_choices = np.asarray(NO_CARE)
 
-    # Four types of care choices upon positive care demand:
-    # 1. Solo informal care: care_demand == 2 AND agent chooses informal care
+    # Four types of care choices upon positive care demand (care_demand == 1).
+    # When caregiving_type == 1 (agent can provide informal care):
+    # 1. Solo informal care:
+    #    care_demand == 1 AND caregiving_type == 1
+    #    AND agent chooses informal care.
     df_sim["solo_informal_care"] = (
-        (df_sim["care_demand"] == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
+        (df_sim["care_demand"] == 1)
+        & (df_sim["caregiving_type"] == 1)
         & (df_sim["choice"].isin(informal_care_choices))
     ).astype(int)
 
-    # 2. Formal care: care_demand == 2 AND agent chooses no care
+    # 2. Formal care:
+    #    care_demand == 1 AND agent chooses formal care
+    #    (regardless of caregiving_type).
     df_sim["formal_care"] = (
-        (df_sim["care_demand"] == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
-        & (df_sim["choice"].isin(no_care_choices))
+        (df_sim["care_demand"] == 1) & (df_sim["choice"].isin(formal_care_choices))
     ).astype(int)
 
-    # 3. Joint informal care: care_demand == 1 AND agent chooses informal care
-    df_sim["joint_informal_care"] = (
-        (df_sim["care_demand"] == CARE_DEMAND_AND_OTHER_SUPPLY)
-        & (df_sim["choice"].isin(informal_care_choices))
-    ).astype(int)
+    # When caregiving_type == 0 (someone else provides informal care):
+    # 3. Joint informal care:
+    #    This category no longer exists with binary care_demand
+    #    (keeping for backward compatibility, but should be 0).
+    df_sim["joint_informal_care"] = np.zeros(len(df_sim), dtype=int)
 
-    # 4. Other family member only: care_demand == 1 AND agent chooses no informal care
+    # 4. Other family member only:
+    #    care_demand == 1 AND caregiving_type == 0
+    #    AND agent chooses no care.
     df_sim["other_family_only"] = (
-        (df_sim["care_demand"] == CARE_DEMAND_AND_OTHER_SUPPLY)
+        (df_sim["care_demand"] == 1)
+        & (df_sim["caregiving_type"] == 0)
         & (df_sim["choice"].isin(no_care_choices))
     ).astype(int)
 
     # Calculate shares for care demand (any care demand)
     care_demand_shares = (
-        df_sim.groupby(["age", "education", "has_sister"], observed=False)[
+        df_sim.groupby(["age", "education", "caregiving_type"], observed=False)[
             "care_demand"
         ]
         .apply(lambda x: (x > 0).mean())
         .reindex(
             pd.MultiIndex.from_product(
-                [ages, [0, 1], [0, 1]], names=["age", "education", "has_sister"]
+                [ages, [0, 1], [0, 1]], names=["age", "education", "caregiving_type"]
             ),
             fill_value=0,
         )
@@ -320,13 +336,14 @@ def plot_simulated_care_demand_by_age_2_by_2(  # noqa: PLR0915
         "other_family_only",
     ):
         shares = (
-            df_sim.groupby(["age", "education", "has_sister"], observed=False)[
+            df_sim.groupby(["age", "education", "caregiving_type"], observed=False)[
                 care_type
             ]
             .mean()
             .reindex(
                 pd.MultiIndex.from_product(
-                    [ages, [0, 1], [0, 1]], names=["age", "education", "has_sister"]
+                    [ages, [0, 1], [0, 1]],
+                    names=["age", "education", "caregiving_type"],
                 ),
                 fill_value=0,
             )
@@ -337,21 +354,24 @@ def plot_simulated_care_demand_by_age_2_by_2(  # noqa: PLR0915
     fig, axes = plt.subplots(2, 2, figsize=(12, 10))
     axes = axes.flatten()
 
-    # Define subplot positions: (education, has_sister) -> index
-    # Top left (0): Low edu (0), No sister (0)
-    # Top right (1): Low edu (0), Has sister (1)
-    # Bottom left (2): High edu (1), No sister (0)
-    # Bottom right (3): High edu (1), Has sister (1)
+    # Define subplot positions: (education, caregiving_type) -> index
+    # Top left (0): Low edu (0), Other provides informal care (0)
+    # Top right (1): Low edu (0), Agent provides informal care (1)
+    # Bottom left (2): High edu (1), Other provides informal care (0)
+    # Bottom right (3): High edu (1), Agent provides informal care (1)
     subplot_map = {
-        (0, 0): 0,  # Low edu, No sister
-        (0, 1): 1,  # Low edu, Has sister
-        (1, 0): 2,  # High edu, No sister
-        (1, 1): 3,  # High edu, Has sister
+        (0, 0): 0,  # Low edu, Other provides informal care
+        (0, 1): 1,  # Low edu, Agent provides informal care
+        (1, 0): 2,  # High edu, Other provides informal care
+        (1, 1): 3,  # High edu, Agent provides informal care
     }
 
     # Labels for titles
     edu_labels = {0: "Low education", 1: "High education"}
-    sister_labels = {0: "No sister", 1: "Has sister"}
+    caregiving_type_labels = {
+        0: "Other provides informal care",
+        1: "Agent provides informal care",
+    }
 
     # Colors for care mix (stacked from bottom to top)
     care_colors = {
@@ -363,27 +383,27 @@ def plot_simulated_care_demand_by_age_2_by_2(  # noqa: PLR0915
 
     # ---- 4. Plot each combination
     for edu in (0, 1):
-        for has_sister in (0, 1):
-            idx = subplot_map[(edu, has_sister)]
+        for caregiving_type in (0, 1):
+            idx = subplot_map[(edu, caregiving_type)]
             ax = axes[idx]
 
             # Get care demand share
             care_demand_series = care_demand_shares.xs(
-                (edu, has_sister), level=("education", "has_sister")
+                (edu, caregiving_type), level=("education", "caregiving_type")
             )
 
             # Get care mix shares
             solo_informal_series = care_mix_shares["solo_informal_care"].xs(
-                (edu, has_sister), level=("education", "has_sister")
+                (edu, caregiving_type), level=("education", "caregiving_type")
             )
             formal_series = care_mix_shares["formal_care"].xs(
-                (edu, has_sister), level=("education", "has_sister")
+                (edu, caregiving_type), level=("education", "caregiving_type")
             )
             joint_informal_series = care_mix_shares["joint_informal_care"].xs(
-                (edu, has_sister), level=("education", "has_sister")
+                (edu, caregiving_type), level=("education", "caregiving_type")
             )
             other_family_series = care_mix_shares["other_family_only"].xs(
-                (edu, has_sister), level=("education", "has_sister")
+                (edu, caregiving_type), level=("education", "caregiving_type")
             )
 
             # Plot stacked area for care mix (below the curve)
@@ -441,7 +461,9 @@ def plot_simulated_care_demand_by_age_2_by_2(  # noqa: PLR0915
             ax.set_ylabel("Share")
             ax.set_xlim(age_min - pad, 75 + pad)  # Cut x-axis at 75
             ax.set_ylim(0, None)  # Let y-axis adjust automatically
-            ax.set_title(f"{edu_labels[edu]}, {sister_labels[has_sister]}")
+            ax.set_title(
+                f"{edu_labels[edu]}, {caregiving_type_labels[caregiving_type]}"
+            )
 
             # Get handles and labels, then reorder to show from bottom to top
             # Legend order: Care demand at top, then care types from top to bottom
@@ -502,30 +524,38 @@ def plot_simulated_care_demand_by_age_pooled(  # noqa: PLR0915
     # ---- 2. Calculate care type indicators
     # Convert JAX arrays to numpy arrays for pandas compatibility
     informal_care_choices = np.asarray(INFORMAL_CARE)
+    formal_care_choices = np.asarray(FORMAL_CARE)
     no_care_choices = np.asarray(NO_CARE)
 
-    # Four types of care choices upon positive care demand:
-    # 1. Solo informal care: care_demand == 2 AND agent chooses informal care
+    # Four types of care choices upon positive care demand (care_demand == 1).
+    # When caregiving_type == 1 (agent can provide informal care):
+    # 1. Solo informal care:
+    #    care_demand == 1 AND caregiving_type == 1
+    #    AND agent chooses informal care.
     df_sim["solo_informal_care"] = (
-        (df_sim["care_demand"] == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
+        (df_sim["care_demand"] == 1)
+        & (df_sim["caregiving_type"] == 1)
         & (df_sim["choice"].isin(informal_care_choices))
     ).astype(int)
 
-    # 2. Formal care: care_demand == 2 AND agent chooses no care
+    # 2. Formal care:
+    #    care_demand == 1 AND agent chooses formal care
+    #    (regardless of caregiving_type).
     df_sim["formal_care"] = (
-        (df_sim["care_demand"] == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
-        & (df_sim["choice"].isin(no_care_choices))
+        (df_sim["care_demand"] == 1) & (df_sim["choice"].isin(formal_care_choices))
     ).astype(int)
 
-    # 3. Joint informal care: care_demand == 1 AND agent chooses informal care
-    df_sim["joint_informal_care"] = (
-        (df_sim["care_demand"] == CARE_DEMAND_AND_OTHER_SUPPLY)
-        & (df_sim["choice"].isin(informal_care_choices))
-    ).astype(int)
+    # When caregiving_type == 0 (someone else provides informal care):
+    # 3. Joint informal care:
+    #    This category no longer exists with binary care_demand
+    #    (keeping for backward compatibility, but should be 0).
+    df_sim["joint_informal_care"] = np.zeros(len(df_sim), dtype=int)
 
-    # 4. Other family care: care_demand == 1 AND agent chooses no informal care
+    # 4. Other family care:
+    # care_demand == 1 AND caregiving_type == 0 AND agent chooses no care
     df_sim["other_family_only"] = (
-        (df_sim["care_demand"] == CARE_DEMAND_AND_OTHER_SUPPLY)
+        (df_sim["care_demand"] == 1)
+        & (df_sim["caregiving_type"] == 0)
         & (df_sim["choice"].isin(no_care_choices))
     ).astype(int)
 
@@ -674,26 +704,25 @@ def plot_simulated_care_demand_by_age_2_by_2_combined(  # noqa: PLR0915
 
     # ---- 2. Calculate care type indicators
     informal_care_choices = np.asarray(INFORMAL_CARE)
+    formal_care_choices = np.asarray(FORMAL_CARE)
     no_care_choices = np.asarray(NO_CARE)
 
-    # Calculate individual categories
+    # Calculate individual categories (care_demand == 1):
     df_sim["solo_informal_care"] = (
-        (df_sim["care_demand"] == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
+        (df_sim["care_demand"] == 1)
+        & (df_sim["caregiving_type"] == 1)
         & (df_sim["choice"].isin(informal_care_choices))
     ).astype(int)
 
     df_sim["formal_care"] = (
-        (df_sim["care_demand"] == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
-        & (df_sim["choice"].isin(no_care_choices))
+        (df_sim["care_demand"] == 1) & (df_sim["choice"].isin(formal_care_choices))
     ).astype(int)
 
-    df_sim["joint_informal_care"] = (
-        (df_sim["care_demand"] == CARE_DEMAND_AND_OTHER_SUPPLY)
-        & (df_sim["choice"].isin(informal_care_choices))
-    ).astype(int)
+    df_sim["joint_informal_care"] = np.zeros(len(df_sim), dtype=int)
 
     df_sim["other_family_only"] = (
-        (df_sim["care_demand"] == CARE_DEMAND_AND_OTHER_SUPPLY)
+        (df_sim["care_demand"] == 1)
+        & (df_sim["caregiving_type"] == 0)
         & (df_sim["choice"].isin(no_care_choices))
     ).astype(int)
 
@@ -704,13 +733,13 @@ def plot_simulated_care_demand_by_age_2_by_2_combined(  # noqa: PLR0915
 
     # Calculate shares for care demand
     care_demand_shares = (
-        df_sim.groupby(["age", "education", "has_sister"], observed=False)[
+        df_sim.groupby(["age", "education", "caregiving_type"], observed=False)[
             "care_demand"
         ]
         .apply(lambda x: (x > 0).mean())
         .reindex(
             pd.MultiIndex.from_product(
-                [ages, [0, 1], [0, 1]], names=["age", "education", "has_sister"]
+                [ages, [0, 1], [0, 1]], names=["age", "education", "caregiving_type"]
             ),
             fill_value=0,
         )
@@ -720,13 +749,14 @@ def plot_simulated_care_demand_by_age_2_by_2_combined(  # noqa: PLR0915
     care_mix_shares = {}
     for care_type in ("informal_care", "other_family_only", "formal_care"):
         shares = (
-            df_sim.groupby(["age", "education", "has_sister"], observed=False)[
+            df_sim.groupby(["age", "education", "caregiving_type"], observed=False)[
                 care_type
             ]
             .mean()
             .reindex(
                 pd.MultiIndex.from_product(
-                    [ages, [0, 1], [0, 1]], names=["age", "education", "has_sister"]
+                    [ages, [0, 1], [0, 1]],
+                    names=["age", "education", "caregiving_type"],
                 ),
                 fill_value=0,
             )
@@ -738,14 +768,17 @@ def plot_simulated_care_demand_by_age_2_by_2_combined(  # noqa: PLR0915
     axes = axes.flatten()
 
     subplot_map = {
-        (0, 0): 0,  # Low edu, No sister
-        (0, 1): 1,  # Low edu, Has sister
-        (1, 0): 2,  # High edu, No sister
-        (1, 1): 3,  # High edu, Has sister
+        (0, 0): 0,  # Low edu, Other provides informal care
+        (0, 1): 1,  # Low edu, Agent provides informal care
+        (1, 0): 2,  # High edu, Other provides informal care
+        (1, 1): 3,  # High edu, Agent provides informal care
     }
 
     edu_labels = {0: "Low education", 1: "High education"}
-    sister_labels = {0: "No sister", 1: "Has sister"}
+    caregiving_type_labels = {
+        0: "Other provides informal care",
+        1: "Agent provides informal care",
+    }
 
     # Colors for care mix (stacked from bottom to top)
     care_colors = {
@@ -757,24 +790,24 @@ def plot_simulated_care_demand_by_age_2_by_2_combined(  # noqa: PLR0915
 
     # ---- 4. Plot each combination
     for edu in (0, 1):
-        for has_sister in (0, 1):
-            idx = subplot_map[(edu, has_sister)]
+        for caregiving_type in (0, 1):
+            idx = subplot_map[(edu, caregiving_type)]
             ax = axes[idx]
 
             # Get care demand share
             care_demand_series = care_demand_shares.xs(
-                (edu, has_sister), level=("education", "has_sister")
+                (edu, caregiving_type), level=("education", "caregiving_type")
             )
 
             # Get care mix shares
             informal_series = care_mix_shares["informal_care"].xs(
-                (edu, has_sister), level=("education", "has_sister")
+                (edu, caregiving_type), level=("education", "caregiving_type")
             )
             other_family_series = care_mix_shares["other_family_only"].xs(
-                (edu, has_sister), level=("education", "has_sister")
+                (edu, caregiving_type), level=("education", "caregiving_type")
             )
             formal_series = care_mix_shares["formal_care"].xs(
-                (edu, has_sister), level=("education", "has_sister")
+                (edu, caregiving_type), level=("education", "caregiving_type")
             )
 
             # Plot stacked area for care mix
@@ -822,7 +855,9 @@ def plot_simulated_care_demand_by_age_2_by_2_combined(  # noqa: PLR0915
             ax.set_ylabel("Share")
             ax.set_xlim(age_min - pad, 75 + pad)  # Cut x-axis at 75
             ax.set_ylim(0, None)
-            ax.set_title(f"{edu_labels[edu]}, {sister_labels[has_sister]}")
+            ax.set_title(
+                f"{edu_labels[edu]}, {caregiving_type_labels[caregiving_type]}"
+            )
 
             # Get handles and labels, then reorder to show from bottom to top
             handles, labels = ax.get_legend_handles_labels()
@@ -869,26 +904,25 @@ def plot_simulated_care_demand_by_age_pooled_combined(  # noqa: PLR0915
 
     # ---- 2. Calculate care type indicators
     informal_care_choices = np.asarray(INFORMAL_CARE)
+    formal_care_choices = np.asarray(FORMAL_CARE)
     no_care_choices = np.asarray(NO_CARE)
 
-    # Calculate individual categories
+    # Calculate individual categories (care_demand == 1):
     df_sim["solo_informal_care"] = (
-        (df_sim["care_demand"] == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
+        (df_sim["care_demand"] == 1)
+        & (df_sim["caregiving_type"] == 1)
         & (df_sim["choice"].isin(informal_care_choices))
     ).astype(int)
 
     df_sim["formal_care"] = (
-        (df_sim["care_demand"] == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
-        & (df_sim["choice"].isin(no_care_choices))
+        (df_sim["care_demand"] == 1) & (df_sim["choice"].isin(formal_care_choices))
     ).astype(int)
 
-    df_sim["joint_informal_care"] = (
-        (df_sim["care_demand"] == CARE_DEMAND_AND_OTHER_SUPPLY)
-        & (df_sim["choice"].isin(informal_care_choices))
-    ).astype(int)
+    df_sim["joint_informal_care"] = np.zeros(len(df_sim), dtype=int)
 
     df_sim["other_family_only"] = (
-        (df_sim["care_demand"] == CARE_DEMAND_AND_OTHER_SUPPLY)
+        (df_sim["care_demand"] == 1)
+        & (df_sim["caregiving_type"] == 0)
         & (df_sim["choice"].isin(no_care_choices))
     ).astype(int)
 
@@ -1027,9 +1061,7 @@ def plot_mother_health_shares_by_age(
     if "mother_age" not in df_sim.columns:
         df_sim["mother_age"] = (
             df_sim["age"].to_numpy()
-            + specs["mother_age_diff"][
-                df_sim["has_sister"].to_numpy(), df_sim["education"].to_numpy()
-            ]
+            + specs["mother_age_diff"][df_sim["education"].to_numpy()]
         )
 
     # Filter to relevant age range
@@ -1114,10 +1146,16 @@ def test_care_mix_sums_to_care_demand(df_sim, specs, age_min=None, age_max=None)
     at each given age.
 
     The four care modes are:
-    1. Solo informal care (care_demand == 2, agent chooses informal care)
-    2. Formal care (care_demand == 2, agent chooses no care)
-    3. Joint informal care (care_demand == 1, agent chooses informal care)
-    4. Other family member only (care_demand == 1, agent chooses no informal care)
+    1. Solo informal care:
+       care_demand == 1, caregiving_type == 1,
+       agent chooses informal care.
+    2. Formal care:
+       care_demand == 1, agent chooses formal care.
+    3. Joint informal care:
+       no longer applicable with binary care_demand, set to 0.
+    4. Other family member only:
+       care_demand == 1, caregiving_type == 0,
+       agent chooses no care.
 
     This function asserts that the absolute counts of the four care modes sum to
     the number of agents with care demand.
@@ -1125,7 +1163,8 @@ def test_care_mix_sums_to_care_demand(df_sim, specs, age_min=None, age_max=None)
     Parameters
     ----------
     df_sim : pd.DataFrame
-        Simulated data with columns: age, education, has_sister, care_demand, choice
+        Simulated data with columns:
+        age, education, caregiving_type, care_demand, choice.
     specs : dict
         Model specifications
     age_min : int, optional
@@ -1151,34 +1190,62 @@ def test_care_mix_sums_to_care_demand(df_sim, specs, age_min=None, age_max=None)
 
     # Convert JAX arrays to numpy arrays for pandas compatibility
     informal_care_choices = np.asarray(INFORMAL_CARE)
+    formal_care_choices = np.asarray(FORMAL_CARE)
     no_care_choices = np.asarray(NO_CARE)
 
-    # Create care type indicators for all four scenarios
+    # Create care type indicators for all four scenarios (care_demand == 1):
+    # When caregiving_type == 1 (agent can provide informal care):
+    # - Agent chooses INFORMAL_CARE → solo informal care
+    # - Agent chooses FORMAL_CARE → formal care
     df_test["solo_informal_care"] = (
-        (df_test["care_demand"] == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
+        (df_test["care_demand"] == 1)
+        & (df_test["caregiving_type"] == 1)
         & (df_test["choice"].isin(informal_care_choices))
     ).astype(int)
 
     df_test["formal_care"] = (
-        (df_test["care_demand"] == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
-        & (df_test["choice"].isin(no_care_choices))
+        (df_test["care_demand"] == 1) & (df_test["choice"].isin(formal_care_choices))
     ).astype(int)
 
-    df_test["joint_informal_care"] = (
-        (df_test["care_demand"] == CARE_DEMAND_AND_OTHER_SUPPLY)
-        & (df_test["choice"].isin(informal_care_choices))
-    ).astype(int)
+    # When caregiving_type == 0 (someone else provides informal care):
+    # - Joint informal care no longer exists with binary care_demand
+    # - Agent chooses NO_CARE → other family only (someone else provides informal care)
+    df_test["joint_informal_care"] = np.zeros(len(df_test), dtype=int)
 
     df_test["other_family_only"] = (
-        (df_test["care_demand"] == CARE_DEMAND_AND_OTHER_SUPPLY)
+        (df_test["care_demand"] == 1)
+        & (df_test["caregiving_type"] == 0)
         & (df_test["choice"].isin(no_care_choices))
     ).astype(int)
 
-    # Calculate absolute counts by age, education, has_sister
-    group_cols = ["age", "education", "has_sister"]
+    # Debug: Check for uncategorized agents with care_demand == 1
+    care_demand_1_mask = df_test["care_demand"] == 1
+    categorized_mask = (
+        df_test["solo_informal_care"]
+        + df_test["formal_care"]
+        + df_test["joint_informal_care"]
+        + df_test["other_family_only"]
+    ) > 0
+    uncategorized = df_test[care_demand_1_mask & ~categorized_mask]
+    if len(uncategorized) > 0:
+        print(
+            f"\nWARNING: {len(uncategorized)} agents with care_demand == 1 "
+            f"are not categorized!"
+        )
+        print(
+            "Sample uncategorized choices:",
+            uncategorized["choice"].value_counts().head(10),
+        )
+        print(
+            "Sample uncategorized caregiving_type:",
+            uncategorized["caregiving_type"].value_counts(),
+        )
+
+    # Calculate absolute counts by age, education, caregiving_type
+    group_cols = ["age", "education", "caregiving_type"]
     counts = df_test.groupby(group_cols, observed=False).agg(
         {
-            "care_demand": lambda x: (x > 0).sum(),  # Count with care demand
+            "care_demand": lambda x: (x == 1).sum(),  # Count with care demand == 1
             "solo_informal_care": "sum",
             "formal_care": "sum",
             "joint_informal_care": "sum",
@@ -1206,8 +1273,41 @@ def test_care_mix_sums_to_care_demand(df_sim, specs, age_min=None, age_max=None)
     max_absolute_diff = counts["absolute_diff"].max()
     max_relative_diff = counts["relative_diff"].max()
 
+    # Debug: Print problematic rows if test fails
+    if max_absolute_diff >= CARE_MIX_TOLERANCE:
+        problematic = counts[counts["absolute_diff"] >= CARE_MIX_TOLERANCE].copy()
+        print("\nProblematic groups where care mix doesn't sum to care demand:")
+        print(problematic.head(20))
+        print(f"\nTotal problematic groups: {len(problematic)}")
+        print("\nSample of problematic data:")
+        # Show a sample of the raw data for one problematic group
+        if len(problematic) > 0:
+            sample_idx = problematic.index[0]
+            sample_data = df_test[
+                (df_test["age"] == sample_idx[0])
+                & (df_test["education"] == sample_idx[1])
+                & (df_test["caregiving_type"] == sample_idx[2])
+            ]
+            print(
+                f"\nSample group: age={sample_idx[0]}, "
+                f"education={sample_idx[1]}, caregiving_type={sample_idx[2]}"
+            )
+            print(f"care_demand == 1 count: {(sample_data['care_demand'] == 1).sum()}")
+            print(f"solo_informal_care sum: {sample_data['solo_informal_care'].sum()}")
+            print(f"formal_care sum: {sample_data['formal_care'].sum()}")
+            print(f"other_family_only sum: {sample_data['other_family_only'].sum()}")
+            care_mix_sum_sample = (
+                sample_data["solo_informal_care"].sum()
+                + sample_data["formal_care"].sum()
+                + sample_data["other_family_only"].sum()
+            )
+            print(f"care_mix_sum: {care_mix_sum_sample}")
+            print("\nChoices when care_demand == 1:")
+            care_demand_1 = sample_data[sample_data["care_demand"] == 1]
+            print(care_demand_1["choice"].value_counts().sort_index())
+
     # Assert that the test passed
-    tolerance = 1e-10
+    tolerance = CARE_MIX_TOLERANCE
     assert max_absolute_diff < tolerance, (
         f"Care mix does not sum to care demand. "
         f"Max absolute difference: {max_absolute_diff}, "

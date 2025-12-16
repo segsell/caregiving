@@ -7,7 +7,7 @@ from caregiving.model.shared import MOTHER
 PARENT_AGE_OFFSET = 3
 
 
-def limitations_with_adl_transition(mother_adl, period, has_sister, education, options):
+def limitations_with_adl_transition(mother_adl, period, education, options):
     """Transition probability for next period ADL state given current ADL.
 
     Parameters
@@ -16,8 +16,6 @@ def limitations_with_adl_transition(mother_adl, period, has_sister, education, o
         Current ADL state (0=No ADL, 1=ADL 1, 2=ADL 2 or ADL 3)
     period : int
         Current period
-    has_sister : int
-        Whether caregiver has a sister (0 or 1)
     education : int
         Education level (0=Low, 1=High)
     options : dict
@@ -35,7 +33,7 @@ def limitations_with_adl_transition(mother_adl, period, has_sister, education, o
     mother_age = (
         period
         - options["agent_to_parent_mat_age_offset"]
-        + options["mother_age_diff"][has_sister, education]
+        + options["mother_age_diff"][education]
         + PARENT_AGE_OFFSET
     )
 
@@ -46,7 +44,7 @@ def limitations_with_adl_transition(mother_adl, period, has_sister, education, o
     return prob_vector
 
 
-def death_transition(period, mother_dead, has_sister, education, options):
+def death_transition(period, mother_dead, education, options):
     """Death transition probability for next period.
 
     Uses death transition matrix indexed by sex and age. If mother was already
@@ -58,8 +56,6 @@ def death_transition(period, mother_dead, has_sister, education, options):
         Current period
     mother_dead : int
         Lagged mother death status (1=dead, 0=alive)
-    has_sister : int
-        Whether caregiver has a sister (0 or 1)
     education : int
         Education level (0=Low, 1=High)
     options : dict
@@ -81,7 +77,7 @@ def death_transition(period, mother_dead, has_sister, education, options):
     mother_age = (
         period
         - options["agent_to_parent_mat_age_offset"]
-        + options["mother_age_diff"][has_sister, education]
+        + options["mother_age_diff"][education]
         + PARENT_AGE_OFFSET
     )
 

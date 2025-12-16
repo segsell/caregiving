@@ -76,9 +76,7 @@ def simulate_moments_pandas(  # noqa: PLR0915
     df_full = df_full.loc[df_full["health"] != DEAD].copy()
     df_full["mother_age"] = (
         df_full["age"].to_numpy()
-        + model_params["mother_age_diff"][
-            df_full["has_sister"].to_numpy(), df_full["education"].to_numpy()
-        ]
+        + model_params["mother_age_diff"][df_full["education"].to_numpy()]
     )
 
     # Only non-caregivers

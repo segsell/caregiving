@@ -131,8 +131,6 @@ util_informal_care_high_good: 0
 util_informal_care_high_bad: 0
 util_informal_care_low_good: 0
 util_informal_care_low_bad: 0
-util_joint_informal_care_good: 0
-util_joint_informal_care_bad: 0
 util_formal_care_good: 0
 util_formal_care_bad: 0
 
@@ -325,6 +323,10 @@ util_formal_care_bad: 0
 # bequest_scale: 2.4
 bequest_scale_low: 2.4
 bequest_scale_high: 2.4
+
+# Share unobserved type 1
+share_unobserved_type_low_educ: 0.5
+share_unobserved_type_high_educ: 0.5
 
 # Job separation params are set internally driven by data
 

@@ -85,8 +85,6 @@ def utility_func_adda(
             0 = good health, 1 = medium health, 2 = bad health.
         father_health (int): Health status of the father. One of 0, 1, 2.
             0 = good health, 1 = medium health, 2 = bad health.
-        has_sibling (int): Indicator for whether the agent has a sibling.
-            0 = no sibling, 1 = has sibling.
         params (dict): Dictionary containing model parameters.
             Relevant here is the CRRA coefficient theta.
         options (dict): Dictionary containing model options.
@@ -293,8 +291,6 @@ def utility_func_additive(
             0 = good health, 1 = medium health, 2 = bad health.
         father_health (int): Health status of the father. One of 0, 1, 2.
             0 = good health, 1 = medium health, 2 = bad health.
-        has_sibling (int): Indicator for whether the agent has a sibling.
-            0 = no sibling, 1 = has sibling.
         params (dict): Dictionary containing model parameters.
             Relevant here is the CRRA coefficient theta.
         options (dict): Dictionary containing model options.

@@ -689,7 +689,6 @@ def _compute_total_income_like_sim_with_options(
         if "lagged_choice" in df.columns
         else np.asarray(df["choice"])
     )
-    has_sister_array = np.asarray(df.get("has_sister", np.zeros(len(df), dtype=int)))
     care_demand_array = np.asarray(df.get("care_demand", np.zeros(len(df), dtype=int)))
 
     # unemployment benefits
@@ -719,12 +718,12 @@ def _compute_total_income_like_sim_with_options(
 
     # care benefits and costs
     v_care = jax.vmap(
-        lambda lc, edu, hs, cd: calc_care_benefits_and_costs(
-            lagged_choice=lc, education=edu, has_sister=hs, care_demand=cd, options=mp
+        lambda lc, edu, cd: calc_care_benefits_and_costs(
+            lagged_choice=lc, education=edu, care_demand=cd, options=mp
         )
     )
     df["care_benefits_and_costs_calc"] = v_care(
-        lagged_choice_array, education_array, has_sister_array, care_demand_array
+        lagged_choice_array, education_array, care_demand_array
     )
 
     # total net income
