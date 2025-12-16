@@ -1,13 +1,6 @@
 from jax import numpy as jnp
 
-from caregiving.model.shared import (
-    CARE_DEMAND_AND_NO_OTHER_SUPPLY,
-    SEX,
-    is_formal_care,
-    is_no_care,
-    is_retired,
-    is_working,
-)
+from caregiving.model.shared import SEX, is_formal_care, is_retired, is_working
 from caregiving.model.wealth_and_budget.partner_income import (
     calc_partner_income_after_ssc,
 )
@@ -23,22 +16,19 @@ from caregiving.model.wealth_and_budget.wages import calc_labor_income_after_ssc
 
 
 def calc_care_benefits_and_costs_no_cash_benefits(
-    lagged_choice, education, has_sister, care_demand, options
+    lagged_choice, education, care_demand, options
 ):
-    """Calculate the care benefits and costs with higher formal care costs.
+    """Care costs only (no informal care cash benefits), with higher formal costs.
 
-    Formal care costs are multiplied by 1.5 (50% more expensive).
+    This counterfactual removes informal care cash benefits and doubles
+    the cost of formal care. The cost applies whenever the lagged choice
+    involves formal care; it no longer depends on `has_sister`.
     """
-    # Formal care is choices 8, 9, 10, 11 (FORMAL_CARE array)
-    formal_care = is_formal_care(lagged_choice) & (
-        care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY
-    )
+    formal_care = is_formal_care(lagged_choice)
 
-    # Formal care costs are 100% more expensive (multiply by 2.0)
+    # Formal care costs are 100% more expensive (multiply by 2.0).
     annual_care_costs = options["formal_care_costs"] * 12 * 2.0
-    annual_care_costs_weighted = (
-        annual_care_costs * 0.5 * has_sister + annual_care_costs * (1 - has_sister)
-    ) * formal_care
+    annual_care_costs_weighted = annual_care_costs * formal_care
 
     return -annual_care_costs_weighted
 
@@ -50,7 +40,6 @@ def budget_constraint(
     experience,
     # sex,
     partner_state,
-    has_sister,
     care_demand,
     savings_end_of_previous_period,  # A_{t-1}
     income_shock_previous_period,  # epsilon_{t - 1}
@@ -131,7 +120,6 @@ def budget_constraint(
     care_benfits_and_costs = calc_care_benefits_and_costs_no_cash_benefits(
         lagged_choice=lagged_choice,
         education=education,
-        has_sister=has_sister,
         care_demand=care_demand,
         options=options,
     )

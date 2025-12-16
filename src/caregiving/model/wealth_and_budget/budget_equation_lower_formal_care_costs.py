@@ -1,12 +1,9 @@
 from jax import numpy as jnp
 
 from caregiving.model.shared import (
-    CARE_DEMAND_AND_NO_OTHER_SUPPLY,
-    CARE_DEMAND_AND_OTHER_SUPPLY,
     SEX,
     is_formal_care,
     is_informal_care,
-    is_no_care,
     is_retired,
     is_working,
 )
@@ -25,24 +22,22 @@ from caregiving.model.wealth_and_budget.wages import calc_labor_income_after_ssc
 
 
 def calc_care_benefits_and_costs_lower_formal_care_costs(
-    lagged_choice, education, has_sister, care_demand, options
+    lagged_choice, education, care_demand, options
 ):
-    """Calculate the care benefits and costs with lower formal care costs.
+    """Care benefits and costs with lower formal care costs.
 
-    Formal care costs are multiplied by 0.5 (half as expensive).
+    - Informal care: same cash benefit as baseline.
+    - Formal care: cost is reduced relative to the baseline.
     """
     informal_care_solo = is_informal_care(lagged_choice)
-    # Formal care is choices 8, 9, 10, 11 (FORMAL_CARE array)
     formal_care = is_formal_care(lagged_choice)
 
     annual_care_benefits = options["informal_care_cash_benefits"] * 12
     annual_care_benefits_weighted = annual_care_benefits * informal_care_solo
 
-    # Formal care costs contribution is zero
+    # Formal care costs contribution is zero or reduced (here: zero).
     annual_care_costs = options["formal_care_costs"] * 12 * 0.0
-    annual_care_costs_weighted = (
-        annual_care_costs * 0.5 * has_sister + annual_care_costs * (1 - has_sister)
-    ) * formal_care
+    annual_care_costs_weighted = annual_care_costs * formal_care
 
     return annual_care_benefits_weighted - annual_care_costs_weighted
 
@@ -54,7 +49,6 @@ def budget_constraint(
     experience,
     # sex,
     partner_state,
-    has_sister,
     care_demand,
     savings_end_of_previous_period,  # A_{t-1}
     income_shock_previous_period,  # epsilon_{t - 1}
@@ -135,7 +129,6 @@ def budget_constraint(
     care_benfits_and_costs = calc_care_benefits_and_costs_lower_formal_care_costs(
         lagged_choice=lagged_choice,
         education=education,
-        has_sister=has_sister,
         care_demand=care_demand,
         options=options,
     )

@@ -269,7 +269,6 @@ def utility_func_additive(
     care_demand: int,
     # mother_health: int,
     partner_state: int,
-    caregiving_type: int,
     params: dict,
     options: dict,
 ) -> jnp.array:
@@ -309,7 +308,6 @@ def utility_func_additive(
         health=health,
         care_demand=care_demand,
         # mother_health=mother_health,
-        caregiving_type=caregiving_type,
         period=period,
         choice=choice,
         params=params,
@@ -333,7 +331,6 @@ def utility_func_alive_additive(
     health,
     care_demand,
     # mother_health,
-    caregiving_type,
     period,
     choice,
     params,

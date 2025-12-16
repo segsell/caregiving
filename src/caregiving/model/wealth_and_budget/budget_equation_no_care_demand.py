@@ -24,7 +24,6 @@ def budget_constraint(
     lagged_choice,  # d_{t-1}
     experience,
     partner_state,
-    has_sister,
     savings_end_of_previous_period,  # A_{t-1}
     income_shock_previous_period,  # epsilon_{t - 1}
     params,
