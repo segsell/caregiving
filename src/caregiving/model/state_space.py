@@ -229,7 +229,6 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "job_offer": job_offer,
             }
             return state_proxy
-            return state_proxy
         elif age > max_ret_age + 1:
             # If age is larger than max_ret_age + 1, the individual can only be
             # longer retired.
@@ -309,6 +308,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "care_demand": 0,
                 "job_offer": job_offer,
             }
+            return state_proxy
         elif age < start_age_caregiving:
             # Proxy to state with care_demand = 0
             state_proxy = {

@@ -44,7 +44,7 @@ informed_threshhold: 5
 # Retirement parameters
 ret_years_before_SRA: 4
 min_ret_age: 63
-max_ret_age: 67
+max_ret_age: 72 # 67
 # Maximum age to estimate labor market
 max_est_age_labor: 65
 # Assume that part time gives half a year of experience
