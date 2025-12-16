@@ -1,6 +1,7 @@
 from caregiving.model.shared import (
     CARE_DEMAND_AND_NO_OTHER_SUPPLY,
     CARE_DEMAND_AND_OTHER_SUPPLY,
+    is_formal_care,
     is_informal_care,
     is_no_care,
 )
@@ -58,20 +59,12 @@ def calc_unemployment_benefits(
     return unemployment_benefits
 
 
-def calc_care_benefits_and_costs(
-    lagged_choice, education, has_sister, care_demand, options
-):
+def calc_care_benefits_and_costs(lagged_choice, education, care_demand, options):
     """Calculate the care benefits and costs."""
 
-    informal_care_solo = is_informal_care(lagged_choice) * (
-        care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY
-    )
-    informal_care_joint = is_informal_care(lagged_choice) * (
-        care_demand == CARE_DEMAND_AND_OTHER_SUPPLY
-    )
-    formal_care = is_no_care(lagged_choice) & (
-        care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY
-    )
+    informal_care_solo = is_informal_care(lagged_choice)
+    formal_care = is_formal_care(lagged_choice)
+
     # # Care benefits
     # care_benefits = options["care_benefits"][education, has_sister]
 
@@ -79,14 +72,8 @@ def calc_care_benefits_and_costs(
     # care_costs = options["care_costs"][education, has_sister]
 
     annual_care_benefits = options["informal_care_cash_benefits"] * 12
-    annual_care_benefits_weighted = (
-        annual_care_benefits * 0.5 * informal_care_joint
-        + annual_care_benefits * informal_care_solo
-    )
+    annual_care_benefits_weighted = annual_care_benefits * informal_care_solo
 
-    annual_care_costs = options["formal_care_costs"] * 12
-    annual_care_costs_weighted = (
-        annual_care_costs * 0.5 * has_sister + annual_care_costs * (1 - has_sister)
-    ) * formal_care
+    annual_care_costs_weighted = options["formal_care_costs"] * formal_care * 12 * 0.5
 
     return annual_care_benefits_weighted - annual_care_costs_weighted

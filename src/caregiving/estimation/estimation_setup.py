@@ -6,6 +6,7 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional
 
 import jax
+import jax.numpy as jnp
 import numpy as np
 import optimagic as om
 import pandas as pd
@@ -236,6 +237,147 @@ def estimate_model(
     return result
 
 
+def estimate_model_with_unobserved_type_shares(
+    model_for_simulation: Dict[str, Any],
+    start_params: Dict[str, Any],
+    solve_func: callable,
+    options: Dict[str, Any],
+    algo: str,
+    algo_options: Dict[str, Any],
+    lower_bounds: Dict[str, float],
+    upper_bounds: Dict[str, float],
+    simulate_scenario_func: callable,
+    simulate_moments_func: callable,
+    weighting_method: str = "identity",
+    use_cholesky_weights: bool = True,
+    relative_deviations: bool = False,
+    least_squares: bool = True,
+    *,
+    path_to_discrete_states: str = BLD / "model" / "initial_conditions" / "states.pkl",
+    path_to_wealth: str = BLD / "model" / "initial_conditions" / "wealth.csv",
+    path_to_empirical_moments: str = BLD / "moments" / "moments_full.csv",
+    path_to_empirical_variance: str = BLD / "moments" / "variances_full.csv",
+    path_to_save_estimation_result: str = BLD / "estimation" / "result.pkl",
+    path_to_save_estimation_params: str = BLD / "estimation" / "estimated_params.csv",
+    select_fixed_params: Optional[Callable[[str, Any], bool]] = None,
+    other_constraint: Optional[om.constraints.Constraint] = None,
+    scaling: bool = False,
+    scaling_options: Optional[Dict[str, Any]] = None,
+    multistart: bool = False,
+    multistart_options: Optional[Dict[str, Any]] = None,
+    random_seed: bool = False,
+    error_handling: str = "continue",
+) -> None:
+    """Estimate model where caregiving_type shares in initial states are estimated.
+
+    This variant is identical to `estimate_model`, but uses a criterion function
+    which, for each parameter vector, redraws the unobserved caregiving type
+    (`caregiving_type`) in the initial states according to:
+
+    - share_unobserved_type_low_educ  (education == 0)
+    - share_unobserved_type_high_educ (education == 1)
+    """
+
+    if random_seed:
+        seed_generator = np.random.default_rng()
+        fixed_seed = None
+    else:
+        seed_generator = None
+        fixed_seed = options["model_params"]["seed"]
+
+    initial_states = pickle.load(path_to_discrete_states.open("rb"))
+    wealth_agents = np.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
+
+    empirical_moments = np.array(
+        pd.read_csv(path_to_empirical_moments, index_col=0).squeeze()
+    )
+
+    if weighting_method in ("identity", "unit"):
+        weights = np.eye(len(empirical_moments))
+    elif weighting_method == "estimated":
+        weights = pd.read_csv(path_to_empirical_variance, index_col=0).to_numpy()
+    else:
+        raise ValueError("weighting_method must be in ['identity', 'estimated']")
+
+    if least_squares:
+        empirical_moments = empirical_moments.to_numpy()
+        weights = weights.to_numpy()
+
+    constraints_list: List[om.constraints.Constraint] = []
+
+    constraints_list, lower_bounds, upper_bounds = (
+        combine_constraints_and_update_bounds(
+            select_fixed_params=select_fixed_params,
+            other_constraint=other_constraint,
+            start_params=start_params,
+            lower_bounds=lower_bounds,
+            upper_bounds=upper_bounds,
+        )
+    )
+
+    bounds = om.Bounds(lower=lower_bounds, upper=upper_bounds)
+
+    simulate_moments_given_params = partial(
+        simulate_moments_with_unobserved_type_shares,
+        solve_func=solve_func,
+        initial_states=initial_states,
+        wealth_agents=wealth_agents,
+        model_for_simulation=model_for_simulation,
+        options=options,
+        fixed_seed=fixed_seed,
+        seed_generator=seed_generator,
+        simulate_scenario_func=simulate_scenario_func,
+        simulate_moments_func=simulate_moments_func,
+    )
+
+    criterion_func = get_msm_optimization_function(
+        simulate_moments=simulate_moments_given_params,
+        empirical_moments=empirical_moments,
+        weights=weights,
+        cholesky=use_cholesky_weights,
+        relative_deviations=relative_deviations,
+        least_squares=least_squares,
+    )
+
+    minimize_kwargs = {
+        "fun": criterion_func,
+        "params": start_params,
+        "algorithm": algo,
+        "algo_options": algo_options,
+        "bounds": bounds,
+        "error_handling": error_handling,
+    }
+
+    if constraints_list:
+        minimize_kwargs["constraints"] = constraints_list
+
+    if scaling:
+        so_opts = scaling_options or {
+            "method": "start_values",
+            "clipping_value": 0.1,
+            "magnitude": 1,
+        }
+        minimize_kwargs["scaling"] = so_opts
+
+    if multistart:
+        ms_opts = (
+            om.MultistartOptions(**multistart_options)
+            if multistart_options is not None
+            else om.MultistartOptions(n_samples=100, seed=0, n_cores=4)
+        )
+        minimize_kwargs["multistart"] = ms_opts
+
+    result = om.minimize(**minimize_kwargs)
+
+    pickle.dump(result, open(path_to_save_estimation_result, "wb"))
+
+    start_params.update(result.params)
+    start_params_series = pd.Series(start_params, name="value")
+    start_params_series.to_csv(path_to_save_estimation_params, header=True)
+
+    return result
+
+
 # =====================================================================================
 # Criterion function
 # =====================================================================================
@@ -279,6 +421,64 @@ def simulate_moments(
         model=model_for_simulation,
         solution=solution_dict,
         initial_states=initial_states,
+        wealth_agents=wealth_agents,
+        params=params,
+        options=options,
+        seed=seed,
+    )
+
+    simulated_moments = simulate_moments_func(sim_df, options=options)
+
+    out = np.asarray(simulated_moments.to_numpy())
+    out = np.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0)
+
+    return out
+
+
+def simulate_moments_with_unobserved_type_shares(
+    params: Dict[str, Any],
+    solve_func: callable,
+    initial_states: Dict[str, Any],
+    wealth_agents: np.ndarray,
+    model_for_simulation: Dict[str, Any],
+    options: Dict[str, Any],
+    fixed_seed: Optional[int],
+    seed_generator: Optional[np.random.Generator],
+    simulate_scenario_func: callable,
+    simulate_moments_func: callable,
+):
+    """Solve model and simulate moments, adjusting caregiving_type shares.
+
+    The initial share of unobserved type 1 (caregiving_type == 1) is
+    determined by the estimated parameters:
+    - share_unobserved_type_low_educ  (education == 0)
+    - share_unobserved_type_high_educ (education == 1)
+    """
+
+    if seed_generator is not None:
+        seed = int(seed_generator.integers(0, 2**32, dtype=np.uint32))
+    else:
+        seed = fixed_seed
+
+    solution_dict: Dict[str, Any] = {}
+    (
+        solution_dict["value"],
+        solution_dict["policy"],
+        solution_dict["endog_grid"],
+    ) = solve_func(params)
+
+    # Adjust initial states to reflect the current parameterization
+    # of unobserved caregiving types.
+    adjusted_initial_states = draw_caregiving_type_from_params(
+        initial_states=initial_states,
+        params=params,
+        seed=seed,
+    )
+
+    sim_df = simulate_scenario_func(
+        model=model_for_simulation,
+        solution=solution_dict,
+        initial_states=adjusted_initial_states,
         wealth_agents=wealth_agents,
         params=params,
         options=options,
@@ -411,6 +611,44 @@ def combine_constraints_and_update_bounds(
         constraints_list.extend(constraints_to_apply)
 
     return constraints_list, lower_bounds, upper_bounds
+
+
+# =====================================================================================
+# Auxiliary functions
+# =====================================================================================
+
+
+def draw_caregiving_type_from_params(
+    initial_states: Dict[str, Any],
+    params: Dict[str, Any],
+    seed: int,
+) -> Dict[str, Any]:
+    """Return a copy of initial_states with caregiving_type drawn from share params.
+
+    The probabilities are:
+    - education == 0: share_unobserved_type_low_educ
+    - education == 1: share_unobserved_type_high_educ
+    """
+    # Extract education state and current caregiving_type (for shape).
+    education = initial_states["education"]
+
+    p_low = params["share_unobserved_type_low_educ"]
+    p_high = params["share_unobserved_type_high_educ"]
+
+    # Vector of probabilities per agent, based on education.
+    prob_unobserved_type_1 = jnp.where(education == 0, p_low, p_high)
+
+    # Use JAX RNG so that the draw is fully controlled by `seed`.
+    key = jax.random.PRNGKey(seed)
+    caregiving_type = jax.random.bernoulli(
+        key, p=prob_unobserved_type_1, shape=education.shape
+    ).astype(jnp.uint8)
+
+    # Return a shallow copy of the states dict with updated caregiving_type.
+    adjusted_states = initial_states.copy()
+    adjusted_states["caregiving_type"] = caregiving_type
+
+    return adjusted_states
 
 
 # =====================================================================================

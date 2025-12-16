@@ -403,6 +403,8 @@ def create_sibling_info(df, filter_missing=False):
 
     out = out.rename(columns={"pld0030": "n_sisters", "pld0032": "n_brothers"})
 
+    out["n_siblings"] = out["n_sisters"] + out["n_brothers"]
+
     if filter_missing:
         out = out[out["n_sisters"] >= 0]
         out = out[out["n_brothers"] >= 0]

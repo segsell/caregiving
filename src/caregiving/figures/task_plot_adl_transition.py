@@ -55,7 +55,6 @@ def task_plot_adl_transition(  # noqa: PLR0915
     # Convert to numpy for fast aggregation
     mother_dead_initial = np.asarray(states["mother_dead"], dtype=np.uint8)
     mother_adl_initial = np.asarray(states["mother_adl"], dtype=np.uint8)
-    has_sister = np.asarray(states["has_sister"], dtype=np.uint8)
     education = np.asarray(states["education"], dtype=np.uint8)
 
     n_edu = specs["n_education_types"]
@@ -84,73 +83,68 @@ def task_plot_adl_transition(  # noqa: PLR0915
     share_adl_2_3[0] = np.mean((mother_adl_initial == ADL_2_3) & alive_mask)
     share_any_adl[0] = share_adl_1[0] + share_adl_2_3[0]
 
-    # Track ADL state counts by group (hs, edu, adl_state) for alive mothers only
+    # Track ADL state counts by group (edu, adl_state) for alive mothers only
     adl_by_group = {}
-    # Track dead mothers by group (hs, edu)
+    # Track dead mothers by group (edu)
     dead_by_group = {}
-    for hs in (0, 1):
-        for edu in range(n_edu):
-            # Track alive mothers by ADL state
-            for adl in range(n_adl_states):
-                mask = (
-                    (has_sister == hs)
-                    & (education == edu)
-                    & (mother_dead_initial == 0)
-                    & (mother_adl_initial == adl)
-                )
-                adl_by_group[(hs, edu, adl)] = float(mask.sum())
-            # Track dead mothers
-            mask_dead = (
-                (has_sister == hs) & (education == edu) & (mother_dead_initial == 1)
+    for edu in range(n_edu):
+        # Track alive mothers by ADL state
+        for adl in range(n_adl_states):
+            mask = (
+                (education == edu)
+                & (mother_dead_initial == 0)
+                & (mother_adl_initial == adl)
             )
-            dead_by_group[(hs, edu)] = float(mask_dead.sum())
+            adl_by_group[(edu, adl)] = float(mask.sum())
+        # Track dead mothers
+        mask_dead = (education == edu) & (mother_dead_initial == 1)
+        dead_by_group[edu] = float(mask_dead.sum())
 
     # Simulate forward deterministically using transition probs
     for period in range(1, n_periods):
         adl_next = {}
         dead_next = {}
-        for hs in (0, 1):
-            for edu in range(n_edu):
-                # Dead mothers stay dead (and count as "No ADL")
-                dead_curr = dead_by_group.get((hs, edu), 0.0)
-                dead_next[(hs, edu)] = dead_curr
+        for edu in range(n_edu):
+            # Dead mothers stay dead (and count as "No ADL")
+            dead_curr = dead_by_group.get(edu, 0.0)
+            dead_next[edu] = dead_curr
 
-                for adl_curr_state in range(n_adl_states):
-                    count_curr = adl_by_group.get((hs, edu, adl_curr_state), 0.0)
+            for adl_curr_state in range(n_adl_states):
+                count_curr = adl_by_group.get((edu, adl_curr_state), 0.0)
 
-                    if count_curr == 0:
-                        # No one in this state, nothing to transition
-                        continue
+                if count_curr == 0:
+                    # No one in this state, nothing to transition
+                    continue
 
-                    # First, account for death transitions
-                    # death_transition returns [alive_prob, dead_prob]
-                    death_prob_vector = death_transition(period - 1, 0, hs, edu, specs)
-                    alive_prob = float(death_prob_vector[0])
-                    dead_prob = float(death_prob_vector[1])
+                # First, account for death transitions
+                # death_transition returns [alive_prob, dead_prob]
+                death_prob_vector = death_transition(period - 1, 0, edu, specs)
+                alive_prob = float(death_prob_vector[0])
+                dead_prob = float(death_prob_vector[1])
 
-                    # Only alive mothers have ADL states
-                    count_alive = count_curr * alive_prob
-                    count_died = count_curr * dead_prob
+                # Only alive mothers have ADL states
+                count_alive = count_curr * alive_prob
+                count_died = count_curr * dead_prob
 
-                    # Add newly dead to dead count (they count as "No ADL")
-                    dead_next[(hs, edu)] = dead_next.get((hs, edu), 0.0) + count_died
+                # Add newly dead to dead count (they count as "No ADL")
+                dead_next[edu] = dead_next.get(edu, 0.0) + count_died
 
-                    if count_alive == 0:
-                        # All died, nothing to transition
-                        continue
+                if count_alive == 0:
+                    # All died, nothing to transition
+                    continue
 
-                    # Get ADL transition probabilities for alive mothers
-                    # Returns [prob_no_adl, prob_adl_1, prob_adl_2/3]
-                    adl_prob_vector = limitations_with_adl_transition(
-                        adl_curr_state, period - 1, hs, edu, specs
-                    )
+                # Get ADL transition probabilities for alive mothers
+                # Returns [prob_no_adl, prob_adl_1, prob_adl_2/3]
+                adl_prob_vector = limitations_with_adl_transition(
+                    adl_curr_state, period - 1, edu, specs
+                )
 
-                    # Distribute alive count to next ADL states
-                    # according to transition probs
-                    for adl_next_state in range(n_adl_states):
-                        prob = float(adl_prob_vector[adl_next_state])
-                        key = (hs, edu, adl_next_state)
-                        adl_next[key] = adl_next.get(key, 0.0) + count_alive * prob
+                # Distribute alive count to next ADL states
+                # according to transition probs
+                for adl_next_state in range(n_adl_states):
+                    prob = float(adl_prob_vector[adl_next_state])
+                    key = (edu, adl_next_state)
+                    adl_next[key] = adl_next.get(key, 0.0) + count_alive * prob
 
         # Update counts
         adl_by_group = adl_next
@@ -159,17 +153,11 @@ def task_plot_adl_transition(  # noqa: PLR0915
         # Calculate total shares
         # No ADL includes: alive with no ADL + dead (dead = no ADL)
         total_no_adl_alive = sum(
-            adl_by_group.get((hs, edu, 0), 0.0) for hs in (0, 1) for edu in range(n_edu)
+            adl_by_group.get((edu, 0), 0.0) for edu in range(n_edu)
         )
-        total_dead = sum(
-            dead_by_group.get((hs, edu), 0.0) for hs in (0, 1) for edu in range(n_edu)
-        )
-        total_adl_1 = sum(
-            adl_by_group.get((hs, edu, 1), 0.0) for hs in (0, 1) for edu in range(n_edu)
-        )
-        total_adl_2_3 = sum(
-            adl_by_group.get((hs, edu, 2), 0.0) for hs in (0, 1) for edu in range(n_edu)
-        )
+        total_dead = sum(dead_by_group.get(edu, 0.0) for edu in range(n_edu))
+        total_adl_1 = sum(adl_by_group.get((edu, 1), 0.0) for edu in range(n_edu))
+        total_adl_2_3 = sum(adl_by_group.get((edu, 2), 0.0) for edu in range(n_edu))
 
         # Normalize by total agents (including dead ones)
         share_no_adl[period] = (total_no_adl_alive + total_dead) / n_agents
@@ -240,6 +228,7 @@ def task_plot_adl_transition_adl_only(  # noqa: PLR0915
         Path to save the plot
 
     """
+
     # Load initial states and options
     with path_to_states.open("rb") as f:
         states = pickle.load(f)
@@ -253,7 +242,6 @@ def task_plot_adl_transition_adl_only(  # noqa: PLR0915
     # Convert to numpy for fast aggregation
     mother_dead_initial = np.asarray(states["mother_dead"], dtype=np.uint8)
     mother_adl_initial = np.asarray(states["mother_adl"], dtype=np.uint8)
-    has_sister = np.asarray(states["has_sister"], dtype=np.uint8)
     education = np.asarray(states["education"], dtype=np.uint8)
 
     n_edu = specs["n_education_types"]
@@ -282,73 +270,68 @@ def task_plot_adl_transition_adl_only(  # noqa: PLR0915
     share_adl_2_3[0] = np.mean((mother_adl_initial == ADL_2_3) & alive_mask)
     share_any_adl[0] = share_adl_1[0] + share_adl_2_3[0]
 
-    # Track ADL state counts by group (hs, edu, adl_state) for alive mothers only
+    # Track ADL state counts by group (edu, adl_state) for alive mothers only
     adl_by_group = {}
-    # Track dead mothers by group (hs, edu)
+    # Track dead mothers by group (edu)
     dead_by_group = {}
-    for hs in (0, 1):
-        for edu in range(n_edu):
-            # Track alive mothers by ADL state
-            for adl in range(n_adl_states):
-                mask = (
-                    (has_sister == hs)
-                    & (education == edu)
-                    & (mother_dead_initial == 0)
-                    & (mother_adl_initial == adl)
-                )
-                adl_by_group[(hs, edu, adl)] = float(mask.sum())
-            # Track dead mothers
-            mask_dead = (
-                (has_sister == hs) & (education == edu) & (mother_dead_initial == 1)
+    for edu in range(n_edu):
+        # Track alive mothers by ADL state
+        for adl in range(n_adl_states):
+            mask = (
+                (education == edu)
+                & (mother_dead_initial == 0)
+                & (mother_adl_initial == adl)
             )
-            dead_by_group[(hs, edu)] = float(mask_dead.sum())
+            adl_by_group[(edu, adl)] = float(mask.sum())
+        # Track dead mothers
+        mask_dead = (education == edu) & (mother_dead_initial == 1)
+        dead_by_group[edu] = float(mask_dead.sum())
 
     # Simulate forward deterministically using transition probs
     for period in range(1, n_periods):
         adl_next = {}
         dead_next = {}
-        for hs in (0, 1):
-            for edu in range(n_edu):
-                # Dead mothers stay dead (and count as "No ADL")
-                dead_curr = dead_by_group.get((hs, edu), 0.0)
-                dead_next[(hs, edu)] = dead_curr
+        for edu in range(n_edu):
+            # Dead mothers stay dead (and count as "No ADL")
+            dead_curr = dead_by_group.get(edu, 0.0)
+            dead_next[edu] = dead_curr
 
-                for adl_curr_state in range(n_adl_states):
-                    count_curr = adl_by_group.get((hs, edu, adl_curr_state), 0.0)
+            for adl_curr_state in range(n_adl_states):
+                count_curr = adl_by_group.get((edu, adl_curr_state), 0.0)
 
-                    if count_curr == 0:
-                        # No one in this state, nothing to transition
-                        continue
+                if count_curr == 0:
+                    # No one in this state, nothing to transition
+                    continue
 
-                    # First, account for death transitions
-                    # death_transition returns [alive_prob, dead_prob]
-                    death_prob_vector = death_transition(period - 1, 0, hs, edu, specs)
-                    alive_prob = float(death_prob_vector[0])
-                    dead_prob = float(death_prob_vector[1])
+                # First, account for death transitions
+                # death_transition returns [alive_prob, dead_prob]
+                death_prob_vector = death_transition(period - 1, 0, edu, specs)
+                alive_prob = float(death_prob_vector[0])
+                dead_prob = float(death_prob_vector[1])
 
-                    # Only alive mothers have ADL states
-                    count_alive = count_curr * alive_prob
-                    count_died = count_curr * dead_prob
+                # Only alive mothers have ADL states
+                count_alive = count_curr * alive_prob
+                count_died = count_curr * dead_prob
 
-                    # Add newly dead to dead count (they count as "No ADL")
-                    dead_next[(hs, edu)] = dead_next.get((hs, edu), 0.0) + count_died
+                # Add newly dead to dead count (they count as "No ADL")
+                dead_next[edu] = dead_next.get(edu, 0.0) + count_died
 
-                    if count_alive == 0:
-                        # All died, nothing to transition
-                        continue
+                if count_alive == 0:
+                    # All died, nothing to transition
+                    continue
 
-                    # Get ADL transition probabilities for alive mothers
-                    # Returns [prob_no_adl, prob_adl_1, prob_adl_2/3]
-                    adl_prob_vector = limitations_with_adl_transition(
-                        adl_curr_state, period - 1, hs, edu, specs
-                    )
+                # Get ADL transition probabilities for alive mothers
+                # Returns [prob_no_adl, prob_adl_1, prob_adl_2/3]
+                adl_prob_vector = limitations_with_adl_transition(
+                    adl_curr_state, period - 1, edu, specs
+                )
 
-                    # Distribute alive count to next ADL states
-                    # according to transition probs
-                    for adl_next_state in range(n_adl_states):
-                        prob = float(adl_prob_vector[adl_next_state])
-                        key = (hs, edu, adl_next_state)
-                        adl_next[key] = adl_next.get(key, 0.0) + count_alive * prob
+                # Distribute alive count to next ADL states
+                # according to transition probs
+                for adl_next_state in range(n_adl_states):
+                    prob = float(adl_prob_vector[adl_next_state])
+                    key = (edu, adl_next_state)
+                    adl_next[key] = adl_next.get(key, 0.0) + count_alive * prob
 
         # Update counts
         adl_by_group = adl_next
@@ -357,17 +340,11 @@ def task_plot_adl_transition_adl_only(  # noqa: PLR0915
         # Calculate total shares
         # No ADL includes: alive with no ADL + dead (dead = no ADL)
         total_no_adl_alive = sum(
-            adl_by_group.get((hs, edu, 0), 0.0) for hs in (0, 1) for edu in range(n_edu)
+            adl_by_group.get((edu, 0), 0.0) for edu in range(n_edu)
         )
-        total_dead = sum(
-            dead_by_group.get((hs, edu), 0.0) for hs in (0, 1) for edu in range(n_edu)
-        )
-        total_adl_1 = sum(
-            adl_by_group.get((hs, edu, 1), 0.0) for hs in (0, 1) for edu in range(n_edu)
-        )
-        total_adl_2_3 = sum(
-            adl_by_group.get((hs, edu, 2), 0.0) for hs in (0, 1) for edu in range(n_edu)
-        )
+        total_dead = sum(dead_by_group.get(edu, 0.0) for edu in range(n_edu))
+        total_adl_1 = sum(adl_by_group.get((edu, 1), 0.0) for edu in range(n_edu))
+        total_adl_2_3 = sum(adl_by_group.get((edu, 2), 0.0) for edu in range(n_edu))
 
         # Normalize by total agents (including dead ones)
         share_no_adl[period] = (total_no_adl_alive + total_dead) / n_agents

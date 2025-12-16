@@ -34,6 +34,7 @@ from caregiving.model.wealth_and_budget.budget_equation_lower_formal_care_costs 
 from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
 
 
+@pytask.mark.skip()
 @pytask.mark.lower_formal_care_costs
 def task_specify_model_lower_formal_care_costs(
     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",

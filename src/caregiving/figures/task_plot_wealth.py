@@ -46,7 +46,6 @@ def task_plot_budget_of_unemployed(
                 experience=0.01,
                 # sex=sex_var,
                 partner_state=np.array([1]),
-                has_sister=np.array([0]),
                 care_demand=np.array([0]),
                 savings_end_of_previous_period=savings,
                 income_shock_previous_period=0,

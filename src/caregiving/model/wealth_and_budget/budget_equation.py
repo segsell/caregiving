@@ -23,7 +23,6 @@ def budget_constraint(
     experience,
     # sex,
     partner_state,
-    has_sister,
     care_demand,
     savings_end_of_previous_period,  # A_{t-1}
     income_shock_previous_period,  # epsilon_{t - 1}
@@ -104,7 +103,6 @@ def budget_constraint(
     care_benfits_and_costs = calc_care_benefits_and_costs(
         lagged_choice=lagged_choice,
         education=education,
-        has_sister=has_sister,
         care_demand=care_demand,
         options=options,
     )

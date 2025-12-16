@@ -86,9 +86,7 @@ def task_specify_model(
             "choices": choices,
             "endogenous_states": {
                 "education": np.arange(specs["n_education_types"], dtype=int),
-                "has_sister": np.arange(2, dtype=int),
-                # "education": [0],
-                # "has_sister": [0],
+                "caregiving_type": np.arange(2, dtype=int),
                 "already_retired": np.arange(2, dtype=int),
             },
             "exogenous_processes": {
@@ -104,7 +102,7 @@ def task_specify_model(
                     "transition": health_transition,
                     "states": np.arange(specs["n_health_states"], dtype=int),
                 },
-                # "mother_health": {
+                # "_mother_health": {
                 #     "transition": health_transition_good_medium_bad,
                 #     "states": np.arange(specs["n_health_states_three"], dtype=int),
                 # },
@@ -120,7 +118,7 @@ def task_specify_model(
                 },
                 "care_demand": {
                     "transition": care_demand_and_supply_transition_adl,
-                    "states": np.arange(3, dtype=int),
+                    "states": np.arange(2, dtype=int),
                 },
             },
             "continuous_states": {
