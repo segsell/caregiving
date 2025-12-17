@@ -48,7 +48,7 @@ def task_estimate_exogenous_informal_care_supply(
     print(model.summary())
 
     # Create prediction grid
-    ages = np.arange(specs["start_age"], specs["end_age_caregiving"] + 1)
+    ages = np.arange(specs["start_age"], specs["end_age_exog_care_supply"] + 1)
     has_sister_vals = [0, 1]
     education_vals = [0, 1]
 

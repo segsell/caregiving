@@ -9,8 +9,6 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
@@ -40,6 +38,8 @@ from caregiving.model.utility.utility_functions_additive import create_utility_f
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.moments.task_create_soep_moments import create_df_with_caregivers
 from caregiving.utils import table
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 
 
 @pytask.mark.initial_conditions
@@ -116,24 +116,6 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
 
     # =================================================================================
     # Static state variables
-    sex_data = observed_data.loc[observed_data["sex"] == sex_var]
-
-    sister_cohort = sex_data.loc[
-        (sex_data["gebjahr"] >= INITIAL_CONDITIONS_COHORT_LOW)
-        & (sex_data["gebjahr"] <= INITIAL_CONDITIONS_COHORT_HIGH)
-        & (sex_data["age"] >= INITIAL_CONDITIONS_AGE_LOW)
-        & (sex_data["age"] <= INITIAL_CONDITIONS_AGE_HIGH)
-    ].copy()
-    # The fact that a woman has obtained higher education correlates with the
-    # presence of a sister.
-    sister_shares = (
-        sister_cohort.groupby("education")["has_sister"]
-        .value_counts(normalize=True)  # proportions within each group
-        .unstack(fill_value=0)  # make 0/1 the columns
-        .rename(columns={0: "no_sister", 1: "has_sister"})
-        .sort_index()  # optional: sort education levels
-    )
-
     lifetable = lifetable.sort_values(["sex", "age"])  # ensure order
     lifetable["cum_survival_prob"] = (
         (1 - lifetable["death_prob"]).groupby(lifetable["sex"]).cumprod()
@@ -260,7 +242,6 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     partner_states = np.empty(n_agents, np.uint8)
     health_agents = np.empty(n_agents, np.uint8)
     job_offer_agents = np.empty(n_agents, np.uint8)
-    has_sister_agents = np.empty(n_agents, np.uint8)
     mother_health_agents = np.empty(n_agents, np.uint8)
     mother_dead_agents = np.zeros(n_agents, dtype=np.uint8)
     mother_adl_agents = np.zeros(
@@ -279,16 +260,6 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         ]
 
         n_agents_edu = np.sum(type_mask)
-
-        # Generate has-sister indicator
-        empirical_sister_probs = sister_shares.loc[edu].values
-        sister_probs = pd.Series(index=[0, 1], data=0.0, dtype=float)
-        sister_probs.update(empirical_sister_probs)
-
-        has_sister_edu = np.random.choice(
-            [0, 1], size=n_agents_edu, p=sister_probs.values
-        )
-        has_sister_agents[type_mask] = has_sister_edu
 
         # mother health
         mother_age_diff = specs["mother_age_diff"][edu]

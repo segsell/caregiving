@@ -4,8 +4,8 @@ import jax
 import jax.numpy as jnp
 
 from caregiving.model.shared import (  # is_nursing_home_care,
-    CARE_DEMAND_AND_NO_OTHER_SUPPLY,
-    CARE_DEMAND_AND_OTHER_SUPPLY,
+    CARE_DEMAND_INTENSIVE,
+    CARE_DEMAND_LIGHT,
     DEAD,
     PARENT_BAD_HEALTH,
     PARENT_GOOD_HEALTH,
@@ -235,7 +235,7 @@ def disutility_work(
         -disutility_work_and_no_informal_care * (1 - informal_care)
         - disutility_work_and_informal_care * informal_care
         - partner_retired * retired * params["disutil_partner_retired"]
-        + utility_from_care * (care_demand == 1)
+        + utility_from_care * (care_demand >= CARE_DEMAND_LIGHT)
     )
 
     return disutility
