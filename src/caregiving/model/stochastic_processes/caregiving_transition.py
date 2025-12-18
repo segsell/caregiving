@@ -4,7 +4,6 @@ from caregiving.model.shared import (
     MOTHER,
     PARENT_DEAD,
     SHARE_CARE_TO_MOTHER,
-    START_PERIOD_CAREGIVING,
 )
 from caregiving.model.stochastic_processes.adl_transition import (
     limitations_with_adl_transition,
@@ -50,6 +49,7 @@ def care_demand_transition_adl_light_intensive(
         - 2: intensive care (ADL 2 or ADL 3).
     """
     end_period_caregiving = options["end_age_caregiving"] - options["start_age"]
+    start_period_caregiving = options["start_period_caregiving"]
 
     # No ADL, ADL 1, ADL 2 or ADL 3 (three states)
     prob_adl = limitations_with_adl_transition(mother_adl, period, education, options)
@@ -58,7 +58,7 @@ def care_demand_transition_adl_light_intensive(
     # Outside the caregiving window or if mother is dead: no care demand (state 0).
     in_caregiving_window = (
         (1 - mother_dead)
-        * (period >= START_PERIOD_CAREGIVING - 1)
+        * (period >= start_period_caregiving - 1)
         * (period < end_period_caregiving)
     )
 
@@ -105,6 +105,7 @@ def care_demand_and_supply_transition_adl(
         care_demand_and_not_other]
     """
     end_period_caregiving = options["end_age_caregiving"] - options["start_age"]
+    start_period_caregiving = options["start_period_caregiving"]
 
     # No ADL, ADL 1, ADL 2 or ADL 3 (three states)
     prob_adl = limitations_with_adl_transition(mother_adl, period, education, options)
@@ -114,7 +115,7 @@ def care_demand_and_supply_transition_adl(
     care_demand = (
         (prob_adl[1] + prob_adl[2])
         * (1 - mother_dead)
-        * (period >= START_PERIOD_CAREGIVING - 1)
+        * (period >= start_period_caregiving - 1)
         * (period < end_period_caregiving)
     )
 
@@ -164,6 +165,7 @@ def _care_demand_and_supply_transition_adl(
     """
 
     end_period_caregiving = options["end_age_caregiving"] - options["start_age"]
+    start_period_caregiving = options["start_period_caregiving"]
 
     # No ADL, ADL 1, ADL 2 or ADL 3 (three states)
     prob_adl = limitations_with_adl_transition(mother_adl, period, education, options)
@@ -172,7 +174,7 @@ def _care_demand_and_supply_transition_adl(
     care_demand = (
         (prob_adl[1] + prob_adl[2])
         * (1 - mother_dead)
-        * (period >= START_PERIOD_CAREGIVING - 1)
+        * (period >= start_period_caregiving - 1)
         * (period < end_period_caregiving)
     )
 
@@ -215,7 +217,7 @@ def care_demand_and_supply_transition(mother_health, period, education, options)
     care_demand = (
         limitations_with_adl[1]
         * (mother_health != PARENT_DEAD)
-        * (period >= START_PERIOD_CAREGIVING - 1)
+        * (period >= start_period_caregiving - 1)
         * (period < end_period_caregiving)
         # * SCALE_DOWN_DEMAND
     )
@@ -246,7 +248,7 @@ def _care_demand_transition(mother_health, period, education, options):
     care_demand = (
         limitations_with_adl[1]
         * (mother_health != PARENT_DEAD)
-        * (period >= START_PERIOD_CAREGIVING - 1)
+        * (period >= options["start_period_caregiving"] - 1)
     )
 
     return jnp.array([1 - care_demand, care_demand])
@@ -261,7 +263,7 @@ def _exog_care_supply_transition(mother_health, education, period, options):
         SHARE_CARE_TO_MOTHER  # scale down exog care supply to mother
         * exog_care_supply
         * (mother_health != PARENT_DEAD)
-        * (period >= START_PERIOD_CAREGIVING)
+        * (period >= options["start_period_caregiving"])
     )
 
     return jnp.array([1 - care_supply, care_supply])

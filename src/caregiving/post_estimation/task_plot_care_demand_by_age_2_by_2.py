@@ -25,7 +25,6 @@ from caregiving.model.shared import (
     PARENT_GOOD_HEALTH,
     PARENT_MEDIUM_HEALTH,
     SEX,
-    START_PERIOD_CAREGIVING,
 )
 
 CARE_MIX_TOLERANCE = 1e-10
@@ -1305,7 +1304,7 @@ def task_check_no_care_with_positive_demand(
 
     start_age = specs["start_age"]
     end_age_msm = specs["end_age_msm"]
-    start_age_caregiving = start_age + START_PERIOD_CAREGIVING
+    start_age_caregiving = specs["start_age_caregiving"]
     end_age_caregiving = end_age_msm
 
     # Load simulated data

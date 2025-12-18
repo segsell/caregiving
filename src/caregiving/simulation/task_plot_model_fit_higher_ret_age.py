@@ -28,7 +28,6 @@ from caregiving.model.shared import (
     RETIREMENT,
     SCALE_CAREGIVER_SHARE,
     SEX,
-    START_PERIOD_CAREGIVING,
     WEALTH_QUANTILE_CUTOFF,
     WORK,
     WORK_CHOICES,
@@ -140,7 +139,7 @@ def task_plot_model_fit_higher_ret_age(  # noqa: PLR0915
     specs = model_full["options"]["model_params"]
 
     start_age = specs["start_age"]
-    start_age_caregivers = start_age + START_PERIOD_CAREGIVING
+    start_age_caregivers = specs["start_age_caregiving"]
     end_age = specs["end_age_msm"]
     start_year = 2001
     end_year = 2019
@@ -238,7 +237,7 @@ def task_plot_model_fit_higher_ret_age(  # noqa: PLR0915
 
     # Define age range for caregivers and use 3-year bins (mirror baseline)
     start_age = specs["start_age"]
-    start_age_caregivers = start_age + START_PERIOD_CAREGIVING
+    start_age_caregivers = specs["start_age_caregiving"]
     end_age = 69
 
     plot_choice_shares_by_education_age_bins(

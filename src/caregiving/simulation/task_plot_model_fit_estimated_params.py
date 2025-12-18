@@ -27,7 +27,6 @@ from caregiving.model.shared import (
     RETIREMENT,
     SCALE_CAREGIVER_SHARE,
     SEX,
-    START_PERIOD_CAREGIVING,
     WEALTH_QUANTILE_CUTOFF,
     WORK,
     WORK_CHOICES,
@@ -166,7 +165,7 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
     specs = model_full["options"]["model_params"]
 
     start_age = specs["start_age"]
-    start_age_caregivers = start_age + START_PERIOD_CAREGIVING
+    start_age_caregivers = specs["start_age_caregiving"]
     end_age = specs["end_age_msm"]
     start_year = 2001
     end_year = 2019
@@ -456,9 +455,6 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         "informal_care": "Informal Care",
     }
 
-    # Use start_age_caregivers for caregiving transitions
-    start_age_caregivers = start_age + START_PERIOD_CAREGIVING
-
     plot_transitions_by_age(
         df_emp_care,
         df_sim,
@@ -466,7 +462,7 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         state_labels_caregiving,
         states_emp=states_caregiving_emp,
         states_sim=states_caregiving_sim,
-        age_min=start_age_caregivers,
+        age_min=specs["start_age_caregiving"],
         one_way=True,
         path_to_save_plot=path_to_save_caregiving_transition_age_plot,
     )
@@ -477,7 +473,7 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         state_labels_caregiving,
         states_emp=states_caregiving_emp,
         states_sim=states_caregiving_sim,
-        age_min=start_age_caregivers,
+        age_min=specs["start_age_caregiving"],
         bin_width=5,
         one_way=True,
         path_to_save_plot=path_to_save_caregiving_transition_age_bin_plot,

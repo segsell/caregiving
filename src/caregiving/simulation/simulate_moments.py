@@ -34,7 +34,6 @@ from caregiving.model.shared import (  # NURSING_HOME_CARE,
     RETIREMENT,
     SCALE_CAREGIVER_SHARE,
     SEX,
-    START_PERIOD_CAREGIVING,
     UNEMPLOYED,
     WEALTH_MOMENTS_SCALE,
     WORK,
@@ -55,7 +54,8 @@ def simulate_moments_pandas(  # noqa: PLR0915
 
     model_params = options["model_params"]
     start_age = model_params["start_age"]
-    start_age_caregivers = start_age + START_PERIOD_CAREGIVING
+    # Prefer directly stored caregiving start age if available
+    start_age_caregivers = model_params["start_age_caregiving"]
     end_age = model_params["end_age_msm"]
 
     age_range = range(start_age, end_age + 1)
@@ -63,9 +63,9 @@ def simulate_moments_pandas(  # noqa: PLR0915
     age_range_wealth = range(start_age, model_params["end_age_wealth"] + 1)
 
     age_bins_caregivers_5year = (
-        list(range(40, 75, 5)),  # [40, 45, 50, 55, 60, 65, 70]
+        list(range(45, 75, 5)),  # [40, 45, 50, 55, 60, 65, 70]
         [
-            f"{s}_{s+4}" for s in range(40, 70, 5)
+            f"{s}_{s+4}" for s in range(45, 70, 5)
         ],  # ["40_44", "45_49", "50_54", "55_59", "60_64", "65_69"]
     )
     # age_bins_75 = (
@@ -1103,7 +1103,8 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
     idx = column_indices.copy()
     arr_all = jnp.asarray(sim_df)
 
-    min_age_caregivers = min_age + START_PERIOD_CAREGIVING
+    # Use model parameters to locate the caregiving start age in the JAX grid
+    min_age_caregivers = min_age + model_params["start_period_caregiving"]
     end_age_wealth = model_params["end_age_wealth"]
 
     # df_low_educ = sim_df.loc[sim_df["education"] == 0]

@@ -30,7 +30,6 @@ from caregiving.model.shared import (
     RETIREMENT_CHOICES,
     SCALE_CAREGIVER_SHARE,
     SEX,
-    START_PERIOD_CAREGIVING,
     UNEMPLOYED_CHOICES,
     WEALTH_MOMENTS_SCALE,
     WEALTH_QUANTILE_CUTOFF,
@@ -62,7 +61,7 @@ def task_create_soep_moments(  # noqa: PLR0915
     specs = read_and_derive_specs(path_to_specs)
 
     start_age = specs["start_age"]
-    start_age_caregivers = start_age + START_PERIOD_CAREGIVING
+    start_age_caregivers = specs["start_age_caregiving"]
     end_age = specs["end_age_msm"]
     start_year = 2001
     end_year = 2019
@@ -244,7 +243,7 @@ def task_create_soep_moments(  # noqa: PLR0915
 
     # =================================================================================
     caregiver_shares = {
-        "share_informal_care_age_bin_40_44": 0.02980982 + 0.010,
+        # "share_informal_care_age_bin_40_44": 0.02980982 + 0.010,
         "share_informal_care_age_bin_45_49": 0.04036255 + 0.015,
         "share_informal_care_age_bin_50_54": 0.05350986 + 0.021,
         "share_informal_care_age_bin_55_59": 0.06193384 + 0.027,
@@ -288,7 +287,7 @@ def task_create_soep_moments(  # noqa: PLR0915
     )
 
     # Caregiving labor shares using 3-year age bins
-    start_age_caregivers = start_age + START_PERIOD_CAREGIVING
+    start_age_caregivers = specs["start_age_caregiving"]
     age_bins_caregivers_3year = (
         list(
             range(start_age_caregivers, end_age + 1, 3)
@@ -669,8 +668,8 @@ def compute_share_informal_care_by_age_bin(
     label = f"_{label}" if label else ""
 
     if age_bins is None:
-        # bin edges: 40,45,50,55,60,65,70  (right edge 70 is *exclusive*)
-        bin_edges = list(range(40, 75, 5))  # [40,45,50,55,60,65,70]
+        # bin edges: 45,50,55,60,65,70  (right edge 70 is *exclusive*)
+        bin_edges = list(range(45, 75, 5))  # [45,50,55,60,65,70]
         bin_labels = [f"{s}_{s+4}" for s in bin_edges[:-1]]
     else:
         bin_edges, bin_labels = age_bins

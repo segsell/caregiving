@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from caregiving.config import BLD
-from caregiving.model.shared import MOTHER, START_PERIOD_CAREGIVING
+from caregiving.model.shared import MOTHER
 from caregiving.model.stochastic_processes.adl_transition import (
     PARENT_AGE_OFFSET,
     limitations_with_adl_transition,
@@ -58,9 +58,10 @@ def test_care_demand_transition_adl_light_intensive_sums_to_one(
     end_period_caregiving = (
         model_params["end_age_caregiving"] - model_params["start_age"]
     )
+    start_period_caregiving = model_params["start_period_caregiving"]
     in_caregiving_window = (
         (1 - mother_dead)
-        * (period >= START_PERIOD_CAREGIVING - 1)
+        * (period >= start_period_caregiving - 1)
         * (period < end_period_caregiving)
     )
 
