@@ -388,6 +388,139 @@ def apply_retirement_constraint_for_SRA(SRA, options):
     return np.maximum(SRA - options["ret_years_before_SRA"], 63)
 
 
+# def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR0915
+#     period, lagged_choice, job_offer, health, caregiving_type, care_demand, options
+# ):
+#     age = period + options["start_age"]
+#     start_age_caregiving = options["start_age_caregiving"]
+#     end_age_caregiving = options["end_age_caregiving"]
+
+#     SRA_pol_state = options["min_SRA"]  # + policy_state  # * options["SRA_grid_size"]
+#     min_ret_age_pol_state = apply_retirement_constraint_for_SRA(SRA_pol_state, options)
+
+#     # Light care demand (care_demand == 1) with caregiving_type == 1
+#     # Agent can choose: LIGHT_INFORMAL_CARE or FORMAL_CARE
+#     if (
+#         (care_demand == CARE_DEMAND_LIGHT)
+#         & (caregiving_type == 1)
+#         & (age >= start_age_caregiving)
+#         & (age <= end_age_caregiving)
+#     ):
+#         if is_dead(health):
+#             return RETIREMENT_LIGHT_INFORMAL_OR_FORMAL
+#         elif is_retired(lagged_choice):
+#             return RETIREMENT_LIGHT_INFORMAL_OR_FORMAL
+#         elif age < min_ret_age_pol_state:
+#             if job_offer == 0:
+#                 return UNEMPLOYED_LIGHT_INFORMAL_OR_FORMAL
+#             else:
+#                 return WORK_AND_UNEMPLOYED_LIGHT_INFORMAL_OR_FORMAL
+#         elif age >= options["max_ret_age"]:
+#             return RETIREMENT_LIGHT_INFORMAL_OR_FORMAL
+#         else:
+#             if age >= SRA_pol_state:
+#                 if job_offer == 0:
+#                     return RETIREMENT_LIGHT_INFORMAL_OR_FORMAL
+#                 else:
+#                     return WORK_AND_RETIREMENT_LIGHT_INFORMAL_OR_FORMAL
+#             else:
+#                 if job_offer == 0:
+#                     return NOT_WORKING_LIGHT_INFORMAL_OR_FORMAL
+#                 else:
+#                     return ALL_LIGHT_INFORMAL_OR_FORMAL
+#     # Intensive care demand (care_demand == 2) with caregiving_type == 1
+#     # Agent can choose: INTENSIVE_INFORMAL_CARE or FORMAL_CARE
+#     elif (
+#         (care_demand == CARE_DEMAND_INTENSIVE)
+#         & (caregiving_type == 1)
+#         & (age >= start_age_caregiving)
+#         & (age <= end_age_caregiving)
+#     ):
+#         if is_dead(health):
+#             return RETIREMENT_INTENSIVE_INFORMAL_OR_FORMAL
+#         elif is_retired(lagged_choice):
+#             return RETIREMENT_INTENSIVE_INFORMAL_OR_FORMAL
+#         elif age < min_ret_age_pol_state:
+#             if job_offer == 0:
+#                 return UNEMPLOYED_INTENSIVE_INFORMAL_OR_FORMAL
+#             else:
+#                 return WORK_AND_UNEMPLOYED_INTENSIVE_INFORMAL_OR_FORMAL
+#         elif age >= options["max_ret_age"]:
+#             return RETIREMENT_INTENSIVE_INFORMAL_OR_FORMAL
+#         else:
+#             if age >= SRA_pol_state:
+#                 if job_offer == 0:
+#                     return RETIREMENT_INTENSIVE_INFORMAL_OR_FORMAL
+#                 else:
+#                     return WORK_AND_RETIREMENT_INTENSIVE_INFORMAL_OR_FORMAL
+#             else:
+#                 if job_offer == 0:
+#                     return NOT_WORKING_INTENSIVE_INFORMAL_OR_FORMAL
+#                 else:
+#                     return ALL_INTENSIVE_INFORMAL_OR_FORMAL
+#     # Care demand (light or intensive) with caregiving_type == 0
+#     # Agent can choose: NO_CARE or FORMAL_CARE
+#     # (Same choice set for both light and intensive care demand)
+#     elif (
+#         ((care_demand == CARE_DEMAND_LIGHT) | (care_demand == CARE_DEMAND_INTENSIVE))
+#         # (care_demand > 0)
+#         & (caregiving_type == 0)
+#         & (age >= start_age_caregiving)
+#         & (age <= end_age_caregiving)
+#     ):
+#         if is_dead(health):
+#             return RETIREMENT_NO_CARE_OR_FORMAL
+#         elif is_retired(lagged_choice):
+#             return RETIREMENT_NO_CARE_OR_FORMAL
+#         elif age < min_ret_age_pol_state:
+#             if job_offer == 0:
+#                 return UNEMPLOYED_NO_CARE_OR_FORMAL
+#             else:
+#                 return WORK_AND_UNEMPLOYED_NO_CARE_OR_FORMAL
+#         elif age >= options["max_ret_age"]:
+#             return RETIREMENT_NO_CARE_OR_FORMAL
+#         else:
+#             if age >= SRA_pol_state:
+#                 if job_offer == 0:
+#                     return RETIREMENT_NO_CARE_OR_FORMAL
+#                 else:
+#                     return WORK_AND_RETIREMENT_NO_CARE_OR_FORMAL
+#             else:
+#                 if job_offer == 0:
+#                     return NOT_WORKING_NO_CARE_OR_FORMAL
+#                 else:
+#                     return ALL_NO_CARE_OR_FORMAL
+#     else:  # if (care_demand == 0) | (age outside caregiving window):
+#         # When care_demand == 0: No care is needed (neither informal nor formal care)
+#         if is_dead(health):
+#             return RETIREMENT_NO_CARE
+#         # Retirement is absorbing
+#         elif is_retired(lagged_choice):
+#             return RETIREMENT_NO_CARE
+#         # Check if the person is not in the voluntary retirement range.
+#         elif age < min_ret_age_pol_state:  # min_ret_age: 63
+#             if job_offer == 0:
+#                 return UNEMPLOYED_NO_CARE
+#             else:
+#                 return WORK_AND_UNEMPLOYED_NO_CARE
+#         # Person must retire
+#         elif age >= options["max_ret_age"]:
+#             return RETIREMENT_NO_CARE
+#         # Person is in the voluntary retirement range
+#         else:
+#             if age >= SRA_pol_state:  # min_SRA: 65
+#                 if job_offer == 0:
+#                     return RETIREMENT_NO_CARE  # Cannot choose unemployment after 65
+#                 else:
+#                     return WORK_AND_RETIREMENT_NO_CARE
+#             else:
+#                 if job_offer == 0:
+#                     # Choose unemployment or retirement
+#                     return NOT_WORKING_NO_CARE
+#                 else:
+#                     return ALL_NO_CARE
+
+
 def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR0915
     period, lagged_choice, job_offer, health, caregiving_type, care_demand, options
 ):
@@ -400,97 +533,146 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
 
     # Light care demand (care_demand == 1) with caregiving_type == 1
     # Agent can choose: LIGHT_INFORMAL_CARE or FORMAL_CARE
-    if (
-        (care_demand == CARE_DEMAND_LIGHT)
-        & (caregiving_type == 1)
-        & (age >= start_age_caregiving)
-        & (age <= end_age_caregiving)
-    ):
-        if is_dead(health):
-            return RETIREMENT_LIGHT_INFORMAL_OR_FORMAL
-        elif is_retired(lagged_choice):
-            return RETIREMENT_LIGHT_INFORMAL_OR_FORMAL
-        elif age < min_ret_age_pol_state:
-            if job_offer == 0:
-                return UNEMPLOYED_LIGHT_INFORMAL_OR_FORMAL
-            else:
-                return WORK_AND_UNEMPLOYED_LIGHT_INFORMAL_OR_FORMAL
-        elif age >= options["max_ret_age"]:
-            return RETIREMENT_LIGHT_INFORMAL_OR_FORMAL
-        else:
-            if age >= SRA_pol_state:
+
+    if caregiving_type == 1:
+        if (
+            (care_demand == 0)
+            | (age < start_age_caregiving)
+            | (age > end_age_caregiving)
+        ):
+            if is_dead(health):
+                return RETIREMENT_NO_CARE
+            # Retirement is absorbing
+            elif is_retired(lagged_choice):
+                return RETIREMENT_NO_CARE
+            # Check if the person is not in the voluntary retirement range.
+            elif age < min_ret_age_pol_state:  # min_ret_age: 63
                 if job_offer == 0:
+                    return UNEMPLOYED_NO_CARE
+                else:
+                    return WORK_AND_UNEMPLOYED_NO_CARE
+            # Person must retire
+            elif age >= options["max_ret_age"]:
+                return RETIREMENT_NO_CARE
+            # Person is in the voluntary retirement range
+            else:
+                if age >= SRA_pol_state:  # min_SRA: 65
+                    if job_offer == 0:
+                        return RETIREMENT_NO_CARE  # Cannot choose unemployment after 65
+                    else:
+                        return WORK_AND_RETIREMENT_NO_CARE
+                else:
+                    if job_offer == 0:
+                        # Choose unemployment or retirement
+                        return NOT_WORKING_NO_CARE
+                    else:
+                        return ALL_NO_CARE
+        else:
+            if care_demand == CARE_DEMAND_LIGHT:
+                if is_dead(health):
+                    return RETIREMENT_LIGHT_INFORMAL_OR_FORMAL
+                elif is_retired(lagged_choice):
+                    return RETIREMENT_LIGHT_INFORMAL_OR_FORMAL
+                elif age < min_ret_age_pol_state:
+                    if job_offer == 0:
+                        return UNEMPLOYED_LIGHT_INFORMAL_OR_FORMAL
+                    else:
+                        return WORK_AND_UNEMPLOYED_LIGHT_INFORMAL_OR_FORMAL
+                elif age >= options["max_ret_age"]:
                     return RETIREMENT_LIGHT_INFORMAL_OR_FORMAL
                 else:
-                    return WORK_AND_RETIREMENT_LIGHT_INFORMAL_OR_FORMAL
+                    if age >= SRA_pol_state:
+                        if job_offer == 0:
+                            return RETIREMENT_LIGHT_INFORMAL_OR_FORMAL
+                        else:
+                            return WORK_AND_RETIREMENT_LIGHT_INFORMAL_OR_FORMAL
+                    else:
+                        if job_offer == 0:
+                            return NOT_WORKING_LIGHT_INFORMAL_OR_FORMAL
+                        else:
+                            return ALL_LIGHT_INFORMAL_OR_FORMAL
             else:
-                if job_offer == 0:
-                    return NOT_WORKING_LIGHT_INFORMAL_OR_FORMAL
-                else:
-                    return ALL_LIGHT_INFORMAL_OR_FORMAL
-    # Intensive care demand (care_demand == 2) with caregiving_type == 1
-    # Agent can choose: INTENSIVE_INFORMAL_CARE or FORMAL_CARE
-    elif (
-        (care_demand == CARE_DEMAND_INTENSIVE)
-        & (caregiving_type == 1)
-        & (age >= start_age_caregiving)
-        & (age <= end_age_caregiving)
-    ):
-        if is_dead(health):
-            return RETIREMENT_INTENSIVE_INFORMAL_OR_FORMAL
-        elif is_retired(lagged_choice):
-            return RETIREMENT_INTENSIVE_INFORMAL_OR_FORMAL
-        elif age < min_ret_age_pol_state:
-            if job_offer == 0:
-                return UNEMPLOYED_INTENSIVE_INFORMAL_OR_FORMAL
-            else:
-                return WORK_AND_UNEMPLOYED_INTENSIVE_INFORMAL_OR_FORMAL
-        elif age >= options["max_ret_age"]:
-            return RETIREMENT_INTENSIVE_INFORMAL_OR_FORMAL
-        else:
-            if age >= SRA_pol_state:
-                if job_offer == 0:
+                if is_dead(health):
+                    return RETIREMENT_INTENSIVE_INFORMAL_OR_FORMAL
+                elif is_retired(lagged_choice):
+                    return RETIREMENT_INTENSIVE_INFORMAL_OR_FORMAL
+                elif age < min_ret_age_pol_state:
+                    if job_offer == 0:
+                        return UNEMPLOYED_INTENSIVE_INFORMAL_OR_FORMAL
+                    else:
+                        return WORK_AND_UNEMPLOYED_INTENSIVE_INFORMAL_OR_FORMAL
+                elif age >= options["max_ret_age"]:
                     return RETIREMENT_INTENSIVE_INFORMAL_OR_FORMAL
                 else:
-                    return WORK_AND_RETIREMENT_INTENSIVE_INFORMAL_OR_FORMAL
-            else:
+                    if age >= SRA_pol_state:
+                        if job_offer == 0:
+                            return RETIREMENT_INTENSIVE_INFORMAL_OR_FORMAL
+                        else:
+                            return WORK_AND_RETIREMENT_INTENSIVE_INFORMAL_OR_FORMAL
+                    else:
+                        if job_offer == 0:
+                            return NOT_WORKING_INTENSIVE_INFORMAL_OR_FORMAL
+                        else:
+                            return ALL_INTENSIVE_INFORMAL_OR_FORMAL
+
+    elif caregiving_type == 0:
+        if (
+            (care_demand == 0)
+            | (age < start_age_caregiving)
+            | (age > end_age_caregiving)
+        ):
+            if is_dead(health):
+                return RETIREMENT_NO_CARE
+            # Retirement is absorbing
+            elif is_retired(lagged_choice):
+                return RETIREMENT_NO_CARE
+            # Check if the person is not in the voluntary retirement range.
+            elif age < min_ret_age_pol_state:  # min_ret_age: 63
                 if job_offer == 0:
-                    return NOT_WORKING_INTENSIVE_INFORMAL_OR_FORMAL
+                    return UNEMPLOYED_NO_CARE
                 else:
-                    return ALL_INTENSIVE_INFORMAL_OR_FORMAL
-    # Care demand (light or intensive) with caregiving_type == 0
-    # Agent can choose: NO_CARE or FORMAL_CARE
-    # (Same choice set for both light and intensive care demand)
-    elif (
-        ((care_demand == CARE_DEMAND_LIGHT) | (care_demand == CARE_DEMAND_INTENSIVE))
-        & (caregiving_type == 0)
-        & (age >= start_age_caregiving)
-        & (age <= end_age_caregiving)
-    ):
-        if is_dead(health):
-            return RETIREMENT_NO_CARE_OR_FORMAL
-        elif is_retired(lagged_choice):
-            return RETIREMENT_NO_CARE_OR_FORMAL
-        elif age < min_ret_age_pol_state:
-            if job_offer == 0:
-                return UNEMPLOYED_NO_CARE_OR_FORMAL
+                    return WORK_AND_UNEMPLOYED_NO_CARE
+            # Person must retire
+            elif age >= options["max_ret_age"]:
+                return RETIREMENT_NO_CARE
+            # Person is in the voluntary retirement range
             else:
-                return WORK_AND_UNEMPLOYED_NO_CARE_OR_FORMAL
-        elif age >= options["max_ret_age"]:
-            return RETIREMENT_NO_CARE_OR_FORMAL
+                if age >= SRA_pol_state:  # min_SRA: 65
+                    if job_offer == 0:
+                        return RETIREMENT_NO_CARE  # Cannot choose unemployment after 65
+                    else:
+                        return WORK_AND_RETIREMENT_NO_CARE
+                else:
+                    if job_offer == 0:
+                        # Choose unemployment or retirement
+                        return NOT_WORKING_NO_CARE
+                    else:
+                        return ALL_NO_CARE
         else:
-            if age >= SRA_pol_state:
+            if is_dead(health):
+                return RETIREMENT_NO_CARE_OR_FORMAL
+            elif is_retired(lagged_choice):
+                return RETIREMENT_NO_CARE_OR_FORMAL
+            elif age < min_ret_age_pol_state:
                 if job_offer == 0:
-                    return RETIREMENT_NO_CARE_OR_FORMAL
+                    return UNEMPLOYED_NO_CARE_OR_FORMAL
                 else:
-                    return WORK_AND_RETIREMENT_NO_CARE_OR_FORMAL
+                    return WORK_AND_UNEMPLOYED_NO_CARE_OR_FORMAL
+            elif age >= options["max_ret_age"]:
+                return RETIREMENT_NO_CARE_OR_FORMAL
             else:
-                if job_offer == 0:
-                    return NOT_WORKING_NO_CARE_OR_FORMAL
+                if age >= SRA_pol_state:
+                    if job_offer == 0:
+                        return RETIREMENT_NO_CARE_OR_FORMAL
+                    else:
+                        return WORK_AND_RETIREMENT_NO_CARE_OR_FORMAL
                 else:
-                    return ALL_NO_CARE_OR_FORMAL
-    else:  # if (care_demand == 0) | (age outside caregiving window):
-        # When care_demand == 0: No care is needed (neither informal nor formal care)
+                    if job_offer == 0:
+                        return NOT_WORKING_NO_CARE_OR_FORMAL
+                    else:
+
+                        return ALL_NO_CARE_OR_FORMAL
+    else:
         if is_dead(health):
             return RETIREMENT_NO_CARE
         # Retirement is absorbing

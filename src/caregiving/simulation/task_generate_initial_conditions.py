@@ -104,21 +104,22 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     np.random.seed(seed)
 
     # Define start data and adjust wealth
-    min_period = observed_data["period"].min()
-    start_period_data = observed_data[observed_data["period"].isin([min_period])].copy()
-    # moments_data = create_df_with_caregivers(
-    #     df_full=observed_data,
-    #     specs=specs,
-    #     start_year=2001,
-    #     end_year=2019,
-    #     end_age=specs["end_age_msm"],
-    # )
-    # start_period_data = moments_data[moments_data["age"] == specs["start_age"]].copy()
+    # min_period = observed_data["period"].min()
+    # start_period_data = observed_data[observed_data["period"].isin([min_period])].copy()
+    # start_period_data = start_period_data[start_period_data["wealth"].notnull()].copy()
 
-    start_period_data = start_period_data[start_period_data["wealth"].notnull()].copy()
-    observed_data_wealth = create_df_wealth(df_full=observed_data, specs=specs)
-    start_age_wealth = observed_data_wealth[
-        observed_data_wealth["age"] == specs["start_age"]
+    moments_data = create_df_with_caregivers(
+        df_full=observed_data,
+        specs=specs,
+        start_year=2001,
+        end_year=2019,
+        end_age=specs["end_age_msm"],
+    )
+    start_period_data = moments_data[moments_data["age"] == specs["start_age"]].copy()
+
+    observed_wealth = create_df_wealth(df_full=observed_data, specs=specs)
+    start_age_wealth = observed_wealth[
+        observed_wealth["age"] == specs["start_age"]
     ].copy()
 
     # =================================================================================
