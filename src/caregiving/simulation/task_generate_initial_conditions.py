@@ -9,6 +9,8 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.wealth_correction import adjust_observed_wealth
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
@@ -41,8 +43,6 @@ from caregiving.moments.task_create_soep_moments import (
     create_df_with_caregivers,
 )
 from caregiving.utils import table
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
 
 
 @pytask.mark.initial_conditions
