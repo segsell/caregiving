@@ -67,6 +67,7 @@ from caregiving.model.shared import (
     is_informal_care,
     is_intensive_informal_care,
     is_light_informal_care,
+    is_no_care,
     is_part_time,
     is_retired,
     is_unemployed,
@@ -80,7 +81,7 @@ from caregiving.model.wealth_and_budget.pensions import (
 def create_state_space_functions():
     return {
         "state_specific_choice_set": state_specific_choice_set_with_caregiving,
-        "next_period_endogenous_state": next_period_endogenous_state,
+        "next_period_deterministic_state": next_period_deterministic_state,
         "next_period_experience": get_next_period_experience,
         "sparsity_condition": sparsity_condition,
     }
@@ -89,7 +90,7 @@ def create_state_space_functions():
 def create_state_space_functions_counterfactual():
     return {
         "state_specific_choice_set": state_specific_choice_set,
-        "next_period_endogenous_state": next_period_endogenous_state,
+        "next_period_deterministic_state": next_period_deterministic_state,
         "next_period_experience": get_next_period_experience,
         "sparsity_condition": sparsity_condition,
     }
@@ -100,12 +101,13 @@ def create_state_space_functions_counterfactual():
 # =====================================================================================
 
 
-def next_period_endogenous_state(
+def next_period_deterministic_state(
     period,
     choice,
     lagged_choice,
     already_retired,
 ):
+    # is_already_retired = is_retired(choice)
     is_already_retired = is_retired(lagged_choice) & is_retired(choice)
 
     states_already_retired = {
@@ -160,19 +162,19 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
     care_demand,
     job_offer,
     caregiving_type,
-    options,
+    model_specs,
 ):
-    start_age = options["start_age"]
-    max_ret_age = options["max_ret_age"]
-    min_ret_age_state_space = options["min_ret_age"]
+    start_age = model_specs["start_age"]
+    max_ret_age = model_specs["max_ret_age"]
+    min_ret_age_state_space = model_specs["min_ret_age"]
 
-    start_age_caregiving = options["start_age_caregiving"]
-    end_age_caregiving = options["end_age_caregiving"]
+    start_age_caregiving = model_specs["start_age_caregiving"]
+    end_age_caregiving = model_specs["end_age_caregiving"]
 
-    SRA_pol_state = options["min_SRA"]  # + policy_state
+    SRA_pol_state = model_specs["min_SRA"]  # + policy_state
 
     # Generate last period, because only here are death states
-    last_period = options["n_periods"] - 1
+    last_period = model_specs["n_periods"] - 1
 
     age = start_age + period
 
@@ -186,6 +188,10 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
         return False
     elif (not is_retired(lagged_choice)) & (already_retired == 1):
         return False
+    # Note: We allow (is_retired(lagged_choice)) & (already_retired == 0) because
+    # this represents the period immediately after someone first retires
+    # elif (is_retired(lagged_choice)) & (already_retired == 0):
+    #     return False
     # ================================================================================
     # After the maximum retirement age, you must be retired.
     elif (age > max_ret_age) & (not is_retired(lagged_choice)) & (is_alive(health)):
@@ -206,6 +212,21 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
     elif (caregiving_type == 0) & (is_informal_care(lagged_choice)):
         return False
     # ================================================================================
+    # # elif (age <= start_age_caregiving) & (lagged_care_demand == 1):
+    # #     return False
+    # elif (is_informal_care(lagged_choice)) & (lagged_care_demand == 0):
+    #     return False
+    # elif (is_formal_care(lagged_choice)) & (lagged_care_demand == 0):
+    #     return False
+    # elif (
+    #     (caregiving_type == 1)
+    #     & (lagged_care_demand == 1)
+    #     & (is_no_care(lagged_choice))
+    #     & (age > start_age_caregiving)
+    #     & (age <= end_age_caregiving + 1)
+    # ):
+    #     return False
+    # # ================================================================================
     else:
         # Now turn to the states, where it is decided by the value of an exogenous
         # state if it is valid or not. For invalid states we provide a proxy child state
@@ -252,7 +273,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
             state_proxy = {
                 "period": period,
                 "lagged_choice": lagged_choice,
-                "already_retired": already_retired,
+                "already_retired": 1,
                 "education": education,
                 "caregiving_type": caregiving_type,
                 "health": health,
@@ -309,50 +330,54 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
         #         "job_offer": job_offer,
         #     }
         #     return state_proxy
-        # Care demand cannot be 1 before the start period for caregiving
-        elif age > end_age_caregiving + 1:
-            # Proxy to state with care_demand = 0
-            state_proxy = {
-                "period": period,
-                "lagged_choice": lagged_choice,
-                "already_retired": already_retired,
-                "education": education,
-                "caregiving_type": caregiving_type,
-                "health": health,
-                "partner_state": partner_state,
-                "mother_dead": mother_dead,
-                "mother_adl": mother_adl,
-                "care_demand": 0,
-                "job_offer": job_offer,
-            }
-            return state_proxy
-        elif age < start_age_caregiving:
-            # Proxy to state with care_demand = 0
-            state_proxy = {
-                "period": period,
-                "lagged_choice": lagged_choice,
-                "already_retired": already_retired,
-                "education": education,
-                "caregiving_type": caregiving_type,
-                "health": health,
-                "partner_state": partner_state,
-                "mother_dead": mother_dead,
-                "mother_adl": mother_adl,
-                "care_demand": 0,
-                "job_offer": job_offer,
-            }
-            return state_proxy
+        # # Care demand cannot be 1 before the start period for caregiving
+        # elif age > end_age_caregiving + 1:
+        #     # Proxy to state with care_demand = 0
+        #     state_proxy = {
+        #         "period": period,
+        #         "lagged_choice": lagged_choice,
+        #         "already_retired": already_retired,
+        #         "education": education,
+        #         "caregiving_type": caregiving_type,
+        #         "health": health,
+        #         "partner_state": partner_state,
+        #         "mother_dead": mother_dead,
+        #         "mother_adl": mother_adl,
+        #         "care_demand": 0,
+        #         "job_offer": job_offer,
+        #     }
+        #     return state_proxy
+        # elif age < start_age_caregiving:
+        #     # Proxy to state with care_demand = 0
+        #     state_proxy = {
+        #         "period": period,
+        #         "lagged_choice": lagged_choice,
+        #         "already_retired": already_retired,
+        #         "education": education,
+        #         "caregiving_type": caregiving_type,
+        #         "health": health,
+        #         "partner_state": partner_state,
+        #         "mother_dead": mother_dead,
+        #         "mother_adl": mother_adl,
+        #         "care_demand": 0,
+        #         "job_offer": job_offer,
+        #     }
+        #     return state_proxy
 
         else:
             return True
 
 
 def state_specific_choice_set(  # noqa: PLR0911, PLR0912
-    period, lagged_choice, job_offer, health, options
+    period, lagged_choice, job_offer, health, model_specs
 ):
-    age = period + options["start_age"]
-    SRA_pol_state = options["min_SRA"]  # + policy_state  # * options["SRA_grid_size"]
-    min_ret_age_pol_state = apply_retirement_constraint_for_SRA(SRA_pol_state, options)
+    age = period + model_specs["start_age"]
+    SRA_pol_state = model_specs[
+        "min_SRA"
+    ]  # + policy_state  # * options["SRA_grid_size"]
+    min_ret_age_pol_state = apply_retirement_constraint_for_SRA(
+        SRA_pol_state, model_specs
+    )
 
     if is_dead(health):
         return RETIREMENT_NO_CARE
@@ -367,7 +392,7 @@ def state_specific_choice_set(  # noqa: PLR0911, PLR0912
         else:
             return WORK_AND_UNEMPLOYED_NO_CARE
     # Person must be retired
-    elif age >= options["max_ret_age"]:
+    elif age >= model_specs["max_ret_age"]:
         return RETIREMENT_NO_CARE
     # Person is in the voluntary retirement range.
     else:
@@ -384,8 +409,8 @@ def state_specific_choice_set(  # noqa: PLR0911, PLR0912
                 return ALL_NO_CARE
 
 
-def apply_retirement_constraint_for_SRA(SRA, options):
-    return np.maximum(SRA - options["ret_years_before_SRA"], 63)
+def apply_retirement_constraint_for_SRA(SRA, model_specs):
+    return np.maximum(SRA - model_specs["ret_years_before_SRA"], 63)
 
 
 # def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR0915
@@ -522,14 +547,18 @@ def apply_retirement_constraint_for_SRA(SRA, options):
 
 
 def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR0915
-    period, lagged_choice, job_offer, health, caregiving_type, care_demand, options
+    period, lagged_choice, job_offer, health, caregiving_type, care_demand, model_specs
 ):
-    age = period + options["start_age"]
-    start_age_caregiving = options["start_age_caregiving"]
-    end_age_caregiving = options["end_age_caregiving"]
+    age = period + model_specs["start_age"]
+    start_age_caregiving = model_specs["start_age_caregiving"]
+    end_age_caregiving = model_specs["end_age_caregiving"]
 
-    SRA_pol_state = options["min_SRA"]  # + policy_state  # * options["SRA_grid_size"]
-    min_ret_age_pol_state = apply_retirement_constraint_for_SRA(SRA_pol_state, options)
+    SRA_pol_state = model_specs[
+        "min_SRA"
+    ]  # + policy_state  # * options["SRA_grid_size"]
+    min_ret_age_pol_state = apply_retirement_constraint_for_SRA(
+        SRA_pol_state, model_specs
+    )
 
     # Light care demand (care_demand == 1) with caregiving_type == 1
     # Agent can choose: LIGHT_INFORMAL_CARE or FORMAL_CARE
@@ -552,7 +581,7 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
                 else:
                     return WORK_AND_UNEMPLOYED_NO_CARE
             # Person must retire
-            elif age >= options["max_ret_age"]:
+            elif age >= model_specs["max_ret_age"]:
                 return RETIREMENT_NO_CARE
             # Person is in the voluntary retirement range
             else:
@@ -578,7 +607,7 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
                         return UNEMPLOYED_LIGHT_INFORMAL_OR_FORMAL
                     else:
                         return WORK_AND_UNEMPLOYED_LIGHT_INFORMAL_OR_FORMAL
-                elif age >= options["max_ret_age"]:
+                elif age >= model_specs["max_ret_age"]:
                     return RETIREMENT_LIGHT_INFORMAL_OR_FORMAL
                 else:
                     if age >= SRA_pol_state:
@@ -601,7 +630,7 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
                         return UNEMPLOYED_INTENSIVE_INFORMAL_OR_FORMAL
                     else:
                         return WORK_AND_UNEMPLOYED_INTENSIVE_INFORMAL_OR_FORMAL
-                elif age >= options["max_ret_age"]:
+                elif age >= model_specs["max_ret_age"]:
                     return RETIREMENT_INTENSIVE_INFORMAL_OR_FORMAL
                 else:
                     if age >= SRA_pol_state:
@@ -633,7 +662,7 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
                 else:
                     return WORK_AND_UNEMPLOYED_NO_CARE
             # Person must retire
-            elif age >= options["max_ret_age"]:
+            elif age >= model_specs["max_ret_age"]:
                 return RETIREMENT_NO_CARE
             # Person is in the voluntary retirement range
             else:
@@ -658,7 +687,7 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
                     return UNEMPLOYED_NO_CARE_OR_FORMAL
                 else:
                     return WORK_AND_UNEMPLOYED_NO_CARE_OR_FORMAL
-            elif age >= options["max_ret_age"]:
+            elif age >= model_specs["max_ret_age"]:
                 return RETIREMENT_NO_CARE_OR_FORMAL
             else:
                 if age >= SRA_pol_state:
@@ -685,7 +714,7 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
             else:
                 return WORK_AND_UNEMPLOYED_NO_CARE
         # Person must retire
-        elif age >= options["max_ret_age"]:
+        elif age >= model_specs["max_ret_age"]:
             return RETIREMENT_NO_CARE
         # Person is in the voluntary retirement range
         else:

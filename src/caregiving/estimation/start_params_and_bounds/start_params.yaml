@@ -331,7 +331,8 @@ share_unobserved_type_high_educ: 0.5
 # Job separation params are set internally driven by data
 
 # Taste shock scale
-lambda: 0.5
+# lambda: 0.5
+taste_shock_scale: 0.5
 # lambda_care: 0.5
 # lambda_low: 0.5
 # lambda_high: 0.5
