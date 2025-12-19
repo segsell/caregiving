@@ -279,7 +279,7 @@ def plot_average_wealth(
 
         ages = np.arange(specs["start_age"] + 1, 90)
         average_wealth_sim = (
-            data_sim_edu.groupby("age")["wealth_at_beginning"].median().loc[ages]
+            data_sim_edu.groupby("age")["assets_begin_of_period"].median().loc[ages]
         )
         average_wealth_obs = (
             data_decision_edu.groupby("age")["adjusted_wealth"].median().loc[ages]

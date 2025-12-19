@@ -88,14 +88,16 @@ def task_solve_and_simulate_estimated_params(
 
     sim_df = sim_df[sim_df["health"] != DEAD].copy()
     sim_df.reset_index(inplace=True)
-    sim_df = create_additional_variables(sim_df, specs)
+    # sim_df = create_additional_variables(sim_df, specs)
     # =================================================================================
 
     # sim_df.to_csv(path_to_save_simulated_data, index=True)
     sim_df.to_pickle(path_to_save_simulated_data)
 
 
-# ===============================
+# =======================================================================================
+# Need to create these additional variables in budget equation
+# =======================================================================================
 
 
 def _create_income_variables(df, specs):

@@ -335,7 +335,7 @@ def create_wealth_difference_plot(
     # Plot wealth difference
     plt.plot(
         differences["age"],
-        differences["wealth_at_beginning_diff"],
+        differences["assets_begin_of_period_diff"],
         color="black",
         linewidth=2,
         label="Wealth Difference",
@@ -1342,7 +1342,7 @@ def task_plot_wealth_differences(
 
     # Compute wealth differences
     differences = compute_wealth_savings_differences(
-        df_original, df_no_care_demand, "wealth_at_beginning"
+        df_original, df_no_care_demand, "assets_begin_of_period"
     )
 
     # Create plot

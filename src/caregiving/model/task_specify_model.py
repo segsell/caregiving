@@ -41,6 +41,8 @@ from caregiving.model.utility.utility_functions_additive import (
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
 
+from dcegm.pre_processing.setup_model import create_model_dict
+
 
 @pytask.mark.baseline_model
 def task_specify_model(
@@ -84,7 +86,7 @@ def task_specify_model(
 
     model_config = {
         # "min_period_batch_segments": [33 - 5, 44 - 5],
-        # "min_period_batch_segments": [44 - 5],
+        "min_period_batch_segments": [23, 33, 34],
         "n_periods": n_periods,
         "choices": choices,
         "deterministic_states": {
@@ -112,6 +114,20 @@ def task_specify_model(
     }
     pickle.dump(model_config, path_to_save_model_config.open("wb"))
 
+    # ### Now test the inspection function.
+    # state_space_df = create_model_dict(
+    #     model_config=model_config,
+    #     model_specs=specs,
+    #     state_space_functions=create_state_space_functions(),
+    #     utility_functions=create_utility_functions(),
+    #     utility_functions_final_period=create_final_period_utility_functions(),
+    #     budget_constraint=budget_constraint,
+    #     stochastic_states_transitions=create_stochastic_states_transitions(),
+    #     debug_info="state_space_df",
+    # )
+    # admissible_df = state_space_df[state_space_df["is_valid"]]
+    # breakpoint()
+
     model = dcegm.setup_model(
         model_specs=specs,
         model_config=model_config,
@@ -122,9 +138,9 @@ def task_specify_model(
         shock_functions=shock_function_dict(),
         stochastic_states_transitions=create_stochastic_states_transitions(),
         model_save_path=path_to_save_model,
-        # alternative_sim_specifications=alternative_sim_specifications,
-        # debug_info=None,
         # use_stochastic_sparsity=True,
+        # alternative_sim_specifications=alternative_sim_specifications,
+        # debug_info="state_space_df",
     )
 
     print("Model specified.", flush=True)

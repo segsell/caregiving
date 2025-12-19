@@ -110,11 +110,11 @@ def simulate_scenario_no_care_demand(
         ] = model_params["av_annual_hours_pt"][sex_var, edu_var]
 
     # Income variables
-    df["wealth_at_beginning"] = df["savings"] + df["consumption"]
+    df["assets_begin_of_period"] = df["savings"] + df["consumption"]
     df["total_income"] = (
-        df.groupby("agent")["wealth_at_beginning"].shift(-1) - df["savings"]
+        df.groupby("agent")["assets_begin_of_period"].shift(-1) - df["savings"]
     )
-    df["income_wo_interest"] = df.groupby("agent")["wealth_at_beginning"].shift(
+    df["income_wo_interest"] = df.groupby("agent")["assets_begin_of_period"].shift(
         -1
     ) - df["savings"] * (1 + options["interest_rate"])
 

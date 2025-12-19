@@ -11,10 +11,15 @@ import pytask
 from pytask import Product
 
 from caregiving.config import BLD
-
-from caregiving.estimation.prepare_estimation import (
-    load_and_setup_full_model_for_solution,
+import dcegm
+from caregiving.model.state_space import create_state_space_functions
+from caregiving.model.utility.bequest_utility import (
+    create_final_period_utility_functions,
 )
+from caregiving.model.utility.utility_functions_additive import create_utility_functions
+from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
+from caregiving.model.task_specify_model import create_stochastic_states_transitions
+from caregiving.model.taste_shocks import shock_function_dict
 from caregiving.model.shared import (
     DEAD,
     FORMAL_CARE,
@@ -35,8 +40,9 @@ CARE_MIX_TOLERANCE = 1e-10
 @pytask.mark.post_estimation
 @pytask.mark.care_demand_post_estimation
 def task_plot_care_demand_by_age_2_by_2(
-    path_to_options: Path = BLD / "model" / "options.pkl",
-    path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_model_config: Path = BLD / "model" / "model_config.pkl",
+    path_to_solution_model: Path = BLD / "model" / "model.pkl",
     path_to_estimated_params: Path = BLD
     / "model"
     / "params"
@@ -51,14 +57,26 @@ def task_plot_care_demand_by_age_2_by_2(
 ) -> None:
     """Plot care demand by age in a 2x2 grid (education × caregiving_type)."""
 
-    options = pickle.load(path_to_options.open("rb"))
-    model_full = load_and_setup_full_model_for_solution(
-        options, path_to_model=path_to_solution_model
+    specs = pickle.load(path_to_specs.open("rb"))
+    model_config = pickle.load(path_to_model_config.open("rb"))
+
+    model = dcegm.setup_model(
+        model_specs=specs,
+        model_config=model_config,
+        state_space_functions=create_state_space_functions(),
+        utility_functions=create_utility_functions(),
+        utility_functions_final_period=create_final_period_utility_functions(),
+        budget_constraint=budget_constraint,
+        shock_functions=shock_function_dict(),
+        stochastic_states_transitions=create_stochastic_states_transitions(),
+        model_load_path=path_to_solution_model,
     )
-    specs = model_full["options"]["model_params"]
 
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
     df_sim["sex"] = SEX
+
+    # Create age variable from start_age + period
+    df_sim["age"] = df_sim["period"] + specs["start_age"]
 
     # Test that care mix sums to care demand
     test_care_mix_sums_to_care_demand(
@@ -78,8 +96,9 @@ def task_plot_care_demand_by_age_2_by_2(
 @pytask.mark.post_estimation
 @pytask.mark.care_demand_post_estimation
 def task_plot_care_demand_by_age_pooled(
-    path_to_options: Path = BLD / "model" / "options.pkl",
-    path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_model_config: Path = BLD / "model" / "model_config.pkl",
+    path_to_solution_model: Path = BLD / "model" / "model.pkl",
     # path_to_estimated_params: Path = BLD
     # / "model"
     # / "params"
@@ -94,14 +113,26 @@ def task_plot_care_demand_by_age_pooled(
 ) -> None:
     """Plot care demand by age pooled across all education and sister specifications."""
 
-    options = pickle.load(path_to_options.open("rb"))
-    model_full = load_and_setup_full_model_for_solution(
-        options, path_to_model=path_to_solution_model
+    specs = pickle.load(path_to_specs.open("rb"))
+    model_config = pickle.load(path_to_model_config.open("rb"))
+
+    model = dcegm.setup_model(
+        model_specs=specs,
+        model_config=model_config,
+        state_space_functions=create_state_space_functions(),
+        utility_functions=create_utility_functions(),
+        utility_functions_final_period=create_final_period_utility_functions(),
+        budget_constraint=budget_constraint,
+        shock_functions=shock_function_dict(),
+        stochastic_states_transitions=create_stochastic_states_transitions(),
+        model_load_path=path_to_solution_model,
     )
-    specs = model_full["options"]["model_params"]
 
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
     df_sim["sex"] = SEX
+
+    # Create age variable from start_age + period
+    df_sim["age"] = df_sim["period"] + specs["start_age"]
 
     plot_simulated_care_demand_by_age_pooled(
         df_sim=df_sim,
@@ -116,8 +147,9 @@ def task_plot_care_demand_by_age_pooled(
 @pytask.mark.post_estimation
 @pytask.mark.care_demand_post_estimation
 def task_plot_care_demand_by_age_pooled_light_intensive(
-    path_to_options: Path = BLD / "model" / "options.pkl",
-    path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_model_config: Path = BLD / "model" / "model_config.pkl",
+    path_to_solution_model: Path = BLD / "model" / "model.pkl",
     path_to_simulated_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
@@ -128,14 +160,26 @@ def task_plot_care_demand_by_age_pooled_light_intensive(
 ) -> None:
     """Plot light vs intensive care demand by age (pooled), with care mix under curves."""
 
-    options = pickle.load(path_to_options.open("rb"))
-    model_full = load_and_setup_full_model_for_solution(
-        options, path_to_model=path_to_solution_model
+    specs = pickle.load(path_to_specs.open("rb"))
+    model_config = pickle.load(path_to_model_config.open("rb"))
+
+    model = dcegm.setup_model(
+        model_specs=specs,
+        model_config=model_config,
+        state_space_functions=create_state_space_functions(),
+        utility_functions=create_utility_functions(),
+        utility_functions_final_period=create_final_period_utility_functions(),
+        budget_constraint=budget_constraint,
+        shock_functions=shock_function_dict(),
+        stochastic_states_transitions=create_stochastic_states_transitions(),
+        model_load_path=path_to_solution_model,
     )
-    specs = model_full["options"]["model_params"]
 
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
     df_sim["sex"] = SEX
+
+    # Create age variable from start_age + period
+    df_sim["age"] = df_sim["period"] + specs["start_age"]
 
     plot_simulated_care_demand_by_age_pooled_light_intensive(
         df_sim=df_sim,
@@ -150,8 +194,9 @@ def task_plot_care_demand_by_age_pooled_light_intensive(
 @pytask.mark.post_estimation
 @pytask.mark.care_demand_post_estimation
 def task_plot_care_demand_by_age_2_by_2_combined(
-    path_to_options: Path = BLD / "model" / "options.pkl",
-    path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_model_config: Path = BLD / "model" / "model_config.pkl",
+    path_to_solution_model: Path = BLD / "model" / "model.pkl",
     path_to_estimated_params: Path = BLD
     / "model"
     / "params"
@@ -166,14 +211,26 @@ def task_plot_care_demand_by_age_2_by_2_combined(
 ) -> None:
     """Plot care demand by age in a 2x2 grid with combined informal care categories."""
 
-    options = pickle.load(path_to_options.open("rb"))
-    model_full = load_and_setup_full_model_for_solution(
-        options, path_to_model=path_to_solution_model
+    specs = pickle.load(path_to_specs.open("rb"))
+    model_config = pickle.load(path_to_model_config.open("rb"))
+
+    model = dcegm.setup_model(
+        model_specs=specs,
+        model_config=model_config,
+        state_space_functions=create_state_space_functions(),
+        utility_functions=create_utility_functions(),
+        utility_functions_final_period=create_final_period_utility_functions(),
+        budget_constraint=budget_constraint,
+        shock_functions=shock_function_dict(),
+        stochastic_states_transitions=create_stochastic_states_transitions(),
+        model_load_path=path_to_solution_model,
     )
-    specs = model_full["options"]["model_params"]
 
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
     df_sim["sex"] = SEX
+
+    # Create age variable from start_age + period
+    df_sim["age"] = df_sim["period"] + specs["start_age"]
 
     # Test that care mix sums to care demand
     test_care_mix_sums_to_care_demand(
@@ -193,8 +250,9 @@ def task_plot_care_demand_by_age_2_by_2_combined(
 @pytask.mark.post_estimation
 @pytask.mark.care_demand_post_estimation
 def task_plot_care_demand_by_age_pooled_combined(
-    path_to_options: Path = BLD / "model" / "options.pkl",
-    path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_model_config: Path = BLD / "model" / "model_config.pkl",
+    path_to_solution_model: Path = BLD / "model" / "model.pkl",
     # path_to_estimated_params: Path = BLD
     # / "model"
     # / "params"
@@ -209,14 +267,26 @@ def task_plot_care_demand_by_age_pooled_combined(
 ) -> None:
     """Plot care demand by age pooled with combined informal care categories."""
 
-    options = pickle.load(path_to_options.open("rb"))
-    model_full = load_and_setup_full_model_for_solution(
-        options, path_to_model=path_to_solution_model
+    specs = pickle.load(path_to_specs.open("rb"))
+    model_config = pickle.load(path_to_model_config.open("rb"))
+
+    model = dcegm.setup_model(
+        model_specs=specs,
+        model_config=model_config,
+        state_space_functions=create_state_space_functions(),
+        utility_functions=create_utility_functions(),
+        utility_functions_final_period=create_final_period_utility_functions(),
+        budget_constraint=budget_constraint,
+        shock_functions=shock_function_dict(),
+        stochastic_states_transitions=create_stochastic_states_transitions(),
+        model_load_path=path_to_solution_model,
     )
-    specs = model_full["options"]["model_params"]
 
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
     df_sim["sex"] = SEX
+
+    # Create age variable from start_age + period
+    df_sim["age"] = df_sim["period"] + specs["start_age"]
 
     plot_simulated_care_demand_by_age_pooled_combined(
         df_sim=df_sim,
@@ -231,8 +301,9 @@ def task_plot_care_demand_by_age_pooled_combined(
 @pytask.mark.post_estimation
 @pytask.mark.care_demand_post_estimation
 def task_plot_mother_health_shares_by_age(
-    path_to_options: Path = BLD / "model" / "options.pkl",
-    path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_model_config: Path = BLD / "model" / "model_config.pkl",
+    path_to_solution_model: Path = BLD / "model" / "model.pkl",
     path_to_estimated_params: Path = BLD
     / "model"
     / "params"
@@ -247,15 +318,26 @@ def task_plot_mother_health_shares_by_age(
 ) -> None:
     """Plot the share of mother health states (good, medium, bad, dead) by age."""
 
-    options = pickle.load(path_to_options.open("rb"))
+    specs = pickle.load(path_to_specs.open("rb"))
+    model_config = pickle.load(path_to_model_config.open("rb"))
 
-    model_full = load_and_setup_full_model_for_solution(
-        options, path_to_model=path_to_solution_model
+    model = dcegm.setup_model(
+        model_specs=specs,
+        model_config=model_config,
+        state_space_functions=create_state_space_functions(),
+        utility_functions=create_utility_functions(),
+        utility_functions_final_period=create_final_period_utility_functions(),
+        budget_constraint=budget_constraint,
+        shock_functions=shock_function_dict(),
+        stochastic_states_transitions=create_stochastic_states_transitions(),
+        model_load_path=path_to_solution_model,
     )
-    specs = model_full["options"]["model_params"]
 
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
     df_sim["sex"] = SEX
+
+    # Create age variable from start_age + period
+    df_sim["age"] = df_sim["period"] + specs["start_age"]
 
     plot_mother_health_shares_by_age(
         df_sim=df_sim,
@@ -295,6 +377,7 @@ def plot_simulated_care_demand_by_age_2_by_2(  # noqa: PLR0915
     - Top right: Low education, Has sister
     - Bottom left: High education, No sister
     - Bottom right: High education, Has sister
+
     """
 
     # ---- 1. Setup
@@ -308,6 +391,13 @@ def plot_simulated_care_demand_by_age_2_by_2(  # noqa: PLR0915
     df_sim = df_sim.loc[df_sim["health"] != DEAD].copy()
     if "sex" in df_sim.columns:
         df_sim = df_sim.loc[df_sim["sex"] == SEX].copy()
+
+    # ================================================================================
+    # Drop cases where care_demand > 0 and mother_dead == 1
+    df_sim = df_sim.loc[
+        ~((df_sim["care_demand"] > 0) & (df_sim["mother_dead"] == 1))
+    ].copy()
+    # ================================================================================
 
     # ---- 2. Calculate care type indicators for all four scenarios
     # Convert JAX arrays to numpy arrays for pandas compatibility
@@ -1536,7 +1626,8 @@ def test_care_mix_sums_to_care_demand(df_sim, specs, age_min=None, age_max=None)
 @pytask.mark.baseline_model
 @pytask.mark.post_estimation
 def task_check_no_care_with_positive_demand(
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_model_config: Path = BLD / "model" / "model_config.pkl",
     path_to_simulated_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
@@ -1549,11 +1640,20 @@ def task_check_no_care_with_positive_demand(
     """
 
     # Load model specs to infer caregiving age window
-    options = pickle.load(path_to_options.open("rb"))
-    model_full = load_and_setup_full_model_for_solution(
-        options, path_to_model=BLD / "model" / "model_for_solution.pkl"
+    specs = pickle.load(path_to_specs.open("rb"))
+    model_config = pickle.load(path_to_model_config.open("rb"))
+
+    model = dcegm.setup_model(
+        model_specs=specs,
+        model_config=model_config,
+        state_space_functions=create_state_space_functions(),
+        utility_functions=create_utility_functions(),
+        utility_functions_final_period=create_final_period_utility_functions(),
+        budget_constraint=budget_constraint,
+        shock_functions=shock_function_dict(),
+        stochastic_states_transitions=create_stochastic_states_transitions(),
+        model_load_path=BLD / "model" / "model.pkl",
     )
-    specs = model_full["options"]["model_params"]
 
     start_age = specs["start_age"]
     end_age_msm = specs["end_age_msm"]
@@ -1563,12 +1663,16 @@ def task_check_no_care_with_positive_demand(
     # Load simulated data
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
 
+    # Create age variable from start_age + period
+    df_sim["age"] = df_sim["period"] + start_age
+
     # NO_CARE choices are 0–3
     no_care_choices = set(NO_CARE.tolist())
 
     mask = (
         (df_sim["care_demand"] > 0)
         & (df_sim["health"] != DEAD)
+        & (df_sim["mother_dead"] == 0)
         & (df_sim["caregiving_type"] == 1)
         & (df_sim["choice"].isin(no_care_choices))
         & (df_sim["age"].between(start_age_caregiving, end_age_caregiving))
@@ -1604,5 +1708,4 @@ def task_check_no_care_with_positive_demand(
         f"in ages [{start_age_caregiving}, {end_age_caregiving}]. "
         f"Count: {n_violations}."
     )
-
-    breakpoint()
+    # breakpoint()

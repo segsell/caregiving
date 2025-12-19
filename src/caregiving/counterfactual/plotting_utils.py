@@ -193,7 +193,7 @@ def calculate_additional_outcomes(df: pd.DataFrame) -> dict[str, np.ndarray]:
     """Extract additional outcomes for plotting.
 
     Args:
-        df: DataFrame with 'gross_labor_income', 'savings_dec', 'wealth_at_beginning',
+        df: DataFrame with 'gross_labor_income', 'savings_dec', 'assets_begin_of_period',
             'savings_rate', and optionally 'consumption'.
 
     Returns:
@@ -220,8 +220,8 @@ def calculate_additional_outcomes(df: pd.DataFrame) -> dict[str, np.ndarray]:
         outcomes["savings"] = np.zeros(n)
 
     # Wealth at beginning of period
-    if "wealth_at_beginning" in df.columns:
-        outcomes["wealth"] = df["wealth_at_beginning"].values
+    if "assets_begin_of_period" in df.columns:
+        outcomes["wealth"] = df["assets_end_of_period"].values
     else:
         outcomes["wealth"] = np.zeros(n)
 

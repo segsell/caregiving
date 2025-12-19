@@ -212,6 +212,9 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
     elif (caregiving_type == 0) & (is_informal_care(lagged_choice)):
         return False
     # ================================================================================
+    elif (mother_dead == 1) & (care_demand > 0):
+        return False
+    # ================================================================================
     # # elif (age <= start_age_caregiving) & (lagged_care_demand == 1):
     # #     return False
     # elif (is_informal_care(lagged_choice)) & (lagged_care_demand == 0):
@@ -280,7 +283,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "partner_state": partner_state,
                 "mother_dead": mother_dead,
                 "mother_adl": mother_adl,
-                "care_demand": care_demand,
+                "care_demand": 0,
                 "job_offer": 0,
             }
             return state_proxy
@@ -330,39 +333,39 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
         #         "job_offer": job_offer,
         #     }
         #     return state_proxy
-        # # Care demand cannot be 1 before the start period for caregiving
-        # elif age > end_age_caregiving + 1:
-        #     # Proxy to state with care_demand = 0
-        #     state_proxy = {
-        #         "period": period,
-        #         "lagged_choice": lagged_choice,
-        #         "already_retired": already_retired,
-        #         "education": education,
-        #         "caregiving_type": caregiving_type,
-        #         "health": health,
-        #         "partner_state": partner_state,
-        #         "mother_dead": mother_dead,
-        #         "mother_adl": mother_adl,
-        #         "care_demand": 0,
-        #         "job_offer": job_offer,
-        #     }
-        #     return state_proxy
-        # elif age < start_age_caregiving:
-        #     # Proxy to state with care_demand = 0
-        #     state_proxy = {
-        #         "period": period,
-        #         "lagged_choice": lagged_choice,
-        #         "already_retired": already_retired,
-        #         "education": education,
-        #         "caregiving_type": caregiving_type,
-        #         "health": health,
-        #         "partner_state": partner_state,
-        #         "mother_dead": mother_dead,
-        #         "mother_adl": mother_adl,
-        #         "care_demand": 0,
-        #         "job_offer": job_offer,
-        #     }
-        #     return state_proxy
+        # Care demand cannot be 1 before the start period for caregiving
+        elif age > end_age_caregiving + 1:
+            # Proxy to state with care_demand = 0
+            state_proxy = {
+                "period": period,
+                "lagged_choice": lagged_choice,
+                "already_retired": already_retired,
+                "education": education,
+                "caregiving_type": caregiving_type,
+                "health": health,
+                "partner_state": partner_state,
+                "mother_dead": mother_dead,
+                "mother_adl": mother_adl,
+                "care_demand": 0,
+                "job_offer": job_offer,
+            }
+            return state_proxy
+        elif age < start_age_caregiving:
+            # Proxy to state with care_demand = 0
+            state_proxy = {
+                "period": period,
+                "lagged_choice": lagged_choice,
+                "already_retired": already_retired,
+                "education": education,
+                "caregiving_type": caregiving_type,
+                "health": health,
+                "partner_state": partner_state,
+                "mother_dead": mother_dead,
+                "mother_adl": mother_adl,
+                "care_demand": 0,
+                "job_offer": job_offer,
+            }
+            return state_proxy
 
         else:
             return True
