@@ -694,12 +694,12 @@ def _compute_total_income_like_sim_with_options(
     # unemployment benefits
     v_unemp = jax.vmap(
         lambda s, edu, hp, p: calc_unemployment_benefits(
-            savings=s,
+            assets=s,
             sex=SEX,
             education=edu,
             has_partner_int=hp,
             period=p,
-            options=mp,
+            model_specs=mp,
         )
     )
     df["unemployment_benefits_calc"] = v_unemp(

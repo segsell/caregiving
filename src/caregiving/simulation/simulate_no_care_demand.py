@@ -116,7 +116,7 @@ def simulate_scenario_no_care_demand(
     )
     df["income_wo_interest"] = df.groupby("agent")["wealth_at_beginning"].shift(
         -1
-    ) - df["savings"] * (1 + params["interest_rate"])
+    ) - df["savings"] * (1 + options["interest_rate"])
 
     df["savings_dec"] = df["total_income"] - df["consumption"]
     df["savings_rate"] = df["savings_dec"] / df["total_income"]
@@ -140,7 +140,7 @@ def simulate_scenario_no_care_demand(
             education=edu,
             sex=sex_var,
             income_shock=shock,
-            options=model_params,
+            model_specs=model_params,
         )
     )
     gross_labor_income_array = vectorized_calc_gross_labor_income(
@@ -265,7 +265,7 @@ def build_simulation_df_with_income_components_no_care_demand(
             education=edu,
             sex=sex_var,
             income_shock=shock,
-            options=model_params,
+            model_specs=model_params,
         )
     )
     gross_labor_income_array = vectorized_calc_gross_labor_income(
@@ -301,13 +301,13 @@ def build_simulation_df_with_income_components_no_care_demand(
 
     # Female unemployment benefits
     vectorized_calc_unemployment_benefits = jax.vmap(
-        lambda savings, edu, has_partner_int, period: calc_unemployment_benefits(
-            savings=savings,
+        lambda assets, edu, has_partner_int, period: calc_unemployment_benefits(
+            assets=assets,
             sex=sex_var,
             education=edu,
             has_partner_int=has_partner_int,
             period=period,
-            options=model_params,
+            model_specs=model_params,
         )
     )
     unemployment_benefits_array = vectorized_calc_unemployment_benefits(

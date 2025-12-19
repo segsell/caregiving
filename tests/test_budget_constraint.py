@@ -95,10 +95,10 @@ def test_budget_unemployed(
         experience=exp_cont,
         # sex=sex,
         care_demand=care_demand,
-        savings_end_of_previous_period=savings,
+        asset_end_of_previous_period=savings,
         income_shock_previous_period=0,
         params=params,
-        options=specs_internal,
+        model_specs=specs_internal,
     )
 
     savings_scaled = savings * specs_internal["wealth_unit"]
@@ -167,7 +167,7 @@ def test_budget_unemployed(
 
     np.testing.assert_almost_equal(
         wealth,
-        (savings_scaled * (1 + params["interest_rate"]) + total_income)
+        (savings_scaled * (1 + specs_internal["interest_rate"]) + total_income)
         / specs_internal["wealth_unit"],
     )
 
@@ -239,10 +239,10 @@ def test_budget_worker(
         experience=exp_cont,
         # sex=sex,
         care_demand=care_demand,
-        savings_end_of_previous_period=savings,
+        asset_end_of_previous_period=savings,
         income_shock_previous_period=income_shock,
         params=params,
-        options=specs_internal,
+        model_specs=specs_internal,
     )
 
     savings_scaled = savings * specs_internal["wealth_unit"]
@@ -273,12 +273,12 @@ def test_budget_worker(
 
     has_partner_int = (partner_state > 0).astype(int)
     unemployment_benefits = calc_unemployment_benefits(
-        savings=savings_scaled,
+        assets=savings_scaled,
         education=education,
         sex=sex,
         has_partner_int=has_partner_int,
         period=period,
-        options=specs_internal,
+        model_specs=specs_internal,
     )
 
     nb_children = specs_internal["children_by_state"][
@@ -402,10 +402,10 @@ def test_retiree(
         experience=exp_cont,
         # sex=sex,
         care_demand=care_demand,
-        savings_end_of_previous_period=savings,
+        asset_end_of_previous_period=savings,
         income_shock_previous_period=0,
         params=params,
-        options=specs_internal,
+        model_specs=specs_internal,
     )
 
     savings_scaled = savings * specs_internal["wealth_unit"]
@@ -421,12 +421,12 @@ def test_retiree(
 
     has_partner_int = (partner_state > 0).astype(int)
     unemployment_benefits = calc_unemployment_benefits(
-        savings=savings_scaled,
+        assets=savings_scaled,
         education=education,
         sex=sex,
         has_partner_int=has_partner_int,
         period=period,
-        options=specs_internal,
+        model_specs=specs_internal,
     )
 
     nb_children = specs_internal["children_by_state"][
@@ -546,10 +546,10 @@ def test_fresh_retiree(
         experience=exp_cont,
         # sex=sex,
         care_demand=care_demand,
-        savings_end_of_previous_period=savings,
+        asset_end_of_previous_period=savings,
         income_shock_previous_period=0,
         params=params,
-        options=specs_internal,
+        model_specs=specs_internal,
     )
 
     savings_scaled = savings * specs_internal["wealth_unit"]
@@ -582,12 +582,12 @@ def test_fresh_retiree(
 
     has_partner_int = (partner_state > 0).astype(int)
     unemployment_benefits = calc_unemployment_benefits(
-        savings=savings_scaled,
+        assets=savings_scaled,
         education=education,
         sex=sex,
         has_partner_int=has_partner_int,
         period=period,
-        options=specs_internal,
+        model_specs=specs_internal,
     )
 
     nb_children = specs_internal["children_by_state"][

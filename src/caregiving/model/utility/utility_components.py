@@ -36,7 +36,7 @@ from caregiving.model.utility.bequest_utility import (
 
 
 def disutility_work(
-    period, choice, education, partner_state, health, care_demand, params, options
+    period, choice, education, partner_state, health, care_demand, params, model_specs
 ):
     """Compute disutility of work."""
     # choice booleans
@@ -60,7 +60,9 @@ def disutility_work(
     formal_care = is_formal_care(choice)  # Formal care
 
     has_partner_int = (partner_state > 0).astype(int)
-    nb_children = options["children_by_state"][SEX, education, has_partner_int, period]
+    nb_children = model_specs["children_by_state"][
+        SEX, education, has_partner_int, period
+    ]
 
     # =================================================================================
     # No caregiving
@@ -241,9 +243,9 @@ def disutility_work(
     return disutility
 
 
-def consumption_scale(partner_state, education, period, options):
+def consumption_scale(partner_state, education, period, model_specs):
     """Compute the household consumption scale."""
     has_partner = (partner_state > 0).astype(int)
-    nb_children = options["children_by_state"][SEX, education, has_partner, period]
+    nb_children = model_specs["children_by_state"][SEX, education, has_partner, period]
     hh_size = 1 + has_partner + nb_children
     return jnp.sqrt(hh_size)

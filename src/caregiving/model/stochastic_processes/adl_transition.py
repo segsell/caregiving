@@ -7,7 +7,7 @@ from caregiving.model.shared import MOTHER
 PARENT_AGE_OFFSET = 3
 
 
-def limitations_with_adl_transition(mother_adl, period, education, options):
+def limitations_with_adl_transition(mother_adl, period, education, model_specs):
     """Transition probability for next period ADL state given current ADL.
 
     Parameters
@@ -32,19 +32,19 @@ def limitations_with_adl_transition(mother_adl, period, education, options):
     # Calculate mother age index
     mother_age = (
         period
-        - options["agent_to_parent_mat_age_offset"]
-        + options["mother_age_diff"][education]
+        - model_specs["agent_to_parent_mat_age_offset"]
+        + model_specs["mother_age_diff"][education]
         + PARENT_AGE_OFFSET
     )
 
-    adl_trans_mat = options["adl_state_transition_mat_light_intensive"]
+    adl_trans_mat = model_specs["adl_state_transition_mat_light_intensive"]
     # Shape: [sex, period, adl_lag, adl_next]
     prob_vector = adl_trans_mat[MOTHER, mother_age, mother_adl, :]
 
     return prob_vector
 
 
-def death_transition(period, mother_dead, education, options):
+def death_transition(period, mother_dead, education, model_specs):
     """Death transition probability for next period.
 
     Uses death transition matrix indexed by sex and age. If mother was already
@@ -58,8 +58,8 @@ def death_transition(period, mother_dead, education, options):
         Lagged mother death status (1=dead, 0=alive)
     education : int
         Education level (0=Low, 1=High)
-    options : dict
-        Options dictionary containing:
+    model_specs : dict
+        Model specifications dictionary containing:
         - death_transition_mat: death probability matrix [sex, age_index]
         - survival_min_age: minimum age in death/survival matrices
           (age_index 0 = age 16)
@@ -76,18 +76,18 @@ def death_transition(period, mother_dead, education, options):
     # Calculate mother's actual age from period using correct mother_age_diff
     mother_age = (
         period
-        - options["agent_to_parent_mat_age_offset"]
-        + options["mother_age_diff"][education]
+        - model_specs["agent_to_parent_mat_age_offset"]
+        + model_specs["mother_age_diff"][education]
         + PARENT_AGE_OFFSET
     )
 
     # Convert to age_index for death_transition_mat
     # death_transition_mat[sex, age_index] where age_index = age - survival_min_age
     # age_index = mother_age + 34
-    age_index = mother_age + options["parent_to_survival_mat_age_offset"]
+    age_index = mother_age + model_specs["parent_to_survival_mat_age_offset"]
 
     # Get death transition matrix
-    death_mat = options["death_transition_mat"]
+    death_mat = model_specs["death_transition_mat"]
     # Shape: [sex, age_index] where sex=0 is Men, sex=1 is Women (MOTHER=1)
 
     # Clip age_index to valid bounds and get death probability (vectorized)

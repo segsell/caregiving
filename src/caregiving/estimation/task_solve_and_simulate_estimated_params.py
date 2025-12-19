@@ -1,122 +1,211 @@
-# """Solve and simulate the model for estimated parameters."""
+"""Solve and simulate the model for estimated parameters."""
 
-# import pickle
-# from pathlib import Path
-# from typing import Annotated, Any, Dict, List, Tuple
+import pickle
+from pathlib import Path
+from typing import Annotated, Any, Dict, List, Tuple
 
-# import jax
-# import jax.numpy as jnp
-# import pandas as pd
-# import pytask
-# import yaml
-# from dcegm.pre_processing.setup_model import load_and_setup_model
+import jax
+import jax.numpy as jnp
+import pandas as pd
+import pytask
+import yaml
+import dcegm
+from pytask import Product
 
-# # from dcegm.solve import get_solve_func_for_model
-# from pytask import Product
+from caregiving.config import SRC, BLD
+from caregiving.model.state_space import (
+    create_state_space_functions,
+)
+from caregiving.model.utility.bequest_utility import (
+    create_final_period_utility_functions,
+)
+from caregiving.model.utility.utility_functions_additive import create_utility_functions
+from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 
-# from caregiving.config import BLD
-# from caregiving.counterfactual.simulate_counterfactual import (
-#     simulate_counterfactual_npv,
-# )
-# from caregiving.estimation.prepare_estimation import (
-#     load_and_setup_full_model_for_solution,
-# )
-# from caregiving.model.state_space import (
-#     create_state_space_functions,
-# )
-# from caregiving.model.utility.bequest_utility import (
-#     create_final_period_utility_functions,
-# )
-# from caregiving.model.utility.utility_functions_additive import create_utility_functions
-# from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 # from caregiving.simulation.simulate import simulate_scenario
+from caregiving.model.task_specify_model import create_stochastic_states_transitions
+from caregiving.model.taste_shocks import shock_function_dict
 
-# jax.config.update("jax_enable_x64", True)
+from caregiving.model.shared import DEAD
+from caregiving.model.state_space import construct_experience_years
+
+jax.config.update("jax_enable_x64", True)
 
 
-# @pytask.mark.baseline_model
-# def task_solve_and_simulate_estimated_params(
-#     path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
-#     path_to_options: Path = BLD / "model" / "options.pkl",
-#     path_to_estimated_params: Path = BLD
-#     / "model"
-#     / "params"
-#     / "estimated_params_model.yaml",
-#     path_to_discrete_states: Path = (
-#         BLD / "model" / "initial_conditions" / "states.pkl"
-#     ),
-#     path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
-#     path_to_save_solution: Annotated[Path, Product] = BLD
-#     / "solve_and_simulate"
-#     / "solution_estimated_params.pkl",
-#     # path_to_save_simulation_model: Annotated[Path, Product] = BLD
-#     # / "model"
-#     # / "model_for_simulation_estimated_params.pkl",
-#     path_to_save_simulated_data: Annotated[Path, Product] = BLD
-#     / "solve_and_simulate"
-#     / "simulated_data_estimated_params.pkl",
-#     # path_to_save_simulated_data_jax: Annotated[Path, Product] = BLD
-#     # / "solve_and_simulate"
-#     # / "simulated_data_jax_estimated_params.pkl",
-# ) -> None:
-#     """Solve and simulate the model for estimated parameters."""
+@pytask.mark.baseline_model
+def task_solve_and_simulate_estimated_params(
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_model: Path = BLD / "model" / "model.pkl",
+    path_to_model_config: Path = BLD / "model" / "model_config.pkl",
+    path_to_estimated_params: Path = BLD
+    / "model"
+    / "params"
+    / "estimated_params_model.yaml",
+    path_to_initial_states: Path = (
+        BLD / "model" / "initial_conditions" / "initial_states.pkl"
+    ),
+    path_to_save_solution: Annotated[Path, Product] = BLD
+    / "solve_and_simulate"
+    / "solution_estimated_params.pkl",
+    # path_to_save_simulation_model: Annotated[Path, Product] = BLD
+    # / "model"
+    # / "model_for_simulation_estimated_params.pkl",
+    path_to_save_simulated_data: Annotated[Path, Product] = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params.pkl",
+    # path_to_save_simulated_data_jax: Annotated[Path, Product] = BLD
+    # / "solve_and_simulate"
+    # / "simulated_data_jax_estimated_params.pkl",
+) -> None:
+    """Solve and simulate the model for estimated parameters."""
 
-#     options = pickle.load(path_to_options.open("rb"))
-#     params = yaml.safe_load(path_to_estimated_params.open("rb"))
+    specs = pickle.load(path_to_specs.open("rb"))
+    model_config = pickle.load(path_to_model_config.open("rb"))
+    params = yaml.safe_load(path_to_estimated_params.open("rb"))
 
-#     model_for_solution = load_and_setup_full_model_for_solution(
-#         options, path_to_model=path_to_solution_model
-#     )
+    model = dcegm.setup_model(
+        model_specs=specs,
+        model_config=model_config,
+        state_space_functions=create_state_space_functions(),
+        utility_functions=create_utility_functions(),
+        utility_functions_final_period=create_final_period_utility_functions(),
+        budget_constraint=budget_constraint,
+        shock_functions=shock_function_dict(),
+        stochastic_states_transitions=create_stochastic_states_transitions(),
+        model_load_path=path_to_model,
+    )
+    # 1) Solve
+    model_solved = model.solve(params, save_sol_path=path_to_save_solution)
 
-#     # 1) Solve
-#     solution_dict = {}
-#     (
-#         solution_dict["value"],
-#         solution_dict["policy"],
-#         solution_dict["endog_grid"],
-#     ) = get_solve_func_for_model(model_for_solution)(params)
-#     # value, policy, endog_grid = get_solve_func_for_model(model_for_solution)(params)
+    # 2) Simulate
+    initial_states = pickle.load(path_to_initial_states.open("rb"))
 
-#     pickle.dump(solution_dict, path_to_save_solution.open("wb"))
+    # =================================================================================
+    sim_df = model_solved.simulate(
+        states_initial=initial_states,
+        seed=specs["seed"],
+    )
 
-#     # 2) Simulate
-#     initial_states = pickle.load(path_to_discrete_states.open("rb"))
-#     wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
+    sim_df = sim_df[sim_df["health"] != DEAD].copy()
+    sim_df.reset_index(inplace=True)
+    sim_df = create_additional_variables(sim_df, specs)
+    # =================================================================================
 
-#     model_for_simulation = load_and_setup_model(
-#         options=options,
-#         state_space_functions=create_state_space_functions(),
-#         utility_functions=create_utility_functions(),
-#         utility_functions_final_period=create_final_period_utility_functions(),
-#         budget_constraint=budget_constraint,
-#         # shock_functions=shock_function_dict(),
-#         path=path_to_solution_model,
-#         sim_model=True,
-#     )
-#     # pickle.dump(model_for_simulation, path_to_save_simulation_model.open("wb"))
+    # sim_df.to_csv(path_to_save_simulated_data, index=True)
+    sim_df.to_pickle(path_to_save_simulated_data)
 
-#     sim_df = simulate_scenario(
-#         model_for_simulation,
-#         solution=solution_dict,
-#         # solution_endog_grid=solution_dict["endog_grid"],
-#         # solution_value=solution_dict["value"],
-#         # solution_policy=solution_dict["policy"],
-#         initial_states=initial_states,
-#         wealth_agents=wealth_agents,
-#         params=params,
-#         options=options,
-#         seed=options["model_params"]["seed"],
-#     )
 
-#     # sim_df.to_csv(path_to_save_simulated_data, index=True)
-#     sim_df.to_pickle(path_to_save_simulated_data)
+# ===============================
 
-#     # sim_df_npv = simulate_counterfactual_npv(
-#     #     model_for_simulation,
-#     #     solution=solution_dict,
-#     #     initial_states=initial_states,
-#     #     wealth_agents=wealth_agents,
-#     #     params=params,
-#     #     options=options,
-#     #     seed=options["model_params"]["seed"],
-#     # )
+
+def _create_income_variables(df, specs):
+    """Create income related variables in the simulated dataframe.
+    Note: check budget equation first! They may already be there (under "aux").
+    """
+    df = df.copy()
+
+    # Create income vars:
+    # First, total income as the difference between wealth at the beginning of next period and savings
+    df.loc[:, "total_income"] = df["assets_begin_of_period"] - df.groupby("agent")[
+        "savings"
+    ].shift(1)
+
+    # periodic savings and savings rate
+    df.loc[:, "savings_dec"] = df["total_income"] - df["consumption"]
+    df.loc[:, "savings_rate"] = df["savings_dec"] / df["total_income"]
+
+    # Create gross own income (without pension income)
+    df.loc[:, "gross_own_income"] = (
+        (df["choice"] == 0) * df["gross_retirement_income"]  # Retired
+        + (df["choice"] == 1) * 0  # Unemployed
+        + ((df["choice"] == 2) | (df["choice"] == 3))
+        * df["gross_labor_income"]  # Part-time or full-time work
+    )
+    return df
+
+
+def _transform_states_into_variables(df, specs):
+    """Transform state variables into more interpretable variables."""
+    df = df.copy()
+
+    # Create additional variables
+    df.loc[:, "age"] = df["period"] + specs["start_age"]
+
+    # Create experience years
+    df.loc[:, "exp_years"] = construct_experience_years(
+        float_experience=df["experience"].values,
+        period=df["period"].values,
+        is_retired=df["lagged_choice"].values == 0,
+        model_specs=specs,
+    )
+
+    return df
+
+
+def _compute_working_hours(df, specs):
+    """Compute working hours based on employment choice and demographics."""
+    df = df.copy()
+
+    # Initialize working_hours column
+    df.loc[:, "working_hours"] = 0.0
+
+    for sex_var in [0, 1]:
+        for edu_var in range(specs["n_education_types"]):
+            # Full-time work
+            mask_ft = (
+                (df["choice"] == 3)
+                & (df["sex"] == sex_var)
+                & (df["education"] == edu_var)
+            )
+            df.loc[mask_ft, "working_hours"] = specs["av_annual_hours_ft"][
+                sex_var, edu_var
+            ]
+
+            # Part-time work
+            mask_pt = (
+                (df["choice"] == 2)
+                & (df["sex"] == sex_var)
+                & (df["education"] == edu_var)
+            )
+            df.loc[mask_pt, "working_hours"] = specs["av_annual_hours_pt"][
+                sex_var, edu_var
+            ]
+
+    return df
+
+
+def _compute_actual_retirement_age(df):
+    """Compute actual retirement age based on choice variable."""
+    df = df.copy()
+
+    df_retirement = df[df["choice"] == 0].copy()
+    actual_retirement_ages = df_retirement.groupby("agent")["age"].min()
+    df.loc[:, "actual_retirement_age"] = df["agent"].map(actual_retirement_ages)
+    return df
+
+
+def create_realized_taste_shock(df, specs):
+    df.loc[:, "real_taste_shock"] = np.nan
+    for choice in range(specs["n_choices"]):
+        df.loc[df["choice"] == choice, "real_taste_shock"] = df.loc[
+            df["choice"] == choice, f"taste_shocks_{choice}"
+        ]
+    return df
+
+
+def create_real_utility(df, specs):
+    df = create_realized_taste_shock(df, specs)
+    df.loc[:, "real_util"] = df["utility"] + df["real_taste_shock"]
+    return df
+
+
+def create_additional_variables(df, specs):
+    """Wrapper function to create additional variables in the simulated dataframe."""
+    df = df.copy()
+
+    df = _create_income_variables(df, specs)
+    df = _transform_states_into_variables(df, specs)
+    df = _compute_working_hours(df, specs)
+    df = _compute_actual_retirement_age(df)
+    df = create_real_utility(df, specs)
+    return df

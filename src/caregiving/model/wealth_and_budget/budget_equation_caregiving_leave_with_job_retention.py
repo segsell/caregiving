@@ -41,23 +41,23 @@ def budget_constraint(
     partner_state,
     care_demand,
     job_before_caregiving,
-    savings_end_of_previous_period,  # A_{t-1}
+    asset_end_of_previous_period,  # A_{t-1}
     income_shock_previous_period,  # epsilon_{t - 1}
     params,
-    options,
+    model_specs,
 ):
     sex_var = SEX
 
-    savings_scaled = savings_end_of_previous_period * options["wealth_unit"]
+    assets_scaled = asset_end_of_previous_period * model_specs["wealth_unit"]
     # Recalculate experience
-    max_exp_period = period + options["max_exp_diffs_per_period"][period]
+    max_exp_period = period + model_specs["max_exp_diffs_per_period"][period]
     experience_years = max_exp_period * experience
 
     # Calculate partner income
     partner_income_after_ssc = calc_partner_income_after_ssc(
         partner_state=partner_state,
         sex=sex_var,
-        options=options,
+        model_specs=model_specs,
         education=education,
         period=period,
     )
@@ -67,19 +67,19 @@ def budget_constraint(
         experience_years=experience_years,
         sex=sex_var,
         education=education,
-        options=options,
+        model_specs=model_specs,
     )
 
     has_partner_int = (partner_state > 0).astype(int)
 
     # Income lagged choice 1
     unemployment_benefits = calc_unemployment_benefits(
-        savings=savings_scaled,
+        assets=assets_scaled,
         education=education,
         sex=sex_var,
         has_partner_int=has_partner_int,
         period=period,
-        options=options,
+        model_specs=model_specs,
     )
 
     # Income lagged choice 2
@@ -89,7 +89,7 @@ def budget_constraint(
         education=education,
         sex=sex_var,
         income_shock=income_shock_previous_period,
-        options=options,
+        model_specs=model_specs,
     )
 
     # Additional caregiving-leave top-up (after SSC, before income tax)
@@ -101,7 +101,7 @@ def budget_constraint(
         income_shock_previous_period=income_shock_previous_period,
         sex=sex_var,
         labor_income_after_ssc=labor_income_after_ssc,
-        options=options,
+        model_specs=model_specs,
     )
 
     # Select relevant income
@@ -121,7 +121,7 @@ def budget_constraint(
         own_income=own_income_after_ssc,
         partner_income=partner_income_after_ssc,
         has_partner_int=has_partner_int,
-        options=options,
+        model_specs=model_specs,
     )
 
     child_benefits = calc_child_benefits(
@@ -129,14 +129,14 @@ def budget_constraint(
         sex=sex_var,
         has_partner_int=has_partner_int,
         period=period,
-        options=options,
+        model_specs=model_specs,
     )
     # Standard care benefits and costs (remain post-tax transfers)
     care_benfits_and_costs = calc_care_benefits_and_costs(
         lagged_choice=lagged_choice,
         education=education,
         care_demand=care_demand,
-        options=options,
+        model_specs=model_specs,
     )
 
     total_income = jnp.maximum(
@@ -144,9 +144,9 @@ def budget_constraint(
         unemployment_benefits,
     )
     # calculate beginning of period wealth M_t
-    wealth = (1 + params["interest_rate"]) * savings_scaled + total_income
+    wealth = (1 + model_specs["interest_rate"]) * assets_scaled + total_income
 
-    return wealth / options["wealth_unit"]
+    return wealth / model_specs["wealth_unit"]
 
 
 def calc_caregiving_leave_top_up(
@@ -157,7 +157,7 @@ def calc_caregiving_leave_top_up(
     income_shock_previous_period,
     sex,
     labor_income_after_ssc,
-    options,
+    model_specs,
 ):
     """Calculate additional wage replacement for caregiving leave.
 
@@ -193,15 +193,15 @@ def calc_caregiving_leave_top_up(
 
     # Construct full-time equivalent annual labor income (gross → after SSC),
     # based on the current experience and income shock.
-    gamma_0 = options["gamma_0"][sex, education]
-    gamma_1 = options["gamma_1"][sex, education]
+    gamma_0 = model_specs["gamma_0"][sex, education]
+    gamma_1 = model_specs["gamma_1"][sex, education]
     hourly_wage = jnp.exp(
         gamma_0 + gamma_1 * jnp.log(experience_years + 1) + income_shock_previous_period
     )
 
     # Full-time annual hours and minimum wage
-    av_hours_ft = options["av_annual_hours_ft"][sex, education]
-    annual_min_wage_ft = options["annual_min_wage_ft"]
+    av_hours_ft = model_specs["av_annual_hours_ft"][sex, education]
+    annual_min_wage_ft = model_specs["annual_min_wage_ft"]
 
     gross_ft_income = hourly_wage * av_hours_ft
     gross_ft_income_min_checked = jnp.maximum(gross_ft_income, annual_min_wage_ft)
@@ -210,8 +210,8 @@ def calc_caregiving_leave_top_up(
     net_ft_income = calc_after_ssc_income_worker(gross_ft_income_min_checked)
 
     # Net PT income (full PT schedule)
-    av_hours_pt = options["av_annual_hours_pt"][sex, education]
-    annual_min_wage_pt = options["annual_min_wage_pt"][sex, education]
+    av_hours_pt = model_specs["av_annual_hours_pt"][sex, education]
+    annual_min_wage_pt = model_specs["annual_min_wage_pt"][sex, education]
     gross_pt_income = hourly_wage * av_hours_pt
     gross_pt_income_min_checked = jnp.maximum(gross_pt_income, annual_min_wage_pt)
     net_pt_income = calc_after_ssc_income_worker(gross_pt_income_min_checked)
@@ -225,7 +225,7 @@ def calc_caregiving_leave_top_up(
     # Top ups:
     # - Prior none, now unemployed: lump-sum monthly_unemployment_benefits.
     topup_prior_none = (
-        options["monthly_unemployment_benefits"] * 12.0 * mask_prior_none_unemp
+        model_specs["monthly_unemployment_benefits"] * 12.0 * mask_prior_none_unemp
     )
 
     # - Prior PT, now unemployed: top up to PT net wage.

@@ -22,7 +22,7 @@ from caregiving.model.wealth_and_budget.wages import calc_labor_income_after_ssc
 
 
 def calc_care_benefits_and_costs_higher_formal_care_costs(
-    lagged_choice, education, care_demand, options
+    lagged_choice, education, care_demand, model_specs
 ):
     """Care benefits and costs with higher formal care costs.
 
@@ -32,11 +32,11 @@ def calc_care_benefits_and_costs_higher_formal_care_costs(
     informal_care_solo = is_informal_care(lagged_choice)
     formal_care = is_formal_care(lagged_choice)
 
-    annual_care_benefits = options["informal_care_cash_benefits"] * 12
+    annual_care_benefits = model_specs["informal_care_cash_benefits"] * 12
     annual_care_benefits_weighted = annual_care_benefits * informal_care_solo
 
     # Formal care costs are 100% more expensive (multiply by 2.0).
-    annual_care_costs = options["formal_care_costs"] * 12 * 2.0
+    annual_care_costs = model_specs["formal_care_costs"] * 12 * 2.0
     annual_care_costs_weighted = annual_care_costs * formal_care
 
     return annual_care_benefits_weighted - annual_care_costs_weighted
@@ -50,23 +50,23 @@ def budget_constraint(
     # sex,
     partner_state,
     care_demand,
-    savings_end_of_previous_period,  # A_{t-1}
+    asset_end_of_previous_period,  # A_{t-1}
     income_shock_previous_period,  # epsilon_{t - 1}
     params,
-    options,
+    model_specs,
 ):
     sex_var = SEX
 
-    savings_scaled = savings_end_of_previous_period * options["wealth_unit"]
+    assets_scaled = asset_end_of_previous_period * model_specs["wealth_unit"]
     # Recalculate experience
-    max_exp_period = period + options["max_exp_diffs_per_period"][period]
+    max_exp_period = period + model_specs["max_exp_diffs_per_period"][period]
     experience_years = max_exp_period * experience
 
     # Calculate partner income
     partner_income_after_ssc = calc_partner_income_after_ssc(
         partner_state=partner_state,
         sex=sex_var,
-        options=options,
+        model_specs=model_specs,
         education=education,
         period=period,
     )
@@ -76,19 +76,19 @@ def budget_constraint(
         experience_years=experience_years,
         sex=sex_var,
         education=education,
-        options=options,
+        model_specs=model_specs,
     )
 
     has_partner_int = (partner_state > 0).astype(int)
 
     # Income lagged choice 1
     unemployment_benefits = calc_unemployment_benefits(
-        savings=savings_scaled,
+        assets=assets_scaled,
         education=education,
         sex=sex_var,
         has_partner_int=has_partner_int,
         period=period,
-        options=options,
+        model_specs=model_specs,
     )
 
     # Income lagged choice 2
@@ -98,7 +98,7 @@ def budget_constraint(
         education=education,
         sex=sex_var,
         income_shock=income_shock_previous_period,
-        options=options,
+        model_specs=model_specs,
     )
 
     # Select relevant income
@@ -116,7 +116,7 @@ def budget_constraint(
         own_income=own_income_after_ssc,
         partner_income=partner_income_after_ssc,
         has_partner_int=has_partner_int,
-        options=options,
+        model_specs=model_specs,
     )
 
     child_benefits = calc_child_benefits(
@@ -124,13 +124,13 @@ def budget_constraint(
         sex=sex_var,
         has_partner_int=has_partner_int,
         period=period,
-        options=options,
+        model_specs=model_specs,
     )
     care_benfits_and_costs = calc_care_benefits_and_costs_higher_formal_care_costs(
         lagged_choice=lagged_choice,
         education=education,
         care_demand=care_demand,
-        options=options,
+        model_specs=model_specs,
     )
 
     total_income = jnp.maximum(
@@ -138,6 +138,6 @@ def budget_constraint(
         unemployment_benefits,
     )
     # calculate beginning of period wealth M_t
-    wealth = (1 + params["interest_rate"]) * savings_scaled + total_income
+    wealth = (1 + model_specs["interest_rate"]) * assets_scaled + total_income
 
-    return wealth / options["wealth_unit"]
+    return wealth / model_specs["wealth_unit"]

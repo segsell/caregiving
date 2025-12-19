@@ -656,12 +656,10 @@ def draw_caregiving_type_from_params(
 # =====================================================================================
 
 
-def select_fixed_params_example(params):
+def select_fixed_params_example(params, model_specs):
     """Select fixed parameters for the optimization."""
 
     fixed_params = {
-        "sigma": params["sigma"],
-        "interest_rate": params["interest_rate"],
         "beta": params["beta"],
         "rho": params["rho"],
     }

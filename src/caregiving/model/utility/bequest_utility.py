@@ -18,7 +18,6 @@ def utility_final_consume_all(
     wealth: jnp.array,
     education: jnp.array,
     params: dict[str, float],
-    # options: dict[str, Any],
 ):
     """Compute the utility in the final period including bequest."""
     # rho = params["rho"]
@@ -48,7 +47,6 @@ def marginal_utility_final_consume_all(
     wealth: jnp.array,
     education: jnp.array,
     params: dict[str, float],
-    # options: dict[str, Any],
 ) -> jnp.array:
     """Compute marginal utility in the final period."""
     # rho = params["rho"]

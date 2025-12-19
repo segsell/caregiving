@@ -127,21 +127,18 @@ disutil_pt_work_low_bad_informal_care: 0.0008436519810557129
 disutil_pt_work_low_good_informal_care: 0.6706074838958038
 disutil_unemployed_high_women_informal_care: 0.3488805668315233
 disutil_unemployed_low_women_informal_care: 0.06541296384907234
-beta: 0.97
-interest_rate: 0.03
 job_finding_logit_age_cubed_women: -3.162982266453729e-05
 job_finding_logit_age_squared_women: 0.0016012387939461
 job_finding_logit_age_women: 0.0065131540323549
 job_finding_logit_const_women: -2.03524742129707
 job_finding_logit_high_educ_women: 0.6955095961575429
-lambda: 0.3939881532506134
+taste_shock_scale: 0.3939881532506134
 bequest_scale_high: 0.5297228095700217
 bequest_scale_low: 0.0192775915674937
 rho_bequest_high: 2.691232215791916
 rho_bequest_low: 2.9967812911872076
 rho_high: 4.933038573095731
 rho_low: 3.638657215972427
-sigma: 0.16471062648214
 util_informal_care_high_good: 0.41961993530828556
 util_informal_care_high_bad: -0.003924630352407146
 util_informal_care_low_good: 0.3964999191548165
@@ -150,3 +147,7 @@ util_informal_care_low_bad: 0.08737468493230734
 # util_joint_informal_care_bad: -0.015858335088598418
 util_formal_care_good: -0.18674258901240745
 util_formal_care_bad: 0.04230013103518421
+#
+# beta: 0.97
+# income_shock_mean: 0.0
+# income_shock_std: 0.16471062648214

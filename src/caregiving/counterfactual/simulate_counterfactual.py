@@ -86,7 +86,7 @@ def simulate_counterfactual_npv(
     )
     df["income_wo_interest"] = df.groupby("agent")["wealth_at_beginning"].shift(
         -1
-    ) - df["savings"] * (1 + params["interest_rate"])
+    ) - df["savings"] * (1 + options["interest_rate"])
 
     # periodic savings and savings rate
     df["savings_dec"] = df["total_income"] - df["consumption"]

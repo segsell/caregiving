@@ -45,30 +45,32 @@ from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
 @pytask.mark.baseline_model
 def task_specify_model(
     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
-    path_to_start_params: Path = (
-        BLD / "model" / "params" / "start_params_updated.yaml"
-    ),
-    path_to_save_options: Annotated[Path, Product] = BLD / "model" / "options.pkl",
-    path_to_save_model: Annotated[Path, Product] = BLD / "model" / "model_config.pkl",
-    path_to_save_start_params: Annotated[Path, Product] = BLD
+    # path_to_start_params: Path = (
+    #     BLD / "model" / "params" / "start_params_updated.yaml"
+    # ),
+    path_to_save_model_config: Annotated[Path, Product] = BLD
     / "model"
-    / "params"
-    / "start_params_model.yaml",
+    / "model_config.pkl",
+    path_to_save_model: Annotated[Path, Product] = BLD / "model" / "model.pkl",
+    # path_to_save_start_params: Annotated[Path, Product] = BLD
+    # / "model"
+    # / "params"
+    # / "start_params_model.yaml",
 ):
     """Generate model and options dictionaries."""
 
     with path_to_derived_specs.open("rb") as f:
         specs = pickle.load(f)
 
-    params = yaml.safe_load(path_to_start_params.open("rb"))
+    # params = yaml.safe_load(path_to_start_params.open("rb"))
 
-    # Assign income shock scale to start_params_all
-    params["sigma"] = float(specs["income_shock_scale"])
-    params["interest_rate"] = float(specs["interest_rate"])
-    params["beta"] = float(specs["discount_factor"])
+    # # Assign income shock scale to start_params_all
+    # params["sigma"] = float(specs["income_shock_scale"])
+    # params["interest_rate"] = float(specs["interest_rate"])
+    # params["beta"] = float(specs["discount_factor"])
 
-    with path_to_save_start_params.open("w") as f:
-        yaml.dump(params, f)
+    # with path_to_save_start_params.open("w") as f:
+    #     yaml.dump(params, f)
 
     # Load specifications
     n_periods = specs["n_periods"]
@@ -108,26 +110,7 @@ def task_specify_model(
         "n_quad_points": specs["quadrature_points_stochastic"],
         # "n_quad_points": specs["n_quad_points"],
     }
-
-    stochastic_states_transitions = {
-        "job_offer": job_offer_process_transition,
-        "partner_state": partner_transition,
-        "health": health_transition,
-        "mother_dead": death_transition,
-        "mother_adl": limitations_with_adl_transition,
-        "care_demand": care_demand_transition_adl_light_intensive,
-    }
-
-    # model = setup_and_save_model(
-    #     options=options,
-    #     state_space_functions=create_state_space_functions(),
-    #     utility_functions=create_utility_functions(),
-    #     utility_functions_final_period=create_final_period_utility_functions(),
-    #     budget_constraint=budget_constraint,
-    #     # shock_functions=shock_function_dict(),
-    #     path=path_to_save_model,
-    #     sim_model=False,
-    # )
+    pickle.dump(model_config, path_to_save_model_config.open("wb"))
 
     model = dcegm.setup_model(
         model_specs=specs,
@@ -137,7 +120,7 @@ def task_specify_model(
         utility_functions_final_period=create_final_period_utility_functions(),
         budget_constraint=budget_constraint,
         shock_functions=shock_function_dict(),
-        stochastic_states_transitions=stochastic_states_transitions,
+        stochastic_states_transitions=create_stochastic_states_transitions(),
         model_save_path=path_to_save_model,
         # alternative_sim_specifications=alternative_sim_specifications,
         # debug_info=None,
@@ -145,4 +128,15 @@ def task_specify_model(
     )
 
     print("Model specified.", flush=True)
-    return model, params
+    return model
+
+
+def create_stochastic_states_transitions():
+    return {
+        "job_offer": job_offer_process_transition,
+        "partner_state": partner_transition,
+        "health": health_transition,
+        "mother_dead": death_transition,
+        "mother_adl": limitations_with_adl_transition,
+        "care_demand": care_demand_transition_adl_light_intensive,
+    }

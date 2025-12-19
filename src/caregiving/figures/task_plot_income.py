@@ -686,7 +686,7 @@ def task_plot_total_household_income(
     with path_to_full_specs.open("rb") as file:
         specs = pkl.load(file)
 
-    params = {"interest_rate": 0.0}
+    params = {}
     exp_levels = np.arange(0, 50 + 1)  # specs["max_experience"] + 1
     marriage_labels = ["Single", "Partnered"]
     edu_labels = specs["education_labels"]
@@ -714,10 +714,10 @@ def task_plot_total_household_income(
                         # sex=sex_var,
                         partner_state=np.array(married_val),
                         care_demand=0,
-                        savings_end_of_previous_period=0,
+                        asset_end_of_previous_period=0,
                         income_shock_previous_period=0,
                         params=params,
-                        options=specs,
+                        model_specs=specs,
                     )
                 axs[edu_val, married_val].plot(
                     exp_levels,
