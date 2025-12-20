@@ -356,7 +356,8 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
 
         # Generate type specific initial lagged choice distribution
         empirical_lagged_choice_probs = start_period_data_edu[
-            "lagged_choice"
+            "choice"
+            # "lagged_choice"
         ].value_counts(normalize=True)
         lagged_choice_probs = pd.Series(
             index=np.arange(0, model_specs["n_choices"]), data=0, dtype=float
@@ -444,6 +445,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         #
         "assets_begin_of_period": wealth_agents,
     }
+    type_mask_low = (sex_agents == sex_var) & (education_agents == 0)
 
     with path_to_save_discrete_states.open("wb") as f:
         pickle.dump(states, f)
