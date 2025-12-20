@@ -282,7 +282,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "health": health,
                 "partner_state": partner_state,
                 "mother_adl": mother_adl,
-                "care_demand": NO_CARE_DEMAND_DEAD,  # Outside caregiving window, no care demand
+                "care_demand": care_demand,  # Outside caregiving window, no care demand
                 "job_offer": 0,
             }
             return state_proxy
@@ -343,7 +343,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "health": health,
                 "partner_state": partner_state,
                 "mother_adl": mother_adl,
-                "care_demand": NO_CARE_DEMAND_DEAD,
+                "care_demand": NO_CARE_DEMAND_ALIVE,
                 "job_offer": job_offer,
             }
             return state_proxy

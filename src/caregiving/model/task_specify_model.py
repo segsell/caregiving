@@ -43,107 +43,108 @@ from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
 from dcegm.pre_processing.setup_model import create_model_dict
 
 
-@pytask.mark.baseline_model
-def task_specify_model(
-    path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
-    # path_to_start_params: Path = (
-    #     BLD / "model" / "params" / "start_params_updated.yaml"
-    # ),
-    path_to_save_model_config: Annotated[Path, Product] = BLD
-    / "model"
-    / "model_config.pkl",
-    path_to_save_model: Annotated[Path, Product] = BLD / "model" / "model.pkl",
-    # path_to_save_start_params: Annotated[Path, Product] = BLD
-    # / "model"
-    # / "params"
-    # / "start_params_model.yaml",
-):
-    """Generate model and options dictionaries."""
+# @pytask.mark.baseline_model
+# def task_specify_model(
+#     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+#     # path_to_start_params: Path = (
+#     #     BLD / "model" / "params" / "start_params_updated.yaml"
+#     # ),
+#     path_to_save_model_config: Annotated[Path, Product] = BLD
+#     / "model"
+#     / "model_config.pkl",
+#     path_to_save_model: Annotated[Path, Product] = BLD / "model" / "model.pkl",
+#     # path_to_save_start_params: Annotated[Path, Product] = BLD
+#     # / "model"
+#     # / "params"
+#     # / "start_params_model.yaml",
+# ):
+#     """Generate model and options dictionaries."""
 
-    with path_to_derived_specs.open("rb") as f:
-        specs = pickle.load(f)
+#     with path_to_derived_specs.open("rb") as f:
+#         specs = pickle.load(f)
 
-    # params = yaml.safe_load(path_to_start_params.open("rb"))
+#     # params = yaml.safe_load(path_to_start_params.open("rb"))
 
-    # # Assign income shock scale to start_params_all
-    # params["sigma"] = float(specs["income_shock_scale"])
-    # params["interest_rate"] = float(specs["interest_rate"])
-    # params["beta"] = float(specs["discount_factor"])
+#     # # Assign income shock scale to start_params_all
+#     # params["sigma"] = float(specs["income_shock_scale"])
+#     # params["interest_rate"] = float(specs["interest_rate"])
+#     # params["beta"] = float(specs["discount_factor"])
 
-    # with path_to_save_start_params.open("w") as f:
-    #     yaml.dump(params, f)
+#     # with path_to_save_start_params.open("w") as f:
+#     #     yaml.dump(params, f)
 
-    # Load specifications
-    n_periods = specs["n_periods"]
-    choices = np.arange(specs["n_choices"], dtype=int)
+#     # Load specifications
+#     n_periods = specs["n_periods"]
+#     choices = np.arange(specs["n_choices"], dtype=int)
 
-    # Savings grid
-    savings_grid = create_savings_grid()
+#     # Savings grid
+#     savings_grid = create_savings_grid()
 
-    # Experience grid
-    experience_grid = jnp.linspace(0, 1, specs["n_experience_grid_points"])
+#     # Experience grid
+#     experience_grid = jnp.linspace(0, 1, specs["n_experience_grid_points"])
 
-    model_config = {
-        # "min_period_batch_segments": [33 - 5, 44 - 5],
-        # "min_period_batch_segments": [23, 33, 34],
-        "min_period_batch_segments": [33, 43, 44],
-        "n_periods": n_periods,
-        "choices": choices,
-        "deterministic_states": {
-            # "partner_state": [0],
-            # "education": [0],
-            # "caregiving_type": [0],
-            "caregiving_type": np.arange(2, dtype=int),
-            "education": np.arange(specs["n_education_types"], dtype=int),
-            "already_retired": np.arange(2, dtype=int),
-        },
-        "stochastic_states": {
-            "job_offer": np.arange(2, dtype=int),
-            "partner_state": np.arange(specs["n_partner_states"], dtype=int),
-            "health": np.arange(specs["n_health_states"], dtype=int),
-            "mother_adl": np.arange(specs["n_adl_states_light_intensive"], dtype=int),
-            "care_demand": np.arange(
-                4, dtype=int
-            ),  # 4 states: DEAD, ALIVE_NO_CARE, LIGHT, INTENSIVE
-        },
-        "continuous_states": {
-            "assets_end_of_period": savings_grid,
-            "experience": experience_grid,
-        },
-        "n_quad_points": specs["quadrature_points_stochastic"],
-        # "n_quad_points": specs["n_quad_points"],
-    }
-    pickle.dump(model_config, path_to_save_model_config.open("wb"))
+#     model_config = {
+#         # "min_period_batch_segments": [33 - 5, 44 - 5],
+#         # "min_period_batch_segments": [23, 33, 34],
+#         "min_period_batch_segments": [33, 43, 44],
+#         "n_periods": n_periods,
+#         "choices": choices,
+#         "deterministic_states": {
+#             # "partner_state": [0],
+#             # "education": [0],
+#             # "caregiving_type": [0],
+#             "caregiving_type": np.arange(2, dtype=int),
+#             "education": np.arange(specs["n_education_types"], dtype=int),
+#             "already_retired": np.arange(2, dtype=int),
+#         },
+#         "stochastic_states": {
+#             "job_offer": np.arange(2, dtype=int),
+#             "partner_state": np.arange(specs["n_partner_states"], dtype=int),
+#             "health": np.arange(specs["n_health_states"], dtype=int),
+#             "mother_adl": np.arange(3, dtype=int),
+#             # "mother_adl": np.arange(specs["n_adl_states_light_intensive"], dtype=int),
+#             "care_demand": np.arange(
+#                 4, dtype=int
+#             ),  # 4 states: DEAD, ALIVE_NO_CARE, LIGHT, INTENSIVE
+#         },
+#         "continuous_states": {
+#             "assets_end_of_period": savings_grid,
+#             "experience": experience_grid,
+#         },
+#         "n_quad_points": specs["quadrature_points_stochastic"],
+#         # "n_quad_points": specs["n_quad_points"],
+#     }
+#     pickle.dump(model_config, path_to_save_model_config.open("wb"))
 
-    # ### Now test the inspection function.
-    # state_space_df = create_model_dict(
-    #     model_config=model_config,
-    #     model_specs=specs,
-    #     state_space_functions=create_state_space_functions(),
-    #     utility_functions=create_utility_functions(),
-    #     utility_functions_final_period=create_final_period_utility_functions(),
-    #     budget_constraint=budget_constraint,
-    #     stochastic_states_transitions=create_stochastic_states_transitions(),
-    #     debug_info="state_space_df",
-    # )
-    # admissible_df = state_space_df[state_space_df["is_valid"]]
+#     # ### Now test the inspection function.
+#     # state_space_df = create_model_dict(
+#     #     model_config=model_config,
+#     #     model_specs=specs,
+#     #     state_space_functions=create_state_space_functions(),
+#     #     utility_functions=create_utility_functions(),
+#     #     utility_functions_final_period=create_final_period_utility_functions(),
+#     #     budget_constraint=budget_constraint,
+#     #     stochastic_states_transitions=create_stochastic_states_transitions(),
+#     #     debug_info="state_space_df",
+#     # )
+#     # admissible_df = state_space_df[state_space_df["is_valid"]]
 
-    model = dcegm.setup_model(
-        model_specs=specs,
-        model_config=model_config,
-        state_space_functions=create_state_space_functions(),
-        utility_functions=create_utility_functions(),
-        utility_functions_final_period=create_final_period_utility_functions(),
-        budget_constraint=budget_constraint,
-        shock_functions=shock_function_dict(),
-        stochastic_states_transitions=create_stochastic_states_transitions(),
-        model_save_path=path_to_save_model,
-        # use_stochastic_sparsity=True,
-        # alternative_sim_specifications=alternative_sim_specifications,
-        # debug_info="state_space_df",
-    )
-    print("Model specified.", flush=True)
-    return model
+#     model = dcegm.setup_model(
+#         model_specs=specs,
+#         model_config=model_config,
+#         state_space_functions=create_state_space_functions(),
+#         utility_functions=create_utility_functions(),
+#         utility_functions_final_period=create_final_period_utility_functions(),
+#         budget_constraint=budget_constraint,
+#         shock_functions=shock_function_dict(),
+#         stochastic_states_transitions=create_stochastic_states_transitions(),
+#         model_save_path=path_to_save_model,
+#         # use_stochastic_sparsity=True,
+#         # alternative_sim_specifications=alternative_sim_specifications,
+#         # debug_info="state_space_df",
+#     )
+#     print("Model specified.", flush=True)
+#     return model
 
 
 def create_stochastic_states_transitions():

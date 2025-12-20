@@ -40,27 +40,12 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.moments.task_create_soep_moments import (
+    create_df_non_caregivers,
     create_df_wealth,
-    create_df_with_caregivers,
 )
 from caregiving.utils import table
-from caregiving.model.stochastic_processes.adl_transition import (
-    death_transition,
-    limitations_with_adl_transition,
-)
-from caregiving.model.stochastic_processes.caregiving_transition import (
-    care_demand_transition_adl_light_intensive,
-)
-from caregiving.model.stochastic_processes.health_transition import (
-    health_transition,
-)
-from caregiving.model.stochastic_processes.job_transition import (
-    job_offer_process_transition,
-)
-from caregiving.model.stochastic_processes.partner_transition import (
-    partner_transition,
-)
 from caregiving.model.taste_shocks import shock_function_dict
+from caregiving.model.task_specify_model import create_stochastic_states_transitions
 
 
 @pytask.mark.initial_conditions
@@ -106,15 +91,6 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     params = yaml.safe_load(path_to_start_params.open("rb"))
     model_config = pickle.load(path_to_model_config.open("rb"))
 
-    stochastic_states_transitions = {
-        "job_offer": job_offer_process_transition,
-        "partner_state": partner_transition,
-        "health": health_transition,
-        "mother_dead": death_transition,
-        "mother_adl": limitations_with_adl_transition,
-        "care_demand": care_demand_transition_adl_light_intensive,
-    }
-
     model_class = dcegm.setup_model(
         model_specs=specs,
         model_config=model_config,
@@ -123,7 +99,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         utility_functions_final_period=create_final_period_utility_functions(),
         budget_constraint=budget_constraint,
         shock_functions=shock_function_dict(),
-        stochastic_states_transitions=stochastic_states_transitions,
+        stochastic_states_transitions=create_stochastic_states_transitions(),
         model_load_path=path_to_model,
         # alternative_sim_specifications=alternative_sim_specifications,
         # debug_info=debug_info,
@@ -142,7 +118,9 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     # start_period_data = observed_data[observed_data["period"].isin([min_period])].copy()
     # start_period_data = start_period_data[start_period_data["wealth"].notnull()].copy()
 
-    moments_data = create_df_with_caregivers(
+    # Use create_df_non_caregivers to match the moments calculation
+    # (moments use non-caregivers only, so initial conditions should too)
+    moments_data = create_df_non_caregivers(
         df_full=observed_data,
         specs=model_specs,
         start_year=2001,
@@ -356,8 +334,8 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
 
         # Generate type specific initial lagged choice distribution
         empirical_lagged_choice_probs = start_period_data_edu[
-            "choice"
-            # "lagged_choice"
+            # "choice"
+            "lagged_choice"
         ].value_counts(normalize=True)
         lagged_choice_probs = pd.Series(
             index=np.arange(0, model_specs["n_choices"]), data=0, dtype=float
@@ -418,8 +396,8 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     exp_agents /= model_specs["max_exp_diffs_per_period"][0]
 
     # Set lagged choice to 1(unemployment) if experience is 0
-    exp_zero_mask = exp_agents == 0
-    lagged_choice[exp_zero_mask] = 1
+    # exp_zero_mask = exp_agents == 0
+    # lagged_choice[exp_zero_mask] = 1
 
     # In the first period, only NO_CARE choices are available (0, 1, 2, 3),
     # which correspond to retirement, unemployed, part-time, full-time.
@@ -445,7 +423,8 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         #
         "assets_begin_of_period": wealth_agents,
     }
-    type_mask_low = (sex_agents == sex_var) & (education_agents == 0)
+    # type_mask_low = (sex_agents == sex_var) & (education_agents == 0)
+    # breakpoint()
 
     with path_to_save_discrete_states.open("wb") as f:
         pickle.dump(states, f)
