@@ -212,9 +212,6 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
     elif (caregiving_type == 0) & (is_informal_care(lagged_choice)):
         return False
     # ================================================================================
-    elif (mother_dead == 1) & (care_demand > 0):
-        return False
-    # ================================================================================
     # # elif (age <= start_age_caregiving) & (lagged_care_demand == 1):
     # #     return False
     # elif (is_informal_care(lagged_choice)) & (lagged_care_demand == 0):
@@ -254,7 +251,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "job_offer": 0,
             }
             return state_proxy
-        elif mother_dead:
+        elif mother_dead == 1:
             # If mother is dead, no care demand and supply
             state_proxy = {
                 "period": period,
@@ -270,6 +267,24 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "job_offer": job_offer,
             }
             return state_proxy
+        # ================================================================================
+        elif (mother_dead == 1) & (care_demand > 0):
+            # Return proxy state: if mother is dead, care_demand must be 0
+            state_proxy = {
+                "period": period,
+                "lagged_choice": lagged_choice,
+                "already_retired": already_retired,
+                "education": education,
+                "caregiving_type": caregiving_type,
+                "health": health,
+                "partner_state": partner_state,
+                "mother_dead": 1,
+                "mother_adl": 0,
+                "care_demand": 0,
+                "job_offer": job_offer,
+            }
+            return state_proxy
+        # ================================================================================
         elif age > max_ret_age + 1:
             # If age is larger than max_ret_age + 1, the individual can only be
             # longer retired.

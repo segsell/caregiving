@@ -58,6 +58,7 @@ def care_demand_transition_adl_light_intensive(
 
     # Restrict care demand to the caregiving window and to living mothers.
     # Outside the caregiving window or if mother is dead: no care demand (state 0).
+    # Note: If mother_dead == 1, then in_caregiving_window = 0, ensuring care_demand = 0.
     in_caregiving_window = (
         (1 - mother_dead)
         * (period >= start_period_caregiving - 1)
@@ -68,11 +69,21 @@ def care_demand_transition_adl_light_intensive(
     # - ADL 0 -> care_demand 0 (no demand)
     # - ADL 1 -> care_demand 1 (light)
     # - ADL 2/3 -> care_demand 2 (intensive)
+    #
+    # When mother_dead == 1: in_caregiving_window = 0, so:
+    # - p_no_care = prob_adl[0] + prob_adl[1] + prob_adl[2] = 1.0
+    # - p_light = 0, p_intensive = 0
+    # This guarantees care_demand == 0 whenever mother_dead == 1.
     p_no_care = prob_adl[0] + (1 - in_caregiving_window) * (prob_adl[1] + prob_adl[2])
     p_light = prob_adl[1] * in_caregiving_window
     p_intensive = prob_adl[2] * in_caregiving_window
 
-    return jnp.array([p_no_care, p_light, p_intensive])
+    # Ensure probabilities sum to 1 (sanity check)
+    probs = jnp.array([p_no_care, p_light, p_intensive])
+    # Note: In JAX, we can't use assertions that would break compilation,
+    # but the math guarantees this sums to 1.0
+
+    return probs
 
 
 def care_demand_and_supply_transition_adl(

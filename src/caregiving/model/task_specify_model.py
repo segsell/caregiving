@@ -86,7 +86,8 @@ def task_specify_model(
 
     model_config = {
         # "min_period_batch_segments": [33 - 5, 44 - 5],
-        "min_period_batch_segments": [23, 33, 34],
+        # "min_period_batch_segments": [23, 33, 34],
+        "min_period_batch_segments": [33, 43, 44],
         "n_periods": n_periods,
         "choices": choices,
         "deterministic_states": {
@@ -126,7 +127,6 @@ def task_specify_model(
     #     debug_info="state_space_df",
     # )
     # admissible_df = state_space_df[state_space_df["is_valid"]]
-    # breakpoint()
 
     model = dcegm.setup_model(
         model_specs=specs,
@@ -142,7 +142,6 @@ def task_specify_model(
         # alternative_sim_specifications=alternative_sim_specifications,
         # debug_info="state_space_df",
     )
-
     print("Model specified.", flush=True)
     return model
 

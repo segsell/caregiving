@@ -393,10 +393,10 @@ def plot_simulated_care_demand_by_age_2_by_2(  # noqa: PLR0915
         df_sim = df_sim.loc[df_sim["sex"] == SEX].copy()
 
     # ================================================================================
-    # Drop cases where care_demand > 0 and mother_dead == 1
-    df_sim = df_sim.loc[
-        ~((df_sim["care_demand"] > 0) & (df_sim["mother_dead"] == 1))
-    ].copy()
+    # # Drop cases where care_demand > 0 and mother_dead == 1
+    # df_sim = df_sim.loc[
+    #     ~((df_sim["care_demand"] > 0) & (df_sim["mother_dead"] == 1))
+    # ].copy()
     # ================================================================================
 
     # ---- 2. Calculate care type indicators for all four scenarios
@@ -1672,7 +1672,7 @@ def task_check_no_care_with_positive_demand(
     mask = (
         (df_sim["care_demand"] > 0)
         & (df_sim["health"] != DEAD)
-        & (df_sim["mother_dead"] == 0)
+        # & (df_sim["mother_dead"] == 0)
         & (df_sim["caregiving_type"] == 1)
         & (df_sim["choice"].isin(no_care_choices))
         & (df_sim["age"].between(start_age_caregiving, end_age_caregiving))
