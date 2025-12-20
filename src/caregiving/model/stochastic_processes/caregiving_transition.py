@@ -4,6 +4,7 @@ from caregiving.model.shared import (
     MOTHER,
     PARENT_DEAD,
     SHARE_CARE_TO_MOTHER,
+    NO_CARE_DEMAND_DEAD,
 )
 from caregiving.model.stochastic_processes.adl_transition import (
     limitations_with_adl_transition,
@@ -84,6 +85,142 @@ def care_demand_transition_adl_light_intensive(
     # but the math guarantees this sums to 1.0
 
     return probs
+
+
+def care_demand_death_transition_light_intensive(
+    mother_adl, period, education, model_specs
+):
+    """Combined transition probability for care demand and death.
+
+    Combines death transition and care demand transition into a single 4-state process:
+    - 0: NO_CARE_DEMAND_DEAD (mother is dead)
+    - 1: NO_CARE_DEMAND_ALIVE (mother is alive, no ADL, outside caregiving window)
+    - 2: CARE_DEMAND_LIGHT (mother is alive, ADL 1, in caregiving window)
+    - 3: CARE_DEMAND_INTENSIVE (mother is alive, ADL 2 or 3, in caregiving window)
+
+    Once mother is dead (mother_adl == 0, "No ADL Dead"), she remains dead forever
+    and care_demand is NO_CARE_DEMAND_DEAD (0) forever.
+
+    The ADL transition probabilities from limitations_with_adl_transition are
+    conditional on being alive, so we can combine them with death probabilities.
+
+    Parameters
+    ----------
+    mother_adl : int
+        Current ADL state:
+        - 0: "No ADL Dead" (mother is dead)
+        - 1: "No ADL Alive" (mother is alive, no ADL)
+        - 2: "ADL 1" (mother is alive, ADL 1)
+        - 3: "ADL 2 or ADL 3" (mother is alive, ADL 2 or 3)
+    period : int
+        Current period
+    education : int
+        Education level (0=Low, 1=High)
+    model_specs : dict
+        Model specifications dictionary containing:
+        - adl_state_transition_mat_light_intensive: ADL transition matrix
+        - death_transition_mat: death probability matrix [sex, age_index]
+        - mother_age_diff: age difference matrix
+        - agent_to_parent_mat_age_offset: age offset between agent and parent matrices
+        - parent_to_survival_mat_age_offset: age offset for survival matrices
+        - end_age_caregiving, start_age: age bounds
+        - start_period_caregiving: start period for caregiving
+
+    Returns
+    -------
+    jnp.ndarray
+        Probability vector over care_demand states [0, 1, 2, 3], where:
+        - 0: NO_CARE_DEMAND_DEAD (mother is dead)
+        - 1: NO_CARE_DEMAND_ALIVE (mother is alive, no ADL, outside caregiving window)
+        - 2: CARE_DEMAND_LIGHT (mother is alive, ADL 1, in caregiving window)
+        - 3: CARE_DEMAND_INTENSIVE (mother is alive, ADL 2 or 3, in caregiving window)
+    """
+    # Infer mother_dead from mother_adl: mother_adl == 0 means "No ADL Dead"
+    # mother_adl states: 0="No ADL Dead", 1="No ADL Alive", 2="ADL 1", 3="ADL 2 or ADL 3"
+    already_dead = mother_adl == NO_CARE_DEMAND_DEAD
+
+    # Calculate death probability for next period (if mother is currently alive)
+    # Calculate mother's actual age from period
+    mother_age = (
+        period
+        - model_specs["agent_to_parent_mat_age_offset"]
+        + model_specs["mother_age_diff"][education]
+        + PARENT_AGE_OFFSET
+    )
+
+    # Convert to age_index for death_transition_mat
+    age_index = mother_age + model_specs["parent_to_survival_mat_age_offset"]
+
+    # Get death transition matrix
+    death_mat = model_specs["death_transition_mat"]
+    # Shape: [sex, age_index] where sex=0 is Men, sex=1 is Women (MOTHER=1)
+
+    # Clip age_index to valid bounds and get death probability
+    max_idx = death_mat.shape[1] - 1
+    clipped_idx = jnp.clip(age_index, 0, max_idx)
+    in_bounds = (age_index >= 0) & (age_index <= max_idx)
+    death_prob = jnp.where(
+        in_bounds, death_mat[MOTHER, clipped_idx], 1.0
+    )  # If out of bounds, assume dead
+
+    # If mother was already dead (mother_adl == 0), she stays dead forever
+    # Return [1.0, 0.0, 0.0, 0.0] (state 0: NO_CARE_DEMAND_DEAD)
+    # Use JAX-compatible conditional logic
+    dead_probs = jnp.array([1.0, 0.0, 0.0, 0.0])
+
+    # If mother was already dead, death_prob should be 1.0
+    death_prob = jnp.where(already_dead, 1.0, death_prob)
+    alive_prob = 1.0 - death_prob
+
+    # Get ADL transition probabilities (conditional on being alive)
+    # mother_adl states when alive: 1="No ADL Alive", 2="ADL 1", 3="ADL 2 or ADL 3"
+    # Map to internal ADL representation for limitations_with_adl_transition:
+    # - mother_adl == 1 (No ADL Alive) -> adl_state = 0 (No ADL)
+    # - mother_adl == 2 (ADL 1) -> adl_state = 1 (ADL 1)
+    # - mother_adl == 3 (ADL 2 or 3) -> adl_state = 2 (ADL 2/3)
+    # Note: mother_adl == 0 (dead) is handled above, so we subtract 1 to map [1,2,3] -> [0,1,2]
+    adl_state_for_transition = jnp.where(already_dead, 0, mother_adl - 1)
+
+    prob_adl = limitations_with_adl_transition(
+        adl_state_for_transition, period, education, model_specs
+    )
+
+    # Caregiving window restrictions
+    end_period_caregiving = model_specs["end_age_caregiving"] - model_specs["start_age"]
+    start_period_caregiving = model_specs["start_period_caregiving"]
+
+    # Restrict care demand to the caregiving window (boolean indicator)
+    in_caregiving_window = (period >= start_period_caregiving - 1) * (
+        period < end_period_caregiving
+    )
+
+    # Calculate probabilities for each state:
+    # State 0: NO_CARE_DEMAND_DEAD (mother dies or is already dead)
+    p_dead = death_prob
+
+    # State 1: NO_CARE_DEMAND_ALIVE (mother is alive, no ADL, outside caregiving window)
+    # This includes: alive * (ADL 0 OR (ADL 1/2/3 but outside caregiving window))
+    p_no_care_alive = alive_prob * (
+        prob_adl[0] + (1 - in_caregiving_window) * (prob_adl[1] + prob_adl[2])
+    )
+
+    # State 2: CARE_DEMAND_LIGHT (mother is alive, ADL 1, in caregiving window)
+    p_light = alive_prob * prob_adl[1] * in_caregiving_window
+
+    # State 3: CARE_DEMAND_INTENSIVE (mother is alive, ADL 2 or 3, in caregiving window)
+    p_intensive = alive_prob * prob_adl[2] * in_caregiving_window
+
+    # Ensure probabilities sum to 1
+    # Note: p_dead + p_no_care_alive + p_light + p_intensive should equal 1.0
+    # = death_prob + alive_prob * (prob_adl[0] + (1 - in_caregiving_window) * (prob_adl[1] + prob_adl[2]) + prob_adl[1] * in_caregiving_window + prob_adl[2] * in_caregiving_window)
+    # = death_prob + alive_prob * (prob_adl[0] + prob_adl[1] + prob_adl[2])
+    # = death_prob + alive_prob * 1.0
+    # = death_prob + (1 - death_prob) = 1.0
+
+    probs = jnp.array([p_dead, p_no_care_alive, p_light, p_intensive])
+
+    # If mother was already dead, return dead state with certainty
+    return jnp.where(already_dead, dead_probs, probs)
 
 
 def care_demand_and_supply_transition_adl(

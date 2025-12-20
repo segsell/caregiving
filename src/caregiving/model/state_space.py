@@ -15,6 +15,8 @@ from caregiving.model.shared import (
     ALL_NO_INFORMAL_CARE,
     CARE_DEMAND_INTENSIVE,
     CARE_DEMAND_LIGHT,
+    NO_CARE_DEMAND_DEAD,
+    NO_CARE_DEMAND_ALIVE,
     FORMAL_CARE,
     INTENSIVE_INFORMAL_CARE,
     LIGHT_INFORMAL_CARE,
@@ -60,7 +62,9 @@ from caregiving.model.shared import (
     WORK_AND_UNEMPLOYED_NO_CARE_OR_FORMAL,
     WORK_AND_UNEMPLOYED_NO_FORMAL_CARE,
     WORK_AND_UNEMPLOYED_NO_INFORMAL_CARE,
+    has_care_demand,
     is_alive,
+    is_care_demand_dead,
     is_dead,
     is_formal_care,
     is_full_time,
@@ -68,6 +72,7 @@ from caregiving.model.shared import (
     is_intensive_informal_care,
     is_light_informal_care,
     is_no_care,
+    is_no_care_demand,
     is_part_time,
     is_retired,
     is_unemployed,
@@ -157,7 +162,6 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
     education,
     health,
     partner_state,
-    mother_dead,
     mother_adl,
     care_demand,
     job_offer,
@@ -245,14 +249,13 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "caregiving_type": caregiving_type,
                 "health": health,
                 "partner_state": partner_state,
-                "mother_dead": 1,
                 "mother_adl": 0,
-                "care_demand": 0,
+                "care_demand": NO_CARE_DEMAND_DEAD,
                 "job_offer": 0,
             }
             return state_proxy
-        elif mother_dead == 1:
-            # If mother is dead, no care demand and supply
+        elif is_care_demand_dead(care_demand):
+            # If mother is dead (care_demand == NO_CARE_DEMAND_DEAD), no care demand and supply
             state_proxy = {
                 "period": period,
                 "lagged_choice": lagged_choice,
@@ -261,26 +264,8 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "caregiving_type": caregiving_type,
                 "health": health,
                 "partner_state": partner_state,
-                "mother_dead": 1,
                 "mother_adl": 0,
-                "care_demand": 0,
-                "job_offer": job_offer,
-            }
-            return state_proxy
-        # ================================================================================
-        elif (mother_dead == 1) & (care_demand > 0):
-            # Return proxy state: if mother is dead, care_demand must be 0
-            state_proxy = {
-                "period": period,
-                "lagged_choice": lagged_choice,
-                "already_retired": already_retired,
-                "education": education,
-                "caregiving_type": caregiving_type,
-                "health": health,
-                "partner_state": partner_state,
-                "mother_dead": 1,
-                "mother_adl": 0,
-                "care_demand": 0,
+                "care_demand": NO_CARE_DEMAND_DEAD,
                 "job_offer": job_offer,
             }
             return state_proxy
@@ -296,9 +281,8 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "caregiving_type": caregiving_type,
                 "health": health,
                 "partner_state": partner_state,
-                "mother_dead": mother_dead,
                 "mother_adl": mother_adl,
-                "care_demand": 0,
+                "care_demand": NO_CARE_DEMAND_DEAD,  # Outside caregiving window, no care demand
                 "job_offer": 0,
             }
             return state_proxy
@@ -313,7 +297,6 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "caregiving_type": caregiving_type,
                 "health": health,
                 "partner_state": partner_state,
-                "mother_dead": mother_dead,
                 "mother_adl": mother_adl,
                 "care_demand": care_demand,
                 "job_offer": 0,
@@ -348,9 +331,9 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
         #         "job_offer": job_offer,
         #     }
         #     return state_proxy
-        # Care demand cannot be 1 before the start period for caregiving
+        # Care demand cannot be light/intensive before the start period for caregiving
         elif age > end_age_caregiving + 1:
-            # Proxy to state with care_demand = 0
+            # Proxy to state with no care demand (alive, outside window)
             state_proxy = {
                 "period": period,
                 "lagged_choice": lagged_choice,
@@ -359,14 +342,13 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "caregiving_type": caregiving_type,
                 "health": health,
                 "partner_state": partner_state,
-                "mother_dead": mother_dead,
                 "mother_adl": mother_adl,
-                "care_demand": 0,
+                "care_demand": NO_CARE_DEMAND_DEAD,
                 "job_offer": job_offer,
             }
             return state_proxy
         elif age < start_age_caregiving:
-            # Proxy to state with care_demand = 0
+            # Proxy to state with no care demand (alive, outside window)
             state_proxy = {
                 "period": period,
                 "lagged_choice": lagged_choice,
@@ -375,9 +357,8 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "caregiving_type": caregiving_type,
                 "health": health,
                 "partner_state": partner_state,
-                "mother_dead": mother_dead,
                 "mother_adl": mother_adl,
-                "care_demand": 0,
+                "care_demand": NO_CARE_DEMAND_ALIVE,
                 "job_offer": job_offer,
             }
             return state_proxy
@@ -583,7 +564,7 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
 
     if caregiving_type == 1:
         if (
-            (care_demand == 0)
+            is_no_care_demand(care_demand)
             | (age < start_age_caregiving)
             | (age > end_age_caregiving)
         ):
@@ -664,7 +645,7 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
 
     elif caregiving_type == 0:
         if (
-            (care_demand == 0)
+            is_no_care_demand(care_demand)
             | (age < start_age_caregiving)
             | (age > end_age_caregiving)
         ):
