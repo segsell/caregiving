@@ -85,7 +85,6 @@ def task_specify_model(
             "partner_state": np.arange(specs["n_partner_states"], dtype=int),
             "job_offer": np.arange(2, dtype=int),
             "health": np.arange(specs["n_health_states"], dtype=int),
-            # "mother_adl": np.arange(3, dtype=int),
             "mother_dead": np.arange(2, dtype=int),
             "mother_adl": np.arange(specs["n_adl_states_light_intensive"], dtype=int),
             "care_demand": np.arange(3, dtype=int),
@@ -126,7 +125,6 @@ def task_specify_model(
         # alternative_sim_specifications=alternative_sim_specifications,
         # debug_info="state_space_df",
     )
-
     print("Model specified.", flush=True)
 
     return model

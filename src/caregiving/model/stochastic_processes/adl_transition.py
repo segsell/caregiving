@@ -101,8 +101,8 @@ def death_transition(period, mother_dead, education, model_specs):
     # death_prob = death_mat[MOTHER, age_index]
 
     # If mother was already dead, she stays dead with certainty
-    # alive_prob = jnp.where(mother_dead == 1, 0.0, 1.0 - death_prob)
-    # dead_prob = jnp.where(mother_dead == 1, 1.0, death_prob)
-    alive_prob = (1 - death_prob) * (1 - mother_dead)
+    # Use explicit conditional to ensure bulletproof behavior
+    alive_prob = jnp.where(mother_dead == 1, 0.0, 1.0 - death_prob)
+    dead_prob = jnp.where(mother_dead == 1, 1.0, death_prob)
 
-    return jnp.array([alive_prob, 1 - alive_prob])
+    return jnp.array([alive_prob, dead_prob])
