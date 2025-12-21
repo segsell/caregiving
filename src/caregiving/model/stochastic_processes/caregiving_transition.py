@@ -1,10 +1,9 @@
 import jax.numpy as jnp
 
-from caregiving.model.shared import (
+from caregiving.model.shared import (  # NO_CARE_DEMAND_DEAD,
     MOTHER,
     PARENT_DEAD,
     SHARE_CARE_TO_MOTHER,
-    # NO_CARE_DEMAND_DEAD,
 )
 from caregiving.model.stochastic_processes.adl_transition import (
     limitations_with_adl_transition,

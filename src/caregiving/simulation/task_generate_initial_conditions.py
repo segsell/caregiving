@@ -9,13 +9,13 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-import dcegm
 
 from dcegm.asset_correction import adjust_observed_assets
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
 
+import dcegm
 from caregiving.config import BLD
 from caregiving.model.shared import (
     ALL_NO_CARE,
@@ -37,6 +37,8 @@ from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.stochastic_processes.job_transition import (
     job_offer_process_transition_initial_conditions,
 )
+from caregiving.model.task_specify_model import create_stochastic_states_transitions
+from caregiving.model.taste_shocks import shock_function_dict
 from caregiving.model.utility.bequest_utility import (
     create_final_period_utility_functions,
 )
@@ -47,8 +49,6 @@ from caregiving.moments.task_create_soep_moments import (
     create_df_wealth,
 )
 from caregiving.utils import table
-from caregiving.model.taste_shocks import shock_function_dict
-from caregiving.model.task_specify_model import create_stochastic_states_transitions
 
 
 @pytask.mark.initial_conditions
@@ -432,7 +432,6 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         # ),
         "caregiving_type": jnp.array(caregiving_type_agents, dtype=jnp.uint8),
         "lagged_caregiving": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
-        #
         "assets_begin_of_period": wealth_agents,
     }
     # type_mask_low = (sex_agents == sex_var) & (education_agents == 0)
