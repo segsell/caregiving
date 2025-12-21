@@ -118,10 +118,14 @@ ADL_2 = 2
 ADL_3 = 3
 ADL_2_3 = 2
 
-NO_CARE_DEMAND_DEAD = 0
-NO_CARE_DEMAND_ALIVE = 1
-CARE_DEMAND_LIGHT = 2
-CARE_DEMAND_INTENSIVE = 3
+# NO_CARE_DEMAND_DEAD = 0
+# NO_CARE_DEMAND_ALIVE = 1
+# CARE_DEMAND_LIGHT = 2
+# CARE_DEMAND_INTENSIVE = 3
+NO_CARE_DEMAND = 0
+CARE_DEMAND_LIGHT = 1
+CARE_DEMAND_INTENSIVE = 2
+
 # Legacy constants (deprecated)
 CARE_DEMAND_AND_OTHER_SUPPLY = 1
 CARE_DEMAND_AND_NO_OTHER_SUPPLY = 2
@@ -596,22 +600,22 @@ def is_intensive_informal_care(choice):
 # ==============================================================================
 
 
-def is_care_demand_dead(care_demand):
-    """Check if care_demand state is NO_CARE_DEMAND_DEAD (mother is dead)."""
-    return care_demand == NO_CARE_DEMAND_DEAD
-
-
 def is_care_demand_alive_no_care(care_demand):
-    """Check if care_demand state is NO_CARE_DEMAND_ALIVE (mother alive, no care needed)."""
-    return care_demand == NO_CARE_DEMAND_ALIVE
+    """DEPRECATED: Use care_demand == NO_CARE_DEMAND and mother_dead == 0 instead.
+
+    Check if care_demand state is NO_CARE_DEMAND_ALIVE (mother alive, no care needed).
+    In the 3-state system, this checks if care_demand == NO_CARE_DEMAND.
+    """
+    return care_demand == NO_CARE_DEMAND
 
 
 def is_no_care_demand(care_demand):
-    """Check if there is no care demand (mother dead or alive with no care needed).
+    """Check if there is no care demand.
 
-    This includes both NO_CARE_DEMAND_DEAD (0) and NO_CARE_DEMAND_ALIVE (1).
+    In the 3-state system, this checks if care_demand == NO_CARE_DEMAND (0).
+    Note: To check if mother is dead, use the mother_dead state variable.
     """
-    return (care_demand == NO_CARE_DEMAND_DEAD) | (care_demand == NO_CARE_DEMAND_ALIVE)
+    return care_demand == NO_CARE_DEMAND
 
 
 def is_care_demand_light(care_demand):
@@ -627,7 +631,7 @@ def is_care_demand_intensive(care_demand):
 def has_care_demand(care_demand):
     """Check if there is any care demand (light or intensive).
 
-    This includes both CARE_DEMAND_LIGHT (2) and CARE_DEMAND_INTENSIVE (3).
+    In the 3-state system, this includes both CARE_DEMAND_LIGHT (1) and CARE_DEMAND_INTENSIVE (2).
     """
     return (care_demand == CARE_DEMAND_LIGHT) | (care_demand == CARE_DEMAND_INTENSIVE)
 

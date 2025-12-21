@@ -17,9 +17,10 @@ from caregiving.config import BLD
 from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.stochastic_processes.adl_transition import (
     limitations_with_adl_transition,
+    death_transition,
 )
 from caregiving.model.stochastic_processes.caregiving_transition import (
-    care_demand_death_transition_light_intensive,
+    care_demand_transition_adl_light_intensive,
 )
 from caregiving.model.stochastic_processes.health_transition import (
     health_transition,
@@ -84,11 +85,10 @@ def task_specify_model(
             "partner_state": np.arange(specs["n_partner_states"], dtype=int),
             "job_offer": np.arange(2, dtype=int),
             "health": np.arange(specs["n_health_states"], dtype=int),
-            "mother_adl": np.arange(3, dtype=int),
-            # "mother_adl": np.arange(specs["n_adl_states_light_intensive"], dtype=int),
-            "care_demand": np.arange(
-                4, dtype=int
-            ),  # 4 states: DEAD, ALIVE_NO_CARE, LIGHT, INTENSIVE
+            # "mother_adl": np.arange(3, dtype=int),
+            "mother_dead": np.arange(2, dtype=int),
+            "mother_adl": np.arange(specs["n_adl_states_light_intensive"], dtype=int),
+            "care_demand": np.arange(3, dtype=int),
         },
         "continuous_states": {
             "assets_end_of_period": savings_grid,
@@ -126,6 +126,7 @@ def task_specify_model(
         # alternative_sim_specifications=alternative_sim_specifications,
         # debug_info="state_space_df",
     )
+
     print("Model specified.", flush=True)
 
     return model
@@ -137,5 +138,6 @@ def create_stochastic_states_transitions():
         "partner_state": partner_transition,
         "health": health_transition,
         "mother_adl": limitations_with_adl_transition,
-        "care_demand": care_demand_death_transition_light_intensive,
+        "care_demand": care_demand_transition_adl_light_intensive,
+        "mother_dead": death_transition,
     }

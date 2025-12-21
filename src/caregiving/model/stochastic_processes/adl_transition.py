@@ -72,6 +72,7 @@ def death_transition(period, mother_dead, education, model_specs):
         Probability vector [1 - death_prob, death_prob] where:
         - If mother_dead=1: [0, 1] (dead with certainty)
         - If mother_dead=0: [1 - death_prob, death_prob] from transition matrix
+
     """
     # Calculate mother's actual age from period using correct mother_age_diff
     mother_age = (

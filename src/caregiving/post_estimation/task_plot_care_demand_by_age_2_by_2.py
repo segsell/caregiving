@@ -1717,6 +1717,8 @@ def task_check_no_care_with_positive_demand(
             [
                 "age",
                 "education",
+                "mother_dead",
+                "mother_adl",
                 "care_demand",
                 "caregiving_type",
                 "choice",

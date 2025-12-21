@@ -1,6 +1,4 @@
 from caregiving.model.shared import (
-    CARE_DEMAND_AND_NO_OTHER_SUPPLY,
-    CARE_DEMAND_AND_OTHER_SUPPLY,
     is_formal_care,
     is_informal_care,
     is_no_care,
