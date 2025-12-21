@@ -21,8 +21,11 @@ from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.model.task_specify_model import create_stochastic_states_transitions
 from caregiving.model.taste_shocks import shock_function_dict
 from caregiving.model.shared import (
+    CARE_DEMAND_INTENSIVE,
+    CARE_DEMAND_LIGHT,
     DEAD,
     FORMAL_CARE,
+    has_care_demand,
     INTENSIVE_INFORMAL_CARE,
     LIGHT_INFORMAL_CARE,
     NO_CARE,
@@ -269,7 +272,6 @@ def task_plot_care_demand_by_age_pooled_combined(
 
     specs = pickle.load(path_to_specs.open("rb"))
     model_config = pickle.load(path_to_model_config.open("rb"))
-
     model = dcegm.setup_model(
         model_specs=specs,
         model_config=model_config,
@@ -362,15 +364,15 @@ def plot_simulated_care_demand_by_age_2_by_2(  # noqa: PLR0915
     • education (0 = low, 1 = high) → rows
     • caregiving_type (0 / 1)       → columns
 
-    Shows care choices upon positive care demand (care_demand in {1, 2}):
+    Shows care choices upon positive care demand (care_demand in {CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE}):
     1. No care:
-       care_demand > 0 AND agent chooses NO_CARE.
+       has_care_demand(care_demand) AND agent chooses NO_CARE.
     2. Light informal care:
-       care_demand > 0 AND agent chooses LIGHT_INFORMAL_CARE.
+       has_care_demand(care_demand) AND agent chooses LIGHT_INFORMAL_CARE.
     3. Intensive informal care:
-       care_demand > 0 AND agent chooses INTENSIVE_INFORMAL_CARE.
+       has_care_demand(care_demand) AND agent chooses INTENSIVE_INFORMAL_CARE.
     4. Formal care:
-       care_demand > 0 AND agent chooses FORMAL_CARE.
+       has_care_demand(care_demand) AND agent chooses FORMAL_CARE.
 
     Layout:
     - Top left: Low education, No sister
@@ -406,8 +408,10 @@ def plot_simulated_care_demand_by_age_2_by_2(  # noqa: PLR0915
     formal_care_choices = np.asarray(FORMAL_CARE)
     no_care_choices = np.asarray(NO_CARE)
 
-    # Four types of care choices upon positive care demand (care_demand in {1, 2}).
-    positive_demand = df_sim["care_demand"] > 0
+    # Four types of care choices upon positive care demand (care_demand in {CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE}).
+    positive_demand = df_sim["care_demand"].isin(
+        [CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]
+    )
 
     # 1. No care
     df_sim["no_care_choice"] = (
@@ -434,7 +438,7 @@ def plot_simulated_care_demand_by_age_2_by_2(  # noqa: PLR0915
         df_sim.groupby(["age", "education", "caregiving_type"], observed=False)[
             "care_demand"
         ]
-        .apply(lambda x: (x > 0).mean())
+        .apply(lambda x: x.isin([CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]).mean())
         .reindex(
             pd.MultiIndex.from_product(
                 [ages, [0, 1], [0, 1]], names=["age", "education", "caregiving_type"]
@@ -614,11 +618,12 @@ def plot_simulated_care_demand_by_age_pooled(  # noqa: PLR0915
     Pooled across all education and sister groups.
 
     Shows all four types of care choices upon positive care demand
-    (care_demand in {1, 2}):
+    (care_demand in {CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE}):
     1. No care (NO_CARE)
     2. Light informal care (LIGHT_INFORMAL_CARE)
     3. Intensive informal care (INTENSIVE_INFORMAL_CARE)
     4. Formal care (FORMAL_CARE)
+
     """
 
     # ---- 1. Setup
@@ -640,8 +645,10 @@ def plot_simulated_care_demand_by_age_pooled(  # noqa: PLR0915
     formal_care_choices = np.asarray(FORMAL_CARE)
     no_care_choices = np.asarray(NO_CARE)
 
-    # Four types of care choices upon positive care demand (care_demand in {1, 2}).
-    positive_demand = df_sim["care_demand"] > 0
+    # Four types of care choices upon positive care demand (care_demand in {CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE}).
+    positive_demand = df_sim["care_demand"].isin(
+        [CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]
+    )
 
     df_sim["no_care_choice"] = (
         positive_demand & df_sim["choice"].isin(no_care_choices)
@@ -660,7 +667,7 @@ def plot_simulated_care_demand_by_age_pooled(  # noqa: PLR0915
     # Pooled across education and sister
     care_demand_shares = (
         df_sim.groupby("age", observed=False)["care_demand"]
-        .apply(lambda x: (x > 0).mean())
+        .apply(lambda x: x.isin([CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]).mean())
         .reindex(ages, fill_value=0)
     )
 
@@ -784,8 +791,8 @@ def plot_simulated_care_demand_by_age_pooled_light_intensive(  # noqa: PLR0915
     """
     Plot two pooled panels:
 
-    - Left: share with light care demand (care_demand == 1) by age.
-    - Right: share with intensive care demand (care_demand == 2) by age.
+    - Left: share with light care demand (care_demand == CARE_DEMAND_LIGHT) by age.
+    - Right: share with intensive care demand (care_demand == CARE_DEMAND_INTENSIVE) by age.
 
     Under each demand curve, stack (shares in total population):
     - No care (NO_CARE)
@@ -812,8 +819,8 @@ def plot_simulated_care_demand_by_age_pooled_light_intensive(  # noqa: PLR0915
     no_care_choices = np.asarray(NO_CARE)
 
     # Light and intensive demand indicators
-    light_demand = df_sim["care_demand"] == 1
-    intensive_demand = df_sim["care_demand"] == 2
+    light_demand = df_sim["care_demand"] == CARE_DEMAND_LIGHT
+    intensive_demand = df_sim["care_demand"] == CARE_DEMAND_INTENSIVE
 
     # For light demand panel
     df_sim["no_care_light"] = (
@@ -846,12 +853,12 @@ def plot_simulated_care_demand_by_age_pooled_light_intensive(  # noqa: PLR0915
     # ---- 3. Demand shares (in total population)
     light_demand_shares = (
         df_sim.groupby("age", observed=False)["care_demand"]
-        .apply(lambda x: (x == 1).mean())
+        .apply(lambda x: (x == CARE_DEMAND_LIGHT).mean())
         .reindex(ages, fill_value=0)
     )
     intensive_demand_shares = (
         df_sim.groupby("age", observed=False)["care_demand"]
-        .apply(lambda x: (x == 2).mean())
+        .apply(lambda x: (x == CARE_DEMAND_INTENSIVE).mean())
         .reindex(ages, fill_value=0)
     )
 
@@ -1028,7 +1035,9 @@ def plot_simulated_care_demand_by_age_2_by_2_combined(  # noqa: PLR0915
     formal_care_choices = np.asarray(FORMAL_CARE)
     no_care_choices = np.asarray(NO_CARE)
 
-    positive_demand = df_sim["care_demand"] > 0
+    positive_demand = df_sim["care_demand"].isin(
+        [CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]
+    )
 
     # Base indicators by choice
     df_sim["no_care_choice"] = (
@@ -1054,7 +1063,7 @@ def plot_simulated_care_demand_by_age_2_by_2_combined(  # noqa: PLR0915
         df_sim.groupby(["age", "education", "caregiving_type"], observed=False)[
             "care_demand"
         ]
-        .apply(lambda x: (x > 0).mean())
+        .apply(lambda x: x.isin([CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]).mean())
         .reindex(
             pd.MultiIndex.from_product(
                 [ages, [0, 1], [0, 1]], names=["age", "education", "caregiving_type"]
@@ -1231,7 +1240,9 @@ def plot_simulated_care_demand_by_age_pooled_combined(  # noqa: PLR0915
     formal_care_choices = np.asarray(FORMAL_CARE)
     no_care_choices = np.asarray(NO_CARE)
 
-    positive_demand = df_sim["care_demand"] > 0
+    positive_demand = df_sim["care_demand"].isin(
+        [CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]
+    )
 
     df_sim["no_care_choice"] = (
         positive_demand & df_sim["choice"].isin(no_care_choices)
@@ -1254,7 +1265,7 @@ def plot_simulated_care_demand_by_age_pooled_combined(  # noqa: PLR0915
     # Calculate shares for care demand - pooled across education and sister
     care_demand_shares = (
         df_sim.groupby("age", observed=False)["care_demand"]
-        .apply(lambda x: (x > 0).mean())
+        .apply(lambda x: x.isin([CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]).mean())
         .reindex(ages, fill_value=0)
     )
 
@@ -1465,7 +1476,7 @@ def test_care_mix_sums_to_care_demand(df_sim, specs, age_min=None, age_max=None)
     Test that the four care modes sum up to the number of agents facing care demand
     at each given age.
 
-    The four care modes (conditional on positive care demand, care_demand in {1, 2})
+    The four care modes (conditional on positive care demand, care_demand in {CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE})
     are defined purely by the agent's choice:
     1. No care: choice in NO_CARE
     2. Light informal care: choice in LIGHT_INFORMAL_CARE
@@ -1509,8 +1520,10 @@ def test_care_mix_sums_to_care_demand(df_sim, specs, age_min=None, age_max=None)
     formal_care_choices = np.asarray(FORMAL_CARE)
     no_care_choices = np.asarray(NO_CARE)
 
-    # Create care type indicators for all four scenarios (care_demand in {1, 2})
-    positive_demand = df_test["care_demand"] > 0
+    # Create care type indicators for all four scenarios (care_demand in {CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE})
+    positive_demand = df_test["care_demand"].isin(
+        [CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]
+    )
 
     df_test["no_care_choice"] = (
         positive_demand & df_test["choice"].isin(no_care_choices)
@@ -1525,8 +1538,10 @@ def test_care_mix_sums_to_care_demand(df_sim, specs, age_min=None, age_max=None)
         positive_demand & df_test["choice"].isin(formal_care_choices)
     ).astype(int)
 
-    # Debug: Check for uncategorized agents with care_demand == 1
-    care_demand_1_mask = df_test["care_demand"] > 0
+    # Debug: Check for uncategorized agents with positive care demand
+    care_demand_1_mask = df_test["care_demand"].isin(
+        [CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]
+    )
     categorized_mask = (
         df_test["no_care_choice"]
         + df_test["light_informal_care"]
@@ -1536,7 +1551,7 @@ def test_care_mix_sums_to_care_demand(df_sim, specs, age_min=None, age_max=None)
     uncategorized = df_test[care_demand_1_mask & ~categorized_mask]
     if len(uncategorized) > 0:
         print(
-            f"\nWARNING: {len(uncategorized)} agents with care_demand == 1 "
+            f"\nWARNING: {len(uncategorized)} agents with positive care demand "
             f"are not categorized!"
         )
         print(
@@ -1552,7 +1567,9 @@ def test_care_mix_sums_to_care_demand(df_sim, specs, age_min=None, age_max=None)
     group_cols = ["age", "education", "caregiving_type"]
     counts = df_test.groupby(group_cols, observed=False).agg(
         {
-            "care_demand": lambda x: (x > 0).sum(),  # Count with care_demand > 0
+            "care_demand": lambda x: x.isin(
+                [CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]
+            ).sum(),  # Count with positive care demand
             "no_care_choice": "sum",
             "light_informal_care": "sum",
             "intensive_informal_care": "sum",
@@ -1571,7 +1588,7 @@ def test_care_mix_sums_to_care_demand(df_sim, specs, age_min=None, age_max=None)
     # Calculate differences
     counts["absolute_diff"] = np.abs(counts["care_demand"] - counts["care_mix_sum"])
     counts["relative_diff"] = np.where(
-        counts["care_demand"] > 0,
+        counts["care_demand"] > 0,  # care_demand here is the count, not the state value
         counts["absolute_diff"] / counts["care_demand"],
         0,
     )
@@ -1599,7 +1616,9 @@ def test_care_mix_sums_to_care_demand(df_sim, specs, age_min=None, age_max=None)
                 f"\nSample group: age={sample_idx[0]}, "
                 f"education={sample_idx[1]}, caregiving_type={sample_idx[2]}"
             )
-            print(f"care_demand == 1 count: {(sample_data['care_demand'] == 1).sum()}")
+            print(
+                f"positive care_demand count: {sample_data['care_demand'].isin([CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]).sum()}"
+            )
             print(f"solo_informal_care sum: {sample_data['solo_informal_care'].sum()}")
             print(f"formal_care sum: {sample_data['formal_care'].sum()}")
             print(f"other_family_only sum: {sample_data['other_family_only'].sum()}")
@@ -1609,8 +1628,12 @@ def test_care_mix_sums_to_care_demand(df_sim, specs, age_min=None, age_max=None)
                 + sample_data["other_family_only"].sum()
             )
             print(f"care_mix_sum: {care_mix_sum_sample}")
-            print("\nChoices when care_demand == 1:")
-            care_demand_1 = sample_data[sample_data["care_demand"] == 1]
+            print("\nChoices when care_demand is positive:")
+            care_demand_1 = sample_data[
+                sample_data["care_demand"].isin(
+                    [CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]
+                )
+            ]
             print(care_demand_1["choice"].value_counts().sort_index())
 
     # Assert that the test passed
@@ -1635,7 +1658,7 @@ def task_check_no_care_with_positive_demand(
     """
     Quick consistency check:
 
-    Verify that within the caregiving age window, whenever care_demand > 0 and
+    Verify that within the caregiving age window, whenever care_demand is positive (CARE_DEMAND_LIGHT or CARE_DEMAND_INTENSIVE) and
     caregiving_type == 1, the model never chooses NO_CARE (choices 0–3).
     """
 
@@ -1670,9 +1693,8 @@ def task_check_no_care_with_positive_demand(
     no_care_choices = set(NO_CARE.tolist())
 
     mask = (
-        (df_sim["care_demand"] > 0)
+        (df_sim["care_demand"].isin([CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]))
         & (df_sim["health"] != DEAD)
-        # & (df_sim["mother_dead"] == 0)
         & (df_sim["caregiving_type"] == 1)
         & (df_sim["choice"].isin(no_care_choices))
         & (df_sim["age"].between(start_age_caregiving, end_age_caregiving))
@@ -1685,7 +1707,7 @@ def task_check_no_care_with_positive_demand(
         f"[{start_age_caregiving}, {end_age_caregiving}]."
     )
     print(
-        "Rows with care_demand>0, caregiving_type==1, choice in NO_CARE within "
+        "Rows with positive care_demand, caregiving_type==1, choice in NO_CARE within "
         f"this window: {n_violations}"
     )
 
@@ -1704,7 +1726,7 @@ def task_check_no_care_with_positive_demand(
         print(sample.to_string(index=False))
 
     assert n_violations == 0, (
-        "Found choices in NO_CARE for caregiving_type==1 and care_demand>0 "
+        "Found choices in NO_CARE for caregiving_type==1 and positive care_demand "
         f"in ages [{start_age_caregiving}, {end_age_caregiving}]. "
         f"Count: {n_violations}."
     )

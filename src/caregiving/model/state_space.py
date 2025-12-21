@@ -62,9 +62,7 @@ from caregiving.model.shared import (
     WORK_AND_UNEMPLOYED_NO_CARE_OR_FORMAL,
     WORK_AND_UNEMPLOYED_NO_FORMAL_CARE,
     WORK_AND_UNEMPLOYED_NO_INFORMAL_CARE,
-    has_care_demand,
     is_alive,
-    is_care_demand_dead,
     is_dead,
     is_formal_care,
     is_full_time,
@@ -254,7 +252,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "job_offer": 0,
             }
             return state_proxy
-        elif is_care_demand_dead(care_demand):
+        elif care_demand == NO_CARE_DEMAND_DEAD:
             # If mother is dead (care_demand == NO_CARE_DEMAND_DEAD), no care demand and supply
             state_proxy = {
                 "period": period,

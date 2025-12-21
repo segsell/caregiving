@@ -26,6 +26,8 @@ from caregiving.model.shared import (
     INITIAL_CONDITIONS_COHORT_HIGH,
     INITIAL_CONDITIONS_COHORT_LOW,
     MOTHER,
+    NO_CARE_DEMAND_ALIVE,
+    NO_CARE_DEMAND_DEAD,
     PARENT_DEAD,
     SEX,
     WORK_AND_UNEMPLOYED_NO_CARE,
@@ -415,9 +417,16 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         "job_offer": jnp.array(job_offer_agents, dtype=jnp.uint8),
         "partner_state": jnp.array(partner_states, dtype=jnp.uint8),
         # "mother_health": jnp.array(mother_health_agents, dtype=jnp.uint8),
-        "mother_dead": jnp.array(mother_dead_agents, dtype=jnp.uint8),
+        # "mother_dead": jnp.array(mother_dead_agents, dtype=jnp.uint8),
         "mother_adl": jnp.array(mother_adl_agents, dtype=jnp.uint8),
-        "care_demand": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
+        # Initialize care_demand based on mother_dead status:
+        # - mother_dead == 1 -> care_demand = NO_CARE_DEMAND_DEAD (0)
+        # - mother_dead == 0 -> care_demand = NO_CARE_DEMAND_ALIVE (1)
+        "care_demand": jnp.where(
+            jnp.array(mother_dead_agents, dtype=jnp.uint8) == 1,
+            NO_CARE_DEMAND_DEAD,
+            NO_CARE_DEMAND_ALIVE,
+        ),
         "caregiving_type": jnp.array(caregiving_type_agents, dtype=jnp.uint8),
         "lagged_caregiving": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
         #
