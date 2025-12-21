@@ -342,7 +342,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "health": health,
                 "partner_state": partner_state,
                 "mother_adl": mother_adl,
-                "mother_dead": mother_dead,
+                "mother_dead": 1,
                 "care_demand": NO_CARE_DEMAND,
                 "job_offer": job_offer,
             }
