@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import yaml
+from dcegm.asset_correction import adjust_observed_assets
 from pytask import Product
 
 from caregiving.config import BLD
@@ -23,7 +24,6 @@ from caregiving.simulation.task_generate_initial_conditions import (
     draw_start_wealth_dist,
 )
 from dcegm import setup_model
-from dcegm.asset_correction import adjust_observed_assets
 
 
 def task_plot_initial_wealth(
