@@ -75,7 +75,7 @@ def task_simulate_moments_estimated_params(
 
     emp_moms = pd.read_csv(path_to_empirical_moments, index_col=[0]).squeeze("columns")
 
-    sim_moms_pandas = simulate_moments_pandas(df_sim, options=options)
+    sim_moms_pandas = simulate_moments_pandas(df_sim, model_specs=options)
     sim_moms_jax = simulate_moments_jax(df_sim, options=options)
 
     # Save moments

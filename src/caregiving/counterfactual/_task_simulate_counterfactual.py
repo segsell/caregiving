@@ -1,18 +1,13 @@
-import copy
-import pickle
-from pathlib import Path
-from typing import Annotated
+# import copy
+# import pickle
+# from pathlib import Path
+# from typing import Annotated
 
-import jax.numpy as jnp
-import pandas as pd
-import pytask
-import yaml
+# import jax.numpy as jnp
+# import pandas as pd
+# import pytask
+# import yaml
 
-# TEMPORARILY COMMENTED OUT - TO BE RE-ENABLED STEP BY STEP
-raise NotImplementedError(
-    "This module is temporarily commented out due to dcegm API changes. "
-    "Need to update imports to use new dcegm API."
-)
 # from dcegm.pre_processing.setup_model import load_and_setup_model
 # from dcegm.solve import get_solve_func_for_model
 # from pytask import Product

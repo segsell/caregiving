@@ -2,6 +2,7 @@
 
 Mirrors the baseline simulate_scenario but uses the reduced 4-state
 choice arrays from shared_no_care_demand to assign working hours, etc.
+
 """
 
 import jax
@@ -38,22 +39,8 @@ from caregiving.model.wealth_and_budget.transfers import (
 from caregiving.model.wealth_and_budget.wages_no_care_demand import (
     calculate_gross_labor_income,
 )
-from dcegm.pre_processing.setup_model import load_and_setup_model
 from dcegm.simulation.sim_utils import create_simulation_df
 from dcegm.simulation.simulate import simulate_all_periods
-
-
-def setup_model_for_simulation_no_care_demand(path_to_model, options):
-    """Setup no-care-demand model for simulation with correct utility functions."""
-    return load_and_setup_model(
-        options=options,
-        state_space_functions=create_state_space_functions(),
-        utility_functions=create_utility_functions(),
-        utility_functions_final_period=create_final_period_utility_functions(),
-        budget_constraint=budget_constraint,
-        path=path_to_model,
-        sim_model=True,
-    )
 
 
 def simulate_scenario_no_care_demand(
@@ -62,7 +49,7 @@ def simulate_scenario_no_care_demand(
     initial_states,
     wealth_agents,
     params,
-    options,
+    model_specs,
     seed,
 ) -> pd.DataFrame:
     """Simulate the counterfactual model and return a DataFrame."""
@@ -70,7 +57,8 @@ def simulate_scenario_no_care_demand(
     sim_dict = simulate_all_periods(
         states_initial=initial_states,
         wealth_initial=wealth_agents,
-        n_periods=options["model_params"]["n_periods"],
+        # n_periods=model_specs["model_params"]["n_periods"],
+        n_periods=model_specs["n_periods"],
         params=params,
         seed=seed,
         endog_grid_solved=solution["endog_grid"],
@@ -82,13 +70,12 @@ def simulate_scenario_no_care_demand(
     df = create_simulation_df(sim_dict)
 
     # Add derived variables
-    model_params = options["model_params"]
-    df["age"] = df.index.get_level_values("period") + model_params["start_age"]
+    df["age"] = df.index.get_level_values("period") + model_specs["start_age"]
 
     df["exp_years"] = construct_experience_years(
         experience=df["experience"].values,
         period=df.index.get_level_values("period").values,
-        max_exp_diffs_per_period=model_params["max_exp_diffs_per_period"],
+        max_exp_diffs_per_period=model_specs["max_exp_diffs_per_period"],
     )
 
     # Assign working hours
@@ -97,17 +84,17 @@ def simulate_scenario_no_care_demand(
     full_time_values = FULL_TIME_NO_CARE_DEMAND.ravel().tolist()
 
     sex_var = SEX
-    for edu_var in range(model_params["n_education_types"]):
+    for edu_var in range(model_specs["n_education_types"]):
         # full-time
         df.loc[
             df["choice"].isin(full_time_values) & (df["education"] == edu_var),
             "working_hours",
-        ] = model_params["av_annual_hours_ft"][sex_var, edu_var]
+        ] = model_specs["av_annual_hours_ft"][sex_var, edu_var]
         # part-time
         df.loc[
             df["choice"].isin(part_time_values) & (df["education"] == edu_var),
             "working_hours",
-        ] = model_params["av_annual_hours_pt"][sex_var, edu_var]
+        ] = model_specs["av_annual_hours_pt"][sex_var, edu_var]
 
     # Income variables
     df["assets_begin_of_period"] = df["savings"] + df["consumption"]
@@ -116,7 +103,7 @@ def simulate_scenario_no_care_demand(
     )
     df["income_wo_interest"] = df.groupby("agent")["assets_begin_of_period"].shift(
         -1
-    ) - df["savings"] * (1 + options["interest_rate"])
+    ) - df["savings"] * (1 + model_specs["interest_rate"])
 
     df["savings_dec"] = df["total_income"] - df["consumption"]
     df["savings_rate"] = df["savings_dec"] / df["total_income"]
@@ -140,7 +127,7 @@ def simulate_scenario_no_care_demand(
             education=edu,
             sex=sex_var,
             income_shock=shock,
-            model_specs=model_params,
+            model_specs=model_specs,
         )
     )
     gross_labor_income_array = vectorized_calc_gross_labor_income(
@@ -156,7 +143,7 @@ def simulate_scenario_no_care_demand(
     # Mother age
     df["mother_age"] = (
         df["age"].to_numpy()
-        + model_params["mother_age_diff"][df["education"].to_numpy()]
+        + model_specs["mother_age_diff"][df["education"].to_numpy()]
     )
 
     return df

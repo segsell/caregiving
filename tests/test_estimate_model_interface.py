@@ -9,14 +9,19 @@ from unittest.mock import patch
 import pytest
 import yaml
 
+import dcegm
 from caregiving.config import BLD, SRC
 from caregiving.estimation.estimation_setup import estimate_model
-from caregiving.estimation.prepare_estimation import (
-    load_and_setup_full_model_for_solution,
+from caregiving.model.state_space import create_state_space_functions
+from caregiving.model.task_specify_model import create_stochastic_states_transitions
+from caregiving.model.taste_shocks import shock_function_dict
+from caregiving.model.utility.bequest_utility import (
+    create_final_period_utility_functions,
 )
+from caregiving.model.utility.utility_functions_additive import create_utility_functions
+from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.simulation.simulate import simulate_scenario
 from caregiving.simulation.simulate_moments import simulate_moments_pandas
-from dcegm.solve import get_solve_func_for_model
 
 
 @pytest.fixture
@@ -100,6 +105,31 @@ def load_real_parameters(test_param_keys=None):
     return start_params, lower_bounds, upper_bounds
 
 
+def create_simulate_scenario_wrapper():
+    """Create a simulate_scenario wrapper for the new dcegm interface."""
+
+    def simulate_scenario_wrapper(
+        model_solved,
+        initial_states,
+        wealth_agents,
+        params,
+        model_specs,
+        seed,
+    ):
+        """Wrapper that uses the new model_solved.simulate() interface.
+
+        model_solved is already provided from model_class.solve(params),
+        so we just need to call simulate() on it.
+        """
+        sim_df = model_solved.simulate(
+            states_initial=initial_states,
+            seed=seed,
+        )
+        return sim_df
+
+    return simulate_scenario_wrapper
+
+
 def test_estimate_model_least_squares_interface(temp_test_dir):
     """Test estimate_model interface with least squares optimization."""
 
@@ -109,7 +139,9 @@ def test_estimate_model_least_squares_interface(temp_test_dir):
         BLD / "model" / "initial_conditions" / "wealth.csv",
         BLD / "moments" / "moments_full.csv",
         BLD / "moments" / "variances_full.csv",
-        BLD / "model" / "options.pkl",
+        BLD / "model" / "specs" / "specs_full.pkl",
+        BLD / "model" / "model.pkl",
+        BLD / "model" / "model_config.pkl",
     ]
 
     missing_files = [f for f in required_files if not f.exists()]
@@ -127,16 +159,30 @@ def test_estimate_model_least_squares_interface(temp_test_dir):
             nfev=1,
         )
 
-    with open(BLD / "model" / "options.pkl", "rb") as f:
-        options = pickle.load(f)
+    # Load model specs and config
+    with open(BLD / "model" / "specs" / "specs_full.pkl", "rb") as f:
+        model_specs = pickle.load(f)
 
-    model = load_and_setup_full_model_for_solution(
-        options=options, path_to_model=BLD / "model" / "model_for_solution.pkl"
+    with open(BLD / "model" / "model_config.pkl", "rb") as f:
+        model_config = pickle.load(f)
+
+    # Setup model using new interface
+    model_class = dcegm.setup_model(
+        model_specs=model_specs,
+        model_config=model_config,
+        state_space_functions=create_state_space_functions(),
+        utility_functions=create_utility_functions(),
+        utility_functions_final_period=create_final_period_utility_functions(),
+        budget_constraint=budget_constraint,
+        shock_functions=shock_function_dict(),
+        stochastic_states_transitions=create_stochastic_states_transitions(),
+        model_load_path=BLD / "model" / "model.pkl",
     )
 
     start_params, lower_bounds, upper_bounds = load_real_parameters()
 
-    solve_func = get_solve_func_for_model(model)
+    # Create simulate_scenario wrapper
+    simulate_scenario_wrapper = create_simulate_scenario_wrapper()
 
     # Create temporary files in the test temp directory
     temp_result_file = temp_test_dir("temp_result_ls.pkl")
@@ -144,15 +190,14 @@ def test_estimate_model_least_squares_interface(temp_test_dir):
 
     with patch("optimagic.minimize", side_effect=mock_minimize):
         result = estimate_model(
-            model_for_simulation=model,
+            model=model_class,
             start_params=start_params,
-            solve_func=solve_func,
-            options=options,
+            model_specs=model_specs,
             algo="tranquilo_ls",
             algo_options={"maxiter": 1, "ftol": 1e-3},
             lower_bounds=lower_bounds,
             upper_bounds=upper_bounds,
-            simulate_scenario_func=simulate_scenario,
+            simulate_scenario_func=simulate_scenario_wrapper,
             simulate_moments_func=simulate_moments_pandas,
             least_squares=True,
             weighting_method="identity",
@@ -181,7 +226,9 @@ def test_estimate_model_scalar_interface(temp_test_dir):
         BLD / "model" / "initial_conditions" / "wealth.csv",
         BLD / "moments" / "moments_full.csv",
         BLD / "moments" / "variances_full.csv",
-        BLD / "model" / "options.pkl",
+        BLD / "model" / "specs" / "specs_full.pkl",
+        BLD / "model" / "model.pkl",
+        BLD / "model" / "model_config.pkl",
     ]
 
     missing_files = [f for f in required_files if not f.exists()]
@@ -199,15 +246,30 @@ def test_estimate_model_scalar_interface(temp_test_dir):
             nfev=1,
         )
 
-    with open(BLD / "model" / "options.pkl", "rb") as f:
-        options = pickle.load(f)
+    # Load model specs and config
+    with open(BLD / "model" / "specs" / "specs_full.pkl", "rb") as f:
+        model_specs = pickle.load(f)
 
-    model = load_and_setup_full_model_for_solution(
-        options=options, path_to_model=BLD / "model" / "model_for_solution.pkl"
+    with open(BLD / "model" / "model_config.pkl", "rb") as f:
+        model_config = pickle.load(f)
+
+    # Setup model using new interface
+    model_class = dcegm.setup_model(
+        model_specs=model_specs,
+        model_config=model_config,
+        state_space_functions=create_state_space_functions(),
+        utility_functions=create_utility_functions(),
+        utility_functions_final_period=create_final_period_utility_functions(),
+        budget_constraint=budget_constraint,
+        shock_functions=shock_function_dict(),
+        stochastic_states_transitions=create_stochastic_states_transitions(),
+        model_load_path=BLD / "model" / "model.pkl",
     )
 
     start_params, lower_bounds, upper_bounds = load_real_parameters()
-    solve_func = get_solve_func_for_model(model)
+
+    # Create simulate_scenario wrapper
+    simulate_scenario_wrapper = create_simulate_scenario_wrapper()
 
     # Create temporary files in the test temp directory
     temp_result_file = temp_test_dir("temp_result_scalar.pkl")
@@ -215,15 +277,14 @@ def test_estimate_model_scalar_interface(temp_test_dir):
 
     with patch("optimagic.minimize", side_effect=mock_minimize):
         result = estimate_model(
-            model_for_simulation=model,
+            model=model_class,
             start_params=start_params,
-            solve_func=solve_func,
-            options=options,
+            model_specs=model_specs,
             algo="scipy_lbfgsb",
             algo_options={"maxiter": 1, "ftol": 1e-3},
             lower_bounds=lower_bounds,
             upper_bounds=upper_bounds,
-            simulate_scenario_func=simulate_scenario,
+            simulate_scenario_func=simulate_scenario_wrapper,
             simulate_moments_func=simulate_moments_pandas,
             least_squares=False,
             weighting_method="identity",
@@ -252,7 +313,9 @@ def test_estimate_model_with_timeout(temp_test_dir):
         BLD / "model" / "initial_conditions" / "wealth.csv",
         BLD / "moments" / "moments_full.csv",
         BLD / "moments" / "variances_full.csv",
-        BLD / "model" / "options.pkl",
+        BLD / "model" / "specs" / "specs_full.pkl",
+        BLD / "model" / "model.pkl",
+        BLD / "model" / "model_config.pkl",
     ]
 
     missing_files = [f for f in required_files if not f.exists()]
@@ -278,30 +341,43 @@ def test_estimate_model_with_timeout(temp_test_dir):
                 nfev=1,
             )
 
-        with open(BLD / "model" / "options.pkl", "rb") as f:
-            options = pickle.load(f)
+        # Load model specs and config
+        with open(BLD / "model" / "specs" / "specs_full.pkl", "rb") as f:
+            model_specs = pickle.load(f)
 
-        model = load_and_setup_full_model_for_solution(
-            options=options, path_to_model=BLD / "model" / "model_for_solution.pkl"
+        with open(BLD / "model" / "model_config.pkl", "rb") as f:
+            model_config = pickle.load(f)
+
+        # Setup model using new interface
+        model_class = dcegm.setup_model(
+            model_specs=model_specs,
+            model_config=model_config,
+            state_space_functions=create_state_space_functions(),
+            utility_functions=create_utility_functions(),
+            utility_functions_final_period=create_final_period_utility_functions(),
+            budget_constraint=budget_constraint,
+            shock_functions=shock_function_dict(),
+            stochastic_states_transitions=create_stochastic_states_transitions(),
+            model_load_path=BLD / "model" / "model.pkl",
         )
 
         start_params, lower_bounds, upper_bounds = load_real_parameters(
             test_param_keys=["sigma", "beta"]
         )
 
-        solve_func = get_solve_func_for_model(model)
+        # Create simulate_scenario wrapper
+        simulate_scenario_wrapper = create_simulate_scenario_wrapper()
 
         with patch("optimagic.minimize", side_effect=mock_minimize):
             result = estimate_model(
-                model_for_simulation=model,
+                model=model_class,
                 start_params=start_params,
-                solve_func=solve_func,
-                options=options,
+                model_specs=model_specs,
                 algo="scipy_lbfgsb",
                 algo_options={"maxiter": 1},
                 lower_bounds=lower_bounds,
                 upper_bounds=upper_bounds,
-                simulate_scenario_func=simulate_scenario,
+                simulate_scenario_func=simulate_scenario_wrapper,
                 simulate_moments_func=simulate_moments_pandas,
                 least_squares=False,
                 path_to_discrete_states=BLD

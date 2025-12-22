@@ -48,19 +48,18 @@ FILL_VALUE_MISSING_AGE = 0  # np.nan
 
 def simulate_moments_pandas(  # noqa: PLR0915
     df_full,
-    options,
+    model_specs,
 ) -> pd.DataFrame:
     """Simulate the model for given parametrization and model solution."""
 
-    model_params = options["model_params"]
-    start_age = model_params["start_age"]
+    start_age = model_specs["start_age"]
     # Prefer directly stored caregiving start age if available
-    start_age_caregivers = model_params["start_age_caregiving"]
-    end_age = model_params["end_age_msm"]
+    start_age_caregivers = model_specs["start_age_caregiving"]
+    end_age = model_specs["end_age_msm"]
 
     age_range = range(start_age, end_age + 1)
     age_range_caregivers = range(start_age_caregivers, end_age + 1)
-    age_range_wealth = range(start_age, model_params["end_age_wealth"] + 1)
+    age_range_wealth = range(start_age, model_specs["end_age_wealth"] + 1)
 
     age_bins_caregivers_5year = (
         list(range(45, 75, 5)),  # [40, 45, 50, 55, 60, 65, 70]
@@ -76,7 +75,7 @@ def simulate_moments_pandas(  # noqa: PLR0915
     df_full = df_full.loc[df_full["health"] != DEAD].copy()
     df_full["mother_age"] = (
         df_full["age"].to_numpy()
-        + model_params["mother_age_diff"][df_full["education"].to_numpy()]
+        + model_specs["mother_age_diff"][df_full["education"].to_numpy()]
     )
 
     # Only non-caregivers
@@ -1081,31 +1080,30 @@ def compute_transition_moments_pandas(df, moments, age_range, states, label=None
 
 def simulate_moments_jax(
     df,
-    options,
+    model_specs,
 ) -> pd.DataFrame:
     """Simulate the model for given parametrization and model solution."""
 
     # Mirror pandas version: drop periods where the agent is dead.
     df = df.loc[df["health"] != DEAD].copy()
 
-    model_params = options["model_params"]
-    start_age = model_params["start_age"]
-    end_age = model_params["end_age_msm"]
+    start_age = model_specs["start_age"]
+    end_age = model_specs["end_age_msm"]
 
-    # df["age"] = df.index.get_level_values("period") + model_params["start_age"]
+    # df["age"] = df.index.get_level_values("period") + model_specs["start_age"]
 
-    return create_moments_jax(df, start_age, end_age, model_params=model_params)
+    return create_moments_jax(df, start_age, end_age, model_specs=model_specs)
 
 
-def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
+def create_moments_jax(sim_df, min_age, max_age, model_specs):  # noqa: PLR0915
 
     column_indices = {col: idx for idx, col in enumerate(sim_df.columns)}
     idx = column_indices.copy()
     arr_all = jnp.asarray(sim_df)
 
     # Use model parameters to locate the caregiving start age in the JAX grid
-    min_age_caregivers = min_age + model_params["start_period_caregiving"]
-    end_age_wealth = model_params["end_age_wealth"]
+    min_age_caregivers = min_age + model_specs["start_period_caregiving"]
+    end_age_wealth = model_specs["end_age_wealth"]
 
     # df_low_educ = sim_df.loc[sim_df["education"] == 0]
     # df_high_educ = sim_df.loc[sim_df["education"] == 1]
