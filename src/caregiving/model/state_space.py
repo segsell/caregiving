@@ -342,7 +342,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "health": health,
                 "partner_state": partner_state,
                 "mother_adl": mother_adl,
-                "mother_dead": 1,
+                "mother_dead": mother_dead,
                 "care_demand": NO_CARE_DEMAND,
                 "job_offer": job_offer,
             }
@@ -570,38 +570,39 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
     # Light care demand (care_demand == 1) with caregiving_type == 1
     # Agent can choose: LIGHT_INFORMAL_CARE or FORMAL_CARE
 
-    # If mother is dead, always return NO_CARE choices regardless of care_demand
-    if mother_dead == 1:
-        if is_dead(health):
-            return RETIREMENT_NO_CARE
-        # Retirement is absorbing
-        elif is_retired(lagged_choice):
-            return RETIREMENT_NO_CARE
-        # Check if the person is not in the voluntary retirement range.
-        elif age < min_ret_age_pol_state:  # min_ret_age: 63
-            if job_offer == 0:
-                return UNEMPLOYED_NO_CARE
-            else:
-                return WORK_AND_UNEMPLOYED_NO_CARE
-        # Person must retire
-        elif age >= model_specs["max_ret_age"]:
-            return RETIREMENT_NO_CARE
-        # Person is in the voluntary retirement range
-        else:
-            if age >= SRA_pol_state:  # min_SRA: 65
-                if job_offer == 0:
-                    return RETIREMENT_NO_CARE  # Cannot choose unemployment after 65
-                else:
-                    return WORK_AND_RETIREMENT_NO_CARE
-            else:
-                if job_offer == 0:
-                    # Choose unemployment or retirement
-                    return NOT_WORKING_NO_CARE
-                else:
-                    return ALL_NO_CARE
+    # # If mother is dead, always return NO_CARE choices regardless of care_demand
+    # if mother_dead == 1:
+    #     if is_dead(health):
+    #         return RETIREMENT_NO_CARE
+    #     # Retirement is absorbing
+    #     elif is_retired(lagged_choice):
+    #         return RETIREMENT_NO_CARE
+    #     # Check if the person is not in the voluntary retirement range.
+    #     elif age < min_ret_age_pol_state:  # min_ret_age: 63
+    #         if job_offer == 0:
+    #             return UNEMPLOYED_NO_CARE
+    #         else:
+    #             return WORK_AND_UNEMPLOYED_NO_CARE
+    #     # Person must retire
+    #     elif age >= model_specs["max_ret_age"]:
+    #         return RETIREMENT_NO_CARE
+    #     # Person is in the voluntary retirement range
+    #     else:
+    #         if age >= SRA_pol_state:  # min_SRA: 65
+    #             if job_offer == 0:
+    #                 return RETIREMENT_NO_CARE  # Cannot choose unemployment after 65
+    #             else:
+    #                 return WORK_AND_RETIREMENT_NO_CARE
+    #         else:
+    #             if job_offer == 0:
+    #                 # Choose unemployment or retirement
+    #                 return NOT_WORKING_NO_CARE
+    #             else:
+    #                 return ALL_NO_CARE
     if caregiving_type == 1:
         if (
             is_no_care_demand(care_demand)
+            | (mother_dead == 1)
             | (age < start_age_caregiving)
             | (age > end_age_caregiving)
         ):
@@ -679,10 +680,10 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
                             return NOT_WORKING_INTENSIVE_INFORMAL_OR_FORMAL
                         else:
                             return ALL_INTENSIVE_INFORMAL_OR_FORMAL
-
     elif caregiving_type == 0:
         if (
             is_no_care_demand(care_demand)
+            | (mother_dead == 1)
             | (age < start_age_caregiving)
             | (age > end_age_caregiving)
         ):
@@ -737,34 +738,34 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
                     else:
 
                         return ALL_NO_CARE_OR_FORMAL
-    # else:
-    #     if is_dead(health):
-    #         return RETIREMENT_NO_CARE
-    #     # Retirement is absorbing
-    #     elif is_retired(lagged_choice):
-    #         return RETIREMENT_NO_CARE
-    #     # Check if the person is not in the voluntary retirement range.
-    #     elif age < min_ret_age_pol_state:  # min_ret_age: 63
-    #         if job_offer == 0:
-    #             return UNEMPLOYED_NO_CARE
-    #         else:
-    #             return WORK_AND_UNEMPLOYED_NO_CARE
-    #     # Person must retire
-    #     elif age >= model_specs["max_ret_age"]:
-    #         return RETIREMENT_NO_CARE
-    #     # Person is in the voluntary retirement range
-    #     else:
-    #         if age >= SRA_pol_state:  # min_SRA: 65
-    #             if job_offer == 0:
-    #                 return RETIREMENT_NO_CARE  # Cannot choose unemployment after 65
-    #             else:
-    #                 return WORK_AND_RETIREMENT_NO_CARE
-    #         else:
-    #             if job_offer == 0:
-    #                 # Choose unemployment or retirement
-    #                 return NOT_WORKING_NO_CARE
-    #             else:
-    #                 return ALL_NO_CARE
+    else:
+        if is_dead(health):
+            return RETIREMENT_NO_CARE
+        # Retirement is absorbing
+        elif is_retired(lagged_choice):
+            return RETIREMENT_NO_CARE
+        # Check if the person is not in the voluntary retirement range.
+        elif age < min_ret_age_pol_state:  # min_ret_age: 63
+            if job_offer == 0:
+                return UNEMPLOYED_NO_CARE
+            else:
+                return WORK_AND_UNEMPLOYED_NO_CARE
+        # Person must retire
+        elif age >= model_specs["max_ret_age"]:
+            return RETIREMENT_NO_CARE
+        # Person is in the voluntary retirement range
+        else:
+            if age >= SRA_pol_state:  # min_SRA: 65
+                if job_offer == 0:
+                    return RETIREMENT_NO_CARE  # Cannot choose unemployment after 65
+                else:
+                    return WORK_AND_RETIREMENT_NO_CARE
+            else:
+                if job_offer == 0:
+                    # Choose unemployment or retirement
+                    return NOT_WORKING_NO_CARE
+                else:
+                    return ALL_NO_CARE
 
 
 # def get_next_period_experience(period, lagged_choice, experience, model_specs):

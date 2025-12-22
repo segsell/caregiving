@@ -11,9 +11,15 @@ import pytask
 import yaml
 from pytask import Product
 
+import numpy as np
 import dcegm
 from caregiving.config import BLD, SRC
-from caregiving.model.shared import DEAD
+from caregiving.model.shared import (
+    DEAD,
+    NO_CARE,
+    CARE_DEMAND_LIGHT,
+    CARE_DEMAND_INTENSIVE,
+)
 from caregiving.model.state_space import (
     construct_experience_years,
     create_state_space_functions,
@@ -92,6 +98,30 @@ def task_solve_and_simulate_estimated_params(
 
     # sim_df.to_csv(path_to_save_simulated_data, index=True)
     sim_df.to_pickle(path_to_save_simulated_data)
+
+    start_age_caregiving = specs["start_age_caregiving"]
+    end_age_caregiving = specs["end_age_caregiving"]
+    no_care_choices = set(NO_CARE.tolist())
+    mask = (
+        (sim_df["care_demand"].isin([CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]))
+        & (sim_df["health"] != DEAD)
+        & (sim_df["caregiving_type"] == 1)
+        & (sim_df["choice"].isin(no_care_choices))
+        & (sim_df["age"].between(start_age_caregiving, end_age_caregiving))
+    )
+    sample = sim_df.loc[
+        mask,
+        [
+            "age",
+            "education",
+            "mother_dead",
+            "mother_adl",
+            "care_demand",
+            "caregiving_type",
+            "choice",
+        ],
+    ]
+    breakpoint()
 
 
 # =======================================================================================
