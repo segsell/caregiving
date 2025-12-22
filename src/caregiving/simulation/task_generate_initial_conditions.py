@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
+from dcegm.asset_correction import adjust_observed_assets
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
@@ -47,7 +48,6 @@ from caregiving.moments.task_create_soep_moments import (
     create_df_wealth,
 )
 from caregiving.utils import table
-from dcegm.asset_correction import adjust_observed_assets
 
 
 @pytask.mark.initial_conditions
