@@ -33,8 +33,10 @@ def estimate_model(
     relative_deviations: bool = False,
     least_squares: bool = True,
     *,
-    path_to_discrete_states: str = BLD / "model" / "initial_conditions" / "states.pkl",
-    path_to_wealth: str = BLD / "model" / "initial_conditions" / "wealth.csv",
+    path_to_initial_states: str = BLD
+    / "model"
+    / "initial_conditions"
+    / "initial_states.pkl",
     path_to_empirical_moments: str = BLD / "moments" / "moments_full.csv",
     path_to_empirical_variance: str = BLD / "moments" / "variances_full.csv",
     path_to_save_estimation_result: str = BLD / "estimation" / "result.pkl",
@@ -72,8 +74,7 @@ def estimate_model(
         seed_generator = None
         fixed_seed = model_specs["seed"]  # same seed every call
 
-    initial_states = pickle.load(path_to_discrete_states.open("rb"))
-    wealth_agents = np.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
+    initial_states = pickle.load(path_to_initial_states.open("rb"))
 
     # Load empirical data
     empirical_moments = np.array(
@@ -179,7 +180,6 @@ def estimate_model(
         simulate_moments,
         model_class=model,
         initial_states=initial_states,
-        wealth_agents=wealth_agents,
         model_specs=model_specs,
         fixed_seed=fixed_seed,
         seed_generator=seed_generator,
@@ -251,8 +251,10 @@ def estimate_model_with_unobserved_type_shares(
     relative_deviations: bool = False,
     least_squares: bool = True,
     *,
-    path_to_discrete_states: str = BLD / "model" / "initial_conditions" / "states.pkl",
-    path_to_wealth: str = BLD / "model" / "initial_conditions" / "wealth.csv",
+    path_to_initial_states: str = BLD
+    / "model"
+    / "initial_conditions"
+    / "initial_states.pkl",
     path_to_empirical_moments: str = BLD / "moments" / "moments_full.csv",
     path_to_empirical_variance: str = BLD / "moments" / "variances_full.csv",
     path_to_save_estimation_result: str = BLD / "estimation" / "result.pkl",
@@ -283,8 +285,7 @@ def estimate_model_with_unobserved_type_shares(
         seed_generator = None
         fixed_seed = model_specs["seed"]
 
-    initial_states = pickle.load(path_to_discrete_states.open("rb"))
-    wealth_agents = np.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
+    initial_states = pickle.load(path_to_initial_states.open("rb"))
 
     empirical_moments = np.array(
         pd.read_csv(path_to_empirical_moments, index_col=0).squeeze()
@@ -319,7 +320,6 @@ def estimate_model_with_unobserved_type_shares(
         simulate_moments_with_unobserved_type_shares,
         solve_func=solve_func,
         initial_states=initial_states,
-        wealth_agents=wealth_agents,
         model_for_simulation=model_for_simulation,
         model_specs=model_specs,
         fixed_seed=fixed_seed,
@@ -384,7 +384,6 @@ def estimate_model_with_unobserved_type_shares(
 def simulate_moments(
     params: np.ndarray,
     initial_states: Dict[str, Any],
-    wealth_agents: np.ndarray,
     model_class: Dict[str, Any],
     model_specs: Dict[str, Any],
     fixed_seed: Optional[int],
@@ -412,7 +411,6 @@ def simulate_moments(
     sim_df = simulate_scenario_func(
         model_solved=model_solved,
         initial_states=initial_states,
-        wealth_agents=wealth_agents,
         params=params,
         model_specs=model_specs,
         seed=seed,
@@ -429,7 +427,6 @@ def simulate_moments(
 def simulate_moments_with_unobserved_type_shares(
     params: Dict[str, Any],
     initial_states: Dict[str, Any],
-    wealth_agents: np.ndarray,
     model_class: Dict[str, Any],
     model_specs: Dict[str, Any],
     fixed_seed: Optional[int],
@@ -463,7 +460,6 @@ def simulate_moments_with_unobserved_type_shares(
     sim_df = simulate_scenario_func(
         model_solved=model_solved,
         initial_states=adjusted_initial_states,
-        wealth_agents=wealth_agents,
         params=params,
         model_specs=model_specs,
         seed=seed,

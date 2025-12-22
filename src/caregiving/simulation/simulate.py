@@ -47,7 +47,6 @@ from caregiving.model.wealth_and_budget.wages import (
     calculate_gross_labor_income,
 )
 from caregiving.utils import table
-from dcegm.pre_processing.setup_model import load_and_setup_model
 from dcegm.simulation.sim_utils import create_simulation_df
 from dcegm.simulation.simulate import simulate_all_periods
 
@@ -87,7 +86,6 @@ def simulate_scenario(
     # solution_policy,
     solution,
     initial_states,
-    wealth_agents,
     params,
     model_specs,
     seed,
@@ -96,7 +94,6 @@ def simulate_scenario(
 
     sim_dict = simulate_all_periods(
         states_initial=initial_states,
-        wealth_initial=wealth_agents,
         n_periods=model_specs["n_periods"],
         params=params,
         seed=seed,
@@ -231,7 +228,6 @@ def simulate_career_costs(
     model,
     solution,
     initial_states,
-    wealth_agents,
     params,
     model_specs,
     seed,
@@ -245,7 +241,6 @@ def simulate_career_costs(
     # Run the simulation to get sim_dict
     sim_dict = simulate_all_periods(
         states_initial=initial_states,
-        wealth_initial=wealth_agents,
         n_periods=model_specs["n_periods"],
         params=params,
         seed=seed,

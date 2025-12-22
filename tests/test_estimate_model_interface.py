@@ -22,7 +22,6 @@ from caregiving.model.utility.utility_functions_additive import create_utility_f
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.simulation.simulate import simulate_scenario
 from caregiving.simulation.simulate_moments import simulate_moments_pandas
-from dcegm.solve import get_solve_func_for_model
 
 
 @pytest.fixture
@@ -204,7 +203,7 @@ def test_estimate_model_least_squares_interface(temp_test_dir):
             weighting_method="identity",
             use_cholesky_weights=True,
             relative_deviations=False,
-            path_to_discrete_states=BLD / "model" / "initial_conditions" / "states.pkl",
+            path_to_initial_states=BLD / "model" / "initial_conditions" / "states.pkl",
             path_to_wealth=BLD / "model" / "initial_conditions" / "wealth.csv",
             path_to_empirical_moments=BLD / "moments" / "moments_full.csv",
             path_to_empirical_variance=BLD / "moments" / "variances_full.csv",
@@ -291,7 +290,7 @@ def test_estimate_model_scalar_interface(temp_test_dir):
             weighting_method="identity",
             use_cholesky_weights=True,
             relative_deviations=False,
-            path_to_discrete_states=BLD / "model" / "initial_conditions" / "states.pkl",
+            path_to_initial_states=BLD / "model" / "initial_conditions" / "states.pkl",
             path_to_wealth=BLD / "model" / "initial_conditions" / "wealth.csv",
             path_to_empirical_moments=BLD / "moments" / "moments_full.csv",
             path_to_empirical_variance=BLD / "moments" / "variances_full.csv",
@@ -381,7 +380,7 @@ def test_estimate_model_with_timeout(temp_test_dir):
                 simulate_scenario_func=simulate_scenario_wrapper,
                 simulate_moments_func=simulate_moments_pandas,
                 least_squares=False,
-                path_to_discrete_states=BLD
+                path_to_initial_states=BLD
                 / "model"
                 / "initial_conditions"
                 / "states.pkl",

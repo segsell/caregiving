@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-from dcegm.asset_correction import adjust_observed_assets
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
@@ -48,6 +47,7 @@ from caregiving.moments.task_create_soep_moments import (
     create_df_wealth,
 )
 from caregiving.utils import table
+from dcegm.asset_correction import adjust_observed_assets
 
 
 @pytask.mark.initial_conditions
@@ -73,7 +73,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     / "model"
     / "initial_conditions"
     / "survival_by_age.csv",
-    path_to_save_discrete_states: Annotated[Path, Product] = BLD
+    path_to_save_initial_states: Annotated[Path, Product] = BLD
     / "model"
     / "initial_conditions"
     / "initial_states.pkl",
@@ -436,7 +436,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     # type_mask_low = (sex_agents == sex_var) & (education_agents == 0)
     # breakpoint()
 
-    with path_to_save_discrete_states.open("wb") as f:
+    with path_to_save_initial_states.open("wb") as f:
         pickle.dump(states, f)
 
 

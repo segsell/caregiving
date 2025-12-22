@@ -31,7 +31,6 @@ from caregiving.simulation.simulate_moments_no_care_demand import (
 from caregiving.simulation.simulate_no_care_demand import (
     simulate_scenario_no_care_demand,
 )
-from dcegm import setup_model
 from dcegm.asset_correction import adjust_observed_assets
 
 jax.config.update("jax_enable_x64", True)
@@ -49,8 +48,10 @@ def estimate_model(
     use_cholesky_weights: bool = True,
     relative_deviations: bool = False,
     *,
-    path_to_discrete_states: str = BLD / "model" / "initial_conditions" / "states.pkl",
-    path_to_wealth: str = BLD / "model" / "initial_conditions" / "wealth.csv",
+    path_to_initial_states: str = BLD
+    / "model"
+    / "initial_conditions"
+    / "initial_states.pkl",
     path_to_empirical_moments: str = BLD / "moments" / "moments_full.csv",
     path_to_empirical_variance: str = BLD / "moments" / "variances_full.csv",
     # path_to_updated_start_params: str = BLD
@@ -79,8 +80,7 @@ def estimate_model(
         seed_generator = None
         fixed_seed = model_specs["seed"]  # same seed every call
 
-    initial_states = pickle.load(path_to_discrete_states.open("rb"))
-    wealth_agents = np.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
+    initial_states = pickle.load(path_to_initial_states.open("rb"))
 
     # Load empirical data
     empirical_moments = np.array(
@@ -185,7 +185,6 @@ def estimate_model(
     simulate_moments_given_params = partial(
         simulate_moments,
         initial_states=initial_states,
-        wealth_agents=wealth_agents,
         model_class=model,
         model_specs=model_specs,
         fixed_seed=fixed_seed,
@@ -262,7 +261,6 @@ def estimate_model(
 def simulate_moments(
     params: np.ndarray,
     initial_states: Dict[str, Any],
-    wealth_agents: np.ndarray,
     model_class: Dict[str, Any],
     model_specs: Dict[str, Any],
     fixed_seed: Optional[int],
@@ -289,7 +287,6 @@ def simulate_moments(
     sim_df = simulate_scenario_no_care_demand(
         model_solved=model_solved,
         initial_states=initial_states,
-        wealth_agents=wealth_agents,
         params=params,
         model_specs=model_specs,
         seed=seed,
@@ -454,13 +451,13 @@ def load_and_prep_data_no_care_demand(
     states_dict["experience"] = data_emp["experience"].values
     states_dict["wealth"] = data_emp["wealth"].values / model_specs["wealth_unit"]
 
-    adjusted_wealth = adjust_observed_assets(
+    adjusted_assets = adjust_observed_assets(
         observed_states_dict=states_dict,
         params=start_params,
         model_class=model_class,
     )
-    data_emp.loc[:, "adjusted_wealth"] = adjusted_wealth
-    states_dict["wealth"] = data_emp["adjusted_wealth"].values
+    data_emp.loc[:, "adjusted_assets"] = adjusted_assets
+    states_dict["assets_begin_of_period"] = data_emp["adjusted_assets"].values
 
     return data_emp, states_dict
 
