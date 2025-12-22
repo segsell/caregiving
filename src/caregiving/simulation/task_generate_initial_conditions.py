@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-
 from dcegm.asset_correction import adjust_observed_assets
 from pytask import Product
 from scipy import stats

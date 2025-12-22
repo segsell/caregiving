@@ -6,19 +6,19 @@ from typing import Annotated, Any, Dict, List, Tuple
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 import pandas as pd
 import pytask
 import yaml
 from pytask import Product
 
-import numpy as np
 import dcegm
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import (
+    CARE_DEMAND_INTENSIVE,
+    CARE_DEMAND_LIGHT,
     DEAD,
     NO_CARE,
-    CARE_DEMAND_LIGHT,
-    CARE_DEMAND_INTENSIVE,
 )
 from caregiving.model.state_space import (
     construct_experience_years,
