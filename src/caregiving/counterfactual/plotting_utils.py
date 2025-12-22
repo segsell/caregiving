@@ -193,8 +193,9 @@ def calculate_additional_outcomes(df: pd.DataFrame) -> dict[str, np.ndarray]:
     """Extract additional outcomes for plotting.
 
     Args:
-        df: DataFrame with 'gross_labor_income', 'savings_dec', 'assets_begin_of_period',
-            'savings_rate', and optionally 'consumption'.
+        df: DataFrame with 'gross_labor_income', 'savings_dec',
+            'assets_begin_of_period', 'savings_rate', and optionally
+            'consumption'.
 
     Returns:
         Dictionary with keys:

@@ -4,5 +4,5 @@ def shock_function_dict():
     }
 
 
-def taste_shock_for_women(params):
+def taste_shock_for_women(params):  # noqa: FURB118
     return params["taste_shock_scale"]

@@ -16,8 +16,8 @@ import dcegm
 from caregiving.config import BLD
 from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.stochastic_processes.adl_transition import (
-    limitations_with_adl_transition,
     death_transition,
+    limitations_with_adl_transition,
 )
 from caregiving.model.stochastic_processes.caregiving_transition import (
     care_demand_transition_adl_light_intensive,
@@ -40,7 +40,6 @@ from caregiving.model.utility.utility_functions_additive import (
 )
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
-
 from dcegm.pre_processing.setup_model import create_model_dict
 
 
@@ -74,17 +73,17 @@ def task_specify_model(
         "n_periods": n_periods,
         "choices": choices,
         "deterministic_states": {
-            "partner_state": [0],
-            "health": [1],  # good health
-            "education": [0],
-            "caregiving_type": [1],
-            # "caregiving_type": np.arange(2, dtype=int),
-            # "education": np.arange(specs["n_education_types"], dtype=int),
+            # "partner_state": [0],
+            # "health": [1],  # good health
+            # "education": [0],
+            # "caregiving_type": [1],
+            "caregiving_type": np.arange(2, dtype=int),
+            "education": np.arange(specs["n_education_types"], dtype=int),
             "already_retired": np.arange(2, dtype=int),
         },
         "stochastic_states": {
-            # "partner_state": np.arange(specs["n_partner_states"], dtype=int),
-            # "health": np.arange(specs["n_health_states"], dtype=int),
+            "partner_state": np.arange(specs["n_partner_states"], dtype=int),
+            "health": np.arange(specs["n_health_states"], dtype=int),
             "job_offer": np.arange(2, dtype=int),
             "mother_dead": np.arange(2, dtype=int),
             "mother_adl": np.arange(specs["n_adl_states_light_intensive"], dtype=int),
@@ -135,8 +134,8 @@ def task_specify_model(
 def create_stochastic_states_transitions():
     return {
         "job_offer": job_offer_process_transition,
-        # "partner_state": partner_transition,
-        # "health": health_transition,
+        "partner_state": partner_transition,
+        "health": health_transition,
         "mother_adl": limitations_with_adl_transition,
         "care_demand": care_demand_transition_adl_light_intensive,
         "mother_dead": death_transition,

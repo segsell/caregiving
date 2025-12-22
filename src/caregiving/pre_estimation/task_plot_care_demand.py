@@ -25,7 +25,7 @@ from caregiving.model.stochastic_processes.caregiving_transition import (
 
 
 @pytask.mark.pre_estimation
-def task_plot_care_demand_transition(  # noqa: PLR0915
+def task_plot_care_demand_transition(  # noqa: PLR0912, PLR0915
     path_to_states: Path = BLD / "model" / "initial_conditions" / "initial_states.pkl",
     path_to_full_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_save: Annotated[Path, Product] = BLD
@@ -85,7 +85,7 @@ def task_plot_care_demand_transition(  # noqa: PLR0915
     state_by_group = {}
     for edu in range(n_edu):
         for adl in range(n_adl_states):
-            for dead in [0, 1]:
+            for dead in (0, 1):
                 mask = (
                     (education == edu)
                     & (mother_adl_initial == adl)
@@ -93,11 +93,12 @@ def task_plot_care_demand_transition(  # noqa: PLR0915
                 )
                 state_by_group[(edu, adl, dead)] = float(mask.sum())
 
-    # Calculate initial care demand shares using care_demand_transition_adl_light_intensive
+    # Calculate initial care demand shares using
+    # care_demand_transition_adl_light_intensive.
     care_demand_by_group_initial = {}
     for edu in range(n_edu):
         for adl in range(n_adl_states):
-            for dead in [0, 1]:
+            for dead in (0, 1):
                 count = state_by_group.get((edu, adl, dead), 0.0)
                 if count == 0:
                     continue
@@ -197,7 +198,7 @@ def task_plot_care_demand_transition(  # noqa: PLR0915
         care_demand_by_group = {}
         for edu in range(n_edu):
             for adl in range(n_adl_states):
-                for dead in [0, 1]:
+                for dead in (0, 1):
                     count = state_by_group.get((edu, adl, dead), 0.0)
                     if count == 0:
                         continue
@@ -281,7 +282,7 @@ def task_plot_care_demand_transition(  # noqa: PLR0915
 
 
 @pytask.mark.pre_estimation
-def task_plot_care_demand_transition_adl_and_dead_state(  # noqa: PLR0915
+def task_plot_care_demand_transition_adl_and_dead_state(  # noqa: PLR0912, PLR0915
     path_to_states: Path = BLD / "model" / "initial_conditions" / "initial_states.pkl",
     path_to_full_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_save: Annotated[Path, Product] = BLD
@@ -289,11 +290,12 @@ def task_plot_care_demand_transition_adl_and_dead_state(  # noqa: PLR0915
     / "pre_estimation"
     / "care_demand_by_age.png",
 ):
-    """Plot share of care demand states by age using care_demand_transition_adl_light_intensive.
+    """Plot share of care demand states by age using ADL-based transitions.
 
-    Computes care demand shares by age using the care_demand_transition_adl_light_intensive
-    function with yearly inputs from death_transition and limitations_with_adl_transition.
-    Shows care demand categories: No Care Demand, Light Care, and Intensive Care.
+    Computes care demand shares by age using the
+    care_demand_transition_adl_light_intensive function with yearly inputs from
+    death_transition and limitations_with_adl_transition. Shows care demand
+    categories: No Care Demand, Light Care, and Intensive Care.
 
     Parameters
     ----------
@@ -338,7 +340,7 @@ def task_plot_care_demand_transition_adl_and_dead_state(  # noqa: PLR0915
     state_by_group = {}
     for edu in range(n_edu):
         for adl in range(n_adl_states):
-            for dead in [0, 1]:
+            for dead in (0, 1):
                 mask = (
                     (education == edu)
                     & (mother_adl_initial == adl)
@@ -346,12 +348,14 @@ def task_plot_care_demand_transition_adl_and_dead_state(  # noqa: PLR0915
                 )
                 state_by_group[(edu, adl, dead)] = float(mask.sum())
 
-    # Calculate initial care demand shares using care_demand_transition_adl_light_intensive
-    # This function expects mother_adl (0,1,2) and mother_dead (0,1) as separate inputs
+    # Calculate initial care demand shares using
+    # care_demand_transition_adl_light_intensive
+    # This function expects mother_adl (0,1,2) and mother_dead (0,1)
+    # as separate inputs
     care_demand_by_group_initial = {}
     for edu in range(n_edu):
         for adl in range(n_adl_states):
-            for dead in [0, 1]:
+            for dead in (0, 1):
                 count = state_by_group.get((edu, adl, dead), 0.0)
                 if count == 0:
                     continue
@@ -448,7 +452,7 @@ def task_plot_care_demand_transition_adl_and_dead_state(  # noqa: PLR0915
         care_demand_by_group = {}
         for edu in range(n_edu):
             for adl in range(n_adl_states):
-                for dead in [0, 1]:
+                for dead in (0, 1):
                     count = state_by_group.get((edu, adl, dead), 0.0)
                     if count == 0:
                         continue

@@ -1612,7 +1612,7 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
         max_age=max_age,
     )
 
-    # # ==================================================================================
+    # # ==============================================================================  # noqa: E501
     # # Care mix
     # age_bins_parents = [(a, a + 5) for a in range(65, 90, 5)]
     # age_bins_parents.append((90, np.inf))
@@ -1629,7 +1629,8 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
     # # the agent chooses NO_CARE (meaning formal care is organized)
     # no_care_mask = jnp.isin(arr_parent_bad_health[:, idx["choice"]], NO_CARE)
     # care_demand_mask = (
-    #     arr_parent_bad_health[:, idx["care_demand"]] == CARE_DEMAND_AND_NO_OTHER_SUPPLY
+    #     arr_parent_bad_health[:, idx["care_demand"]]
+    #     == CARE_DEMAND_AND_NO_OTHER_SUPPLY
     # )
     # nursing_home_mask = no_care_mask & care_demand_mask
 
@@ -1641,7 +1642,7 @@ def create_moments_jax(sim_df, min_age, max_age, model_params):  # noqa: PLR0915
     #     extra_mask=nursing_home_mask,
     #     age_var="mother_age",
     # )
-    # # ==================================================================================
+    # # ==============================================================================  # noqa: E501
 
     # # share_pure_informal_care_by_parent_age_bin = get_share_by_age_bin(
     # #     arr_domestic_care,

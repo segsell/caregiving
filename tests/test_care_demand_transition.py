@@ -141,7 +141,7 @@ def test_care_demand_death_transition_mother_already_dead(
     period,
     education,
 ):
-    """Test that if mother is already dead (mother_adl == 0), she stays dead forever (state 0)."""
+    """Mother dead (mother_adl == 0) stays in dead state (state 0)."""
     # Load model_specs from BLD
     model_specs = pickle.load((BLD / "model" / "specs" / "specs_full.pkl").open("rb"))
 
@@ -230,11 +230,13 @@ def test_care_demand_death_transition_no_care_demand_alive(
 
     # State 0 (NO_CARE_DEMAND_DEAD) should be death probability
     expected_p_dead = 1.0 - alive_prob
-    assert np.isclose(
-        probs[0], expected_p_dead, atol=1e-6
-    ), f"State 0 (dead) probability mismatch: expected {expected_p_dead}, got {probs[0]}"
+    assert np.isclose(probs[0], expected_p_dead, atol=1e-6), (
+        f"State 0 (dead) probability mismatch: expected {expected_p_dead}, "
+        f"got {probs[0]}"
+    )
 
-    # State 1 (NO_CARE_DEMAND_ALIVE) should be: alive * (ADL 0 OR (ADL 1/2/3 but outside window))
+    # State 1 (NO_CARE_DEMAND_ALIVE) should be: alive * (ADL 0 OR
+    # (ADL 1/2/3 but outside window)).
     expected_p_no_care_alive = alive_prob * (
         prob_adl[0] + (1 - in_caregiving_window) * (prob_adl[1] + prob_adl[2])
     )

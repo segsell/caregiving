@@ -631,7 +631,8 @@ def is_care_demand_intensive(care_demand):
 def has_care_demand(care_demand):
     """Check if there is any care demand (light or intensive).
 
-    In the 3-state system, this includes both CARE_DEMAND_LIGHT (1) and CARE_DEMAND_INTENSIVE (2).
+    In the 3-state system, this includes both CARE_DEMAND_LIGHT (1) and
+    CARE_DEMAND_INTENSIVE (2).
     """
     return (care_demand == CARE_DEMAND_LIGHT) | (care_demand == CARE_DEMAND_INTENSIVE)
 

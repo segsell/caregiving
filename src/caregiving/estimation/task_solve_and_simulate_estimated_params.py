@@ -6,19 +6,20 @@ from typing import Annotated, Any, Dict, List, Tuple
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 import pandas as pd
 import pytask
 import yaml
 from pytask import Product
 
-import numpy as np
 import dcegm
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import (
-    DEAD,
-    NO_CARE,
-    CARE_DEMAND_LIGHT,
     CARE_DEMAND_INTENSIVE,
+    CARE_DEMAND_LIGHT,
+    DEAD,
+    INFORMAL_CARE,
+    NO_CARE,
 )
 from caregiving.model.state_space import (
     construct_experience_years,
@@ -37,6 +38,7 @@ from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 jax.config.update("jax_enable_x64", True)
 
 
+@pytask.mark.solve_and_simulate
 @pytask.mark.baseline_model
 def task_solve_and_simulate_estimated_params(
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
@@ -99,34 +101,10 @@ def task_solve_and_simulate_estimated_params(
     # sim_df.to_csv(path_to_save_simulated_data, index=True)
     sim_df.to_pickle(path_to_save_simulated_data)
 
-    start_age_caregiving = specs["start_age_caregiving"]
-    end_age_caregiving = specs["end_age_caregiving"]
-    no_care_choices = set(NO_CARE.tolist())
-    mask = (
-        (sim_df["care_demand"].isin([CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]))
-        & (sim_df["health"] != DEAD)
-        & (sim_df["caregiving_type"] == 1)
-        & (sim_df["choice"].isin(no_care_choices))
-        & (sim_df["age"].between(start_age_caregiving, end_age_caregiving))
-    )
-    sample = sim_df.loc[
-        mask,
-        [
-            "age",
-            "education",
-            "mother_dead",
-            "mother_adl",
-            "care_demand",
-            "caregiving_type",
-            "choice",
-        ],
-    ]
-    breakpoint()
 
-
-# =======================================================================================
-# Need to create these additional variables in budget equation
-# =======================================================================================
+# ==============================================================================
+# Additional variables related to the budget equation (see budget_equation.py).
+# ==============================================================================
 
 
 def _create_income_variables(df, specs):
@@ -136,7 +114,8 @@ def _create_income_variables(df, specs):
     df = df.copy()
 
     # Create income vars:
-    # First, total income as the difference between wealth at the beginning of next period and savings
+    # First, total income as the difference between wealth at the beginning of
+    # next period and savings.
     df.loc[:, "total_income"] = df["assets_begin_of_period"] - df.groupby("agent")[
         "savings"
     ].shift(1)
@@ -147,9 +126,9 @@ def _create_income_variables(df, specs):
 
     # Create gross own income (without pension income)
     df.loc[:, "gross_own_income"] = (
-        (df["choice"] == 0) * df["gross_retirement_income"]  # Retired
-        + (df["choice"] == 1) * 0  # Unemployed
-        + ((df["choice"] == 2) | (df["choice"] == 3))
+        (df["choice"] == 0) * df["gross_retirement_income"]  # Retired  # noqa: PLR2004
+        + (df["choice"] == 1) * 0  # Unemployed  # noqa: PLR2004
+        + ((df["choice"] == 2) | (df["choice"] == 3))  # noqa: PLR2004
         * df["gross_labor_income"]  # Part-time or full-time work
     )
     return df
@@ -180,11 +159,11 @@ def _compute_working_hours(df, specs):
     # Initialize working_hours column
     df.loc[:, "working_hours"] = 0.0
 
-    for sex_var in [0, 1]:
+    for sex_var in (0, 1):
         for edu_var in range(specs["n_education_types"]):
             # Full-time work
             mask_ft = (
-                (df["choice"] == 3)
+                (df["choice"] == 3)  # noqa: PLR2004
                 & (df["sex"] == sex_var)
                 & (df["education"] == edu_var)
             )
@@ -194,7 +173,7 @@ def _compute_working_hours(df, specs):
 
             # Part-time work
             mask_pt = (
-                (df["choice"] == 2)
+                (df["choice"] == 2)  # noqa: PLR2004
                 & (df["sex"] == sex_var)
                 & (df["education"] == edu_var)
             )

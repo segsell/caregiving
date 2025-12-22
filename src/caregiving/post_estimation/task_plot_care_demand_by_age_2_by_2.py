@@ -10,7 +10,6 @@ import pandas as pd
 import pytask
 from pytask import Product
 
-import dcegm
 from caregiving.config import BLD
 from caregiving.model.shared import (
     CARE_DEMAND_INTENSIVE,
@@ -44,12 +43,6 @@ CARE_MIX_TOLERANCE = 1e-10
 @pytask.mark.care_demand_post_estimation
 def task_plot_care_demand_by_age_2_by_2(
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
-    path_to_model_config: Path = BLD / "model" / "model_config.pkl",
-    path_to_solution_model: Path = BLD / "model" / "model.pkl",
-    path_to_estimated_params: Path = BLD
-    / "model"
-    / "params"
-    / "estimated_params_model.yaml",
     path_to_simulated_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
@@ -61,19 +54,6 @@ def task_plot_care_demand_by_age_2_by_2(
     """Plot care demand by age in a 2x2 grid (education × caregiving_type)."""
 
     specs = pickle.load(path_to_specs.open("rb"))
-    model_config = pickle.load(path_to_model_config.open("rb"))
-
-    model = dcegm.setup_model(
-        model_specs=specs,
-        model_config=model_config,
-        state_space_functions=create_state_space_functions(),
-        utility_functions=create_utility_functions(),
-        utility_functions_final_period=create_final_period_utility_functions(),
-        budget_constraint=budget_constraint,
-        shock_functions=shock_function_dict(),
-        stochastic_states_transitions=create_stochastic_states_transitions(),
-        model_load_path=path_to_solution_model,
-    )
 
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
     df_sim["sex"] = SEX
@@ -81,7 +61,7 @@ def task_plot_care_demand_by_age_2_by_2(
     # Create age variable from start_age + period
     df_sim["age"] = df_sim["period"] + specs["start_age"]
 
-    # Test that care mix sums to care demand
+    # Test that care mix sums to care demand (only when mother is alive)
     test_care_mix_sums_to_care_demand(
         df_sim=df_sim, specs=specs, age_min=40, age_max=80
     )
@@ -100,12 +80,6 @@ def task_plot_care_demand_by_age_2_by_2(
 @pytask.mark.care_demand_post_estimation
 def task_plot_care_demand_by_age_pooled(
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
-    path_to_model_config: Path = BLD / "model" / "model_config.pkl",
-    path_to_solution_model: Path = BLD / "model" / "model.pkl",
-    # path_to_estimated_params: Path = BLD
-    # / "model"
-    # / "params"
-    # / "estimated_params_model.yaml",
     path_to_simulated_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
@@ -117,19 +91,6 @@ def task_plot_care_demand_by_age_pooled(
     """Plot care demand by age pooled across all education and sister specifications."""
 
     specs = pickle.load(path_to_specs.open("rb"))
-    model_config = pickle.load(path_to_model_config.open("rb"))
-
-    model = dcegm.setup_model(
-        model_specs=specs,
-        model_config=model_config,
-        state_space_functions=create_state_space_functions(),
-        utility_functions=create_utility_functions(),
-        utility_functions_final_period=create_final_period_utility_functions(),
-        budget_constraint=budget_constraint,
-        shock_functions=shock_function_dict(),
-        stochastic_states_transitions=create_stochastic_states_transitions(),
-        model_load_path=path_to_solution_model,
-    )
 
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
     df_sim["sex"] = SEX
@@ -151,8 +112,6 @@ def task_plot_care_demand_by_age_pooled(
 @pytask.mark.care_demand_post_estimation
 def task_plot_care_demand_by_age_pooled_light_intensive(
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
-    path_to_model_config: Path = BLD / "model" / "model_config.pkl",
-    path_to_solution_model: Path = BLD / "model" / "model.pkl",
     path_to_simulated_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
@@ -161,22 +120,12 @@ def task_plot_care_demand_by_age_pooled_light_intensive(
     / "post_estimation"
     / "care_demand_by_age_pooled_light_intensive.png",
 ) -> None:
-    """Plot light vs intensive care demand by age (pooled), with care mix under curves."""
+    """Plot light vs intensive care demand by age (pooled).
+
+    Under each curve, display the care mix across care types.
+    """
 
     specs = pickle.load(path_to_specs.open("rb"))
-    model_config = pickle.load(path_to_model_config.open("rb"))
-
-    model = dcegm.setup_model(
-        model_specs=specs,
-        model_config=model_config,
-        state_space_functions=create_state_space_functions(),
-        utility_functions=create_utility_functions(),
-        utility_functions_final_period=create_final_period_utility_functions(),
-        budget_constraint=budget_constraint,
-        shock_functions=shock_function_dict(),
-        stochastic_states_transitions=create_stochastic_states_transitions(),
-        model_load_path=path_to_solution_model,
-    )
 
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
     df_sim["sex"] = SEX
@@ -198,12 +147,6 @@ def task_plot_care_demand_by_age_pooled_light_intensive(
 @pytask.mark.care_demand_post_estimation
 def task_plot_care_demand_by_age_2_by_2_combined(
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
-    path_to_model_config: Path = BLD / "model" / "model_config.pkl",
-    path_to_solution_model: Path = BLD / "model" / "model.pkl",
-    path_to_estimated_params: Path = BLD
-    / "model"
-    / "params"
-    / "estimated_params_model.yaml",
     path_to_simulated_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
@@ -215,19 +158,6 @@ def task_plot_care_demand_by_age_2_by_2_combined(
     """Plot care demand by age in a 2x2 grid with combined informal care categories."""
 
     specs = pickle.load(path_to_specs.open("rb"))
-    model_config = pickle.load(path_to_model_config.open("rb"))
-
-    model = dcegm.setup_model(
-        model_specs=specs,
-        model_config=model_config,
-        state_space_functions=create_state_space_functions(),
-        utility_functions=create_utility_functions(),
-        utility_functions_final_period=create_final_period_utility_functions(),
-        budget_constraint=budget_constraint,
-        shock_functions=shock_function_dict(),
-        stochastic_states_transitions=create_stochastic_states_transitions(),
-        model_load_path=path_to_solution_model,
-    )
 
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
     df_sim["sex"] = SEX
@@ -254,12 +184,6 @@ def task_plot_care_demand_by_age_2_by_2_combined(
 @pytask.mark.care_demand_post_estimation
 def task_plot_care_demand_by_age_pooled_combined(
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
-    path_to_model_config: Path = BLD / "model" / "model_config.pkl",
-    path_to_solution_model: Path = BLD / "model" / "model.pkl",
-    # path_to_estimated_params: Path = BLD
-    # / "model"
-    # / "params"
-    # / "estimated_params_model.yaml",
     path_to_simulated_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
@@ -271,18 +195,6 @@ def task_plot_care_demand_by_age_pooled_combined(
     """Plot care demand by age pooled with combined informal care categories."""
 
     specs = pickle.load(path_to_specs.open("rb"))
-    model_config = pickle.load(path_to_model_config.open("rb"))
-    model = dcegm.setup_model(
-        model_specs=specs,
-        model_config=model_config,
-        state_space_functions=create_state_space_functions(),
-        utility_functions=create_utility_functions(),
-        utility_functions_final_period=create_final_period_utility_functions(),
-        budget_constraint=budget_constraint,
-        shock_functions=shock_function_dict(),
-        stochastic_states_transitions=create_stochastic_states_transitions(),
-        model_load_path=path_to_solution_model,
-    )
 
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
     df_sim["sex"] = SEX
@@ -304,12 +216,6 @@ def task_plot_care_demand_by_age_pooled_combined(
 @pytask.mark.care_demand_post_estimation
 def task_plot_mother_health_shares_by_age(
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
-    path_to_model_config: Path = BLD / "model" / "model_config.pkl",
-    path_to_solution_model: Path = BLD / "model" / "model.pkl",
-    path_to_estimated_params: Path = BLD
-    / "model"
-    / "params"
-    / "estimated_params_model.yaml",
     path_to_simulated_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
@@ -321,19 +227,6 @@ def task_plot_mother_health_shares_by_age(
     """Plot the share of mother health states (good, medium, bad, dead) by age."""
 
     specs = pickle.load(path_to_specs.open("rb"))
-    model_config = pickle.load(path_to_model_config.open("rb"))
-
-    model = dcegm.setup_model(
-        model_specs=specs,
-        model_config=model_config,
-        state_space_functions=create_state_space_functions(),
-        utility_functions=create_utility_functions(),
-        utility_functions_final_period=create_final_period_utility_functions(),
-        budget_constraint=budget_constraint,
-        shock_functions=shock_function_dict(),
-        stochastic_states_transitions=create_stochastic_states_transitions(),
-        model_load_path=path_to_solution_model,
-    )
 
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
     df_sim["sex"] = SEX
@@ -359,12 +252,14 @@ def plot_simulated_care_demand_by_age_2_by_2(  # noqa: PLR0915
     df_sim, specs, age_min=None, age_max=None, path_to_save_plot=None
 ):
     """
-    Plot the yearly share with care_demand > 0 in a 2x2 grid,
-    with one subplot for each combination of:
+    Plot the yearly share with care_demand > 0 in a 2x2 grid.
+
+    We use one subplot for each combination of:
     • education (0 = low, 1 = high) → rows
     • caregiving_type (0 / 1)       → columns
 
-    Shows care choices upon positive care demand (care_demand in {CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE}):
+    Shows care choices upon positive care demand
+    (care_demand in {CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE}):
     1. No care:
        has_care_demand(care_demand) AND agent chooses NO_CARE.
     2. Light informal care:
@@ -408,10 +303,11 @@ def plot_simulated_care_demand_by_age_2_by_2(  # noqa: PLR0915
     formal_care_choices = np.asarray(FORMAL_CARE)
     no_care_choices = np.asarray(NO_CARE)
 
-    # Four types of care choices upon positive care demand (care_demand in {CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE}).
+    # Four types of care choices upon "true" care demand:
+    # care_demand in {CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE} AND mother alive.
     positive_demand = df_sim["care_demand"].isin(
         [CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]
-    )
+    ) & (df_sim["mother_dead"] == 0)
 
     # 1. No care
     df_sim["no_care_choice"] = (
@@ -433,12 +329,16 @@ def plot_simulated_care_demand_by_age_2_by_2(  # noqa: PLR0915
         positive_demand & df_sim["choice"].isin(formal_care_choices)
     ).astype(int)
 
-    # Calculate shares for care demand (any positive care demand)
+    # Calculate shares for care demand (any positive care demand, mother alive)
+    def _true_care_demand_share(group):
+        mask = group["care_demand"].isin([CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]) & (
+            group["mother_dead"] == 0
+        )
+        return mask.mean()
+
     care_demand_shares = (
-        df_sim.groupby(["age", "education", "caregiving_type"], observed=False)[
-            "care_demand"
-        ]
-        .apply(lambda x: x.isin([CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]).mean())
+        df_sim.groupby(["age", "education", "caregiving_type"], observed=False)
+        .apply(_true_care_demand_share)
         .reindex(
             pd.MultiIndex.from_product(
                 [ages, [0, 1], [0, 1]], names=["age", "education", "caregiving_type"]
@@ -645,10 +545,11 @@ def plot_simulated_care_demand_by_age_pooled(  # noqa: PLR0915
     formal_care_choices = np.asarray(FORMAL_CARE)
     no_care_choices = np.asarray(NO_CARE)
 
-    # Four types of care choices upon positive care demand (care_demand in {CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE}).
+    # Four types of care choices upon "true" care demand:
+    # care_demand in {CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE} AND mother alive.
     positive_demand = df_sim["care_demand"].isin(
         [CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]
-    )
+    ) & (df_sim["mother_dead"] == 0)
 
     df_sim["no_care_choice"] = (
         positive_demand & df_sim["choice"].isin(no_care_choices)
@@ -663,11 +564,17 @@ def plot_simulated_care_demand_by_age_pooled(  # noqa: PLR0915
         positive_demand & df_sim["choice"].isin(formal_care_choices)
     ).astype(int)
 
-    # Calculate shares for care demand (any positive care demand)
-    # Pooled across education and sister
+    # Calculate shares for care demand (any positive care demand, mother alive)
+    # Pooled across education and sister.
+    def _true_care_demand_share(group):
+        mask = group["care_demand"].isin([CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]) & (
+            group["mother_dead"] == 0
+        )
+        return mask.mean()
+
     care_demand_shares = (
-        df_sim.groupby("age", observed=False)["care_demand"]
-        .apply(lambda x: x.isin([CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]).mean())
+        df_sim.groupby("age", observed=False)
+        .apply(_true_care_demand_share)
         .reindex(ages, fill_value=0)
     )
 
@@ -791,8 +698,10 @@ def plot_simulated_care_demand_by_age_pooled_light_intensive(  # noqa: PLR0915
     """
     Plot two pooled panels:
 
-    - Left: share with light care demand (care_demand == CARE_DEMAND_LIGHT) by age.
-    - Right: share with intensive care demand (care_demand == CARE_DEMAND_INTENSIVE) by age.
+    - Left: share with light care demand
+      (care_demand == CARE_DEMAND_LIGHT) by age.
+    - Right: share with intensive care demand
+      (care_demand == CARE_DEMAND_INTENSIVE) by age.
 
     Under each demand curve, stack (shares in total population):
     - No care (NO_CARE)
@@ -818,9 +727,13 @@ def plot_simulated_care_demand_by_age_pooled_light_intensive(  # noqa: PLR0915
     formal_care_choices = np.asarray(FORMAL_CARE)
     no_care_choices = np.asarray(NO_CARE)
 
-    # Light and intensive demand indicators
-    light_demand = df_sim["care_demand"] == CARE_DEMAND_LIGHT
-    intensive_demand = df_sim["care_demand"] == CARE_DEMAND_INTENSIVE
+    # Light and intensive demand indicators (only when mother is alive)
+    light_demand = (df_sim["care_demand"] == CARE_DEMAND_LIGHT) & (
+        df_sim["mother_dead"] == 0
+    )
+    intensive_demand = (df_sim["care_demand"] == CARE_DEMAND_INTENSIVE) & (
+        df_sim["mother_dead"] == 0
+    )
 
     # For light demand panel
     df_sim["no_care_light"] = (
@@ -850,15 +763,25 @@ def plot_simulated_care_demand_by_age_pooled_light_intensive(  # noqa: PLR0915
         intensive_demand & df_sim["choice"].isin(formal_care_choices)
     ).astype(int)
 
-    # ---- 3. Demand shares (in total population)
+    # ---- 3. Demand shares (in total population, mother alive)
+    def _light_demand_share(group):
+        mask = (group["care_demand"] == CARE_DEMAND_LIGHT) & (group["mother_dead"] == 0)
+        return mask.mean()
+
+    def _intensive_demand_share(group):
+        mask = (group["care_demand"] == CARE_DEMAND_INTENSIVE) & (
+            group["mother_dead"] == 0
+        )
+        return mask.mean()
+
     light_demand_shares = (
-        df_sim.groupby("age", observed=False)["care_demand"]
-        .apply(lambda x: (x == CARE_DEMAND_LIGHT).mean())
+        df_sim.groupby("age", observed=False)
+        .apply(_light_demand_share)
         .reindex(ages, fill_value=0)
     )
     intensive_demand_shares = (
-        df_sim.groupby("age", observed=False)["care_demand"]
-        .apply(lambda x: (x == CARE_DEMAND_INTENSIVE).mean())
+        df_sim.groupby("age", observed=False)
+        .apply(_intensive_demand_share)
         .reindex(ages, fill_value=0)
     )
 
@@ -1007,7 +930,8 @@ def plot_simulated_care_demand_by_age_2_by_2_combined(  # noqa: PLR0915
     df_sim, specs, age_min=None, age_max=None, path_to_save_plot=None
 ):
     """
-    Plot the yearly share with care_demand > 0 in a 2x2 grid with **combined** categories.
+    Plot the yearly share with care_demand > 0 in a 2x2 grid
+    with **combined** categories.
 
     For each (education, caregiving_type) cell we show:
 
@@ -1037,7 +961,7 @@ def plot_simulated_care_demand_by_age_2_by_2_combined(  # noqa: PLR0915
 
     positive_demand = df_sim["care_demand"].isin(
         [CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]
-    )
+    ) & (df_sim["mother_dead"] == 0)
 
     # Base indicators by choice
     df_sim["no_care_choice"] = (
@@ -1058,12 +982,16 @@ def plot_simulated_care_demand_by_age_2_by_2_combined(  # noqa: PLR0915
         df_sim["light_informal_care"] + df_sim["intensive_informal_care"]
     )
 
-    # Calculate shares for care demand
+    # Calculate shares for care demand (mother alive)
+    def _true_care_demand_share(group):
+        mask = group["care_demand"].isin([CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]) & (
+            group["mother_dead"] == 0
+        )
+        return mask.mean()
+
     care_demand_shares = (
-        df_sim.groupby(["age", "education", "caregiving_type"], observed=False)[
-            "care_demand"
-        ]
-        .apply(lambda x: x.isin([CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]).mean())
+        df_sim.groupby(["age", "education", "caregiving_type"], observed=False)
+        .apply(_true_care_demand_share)
         .reindex(
             pd.MultiIndex.from_product(
                 [ages, [0, 1], [0, 1]], names=["age", "education", "caregiving_type"]
@@ -1242,7 +1170,7 @@ def plot_simulated_care_demand_by_age_pooled_combined(  # noqa: PLR0915
 
     positive_demand = df_sim["care_demand"].isin(
         [CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]
-    )
+    ) & (df_sim["mother_dead"] == 0)
 
     df_sim["no_care_choice"] = (
         positive_demand & df_sim["choice"].isin(no_care_choices)
@@ -1262,10 +1190,17 @@ def plot_simulated_care_demand_by_age_pooled_combined(  # noqa: PLR0915
         df_sim["light_informal_care"] + df_sim["intensive_informal_care"]
     )
 
-    # Calculate shares for care demand - pooled across education and sister
+    # Calculate shares for care demand - pooled across education and sister,
+    # requiring mother to be alive.
+    def _true_care_demand_share(group):
+        mask = group["care_demand"].isin([CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]) & (
+            group["mother_dead"] == 0
+        )
+        return mask.mean()
+
     care_demand_shares = (
-        df_sim.groupby("age", observed=False)["care_demand"]
-        .apply(lambda x: x.isin([CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]).mean())
+        df_sim.groupby("age", observed=False)
+        .apply(_true_care_demand_share)
         .reindex(ages, fill_value=0)
     )
 
@@ -1471,12 +1406,14 @@ def plot_mother_health_shares_by_age(
     plt.close(fig)
 
 
-def test_care_mix_sums_to_care_demand(df_sim, specs, age_min=None, age_max=None):
+def test_care_mix_sums_to_care_demand(  # noqa: PLR0915
+    df_sim, specs, age_min=None, age_max=None
+):
     """
-    Test that the four care modes sum up to the number of agents facing care demand
-    at each given age.
+    Test that the four care modes sum to the number of agents with care demand.
 
-    The four care modes (conditional on positive care demand, care_demand in {CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE})
+    The four care modes (conditional on "true" care demand, i.e.
+    care_demand in {CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE} AND mother_dead == 0)
     are defined purely by the agent's choice:
     1. No care: choice in NO_CARE
     2. Light informal care: choice in LIGHT_INFORMAL_CARE
@@ -1520,10 +1457,13 @@ def test_care_mix_sums_to_care_demand(df_sim, specs, age_min=None, age_max=None)
     formal_care_choices = np.asarray(FORMAL_CARE)
     no_care_choices = np.asarray(NO_CARE)
 
-    # Create care type indicators for all four scenarios (care_demand in {CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE})
+    # "True" care demand:
+    # care_demand in {CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE} AND mother_dead == 0.
     positive_demand = df_test["care_demand"].isin(
         [CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]
-    )
+    ) & (df_test["mother_dead"] == 0)
+
+    df_test["true_positive_demand"] = positive_demand.astype(int)
 
     df_test["no_care_choice"] = (
         positive_demand & df_test["choice"].isin(no_care_choices)
@@ -1538,10 +1478,8 @@ def test_care_mix_sums_to_care_demand(df_sim, specs, age_min=None, age_max=None)
         positive_demand & df_test["choice"].isin(formal_care_choices)
     ).astype(int)
 
-    # Debug: Check for uncategorized agents with positive care demand
-    care_demand_1_mask = df_test["care_demand"].isin(
-        [CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]
-    )
+    # Debug: Check for uncategorized agents with "true" positive care demand
+    care_demand_1_mask = positive_demand
     categorized_mask = (
         df_test["no_care_choice"]
         + df_test["light_informal_care"]
@@ -1567,9 +1505,8 @@ def test_care_mix_sums_to_care_demand(df_sim, specs, age_min=None, age_max=None)
     group_cols = ["age", "education", "caregiving_type"]
     counts = df_test.groupby(group_cols, observed=False).agg(
         {
-            "care_demand": lambda x: x.isin(
-                [CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]
-            ).sum(),  # Count with positive care demand
+            # Count of agents with "true" positive care demand in this group.
+            "true_positive_demand": "sum",
             "no_care_choice": "sum",
             "light_informal_care": "sum",
             "intensive_informal_care": "sum",
@@ -1586,10 +1523,12 @@ def test_care_mix_sums_to_care_demand(df_sim, specs, age_min=None, age_max=None)
     )
 
     # Calculate differences
-    counts["absolute_diff"] = np.abs(counts["care_demand"] - counts["care_mix_sum"])
+    counts["absolute_diff"] = np.abs(
+        counts["true_positive_demand"] - counts["care_mix_sum"]
+    )
     counts["relative_diff"] = np.where(
-        counts["care_demand"] > 0,  # care_demand here is the count, not the state value
-        counts["absolute_diff"] / counts["care_demand"],
+        counts["true_positive_demand"] > 0,
+        counts["absolute_diff"] / counts["true_positive_demand"],
         0,
     )
 
@@ -1616,9 +1555,9 @@ def test_care_mix_sums_to_care_demand(df_sim, specs, age_min=None, age_max=None)
                 f"\nSample group: age={sample_idx[0]}, "
                 f"education={sample_idx[1]}, caregiving_type={sample_idx[2]}"
             )
-            print(
-                f"positive care_demand count: {sample_data['care_demand'].isin([CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]).sum()}"
-            )
+            pos_care_mask = sample_data["care_demand"].isin()
+            pos_care_count = pos_care_mask.sum()
+            print(f"positive care_demand count: {pos_care_count}")
             print(f"solo_informal_care sum: {sample_data['solo_informal_care'].sum()}")
             print(f"formal_care sum: {sample_data['formal_care'].sum()}")
             print(f"other_family_only sum: {sample_data['other_family_only'].sum()}")
@@ -1650,7 +1589,6 @@ def test_care_mix_sums_to_care_demand(df_sim, specs, age_min=None, age_max=None)
 @pytask.mark.post_estimation
 def task_check_no_care_with_positive_demand(
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
-    path_to_model_config: Path = BLD / "model" / "model_config.pkl",
     path_to_simulated_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
@@ -1658,25 +1596,13 @@ def task_check_no_care_with_positive_demand(
     """
     Quick consistency check:
 
-    Verify that within the caregiving age window, whenever care_demand is positive (CARE_DEMAND_LIGHT or CARE_DEMAND_INTENSIVE) and
+    Verify that within the caregiving age window, whenever there is "true" care_demand
+    (CARE_DEMAND_LIGHT or CARE_DEMAND_INTENSIVE with mother_dead == 0) and
     caregiving_type == 1, the model never chooses NO_CARE (choices 0–3).
     """
 
     # Load model specs to infer caregiving age window
     specs = pickle.load(path_to_specs.open("rb"))
-    model_config = pickle.load(path_to_model_config.open("rb"))
-
-    model = dcegm.setup_model(
-        model_specs=specs,
-        model_config=model_config,
-        state_space_functions=create_state_space_functions(),
-        utility_functions=create_utility_functions(),
-        utility_functions_final_period=create_final_period_utility_functions(),
-        budget_constraint=budget_constraint,
-        shock_functions=shock_function_dict(),
-        stochastic_states_transitions=create_stochastic_states_transitions(),
-        model_load_path=BLD / "model" / "model.pkl",
-    )
 
     start_age = specs["start_age"]
     end_age_msm = specs["end_age_msm"]
@@ -1693,7 +1619,8 @@ def task_check_no_care_with_positive_demand(
     no_care_choices = set(NO_CARE.tolist())
 
     mask = (
-        (df_sim["care_demand"].isin([CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]))
+        df_sim["care_demand"].isin([CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE])
+        & (df_sim["mother_dead"] == 0)
         & (df_sim["health"] != DEAD)
         & (df_sim["caregiving_type"] == 1)
         & (df_sim["choice"].isin(no_care_choices))
@@ -1732,4 +1659,3 @@ def task_check_no_care_with_positive_demand(
         f"in ages [{start_age_caregiving}, {end_age_caregiving}]. "
         f"Count: {n_violations}."
     )
-    # breakpoint()
