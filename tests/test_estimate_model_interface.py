@@ -111,7 +111,6 @@ def create_simulate_scenario_wrapper():
     def simulate_scenario_wrapper(
         model_solved,
         initial_states,
-        wealth_agents,
         params,
         model_specs,
         seed,
@@ -135,8 +134,7 @@ def test_estimate_model_least_squares_interface(temp_test_dir):
 
     # Check if required files exist, skip test if not
     required_files = [
-        BLD / "model" / "initial_conditions" / "states.pkl",
-        BLD / "model" / "initial_conditions" / "wealth.csv",
+        BLD / "model" / "initial_conditions" / "initial_states.pkl",
         BLD / "moments" / "moments_full.csv",
         BLD / "moments" / "variances_full.csv",
         BLD / "model" / "specs" / "specs_full.pkl",
@@ -203,8 +201,10 @@ def test_estimate_model_least_squares_interface(temp_test_dir):
             weighting_method="identity",
             use_cholesky_weights=True,
             relative_deviations=False,
-            path_to_initial_states=BLD / "model" / "initial_conditions" / "states.pkl",
-            path_to_wealth=BLD / "model" / "initial_conditions" / "wealth.csv",
+            path_to_initial_states=BLD
+            / "model"
+            / "initial_conditions"
+            / "initial_states.pkl",
             path_to_empirical_moments=BLD / "moments" / "moments_full.csv",
             path_to_empirical_variance=BLD / "moments" / "variances_full.csv",
             path_to_save_estimation_result=temp_result_file,
@@ -222,8 +222,7 @@ def test_estimate_model_scalar_interface(temp_test_dir):
 
     # Check if required files exist, skip test if not
     required_files = [
-        BLD / "model" / "initial_conditions" / "states.pkl",
-        BLD / "model" / "initial_conditions" / "wealth.csv",
+        BLD / "model" / "initial_conditions" / "initial_states.pkl",
         BLD / "moments" / "moments_full.csv",
         BLD / "moments" / "variances_full.csv",
         BLD / "model" / "specs" / "specs_full.pkl",
@@ -290,8 +289,10 @@ def test_estimate_model_scalar_interface(temp_test_dir):
             weighting_method="identity",
             use_cholesky_weights=True,
             relative_deviations=False,
-            path_to_initial_states=BLD / "model" / "initial_conditions" / "states.pkl",
-            path_to_wealth=BLD / "model" / "initial_conditions" / "wealth.csv",
+            path_to_initial_states=BLD
+            / "model"
+            / "initial_conditions"
+            / "initial_states.pkl",
             path_to_empirical_moments=BLD / "moments" / "moments_full.csv",
             path_to_empirical_variance=BLD / "moments" / "variances_full.csv",
             path_to_save_estimation_result=temp_result_file,
@@ -309,8 +310,7 @@ def test_estimate_model_with_timeout(temp_test_dir):
 
     # Check if required files exist, skip test if not
     required_files = [
-        BLD / "model" / "initial_conditions" / "states.pkl",
-        BLD / "model" / "initial_conditions" / "wealth.csv",
+        BLD / "model" / "initial_conditions" / "initial_states.pkl",
         BLD / "moments" / "moments_full.csv",
         BLD / "moments" / "variances_full.csv",
         BLD / "model" / "specs" / "specs_full.pkl",
@@ -383,8 +383,7 @@ def test_estimate_model_with_timeout(temp_test_dir):
                 path_to_initial_states=BLD
                 / "model"
                 / "initial_conditions"
-                / "states.pkl",
-                path_to_wealth=BLD / "model" / "initial_conditions" / "wealth.csv",
+                / "initial_states.pkl",
                 path_to_empirical_moments=BLD / "moments" / "moments_full.csv",
                 path_to_empirical_variance=BLD / "moments" / "variances_full.csv",
             )
