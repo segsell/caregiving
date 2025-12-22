@@ -39,6 +39,7 @@ from caregiving.model.wealth_and_budget.transfers import (
 from caregiving.model.wealth_and_budget.wages_no_care_demand import (
     calculate_gross_labor_income,
 )
+from dcegm.pre_processing.setup_model import load_and_setup_model
 from dcegm.simulation.sim_utils import create_simulation_df
 from dcegm.simulation.simulate import simulate_all_periods
 

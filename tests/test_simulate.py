@@ -9,6 +9,8 @@ import jax.numpy as jnp
 import pandas as pd
 import pytest
 import yaml
+from dcegm.pre_processing.setup_model import load_and_setup_model
+from dcegm.solve import get_solve_func_for_model
 from pytask import Product
 
 from caregiving.config import BLD, TESTS
