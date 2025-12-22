@@ -402,8 +402,8 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     exp_agents /= model_specs["max_exp_diffs_per_period"][0]
 
     # Set lagged choice to 1(unemployment) if experience is 0
-    # exp_zero_mask = exp_agents == 0
-    # lagged_choice[exp_zero_mask] = 1
+    exp_zero_mask = exp_agents == 0
+    lagged_choice[exp_zero_mask] = 1
 
     # In the first period, only NO_CARE choices are available (0, 1, 2, 3),
     # which correspond to retirement, unemployed, part-time, full-time.

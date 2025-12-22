@@ -14,13 +14,7 @@ from pytask import Product
 
 import dcegm
 from caregiving.config import BLD, SRC
-from caregiving.model.shared import (
-    CARE_DEMAND_INTENSIVE,
-    CARE_DEMAND_LIGHT,
-    DEAD,
-    INFORMAL_CARE,
-    NO_CARE,
-)
+from caregiving.model.shared import DEAD
 from caregiving.model.state_space import (
     construct_experience_years,
     create_state_space_functions,
