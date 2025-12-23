@@ -32,6 +32,7 @@ from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
 
 
+@pytask.mark.skip()
 @pytask.mark.job_retention
 def task_specify_model_job_retention(
     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",

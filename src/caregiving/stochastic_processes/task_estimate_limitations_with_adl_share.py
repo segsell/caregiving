@@ -19,6 +19,10 @@ from pytask import Product
 
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import (
+    ADL_0,
+    ADL_1,
+    ADL_2,
+    ADL_3,
     END_YEAR_PARENT_GENERATION,
     FEMALE,
     MALE,
@@ -55,8 +59,8 @@ def task_estimate_adl_transitions_one_logit(  # noqa: PLR0912
 
     model_men, model_women = estimate_multinomial_logit_by_gender(df)
 
-    df_men = pivot_model_params(model_men, "Men")
-    df_women = pivot_model_params(model_women, "Women")
+    df_men = pivot_model_params_by_health(model_men, "Men")
+    df_women = pivot_model_params_by_health(model_women, "Women")
     df_combined = pd.concat([df_men, df_women], ignore_index=True)
 
     df_combined.to_csv(path_to_save_adl_probabilities, index=False)
@@ -151,9 +155,360 @@ def task_estimate_adl_transitions_one_logit(  # noqa: PLR0912
 
     adl_transition_matrix.to_csv(path_to_save)
 
-    plot_adl_probabilities_by_health(
-        df, adl_transition_matrix, specs, path_to_save_plot=path_to_save_plot
+    # plot_adl_probabilities_by_health(
+    #     df, adl_transition_matrix, specs, path_to_save_plot=path_to_save_plot
+    # )
+
+
+@pytask.mark.dip
+def task_estimate_adl_transitions_no_health_one_logit(  # noqa: PLR0912
+    path_to_specs: Path = SRC / "specs.yaml",
+    path_to_parent_child_sample: Path = BLD / "data" / "share_parent_child_data.csv",
+    path_to_save_adl_probabilities: Annotated[Path, Product] = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "adl_state_params.csv",
+    path_to_save: Annotated[Path, Product] = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "adl_state_transition_matrix.csv",
+):
+    specs = read_and_derive_specs(path_to_specs)
+
+    df = pd.read_csv(path_to_parent_child_sample)
+    df = df[df["yrbirth"] < END_YEAR_PARENT_GENERATION].copy()
+
+    # Filter to observations with both current and lagged ADL defined
+    df = df.dropna(subset=["adl_cat", "lagged_adl_cat"])
+
+    # Estimate multinomial logit with lagged ADL as predictor
+    model_men, model_women = estimate_multinomial_logit_by_gender(
+        df, cat_var="lagged_adl_cat"
     )
+
+    df_men = pivot_model_params_by_adl(model_men, "Men")
+    df_women = pivot_model_params_by_adl(model_women, "Women")
+    df_combined = pd.concat([df_men, df_women], ignore_index=True)
+
+    df_combined.to_csv(path_to_save_adl_probabilities, index=False)
+
+    # 1. Setup the index ranges
+    ages = np.arange(specs["start_age_parents"], specs["end_age"] + 1)
+    adl_labels = specs["adl_labels"]  # ["No ADL", "ADL 1", "ADL 2", "ADL 3"]
+    adl_indices = np.arange(len(adl_labels))  # 0, 1, 2, 3
+
+    # 2. Create a MultiIndex: (sex, age, lagged_adl_cat, adl_cat)
+    index = pd.MultiIndex.from_product(
+        [
+            specs["sex_labels"],
+            ages,
+            adl_labels,  # lagged ADL state
+            adl_labels,  # current ADL state (destination)
+        ],
+        names=["sex", "age", "adl_lag", "adl_next"],
+    )
+
+    # 3. Prepare an empty DataFrame
+    adl_transition_matrix = pd.DataFrame(index=index, columns=["transition_prob"])
+
+    for sex_label in specs["sex_labels"]:
+
+        df_sex = df_combined[df_combined["sex"] == sex_label].copy()
+
+        # Loop over lagged ADL states (origin states)
+        for lag_adl_idx, lag_adl_label in zip(adl_indices, adl_labels, strict=False):
+
+            # Extract parameters for each outcome category (1,2,3; 0 is base)
+            cat_params = {}
+            for _, row in df_sex.iterrows():
+                cat = int(row["adl_cat"])  # outcome category: 1,2,3
+                cat_params[cat] = row
+
+            probs = np.zeros((len(ages), 4))  # 4 destination states
+
+            for i, age in enumerate(ages):
+
+                lp = [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                ]  # logit probabilities for destinations 0,1,2,3
+
+                # Compute logit for each destination category (1,2,3; 0 is reference)
+                for dest_cat in (1, 2, 3):
+                    if dest_cat not in cat_params:
+                        lp[dest_cat] = 0.0
+                        continue
+
+                    row_params = cat_params[dest_cat]
+                    val = 0.0
+
+                    # Intercept
+                    if not pd.isna(row_params["const"]):
+                        val += row_params["const"]
+
+                    # Age terms
+                    if "age" in row_params and not pd.isna(row_params["age"]):
+                        val += row_params["age"] * age
+
+                    if "age_sq" in row_params and not pd.isna(row_params["age_sq"]):
+                        val += row_params["age_sq"] * (age**2)
+
+                    if "age_cubed" in row_params and not pd.isna(
+                        row_params["age_cubed"]
+                    ):
+                        val += row_params["age_cubed"] * (age**3)
+
+                    # Lagged ADL state terms (from pivot_model_params_by_adl)
+                    if lag_adl_idx == ADL_1 and "adl_cat_1" in row_params:
+                        if not pd.isna(row_params["adl_cat_1"]):
+                            val += row_params["adl_cat_1"]
+
+                    if lag_adl_idx == ADL_2 and "adl_cat_2" in row_params:
+                        if not pd.isna(row_params["adl_cat_2"]):
+                            val += row_params["adl_cat_2"]
+
+                    if lag_adl_idx == ADL_3 and "adl_cat_3" in row_params:
+                        if not pd.isna(row_params["adl_cat_3"]):
+                            val += row_params["adl_cat_3"]
+
+                    lp[dest_cat] = val
+
+                # Softmax to convert logits into probabilities
+                exps = np.exp(lp)
+                s = exps.sum()
+                p = exps / s
+                probs[i, :] = p
+
+            # Store the results: P(adl_next | adl_lag, sex, age)
+            for dest_idx, dest_label in enumerate(adl_labels):
+                adl_transition_matrix.loc[
+                    (sex_label, slice(None), lag_adl_label, dest_label),
+                    "transition_prob",
+                ] = probs[:, dest_idx]
+
+    adl_transition_matrix.to_csv(path_to_save)
+
+    # # Plot with empirical dots and logit curves
+    # plot_adl_state_transitions_by_lagged_adl(
+    #     df_sample=None,  # Not using empirical data
+    #     adl_state_transition_matrix=adl_transition_matrix,
+    #     specs=specs,
+    #     path_to_save_plot=path_to_save_plot,
+    # )
+
+
+@pytask.mark.dip
+def task_plot_adl_state_transitions_by_lagged_adl(
+    path_to_specs: Path = SRC / "specs.yaml",
+    path_to_parent_child_sample: Path = BLD / "data" / "share_parent_child_data.csv",
+    path_to_adl_state_mat: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "adl_state_transition_matrix.csv",
+    path_to_save_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "stochastic_processes"
+    / "adl_state_transitions.png",
+) -> None:
+    """Plot ADL state transitions from CSV file.
+
+    Creates a 2x4 grid:
+    - 2 rows: Men, Women
+    - 4 columns: To No ADL, To ADL 1, To ADL 2, To ADL 3
+    - Each subplot shows 4 lines (one for each adl_lag value)
+    - Scatter points show raw empirical data
+    """
+    specs = read_and_derive_specs(path_to_specs)
+    adl_mat = pd.read_csv(path_to_adl_state_mat, index_col=[0, 1, 2, 3])
+
+    # Load raw data for empirical points
+    df_sample = pd.read_csv(path_to_parent_child_sample)
+    df_sample = df_sample[df_sample["yrbirth"] < END_YEAR_PARENT_GENERATION].copy()
+
+    plot_adl_state_transitions_by_lagged_adl(
+        df_sample=df_sample,
+        adl_state_transition_matrix=adl_mat,
+        specs=specs,
+        path_to_save_plot=path_to_save_plot,
+    )
+
+
+def task_plot_adl_state_transitions(
+    path_to_specs: Path = SRC / "specs.yaml",
+    path_to_adl_state_mat: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "adl_state_transition_matrix.csv",
+    path_to_save_plot: Path = BLD
+    / "plots"
+    / "stochastic_processes"
+    / "adl_state_transitions.png",
+) -> None:
+    """Convenience task to (re-)plot ADL state transitions from disk."""
+    specs = read_and_derive_specs(path_to_specs)
+    adl_mat = pd.read_csv(path_to_adl_state_mat, index_col=[0, 1, 2, 3])
+    # For re-plotting we do not have df_sample here; use only the
+    # model-implied matrix and skip empirical dots.
+    plot_adl_state_transitions_by_origin(
+        df_sample=None,
+        adl_state_transition_matrix=adl_mat,
+        specs=specs,
+        path_to_save_plot=path_to_save_plot,
+    )
+
+
+def plot_adl_state_transitions_by_origin(
+    df_sample: Optional[pd.DataFrame],
+    adl_state_transition_matrix: pd.DataFrame,
+    specs: dict,
+    path_to_save_plot: Optional[Path | str] = None,
+) -> plt.Figure:
+    """
+    Plot ADL state transition probabilities in the style of
+    ``plot_adl_probabilities_by_health``, but conditioning on origin
+    ADL state instead of health.
+
+    Layout:
+
+        2 x 4 grid:
+            ┌────────────────┬────────────────┬────────────────┬────────────────┐
+            │ Men / from 0   │ Men / from 1  │ Men / from 2   │ Men / from 3   │
+            ├────────────────┼────────────────┼────────────────┼────────────────┤
+            │ Women / from 0 │ Women / from 1│ Women / from 2 │ Women / from 3 │
+            └────────────────┴────────────────┴────────────────┴────────────────┘
+
+    • Solid lines: predicted probabilities from
+      ``adl_state_transition_matrix``:
+        P(ADL_t = j | ADL_{t-1} = i, sex, age)
+    • Scatter dots (if df_sample is provided): empirical probabilities
+      from the SHARE parent-child sample.
+    """
+
+    sex_labels = specs["sex_labels"]
+
+    # Mapping numeric codes to strings and colours
+    gender_map = {1: "Men", 2: "Women"}
+    adl_map_num_to_str = {
+        0: "No ADL",
+        1: "ADL 1",
+        2: "ADL 2",
+        3: "ADL 3",
+    }
+    adl_colors = {
+        "No ADL": "blue",
+        "ADL 1": "green",
+        "ADL 2": "orange",
+        "ADL 3": "red",
+    }
+    adl_order = ["No ADL", "ADL 1", "ADL 2", "ADL 3"]
+
+    # ──────────────────────────────────────────────────────────────────────
+    # 1.  Empirical (observed) transition probabilities (optional)
+    # ──────────────────────────────────────────────────────────────────────
+    if df_sample is not None:
+        df_obs = df_sample.copy()
+        df_obs["sex"] = df_obs["gender"].map(gender_map)
+        df_obs["adl_from_str"] = df_obs["lagged_adl_cat"].map(adl_map_num_to_str)
+        df_obs["adl_to_str"] = df_obs["adl_cat"].map(adl_map_num_to_str)
+
+        counts = (
+            df_obs.groupby(["sex", "age", "adl_from_str", "adl_to_str"])
+            .size()
+            .rename("n")
+            .reset_index()
+        )
+        totals = (
+            df_obs.groupby(["sex", "age", "adl_from_str"])
+            .size()
+            .rename("total")
+            .reset_index()
+        )
+        df_emp = counts.merge(totals, on=["sex", "age", "adl_from_str"])
+        df_emp["prob"] = df_emp["n"] / df_emp["total"]
+    else:
+        df_emp = None
+
+    # ──────────────────────────────────────────────────────────────────────
+    # 2.  Predicted probabilities from the ADL-state transition matrix
+    # ──────────────────────────────────────────────────────────────────────
+    adl_mat = adl_state_transition_matrix.copy()
+    adl_mat.index.set_names(["sex", "age", "adl_lag", "adl_next"], inplace=True)
+
+    df_pred = adl_mat.reset_index().rename(
+        columns={"transition_prob": "prob", "adl_lag": "adl_from", "adl_next": "adl_to"}
+    )
+    df_pred["adl_from_str"] = df_pred["adl_from"].map(adl_map_num_to_str)
+    df_pred["adl_to_str"] = df_pred["adl_to"].map(adl_map_num_to_str)
+
+    # ──────────────────────────────────────────────────────────────────────
+    # 3.  Plot – same overall style as plot_adl_probabilities_by_health
+    # ──────────────────────────────────────────────────────────────────────
+    fig, axes = plt.subplots(
+        nrows=2,
+        ncols=4,
+        figsize=(14, 6),
+        sharex=True,
+        sharey=True,
+    )
+
+    origin_labels = adl_order  # "from" states in columns
+
+    for row, sex in enumerate(sex_labels):  # ["Men", "Women"]
+        for col, adl_from in enumerate(origin_labels):
+            ax = axes[row, col]
+
+            # predicted ––– solid lines
+            for adl_to in adl_order:
+                dat = df_pred[
+                    (df_pred["sex"] == sex)
+                    & (df_pred["adl_from_str"] == adl_from)
+                    & (df_pred["adl_to_str"] == adl_to)
+                ]
+                if not dat.empty:
+                    ax.plot(
+                        dat["age"],
+                        dat["prob"],
+                        label=adl_to,
+                        color=adl_colors[adl_to],
+                    )
+
+            # observed ––– scatter points (if available)
+            if df_emp is not None:
+                for adl_to in adl_order:
+                    dat = df_emp[
+                        (df_emp["sex"] == sex)
+                        & (df_emp["adl_from_str"] == adl_from)
+                        & (df_emp["adl_to_str"] == adl_to)
+                    ]
+                    if not dat.empty:
+                        ax.scatter(
+                            dat["age"],
+                            dat["prob"],
+                            s=12,
+                            alpha=1,
+                            color=adl_colors[adl_to],
+                        )
+
+            # cosmetics
+            if row == 1:
+                ax.set_xlabel("Age")
+            if col == 0:
+                ax.set_ylabel("Probability")
+            ax.set_title(f"{sex} - from {adl_from}")
+            ax.grid(True, alpha=0.3)
+
+    # Legend and layout
+    handles, labels = axes[0, 0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper center", ncol=len(adl_order))
+    fig.tight_layout(rect=[0, 0, 1, 0.93])
+
+    if path_to_save_plot:
+        fig.savefig(path_to_save_plot, dpi=300, bbox_inches="tight")
+
+    plt.close(fig)
+    return fig
 
 
 @pytask.mark.cip
@@ -658,14 +1013,14 @@ def task_estimate_adl_transitions_via_separate_logits(
     adl_transition_matrix.to_csv(path_to_save)
 
 
-def estimate_multinomial_logit_by_gender(df):
+def estimate_multinomial_logit_by_gender(df, cat_var="health"):
     """Estimate multinomial logit model separately by gender."""
 
     dat_men = df[df["gender"] == MALE].copy()
     dat_women = df[df["gender"] == FEMALE].copy()
 
     # formula = "adl_cat ~ age + I(age**2) + C(health)"
-    formula = "adl_cat ~ age + I(age**2)  + I(age**3) + C(health)"
+    formula = f"adl_cat ~ age + I(age**2)  + I(age**3) + C({cat_var})"
 
     model_men = smf.mnlogit(formula, data=dat_men).fit()
     print("Results for men (gender == 1):")
@@ -678,7 +1033,7 @@ def estimate_multinomial_logit_by_gender(df):
     return model_men, model_women
 
 
-def pivot_model_params(model, sex_label):
+def pivot_model_params_by_health(model, sex_label):
     """Return wide dataframe of model parameters."""
 
     df = model.params.copy()
@@ -711,6 +1066,56 @@ def pivot_model_params(model, sex_label):
         "age_cubed",
         "medium_health",
         "good_health",
+    ]
+
+    for col in desired_cols:
+        if col not in df.columns:
+            df[col] = np.nan
+
+    df = df[desired_cols]
+
+    return df
+
+
+def pivot_model_params_by_adl(model, sex_label):
+    """Return wide dataframe of model parameters.
+
+    Reference category is No ADL (lagged_adl_cat = 0)
+
+    """
+
+    df = model.params.copy()
+
+    df = df.T
+
+    rename_dict = {
+        "Intercept": "const",
+        "age": "age",
+        "I(age ** 2)": "age_sq",
+        "I(age ** 3)": "age_cubed",
+        "C(lagged_adl_cat)[T.1.0]": "adl_cat_1",
+        "C(lagged_adl_cat)[T.2.0]": "adl_cat_2",
+        "C(lagged_adl_cat)[T.3.0]": "adl_cat_3",
+    }
+    df.rename(columns=rename_dict, inplace=True)
+
+    df.index = df.index + 1
+    df.index.name = "adl_cat"
+
+    df.reset_index(inplace=True)  # Now "adl_cat" is a column
+
+    df.insert(0, "sex", sex_label)
+
+    desired_cols = [
+        "sex",
+        "adl_cat",
+        "const",
+        "age",
+        "age_sq",
+        "age_cubed",
+        "adl_cat_1",
+        "adl_cat_2",
+        "adl_cat_3",
     ]
 
     for col in desired_cols:
@@ -1507,3 +1912,211 @@ def plot_adl_probabilities_by_health(
 
     if path_to_save_plot:
         fig.savefig(path_to_save_plot, dpi=300)
+    plt.close(fig)
+
+    return fig
+
+
+def plot_adl_state_transitions_by_lagged_adl(  # noqa: PLR0912, PLR0915
+    df_sample: pd.DataFrame,
+    adl_state_transition_matrix: pd.DataFrame,
+    specs: dict,
+    path_to_save_plot: Optional[str] = None,
+) -> plt.Figure:
+    """
+    2 x 4 grid:
+        ┌───────────────┬───────────────┬───────────────┬───────────────┐
+        │ Men / from 0  │ Men / from 1  │ Men / from 2  │ Men / from 3  │
+        ├───────────────┼───────────────┼───────────────┼───────────────┤
+        │ Women / from 0│ Women / from 1│ Women / from 2│ Women / from 3│
+        └───────────────┴───────────────┴───────────────┴───────────────┘
+
+    • Solid lines  : probabilities predicted by the multinomial-logit
+    • Scatter dots : empirical probabilities in the estimation sample
+
+    Parameters
+    ----------
+    df_sample
+        Estimation sample with columns
+        ['gender', 'age', 'lagged_adl_cat', 'adl_cat']
+        *gender*: 1 = Men, 2 = Women (constants MALE/FEMALE in your code)
+        *lagged_adl_cat*: 0 = No ADL, 1 = ADL 1, 2 = ADL 2, 3 = ADL 3
+        *adl_cat*: 0 = No ADL, 1 = ADL 1, 2 = ADL 2, 3 = ADL 3
+    adl_state_transition_matrix
+        DataFrame produced right after the prediction loop.
+        MultiIndex = (sex, age, adl_lag, adl_next),
+        value column = 'transition_prob'.
+    specs
+        Full specification dictionary created by `read_and_derive_specs`.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+    """
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # 1. Load and prepare predicted probabilities
+    # ──────────────────────────────────────────────────────────────────────────
+    # Handle both MultiIndex DataFrame and regular DataFrame
+    if isinstance(adl_state_transition_matrix.index, pd.MultiIndex):
+        df = adl_state_transition_matrix.reset_index()
+    else:
+        df = adl_state_transition_matrix.copy()
+
+    # Ensure column names are correct
+    if "transition_prob" in df.columns:
+        df = df.rename(columns={"transition_prob": "prob"})
+
+    # Ensure age is numeric
+    df["age"] = pd.to_numeric(df["age"], errors="coerce")
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # 2. Prepare empirical data (raw data points)
+    # ──────────────────────────────────────────────────────────────────────────
+    adl_map_num_to_str = {
+        0: "No ADL",
+        1: "ADL 1",
+        2: "ADL 2",
+        3: "ADL 3",
+    }
+    gender_map = {1: "Men", 2: "Women"}
+
+    df_emp = None
+    if df_sample is not None:
+        df_obs = df_sample.copy()
+        df_obs = df_obs.dropna(subset=["adl_cat", "lagged_adl_cat"])
+
+        df_obs["sex"] = df_obs["gender"].map(gender_map)
+        df_obs["adl_lag_str"] = df_obs["lagged_adl_cat"].map(adl_map_num_to_str)
+        df_obs["adl_str"] = df_obs["adl_cat"].map(adl_map_num_to_str)
+
+        # Counts per (sex, age, lagged_adl, adl)
+        counts = (
+            df_obs.groupby(["sex", "age", "adl_lag_str", "adl_str"])
+            .size()
+            .rename("n")
+            .reset_index()
+        )
+        # Totals per (sex, age, lagged_adl)
+        totals = (
+            df_obs.groupby(["sex", "age", "adl_lag_str"])
+            .size()
+            .rename("total")
+            .reset_index()
+        )
+
+        df_emp = counts.merge(totals, on=["sex", "age", "adl_lag_str"])
+        df_emp["prob"] = df_emp["n"] / df_emp["total"]
+        df_emp["age"] = pd.to_numeric(df_emp["age"], errors="coerce")
+        # Rename to match predicted data column names
+        df_emp = df_emp.rename(
+            columns={"adl_lag_str": "adl_lag", "adl_str": "adl_next"}
+        )
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # 3. Setup plot
+    # ──────────────────────────────────────────────────────────────────────────
+    adl_labels = specs["adl_labels"]  # ["No ADL", "ADL 1", "ADL 2", "ADL 3"]
+    adl_colors = {
+        "No ADL": "blue",
+        "ADL 1": "green",
+        "ADL 2": "orange",
+        "ADL 3": "red",
+    }
+
+    start_age = specs["start_age_parents"]
+    end_age = specs["end_age"]
+
+    fig, axes = plt.subplots(
+        nrows=2,
+        ncols=4,
+        figsize=(16, 6),
+        # sharex=True,
+        # sharey=True,
+    )
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # 4. Plot: 2 rows (Men/Women) x 4 columns (adl_next)
+    # ──────────────────────────────────────────────────────────────────────────
+    for row, sex in enumerate(specs["sex_labels"]):  # ["Men", "Women"]
+        for col, adl_next in enumerate(
+            adl_labels
+        ):  # ["No ADL", "ADL 1", "ADL 2", "ADL 3"]
+            ax = axes[row, col]
+
+            # Plot one line for each adl_lag
+            for adl_lag in adl_labels:
+                dat = df[
+                    (df["sex"] == sex)
+                    & (df["adl_lag"] == adl_lag)
+                    & (df["adl_next"] == adl_next)
+                ].copy()
+
+                if not dat.empty:
+                    dat = dat.sort_values("age")
+                    ax.plot(
+                        dat["age"].values,
+                        dat["prob"].values,
+                        label=adl_lag,
+                        color=adl_colors[adl_lag],
+                        linewidth=2,
+                    )
+
+            # Add empirical data points (scatter)
+            if df_emp is not None:
+                for adl_lag in adl_labels:
+                    dat_emp = df_emp[
+                        (df_emp["sex"] == sex)
+                        & (df_emp["adl_lag"] == adl_lag)
+                        & (df_emp["adl_next"] == adl_next)
+                    ].copy()
+
+                    if not dat_emp.empty:
+                        ax.scatter(
+                            dat_emp["age"].values,
+                            dat_emp["prob"].values,
+                            s=12,
+                            alpha=0.6,
+                            color=adl_colors[adl_lag],
+                            edgecolors="white",
+                            linewidth=0.5,
+                        )
+
+            # Cosmetics
+            if row == 1:
+                ax.set_xlabel("Age")
+            if col == 0:
+                ax.set_ylabel("Probability")
+            ax.set_title(f"{sex} - to {adl_next}")
+
+            # Set limits with padding
+            age_range = end_age - start_age
+            y_range = 1.0 - 0.0
+            padding_x = age_range * 0.05
+            padding_y = y_range * 0.05
+
+            ax.set_xlim(start_age - padding_x, end_age + padding_x)
+            ax.set_xticks(np.arange(start_age, end_age + 1, 5))
+            ax.set_ylim(0 - padding_y, 1 + padding_y)
+            ax.grid(True, alpha=0.3)
+
+    # Legend
+    handles, labels = axes[0, 0].get_legend_handles_labels()
+    fig.legend(
+        handles,
+        labels,
+        loc="upper center",
+        ncol=len(adl_labels),
+        title="From ADL state",
+    )
+    # fig.tight_layout(rect=[0, 0, 1, 0.93])
+
+    if path_to_save_plot:
+        path_to_save_plot.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(path_to_save_plot, dpi=300, bbox_inches="tight")
+        print(f"Plot saved to: {path_to_save_plot}")
+
+    # Don't close the figure - let it be returned
+    # plt.close(fig)
+
+    return fig

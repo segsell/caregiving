@@ -263,7 +263,6 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         scale=SCALE_CAREGIVER_SHARE,
         path_to_save_plot=path_to_save_caregiver_share_by_age_bin_plot,
     )
-
     plot_simulated_care_demand_by_age(
         df_sim,
         specs,

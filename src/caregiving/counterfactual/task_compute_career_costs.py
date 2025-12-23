@@ -14,19 +14,23 @@ import yaml
 from pytask import Product
 
 from caregiving.config import BLD, SRC
-from caregiving.model.shared import DEAD, INFORMAL_CARE, NPV_END_AGE, NPV_START_AGE
+from caregiving.model.shared import (
+    DEAD,
+    INFORMAL_CARE,
+    NPV_END_AGE,
+    NPV_START_AGE,
+)
 from caregiving.simulation.simulate import (
     setup_model_for_simulation_baseline,
     simulate_career_costs,
-    simulate_scenario,
 )
 from caregiving.simulation.simulate_no_care_demand import (
     setup_model_for_simulation_no_care_demand,
     simulate_career_costs_no_care_demand,
-    simulate_scenario_no_care_demand,
 )
 
 
+@pytask.mark.skip()
 @pytask.mark.career_costs
 def task_compute_career_costs(
     # Baseline
@@ -182,7 +186,7 @@ def task_compute_career_costs(
     ].unique()
 
     df_original = df_original[df_original["agent"].isin(caregiver_ids)].copy()
-    df_no_care_demand = df_no_care_demand[
+    df_counterfactual = df_no_care_demand[
         df_no_care_demand["agent"].isin(caregiver_ids)
     ].copy()
 
@@ -191,11 +195,11 @@ def task_compute_career_costs(
 
     # Compute NPV for original scenario
     original_npv = compute_career_npv(df_original, beta)
-    # original_npv.to_csv(path_to_original_npv)
+    original_npv.to_csv(path_to_baseline_npv, index=False)
 
     # Compute NPV for no-care-demand scenario
-    no_care_demand_npv = compute_career_npv(df_no_care_demand, beta)
-    # no_care_demand_npv.to_csv(path_to_no_care_demand_npv)
+    no_care_demand_npv = compute_career_npv(df_counterfactual, beta)
+    no_care_demand_npv.to_csv(path_to_no_care_demand_npv, index=False)
 
     # Compute career costs (difference in NPV)
     # career_costs = compute_career_costs(original_npv, no_care_demand_npv)
@@ -227,7 +231,6 @@ def task_compute_career_costs(
     pd.DataFrame({"agent": _merged_npv["agent"], "npv_care_ratio": _npv_care}).to_csv(
         path_to_npv_care_ratios, index=False
     )
-
     # Save summary statistics
     pd.DataFrame(
         {"metric": ["npv_care_mean", "npv_mean"], "value": [npv_care_mean, _npv_mean]}
@@ -240,12 +243,11 @@ def task_compute_career_costs(
 
 
 def compute_career_npv(df: pd.DataFrame, beta: float) -> pd.DataFrame:
-    """Compute net present value of total income from age 30 to 70."""
+    """Compute net present value of total income."""
 
-    # Filter data for ages 30-80
     df_filtered = df[(df["age"] >= NPV_START_AGE) & (df["age"] <= NPV_END_AGE)].copy()
 
-    # Create discount factors (beta^(age-30))
+    # Create discount factors (beta^(age-40))
     df_filtered["discount_factor"] = beta ** (df_filtered["age"] - NPV_START_AGE)
 
     # Compute discounted income using total_income (individual income components)

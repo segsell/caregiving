@@ -35,7 +35,11 @@ from caregiving.data_management.soep.variables import (
     determine_observed_job_offers,
     generate_job_separation_var,
 )
-from caregiving.model.shared import PART_TIME_CHOICES, RETIREMENT_CHOICES, WORK_CHOICES
+from caregiving.model.shared import (
+    PART_TIME_CHOICES,
+    RETIREMENT_CHOICES,
+    WORK_CHOICES,
+)
 from caregiving.specs.task_write_specs import read_and_derive_specs
 from caregiving.utils import table
 

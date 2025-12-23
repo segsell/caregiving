@@ -26,10 +26,10 @@ disutil_pt_work_low_bad: 0.4
 disutil_pt_work_low_bad_informal_care: 0.4
 disutil_pt_work_low_good: 0.4
 disutil_pt_work_low_good_informal_care: 0.4
-disutil_unemployed_high_women: 0.2
-disutil_unemployed_high_women_informal_care: 0.1
-disutil_unemployed_low_women: 0.2
-disutil_unemployed_low_women_informal_care: 0.1
+disutil_unemployed_high: 0.2
+disutil_unemployed_high_informal_care: 0.1
+disutil_unemployed_low: 0.2
+disutil_unemployed_low_informal_care: 0.1
 interest_rate: 0.04
 job_finding_logit_age_cubed_women: -0.0003358997316583
 job_finding_logit_age_squared_women: 0.0481994001877842

@@ -40,7 +40,6 @@ def task_plot_job_transitions(
     # job_offer_probs = np.zeros(
     #     (n_sexes, n_education_types, n_working_periods), dtype=float
     # )
-
     # for sex in range(n_sexes):
     #     for edu in range(n_education_types):
     #         for period in range(n_working_periods):
