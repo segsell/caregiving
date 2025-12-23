@@ -36,6 +36,7 @@ generate_initial_conditions_10k = "Generate initial conditions with 10k agents"
 solve_no_care_demand = "Solve no care demand counterfactual"
 solve_lower_formal_care_costs = "Solve lower formal care costs counterfactual"
 solve_higher_formal_care_costs = "Solve higher formal care costs counterfactual"
+solve_and_simulate = "Solve and simulate baseline model with estimated parameters"
 # Model fit
 model_fit = "Model fit tasks"
 model_fit_estimated_params = "Model fit with estimated parameters"
@@ -78,9 +79,14 @@ line_chart_emp = "Empirical line chart plotting tasks"
 budget_constraint = "Budget constraint plotting tasks"
 plot_mother_adl = "Plot mother ADL transition tasks"
 plot_mother_death = "Plot mother death transition tasks"
+initial_wealth = "Initial wealth plotting tasks"
+plot_incomes = "Income plotting tasks"
+family_transition = "Family transition plotting tasks"
 # Post estimation
 post_estimation = "Post estimation tasks"
 care_demand_post_estimation = "Care demand post estimation tasks"
+post_estimation_care_demand = "Post-estimation care demand plotting tasks"
+debug = "Debugging and exploratory tasks"
 
 
 [tool.interrogate]

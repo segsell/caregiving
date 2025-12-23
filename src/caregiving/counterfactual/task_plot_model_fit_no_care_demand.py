@@ -32,11 +32,7 @@ from caregiving.simulation.plot_model_fit import (
 
 @pytask.mark.model_fit
 def task_plot_model_fit_no_care_demand(
-    path_to_options: Path = BLD / "model" / "options_no_care_demand.pkl",
-    # path_to_start_params: Path = BLD
-    # / "model"
-    # / "params"
-    # / "params_model_no_care_demand.yaml",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_empirical_moments: Path = BLD / "moments" / "moments_full.csv",
     path_to_empirical_data: Path = BLD
     / "data"
@@ -75,10 +71,9 @@ def task_plot_model_fit_no_care_demand(
     / "counterfactual"
     / "work_transitions_by_edu_and_age_bin_no_care_demand.png",
 ) -> None:
-    options = pickle.load(path_to_options.open("rb"))
-    # params = yaml.safe_load(path_to_start_params.open("rb"))
 
-    specs = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
+
     df_emp = pd.read_csv(path_to_empirical_data)
     # df_emp_wealth = df_emp[["sex", "education", "age", "wealth"]].copy()
     df_emp_wealth = df_emp[(df_emp["wealth"].notna()) & (df_emp["sex"] == 1)].copy()

@@ -7,8 +7,8 @@ from typing import Annotated
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pytask
 import yaml
-from dcegm.asset_correction import adjust_observed_assets
 from pytask import Product
 
 from caregiving.config import BLD
@@ -24,8 +24,10 @@ from caregiving.simulation.task_generate_initial_conditions import (
     draw_start_wealth_dist,
 )
 from dcegm import setup_model
+from dcegm.asset_correction import adjust_observed_assets
 
 
+@pytask.mark.initial_wealth
 def task_plot_initial_wealth(
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_model_config: Path = BLD / "model" / "model_config.pkl",
@@ -72,7 +74,17 @@ def task_plot_initial_wealth(
     states_dict = {
         name: start_period_data[name].values
         for name in model_structure["discrete_states_names"]
-        if name not in ("mother_health", "care_demand", "care_supply")
+        if name
+        not in (
+            "mother_health",
+            "mother_adl",
+            "mother_dead",
+            "care_demand",
+            "care_supply",
+            "caregiving_type",
+            "mother_alive",
+            "father_alive",
+        )
     }
 
     states_dict["care_demand"] = np.zeros_like(start_period_data["wealth"])

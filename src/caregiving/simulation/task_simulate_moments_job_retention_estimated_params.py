@@ -31,10 +31,10 @@ from caregiving.specs.task_write_specs import read_and_derive_specs
 jax.config.update("jax_enable_x64", True)
 
 
+@pytask.mark.skip(reason="Job retention model not specified yet")
 @pytask.mark.sim_job_retention_estimated_params
 def task_simulate_moments_job_retention_estimated_params(
     path_to_specs: Path = SRC / "specs.yaml",
-    path_to_options: Path = BLD / "model" / "options_job_retention.pkl",
     path_to_empirical_moments: Path = BLD / "moments" / "moments_full.csv",
     path_to_simulated_data: Path = BLD
     / "solve_and_simulate"
@@ -75,7 +75,6 @@ def task_simulate_moments_job_retention_estimated_params(
 
     Args:
         path_to_specs: Path to model specifications
-        path_to_options: Path to job retention model options
         path_to_empirical_moments: Path to empirical moments
         path_to_simulated_data: Path to simulated data from job retention model
         path_to_save_pandas_moments: Path to save pandas moments
@@ -91,13 +90,12 @@ def task_simulate_moments_job_retention_estimated_params(
 
     specs = read_and_derive_specs(path_to_specs)
 
-    options = pickle.load(path_to_options.open("rb"))
     df_sim = pd.read_pickle(path_to_simulated_data)
 
     emp_moms = pd.read_csv(path_to_empirical_moments, index_col=[0]).squeeze("columns")
 
-    sim_moms_pandas = simulate_moments_pandas(df_sim, model_specs=options)
-    sim_moms_jax = simulate_moments_jax(df_sim, options=options)
+    sim_moms_pandas = simulate_moments_pandas(df_sim, model_specs=specs)
+    sim_moms_jax = simulate_moments_jax(df_sim, model_specs=specs)
 
     # Save moments
     sim_moms_pandas.to_csv(path_to_save_pandas_moments)

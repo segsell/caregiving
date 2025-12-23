@@ -53,7 +53,7 @@ def task_plot_utility(
                 period=period,
                 choice=choice,
                 params=params,
-                options=specs,
+                model_specs=specs,
             )
         ax.plot(
             utilities,
@@ -144,7 +144,7 @@ def task_plot_cons_scale(
                     # sex=1,
                     education=edu_val,
                     period=period,
-                    options=specs,
+                    model_specs=specs,
                 )
 
             axs[married_val].plot(cons_scale, label=edu_label)
