@@ -24,23 +24,23 @@ def budget_constraint(
     lagged_choice,  # d_{t-1}
     experience,
     partner_state,
-    savings_end_of_previous_period,  # A_{t-1}
+    asset_end_of_previous_period,  # A_{t-1}
     income_shock_previous_period,  # epsilon_{t - 1}
     params,
-    options,
+    model_specs,
 ):
     sex_var = SEX
 
-    savings_scaled = savings_end_of_previous_period * options["wealth_unit"]
+    assets_scaled = asset_end_of_previous_period * model_specs["wealth_unit"]
     # Recalculate experience
-    max_exp_period = period + options["max_exp_diffs_per_period"][period]
+    max_exp_period = period + model_specs["max_exp_diffs_per_period"][period]
     experience_years = max_exp_period * experience
 
     # Calculate partner income
     partner_income_after_ssc = calc_partner_income_after_ssc(
         partner_state=partner_state,
         sex=sex_var,
-        options=options,
+        model_specs=model_specs,
         education=education,
         period=period,
     )
@@ -50,19 +50,19 @@ def budget_constraint(
         experience_years=experience_years,
         sex=sex_var,
         education=education,
-        options=options,
+        model_specs=model_specs,
     )
 
     has_partner_int = (partner_state > 0).astype(int)
 
     # Income lagged choice 1
     unemployment_benefits = calc_unemployment_benefits(
-        savings=savings_scaled,
+        assets=assets_scaled,
         education=education,
         sex=sex_var,
         has_partner_int=has_partner_int,
         period=period,
-        options=options,
+        model_specs=model_specs,
     )
 
     # Income lagged choice 2
@@ -72,7 +72,7 @@ def budget_constraint(
         education=education,
         sex=sex_var,
         income_shock=income_shock_previous_period,
-        options=options,
+        model_specs=model_specs,
     )
 
     # Select relevant income
@@ -90,14 +90,14 @@ def budget_constraint(
         own_income=own_income_after_ssc,
         partner_income=partner_income_after_ssc,
         has_partner_int=has_partner_int,
-        options=options,
+        model_specs=model_specs,
     )
     child_benefits = calc_child_benefits(
         education=education,
         sex=sex_var,
         has_partner_int=has_partner_int,
         period=period,
-        options=options,
+        model_specs=model_specs,
     )
 
     # No care demand / caregiving transfers in counterfactual
@@ -106,6 +106,6 @@ def budget_constraint(
         unemployment_benefits,
     )
     # calculate beginning of period wealth M_t
-    wealth = (1 + params["interest_rate"]) * savings_scaled + total_income
+    wealth = (1 + model_specs["interest_rate"]) * assets_scaled + total_income
 
-    return wealth / options["wealth_unit"]
+    return wealth / model_specs["wealth_unit"]

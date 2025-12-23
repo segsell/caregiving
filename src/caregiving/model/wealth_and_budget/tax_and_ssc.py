@@ -103,7 +103,7 @@
 import jax.numpy as jnp
 
 
-def calc_net_household_income(own_income, partner_income, has_partner_int, options):
+def calc_net_household_income(own_income, partner_income, has_partner_int, model_specs):
     """Calculate the income tax for a couple."""
     # Calculate the income tax for the couple
     family_income = own_income + partner_income
@@ -111,7 +111,7 @@ def calc_net_household_income(own_income, partner_income, has_partner_int, optio
     # Calculate split factor. 1 if single, 2 if partnered
     split_factor = 1 + has_partner_int
     income_tax_split = calc_inc_tax_for_single_income(
-        family_income / split_factor, options
+        family_income / split_factor, model_specs
     )
 
     # Readjust with split factor
@@ -119,11 +119,11 @@ def calc_net_household_income(own_income, partner_income, has_partner_int, optio
     return family_income - income_tax
 
 
-def calc_inc_tax_for_single_income(gross_income, options):
-    thresholds = options["income_tax_brackets"]
-    linear_rates = options["linear_income_tax_rates"]
-    quadratic_rates = options["quadratic_income_tax_rates"]
-    intercepts = options["intercepts_income_tax"]
+def calc_inc_tax_for_single_income(gross_income, model_specs):
+    thresholds = model_specs["income_tax_brackets"]
+    linear_rates = model_specs["linear_income_tax_rates"]
+    quadratic_rates = model_specs["quadratic_income_tax_rates"]
+    intercepts = model_specs["intercepts_income_tax"]
     # Formula directly taken from
     # https://esth.bundesfinanzministerium.de/esth/2020
     # /A-Einkommensteuergesetz/IV-Tarif/Paragraf-32a/inhalt.html

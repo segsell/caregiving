@@ -26,7 +26,6 @@ from caregiving.model.shared import (
     RETIREMENT,
     RETIREMENT_CHOICES,
     SEX,
-    START_PERIOD_CAREGIVING,
     UNEMPLOYED,
     UNEMPLOYED_CHOICES,
     WEALTH_MOMENTS_SCALE,
@@ -122,6 +121,7 @@ def task_plot_empirical_soep_moments(
     end_year = 2019
     start_age = specs["start_age"]
     end_age = specs["end_age_msm"]
+    start_age_caregivers = specs["start_age_caregiving"]
 
     soep_moments = pd.read_csv(path_to_soep_moments, index_col=[0])
 
@@ -264,7 +264,7 @@ def task_plot_empirical_soep_moments(
     plot_choice_shares_by_education_age_bins_emp(
         data_emp=df_caregivers,
         specs=specs,
-        age_min=start_age + START_PERIOD_CAREGIVING,
+        age_min=start_age_caregivers,
         age_max=end_age,
         bin_width=3,
         path_to_save_plot=path_to_save_labor_supply_caregivers_by_age_bins,
@@ -272,7 +272,7 @@ def task_plot_empirical_soep_moments(
     plot_choice_shares_by_education_age_bins_emp(
         data_emp=df_light_caregivers,
         specs=specs,
-        age_min=start_age + START_PERIOD_CAREGIVING,
+        age_min=start_age_caregivers,
         age_max=end_age,
         bin_width=3,
         path_to_save_plot=path_to_save_labor_supply_light_caregivers_by_age_bins,
@@ -280,7 +280,7 @@ def task_plot_empirical_soep_moments(
     plot_choice_shares_by_education_age_bins_emp(
         data_emp=df_intensive_caregivers,
         specs=specs,
-        age_min=start_age + START_PERIOD_CAREGIVING,
+        age_min=start_age_caregivers,
         age_max=end_age,
         bin_width=3,
         path_to_save_plot=path_to_save_labor_supply_intensive_caregivers_by_age_bins,

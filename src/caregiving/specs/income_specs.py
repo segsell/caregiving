@@ -19,7 +19,7 @@ def add_income_specs(
     (
         specs["gamma_0"],
         specs["gamma_1"],
-        specs["income_shock_scale"],
+        specs["income_shock_std"],
     ) = process_wage_params(specs, wage_params)
 
     # unemployment benefits
@@ -160,9 +160,9 @@ def process_wage_params(specs, wage_params):
         & (wage_params["sex"] == "all")
         & (wage_params["parameter"] == "income_shock_std")
     )
-    income_shock_scale = wage_params.loc[mask, "value"].values[0]
+    income_shock_std = wage_params.loc[mask, "value"].values[0]
 
-    return jnp.asarray(gamma_0), jnp.asarray(gamma_1), income_shock_scale
+    return jnp.asarray(gamma_0), jnp.asarray(gamma_1), income_shock_std
 
 
 def calculate_partner_income(specs, partner_wage_params_men, partner_wage_params_women):

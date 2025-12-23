@@ -19,10 +19,9 @@ jax.config.update("jax_enable_x64", True)
 
 
 def estimate_model(
-    model_for_simulation: Dict[str, Any],
+    model: Dict[str, Any],
     start_params: Dict[str, Any],
-    solve_func: callable,
-    options: Dict[str, Any],
+    model_specs: Dict[str, Any],
     algo: str,
     algo_options: Dict[str, Any],
     lower_bounds: Dict[str, float],
@@ -34,8 +33,10 @@ def estimate_model(
     relative_deviations: bool = False,
     least_squares: bool = True,
     *,
-    path_to_discrete_states: str = BLD / "model" / "initial_conditions" / "states.pkl",
-    path_to_wealth: str = BLD / "model" / "initial_conditions" / "wealth.csv",
+    path_to_initial_states: str = BLD
+    / "model"
+    / "initial_conditions"
+    / "initial_states.pkl",
     path_to_empirical_moments: str = BLD / "moments" / "moments_full.csv",
     path_to_empirical_variance: str = BLD / "moments" / "variances_full.csv",
     path_to_save_estimation_result: str = BLD / "estimation" / "result.pkl",
@@ -71,10 +72,9 @@ def estimate_model(
         fixed_seed = None
     else:
         seed_generator = None
-        fixed_seed = options["model_params"]["seed"]  # same seed every call
+        fixed_seed = model_specs["seed"]  # same seed every call
 
-    initial_states = pickle.load(path_to_discrete_states.open("rb"))
-    wealth_agents = np.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
+    initial_states = pickle.load(path_to_initial_states.open("rb"))
 
     # Load empirical data
     empirical_moments = np.array(
@@ -178,11 +178,9 @@ def estimate_model(
 
     simulate_moments_given_params = partial(
         simulate_moments,
-        solve_func=solve_func,
+        model_class=model,
         initial_states=initial_states,
-        wealth_agents=wealth_agents,
-        model_for_simulation=model_for_simulation,
-        options=options,
+        model_specs=model_specs,
         fixed_seed=fixed_seed,
         seed_generator=seed_generator,
         simulate_scenario_func=simulate_scenario_func,
@@ -241,7 +239,7 @@ def estimate_model_with_unobserved_type_shares(
     model_for_simulation: Dict[str, Any],
     start_params: Dict[str, Any],
     solve_func: callable,
-    options: Dict[str, Any],
+    model_specs: Dict[str, Any],
     algo: str,
     algo_options: Dict[str, Any],
     lower_bounds: Dict[str, float],
@@ -253,8 +251,10 @@ def estimate_model_with_unobserved_type_shares(
     relative_deviations: bool = False,
     least_squares: bool = True,
     *,
-    path_to_discrete_states: str = BLD / "model" / "initial_conditions" / "states.pkl",
-    path_to_wealth: str = BLD / "model" / "initial_conditions" / "wealth.csv",
+    path_to_initial_states: str = BLD
+    / "model"
+    / "initial_conditions"
+    / "initial_states.pkl",
     path_to_empirical_moments: str = BLD / "moments" / "moments_full.csv",
     path_to_empirical_variance: str = BLD / "moments" / "variances_full.csv",
     path_to_save_estimation_result: str = BLD / "estimation" / "result.pkl",
@@ -283,10 +283,9 @@ def estimate_model_with_unobserved_type_shares(
         fixed_seed = None
     else:
         seed_generator = None
-        fixed_seed = options["model_params"]["seed"]
+        fixed_seed = model_specs["seed"]
 
-    initial_states = pickle.load(path_to_discrete_states.open("rb"))
-    wealth_agents = np.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
+    initial_states = pickle.load(path_to_initial_states.open("rb"))
 
     empirical_moments = np.array(
         pd.read_csv(path_to_empirical_moments, index_col=0).squeeze()
@@ -321,9 +320,8 @@ def estimate_model_with_unobserved_type_shares(
         simulate_moments_with_unobserved_type_shares,
         solve_func=solve_func,
         initial_states=initial_states,
-        wealth_agents=wealth_agents,
         model_for_simulation=model_for_simulation,
-        options=options,
+        model_specs=model_specs,
         fixed_seed=fixed_seed,
         seed_generator=seed_generator,
         simulate_scenario_func=simulate_scenario_func,
@@ -385,11 +383,9 @@ def estimate_model_with_unobserved_type_shares(
 
 def simulate_moments(
     params: np.ndarray,
-    solve_func: callable,
     initial_states: Dict[str, Any],
-    wealth_agents: np.ndarray,
-    model_for_simulation: Dict[str, Any],
-    options: Dict[str, Any],
+    model_class: Dict[str, Any],
+    model_specs: Dict[str, Any],
     fixed_seed: Optional[int],
     seed_generator: Optional[np.random.Generator],
     simulate_scenario_func: callable,
@@ -410,24 +406,17 @@ def simulate_moments(
     else:
         seed = fixed_seed
 
-    solution_dict = {}
-    (
-        solution_dict["value"],
-        solution_dict["policy"],
-        solution_dict["endog_grid"],
-    ) = solve_func(params)
+    model_solved = model_class.solve(params)
 
     sim_df = simulate_scenario_func(
-        model=model_for_simulation,
-        solution=solution_dict,
+        model_solved=model_solved,
         initial_states=initial_states,
-        wealth_agents=wealth_agents,
         params=params,
-        options=options,
+        model_specs=model_specs,
         seed=seed,
     )
 
-    simulated_moments = simulate_moments_func(sim_df, options=options)
+    simulated_moments = simulate_moments_func(sim_df, model_specs=model_specs)
 
     out = np.asarray(simulated_moments.to_numpy())
     out = np.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0)
@@ -437,11 +426,9 @@ def simulate_moments(
 
 def simulate_moments_with_unobserved_type_shares(
     params: Dict[str, Any],
-    solve_func: callable,
     initial_states: Dict[str, Any],
-    wealth_agents: np.ndarray,
-    model_for_simulation: Dict[str, Any],
-    options: Dict[str, Any],
+    model_class: Dict[str, Any],
+    model_specs: Dict[str, Any],
     fixed_seed: Optional[int],
     seed_generator: Optional[np.random.Generator],
     simulate_scenario_func: callable,
@@ -460,12 +447,7 @@ def simulate_moments_with_unobserved_type_shares(
     else:
         seed = fixed_seed
 
-    solution_dict: Dict[str, Any] = {}
-    (
-        solution_dict["value"],
-        solution_dict["policy"],
-        solution_dict["endog_grid"],
-    ) = solve_func(params)
+    model_solved = model_class.solve(params)
 
     # Adjust initial states to reflect the current parameterization
     # of unobserved caregiving types.
@@ -476,16 +458,14 @@ def simulate_moments_with_unobserved_type_shares(
     )
 
     sim_df = simulate_scenario_func(
-        model=model_for_simulation,
-        solution=solution_dict,
+        model_solved=model_solved,
         initial_states=adjusted_initial_states,
-        wealth_agents=wealth_agents,
         params=params,
-        options=options,
+        model_specs=model_specs,
         seed=seed,
     )
 
-    simulated_moments = simulate_moments_func(sim_df, options=options)
+    simulated_moments = simulate_moments_func(sim_df, model_specs=model_specs)
 
     out = np.asarray(simulated_moments.to_numpy())
     out = np.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0)
@@ -656,12 +636,10 @@ def draw_caregiving_type_from_params(
 # =====================================================================================
 
 
-def select_fixed_params_example(params):
+def select_fixed_params_example(params, model_specs):
     """Select fixed parameters for the optimization."""
 
     fixed_params = {
-        "sigma": params["sigma"],
-        "interest_rate": params["interest_rate"],
         "beta": params["beta"],
         "rho": params["rho"],
     }

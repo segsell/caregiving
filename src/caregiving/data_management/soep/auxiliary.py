@@ -101,9 +101,9 @@ def span_dataframe(df, start_year, end_year):
         [pid_indexes, range(start_year, end_year + 1)],
         names=["pid", "syear"],
     )
-    full_container = pd.DataFrame(
-        index=full_index, data=np.nan, dtype=float, columns=df.columns
-    )
+    # Use reindex to create full_container with proper dtypes matching df
+    # This avoids dtype incompatibility warnings when updating
+    full_container = df.reindex(full_index)
     full_container.update(df)
 
     if "hid" in full_container.columns.values:

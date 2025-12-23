@@ -90,7 +90,7 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
             education=edu_var,
             sex=sex_var,
             income_shock=income_shock,
-            options=specs,
+            model_specs=specs,
         )
 
         # Prior none (0), now unemployed caregiver
@@ -103,7 +103,7 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
                 income_shock_previous_period=income_shock,
                 sex=sex_var,
                 labor_income_after_ssc=0.0,
-                options=specs,
+                model_specs=specs,
             )
         )
 
@@ -117,7 +117,7 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
                 income_shock_previous_period=income_shock,
                 sex=sex_var,
                 labor_income_after_ssc=0.0,
-                options=specs,
+                model_specs=specs,
             )
         )
 
@@ -131,7 +131,7 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
                 income_shock_previous_period=income_shock,
                 sex=sex_var,
                 labor_income_after_ssc=0.0,
-                options=specs,
+                model_specs=specs,
             )
         )
 
@@ -145,7 +145,7 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
                 income_shock_previous_period=income_shock,
                 sex=sex_var,
                 labor_income_after_ssc=labor_income_pt_care,
-                options=specs,
+                model_specs=specs,
             )
         )
 
@@ -167,7 +167,7 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
             education=edu_var,
             sex=sex_var,
             income_shock=income_shock,
-            options=specs,
+            model_specs=specs,
         )
 
         labor_pt_care = calc_labor_income_after_ssc(
@@ -176,7 +176,7 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
             education=edu_var,
             sex=sex_var,
             income_shock=income_shock,
-            options=specs,
+            model_specs=specs,
         )
 
         labor_prior_none_unemp[i] = labor_unemp_care
@@ -198,7 +198,7 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
             education=edu_var,
             sex=sex_var,
             income_shock=income_shock,
-            options=specs,
+            model_specs=specs,
         )
 
         wage_ft_noncg[i] = calc_labor_income_after_ssc(
@@ -207,7 +207,7 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
             education=edu_var,
             sex=sex_var,
             income_shock=income_shock,
-            options=specs,
+            model_specs=specs,
         )
 
     # Combined income = labor income + top-up
@@ -521,6 +521,7 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
     plt.close(fig)
 
 
+@pytask.mark.plot_incomes
 def task_plot_incomes(
     path_to_full_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_data: Path = BLD / "data" / "soep_partner_transition_data.csv",
@@ -573,7 +574,7 @@ def task_plot_incomes(
                     education=edu_var,
                     sex=sex_var,
                     income_shock=0,
-                    options=specs,
+                    model_specs=specs,
                 )
                 after_ssc_pt_wages[i] = calc_labor_income_after_ssc(
                     lagged_choice=2,
@@ -581,7 +582,7 @@ def task_plot_incomes(
                     education=edu_var,
                     sex=sex_var,
                     income_shock=0,
-                    options=specs,
+                    model_specs=specs,
                 )
 
                 gross_ft_wages[i] = calculate_gross_labor_income(
@@ -590,7 +591,7 @@ def task_plot_incomes(
                     education=edu_var,
                     sex=sex_var,
                     income_shock=0,
-                    options=specs,
+                    model_specs=specs,
                 )
                 after_ssc_ft_wages[i] = calc_labor_income_after_ssc(
                     lagged_choice=3,
@@ -598,7 +599,7 @@ def task_plot_incomes(
                     education=edu_var,
                     sex=sex_var,
                     income_shock=0,
-                    options=specs,
+                    model_specs=specs,
                 )
 
                 gross_pensions[i] = np.maximum(
@@ -606,7 +607,7 @@ def task_plot_incomes(
                         experience_years=exp,
                         education=edu_var,
                         sex=sex_var,
-                        options=specs,
+                        model_specs=specs,
                     ),
                     annual_unemployment,
                 )
@@ -616,7 +617,7 @@ def task_plot_incomes(
                         experience_years=exp,
                         education=edu_var,
                         sex=sex_var,
-                        options=specs,
+                        model_specs=specs,
                     ),
                     annual_unemployment,
                 )
@@ -686,7 +687,7 @@ def task_plot_total_household_income(
     with path_to_full_specs.open("rb") as file:
         specs = pkl.load(file)
 
-    params = {"interest_rate": 0.0}
+    params = {}
     exp_levels = np.arange(0, 50 + 1)  # specs["max_experience"] + 1
     marriage_labels = ["Single", "Partnered"]
     edu_labels = specs["education_labels"]
@@ -714,10 +715,10 @@ def task_plot_total_household_income(
                         # sex=sex_var,
                         partner_state=np.array(married_val),
                         care_demand=0,
-                        savings_end_of_previous_period=0,
+                        asset_end_of_previous_period=0,
                         income_shock_previous_period=0,
                         params=params,
-                        options=specs,
+                        model_specs=specs,
                     )
                 axs[edu_val, married_val].plot(
                     exp_levels,
@@ -822,7 +823,7 @@ def task_plot_child_benefits(
                         sex=sex_var,
                         has_partner_int=partner_val,
                         period=period,
-                        options=specs,
+                        model_specs=specs,
                     )
                 ax.plot(ages, child_benefits, label=str(edu_label))
 

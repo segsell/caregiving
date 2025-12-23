@@ -4,7 +4,6 @@ import jax.numpy as jnp
 
 from caregiving.model.shared import (
     PARENT_DEAD,
-    START_PERIOD_CAREGIVING,
     is_alive,
     is_dead,
     is_informal_care,
@@ -141,9 +140,9 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
     elif (age > max_ret_age + 1) & (already_retired != 1):
         return False
     # ================================================================================
-    elif (age <= start_age + START_PERIOD_CAREGIVING) & is_informal_care(lagged_choice):
+    elif (age <= options["start_age_caregiving"]) & is_informal_care(lagged_choice):
         return False
-    # elif (age <= start_age + START_PERIOD_CAREGIVING) & (job_before_caregiving == 1):
+    # elif (age <= options["start_age_caregiving"]) & (job_before_caregiving == 1):
     #     return False
     elif (not is_informal_care(lagged_choice)) & (job_before_caregiving == 1):
         return False
@@ -189,7 +188,7 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
             }
             return state_proxy
         # =====================================================================
-        elif age < start_age + START_PERIOD_CAREGIVING:
+        elif age < options["start_age_caregiving"]:
             # No care demand and supply before start of caregiving
             state_proxy = {
                 "period": period,
@@ -205,7 +204,7 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
                 "job_before_caregiving": 0,
             }
             return state_proxy
-        # elif age <= start_age + START_PERIOD_CAREGIVING:
+        # elif age <= options["start_age_caregiving"]:
         #     # No care demand and supply before start of caregiving
         #     state_proxy = {
         #         "period": period,

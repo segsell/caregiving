@@ -10,11 +10,8 @@ import pytask
 import yaml
 from pytask import Product
 
+import dcegm
 from caregiving.config import BLD
-from caregiving.estimation.prepare_estimation import (
-    load_and_prep_data,
-    load_and_setup_full_model_for_solution,
-)
 from caregiving.model.shared import (
     DEAD,
     INFORMAL_CARE,
@@ -27,11 +24,18 @@ from caregiving.model.shared import (
     RETIREMENT,
     SCALE_CAREGIVER_SHARE,
     SEX,
-    START_PERIOD_CAREGIVING,
     WEALTH_QUANTILE_CUTOFF,
     WORK,
     WORK_CHOICES,
 )
+from caregiving.model.state_space import create_state_space_functions
+from caregiving.model.task_specify_model import create_stochastic_states_transitions
+from caregiving.model.taste_shocks import shock_function_dict
+from caregiving.model.utility.bequest_utility import (
+    create_final_period_utility_functions,
+)
+from caregiving.model.utility.utility_functions_additive import create_utility_functions
+from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.moments.task_create_soep_moments import (
     create_df_caregivers,
     create_df_non_caregivers,
@@ -63,12 +67,7 @@ from caregiving.simulation.plot_model_fit import (
 @pytask.mark.baseline_model
 @pytask.mark.model_fit_estimated_params
 def task_plot_model_fit_estimated_params(  # noqa: PLR0915
-    path_to_options: Path = BLD / "model" / "options.pkl",
-    path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
-    path_to_estimated_params: Path = BLD
-    / "model"
-    / "params"
-    / "estimated_params_model.yaml",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_simulated_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
@@ -158,15 +157,9 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
 ) -> None:
     """Plot model fit using estimated parameters."""
 
-    options = pickle.load(path_to_options.open("rb"))
+    specs = pickle.load(path_to_specs.open("rb"))
 
-    model_full = load_and_setup_full_model_for_solution(
-        options, path_to_model=path_to_solution_model
-    )
-    specs = model_full["options"]["model_params"]
-
-    start_age = specs["start_age"]
-    start_age_caregivers = start_age + START_PERIOD_CAREGIVING
+    start_age_caregivers = specs["start_age_caregiving"]
     end_age = specs["end_age_msm"]
     start_year = 2001
     end_year = 2019
@@ -207,6 +200,7 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
 
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
     df_sim["sex"] = SEX
+    df_sim["age"] = df_sim["period"] + specs["start_age"]
     df_sim = df_sim[df_sim["health"] != DEAD].copy()
 
     # Subsets empirical
@@ -233,7 +227,7 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         data_sim=df_sim,
         specs=specs,
         wealth_var_emp="adjusted_wealth",
-        wealth_var_sim="wealth_at_beginning",
+        wealth_var_sim="assets_begin_of_period",
         median=False,
         age_min=30,
         age_max=89,
@@ -244,14 +238,14 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         data_sim=df_sim,
         specs=specs,
         wealth_var_emp="adjusted_wealth",
-        wealth_var_sim="wealth_at_beginning",
+        wealth_var_sim="assets_begin_of_period",
         median=False,
         age_min=30,
         age_max=89,
         bin_width=5,
         path_to_save_plot=path_to_save_wealth_age_bins_plot,
     )
-    plot_average_savings_decision(df_sim, path_to_save_savings_plot)
+    # plot_average_savings_decision(df_sim, path_to_save_savings_plot)
 
     plot_choice_shares_by_education(
         df_emp,
@@ -456,9 +450,6 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         "informal_care": "Informal Care",
     }
 
-    # Use start_age_caregivers for caregiving transitions
-    start_age_caregivers = start_age + START_PERIOD_CAREGIVING
-
     plot_transitions_by_age(
         df_emp_care,
         df_sim,
@@ -466,7 +457,7 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         state_labels_caregiving,
         states_emp=states_caregiving_emp,
         states_sim=states_caregiving_sim,
-        age_min=start_age_caregivers,
+        age_min=specs["start_age_caregiving"],
         one_way=True,
         path_to_save_plot=path_to_save_caregiving_transition_age_plot,
     )
@@ -477,7 +468,7 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         state_labels_caregiving,
         states_emp=states_caregiving_emp,
         states_sim=states_caregiving_sim,
-        age_min=start_age_caregivers,
+        age_min=specs["start_age_caregiving"],
         bin_width=5,
         one_way=True,
         path_to_save_plot=path_to_save_caregiving_transition_age_bin_plot,

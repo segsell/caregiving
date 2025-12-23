@@ -4,8 +4,8 @@ import jax
 import jax.numpy as jnp
 
 from caregiving.model.shared import (  # is_nursing_home_care,
-    CARE_DEMAND_AND_NO_OTHER_SUPPLY,
-    CARE_DEMAND_AND_OTHER_SUPPLY,
+    CARE_DEMAND_INTENSIVE,
+    CARE_DEMAND_LIGHT,
     DEAD,
     PARENT_BAD_HEALTH,
     PARENT_GOOD_HEALTH,
@@ -36,7 +36,7 @@ from caregiving.model.utility.bequest_utility import (
 
 
 def disutility_work(
-    period, choice, education, partner_state, health, care_demand, params, options
+    period, choice, education, partner_state, health, care_demand, params, model_specs
 ):
     """Compute disutility of work."""
     # choice booleans
@@ -60,7 +60,9 @@ def disutility_work(
     formal_care = is_formal_care(choice)  # Formal care
 
     has_partner_int = (partner_state > 0).astype(int)
-    nb_children = options["children_by_state"][SEX, education, has_partner_int, period]
+    nb_children = model_specs["children_by_state"][
+        SEX, education, has_partner_int, period
+    ]
 
     # =================================================================================
     # No caregiving
@@ -235,15 +237,15 @@ def disutility_work(
         -disutility_work_and_no_informal_care * (1 - informal_care)
         - disutility_work_and_informal_care * informal_care
         - partner_retired * retired * params["disutil_partner_retired"]
-        + utility_from_care * (care_demand == 1)
+        + utility_from_care * (care_demand >= CARE_DEMAND_LIGHT)
     )
 
     return disutility
 
 
-def consumption_scale(partner_state, education, period, options):
+def consumption_scale(partner_state, education, period, model_specs):
     """Compute the household consumption scale."""
     has_partner = (partner_state > 0).astype(int)
-    nb_children = options["children_by_state"][SEX, education, has_partner, period]
+    nb_children = model_specs["children_by_state"][SEX, education, has_partner, period]
     hh_size = 1 + has_partner + nb_children
     return jnp.sqrt(hh_size)

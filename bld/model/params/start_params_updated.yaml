@@ -34,13 +34,13 @@ job_finding_logit_age_squared_women: 0.0016012387939461
 job_finding_logit_age_women: 0.0065131540323549
 job_finding_logit_const_women: -2.03524742129707
 job_finding_logit_high_educ_women: 0.6955095961575429
-lambda: 0.5
 rho_bequest_high: 1.5
 rho_bequest_low: 1.5
 rho_high: 1.5
 rho_low: 1.5
 share_unobserved_type_high_educ: 0.5
 share_unobserved_type_low_educ: 0.5
+taste_shock_scale: 0.5
 util_formal_care_bad: 0
 util_formal_care_good: 0
 util_informal_care_high_bad: 0

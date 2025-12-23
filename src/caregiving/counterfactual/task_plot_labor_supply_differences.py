@@ -38,6 +38,7 @@ from caregiving.model.shared_no_care_demand import (
     UNEMPLOYED_NO_CARE_DEMAND,
     WORK_NO_CARE_DEMAND,
 )
+from caregiving.model.state_space import construct_experience_years
 from caregiving.model.wealth_and_budget.transfers import (
     calc_care_benefits_and_costs,
     calc_child_benefits,
@@ -335,7 +336,7 @@ def create_wealth_difference_plot(
     # Plot wealth difference
     plt.plot(
         differences["age"],
-        differences["wealth_at_beginning_diff"],
+        differences["assets_begin_of_period_diff"],
         color="black",
         linewidth=2,
         label="Wealth Difference",
@@ -694,12 +695,12 @@ def _compute_total_income_like_sim_with_options(
     # unemployment benefits
     v_unemp = jax.vmap(
         lambda s, edu, hp, p: calc_unemployment_benefits(
-            savings=s,
+            assets=s,
             sex=SEX,
             education=edu,
             has_partner_int=hp,
             period=p,
-            options=mp,
+            model_specs=mp,
         )
     )
     df["unemployment_benefits_calc"] = v_unemp(
@@ -759,6 +760,36 @@ def _compute_gross_income_columns(
         if is_original
         else calculate_gross_labor_income_ncd
     )
+
+    # ===============================================================================
+    # Ensure experience in "years" exists; older simulated data may miss this.
+    # ===============================================================================
+    if "exp_years" not in df.columns:
+        if "experience" not in df.columns:
+            msg = (
+                "Expected either 'exp_years' or 'experience' in simulation data, "
+                "but neither was found."
+            )
+            raise KeyError(msg)
+
+        # Derive period index for construct_experience_years.
+        if isinstance(df.index, pd.MultiIndex) and "period" in df.index.names:
+            period_array = df.index.get_level_values("period").to_numpy()
+        elif "period" in df.columns:
+            period_array = df["period"].to_numpy()
+        else:
+            msg = (
+                "Could not infer 'period' for constructing exp_years. "
+                "Expected a 'period' column or index level."
+            )
+            raise KeyError(msg)
+
+        df["exp_years"] = construct_experience_years(
+            experience=df["experience"].to_numpy(),
+            period=period_array,
+            max_exp_diffs_per_period=mp["max_exp_diffs_per_period"],
+        )
+    # ===============================================================================
 
     # Prepare arrays
     lagged_choice_array = np.asarray(df["lagged_choice"])  # shape (N,)
@@ -1342,7 +1373,7 @@ def task_plot_wealth_differences(
 
     # Compute wealth differences
     differences = compute_wealth_savings_differences(
-        df_original, df_no_care_demand, "wealth_at_beginning"
+        df_original, df_no_care_demand, "assets_begin_of_period"
     )
 
     # Create plot

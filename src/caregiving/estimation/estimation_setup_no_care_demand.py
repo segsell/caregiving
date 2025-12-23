@@ -10,8 +10,7 @@ import numpy as np
 import optimagic as om
 import pandas as pd
 import yaml
-from dcegm.pre_processing.setup_model import load_and_setup_model
-from dcegm.wealth_correction import adjust_observed_wealth
+from dcegm.asset_correction import adjust_observed_assets
 
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import MACHINE_ZERO, RETIREMENT
@@ -38,10 +37,9 @@ jax.config.update("jax_enable_x64", True)
 
 
 def estimate_model(
-    model_for_simulation: Dict[str, Any],
+    model: Dict[str, Any],
     start_params: Dict[str, Any],
-    solve_func: callable,
-    options: Dict[str, Any],
+    model_specs: Dict[str, Any],
     algo: str,
     algo_options: Dict[str, Any],
     lower_bounds: Dict[str, float],
@@ -50,8 +48,10 @@ def estimate_model(
     use_cholesky_weights: bool = True,
     relative_deviations: bool = False,
     *,
-    path_to_discrete_states: str = BLD / "model" / "initial_conditions" / "states.pkl",
-    path_to_wealth: str = BLD / "model" / "initial_conditions" / "wealth.csv",
+    path_to_initial_states: str = BLD
+    / "model"
+    / "initial_conditions"
+    / "initial_states.pkl",
     path_to_empirical_moments: str = BLD / "moments" / "moments_full.csv",
     path_to_empirical_variance: str = BLD / "moments" / "variances_full.csv",
     # path_to_updated_start_params: str = BLD
@@ -78,10 +78,9 @@ def estimate_model(
         fixed_seed = None
     else:
         seed_generator = None
-        fixed_seed = options["model_params"]["seed"]  # same seed every call
+        fixed_seed = model_specs["seed"]  # same seed every call
 
-    initial_states = pickle.load(path_to_discrete_states.open("rb"))
-    wealth_agents = np.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
+    initial_states = pickle.load(path_to_initial_states.open("rb"))
 
     # Load empirical data
     empirical_moments = np.array(
@@ -185,11 +184,9 @@ def estimate_model(
 
     simulate_moments_given_params = partial(
         simulate_moments,
-        solve_func=solve_func,
         initial_states=initial_states,
-        wealth_agents=wealth_agents,
-        model_for_simulation=model_for_simulation,
-        options=options,
+        model_class=model,
+        model_specs=model_specs,
         fixed_seed=fixed_seed,
         seed_generator=seed_generator,
         pandas=True,
@@ -263,11 +260,9 @@ def estimate_model(
 
 def simulate_moments(
     params: np.ndarray,
-    solve_func: callable,
     initial_states: Dict[str, Any],
-    wealth_agents: np.ndarray,
-    model_for_simulation: Dict[str, Any],
-    options: Dict[str, Any],
+    model_class: Dict[str, Any],
+    model_specs: Dict[str, Any],
     fixed_seed: Optional[int],
     seed_generator: Optional[np.random.Generator],
     pandas: bool = False,
@@ -287,24 +282,19 @@ def simulate_moments(
     else:
         seed = fixed_seed
 
-    solution_dict = {}
-    (
-        solution_dict["value"],
-        solution_dict["policy"],
-        solution_dict["endog_grid"],
-    ) = solve_func(params)
+    model_solved = model_class.solve(params)
 
     sim_df = simulate_scenario_no_care_demand(
-        model=model_for_simulation,
-        solution=solution_dict,
+        model_solved=model_solved,
         initial_states=initial_states,
-        wealth_agents=wealth_agents,
         params=params,
-        options=options,
+        model_specs=model_specs,
         seed=seed,
     )
 
-    simulated_moments = simulate_moments_pandas_no_care_demand(sim_df, options=options)
+    simulated_moments = simulate_moments_pandas_no_care_demand(
+        sim_df, model_specs=model_specs
+    )
 
     out = np.asarray(simulated_moments.to_numpy())
     out = np.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0)
@@ -416,33 +406,16 @@ def combine_constraints_and_update_bounds(
 # =====================================================================================
 
 
-def load_and_setup_full_model_for_solution_no_care_demand(
-    options, path_to_model
-) -> Dict[str, Any]:
-    """Load and setup full model for solution (no care demand version)."""
-
-    model_full = load_and_setup_model(
-        options=options,
-        state_space_functions=create_state_space_functions(),
-        utility_functions=create_utility_functions(),
-        utility_functions_final_period=create_final_period_utility_functions(),
-        budget_constraint=budget_constraint,
-        # shock_functions=shock_function_dict(),
-        path=path_to_model,
-        sim_model=False,
-    )
-
-    return model_full
-
-
 def load_and_prep_data_no_care_demand(
-    data_emp, model, start_params, drop_retirees=True
+    data_emp, model_class, start_params, drop_retirees=True
 ):
     """Load and prepare empirical data to compare with simulated data."""
     # specs = generate_derived_and_data_derived_specs(path_dict)
     # data_decision = pd.read_pickle(path_dict["struct_est_sample"])
 
-    specs = model["options"]["model_params"]
+    model_specs = model_class.model_specs
+    model_structure = model_class.model_structure
+
     # We need to filter observations in period 0 because of job offer
     # weighting from last period
     data_emp = data_emp[data_emp["period"] > 0].copy()
@@ -451,7 +424,7 @@ def load_and_prep_data_no_care_demand(
     if drop_retirees:
         data_emp = data_emp[~data_emp["lagged_choice"].isin(RETIREMENT.tolist())]
 
-    data_emp.loc[:, "age"] = data_emp["period"] + specs["start_age"]
+    data_emp.loc[:, "age"] = data_emp["period"] + model_specs["start_age"]
     data_emp.loc[:, "age_bin"] = np.floor(data_emp["age"] / 10)
     data_emp.loc[data_emp["age_bin"] > 6, "age_bin"] = 6  # noqa: PLR2004
 
@@ -462,7 +435,7 @@ def load_and_prep_data_no_care_demand(
     ].transform("sum")
 
     # Transform experience
-    max_init_exp = specs["max_exp_diffs_per_period"][data_emp["period"].values]
+    max_init_exp = model_specs["max_exp_diffs_per_period"][data_emp["period"].values]
     exp_denominator = data_emp["period"].values + max_init_exp
     data_emp["experience"] = data_emp["experience"] / exp_denominator
 
@@ -471,20 +444,20 @@ def load_and_prep_data_no_care_demand(
     # Now transform for dcegm
     states_dict = {
         name: data_emp[name].values
-        for name in model["model_structure"]["discrete_states_names"]
+        for name in model_structure["discrete_states_names"]
         if name not in ("mother_health", "care_demand", "care_supply")
     }
     states_dict["care_demand"] = np.zeros_like(data_emp["wealth"])
     states_dict["experience"] = data_emp["experience"].values
-    states_dict["wealth"] = data_emp["wealth"].values / specs["wealth_unit"]
+    states_dict["wealth"] = data_emp["wealth"].values / model_specs["wealth_unit"]
 
-    adjusted_wealth = adjust_observed_wealth(
+    adjusted_assets = adjust_observed_assets(
         observed_states_dict=states_dict,
         params=start_params,
-        model=model,
+        model_class=model_class,
     )
-    data_emp.loc[:, "adjusted_wealth"] = adjusted_wealth
-    states_dict["wealth"] = data_emp["adjusted_wealth"].values
+    data_emp.loc[:, "adjusted_assets"] = adjusted_assets
+    states_dict["assets_begin_of_period"] = data_emp["adjusted_assets"].values
 
     return data_emp, states_dict
 
@@ -494,12 +467,10 @@ def load_and_prep_data_no_care_demand(
 # =====================================================================================
 
 
-def _select_fixed_params_example(params):
+def _select_fixed_params_example(params, model_specs):
     """Select fixed parameters for the optimization."""
 
     fixed_params = {
-        "sigma": params["sigma"],
-        "interest_rate": params["interest_rate"],
         "beta": params["beta"],
         "rho": params["rho"],
     }

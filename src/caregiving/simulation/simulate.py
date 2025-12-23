@@ -4,7 +4,6 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pandas as pd
-from dcegm.pre_processing.setup_model import load_and_setup_model
 from dcegm.simulation.sim_utils import create_simulation_df
 from dcegm.simulation.simulate import simulate_all_periods
 
@@ -54,30 +53,30 @@ from caregiving.utils import table
 jax.config.update("jax_enable_x64", True)
 
 
-def setup_model_for_simulation_baseline(path_to_model, options):
-    """Setup baseline model for simulation with correct utility functions."""
-    return load_and_setup_model(
-        options=options,
-        state_space_functions=create_state_space_functions(),
-        utility_functions=create_utility_functions(),
-        utility_functions_final_period=create_final_period_utility_functions(),
-        budget_constraint=budget_constraint,
-        path=path_to_model,
-        sim_model=True,
-    )
+# def setup_model_for_simulation_baseline(path_to_model, model_specs):
+#     """Setup baseline model for simulation with correct utility functions."""
+#     return load_and_setup_model(
+#         model_specs=model_specs,
+#         state_space_functions=create_state_space_functions(),
+#         utility_functions=create_utility_functions(),
+#         utility_functions_final_period=create_final_period_utility_functions(),
+#         budget_constraint=budget_constraint,
+#         path=path_to_model,
+#         sim_model=True,
+#     )
 
 
-def setup_model_for_simulation_job_retention(path_to_model, options):
-    """Setup job retention model for simulation with correct utility functions."""
-    return load_and_setup_model(
-        options=options,
-        state_space_functions=create_state_space_functions_job_retention(),
-        utility_functions=create_utility_functions(),
-        utility_functions_final_period=create_final_period_utility_functions(),
-        budget_constraint=budget_constraint,
-        path=path_to_model,
-        sim_model=True,
-    )
+# def setup_model_for_simulation_job_retention(path_to_model, model_specs):
+#     """Setup job retention model for simulation with correct utility functions."""
+#     return load_and_setup_model(
+#         model_specs=model_specs,
+#         state_space_functions=create_state_space_functions_job_retention(),
+#         utility_functions=create_utility_functions(),
+#         utility_functions_final_period=create_final_period_utility_functions(),
+#         budget_constraint=budget_constraint,
+#         path=path_to_model,
+#         sim_model=True,
+#     )
 
 
 def simulate_scenario(
@@ -87,17 +86,15 @@ def simulate_scenario(
     # solution_policy,
     solution,
     initial_states,
-    wealth_agents,
     params,
-    options,
+    model_specs,
     seed,
 ) -> pd.DataFrame:
     """Simulate the model for given parametrization and model solution."""
 
     sim_dict = simulate_all_periods(
         states_initial=initial_states,
-        wealth_initial=wealth_agents,
-        n_periods=options["model_params"]["n_periods"],
+        n_periods=model_specs["n_periods"],
         params=params,
         seed=seed,
         endog_grid_solved=solution["endog_grid"],
@@ -109,16 +106,15 @@ def simulate_scenario(
     df = create_simulation_df(sim_dict)
 
     # Create additional variables
-    model_params = options["model_params"]
-    max_ret_age = model_params["max_ret_age"]
+    max_ret_age = model_specs["max_ret_age"]
 
-    df["age"] = df.index.get_level_values("period") + model_params["start_age"]
+    df["age"] = df.index.get_level_values("period") + model_specs["start_age"]
 
     # Create experience years
     df["exp_years"] = construct_experience_years(
         experience=df["experience"].values,
         period=df.index.get_level_values("period").values,
-        max_exp_diffs_per_period=model_params["max_exp_diffs_per_period"],
+        max_exp_diffs_per_period=model_specs["max_exp_diffs_per_period"],
     )
 
     # Assign working hours for choice 1 (unemployed)
@@ -131,31 +127,31 @@ def simulate_scenario(
 
     sex_var = SEX
 
-    for edu_var in range(model_params["n_education_types"]):
+    for edu_var in range(model_specs["n_education_types"]):
         # full-time
         df.loc[
             df["choice"].isin(full_time_values) & (df["education"] == edu_var),
             "working_hours",
-        ] = model_params["av_annual_hours_ft"][sex_var, edu_var]
+        ] = model_specs["av_annual_hours_ft"][sex_var, edu_var]
 
         # part-time
         df.loc[
             df["choice"].isin(part_time_values) & (df["education"] == edu_var),
             "working_hours",
-        ] = model_params["av_annual_hours_pt"][sex_var, edu_var]
+        ] = model_specs["av_annual_hours_pt"][sex_var, edu_var]
 
     # Create income vars:
     # First wealth at the beginning of period as the sum of savings and consumption
-    df["wealth_at_beginning"] = df["savings"] + df["consumption"]
+    df["assets_begin_of_period"] = df["savings"] + df["consumption"]
 
     # Then total income as the difference between wealth at the beginning
     # of next period and savings
     df["total_income"] = (
-        df.groupby("agent")["wealth_at_beginning"].shift(-1) - df["savings"]
+        df.groupby("agent")["assets_begin_of_period"].shift(-1) - df["savings"]
     )
-    df["income_wo_interest"] = df.groupby("agent")["wealth_at_beginning"].shift(
+    df["income_wo_interest"] = df.groupby("agent")["assets_begin_of_period"].shift(
         -1
-    ) - df["savings"] * (1 + params["interest_rate"])
+    ) - df["savings"] * (1 + model_specs["interest_rate"])
 
     # periodic savings and savings rate
     df["savings_dec"] = df["total_income"] - df["consumption"]
@@ -179,7 +175,7 @@ def simulate_scenario(
             education=edu,
             sex=sex_var,
             income_shock=shock,
-            options=model_params,
+            model_specs=model_specs,
         )
     )
     gross_labor_income_array = vectorized_calc_gross_labor_income(
@@ -211,7 +207,7 @@ def simulate_scenario(
 
     df["mother_age"] = (
         df["age"].to_numpy()
-        + model_params["mother_age_diff"][df["education"].to_numpy()]
+        + model_specs["mother_age_diff"][df["education"].to_numpy()]
     )
 
     # Drop all agents (entirely) who work after the maximum retirement age
@@ -232,9 +228,8 @@ def simulate_career_costs(
     model,
     solution,
     initial_states,
-    wealth_agents,
     params,
-    options,
+    model_specs,
     seed,
 ) -> pd.DataFrame:
     """Ultra-fast career costs simulation: build from sim_dict and compute income.
@@ -246,8 +241,7 @@ def simulate_career_costs(
     # Run the simulation to get sim_dict
     sim_dict = simulate_all_periods(
         states_initial=initial_states,
-        wealth_initial=wealth_agents,
-        n_periods=options["model_params"]["n_periods"],
+        n_periods=model_specs["n_periods"],
         params=params,
         seed=seed,
         endog_grid_solved=solution["endog_grid"],
@@ -258,25 +252,24 @@ def simulate_career_costs(
     )
 
     # Build simulation DataFrame from sim_dict with income components
-    df = build_simulation_df_with_income_components(sim_dict, options, params)
+    df = build_simulation_df_with_income_components(sim_dict, model_specs, params)
 
     return df
 
 
-def build_simulation_df_with_income_components(sim_dict, options, params):
+def build_simulation_df_with_income_components(sim_dict, model_specs, params):
     """Build simulation DataFrame and compute income components efficiently."""
 
     df = create_simulation_df(sim_dict)
 
     # Create additional variables
-    model_params = options["model_params"]
-    df["age"] = df.index.get_level_values("period") + model_params["start_age"]
+    df["age"] = df.index.get_level_values("period") + model_specs["start_age"]
 
     # Create experience years
     df["exp_years"] = construct_experience_years(
         experience=df["experience"].values,
         period=df.index.get_level_values("period").values,
-        max_exp_diffs_per_period=model_params["max_exp_diffs_per_period"],
+        max_exp_diffs_per_period=model_specs["max_exp_diffs_per_period"],
     )
 
     # Assign working hours for choice 1 (unemployed)
@@ -289,19 +282,19 @@ def build_simulation_df_with_income_components(sim_dict, options, params):
 
     sex_var = SEX
 
-    for edu_var in range(model_params["n_education_types"]):
+    for edu_var in range(model_specs["n_education_types"]):
 
         # full-time
         df.loc[
             df["choice"].isin(full_time_values) & (df["education"] == edu_var),
             "working_hours",
-        ] = model_params["av_annual_hours_ft"][sex_var, edu_var]
+        ] = model_specs["av_annual_hours_ft"][sex_var, edu_var]
 
         # part-time
         df.loc[
             df["choice"].isin(part_time_values) & (df["education"] == edu_var),
             "working_hours",
-        ] = model_params["av_annual_hours_pt"][sex_var, edu_var]
+        ] = model_specs["av_annual_hours_pt"][sex_var, edu_var]
 
     # Compute gross labor income using JAX vmap for vectorization
     # Convert pandas Series to numpy arrays for JAX
@@ -326,7 +319,7 @@ def build_simulation_df_with_income_components(sim_dict, options, params):
             education=edu,
             sex=sex_var,
             income_shock=shock,
-            options=model_params,
+            model_specs=model_specs,
         )
     )
     gross_labor_income_array = vectorized_calc_gross_labor_income(
@@ -345,7 +338,7 @@ def build_simulation_df_with_income_components(sim_dict, options, params):
             experience_years=exp,
             education=edu,
             sex=sex_var,
-            options=model_params,
+            model_specs=model_specs,
         )
     )
     gross_pension_income_array = vectorized_calc_gross_pension_income(
@@ -362,13 +355,13 @@ def build_simulation_df_with_income_components(sim_dict, options, params):
 
     # Female unemployment benefits
     vectorized_calc_unemployment_benefits = jax.vmap(
-        lambda savings, edu, has_partner_int, period: calc_unemployment_benefits(
-            savings=savings,
+        lambda assets, edu, has_partner_int, period: calc_unemployment_benefits(
+            assets=assets,
             sex=sex_var,
             education=edu,
             has_partner_int=has_partner_int,
             period=period,
-            options=model_params,
+            model_specs=model_specs,
         )
     )
     unemployment_benefits_array = vectorized_calc_unemployment_benefits(
@@ -386,7 +379,7 @@ def build_simulation_df_with_income_components(sim_dict, options, params):
             sex=sex_var,
             has_partner_int=has_partner_int,
             period=period,
-            options=model_params,
+            model_specs=model_specs,
         )
     )
     child_benefits_array = vectorized_calc_child_benefits(
@@ -402,7 +395,7 @@ def build_simulation_df_with_income_components(sim_dict, options, params):
             lagged_choice=lc,
             education=edu,
             care_demand=care_demand,
-            options=model_params,
+            model_specs=model_specs,
         )
     )
     care_benefits_costs_array = vectorized_calc_care_benefits_and_costs(

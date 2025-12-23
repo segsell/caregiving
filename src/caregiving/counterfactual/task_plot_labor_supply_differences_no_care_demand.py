@@ -405,6 +405,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915, E
     path_to_no_care_demand_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_no_care_demand.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_plot_pt: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
@@ -455,9 +456,12 @@ def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915, E
 
     """
     # Load and prepare data
+    df_o_raw = pd.read_pickle(path_to_original_data)
+    df_c_raw = pd.read_pickle(path_to_no_care_demand_data)
+
     df_o, df_c = prepare_dataframes_for_comparison(
-        pd.read_pickle(path_to_original_data),
-        pd.read_pickle(path_to_no_care_demand_data),
+        df_o_raw,
+        df_c_raw,
         ever_caregivers=ever_caregivers,
         ever_care_demand=ever_care_demand,
     )
@@ -680,6 +684,7 @@ def task_plot_first_care_start_by_age(
         path_to_csv: Path to save the CSV with counts by age
         min_age: Minimum age to include in analysis
         max_age: Maximum age to include in analysis
+
     """
     # Load data
     df_o = pd.read_pickle(path_to_original_data)
@@ -698,10 +703,6 @@ def task_plot_first_care_start_by_age(
 
     # Ensure no index name collisions remain
     df_o = df_o.reset_index(drop=True)
-
-    # Check for age column
-    if "age" not in df_o.columns:
-        raise ValueError("Age column required but not found in data")
 
     # Find first care period for each agent
     care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()

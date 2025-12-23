@@ -95,10 +95,10 @@ def test_budget_unemployed(
         experience=exp_cont,
         # sex=sex,
         care_demand=care_demand,
-        savings_end_of_previous_period=savings,
+        asset_end_of_previous_period=savings,
         income_shock_previous_period=0,
         params=params,
-        options=specs_internal,
+        model_specs=specs_internal,
     )
 
     savings_scaled = savings * specs_internal["wealth_unit"]
@@ -107,14 +107,14 @@ def test_budget_unemployed(
     income_partner = calc_partner_income_after_ssc(
         partner_state=partner_state,
         sex=sex,
-        options=specs_internal,
+        model_specs=specs_internal,
         education=education,
         period=period,
     )
     split_factor = 1 + has_partner
     tax_partner = (
         calc_inc_tax_for_single_income(
-            income_partner / split_factor, options=specs_internal
+            income_partner / split_factor, model_specs=specs_internal
         )
         * split_factor
     )
@@ -160,14 +160,14 @@ def test_budget_unemployed(
         lagged_choice=UNEMPLOYED_NO_CARE[0].item(),
         education=education,
         care_demand=care_demand,
-        options=specs_internal,
+        model_specs=specs_internal,
     )
 
     total_income = income + care_benefits_and_costs
 
     np.testing.assert_almost_equal(
         wealth,
-        (savings_scaled * (1 + params["interest_rate"]) + total_income)
+        (savings_scaled * (1 + specs_internal["interest_rate"]) + total_income)
         / specs_internal["wealth_unit"],
     )
 
@@ -239,10 +239,10 @@ def test_budget_worker(
         experience=exp_cont,
         # sex=sex,
         care_demand=care_demand,
-        savings_end_of_previous_period=savings,
+        asset_end_of_previous_period=savings,
         income_shock_previous_period=income_shock,
         params=params,
-        options=specs_internal,
+        model_specs=specs_internal,
     )
 
     savings_scaled = savings * specs_internal["wealth_unit"]
@@ -273,12 +273,12 @@ def test_budget_worker(
 
     has_partner_int = (partner_state > 0).astype(int)
     unemployment_benefits = calc_unemployment_benefits(
-        savings=savings_scaled,
+        assets=savings_scaled,
         education=education,
         sex=sex,
         has_partner_int=has_partner_int,
         period=period,
-        options=specs_internal,
+        model_specs=specs_internal,
     )
 
     nb_children = specs_internal["children_by_state"][
@@ -290,12 +290,12 @@ def test_budget_worker(
         lagged_choice=working_choice,
         education=education,
         care_demand=care_demand,
-        options=specs_internal,
+        model_specs=specs_internal,
     )
 
     if partner_state == 0:
         tax_total = calc_inc_tax_for_single_income(
-            income_after_ssc, options=specs_internal
+            income_after_ssc, model_specs=specs_internal
         )
         total_net_income = (
             income_after_ssc - tax_total + child_benefits + care_benefits_and_costs
@@ -327,7 +327,7 @@ def test_budget_worker(
 
         tax_toal = (
             calc_inc_tax_for_single_income(
-                total_income_after_ssc / 2, options=specs_internal
+                total_income_after_ssc / 2, model_specs=specs_internal
             )
             * 2
         )
@@ -388,7 +388,7 @@ def test_retiree(
         # sex=sex,
         education=education,
         experience=exp_cont_last_period,
-        options=specs_internal,
+        model_specs=specs_internal,
     )
     # Check that experience does not get updated or added any penalty
     max_exp_this_period = period + specs_internal["max_exp_diffs_per_period"][period]
@@ -402,10 +402,10 @@ def test_retiree(
         experience=exp_cont,
         # sex=sex,
         care_demand=care_demand,
-        savings_end_of_previous_period=savings,
+        asset_end_of_previous_period=savings,
         income_shock_previous_period=0,
         params=params,
-        options=specs_internal,
+        model_specs=specs_internal,
     )
 
     savings_scaled = savings * specs_internal["wealth_unit"]
@@ -421,12 +421,12 @@ def test_retiree(
 
     has_partner_int = (partner_state > 0).astype(int)
     unemployment_benefits = calc_unemployment_benefits(
-        savings=savings_scaled,
+        assets=savings_scaled,
         education=education,
         sex=sex,
         has_partner_int=has_partner_int,
         period=period,
-        options=specs_internal,
+        model_specs=specs_internal,
     )
 
     nb_children = specs_internal["children_by_state"][
@@ -438,12 +438,12 @@ def test_retiree(
         lagged_choice=RETIREMENT_NO_CARE[0].item(),
         education=education,
         care_demand=care_demand,
-        options=specs_internal,
+        model_specs=specs_internal,
     )
 
     if partner_state == 0:
         tax_total = calc_inc_tax_for_single_income(
-            income_after_ssc, options=specs_internal
+            income_after_ssc, model_specs=specs_internal
         )
         total_net_income = (
             income_after_ssc - tax_total + child_benefits + care_benefits_and_costs
@@ -475,7 +475,7 @@ def test_retiree(
 
         tax_toal = (
             calc_inc_tax_for_single_income(
-                total_income_after_ssc / 2, options=specs_internal
+                total_income_after_ssc / 2, model_specs=specs_internal
             )
             * 2
         )
@@ -535,7 +535,7 @@ def test_fresh_retiree(
         # sex=sex,
         education=education,
         experience=exp_cont_prev,
-        options=specs_internal,
+        model_specs=specs_internal,
     )
 
     wealth = budget_constraint(
@@ -546,10 +546,10 @@ def test_fresh_retiree(
         experience=exp_cont,
         # sex=sex,
         care_demand=care_demand,
-        savings_end_of_previous_period=savings,
+        asset_end_of_previous_period=savings,
         income_shock_previous_period=0,
         params=params,
-        options=specs_internal,
+        model_specs=specs_internal,
     )
 
     savings_scaled = savings * specs_internal["wealth_unit"]
@@ -582,12 +582,12 @@ def test_fresh_retiree(
 
     has_partner_int = (partner_state > 0).astype(int)
     unemployment_benefits = calc_unemployment_benefits(
-        savings=savings_scaled,
+        assets=savings_scaled,
         education=education,
         sex=sex,
         has_partner_int=has_partner_int,
         period=period,
-        options=specs_internal,
+        model_specs=specs_internal,
     )
 
     nb_children = specs_internal["children_by_state"][
@@ -597,7 +597,7 @@ def test_fresh_retiree(
 
     if partner_state == 0:
         tax_total = calc_inc_tax_for_single_income(
-            income_after_ssc, options=specs_internal
+            income_after_ssc, model_specs=specs_internal
         )
         total_net_income = income_after_ssc - tax_total + child_benefits
         checked_income = np.maximum(total_net_income, unemployment_benefits)
@@ -628,7 +628,7 @@ def test_fresh_retiree(
 
         tax_toal = (
             calc_inc_tax_for_single_income(
-                total_income_after_ssc / 2, options=specs_internal
+                total_income_after_ssc / 2, model_specs=specs_internal
             )
             * 2
         )

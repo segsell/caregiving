@@ -30,7 +30,7 @@ JOB_OFFER_GRID = np.array([0, 1], dtype=int)
 )
 def test_choice_set_under_63(period, lagged_choice, job_offer):
     """Test choice set for ages under 63."""
-    options = {
+    model_specs = {
         "start_age": 25,
         "min_SRA": 65,
         "min_ret_age": 63,
@@ -41,8 +41,7 @@ def test_choice_set_under_63(period, lagged_choice, job_offer):
         lagged_choice=lagged_choice,
         job_offer=job_offer,
         health=1,
-        # policy_state=0,
-        options=options,
+        model_specs=model_specs,
     )
     if job_offer == 1:
         # if sex == 0:
@@ -64,7 +63,7 @@ JOB_OFFER_GRID = np.array([0, 1], dtype=int)
 )
 def test_choice_set_over_63_under_72(period, lagged_choice, job_offer):
     """Test choice set for ages over 63 and under 72."""
-    options = {
+    model_specs = {
         "start_age": 30,
         "min_SRA": 67,
         "min_ret_age": 63,
@@ -77,11 +76,10 @@ def test_choice_set_over_63_under_72(period, lagged_choice, job_offer):
         lagged_choice=lagged_choice,
         job_offer=job_offer,
         health=1,
-        # policy_state=0,
-        options=options,
+        model_specs=model_specs,
     )
-    age = period + options["start_age"]
-    min_ret_age = options["min_ret_age"]
+    age = period + model_specs["start_age"]
+    min_ret_age = model_specs["min_ret_age"]
 
     if lagged_choice == RETIREMENT_NO_CARE:
         assert np.all(choice_set == RETIREMENT_NO_CARE)
@@ -96,7 +94,7 @@ def test_choice_set_over_63_under_72(period, lagged_choice, job_offer):
             else:
                 assert np.all(choice_set == UNEMPLOYED_NO_CARE)
         else:
-            if age < options["max_ret_age"]:
+            if age < model_specs["max_ret_age"]:
                 if job_offer == 1:
                     # if sex == 0:
                     #     assert np.all(choice_set == np.array([0, 1, 3]))
@@ -118,7 +116,7 @@ LAGGED_CHOICE_SET = ALL_NO_CARE
 )
 def test_choice_set_over_72(period, lagged_choice):
     """Test choice set for ages over 72."""
-    options = {
+    model_specs = {
         "start_age": 25,
         "min_SRA": 65,
         "min_ret_age": 63,
@@ -131,7 +129,6 @@ def test_choice_set_over_72(period, lagged_choice):
         lagged_choice=lagged_choice,
         job_offer=0,
         health=1,
-        # policy_state=0,
-        options=options,
+        model_specs=model_specs,
     )
     assert np.all(choice_set == RETIREMENT_NO_CARE)
