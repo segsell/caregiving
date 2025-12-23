@@ -102,6 +102,13 @@ def task_load_and_merge_estimation_sample(
             "pld0032",  # number of brothers
             "plj0118_h",  # distance to mother
             "plj0119_h",  # distance to father
+            # inheritance
+            "plc0375_v1",  # Erbschaft (jemals)
+            "plc0375_v2",  # Erbschaft (letzte 15 Jahre)
+            "plc0383_h",  # Erbschaft/Schenkung Betrag (Euro)
+            "plc0376_v1",  # Jahr Erbschaft 1. Person
+            "plc0386_v1",  # Jahr Erbschaft 2. Person
+            "plc0396_v1",  # Jahr Erbschaft 3. Person
         ],
         chunksize=100000,
         convert_categoricals=False,
