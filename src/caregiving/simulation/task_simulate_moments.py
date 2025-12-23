@@ -33,7 +33,7 @@ jax.config.update("jax_enable_x64", True)
 
 @pytask.mark.sim
 def task_simulate_moments(
-    path_to_specs: Path = SRC / "specs.yaml",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_empirical_moments: Path = BLD / "moments" / "moments_full.csv",
     path_to_simulated_data: Path = BLD / "solve_and_simulate" / "simulated_data.pkl",
     path_to_save_pandas_moments: Annotated[Path, Product] = BLD
@@ -64,7 +64,7 @@ def task_simulate_moments(
     / "simulated_work_transitions_pandas.png",
 ) -> None:
 
-    specs = read_and_derive_specs(path_to_specs)
+    specs = pickle.load(path_to_specs.open("rb"))
 
     df_sim = pd.read_pickle(path_to_simulated_data)
 

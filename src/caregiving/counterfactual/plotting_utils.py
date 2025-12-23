@@ -222,7 +222,7 @@ def calculate_additional_outcomes(df: pd.DataFrame) -> dict[str, np.ndarray]:
 
     # Wealth at beginning of period
     if "assets_begin_of_period" in df.columns:
-        outcomes["wealth"] = df["assets_end_of_period"].values
+        outcomes["wealth"] = df["assets_begin_of_period"].values
     else:
         outcomes["wealth"] = np.zeros(n)
 
@@ -308,7 +308,8 @@ def create_outcome_columns(
         suffix: Suffix for column names ('_o' or '_c')
 
     Returns:
-        DataFrame with agent, period, and outcome columns with suffix
+        DataFrame with agent, period, (optionally age), and outcome columns
+        with suffix.
     """
     cols = df[["agent", "period", "age"]].copy()
 
@@ -331,9 +332,9 @@ def merge_and_compute_differences(
         outcome_names: List of outcome names (e.g., ['work', 'ft', 'pt', ...])
 
     Returns:
-        Merged DataFrame with difference columns (diff_*)
+        Merged DataFrame with difference columns (diff_*).
     """
-    # Merge on (agent, period, age) to get matched differences
+    # Merge on (agent, period) to get matched differences; include age if present.
     merged = o_cols.merge(c_cols, on=["agent", "period", "age"], how="inner")
 
     # Compute differences (original - counterfactual)

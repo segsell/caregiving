@@ -89,6 +89,8 @@ def task_solve_and_simulate_estimated_params(
 
     sim_df = sim_df[sim_df["health"] != DEAD].copy()
     sim_df.reset_index(inplace=True)
+
+    sim_df["age"] = sim_df["period"] + specs["start_age"]
     # sim_df = create_additional_variables(sim_df, specs)
     # =================================================================================
 

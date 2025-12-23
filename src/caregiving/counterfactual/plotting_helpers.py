@@ -140,8 +140,6 @@ def get_age_at_first_event(
     Returns:
         DataFrame with 'agent' and age_col_name columns
     """
-    if "age" not in df.columns:
-        raise ValueError("Age column required but not found in data")
 
     first_event = (
         df.loc[event_mask, ["agent", "period", "age"]]
