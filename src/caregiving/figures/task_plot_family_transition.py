@@ -13,7 +13,7 @@ from pytask import Product
 from caregiving.config import BLD, JET_COLOR_MAP, SRC
 
 
-@pytask.mark.plot_children
+@pytask.mark.family_transition
 def task_plot_children(
     path_to_full_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_data: Path = BLD / "data" / "soep_partner_transition_data.csv",
@@ -37,7 +37,8 @@ def task_plot_children(
 
     start_age = specs["start_age"]
     end_age = specs["end_age"]
-    df = df[df["age"] <= end_age]
+    end_age_children_in_household = 65
+    df = df[df["age"] <= end_age_children_in_household]
 
     df["has_partner"] = (df["partner_state"] > 0).astype(int)
 
@@ -112,6 +113,7 @@ def task_plot_children(
     plt.close(fig)
 
 
+@pytask.mark.family_transition
 def task_plot_partner_transitions(
     path_to_full_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_data: Path = BLD / "data" / "soep_partner_transition_data.csv",
@@ -183,8 +185,9 @@ def task_plot_partner_transitions(
                 share_data_container = pd.Series(data=np.nan, index=ages, dtype=float)
                 share_data_container.update(edu_shares_obs)
 
-                # Assign only single and married shares at start
-                initial_dist[0] = partner_shares_obs.loc[(sex_var, edu, start_age, 0)]
+                # Assign only single and partnered shares at model start age
+                p_single = partner_shares_obs.loc[(sex_var, edu, start_age, 0)]
+                initial_dist[0] = float(p_single)
                 initial_dist[1] = 1 - initial_dist[0]
                 shares_over_time = _markov_simulator(
                     initial_dist,

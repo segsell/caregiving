@@ -29,9 +29,7 @@ def task_plot_budget_of_unemployed(
     with path_to_full_specs.open("rb") as file:
         specs = pkl.load(file)
 
-    params = {
-        "interest_rate": specs["interest_rate"],
-    }
+    params = {}
 
     savings = np.linspace(0, 1_000, 100)
 
@@ -46,12 +44,11 @@ def task_plot_budget_of_unemployed(
                 experience=0.01,
                 # sex=sex_var,
                 partner_state=np.array([1]),
-                has_sister=np.array([0]),
                 care_demand=np.array([0]),
-                savings_end_of_previous_period=savings,
+                asset_end_of_previous_period=savings,
                 income_shock_previous_period=0,
                 params=params,
-                options=specs,
+                model_specs=specs,
             )
             ax.plot(savings, wealth, label=edu_label)
             ax.set_xlabel("Savings")

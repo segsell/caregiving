@@ -41,7 +41,19 @@ rho_bequest_high: 1.5
 rho_bequest_low: 1.5
 rho_high: 1.5
 rho_low: 1.5
+<<<<<<< HEAD
 sigma: 0.1586235958231542
 util_formal_care: 0
 util_informal_care: 0
 util_joint_informal_care: 0
+=======
+sigma: 0.1647106264821401
+util_formal_care_bad: 0
+util_formal_care_good: 0
+util_informal_care_high_bad: 0
+util_informal_care_high_good: 0
+util_informal_care_low_bad: 0
+util_informal_care_low_good: 0
+util_joint_informal_care_bad: 0
+util_joint_informal_care_good: 0
+>>>>>>> adc3f09c14fb1909c01517da6618d4814714a08e

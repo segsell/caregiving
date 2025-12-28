@@ -4,8 +4,8 @@ import jax
 import jax.numpy as jnp
 
 from caregiving.model.shared import (  # is_nursing_home_care,
-    CARE_DEMAND_AND_NO_OTHER_SUPPLY,
-    CARE_DEMAND_AND_OTHER_SUPPLY,
+    CARE_DEMAND_INTENSIVE,
+    CARE_DEMAND_LIGHT,
     DEAD,
     PARENT_BAD_HEALTH,
     PARENT_GOOD_HEALTH,
@@ -18,6 +18,7 @@ from caregiving.model.shared import (  # is_nursing_home_care,
     is_child_age_4_to_6,
     is_child_age_7_to_9,
     is_dead,
+    is_formal_care,
     is_full_time,
     is_good_health,
     is_informal_care,
@@ -35,7 +36,7 @@ from caregiving.model.utility.bequest_utility import (
 
 
 def disutility_work(
-    period, choice, education, partner_state, health, care_demand, params, options
+    period, choice, education, partner_state, health, care_demand, params, model_specs
 ):
     """Compute disutility of work."""
     # choice booleans
@@ -48,10 +49,20 @@ def disutility_work(
     bad_health = is_bad_health(health)
     good_health = is_good_health(health)
 
-    informal_care = is_informal_care(choice)
+    # Check care arrangement type based on choice
+    # NO_CARE (choices 0, 1, 2, 3):
+    #   No formal care, someone else provides informal care.
+    # INFORMAL_CARE (choices 4, 5, 6, 7):
+    #   Agent provides informal care.
+    # FORMAL_CARE (choices 8, 9, 10, 11):
+    #   Formal care is organized.
+    informal_care = is_informal_care(choice)  # Agent provides informal care
+    formal_care = is_formal_care(choice)  # Formal care
 
     has_partner_int = (partner_state > 0).astype(int)
-    nb_children = options["children_by_state"][SEX, education, has_partner_int, period]
+    nb_children = model_specs["children_by_state"][
+        SEX, education, has_partner_int, period
+    ]
 
     # =================================================================================
     # No caregiving
@@ -100,7 +111,7 @@ def disutility_work(
         disutil_children_ft_low * (1 - education) + disutil_children_ft_high * education
     )
 
-    disutility_no_caregiving = (
+    disutility_work_and_no_informal_care = (
         (disutil_unemployed) * unemployed
         + (disutil_pt_work + disutil_children_pt) * working_part_time
         + (disutil_ft_work + disutil_children_ft) * working_full_time
@@ -163,7 +174,7 @@ def disutility_work(
         + disutil_children_ft_high_informal_care * education
     )
 
-    disutility_informal_care = (
+    disutility_work_and_informal_care = (
         disutil_unemployed_informal_care * unemployed
         + (disutil_pt_work_informal_care + disutil_children_pt_informal_care)
         * working_part_time
@@ -172,29 +183,69 @@ def disutility_work(
     )
 
     # =================================================================================
+    # Care utility (based on agent's own health)
+    # =================================================================================
+    #
+    # Four care demand scenarios:
+    # 1. care_demand == CARE_DEMAND_AND_OTHER_SUPPLY (1):
+    #    - If agent chooses informal care → joint informal care
+    #      (util_joint_informal_care_good/bad)
+    #    - If agent chooses no informal care → only other family member
+    #      provides care (utility = 0)
+    # 2. care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY (2):
+    #    - If agent chooses informal care → solo informal care
+    #      (util_informal_care_good/bad)
+    #    - If agent chooses no care → formal care (util_formal_care_good/bad)
 
-    # Compute eta
+    # Compute utility from solo informal care (varies by agent's health and education)
+    util_informal_care = (
+        params["util_informal_care_high_good"] * good_health * education
+        + params["util_informal_care_high_bad"] * bad_health * education
+        + params["util_informal_care_low_good"] * good_health * (1 - education)
+        + params["util_informal_care_low_bad"] * bad_health * (1 - education)
+    )
+
+    # Compute utility from formal care (varies by agent's health)
+    util_formal_care = (
+        params["util_formal_care_good"] * good_health
+        + params["util_formal_care_bad"] * bad_health
+    )
+
+    # Utility from care arrangements.
+    # When care_demand == 1:
+    #   - FORMAL_CARE (choices 8, 9, 10, 11):
+    #     Formal care is organized --> util_formal_care.
+    #   - INFORMAL_CARE (choices 4, 5, 6, 7):
+    #     Agent provides informal care --> util_informal_care.
+    #   - NO_CARE (choices 0, 1, 2, 3):
+    #     Someone else provides informal care --> reference category.
+    utility_from_care = (
+        informal_care * util_informal_care + formal_care * util_formal_care
+    )
+
+    # =================================================================================
+    # Compute total disutility
+    # =================================================================================
+    # - NO_CARE (choices 0, 1, 2, 3):
+    #   Someone else provides care → disutility_no_caregiving.
+    # - INFORMAL_CARE (choices 4, 5, 6, 7):
+    #   Agent provides care → disutility_informal_care.
+    # - FORMAL_CARE (choices 8, 9, 10, 11):
+    #   Formal care → disutility_no_caregiving.
+
     disutility = (
-        -disutility_no_caregiving * (1 - informal_care)
-        - disutility_informal_care * informal_care
+        -disutility_work_and_no_informal_care * (1 - informal_care)
+        - disutility_work_and_informal_care * informal_care
         - partner_retired * retired * params["disutil_partner_retired"]
-        + (care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
-        * informal_care
-        * params["util_informal_care"]
-        + (care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY)
-        * (1 - informal_care)
-        * params["util_formal_care"]
-        + (care_demand == CARE_DEMAND_AND_OTHER_SUPPLY)
-        * informal_care
-        * params["util_joint_informal_care"]
+        + utility_from_care * (care_demand >= CARE_DEMAND_LIGHT)
     )
 
     return disutility
 
 
-def consumption_scale(partner_state, education, period, options):
+def consumption_scale(partner_state, education, period, model_specs):
     """Compute the household consumption scale."""
     has_partner = (partner_state > 0).astype(int)
-    nb_children = options["children_by_state"][SEX, education, has_partner, period]
+    nb_children = model_specs["children_by_state"][SEX, education, has_partner, period]
     hh_size = 1 + has_partner + nb_children
     return jnp.sqrt(hh_size)

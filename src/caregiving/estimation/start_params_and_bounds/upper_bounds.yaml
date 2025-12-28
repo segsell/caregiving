@@ -84,9 +84,14 @@ disutil_ft_work_low_age_squared: 5
 disutil_ft_work_high_age: 5
 disutil_ft_work_high_age_squared: 5
 
-util_informal_care: 5
-util_formal_care: 5
-util_joint_informal_care: 5
+util_informal_care_high_good: 5
+util_informal_care_high_bad: 5
+util_informal_care_low_good: 5
+util_informal_care_low_bad: 5
+util_joint_informal_care_good: 5
+util_joint_informal_care_bad: 5
+util_formal_care_good: 5
+util_formal_care_bad: 5
 
 
 # # # Caregiving
@@ -195,6 +200,10 @@ disutil_children_ft_work_informal_care_high: 5
 bequest_scale: 50
 bequest_scale_low: 50
 bequest_scale_high: 50
+
+# Share unobserved type 1
+share_unobserved_type_low_educ: 0.999999999999
+share_unobserved_type_high_educ: 0.999999999999
 
 # Taste shock scale
 lambda: 2

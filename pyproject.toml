@@ -8,6 +8,86 @@ write_to = "src/caregiving/_version.py"
 [tool.pytask.ini_options]
 paths = ["./src/caregiving"]
 
+[tool.pytask.ini_options.markers]
+# Data management
+wip = "Work in progress tasks"
+check = "Check tasks"
+soep_moments = "SOEP moments tasks"
+cip = "CIP tasks"
+dip = "DIP tasks"
+standard_errors = "Standard errors estimation tasks"
+pre_estimation = "Pre-estimation analysis tasks"
+# Model specification
+baseline_model = "Baseline model tasks"
+job_retention = "Job retention counterfactual tasks"
+lower_formal_care_costs = "Lower formal care costs counterfactual tasks"
+higher_formal_care_costs = "Higher formal care costs counterfactual tasks"
+no_cash_benefits_higher_formal_care_costs = "No cash benefits higher formal care costs counterfactual tasks"
+specs = "Specs tasks"
+# Simulation
+sim = "Simulation tasks"
+sim_estimated_params = "Simulation with estimated parameters"
+sim_job_retention_estimated_params = "Job retention simulation with estimated params"
+sim_estimated_params_caregiving_leave_with_job_retention = "Caregiving leave with job retention simulation with estimated params"
+initial_conditions = "Initial conditions tasks"
+generate_initial_conditions_1m = "Generate initial conditions with 1 million agents"
+generate_initial_conditions_10k = "Generate initial conditions with 10k agents"
+# Solving
+solve_no_care_demand = "Solve no care demand counterfactual"
+solve_lower_formal_care_costs = "Solve lower formal care costs counterfactual"
+solve_higher_formal_care_costs = "Solve higher formal care costs counterfactual"
+solve_and_simulate = "Solve and simulate baseline model with estimated parameters"
+# Model fit
+model_fit = "Model fit tasks"
+model_fit_estimated_params = "Model fit with estimated parameters"
+model_fit_estimated_params_moments = "Model fit estimated params moments tasks"
+model_fit_job_retention = "Job retention model fit tasks"
+model_fit_caregiving_leave_with_job_retention = "Caregiving leave with job retention model fit tasks"
+model_fit_higher_ret_age = "Higher retirement age model fit tasks"
+# Counterfactual analysis
+counterfactual_differences = "Counterfactual differences tasks"
+counterfactual_differences_new = "New counterfactual differences tasks"
+counterfactual_differences_no_care_demand = "No care demand counterfactual differences"
+counterfactual_differences_job_retention = "Job retention counterfactual differences"
+counterfactual_differences_lower_formal_care_costs = "Lower formal care costs counterfactual differences"
+counterfactual_differences_higher_formal_care_costs = "Higher formal care costs counterfactual differences"
+counterfactual_differences_forced_care_demand_at_50 = "Forced care demand at 50 counterfactual differences"
+counterfactual_forced_care_demand_at_50 = "Forced care demand at 50 counterfactual tasks"
+counterfactual_differences_caregiving_leave_with_job_retention = "Caregiving leave with job retention counterfactual differences"
+counterfactual_differences_no_cash_benefits_higher_formal_care_costs = "No cash benefits higher formal care costs counterfactual differences"
+counterfactual_differences_higher_ret_age = "Higher retirement age counterfactual differences"
+counterfactual_differences_higher_ret_age_vs_no_care_demand = "Higher retirement age vs no care demand counterfactual differences"
+counterfactual_differences_pre_ls = "Counterfactual differences conditioned on pre-labor supply"
+# Age profile analysis
+counterfactual_differences_age_profiles = "Counterfactual age profile differences (all counterfactuals)"
+counterfactual_differences_job_retention_age_profiles = "Job retention counterfactual age profile differences"
+counterfactual_differences_no_care_demand_age_profiles = "No care demand counterfactual age profile differences"
+counterfactual_differences_lower_formal_care_costs_age_profiles = "Lower formal care costs counterfactual age profile differences"
+counterfactual_differences_higher_formal_care_costs_age_profiles = "Higher formal care costs counterfactual age profile differences"
+counterfactual_differences_cg_leave_age_profiles = "Caregiving leave with job retention counterfactual age profile differences"
+counterfactual_differences_no_cash_benefits_higher_formal_care_costs_age_profiles = "No cash benefits higher formal care costs counterfactual age profile differences"
+counterfactual_differences_higher_ret_age_age_profiles = "Higher retirement age counterfactual age profile differences"
+# Temporary tasks
+temp_recreate_data = "Temporary data recreation tasks"
+# Career costs
+career_costs = "Career costs computation tasks"
+# Plotting
+bar_chart = "Bar chart plotting tasks"
+bar_chart_emp = "Empirical bar chart plotting tasks"
+line_chart = "Line chart plotting tasks"
+line_chart_emp = "Empirical line chart plotting tasks"
+budget_constraint = "Budget constraint plotting tasks"
+plot_mother_adl = "Plot mother ADL transition tasks"
+plot_mother_death = "Plot mother death transition tasks"
+initial_wealth = "Initial wealth plotting tasks"
+plot_incomes = "Income plotting tasks"
+family_transition = "Family transition plotting tasks"
+# Post estimation
+post_estimation = "Post estimation tasks"
+care_demand_post_estimation = "Care demand post estimation tasks"
+post_estimation_care_demand = "Post-estimation care demand plotting tasks"
+debug = "Debugging and exploratory tasks"
+
 
 [tool.interrogate]
 ignore-init-module = true
@@ -123,13 +203,37 @@ extend-ignore = [
 "src/caregiving/data_management/task_create_parent_child_data_set.py" = ["ERA001"]
 "src/caregiving/counterfactual/task_simulate_counterfactual.py" = ["ERA001", "E501"]
 "src/caregiving/counterfactual/state_space_counterfactual.py" = ["E501"]
+"src/caregiving/counterfactual/_task_simulate_counterfactual.py" = ["E501"]
+"src/caregiving/counterfactual/task_compute_career_costs.py" = ["E501"]
+"src/caregiving/counterfactual/task_simulate_forced_care_demand_at_50.py" = ["E501"]
+"src/caregiving/counterfactual/task_solve_and_simulate_caregiving_leave_with_job_retention_estimated_params.py" = ["E501"]
+"src/caregiving/counterfactual/task_solve_and_simulate_higher_formal_care_costs_estimated_params.py" = ["E501"]
+"src/caregiving/counterfactual/task_solve_and_simulate_job_retention_estimated_params.py" = ["E501"]
+"src/caregiving/counterfactual/task_solve_and_simulate_lower_formal_care_costs_estimated_params.py" = ["E501"]
+"src/caregiving/counterfactual/task_solve_and_simulate_no_care_demand.py" = ["E501"]
+"src/caregiving/counterfactual/task_solve_and_simulate_no_cash_benefits_higher_formal_care_costs_estimated_params.py" = ["E501"]
 "src/caregiving/estimation/task_estimate_standard_errors.py" = ["E501"]
+"src/caregiving/estimation/prepare_estimation.py" = ["E501"]
+"src/caregiving/estimation/task_solve_and_simulate.py" = ["E501"]
 "src/caregiving/model/state_space.py" = ["E501"]
+"src/caregiving/model/task_specify_model_higher_formal_care_costs.py" = ["E501"]
+"src/caregiving/model/task_specify_model_job_retention.py" = ["E501"]
+"src/caregiving/model/task_specify_model_lower_formal_care_costs.py" = ["E501"]
+"src/caregiving/model/task_specify_model_lower_ret_age.py" = ["E501"]
+"src/caregiving/model/task_specify_model_no_care_demand.py" = ["E501"]
+"src/caregiving/model/task_specify_model_no_cash_benefits_higher_formal_care_costs.py" = ["E501"]
 "src/caregiving/exogenous_processes/task_create_exog_processes_soep.py" = ["ERA001"]
 "src/caregiving/moments/task_create_care_mix_coefficients.py" = ["ERA001"]
 "src/caregiving/simulation/simulate_moments.py" = ["F841"]
 "src/caregiving/simulation/_simulate.py" = ["E501"]
 "src/caregiving/simulation/_initial_conditions.py" = ["E501"]
+"src/caregiving/simulation/task_generate_initial_conditions_no_care_demand.py" = ["E501"]
+"src/caregiving/simulation/task_generate_plots_for_slides.py" = ["E501"]
+"src/caregiving/simulation/task_plot_model_fit.py" = ["E501"]
+"src/caregiving/simulation/task_plot_model_fit_caregiving_leave_with_job_retention.py" = ["E501"]
+"src/caregiving/simulation/task_plot_model_fit_higher_ret_age.py" = ["E501"]
+"src/caregiving/simulation/task_plot_model_fit_job_retention.py" = ["E501"]
+"src/caregiving/simulation/task_plot_model_fit_no_care_demand.py" = ["E501"]
 "tests/test_utility_functions.py" = ["E501"]
 
 [tool.ruff.lint.pydocstyle]

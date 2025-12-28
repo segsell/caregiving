@@ -75,7 +75,7 @@ def task_simulate_moments_estimated_params(
 
     emp_moms = pd.read_csv(path_to_empirical_moments, index_col=[0]).squeeze("columns")
 
-    sim_moms_pandas = simulate_moments_pandas(df_sim, options=options)
+    sim_moms_pandas = simulate_moments_pandas(df_sim, model_specs=options)
     sim_moms_jax = simulate_moments_jax(df_sim, options=options)
 
     # Save moments
@@ -120,7 +120,6 @@ def task_simulate_moments_estimated_params(
         path_to_save_plot=path_to_save_labor_shares_pandas,
         include_caregivers=False,
     )
-
     plot_model_fit_labor_moments_by_education_pandas_jax(
         moms_emp=emp_moms,
         moms_sim=sim_moms_jax,
@@ -137,7 +136,6 @@ def task_simulate_moments_estimated_params(
         path_to_save_plot=path_to_save_labor_shares_with_caregivers_pandas,
         include_caregivers=True,
     )
-
     plot_model_fit_labor_moments_by_education_pandas_jax(
         moms_emp=emp_moms,
         moms_sim=sim_moms_jax,

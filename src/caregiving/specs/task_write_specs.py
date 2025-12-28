@@ -13,10 +13,15 @@ from pytask import Product
 
 from caregiving.config import BLD, SRC
 from caregiving.specs.caregiving_specs import (
+    read_in_adl_state_transition_specs,
+    read_in_adl_state_transition_specs_light_intensive,
     read_in_adl_transition_specs,
     read_in_adl_transition_specs_binary,
     read_in_care_supply_transition_specs,
+    read_in_death_transition_specs,
     read_in_mother_age_diff_specs,
+    read_in_survival_by_age_specs,
+    weight_adl_transitions_by_survival,
 )
 from caregiving.specs.derive_specs import read_and_derive_specs
 from caregiving.specs.experience_specs import create_max_experience
@@ -40,7 +45,7 @@ jax.config.update("jax_enable_x64", True)
 
 
 @pytask.mark.specs
-def task_write_specs(
+def task_write_specs(  # noqa: PLR0915
     path_to_load_specs: Path = SRC / "specs.yaml",
     path_to_sample: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
     path_to_wage_params: Path = BLD
@@ -91,10 +96,22 @@ def task_write_specs(
     / "estimation"
     / "stochastic_processes"
     / "mortality_transition_matrix_logit_good_medium_bad.csv",
+    path_to_lifetable: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "lifetable.csv",
     path_to_limitations_with_adl_transition: Path = BLD
     / "estimation"
     / "stochastic_processes"
     / "adl_transition_matrix.csv",
+    path_to_adl_state_transition_matrix: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "adl_state_transition_matrix.csv",
+    path_to_save_survival_by_age: Annotated[Path, Product] = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "survival_by_age.csv",
     path_to_exogenous_care_supply_transition: Path = BLD
     / "estimation"
     / "stochastic_processes"
@@ -132,6 +149,20 @@ def task_write_specs(
     / "model"
     / "specs"
     / "specs_full.pkl",
+    path_to_save_adl_state_transition_mat: Annotated[Path, Product] = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "adl_state_transition_mat.csv",
+    path_to_save_adl_state_transition_mat_light_intensive: Annotated[
+        Path, Product
+    ] = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "adl_state_transition_mat_light_intensive.csv",
+    path_to_save_death_transition_mat: Annotated[Path, Product] = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "death_transition_mat.csv",
 ) -> Dict[str, Any]:
     """Read in specs and add specs from first-step estimation."""
 
@@ -226,11 +257,58 @@ def task_write_specs(
             path_to_save_plot=path_to_save_health_death_transition_good_medium_bad,
         )
 
+    # Create and save survival by age for both men and women
+    lifetable = pd.read_csv(path_to_lifetable)
+    lifetable = lifetable.sort_values(["sex", "age"])  # ensure order
+    lifetable["cum_survival_prob"] = (
+        (1 - lifetable["death_prob"]).groupby(lifetable["sex"]).cumprod()
+    )
+    survival_by_age_df = lifetable[["sex", "age", "cum_survival_prob"]].copy()
+    survival_by_age_df = survival_by_age_df.sort_values(["sex", "age"])
+    survival_by_age_df.to_csv(path_to_save_survival_by_age, index=False)
+
+    # Create death transition matrix from lifetable
+    death_transition_df = lifetable[["sex", "age", "death_prob"]].copy()
+    death_transition_df = death_transition_df.sort_values(["sex", "age"])
+    specs["death_transition_mat"] = read_in_death_transition_specs(
+        death_transition_df, specs, path_to_save=path_to_save_death_transition_mat
+    )
+
+    # Read survival by age into specs
+    specs["survival_by_age_mat"] = read_in_survival_by_age_specs(
+        survival_by_age_df, specs
+    )
+    # # Store minimum age for age-to-index conversion (same for death and survival)
+    # specs["survival_min_age"] = min(survival_by_age_df["age"].unique())
+
     if "adl_labels" in specs.keys():
         # adl_labels = ["No limitations", "Limitations"]
         adl_transitions = pd.read_csv(path_to_limitations_with_adl_transition)
         specs["limitations_with_adl_mat"] = read_in_adl_transition_specs_binary(
             adl_transitions, specs
+        )
+
+        # Read ADL state transition matrix (simpler, no health dimension)
+        adl_state_transitions = pd.read_csv(path_to_adl_state_transition_matrix)
+        specs["adl_state_transition_mat"] = read_in_adl_state_transition_specs(
+            adl_state_transitions,
+            specs,
+            path_to_save=path_to_save_adl_state_transition_mat,
+        )
+
+        # Read ADL state transition matrix with collapsed categories
+        # (ADL 2 and ADL 3 collapsed into single "intensive" category)
+        specs["adl_state_transition_mat_light_intensive"] = (
+            read_in_adl_state_transition_specs_light_intensive(
+                adl_state_transitions,
+                specs,
+                path_to_save=path_to_save_adl_state_transition_mat_light_intensive,
+            )
+        )
+
+        # Weight ADL transitions by survival probabilities
+        specs["adl_state_transition_mat_weighted"] = weight_adl_transitions_by_survival(
+            specs
         )
 
         exogenous_care_supply = pd.read_csv(

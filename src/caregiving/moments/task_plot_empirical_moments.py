@@ -26,14 +26,18 @@ from caregiving.model.shared import (
     RETIREMENT,
     RETIREMENT_CHOICES,
     SEX,
-    START_PERIOD_CAREGIVING,
     UNEMPLOYED,
     UNEMPLOYED_CHOICES,
     WEALTH_MOMENTS_SCALE,
     WEALTH_QUANTILE_CUTOFF,
     WORK,
 )
-from caregiving.moments.task_create_soep_moments import adjust_and_trim_wealth_data
+from caregiving.moments.task_create_soep_moments import (
+    create_df_caregivers,
+    create_df_non_caregivers,
+    create_df_wealth,
+    create_df_with_caregivers,
+)
 from caregiving.specs.task_write_specs import read_and_derive_specs
 from caregiving.utils import table
 
@@ -117,45 +121,54 @@ def task_plot_empirical_soep_moments(
     end_year = 2019
     start_age = specs["start_age"]
     end_age = specs["end_age_msm"]
+    start_age_caregivers = specs["start_age_caregiving"]
 
     soep_moments = pd.read_csv(path_to_soep_moments, index_col=[0])
 
+    # Load full datasets
     df_full = pd.read_csv(path_to_main_sample, index_col=[0])
-    df = df_full[
-        (df_full["gebjahr"] >= specs["min_birth_year"])
-        & (df_full["gebjahr"] <= specs["max_birth_year"])
-        & (df_full["syear"] >= start_year)
-        & (df_full["syear"] <= end_year)
-        & (df_full["sex"] == 1)
-        & (df_full["age"] <= end_age + 10)
-    ].copy()  # women only
+    df_caregivers_full = pd.read_csv(path_to_caregivers_sample, index_col=[0])
 
-    df_non_caregivers = df[df["any_care"] == 0].copy()
+    # Create standardized subsamples using shared functions
+    df_non_caregivers = create_df_non_caregivers(
+        df_full=df_full,
+        specs=specs,
+        start_year=start_year,
+        end_year=end_year,
+        end_age=end_age,
+    )
+    df_with_caregivers = create_df_with_caregivers(
+        df_full=df_full,
+        specs=specs,
+        start_year=start_year,
+        end_year=end_year,
+        end_age=end_age,
+    )
+    df_caregivers = create_df_caregivers(
+        df_caregivers_full=df_caregivers_full,
+        specs=specs,
+        start_year=start_year,
+        end_year=end_year,
+        end_age=end_age,
+    )
+    trimmed = create_df_wealth(df_full=df_full, specs=specs)
 
-    df_good_health = df[df["health"] == GOOD_HEALTH].copy()
-    df_bad_health = df[df["health"] == BAD_HEALTH].copy()
+    df_good_health = df_with_caregivers[
+        df_with_caregivers["health"] == GOOD_HEALTH
+    ].copy()
+    df_bad_health = df_with_caregivers[
+        df_with_caregivers["health"] == BAD_HEALTH
+    ].copy()
 
-    df_caregivers = pd.read_csv(path_to_caregivers_sample, index_col=[0])
-    df_caregivers = df_caregivers[
-        (df_caregivers["any_care"] == 1)
-        # & (df_caregivers["gebjahr"] >= specs["min_birth_year"])
-        # & (df_caregivers["gebjahr"] <= specs["max_birth_year"])
-        & (df_caregivers["syear"] >= start_year)
-        & (df_caregivers["syear"] <= end_year)
-        & (df_caregivers["sex"] == 1)
-        & (df_caregivers["age"] <= end_age + 10)
-    ]
     df_light_caregivers = df_caregivers[df_caregivers["light_care"] == 1].copy()
     df_intensive_caregivers = df_caregivers[df_caregivers["intensive_care"] == 1].copy()
 
-    _df_year = df[df["syear"] == 2012]  # 2016 # noqa: PLR2004
+    _df_year = df_with_caregivers[
+        df_with_caregivers["syear"] == 2012  # noqa: PLR2004
+    ]  # 2016 # noqa: PLR2004
     # # df_year = df[df["syear"].between(2012, 2018)]
 
-    df["kidage_youngest"] = df["kidage_youngest"] - 1
-
-    # df_wealth = pd.read_csv(path_to_wealth_sample, index_col=[0])
-    df_wealth = df_full[df_full["sex"] == SEX].copy()
-    trimmed = adjust_and_trim_wealth_data(df=df_wealth, specs=specs)
+    df_with_caregivers["kidage_youngest"] = df_with_caregivers["kidage_youngest"] - 1
 
     # Wealth
     plot_wealth_emp(
@@ -188,7 +201,7 @@ def task_plot_empirical_soep_moments(
 
     # Labor supply
     plot_choice_shares_by_education_emp(
-        data_emp=df,
+        data_emp=df_with_caregivers,
         specs=specs,
         age_min=start_age,
         age_max=end_age,
@@ -240,7 +253,7 @@ def task_plot_empirical_soep_moments(
     )
 
     plot_choice_shares_by_education_age_bins_emp(
-        data_emp=df,
+        data_emp=df_with_caregivers,
         specs=specs,
         age_min=start_age,
         age_max=end_age,
@@ -251,7 +264,7 @@ def task_plot_empirical_soep_moments(
     plot_choice_shares_by_education_age_bins_emp(
         data_emp=df_caregivers,
         specs=specs,
-        age_min=start_age + START_PERIOD_CAREGIVING,
+        age_min=start_age_caregivers,
         age_max=end_age,
         bin_width=3,
         path_to_save_plot=path_to_save_labor_supply_caregivers_by_age_bins,
@@ -259,7 +272,7 @@ def task_plot_empirical_soep_moments(
     plot_choice_shares_by_education_age_bins_emp(
         data_emp=df_light_caregivers,
         specs=specs,
-        age_min=start_age + START_PERIOD_CAREGIVING,
+        age_min=start_age_caregivers,
         age_max=end_age,
         bin_width=3,
         path_to_save_plot=path_to_save_labor_supply_light_caregivers_by_age_bins,
@@ -267,7 +280,7 @@ def task_plot_empirical_soep_moments(
     plot_choice_shares_by_education_age_bins_emp(
         data_emp=df_intensive_caregivers,
         specs=specs,
-        age_min=start_age + START_PERIOD_CAREGIVING,
+        age_min=start_age_caregivers,
         age_max=end_age,
         bin_width=3,
         path_to_save_plot=path_to_save_labor_supply_intensive_caregivers_by_age_bins,

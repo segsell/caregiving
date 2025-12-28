@@ -167,7 +167,17 @@ bld/_old_model/
 
 
 # File too large to be tracked
+bld/model/model_for_solution*
+bld/model/model_job_retention.pkl
+bld/model/model_higher_formal_care_costs.pkl
+bld/model/model_lower_formal_care_costs.pkl
+bld/model/model_higher_ret_age.pkl
+bld/model/model_lower_ret_age.pkl
+bld/model/model_caregiving_leave_with_job_retention.pkl
+bld/model/model_no_cash_benefits_higher_formal_care_costs.pkl
+
 bld/model/model*
+
 
 # # Ensure bld/ itself is tracked
 # !bld/

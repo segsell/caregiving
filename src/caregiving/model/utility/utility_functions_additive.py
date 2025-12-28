@@ -64,7 +64,7 @@ def utility_func_adda(
     care_demand: int,
     partner_state: int,
     params: dict,
-    options: dict,
+    model_specs: dict,
 ) -> jnp.array:
     """Compute the per-period utility based on a CRRA utility function.
 
@@ -85,11 +85,9 @@ def utility_func_adda(
             0 = good health, 1 = medium health, 2 = bad health.
         father_health (int): Health status of the father. One of 0, 1, 2.
             0 = good health, 1 = medium health, 2 = bad health.
-        has_sibling (int): Indicator for whether the agent has a sibling.
-            0 = no sibling, 1 = has sibling.
         params (dict): Dictionary containing model parameters.
             Relevant here is the CRRA coefficient theta.
-        options (dict): Dictionary containing model options.
+        model_specs (dict): Dictionary containing model specifications.
 
     Returns:
         utility (jnp.array): Agent's utility. Array of shape
@@ -106,7 +104,7 @@ def utility_func_adda(
         period=period,
         choice=choice,
         params=params,
-        options=options,
+        model_specs=model_specs,
     )
     utility_death = utility_final_consume_all(
         wealth=consumption,
@@ -128,7 +126,7 @@ def utility_func_alive_adda(
     period,
     choice,
     params,
-    options,
+    model_specs,
 ):
     """Calculate the choice specific cobb-douglas utility, i.e. u =
     ((c*eta/consumption_scale)^(1-rho))/(1-rho) ."""
@@ -145,7 +143,7 @@ def utility_func_alive_adda(
         health=health,
         care_demand=care_demand,
         params=params,
-        options=options,
+        model_specs=model_specs,
     )
     eta = jnp.exp(disutil_work)
     cons_scale = consumption_scale(
@@ -153,7 +151,7 @@ def utility_func_alive_adda(
         # sex=sex,
         education=education,
         period=period,
-        options=options,
+        model_specs=model_specs,
     )
 
     # zeta = utility_of_caregiving(
@@ -163,7 +161,7 @@ def utility_func_alive_adda(
     #     health=health,
     #     care_demand=care_demand,
     #     params=params,
-    #     options=options,
+    #     model_specs=model_specs,
     # )
 
     # compute utility
@@ -179,7 +177,7 @@ def utility_func_alive_adda(
 
 
 def marginal_utility_func_adda_alive(
-    consumption, partner_state, education, health, period, choice, params, options
+    consumption, partner_state, education, health, period, choice, params, model_specs
 ):
 
     # rho = params["rho"]
@@ -190,7 +188,7 @@ def marginal_utility_func_adda_alive(
         # sex=sex,
         education=education,
         period=period,
-        options=options,
+        model_specs=model_specs,
     )
     disutil_work = disutility_work(
         period=period,
@@ -200,7 +198,7 @@ def marginal_utility_func_adda_alive(
         partner_state=partner_state,
         health=health,
         params=params,
-        options=options,
+        model_specs=model_specs,
     )
     eta = jnp.exp(disutil_work)
 
@@ -223,7 +221,7 @@ def inverse_marginal_adda(
     period,
     choice,
     params,
-    options,
+    model_specs,
 ):
 
     # rho = params["rho"]
@@ -234,7 +232,7 @@ def inverse_marginal_adda(
         # sex=sex,
         education=education,
         period=period,
-        options=options,
+        model_specs=model_specs,
     )
     disutil_work = disutility_work(
         period=period,
@@ -244,7 +242,7 @@ def inverse_marginal_adda(
         partner_state=partner_state,
         health=health,
         params=params,
-        options=options,
+        model_specs=model_specs,
     )
     eta = jnp.exp(disutil_work)
 
@@ -272,7 +270,7 @@ def utility_func_additive(
     # mother_health: int,
     partner_state: int,
     params: dict,
-    options: dict,
+    model_specs: dict,
 ) -> jnp.array:
     """Compute the per-period utility based on a CRRA utility function.
 
@@ -293,11 +291,9 @@ def utility_func_additive(
             0 = good health, 1 = medium health, 2 = bad health.
         father_health (int): Health status of the father. One of 0, 1, 2.
             0 = good health, 1 = medium health, 2 = bad health.
-        has_sibling (int): Indicator for whether the agent has a sibling.
-            0 = no sibling, 1 = has sibling.
         params (dict): Dictionary containing model parameters.
             Relevant here is the CRRA coefficient theta.
-        options (dict): Dictionary containing model options.
+        model_specs (dict): Dictionary containing model specifications.
 
     Returns:
         utility (jnp.array): Agent's utility. Array of shape
@@ -315,7 +311,7 @@ def utility_func_additive(
         period=period,
         choice=choice,
         params=params,
-        options=options,
+        model_specs=model_specs,
     )
     utility_death = utility_final_consume_all(
         wealth=consumption,
@@ -338,7 +334,7 @@ def utility_func_alive_additive(
     period,
     choice,
     params,
-    options,
+    model_specs,
 ):
     """Calculate the choice specific cobb-douglas utility, i.e. u =
     ((c*eta/consumption_scale)^(1-rho))/(1-rho) ."""
@@ -355,14 +351,14 @@ def utility_func_alive_additive(
         health=health,
         care_demand=care_demand,
         params=params,
-        options=options,
+        model_specs=model_specs,
     )
     cons_scale = consumption_scale(
         partner_state=partner_state,
         # sex=sex,
         education=education,
         period=period,
-        options=options,
+        model_specs=model_specs,
     )
 
     # zeta = utility_of_caregiving(
@@ -372,7 +368,7 @@ def utility_func_alive_additive(
     #     health=health,
     #     care_demand=care_demand,
     #     params=params,
-    #     options=options,
+    #     model_specs=model_specs,
     # )
 
     # compute utility
@@ -388,7 +384,7 @@ def utility_func_alive_additive(
 
 
 def marginal_utility_func_additive_alive(
-    consumption, partner_state, education, health, period, choice, params, options
+    consumption, partner_state, education, health, period, choice, params, model_specs
 ):
 
     # rho = params["rho"]
@@ -399,7 +395,7 @@ def marginal_utility_func_additive_alive(
         # sex=sex,
         education=education,
         period=period,
-        options=options,
+        model_specs=model_specs,
     )
 
     marg_util_rho_not_one = (consumption / cons_scale) ** (-rho) / cons_scale
@@ -420,7 +416,7 @@ def inverse_marginal_additive(
     period,
     choice,
     params,
-    options,
+    model_specs,
 ):
 
     # rho = params["rho"]
@@ -431,7 +427,7 @@ def inverse_marginal_additive(
         # sex=sex,
         education=education,
         period=period,
-        options=options,
+        model_specs=model_specs,
     )
 
     # Solve m = (c/cons_scale)^(-rho) / cons_scale

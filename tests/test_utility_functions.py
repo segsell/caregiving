@@ -105,10 +105,15 @@ def create_test_params(disutil_work, disutil_unemployed, rho):
         "disutil_children_pt_work_high_informal_care": 0,
         "disutil_children_ft_work_low_informal_care": 0.1,
         "disutil_children_ft_work_high_informal_care": 0.2,
-        # type of care
-        "util_informal_care": 0,
-        "util_formal_care": 0,
-        "util_joint_informal_care": 0,
+        # type of care (varies by health and education)
+        "util_informal_care_high_good": 0,
+        "util_informal_care_high_bad": 0,
+        "util_informal_care_low_good": 0,
+        "util_informal_care_low_bad": 0,
+        "util_formal_care_good": 0,
+        "util_formal_care_bad": 0,
+        "util_joint_informal_care_good": 0,
+        "util_joint_informal_care_bad": 0,
     }
 
 
@@ -134,10 +139,10 @@ def utility_params():
 )
 def test_consumption_scale(partner_state, sex, education, period, load_specs):
     """Test consumption scale function."""
-    options = load_specs
+    model_specs = load_specs
 
     has_partner = int(partner_state > 0)
-    n_children = options["children_by_state"][sex, education, has_partner, period]
+    n_children = model_specs["children_by_state"][sex, education, has_partner, period]
     hh_size = 1 + has_partner + n_children
 
     cons_scale = consumption_scale(
@@ -145,7 +150,7 @@ def test_consumption_scale(partner_state, sex, education, period, load_specs):
         # sex=sex,
         education=education,
         period=period,
-        options=options,
+        model_specs=model_specs,
         # has_partner=has_partner,
         # n_children=n_children,
     )
@@ -182,17 +187,17 @@ def test_utility_func(
     load_specs,
 ):
     """Test utility function for unemployed, part and full-time."""
-    options = load_specs
+    model_specs = load_specs
     params = create_test_params(disutil_work, disutil_unemployed, rho)
 
     # has_partner = int(partner_state > 0)
-    # n_children = options["children_by_state"][sex, education, has_partner, period]
+    # n_children = model_specs["children_by_state"][sex, education, has_partner, period]
     cons_scale = consumption_scale(
         partner_state=partner_state,
         # sex=sex,
         education=education,
         period=period,
-        options=options,
+        model_specs=model_specs,
         # has_partner=has_partner,
         # n_children=n_children,
     )
@@ -235,7 +240,9 @@ def test_utility_func(
 
     # if sex == 1:
     has_partner_int = int(partner_state > 0)
-    nb_children = options["children_by_state"][sex, education, has_partner_int, period]
+    nb_children = model_specs["children_by_state"][
+        sex, education, has_partner_int, period
+    ]
     exp_factor_ft_work += (
         params["disutil_children_ft_work_high"] * nb_children * education
     )
@@ -267,7 +274,7 @@ def test_utility_func(
                 period=period,
                 choice=UNEMPLOYED_NO_CARE,
                 params=params,
-                options=options,
+                model_specs=model_specs,
             ),
             utility_lambda(disutil_unemployment),
         )
@@ -283,7 +290,7 @@ def test_utility_func(
             period=period,
             choice=PART_TIME_NO_CARE,
             params=params,
-            options=options,
+            model_specs=model_specs,
         ),
         utility_lambda(disutil_pt_work),
     )
@@ -299,7 +306,7 @@ def test_utility_func(
             period=period,
             choice=FULL_TIME_NO_CARE,
             params=params,
-            options=options,
+            model_specs=model_specs,
         ),
         utility_lambda(disutil_ft_work),
     )
@@ -335,7 +342,7 @@ def test_marginal_utility(
 ):
     """Test marginal utility function."""
 
-    options = load_specs
+    model_specs = load_specs
     params = create_test_params(disutil_work, disutil_unemployed, rho)
 
     random_choice = np.random.choice(np.array([0, 1, 2]))
@@ -348,7 +355,7 @@ def test_marginal_utility(
         0,  # care_demand
         partner_state,
         params,
-        options,
+        model_specs,
     )
     marg_util_model = marginal_utility_func_additive_alive(
         consumption=consumption,
@@ -359,7 +366,7 @@ def test_marginal_utility(
         # care_demand=0,
         partner_state=partner_state,
         params=params,
-        options=options,
+        model_specs=model_specs,
     )
     np.testing.assert_almost_equal(marg_util_jax, marg_util_model)
 
@@ -392,7 +399,7 @@ def test_inverse_marginal_utility(
     rho,
     load_specs,
 ):
-    options = load_specs
+    model_specs = load_specs
     params = create_test_params(disutil_work, disutil_unemployed, rho)
 
     random_choice = np.random.choice(np.array([0, 1, 2]))
@@ -404,7 +411,7 @@ def test_inverse_marginal_utility(
         period=period,
         choice=random_choice,
         params=params,
-        options=options,
+        model_specs=model_specs,
     )
     np.testing.assert_almost_equal(
         inverse_marginal_additive(
@@ -415,7 +422,7 @@ def test_inverse_marginal_utility(
             period=period,
             choice=random_choice,
             params=params,
-            options=options,
+            model_specs=model_specs,
         ),
         consumption,
     )
@@ -511,7 +518,7 @@ def test_disutility_work_no_caregiving(
     utility_params,
 ):
     """Test disutility_work function for no caregiving scenarios."""
-    options = load_specs
+    model_specs = load_specs
     params = utility_params
 
     disutil = disutility_work(
@@ -522,7 +529,7 @@ def test_disutility_work_no_caregiving(
         health=health,
         care_demand=care_demand,
         params=params,
-        options=options,
+        model_specs=model_specs,
     )
 
     # Test that disutility is negative (as expected for disutility)
@@ -558,7 +565,7 @@ def test_disutility_work_informal_care(
     utility_params,
 ):
     """Test disutility_work function for informal care scenarios."""
-    options = load_specs
+    model_specs = load_specs
     params = utility_params
 
     disutil = disutility_work(
@@ -569,7 +576,7 @@ def test_disutility_work_informal_care(
         health=health,
         care_demand=care_demand,
         params=params,
-        options=options,
+        model_specs=model_specs,
     )
 
     # Test that disutility is negative (as expected for disutility)
@@ -583,7 +590,7 @@ def test_disutility_work_informal_care(
 
 def test_disutility_work_partner_retired_effect(load_specs, utility_params):
     """Test that partner retired status affects disutility correctly."""
-    options = load_specs
+    model_specs = load_specs
     params = utility_params
 
     # Test with partner not retired
@@ -595,7 +602,7 @@ def test_disutility_work_partner_retired_effect(load_specs, utility_params):
         health=jnp.array(1),
         care_demand=jnp.array(0),
         params=params,
-        options=options,
+        model_specs=model_specs,
     )
 
     # Test with partner retired
@@ -607,7 +614,7 @@ def test_disutility_work_partner_retired_effect(load_specs, utility_params):
         health=jnp.array(1),
         care_demand=jnp.array(0),
         params=params,
-        options=options,
+        model_specs=model_specs,
     )
 
     # When partner is retired and individual is retired, there should be additional disutility
@@ -619,7 +626,7 @@ def test_disutility_work_partner_retired_effect(load_specs, utility_params):
 
 def test_disutility_work_education_health_effects(load_specs, utility_params):
     """Test that education and health status affect disutility correctly."""
-    options = load_specs
+    model_specs = load_specs
     params = utility_params
 
     # Test high education vs low education
@@ -631,7 +638,7 @@ def test_disutility_work_education_health_effects(load_specs, utility_params):
         health=jnp.array(1),
         care_demand=jnp.array(0),
         params=params,
-        options=options,
+        model_specs=model_specs,
     )
 
     disutil_low_ed = disutility_work(
@@ -642,7 +649,7 @@ def test_disutility_work_education_health_effects(load_specs, utility_params):
         health=jnp.array(1),
         care_demand=jnp.array(0),
         params=params,
-        options=options,
+        model_specs=model_specs,
     )
 
     # Test bad health vs good health
@@ -654,7 +661,7 @@ def test_disutility_work_education_health_effects(load_specs, utility_params):
         health=jnp.array(0),  # bad health
         care_demand=jnp.array(0),
         params=params,
-        options=options,
+        model_specs=model_specs,
     )
 
     disutil_good_health = disutility_work(
@@ -665,7 +672,7 @@ def test_disutility_work_education_health_effects(load_specs, utility_params):
         health=jnp.array(1),  # good health
         care_demand=jnp.array(0),
         params=params,
-        options=options,
+        model_specs=model_specs,
     )
 
     # With the given parameters, bad health should have higher disutility

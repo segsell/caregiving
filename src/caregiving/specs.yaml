@@ -5,27 +5,31 @@
 quadrature_points_stochastic: 5
 n_experience_grid_points: 11
 # Fixed structural parameters, we will not estimate
-interest_rate: 0.04
-discount_factor: 0.97
 
 # economic model parameters
-start_age: 40
+start_age: 30 # 35
 end_age: 100
 start_age_caregiving: 45
 end_age_caregiving: 71
 end_age_msm: 70
 end_age_wealth: 80
 start_age_parents: 50
-start_age_msm: 40
+survival_min_age: 16
+
 end_age_children_in_household: 60
+start_age_caregiving: 40 #45
+end_age_caregiving: 70
+end_age_exog_care_supply: 80
 
 choice_labels: ["Retired", "Unemployed", "Part-time", "Full-time"]
-# caregiving_labels: ["No Care", "Light Informal Care", "Intensive Informal Care", "Nursing Home Care"]
-caregiving_labels: ["No Care", "Informal Care"]
+caregiving_labels: ["No Care", "Light Informal Care", "Intensive Informal Care", "Nursing Home Care"]
+# caregiving_labels: ["No Care", "Informal Care", "Formal Care"]
 education_labels: ["Low Education", "High Education"]
 health_labels: ["Bad Health", "Good Health", "Death"]
 health_labels_three: ["Bad Health", "Medium Health", "Good Health", "Death"]
 adl_labels: ["No ADL", "ADL 1", "ADL 2", "ADL 3"]
+# adl_labels_dead_light_intensive: ["No ADL Dead", "No ADL Alive", "ADL 1", "ADL 2 or ADL 3"]
+adl_labels_light_intensive: ["No ADL", "ADL 1", "ADL 2 or ADL 3"]
 sex_labels: ["Men", "Women"]
 partner_labels: ["Single","Working Partner", "Retired Partner"]
 
@@ -41,7 +45,7 @@ informed_threshhold: 5
 # Retirement parameters
 ret_years_before_SRA: 4
 min_ret_age: 63
-max_ret_age: 72 #67
+max_ret_age: 72 # 67
 # Maximum age to estimate labor market
 max_est_age_labor: 65
 # Assume that part time gives half a year of experience
@@ -133,6 +137,16 @@ start_age_event_study: 21
 start_year_event_study: 1984 # health variable from 1992 on
 end_year_event_study: 2023
 reference_year_event_study: 2015
+
+###############################################################################
+# Fixed structural parameters, we will not estimate
+###############################################################################
+income_shock_mean: 0.0
+# income_shock_std: 0.16471062648214
+discount_factor: 0.97 # 0.98
+interest_rate: 0.04 # 0.03
+# discount_factor: 0.97
+
 
 
 ###############################################################################
