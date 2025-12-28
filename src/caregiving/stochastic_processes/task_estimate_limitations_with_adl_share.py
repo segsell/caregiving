@@ -1059,6 +1059,7 @@ def task_plot_care_demand(
 ):
 
     specs = read_and_derive_specs(path_to_specs)
+    start_age_parents = specs["start_age_parents"]
 
     health_trans_mat = pd.read_csv(path_to_health_transition_matrix)
     death_trans_mat = pd.read_csv(path_to_death_transition_matrix)
@@ -1081,16 +1082,15 @@ def task_plot_care_demand(
     # save hdeath_df to csv in the same folder as the other transition matrices
     hdeath_df.to_csv(path_to_health_death_transition_matrix_NEW, index=False)
 
-    start_age = 50
     plot_care_demand_from_hdeath_matrix(
         specs=specs,
         adl_transition_df=adl_transition_matrix,
         # health_death_df=hdeath_df,
         health_death_df=health_death_trans_mat,
         path_to_save_plot=path_to_save_weighted_adl_transitions_by_age_plot,
-        start_age=start_age,
-        initial_alive_share=survival_by_age.loc[start_age],
-        initial_health_shares_alive=health_prob_by_age.loc[start_age],
+        start_age=start_age_parents,
+        initial_alive_share=survival_by_age.loc[start_age_parents],
+        initial_health_shares_alive=health_prob_by_age.loc[start_age_parents],
         legend_labels={
             "ADL 1": "Care degree 2",
             "ADL 2": "Care degree 3",
