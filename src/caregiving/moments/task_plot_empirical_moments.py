@@ -177,14 +177,14 @@ def task_plot_empirical_soep_moments(
         specs=specs,
         wealth_var_emp="adjusted_wealth",
         median=False,
-        age_min=30,
+        age_min=specs["start_age"],
         age_max=100,
         path_to_save_plot=path_to_save_wealth,
     )
     plot_wealth_from_moments(
         soep_moments,
         specs=specs,
-        age_min=30,
+        age_min=specs["start_age"],
         age_max=100,
         path_to_save_plot=path_to_save_wealth_from_moments,
     )
@@ -194,7 +194,7 @@ def task_plot_empirical_soep_moments(
         specs=specs,
         wealth_var_emp="adjusted_wealth",
         median=False,
-        age_min=30,
+        age_min=specs["start_age"],
         age_max=100,
         path_to_save_plot=path_to_save_wealth_empirical_vs_moments,
     )

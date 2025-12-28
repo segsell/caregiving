@@ -96,10 +96,12 @@ def task_create_event_study_sample(
         Indicator for whether the person provided any (light or intensive) care.
 
     light_care
-        Indicator for whether the person provided “light” care only (== 1 hour per day)
+        Indicator for whether the person provided "light" care only
+        (== 1 hour per day)
 
     intensive_care
-        Indicator for whether the person provided “intensive” care (>= 2 hours per day).
+        Indicator for whether the person provided "intensive" care
+        (>= 2 hours per day).
 
     n_sisters
         Number of sisters the individual has.
@@ -114,7 +116,8 @@ def task_create_event_study_sample(
         Age of the individual's father in the given survey year (if alive).
 
     mother_alive
-        Indicator for whether the individual's mother is alive in the given survey year.
+        Indicator for whether the individual's mother is alive in the
+        given survey year.
 
     father_alive
         Indicator for whether the individual's father is alive in the given survey year.
@@ -382,6 +385,19 @@ def create_parent_info(df, filter_missing=False):
     df_age["father_age"] = np.where(
         df_age["father_alive"] == 1, df_age["father_age"], np.nan
     )
+
+    # Create death indicators: 1 if parent died this year (syear == death year)
+    df_age["mother_died_this_year"] = 0
+    df_age.loc[
+        (df_age["mydeath"].notna()) & (df_age["syear"] == df_age["mydeath"]),
+        "mother_died_this_year",
+    ] = 1
+
+    df_age["father_died_this_year"] = 0
+    df_age.loc[
+        (df_age["fydeath"].notna()) & (df_age["syear"] == df_age["fydeath"]),
+        "father_died_this_year",
+    ] = 1
 
     df_age.set_index(["pid", "syear"], inplace=True)
 

@@ -7,7 +7,7 @@ MACHINE_ZERO = 1e-12
 FILL_VALUE = 0
 MISSING_VALUE = -99
 BASE_YEAR = 2010  # 2015
-MAX_SYEAR = 2023  # Maximum year in thhe SOEP
+MAX_SYEAR = 2023  # Maximum survey year in the SOEP
 
 PERIOD_SCALE = 10  # to rescale age in utility functions
 

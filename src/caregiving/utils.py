@@ -72,3 +72,62 @@ def load_dict_from_pickle(file_path):
     """
     with Path.open(file_path, "rb") as file:
         return pickle.load(file)
+
+
+def create_age_bins(start_age, end_age, bin_size, min_remainder_size=2):
+    """Create age bins with flexible bin size and optional smaller final bin.
+
+    Args:
+        start_age (int): Starting age (inclusive).
+        end_age (int): Ending age (inclusive).
+        bin_size (int): Preferred bin size (e.g., 3 for 3-year bins, 5 for 5-year bins).
+        min_remainder_size (int): Minimum size for a remainder bin. If the remainder is
+            smaller than bin_size but >= min_remainder_size, a smaller bin is created.
+            Default is 2.
+
+    Returns:
+        tuple or list:
+            - If jax_format=False: tuple of (bin_edges, bin_labels) where:
+                - bin_edges (list): List of bin edges suitable for pd.cut
+                - bin_labels (list): List of bin labels in format "start_end"
+            - If jax_format=True: list of (start, end) tuples
+
+    Examples:
+        >>> create_age_bins(45, 68, 3, 2)  # doctest: +NORMALIZE_WHITESPACE
+        ([45, 48, 51, 54, 57, 60, 63, 66, 69],
+         ['45_47', '48_50', '51_53', '54_56', '57_59',
+          '60_62', '63_65', '66_68'])
+
+        >>> create_age_bins(45, 69, 5, 2)  # doctest: +NORMALIZE_WHITESPACE
+        ([45, 50, 55, 60, 65, 70],
+         ['45_49', '50_54', '55_59', '60_64', '65_69'])
+
+    """
+    bin_edges = []
+    bin_labels = []
+    start = start_age
+
+    # Create full bins of the specified size
+    while start <= end_age - (bin_size - 1):
+        end = start + bin_size
+        bin_edges.append(start)
+        bin_labels.append(f"{start}_{end - 1}")
+        start = end
+
+    # Handle remainder
+    if start <= end_age:
+        # Remainder exists
+        remainder_size = end_age - start + 1
+        if remainder_size >= min_remainder_size:
+            # Create a smaller final bin
+            bin_edges.append(start)
+            bin_labels.append(f"{start}_{end_age}")
+            bin_edges.append(end_age + 1)  # Right edge
+        else:
+            # Remainder too small, just add right edge
+            bin_edges.append(start)
+    else:
+        # No remainder, just add right edge for the last full bin
+        bin_edges.append(start)
+
+    return (bin_edges, bin_labels)

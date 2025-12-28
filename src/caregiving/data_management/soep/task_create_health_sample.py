@@ -27,8 +27,8 @@ from caregiving.data_management.soep.variables import (
 from caregiving.specs.task_write_specs import read_and_derive_specs
 from caregiving.utils import table
 
-AGE_LOW = 65
-AGE_HIGH = 105
+NURSING_HOME_AGE_LOW = 65
+NURSING_HOME_AGE_HIGH = 105
 
 
 def task_create_health_transition_sample_good_bad(
@@ -140,7 +140,9 @@ def task_create_nursing_home_sample(
 
     # First model: full sample (age 65–110)
     filtered_data = df[
-        (df["age"] >= AGE_LOW) & (df["age"] <= AGE_HIGH) & (df["sex"] == 1)
+        (df["age"] >= NURSING_HOME_AGE_LOW)
+        & (df["age"] <= NURSING_HOME_AGE_HIGH)
+        & (df["sex"] == 1)
     ].copy()
     filtered_data = filtered_data[["age", "nursing_home"]].dropna()
     filtered_data["age_squared"] = filtered_data["age"] ** 2
@@ -151,13 +153,15 @@ def task_create_nursing_home_sample(
     print(logit_model.summary())
 
     # Predict over age range
-    age_range = np.arange(AGE_LOW, filtered_data["age"].max() + 1)
+    age_range = np.arange(NURSING_HOME_AGE_LOW, filtered_data["age"].max() + 1)
     X_pred = pd.DataFrame({"const": 1, "age": age_range, "age_squared": age_range**2})
     predicted_probs_full = logit_model.predict(X_pred)
 
     # Second model: bad health only
     bad_health_data = df[
-        (df["age"] >= AGE_LOW) & (df["age"] <= AGE_HIGH + 5) & (df["health"] == 0)
+        (df["age"] >= NURSING_HOME_AGE_LOW)
+        & (df["age"] <= NURSING_HOME_AGE_HIGH + 5)
+        & (df["health"] == 0)
     ].copy()
     bad_health_data = bad_health_data[["age", "nursing_home"]].dropna()
     bad_health_data["age_squared"] = bad_health_data["age"] ** 2

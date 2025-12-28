@@ -9,6 +9,8 @@ n_experience_grid_points: 11
 # economic model parameters
 start_age: 30 # 35
 end_age: 100
+start_age_caregiving: 45
+end_age_caregiving: 71
 end_age_msm: 70
 end_age_wealth: 80
 start_age_parents: 50

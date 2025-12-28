@@ -270,8 +270,10 @@ def care_demand_and_supply_transition_adl(
 def health_transition_good_medium_bad(mother_health, education, period, model_specs):
     """Transition probability for next period health state."""
     trans_mat = model_specs["health_trans_mat_three"]
-    mother_age = period + model_specs["mother_age_diff"][education] + PARENT_AGE_OFFSET
+    mother_period = (
+        period + model_specs["mother_age_diff"][education] + PARENT_AGE_OFFSET
+    )
 
-    prob_vector = trans_mat[MOTHER, mother_age, mother_health, :]
+    prob_vector = trans_mat[MOTHER, mother_period, mother_health, :]
 
     return prob_vector

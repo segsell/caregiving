@@ -32,7 +32,7 @@ def task_create_partner_transition_sample(
 
     specs = read_and_derive_specs(path_to_specs)
 
-    df = pd.read_csv(path_to_raw, index_col=["pid", "syear"])
+    df = pd.read_csv(path_to_raw, index_col=["pid", "syear"], low_memory=False)
 
     df = create_education_type(df)
 

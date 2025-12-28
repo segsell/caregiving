@@ -37,7 +37,7 @@ from caregiving.model.shared import (
     WORK_CHOICES,
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
-from caregiving.utils import table
+from caregiving.utils import create_age_bins, table
 
 DEGREES_OF_FREEDOM = 1
 
@@ -63,6 +63,7 @@ def task_create_soep_moments(  # noqa: PLR0915
     start_age = specs["start_age"]
     start_age_caregivers = specs["start_age_caregiving"]
     end_age = specs["end_age_msm"]
+    end_age_caregiving = specs["end_age_caregiving"]
     start_year = 2001
     end_year = 2019
 
@@ -120,6 +121,7 @@ def task_create_soep_moments(  # noqa: PLR0915
     _df_year_bad_health = df_year[df_year["health"] == BAD_HEALTH]
     _df_year_good_health = df_year[df_year["health"] == GOOD_HEALTH]
 
+    df = df.copy()
     df["kidage_youngest"] = df["kidage_youngest"] - 1
 
     df_low = df[df["education"] == 0].copy()

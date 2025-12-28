@@ -39,6 +39,7 @@ from caregiving.specs.health_specs import (
     read_in_health_transition_specs_good_medium_bad_df,
 )
 from caregiving.specs.income_specs import add_income_specs
+from caregiving.utils import create_age_bins
 
 jax.config.update("jax_enable_x64", True)
 
@@ -328,6 +329,17 @@ def task_write_specs(  # noqa: PLR0915
 
     specs["max_exp_diffs_per_period"] = create_max_experience(
         data_decision, specs, path_to_save_txt=path_to_save_max_exp_diff
+    )
+
+    # Precompute age bins for moment calculation
+    start_age_caregiving = specs["start_age_caregiving"]
+    end_age_caregiving = specs["end_age_caregiving"]
+
+    specs["age_bins_5year"] = create_age_bins(
+        start_age_caregiving, end_age_caregiving, bin_size=5, min_remainder_size=5
+    )
+    specs["age_bins_3year"] = create_age_bins(
+        start_age_caregiving, end_age_caregiving, bin_size=3, min_remainder_size=2
     )
 
     with path_to_save_specs_dict.open("wb") as f:

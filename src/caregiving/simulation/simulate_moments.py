@@ -177,17 +177,6 @@ def simulate_moments_pandas(  # noqa: PLR0915
     moments["share_informal_care_high_educ"] = df_caregivers["education"].mean()
     # ================================================================================
 
-    # Labor caregiver shares using 3-year age bins
-    age_bins_caregivers_3year = (
-        list(
-            range(start_age_caregivers, end_age + 1, 3)
-        ),  # [40, 43, 46, 49, 52, 55, 58, 61, 64, 67, 70]
-        [
-            f"{s}_{s+2}" for s in range(start_age_caregivers, end_age - 1, 3)
-        ],  # ["40_42", "43_45", "46_48", "49_51", "52_54", "55_57",
-        # "58_60", "61_63", "64_66", "67_69"]
-    )
-
     moments = create_labor_share_moments_by_age_bin_pandas(
         df_caregivers, moments, age_bins=age_bins_caregivers_3year, label="caregivers"
     )
@@ -1146,37 +1135,30 @@ def create_moments_jax(sim_df, min_age, max_age, model_specs):  # noqa: PLR0915
     ]
 
     # Age bins for informal care shares (5-year bins)
-    age_bins = [
-        (40, 45),
-        (45, 50),
-        (50, 55),
-        (55, 60),
-        (60, 65),
-        (65, 70),
-    ]
-    age_bins_75 = [
-        (40, 45),
-        (45, 50),
-        (50, 55),
-        (55, 60),
-        (60, 65),
-        (65, 70),
-        (70, 75),
-    ]
+    # Create 5-year bins starting from start_age_caregiving to end_age_msm
+    end_age_msm = model_params["end_age_msm"]
+    age_bins_5year = []
+    start = min_age_caregivers
+    while start <= end_age_msm - 4:  # Need at least 5 years
+        end = start + 5
+        age_bins_5year.append((start, end))
+        start = end
+    # If there's a remainder, add a final bin
+    if start <= end_age_msm:
+        age_bins_5year.append((start, end_age_msm + 1))
 
     # Age bins for caregiver labor shares (3-year bins)
-    age_bins_caregivers_3year_jax = [
-        (40, 43),
-        (43, 46),
-        (46, 49),
-        (49, 52),
-        (52, 55),
-        (55, 58),
-        (58, 61),
-        (61, 64),
-        (64, 67),
-        (67, 70),
-    ]
+    # Create 3-year bins from start_age_caregiving to end_age_caregiving
+    end_age_caregiving = model_params["end_age_caregiving"]
+    age_bins_caregivers_3year_jax = []
+    start = min_age_caregivers
+    while start <= end_age_caregiving - 2:  # Need at least 3 years
+        end = start + 3
+        age_bins_caregivers_3year_jax.append((start, end))
+        start = end
+    # If there's a remainder of 2 years, add a 2-year bin
+    if start <= end_age_caregiving:
+        age_bins_caregivers_3year_jax.append((start, end_age_caregiving + 1))
 
     # Mean wealth by education and age bin
     mean_wealth_by_age_low_educ = get_mean_by_age(
@@ -1247,7 +1229,7 @@ def create_moments_jax(sim_df, min_age, max_age, model_specs):  # noqa: PLR0915
         arr_all,
         ind=idx,
         choice=INFORMAL_CARE,
-        bins=age_bins,
+        bins=age_bins_5year,
         scale=SCALE_CAREGIVER_SHARE,
     )
     # share_caregivers_by_age_bin = get_share_by_age_bin(
