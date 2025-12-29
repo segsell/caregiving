@@ -27,7 +27,6 @@ from caregiving.model.shared import (
     NOT_WORKING_NO_CARE_OR_FORMAL,
     NOT_WORKING_NO_FORMAL_CARE,
     NOT_WORKING_NO_INFORMAL_CARE,
-    PARENT_DEAD,
     RETIREMENT,
     RETIREMENT_CARE,
     RETIREMENT_INTENSIVE_INFORMAL_OR_FORMAL,
@@ -245,13 +244,14 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "health": health,
                 "partner_state": partner_state,
                 "mother_adl": 0,
-                "mother_dead": 1,
+                "mother_dead": 2,
                 "care_demand": NO_CARE_DEMAND,
                 "job_offer": 0,
             }
             return state_proxy
-        elif mother_dead == 1:
-            # If mother is dead, no care demand and supply
+        elif (mother_dead == 1) | (mother_dead == 2):
+            # If mother is dead (recently or longer), no care demand and supply
+            # Preserve mother_dead state (1=recently died, 2=longer dead)
             state_proxy = {
                 "period": period,
                 "lagged_choice": lagged_choice,
@@ -261,7 +261,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "health": health,
                 "partner_state": partner_state,
                 "mother_adl": 0,
-                "mother_dead": 1,
+                "mother_dead": 2,
                 "care_demand": NO_CARE_DEMAND,
                 "job_offer": job_offer,
             }
@@ -602,7 +602,7 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
     if caregiving_type == 1:
         if (
             is_no_care_demand(care_demand)
-            | (mother_dead == 1)
+            | (mother_dead > 0)  # mother_dead in [1, 2] means dead
             | (age < start_age_caregiving)
             | (age > end_age_caregiving)
         ):
@@ -683,7 +683,7 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
     elif caregiving_type == 0:
         if (
             is_no_care_demand(care_demand)
-            | (mother_dead == 1)
+            | (mother_dead > 0)  # mother_dead in [1, 2] means dead
             | (age < start_age_caregiving)
             | (age > end_age_caregiving)
         ):

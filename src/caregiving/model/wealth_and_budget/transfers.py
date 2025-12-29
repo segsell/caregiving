@@ -109,7 +109,7 @@ def calc_inheritance(
         period: Current period
         lagged_choice: Choice from previous period (d_{t-1})
         education: Education level
-        mother_dead: Indicator for whether mother is dead (1) or alive (0)
+        mother_dead: Mother death status (0=alive, 1=recently died, 2=longer dead)
         model_specs: Model specifications dictionary containing inheritance parameters
 
     Returns:
@@ -120,7 +120,8 @@ def calc_inheritance(
     start_age = model_specs["start_age"]
     age = start_age + period
 
-    # Only compute inheritance if mother is dead this period
+    # Only compute inheritance if mother recently died this period (state 1)
+    # State 0 = alive, State 1 = recently died (inheritance paid), State 2 = longer dead
     mother_dead_int = mother_dead == 1
 
     # Get sex label for parameter lookup
