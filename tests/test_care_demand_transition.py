@@ -374,9 +374,9 @@ def test_death_transition_three_states(period, mother_dead, education):
     )
 
     # 1) Probabilities must sum to 1
-    assert np.isclose(probs.sum(), 1.0, atol=1e-8), (
-        f"Probabilities sum to {probs.sum()}, expected 1.0"
-    )
+    assert np.isclose(
+        probs.sum(), 1.0, atol=1e-8
+    ), f"Probabilities sum to {probs.sum()}, expected 1.0"
 
     # 2) Must have 3 states: [alive_prob, recently_died_prob, longer_dead_prob]
     assert probs.shape == (3,), f"Expected shape (3,), got {probs.shape}"
@@ -389,35 +389,35 @@ def test_death_transition_three_states(period, mother_dead, education):
         # If alive: can stay alive or die (become recently dead)
         # Both probabilities should be between 0 and 1
         assert 0.0 <= probs[0] <= 1.0, f"Alive prob should be [0,1], got {probs[0]}"
-        assert 0.0 <= probs[1] <= 1.0, (
-            f"Recently died prob should be [0,1], got {probs[1]}"
-        )
-        assert np.isclose(probs[2], 0.0, atol=1e-8), (
-            f"If alive, longer dead prob should be 0, got {probs[2]}"
-        )
+        assert (
+            0.0 <= probs[1] <= 1.0
+        ), f"Recently died prob should be [0,1], got {probs[1]}"
+        assert np.isclose(
+            probs[2], 0.0, atol=1e-8
+        ), f"If alive, longer dead prob should be 0, got {probs[2]}"
         # Alive and recently died should sum to 1
-        assert np.isclose(probs[0] + probs[1], 1.0, atol=1e-8), (
-            f"Alive + recently died should sum to 1, got {probs[0] + probs[1]}"
-        )
+        assert np.isclose(
+            probs[0] + probs[1], 1.0, atol=1e-8
+        ), f"Alive + recently died should sum to 1, got {probs[0] + probs[1]}"
     elif mother_dead == 1:
         # If recently died: transitions to longer dead (state 2) with certainty
-        assert np.isclose(probs[0], 0.0, atol=1e-8), (
-            f"If recently died, alive prob should be 0, got {probs[0]}"
-        )
-        assert np.isclose(probs[1], 0.0, atol=1e-8), (
-            f"If recently died, recently died prob should be 0, got {probs[1]}"
-        )
-        assert np.isclose(probs[2], 1.0, atol=1e-8), (
-            f"If recently died, longer dead prob should be 1, got {probs[2]}"
-        )
+        assert np.isclose(
+            probs[0], 0.0, atol=1e-8
+        ), f"If recently died, alive prob should be 0, got {probs[0]}"
+        assert np.isclose(
+            probs[1], 0.0, atol=1e-8
+        ), f"If recently died, recently died prob should be 0, got {probs[1]}"
+        assert np.isclose(
+            probs[2], 1.0, atol=1e-8
+        ), f"If recently died, longer dead prob should be 1, got {probs[2]}"
     elif mother_dead == 2:
         # If longer dead: stays longer dead (state 2) with certainty
-        assert np.isclose(probs[0], 0.0, atol=1e-8), (
-            f"If longer dead, alive prob should be 0, got {probs[0]}"
-        )
-        assert np.isclose(probs[1], 0.0, atol=1e-8), (
-            f"If longer dead, recently died prob should be 0, got {probs[1]}"
-        )
-        assert np.isclose(probs[2], 1.0, atol=1e-8), (
-            f"If longer dead, longer dead prob should be 1, got {probs[2]}"
-        )
+        assert np.isclose(
+            probs[0], 0.0, atol=1e-8
+        ), f"If longer dead, alive prob should be 0, got {probs[0]}"
+        assert np.isclose(
+            probs[1], 0.0, atol=1e-8
+        ), f"If longer dead, recently died prob should be 0, got {probs[1]}"
+        assert np.isclose(
+            probs[2], 1.0, atol=1e-8
+        ), f"If longer dead, longer dead prob should be 1, got {probs[2]}"
