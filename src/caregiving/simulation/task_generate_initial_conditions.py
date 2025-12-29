@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-from dcegm.asset_correction import adjust_observed_assets
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
@@ -49,6 +48,7 @@ from caregiving.moments.task_create_soep_moments import (
     create_df_wealth,
 )
 from caregiving.utils import table
+from dcegm.asset_correction import adjust_observed_assets
 
 
 @pytask.mark.initial_conditions
@@ -164,6 +164,11 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
 
     states_dict["care_demand"] = np.zeros_like(start_period_data["wealth"])
     states_dict["experience"] = start_period_data["experience"].values
+    # Initialize mother_dead to 0 (alive) for all agents at initial period
+    # (will be drawn later based on mother health)
+    states_dict["mother_dead"] = np.zeros_like(
+        start_period_data["wealth"], dtype=np.uint8
+    )
 
     states_dict["assets_begin_of_period"] = (
         start_period_data["wealth"].values / specs["wealth_unit"]
