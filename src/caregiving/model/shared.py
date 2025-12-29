@@ -34,9 +34,6 @@ MAX_AGE = 70
 
 MIN_AGE_PARENTS = 50
 MAX_AGE_PARENTS = 100
-# Age offset between agent matrices (start_age=30) and parent matrices
-# (start_age_parents=50)
-AGENT_TO_PARENT_MAT_AGE_OFFSET = 20
 
 AGE_0 = 0
 AGE_4 = 4

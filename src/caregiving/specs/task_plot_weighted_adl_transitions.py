@@ -81,7 +81,7 @@ def plot_weighted_adl_transitions_and_shares(  # noqa: PLR0912, PLR0915
     survival_max_age = survival_min_age + survival_mat.shape[1] - 1
     adl_labels = specs["adl_labels"]  # ["No ADL", "ADL 1", "ADL 2", "ADL 3"]
     sex_labels = specs["sex_labels"]  # ["Men", "Women"]
-    start_age_parents = specs["start_age_parents"]
+    start_age_parents_mat = specs["start_age_parents_mat"]
     end_age = specs["end_age"]
 
     # Map sex to index: "Men" = 0, "Women" = 1
@@ -152,7 +152,7 @@ def plot_weighted_adl_transitions_and_shares(  # noqa: PLR0912, PLR0915
 
         if age < end_age:
             # Compute next period shares using WEIGHTED transition matrix
-            period = age - start_age_parents
+            period = age - start_age_parents_mat
             next_shares = {adl: 0.0 for adl in adl_labels}
 
             for from_adl_idx, from_adl in enumerate(adl_labels):
@@ -251,7 +251,7 @@ def plot_weighted_adl_transitions_and_shares(  # noqa: PLR0912, PLR0915
         if age < end_age:
             # Compute next period shares among alive using UNWEIGHTED transition matrix
             # (transitions among alive population only)
-            period = age - start_age_parents
+            period = age - start_age_parents_mat
             next_shares_alive = {adl: 0.0 for adl in adl_labels}
 
             for from_adl_idx, from_adl in enumerate(adl_labels):
@@ -378,7 +378,7 @@ def plot_light_intensive_adl_transitions_and_shares(  # noqa: PLR0912, PLR0915
         - adl_state_transition_mat: 4-category transition matrix
         - survival_by_age_mat: survival matrix of shape [sex, age_index]
         - survival_min_age: minimum age in survival matrix (age_index 0)
-        - adl_labels, sex_labels, start_age_parents, end_age
+        - adl_labels, sex_labels, start_age_parents_mat, end_age
     path_to_save_plot
         Optional path to save the plot.
     start_age
@@ -398,7 +398,7 @@ def plot_light_intensive_adl_transitions_and_shares(  # noqa: PLR0912, PLR0915
     survival_max_age = survival_min_age + survival_mat.shape[1] - 1
     adl_labels = specs["adl_labels"]  # ["No ADL", "ADL 1", "ADL 2", "ADL 3"]
     sex_labels = specs["sex_labels"]  # ["Men", "Women"]
-    start_age_parents = specs["start_age_parents"]
+    start_age_parents_mat = specs["start_age_parents_mat"]
     end_age = specs["end_age"]
 
     # Map sex to index: "Men" = 0, "Women" = 1
@@ -505,7 +505,7 @@ def plot_light_intensive_adl_transitions_and_shares(  # noqa: PLR0912, PLR0915
 
         if age < end_age:
             # Compute next period shares among alive using light/intensive matrix
-            period = age - start_age_parents
+            period = age - start_age_parents_mat
             next_shares_alive = {adl: 0.0 for adl in adl_labels_light_intensive}
 
             for from_adl_idx, from_adl in enumerate(adl_labels_light_intensive):
@@ -602,7 +602,7 @@ def plot_light_intensive_adl_transitions_and_shares(  # noqa: PLR0912, PLR0915
 
         if age < end_age:
             # Compute next period shares among alive using UNWEIGHTED transition matrix
-            period = age - start_age_parents
+            period = age - start_age_parents_mat
             next_shares_alive = {adl: 0.0 for adl in adl_labels}
 
             for from_adl_idx, from_adl in enumerate(adl_labels):

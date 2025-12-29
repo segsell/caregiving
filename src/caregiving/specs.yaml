@@ -11,7 +11,7 @@ start_age: 30 # 35
 end_age: 100
 end_age_msm: 70
 end_age_wealth: 80
-start_age_parents: 50
+start_age_parents_mat: 50
 survival_min_age: 16
 
 end_age_children_in_household: 60
