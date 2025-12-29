@@ -20,7 +20,6 @@ from caregiving.model.shared import (
     LIGHT_INFORMAL_CARE,
     NO_CARE,
     PARENT_BAD_HEALTH,
-    PARENT_DEAD,
     PARENT_GOOD_HEALTH,
     PARENT_MEDIUM_HEALTH,
     SEX,
@@ -1347,7 +1346,7 @@ def plot_mother_health_shares_by_age(
         df_plot["mother_health"] == PARENT_MEDIUM_HEALTH
     ).astype(int)
     df_plot["health_bad"] = (df_plot["mother_health"] == PARENT_BAD_HEALTH).astype(int)
-    df_plot["health_dead"] = (df_plot["mother_health"] == PARENT_DEAD).astype(int)
+    df_plot["health_dead"] = (df_plot["mother_health"] > 0).astype(int)
 
     # Calculate shares by mother age
     health_shares = {}

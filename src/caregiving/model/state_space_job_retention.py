@@ -3,7 +3,7 @@
 import jax.numpy as jnp
 
 from caregiving.model.shared import (
-    PARENT_DEAD,
+    PARENT_HEALTH_DEAD,
     is_alive,
     is_dead,
     is_informal_care,
@@ -165,13 +165,13 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
                 "has_sister": has_sister,
                 "health": health,
                 "partner_state": partner_state,
-                "mother_health": PARENT_DEAD,
+                "mother_health": PARENT_HEALTH_DEAD,
                 "care_demand": 0,
                 "job_offer": 0,
                 "job_before_caregiving": 0,
             }
             return state_proxy
-        elif mother_health == PARENT_DEAD:
+        elif mother_health == PARENT_HEALTH_DEAD:
             # If mother is dead, no care demand and supply
             state_proxy = {
                 "period": period,

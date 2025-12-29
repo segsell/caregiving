@@ -27,8 +27,8 @@ from caregiving.model.shared import (
     FEMALE,
     MALE,
     MIN_AGE_PARENTS,
-    PARENT_DEAD,
     PARENT_GOOD_HEALTH,
+    PARENT_HEALTH_DEAD,
     PARENT_MEDIUM_HEALTH,
 )
 from caregiving.specs.derive_specs import read_and_derive_specs
@@ -2430,7 +2430,9 @@ def plot_adl_probabilities_by_health(
     # 2.  Empirical (observed) probabilities
     # ──────────────────────────────────────────────────────────────────────────
     df_obs = df_sample.copy()
-    df_obs = df_obs[df_obs["health"] != PARENT_DEAD]  # drop death rows if present
+    df_obs = df_obs[
+        df_obs["health"] != PARENT_HEALTH_DEAD
+    ]  # drop death rows if present
 
     df_obs["sex"] = df_obs["gender"].map(gender_map)
     df_obs["health_str"] = df_obs["health"].map(health_map_num_to_str)

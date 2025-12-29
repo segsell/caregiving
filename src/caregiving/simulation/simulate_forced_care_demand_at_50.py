@@ -6,15 +6,13 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pandas as pd
-from dcegm.simulation.sim_utils import create_simulation_df
-from dcegm.simulation.simulate import simulate_all_periods
 
 from caregiving.model.shared import (
     CARE_DEMAND_AND_NO_OTHER_SUPPLY,
     DEAD,
     FULL_TIME,
     PARENT_BAD_HEALTH,
-    PARENT_DEAD,
+    PARENT_HEALTH_DEAD,
     PART_TIME,
     SEX,
 )
@@ -32,6 +30,8 @@ from caregiving.simulation.simulation_utils import (
     find_continuous_state_names,
     override_forced_states,
 )
+from dcegm.simulation.sim_utils import create_simulation_df
+from dcegm.simulation.simulate import simulate_all_periods
 
 
 def simulate_scenario_forced_care_demand_at_50(  # noqa: PLR0915
@@ -134,7 +134,7 @@ def simulate_scenario_forced_care_demand_at_50(  # noqa: PLR0915
         states_at_age_50,
         CARE_DEMAND_AND_NO_OTHER_SUPPLY,
         PARENT_BAD_HEALTH,
-        PARENT_DEAD,
+        PARENT_HEALTH_DEAD,
     )
 
     # Get wealth at beginning of age 50
@@ -197,7 +197,7 @@ def simulate_scenario_forced_care_demand_at_50(  # noqa: PLR0915
     # Verify forced states are set correctly at age 50 (period 0)
     mask_at_age_50 = df["age"] == forced_age
     df.loc[mask_at_age_50, "care_demand"] = 2
-    mother_alive_mask = mask_at_age_50 & (df["mother_health"] != PARENT_DEAD)
+    mother_alive_mask = mask_at_age_50 & (df["mother_health"] != PARENT_HEALTH_DEAD)
     df.loc[mother_alive_mask, "mother_health"] = PARENT_BAD_HEALTH
 
     # Add additional variables (similar to simulate_scenario)

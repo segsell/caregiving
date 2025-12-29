@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-from dcegm.asset_correction import adjust_observed_assets
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
@@ -28,7 +27,8 @@ from caregiving.model.shared import (
     INITIAL_CONDITIONS_COHORT_LOW,
     MOTHER,
     NO_CARE_DEMAND,
-    PARENT_DEAD,
+    PARENT_HEALTH_DEAD,
+    PARENT_LONGER_DEAD,
     SEX,
     WORK_AND_UNEMPLOYED_NO_CARE,
 )
@@ -48,6 +48,7 @@ from caregiving.moments.task_create_soep_moments import (
     create_df_wealth,
 )
 from caregiving.utils import table
+from dcegm.asset_correction import adjust_observed_assets
 
 
 @pytask.mark.initial_conditions
@@ -307,10 +308,14 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
             health_prob_by_age,
         )
 
-        # mother_dead: 1 if mother_health == PARENT_DEAD (3), else 0
-        mother_dead_agents[type_mask] = (
-            mother_health_agents[type_mask] == PARENT_DEAD
-        ).astype(np.uint8)
+        # mother_dead if mother_health == PARENT_HEALTH_DEAD (3), else 0
+        # In initial conditions, if mother is dead, we set to "longer dead"
+        # because we don't know if death was recent, so no inheritance
+        mother_dead_agents[type_mask] = np.where(
+            mother_health_agents[type_mask] == PARENT_HEALTH_DEAD,
+            PARENT_LONGER_DEAD,  # Set to longer dead
+            0,  # Set to alive
+        )
 
         # mother_adl: draw from empirical ADL distribution by age in parent_child data
         # If dead, ADL = 0 (No ADL). If alive, draw from empirical distribution

@@ -20,7 +20,6 @@ from caregiving.model.shared import (
     NO_INFORMAL_CARE,
     NOT_WORKING,
     NOT_WORKING_CHOICES,
-    PARENT_DEAD,
     RETIREMENT,
     SCALE_CAREGIVER_SHARE,
     SEX,
