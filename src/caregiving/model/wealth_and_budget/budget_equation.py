@@ -39,16 +39,18 @@ def budget_constraint(
     experience_years = max_exp_period * experience
 
     # Calculate partner income
-    partner_income_after_ssc = calc_partner_income_after_ssc(
-        partner_state=partner_state,
-        sex=sex_var,
-        model_specs=model_specs,
-        education=education,
-        period=period,
+    partner_income_after_ssc, gross_partner_income, gross_partner_pension = (
+        calc_partner_income_after_ssc(
+            partner_state=partner_state,
+            sex=sex_var,
+            model_specs=model_specs,
+            education=education,
+            period=period,
+        )
     )
 
     # Income from lagged choice 0
-    retirement_income_after_ssc = calc_pensions_after_ssc(
+    retirement_income_after_ssc, gross_retirement_income = calc_pensions_after_ssc(
         experience_years=experience_years,
         sex=sex_var,
         education=education,
@@ -58,17 +60,19 @@ def budget_constraint(
     has_partner_int = (partner_state > 0).astype(int)
 
     # Income lagged choice 1
-    unemployment_benefits = calc_unemployment_benefits(
-        assets=assets_scaled,
-        education=education,
-        sex=sex_var,
-        has_partner_int=has_partner_int,
-        period=period,
-        model_specs=model_specs,
+    household_unemployment_benefits, own_unemployemnt_benefits = (
+        calc_unemployment_benefits(
+            assets=assets_scaled,
+            education=education,
+            sex=sex_var,
+            has_partner_int=has_partner_int,
+            period=period,
+            model_specs=model_specs,
+        )
     )
 
     # Income lagged choice 2
-    labor_income_after_ssc = calc_labor_income_after_ssc(
+    labor_income_after_ssc, gross_labor_income = calc_labor_income_after_ssc(
         lagged_choice=lagged_choice,
         experience_years=experience_years,
         education=education,
@@ -88,7 +92,7 @@ def budget_constraint(
     )
 
     # Calculate total houshold net income
-    total_net_income = calc_net_household_income(
+    total_net_household_income = calc_net_household_income(
         own_income=own_income_after_ssc,
         partner_income=partner_income_after_ssc,
         has_partner_int=has_partner_int,
@@ -110,8 +114,8 @@ def budget_constraint(
     )
 
     total_income = jnp.maximum(
-        total_net_income + child_benefits + care_benfits_and_costs,
-        unemployment_benefits,
+        total_net_household_income + child_benefits + care_benfits_and_costs,
+        household_unemployment_benefits,
     )
 
     bequest_from_parent = calc_inheritance(
@@ -122,11 +126,34 @@ def budget_constraint(
         model_specs=model_specs,
     )
 
-    # calculate beginning of period wealth M_t
-    wealth = (
-        (1 + model_specs["interest_rate"]) * assets_scaled
-        + total_income
-        + bequest_from_parent
+    # # calculate beginning of period wealth M_t
+    # assets_begin_of_period = (
+    #     (1 + model_specs["interest_rate"]) * assets_scaled
+    #     + total_income
+    #     + bequest_from_parent
+    # )
+    total_income = jnp.maximum(
+        total_net_household_income, household_unemployment_benefits
     )
+    interest_rate = model_specs["interest_rate"]
+    interest = interest_rate * assets_scaled
+    total_income_plus_interest = total_income + interest + bequest_from_parent
 
-    return wealth / model_specs["wealth_unit"]
+    # calculate beginning of period wealth M_t
+    assets_begin_of_period = assets_scaled + total_income_plus_interest
+
+    aux = {
+        "net_hh_income": total_income_plus_interest / model_specs["wealth_unit"],
+        "hh_net_income_wo_interest": total_income / model_specs["wealth_unit"],
+        "interest": interest / model_specs["wealth_unit"],
+        "joint_gross_labor_income": (gross_labor_income + gross_partner_income)
+        / model_specs["wealth_unit"],
+        "joint_gross_retirement_income": (
+            gross_partner_pension + gross_retirement_income
+        )
+        / model_specs["wealth_unit"],
+        "gross_labor_income": gross_labor_income / model_specs["wealth_unit"],
+        "gross_retirement_income": gross_retirement_income / model_specs["wealth_unit"],
+    }
+
+    return assets_begin_of_period / model_specs["wealth_unit"], aux

@@ -707,7 +707,7 @@ def task_plot_total_household_income(
                     else:
                         period = exp
                     exp_share = exp / (exp + specs["max_exp_diffs_per_period"][period])
-                    total_income[i] = budget_constraint(
+                    total_income[i], _budget_aux = budget_constraint(
                         period=period,
                         education=edu_val,
                         lagged_choice=choice,
@@ -715,6 +715,7 @@ def task_plot_total_household_income(
                         # sex=sex_var,
                         partner_state=np.array(married_val),
                         care_demand=0,
+                        mother_dead=0,
                         asset_end_of_previous_period=0,
                         income_shock_previous_period=0,
                         params=params,

@@ -26,30 +26,31 @@ def calc_unemployment_benefits(
     means_test = assets < model_specs["unemployment_wealth_thresh"]
 
     # Unemployment benefits for children living in the household
-    n_children = model_specs["children_by_state"][
+    nb_children = model_specs["children_by_state"][
         sex, education, has_partner_int, period
     ]
     unemployment_benefits_children = (
-        n_children * model_specs["annual_child_unemployment_benefits"]
+        nb_children * model_specs["annual_child_unemployment_benefits"]
     )
 
-    # Unemployment benefits for adults living in the household
-    unemployment_benefits_adults = (1 + has_partner_int) * model_specs[
-        "annual_unemployment_benefits"
-    ]
-    # For housing, second adult gets only half
-    unemployment_benefits_housing = (1 + 0.5 * has_partner_int) * model_specs[
-        "annual_unemployment_benefits_housing"
-    ]
+    own_unemployemnt_benefits = (
+        model_specs["annual_unemployment_benefits"]
+        + model_specs["annual_unemployment_benefits_housing"]
+    )
+
+    partner_unemployment_benefits = has_partner_int * (
+        model_specs["annual_unemployment_benefits"]
+        + model_specs["annual_unemployment_benefits_housing"] * 0.5
+    )
 
     # Total unemployment benefits
     total_unemployment_benefits = (
-        unemployment_benefits_adults
+        own_unemployemnt_benefits
+        + partner_unemployment_benefits
         + unemployment_benefits_children
-        + unemployment_benefits_housing
     )
 
-    # reduced benefits for assets slightly above threshold
+    # reduced benefits for savings slightly above threshold
     reduced_benefits_threshhold = (
         model_specs["unemployment_wealth_thresh"] + total_unemployment_benefits
     )
@@ -58,12 +59,58 @@ def calc_unemployment_benefits(
     )
     reduced_benefits = reduced_benefits_threshhold - assets
 
-    unemployment_benefits = (
+    household_unemployment_benefits = (
         means_test * total_unemployment_benefits
         + reduced_benefits_means_test * reduced_benefits
     )
+    return household_unemployment_benefits, own_unemployemnt_benefits
 
-    return unemployment_benefits
+
+# def calc_unemployment_benefits(
+#     assets, sex, education, has_partner_int, period, model_specs
+# ):
+#     # Unemployment benefits means test
+#     means_test = assets < model_specs["unemployment_wealth_thresh"]
+
+#     # Unemployment benefits for children living in the household
+#     n_children = model_specs["children_by_state"][
+#         sex, education, has_partner_int, period
+#     ]
+#     unemployment_benefits_children = (
+#         n_children * model_specs["annual_child_unemployment_benefits"]
+#     )
+
+#     # Unemployment benefits for adults living in the household
+#     unemployment_benefits_adults = (1 + has_partner_int) * model_specs[
+#         "annual_unemployment_benefits"
+#     ]
+#     # For housing, second adult gets only half
+#     unemployment_benefits_housing = (1 + 0.5 * has_partner_int) * model_specs[
+#         "annual_unemployment_benefits_housing"
+#     ]
+
+#     # Total unemployment benefits
+#     total_unemployment_benefits = (
+#         unemployment_benefits_adults
+#         + unemployment_benefits_children
+#         + unemployment_benefits_housing
+#     )
+
+#     # reduced benefits for assets slightly above threshold
+#     reduced_benefits_threshhold = (
+#         model_specs["unemployment_wealth_thresh"] + total_unemployment_benefits
+#     )
+#     reduced_benefits_means_test = (1 - means_test) * (
+#         assets < reduced_benefits_threshhold
+#     )
+#     reduced_benefits = reduced_benefits_threshhold - assets
+
+#     unemployment_benefits = (
+#         means_test * total_unemployment_benefits
+#         + reduced_benefits_means_test * reduced_benefits
+#     )
+
+#     return unemployment_benefits
 
 
 def calc_care_benefits_and_costs(lagged_choice, education, care_demand, model_specs):

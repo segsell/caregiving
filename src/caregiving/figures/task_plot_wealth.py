@@ -37,7 +37,7 @@ def task_plot_budget_of_unemployed(
     for sex_var, sex_label in enumerate(specs["sex_labels"]):
         ax = axs[sex_var]
         for edu_var, edu_label in enumerate(specs["education_labels"]):
-            wealth = budget_constraint(
+            wealth, _budget_aux = budget_constraint(
                 period=70,
                 education=edu_var,
                 lagged_choice=0,
@@ -45,6 +45,7 @@ def task_plot_budget_of_unemployed(
                 # sex=sex_var,
                 partner_state=np.array([1]),
                 care_demand=np.array([0]),
+                mother_dead=0,
                 asset_end_of_previous_period=savings,
                 income_shock_previous_period=0,
                 params=params,
