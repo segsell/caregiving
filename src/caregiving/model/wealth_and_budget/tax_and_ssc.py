@@ -116,7 +116,8 @@ def calc_net_household_income(own_income, partner_income, has_partner_int, model
 
     # Readjust with split factor
     income_tax = income_tax_split * split_factor
-    return family_income - income_tax
+
+    return family_income - income_tax, income_tax
 
 
 def calc_inc_tax_for_single_income(gross_income, model_specs):

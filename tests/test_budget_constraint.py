@@ -18,6 +18,9 @@ from caregiving.model.shared import (
 )
 from caregiving.model.state_space import get_next_period_experience
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
+from caregiving.model.wealth_and_budget.government_budget import (
+    calc_government_budget_components,
+)
 from caregiving.model.wealth_and_budget.partner_income import (
     calc_partner_income_after_ssc,
 )
@@ -29,6 +32,7 @@ from caregiving.model.wealth_and_budget.tax_and_ssc import (
 )
 from caregiving.model.wealth_and_budget.transfers import (
     calc_care_benefits_and_costs,
+    calc_child_benefits,
     calc_inheritance,
     calc_unemployment_benefits,
 )
@@ -121,7 +125,7 @@ def test_budget_unemployed(
     )
 
     # Calculate total net household income (without child benefits and care benefits)
-    total_net_household_income = calc_net_household_income(
+    total_net_household_income, _ = calc_net_household_income(
         own_income=own_income_after_ssc,
         partner_income=partner_income_after_ssc,
         has_partner_int=has_partner_int,
@@ -287,7 +291,7 @@ def test_budget_worker(
         partner_income_after_ssc = partner_income_year - sscs_partner
 
     # Calculate total net household income (without child benefits and care benefits)
-    total_net_household_income = calc_net_household_income(
+    total_net_household_income, _ = calc_net_household_income(
         own_income=own_income_after_ssc,
         partner_income=partner_income_after_ssc,
         has_partner_int=has_partner_int,
@@ -429,7 +433,7 @@ def test_retiree(
         partner_income_after_ssc = partner_income_year - sscs_partner
 
     # Calculate total net household income (without child benefits and care benefits)
-    total_net_household_income = calc_net_household_income(
+    total_net_household_income, _ = calc_net_household_income(
         own_income=own_income_after_ssc,
         partner_income=partner_income_after_ssc,
         has_partner_int=has_partner_int,
@@ -584,7 +588,7 @@ def test_fresh_retiree(
         partner_income_after_ssc = partner_income_year - sscs_partner
 
     # Calculate total net household income (without child benefits and care benefits)
-    total_net_household_income = calc_net_household_income(
+    total_net_household_income, _ = calc_net_household_income(
         own_income=own_income_after_ssc,
         partner_income=partner_income_after_ssc,
         has_partner_int=has_partner_int,
@@ -627,3 +631,202 @@ def test_fresh_retiree(
     ) / specs_internal["wealth_unit"]
 
     np.testing.assert_almost_equal(wealth, expected_wealth)
+
+
+@pytest.mark.parametrize(
+    "period, sex, partner_state, education, care_demand, savings, working_choice",
+    list(
+        product(
+            PERIOD_GRID[:2],  # Test fewer periods for speed
+            SEX_GRID,
+            PARTNER_STATES,
+            EDUCATION_GRID,
+            CARE_DEMAND_GRID[:2],  # Test fewer care demands
+            SAVINGS_GRID[:2],  # Test fewer savings
+            [PART_TIME_NO_CARE[0].item(), FULL_TIME_NO_CARE[0].item()],
+        )
+    ),
+)
+def test_government_budget_components(
+    period,
+    sex,
+    partner_state,
+    education,
+    care_demand,
+    savings,
+    working_choice,
+    load_specs,
+):
+    """Test government budget components in budget_aux."""
+    specs = load_specs
+    specs_internal = copy.deepcopy(specs)
+
+    params = {"interest_rate": specs_internal["interest_rate"]}
+
+    max_init_exp_period = period + specs_internal["max_exp_diffs_per_period"][period]
+    exp_cont = 15 / max_init_exp_period  # Use fixed experience for testing
+
+    wealth, budget_aux = budget_constraint(
+        period=period,
+        partner_state=partner_state,
+        education=education,
+        lagged_choice=working_choice,
+        experience=exp_cont,
+        care_demand=care_demand,
+        mother_dead=PARENT_LONGER_DEAD,
+        asset_end_of_previous_period=savings,
+        income_shock_previous_period=0,
+        params=params,
+        model_specs=specs_internal,
+    )
+
+    # Check that budget_aux contains all expected government budget keys
+    expected_keys = [
+        "income_tax",
+        "own_ssc",
+        "partner_ssc",
+        "total_tax_revenue",
+        "government_expenditures",
+        "net_government_budget",
+    ]
+    for key in expected_keys:
+        assert key in budget_aux, f"Missing key '{key}' in budget_aux"
+
+    # Manually calculate expected government budget components
+    savings_scaled = savings * specs_internal["wealth_unit"]
+    has_partner_int = int(partner_state > 0)
+
+    # Calculate own income and SSC
+    max_exp_period = period + specs_internal["max_exp_diffs_per_period"][period]
+    experience_years = max_exp_period * exp_cont
+
+    from caregiving.model.wealth_and_budget.wages import calc_labor_income_after_ssc
+
+    labor_income_after_ssc, gross_labor_income = calc_labor_income_after_ssc(
+        lagged_choice=working_choice,
+        experience_years=experience_years,
+        education=education,
+        sex=sex,
+        income_shock=0,
+        model_specs=specs_internal,
+    )
+
+    was_worker = working_choice in (
+        PART_TIME_NO_CARE[0].item(),
+        FULL_TIME_NO_CARE[0].item(),
+    )
+    was_retired = False
+
+    own_income_after_ssc = labor_income_after_ssc if was_worker else 0.0
+    gross_retirement_income = 0.0
+
+    # Calculate partner income
+    partner_income_after_ssc, gross_partner_income, gross_partner_pension = (
+        calc_partner_income_after_ssc(
+            partner_state=partner_state,
+            sex=sex,
+            model_specs=specs_internal,
+            education=education,
+            period=period,
+        )
+    )
+
+    # Calculate benefits
+    child_benefits = calc_child_benefits(
+        education=education,
+        sex=sex,
+        has_partner_int=has_partner_int,
+        period=period,
+        model_specs=specs_internal,
+    )
+    care_benefits_and_costs = calc_care_benefits_and_costs(
+        lagged_choice=working_choice,
+        education=education,
+        care_demand=care_demand,
+        model_specs=specs_internal,
+    )
+    household_unemployment_benefits, _ = calc_unemployment_benefits(
+        assets=savings_scaled,
+        education=education,
+        sex=sex,
+        has_partner_int=has_partner_int,
+        period=period,
+        model_specs=specs_internal,
+    )
+
+    # Calculate income tax using calc_net_household_income
+    _, expected_income_tax = calc_net_household_income(
+        own_income=own_income_after_ssc,
+        partner_income=partner_income_after_ssc,
+        has_partner_int=has_partner_int,
+        model_specs=specs_internal,
+    )
+
+    # Calculate expected government budget components
+    (
+        expected_income_tax,
+        expected_own_ssc,
+        expected_partner_ssc,
+        expected_total_tax_revenue,
+        expected_government_expenditures,
+        expected_net_government_budget,
+    ) = calc_government_budget_components(
+        household_income_tax_total=expected_income_tax,
+        was_worker=was_worker,
+        was_retired=was_retired,
+        gross_labor_income=gross_labor_income,
+        gross_retirement_income=gross_retirement_income,
+        partner_state=partner_state,
+        gross_partner_income=gross_partner_income,
+        gross_partner_pension=gross_partner_pension,
+        child_benefits=child_benefits,
+        care_benefits_and_costs=care_benefits_and_costs,
+        household_unemployment_benefits=household_unemployment_benefits,
+        model_specs=specs_internal,
+    )
+
+    # Compare with budget_aux (scaled by wealth_unit)
+    np.testing.assert_almost_equal(
+        budget_aux["income_tax"],
+        expected_income_tax / specs_internal["wealth_unit"],
+        decimal=7,
+    )
+    np.testing.assert_almost_equal(
+        budget_aux["own_ssc"],
+        expected_own_ssc / specs_internal["wealth_unit"],
+        decimal=7,
+    )
+    np.testing.assert_almost_equal(
+        budget_aux["partner_ssc"],
+        expected_partner_ssc / specs_internal["wealth_unit"],
+        decimal=7,
+    )
+    np.testing.assert_almost_equal(
+        budget_aux["total_tax_revenue"],
+        expected_total_tax_revenue / specs_internal["wealth_unit"],
+        decimal=7,
+    )
+    np.testing.assert_almost_equal(
+        budget_aux["government_expenditures"],
+        expected_government_expenditures / specs_internal["wealth_unit"],
+        decimal=7,
+    )
+    np.testing.assert_almost_equal(
+        budget_aux["net_government_budget"],
+        expected_net_government_budget / specs_internal["wealth_unit"],
+        decimal=7,
+    )
+
+    # Verify that total_tax_revenue = income_tax + own_ssc + partner_ssc
+    np.testing.assert_almost_equal(
+        budget_aux["total_tax_revenue"],
+        (budget_aux["income_tax"] + budget_aux["own_ssc"] + budget_aux["partner_ssc"]),
+        decimal=7,
+    )
+
+    # Verify that net_government_budget = total_tax_revenue - government_expenditures
+    np.testing.assert_almost_equal(
+        budget_aux["net_government_budget"],
+        budget_aux["total_tax_revenue"] - budget_aux["government_expenditures"],
+        decimal=7,
+    )

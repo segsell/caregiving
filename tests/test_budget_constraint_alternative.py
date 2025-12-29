@@ -115,7 +115,7 @@ def test_budget_unemployed(
     )
 
     # Calculate total net household income (without child benefits and care benefits)
-    total_net_household_income = calc_net_household_income(
+    total_net_household_income, _ = calc_net_household_income(
         own_income=own_income_after_ssc,
         partner_income=partner_income_after_ssc,
         has_partner_int=has_partner_int,
@@ -272,7 +272,7 @@ def test_budget_worker(
         )
 
     # Calculate total net household income (without child benefits and care benefits)
-    total_net_household_income = calc_net_household_income(
+    total_net_household_income, _ = calc_net_household_income(
         own_income=own_income_after_ssc,
         partner_income=partner_income_after_ssc,
         has_partner_int=has_partner_int,
@@ -410,7 +410,7 @@ def test_retiree(
         )
 
     # Calculate total net household income (without child benefits and care benefits)
-    total_net_household_income = calc_net_household_income(
+    total_net_household_income, _ = calc_net_household_income(
         own_income=own_income_after_ssc,
         partner_income=partner_income_after_ssc,
         has_partner_int=has_partner_int,
@@ -551,7 +551,7 @@ def test_fresh_retiree(
     has_partner_int = (partner_state > 0).astype(int)
 
     # Calculate total net household income (without child benefits and care benefits)
-    total_net_household_income = calc_net_household_income(
+    total_net_household_income, _ = calc_net_household_income(
         own_income=own_income_after_ssc,
         partner_income=partner_income_after_ssc,
         has_partner_int=has_partner_int,

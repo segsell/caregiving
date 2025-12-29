@@ -1,6 +1,9 @@
 from jax import numpy as jnp
 
 from caregiving.model.shared import SEX, is_retired, is_working
+from caregiving.model.wealth_and_budget.government_budget import (
+    calc_government_budget_components,
+)
 from caregiving.model.wealth_and_budget.partner_income import (
     calc_partner_income_after_ssc,
 )
@@ -60,7 +63,7 @@ def budget_constraint(
     has_partner_int = (partner_state > 0).astype(int)
 
     # Income lagged choice 1
-    household_unemployment_benefits, own_unemployemnt_benefits = (
+    household_unemployment_benefits, _own_unemployemnt_benefits = (
         calc_unemployment_benefits(
             assets=assets_scaled,
             education=education,
@@ -92,7 +95,7 @@ def budget_constraint(
     )
 
     # Calculate total houshold net income
-    total_net_household_income = calc_net_household_income(
+    total_net_household_income, income_tax_total = calc_net_household_income(
         own_income=own_income_after_ssc,
         partner_income=partner_income_after_ssc,
         has_partner_int=has_partner_int,
@@ -142,6 +145,29 @@ def budget_constraint(
     # calculate beginning of period wealth M_t
     assets_begin_of_period = assets_scaled + total_income_plus_interest
 
+    # Calculate government budget components (revenue and expenditures)
+    (
+        income_tax_total,
+        own_ssc,
+        partner_ssc,
+        total_tax_revenue,
+        government_expenditures,
+        net_government_budget,
+    ) = calc_government_budget_components(
+        household_income_tax_total=income_tax_total,
+        was_worker=was_worker,
+        was_retired=was_retired,
+        gross_labor_income=gross_labor_income,
+        gross_retirement_income=gross_retirement_income,
+        partner_state=partner_state,
+        gross_partner_income=gross_partner_income,
+        gross_partner_pension=gross_partner_pension,
+        child_benefits=child_benefits,
+        care_benefits_and_costs=care_benfits_and_costs,
+        household_unemployment_benefits=household_unemployment_benefits,
+        model_specs=model_specs,
+    )
+
     aux = {
         "net_hh_income": total_income_plus_interest / model_specs["wealth_unit"],
         "hh_net_income_wo_interest": total_income / model_specs["wealth_unit"],
@@ -154,6 +180,13 @@ def budget_constraint(
         / model_specs["wealth_unit"],
         "gross_labor_income": gross_labor_income / model_specs["wealth_unit"],
         "gross_retirement_income": gross_retirement_income / model_specs["wealth_unit"],
+        # Government budget components
+        "income_tax": income_tax_total / model_specs["wealth_unit"],
+        "own_ssc": own_ssc / model_specs["wealth_unit"],
+        "partner_ssc": partner_ssc / model_specs["wealth_unit"],
+        "total_tax_revenue": total_tax_revenue / model_specs["wealth_unit"],
+        "government_expenditures": government_expenditures / model_specs["wealth_unit"],
+        "net_government_budget": net_government_budget / model_specs["wealth_unit"],
     }
 
     return assets_begin_of_period / model_specs["wealth_unit"], aux
