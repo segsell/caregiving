@@ -1,6 +1,11 @@
+from jax import numpy as jnp
+
 from caregiving.model.shared import (
+    SEX,
     is_formal_care,
     is_informal_care,
+    is_intensive_informal_care,
+    is_light_informal_care,
     is_no_care,
 )
 
@@ -81,3 +86,102 @@ def calc_care_benefits_and_costs(lagged_choice, education, care_demand, model_sp
     )
 
     return annual_care_benefits_weighted - annual_care_costs_weighted
+
+
+def calc_inheritance(
+    period,
+    lagged_choice,
+    education,
+    mother_dead,
+    model_specs,
+):
+    """Calculate expected inheritance.
+
+    This function computes inheritance in two steps:
+    1. Probability of positive inheritance using spec5 logit parameters
+       (uses any_care dummy, no distinction between light/intensive, no parent dummy)
+    2. Expected inheritance amount using spec5 OLS parameters
+       (distinguishes between light and intensive care)
+
+    Both steps condition on mother_dead == 1 this period.
+
+    Args:
+        period: Current period
+        lagged_choice: Choice from previous period (d_{t-1})
+        education: Education level
+        mother_dead: Indicator for whether mother is dead (1) or alive (0)
+        model_specs: Model specifications dictionary containing inheritance parameters
+
+    Returns:
+        Expected inheritance amount (probability * amount)
+
+    """
+    sex_var = SEX
+    start_age = model_specs["start_age"]
+    age = start_age + period
+
+    # Only compute inheritance if mother is dead this period
+    mother_dead_int = mother_dead == 1
+
+    # Get sex label for parameter lookup
+    sex_label = model_specs["sex_labels"][sex_var]
+
+    # Step 1: Compute probability of positive inheritance using spec7 parameters
+    # Spec7 uses: any_care, age, age_sq, education
+    # Filter: parent_died_this_year == 1
+    # (which corresponds to mother_dead == 1 this period)
+    # NO parent variable in the regression (parent_var = None)
+    # Parameters: age, age_sq, any_care, education, const
+
+    # Check if any informal care was provided (light or intensive)
+    any_care = is_informal_care(lagged_choice).astype(int)
+    light_care = is_light_informal_care(lagged_choice).astype(int)
+    intensive_care = is_intensive_informal_care(lagged_choice).astype(int)
+
+    # Get spec7 logit parameters (stored as spec5_params key for backward compatibility)
+    inheritance_prob_params = model_specs["inheritance_prob_spec5_params"]
+    age_sq = age**2
+
+    # Compute logit linear predictor
+    # X = [age, age_sq, any_care, education]
+    logit_linear = (
+        inheritance_prob_params.loc[sex_label, "age"] * age
+        + inheritance_prob_params.loc[sex_label, "age_sq"] * age_sq
+        + inheritance_prob_params.loc[sex_label, "any_care"] * any_care
+        + inheritance_prob_params.loc[sex_label, "education"] * education
+        + inheritance_prob_params.loc[sex_label, "const"]
+    )
+
+    # Compute probability using logistic function: P = 1 / (1 + exp(-X))
+    prob_positive_inheritance = 1.0 / (1.0 + jnp.exp(-logit_linear))
+
+    # Step 2: Compute expected inheritance amount using spec12 parameters
+    # Spec12 uses: light_care_recent, intensive_care_recent, age, age_sq, education
+    # Filter: parent_died_recent == 1
+    # (which corresponds to mother_dead == 1 this period)
+    # Parameters: age, age_sq, light_care_recent, intensive_care_recent,
+    # education, const
+
+    # Get spec12 OLS parameters (stored as spec5_params key for backward compatibility)
+    inheritance_amount_params = model_specs["inheritance_amount_spec5_params"]
+
+    # Compute OLS linear predictor for ln(inheritance_amount)
+    # X = [age, age_sq, light_care_recent, intensive_care_recent, education]
+    ln_inheritance_amount = (
+        inheritance_amount_params.loc[sex_label, "age"] * age
+        + inheritance_amount_params.loc[sex_label, "age_sq"] * age_sq
+        + inheritance_amount_params.loc[sex_label, "light_care_recent"] * light_care
+        + inheritance_amount_params.loc[sex_label, "intensive_care_recent"]
+        * intensive_care
+        + inheritance_amount_params.loc[sex_label, "education"] * education
+        + inheritance_amount_params.loc[sex_label, "const"]
+    )
+
+    # Convert from log to level: amount = exp(ln(amount))
+    expected_inheritance_amount = jnp.exp(ln_inheritance_amount)
+
+    # Expected inheritance = probability * amount
+    expected_inheritance = prob_positive_inheritance * expected_inheritance_amount
+
+    # Only return inheritance if mother is dead
+    return mother_dead_int * expected_inheritance

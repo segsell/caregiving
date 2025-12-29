@@ -162,6 +162,16 @@ def task_write_specs(  # noqa: PLR0915
     / "estimation"
     / "stochastic_processes"
     / "death_transition_mat.csv",
+    path_to_inheritance_prob_spec7_params: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "inheritance_specs"
+    / "spec7_any_care_this_year_filter_parent_this_year_params.csv",
+    path_to_inheritance_amount_spec12_params: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "inheritance_amount_specs_two_care"
+    / "spec12_care_recent_filter_parent_recent_params.csv",
 ) -> Dict[str, Any]:
     """Read in specs and add specs from first-step estimation."""
 
@@ -329,6 +339,17 @@ def task_write_specs(  # noqa: PLR0915
     specs["max_exp_diffs_per_period"] = create_max_experience(
         data_decision, specs, path_to_save_txt=path_to_save_max_exp_diff
     )
+
+    # Load inheritance parameters
+    inheritance_prob_spec7_params = pd.read_csv(
+        path_to_inheritance_prob_spec7_params, index_col=0
+    )
+    inheritance_amount_spec12_params = pd.read_csv(
+        path_to_inheritance_amount_spec12_params, index_col=0
+    )
+
+    specs["inheritance_prob_spec5_params"] = inheritance_prob_spec7_params
+    specs["inheritance_amount_spec5_params"] = inheritance_amount_spec12_params
 
     with path_to_save_specs_dict.open("wb") as f:
         pkl.dump(specs, f)

@@ -73,6 +73,11 @@ def task_create_main_estimation_sample(
     # filter data. Leave additional years in for lagging and leading.
     df = filter_data(df, specs)
 
+    # df = generate_job_separation_var(df)
+    # df = create_lagged_and_lead_variables(
+    #     df, specs, lead_job_sep=True, drop_missing_lagged_choice=True
+    # )
+
     df = generate_job_separation_var(df)
     df = create_lagged_and_lead_variables(
         df, specs, lead_job_sep=True, drop_missing_lagged_choice=True

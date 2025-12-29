@@ -11,6 +11,7 @@ from caregiving.model.wealth_and_budget.tax_and_ssc import calc_net_household_in
 from caregiving.model.wealth_and_budget.transfers import (
     calc_care_benefits_and_costs,
     calc_child_benefits,
+    calc_inheritance,
     calc_unemployment_benefits,
 )
 from caregiving.model.wealth_and_budget.wages import calc_labor_income_after_ssc
@@ -24,6 +25,7 @@ def budget_constraint(
     # sex,
     partner_state,
     care_demand,
+    mother_dead,
     asset_end_of_previous_period,  # A_{t-1}
     income_shock_previous_period,  # epsilon_{t - 1}
     params,
@@ -111,7 +113,20 @@ def budget_constraint(
         total_net_income + child_benefits + care_benfits_and_costs,
         unemployment_benefits,
     )
+
+    bequest_from_parent = calc_inheritance(
+        period=period,
+        lagged_choice=lagged_choice,
+        education=education,
+        mother_dead=mother_dead,
+        model_specs=model_specs,
+    )
+
     # calculate beginning of period wealth M_t
-    wealth = (1 + model_specs["interest_rate"]) * assets_scaled + total_income
+    wealth = (
+        (1 + model_specs["interest_rate"]) * assets_scaled
+        + total_income
+        + bequest_from_parent
+    )
 
     return wealth / model_specs["wealth_unit"]
