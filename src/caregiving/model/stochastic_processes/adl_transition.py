@@ -2,7 +2,11 @@
 
 import jax.numpy as jnp
 
-from caregiving.model.shared import MOTHER
+from caregiving.model.shared import (
+    MOTHER,
+    PARENT_LONGER_DEAD,
+    PARENT_RECENTLY_DEAD,
+)
 
 PARENT_AGE_OFFSET = 3
 
@@ -54,7 +58,8 @@ def death_transition(period, mother_dead, education, model_specs):
 
     Transition logic:
     - If mother_dead == 0 (alive): can transition to 0 (stay alive) or 1 (die)
-    - If mother_dead == 1 (recently died): transitions to 2 (longer dead) with certainty
+    - If mother_dead == 1 (recently died): transitions to 2 (longer dead) with
+      certainty
     - If mother_dead == 2 (longer dead): stays at 2 (longer dead) with certainty
 
     Parameters
@@ -82,7 +87,7 @@ def death_transition(period, mother_dead, education, model_specs):
         Probability vector [alive_prob, recently_died_prob, longer_dead_prob] where:
         - If mother_dead == 0: [1 - death_prob, death_prob, 0]
         - If mother_dead == 1: [0, 0, 1] (transitions to longer dead)
-        - If mother_dead == 2: [0, 0, 1] (stays longer dead)
+        - If mother_dead == 2: [0, 0, 1] (stays longer dead)  # noqa: PLR2004
 
     """
     # Calculate mother's actual age from period using correct mother_age_diff
@@ -111,9 +116,11 @@ def death_transition(period, mother_dead, education, model_specs):
     )  # If out of bounds, assume dead
 
     # Handle transitions based on current state
-    # Case 1: If mother_dead == 0 (alive): can stay alive or die (become recently dead)
-    # Case 2: If mother_dead == 1 (recently died): transitions to longer dead (state 2) with certainty
-    # Case 3: If mother_dead == 2 (longer dead): stays longer dead (state 2) with certainty
+    # Case 1: If mother_dead == 0 (alive): can stay alive or die (recently dead)
+    # Case 2: If mother_dead == 1 (recently died): transitions to longer dead
+    #   (state 2) with certainty
+    # Case 3: If mother_dead == 2 (longer dead): stays longer dead (state 2)
+    #   with certainty
 
     # Probability of staying alive (only possible if currently alive)
     alive_prob = jnp.where(mother_dead == 0, 1.0 - death_prob, 0.0)
@@ -122,7 +129,12 @@ def death_transition(period, mother_dead, education, model_specs):
     recently_died_prob = jnp.where(mother_dead == 0, death_prob, 0.0)
 
     # Probability of being longer dead (if currently recently dead OR longer dead)
-    # This ensures: state 1 -> state 2 with certainty, state 2 -> state 2 with certainty
-    longer_dead_prob = jnp.where((mother_dead == 1) | (mother_dead == 2), 1.0, 0.0)
+    # This ensures: state 1 -> state 2 with certainty, state 2 -> state 2 with
+    #   certainty
+    longer_dead_prob = jnp.where(
+        (mother_dead == PARENT_RECENTLY_DEAD) | (mother_dead == PARENT_LONGER_DEAD),
+        1.0,
+        0.0,
+    )
 
     return jnp.array([alive_prob, recently_died_prob, longer_dead_prob])

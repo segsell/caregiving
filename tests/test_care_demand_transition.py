@@ -6,7 +6,11 @@ import numpy as np
 import pytest
 
 from caregiving.config import BLD
-from caregiving.model.shared import MOTHER
+from caregiving.model.shared import (
+    MOTHER,
+    PARENT_LONGER_DEAD,
+    PARENT_RECENTLY_DEAD,
+)
 from caregiving.model.stochastic_processes.adl_transition import (
     death_transition,
     limitations_with_adl_transition,
@@ -399,7 +403,7 @@ def test_death_transition_three_states(period, mother_dead, education):
         assert np.isclose(
             probs[0] + probs[1], 1.0, atol=1e-8
         ), f"Alive + recently died should sum to 1, got {probs[0] + probs[1]}"
-    elif mother_dead == 1:
+    elif mother_dead == PARENT_RECENTLY_DEAD:
         # If recently died: transitions to longer dead (state 2) with certainty
         assert np.isclose(
             probs[0], 0.0, atol=1e-8
@@ -410,7 +414,7 @@ def test_death_transition_three_states(period, mother_dead, education):
         assert np.isclose(
             probs[2], 1.0, atol=1e-8
         ), f"If recently died, longer dead prob should be 1, got {probs[2]}"
-    elif mother_dead == 2:
+    elif mother_dead == PARENT_LONGER_DEAD:
         # If longer dead: stays longer dead (state 2) with certainty
         assert np.isclose(
             probs[0], 0.0, atol=1e-8
