@@ -1,6 +1,8 @@
+import jax
 from jax import numpy as jnp
 
 from caregiving.model.shared import (
+    PARENT_RECENTLY_DEAD,
     SEX,
     is_formal_care,
     is_informal_care,
@@ -142,15 +144,18 @@ def calc_inheritance(
     mother_dead,
     model_specs,
 ):
-    """Calculate expected inheritance.
+    """Calculate inheritance using Bernoulli approach.
 
     This function computes inheritance in two steps:
     1. Probability of positive inheritance using spec5 logit parameters
        (uses any_care dummy, no distinction between light/intensive, no parent dummy)
-    2. Expected inheritance amount using spec5 OLS parameters
+    2. Inheritance amount using spec5 OLS parameters
        (distinguishes between light and intensive care)
 
-    Both steps condition on mother_dead == 1 this period.
+    Both steps condition on mother_dead == PARENT_RECENTLY_DEAD (1) this period.
+
+    In practice, inheritance receipt is binary (0 or 1). A Bernoulli draw determines
+    whether inheritance is received based on the calculated probability.
 
     Args:
         period: Current period
@@ -158,9 +163,10 @@ def calc_inheritance(
         education: Education level
         mother_dead: Mother death status (0=alive, 1=recently died, 2=longer dead)
         model_specs: Model specifications dictionary containing inheritance parameters
+                     and a "seed" key for deterministic Bernoulli draw.
 
     Returns:
-        Expected inheritance amount (probability * amount)
+        Inheritance amount: Either 0 or full amount (binary draw based on probability).
 
     """
     sex_var = SEX
@@ -169,7 +175,7 @@ def calc_inheritance(
 
     # Only compute inheritance if mother recently died this period (state 1)
     # State 0 = alive, State 1 = recently died (inheritance paid), State 2 = longer dead
-    mother_dead_int = mother_dead == 1
+    mother_died_recently = mother_dead == PARENT_RECENTLY_DEAD
 
     # Get sex label for parameter lookup
     sex_label = model_specs["sex_labels"][sex_var]
@@ -226,10 +232,37 @@ def calc_inheritance(
     )
 
     # Convert from log to level: amount = exp(ln(amount))
-    expected_inheritance_amount = jnp.exp(ln_inheritance_amount)
+    inheritance_amount = jnp.exp(ln_inheritance_amount)
 
-    # Expected inheritance = probability * amount
-    expected_inheritance = prob_positive_inheritance * expected_inheritance_amount
+    # In practice, inheritance receipt is binary (0 or 1)
+    # Use Bernoulli draw to determine if inheritance is received
+    seed = model_specs["seed"]
+    gets_inheritance = draw_inheritance_outcome(prob_positive_inheritance, seed)
+    inheritance = gets_inheritance * inheritance_amount
 
     # Only return inheritance if mother is dead
-    return mother_dead_int * expected_inheritance
+    return mother_died_recently * inheritance
+
+
+def draw_inheritance_outcome(prob_positive_inheritance, seed):
+    """Draw binary inheritance receipt outcome using Bernoulli distribution.
+
+    In practice, inheritance receipt is binary (0 or 1). This function draws
+    a binary outcome based on the probability of receiving inheritance.
+
+    Args:
+        prob_positive_inheritance: Probability of receiving positive inheritance
+        seed: Integer seed for deterministic Bernoulli draw
+
+    Returns:
+        Binary outcome (0 or 1): 1 if inheritance received, 0 otherwise
+
+    """
+    # Use JAX RNG so that the draw is fully controlled by `seed`
+    key = jax.random.PRNGKey(seed)
+    # Draw binary outcome: 1 if inheritance received, 0 otherwise
+    gets_inheritance = jax.random.bernoulli(
+        key, p=prob_positive_inheritance, shape=prob_positive_inheritance.shape
+    ).astype(jnp.uint8)
+
+    return gets_inheritance
