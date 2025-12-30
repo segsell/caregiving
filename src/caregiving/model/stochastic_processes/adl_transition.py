@@ -47,15 +47,17 @@ def limitations_with_adl_transition(mother_adl, period, education, model_specs):
 def death_transition(period, mother_dead, education, model_specs):
     """Death transition probability for next period.
 
-    Uses death transition matrix indexed by sex and age. Mother death has 3 states:
+    Uses death transition matrix indexed by sex and age. Mother death has 2 states:
     - 0: alive
-    - 1: recently died (this period, inheritance is paid out)
-    - 2: longer dead (died in previous periods, no inheritance)
+    - 1: dead (regardless of when death occurred)
 
     Transition logic:
     - If mother_dead == 0 (alive): can transition to 0 (stay alive) or 1 (die)
-    - If mother_dead == 1 (recently died): transitions to 2 (longer dead) with certainty
-    - If mother_dead == 2 (longer dead): stays at 2 (longer dead) with certainty
+    - If mother_dead == 1 (dead): stays at 1 (dead) with certainty
+
+    Note: The distinction between "recently died" and "longer dead" is tracked
+    by the deterministic state variable `mother_longer_dead`, which is updated
+    separately in the deterministic state transition function.
 
     Parameters
     ----------
@@ -64,8 +66,7 @@ def death_transition(period, mother_dead, education, model_specs):
     mother_dead : int
         Lagged mother death status:
         - 0: alive
-        - 1: recently died (inheritance paid this period)
-        - 2: longer dead (no inheritance)
+        - 1: dead
     education : int
         Education level (0=Low, 1=High)
     model_specs : dict
@@ -79,10 +80,9 @@ def death_transition(period, mother_dead, education, model_specs):
     Returns
     -------
     jnp.ndarray
-        Probability vector [alive_prob, recently_died_prob, longer_dead_prob] where:
-        - If mother_dead == 0: [1 - death_prob, death_prob, 0]
-        - If mother_dead == 1: [0, 0, 1] (transitions to longer dead)
-        - If mother_dead == 2: [0, 0, 1] (stays longer dead)
+        Probability vector [alive_prob, dead_prob] where:
+        - If mother_dead == 0: [1 - death_prob, death_prob]
+        - If mother_dead == 1: [0, 1] (stays dead)
 
     """
     # Calculate mother's actual age from period using correct mother_age_diff
@@ -111,18 +111,13 @@ def death_transition(period, mother_dead, education, model_specs):
     )  # If out of bounds, assume dead
 
     # Handle transitions based on current state
-    # Case 1: If mother_dead == 0 (alive): can stay alive or die (become recently dead)
-    # Case 2: If mother_dead == 1 (recently died): transitions to longer dead (state 2) with certainty
-    # Case 3: If mother_dead == 2 (longer dead): stays longer dead (state 2) with certainty
+    # Case 1: If mother_dead == 0 (alive): can stay alive or die
+    # Case 2: If mother_dead == 1 (dead): stays dead with certainty
 
     # Probability of staying alive (only possible if currently alive)
     alive_prob = jnp.where(mother_dead == 0, 1.0 - death_prob, 0.0)
 
-    # Probability of recently dying (only possible if currently alive)
-    recently_died_prob = jnp.where(mother_dead == 0, death_prob, 0.0)
+    # Probability of being dead (if currently alive and dies, or if already dead)
+    dead_prob = jnp.where(mother_dead == 0, death_prob, 1.0)
 
-    # Probability of being longer dead (if currently recently dead OR longer dead)
-    # This ensures: state 1 -> state 2 with certainty, state 2 -> state 2 with certainty
-    longer_dead_prob = jnp.where((mother_dead == 1) | (mother_dead == 2), 1.0, 0.0)
-
-    return jnp.array([alive_prob, recently_died_prob, longer_dead_prob])
+    return jnp.array([alive_prob, dead_prob])

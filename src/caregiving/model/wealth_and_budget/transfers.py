@@ -140,6 +140,7 @@ def calc_inheritance(
     lagged_choice,
     education,
     mother_dead,
+    mother_longer_dead,
     model_specs,
 ):
     """Calculate expected inheritance.
@@ -150,13 +151,15 @@ def calc_inheritance(
     2. Expected inheritance amount using spec5 OLS parameters
        (distinguishes between light and intensive care)
 
-    Both steps condition on mother_dead == 1 this period.
+    Both steps condition on mother recently dying this period.
 
     Args:
         period: Current period
         lagged_choice: Choice from previous period (d_{t-1})
         education: Education level
-        mother_dead: Mother death status (0=alive, 1=recently died, 2=longer dead)
+        mother_dead: Mother death status (0=alive, 1=dead)
+        mother_longer_dead: Mother longer dead status (0=alive/recently dead,
+            1=longer dead)
         model_specs: Model specifications dictionary containing inheritance parameters
 
     Returns:
@@ -167,9 +170,10 @@ def calc_inheritance(
     start_age = model_specs["start_age"]
     age = start_age + period
 
-    # Only compute inheritance if mother recently died this period (state 1)
-    # State 0 = alive, State 1 = recently died (inheritance paid), State 2 = longer dead
-    mother_dead_int = mother_dead == 1
+    # Only compute inheritance if mother recently died this period:
+    # mother_dead == 1 (dead) AND mother_longer_dead == 0 (not yet longer dead)
+    # This means mother just died this period (recently died)
+    mother_recently_died = (mother_dead == 1) & (mother_longer_dead == 0)
 
     # Get sex label for parameter lookup
     sex_label = model_specs["sex_labels"][sex_var]
@@ -231,5 +235,5 @@ def calc_inheritance(
     # Expected inheritance = probability * amount
     expected_inheritance = prob_positive_inheritance * expected_inheritance_amount
 
-    # Only return inheritance if mother is dead
-    return mother_dead_int * expected_inheritance
+    # Only return inheritance if mother recently died this period
+    return mother_recently_died * expected_inheritance

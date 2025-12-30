@@ -8,7 +8,6 @@ import jax.numpy as jnp
 import numpy as np
 import pytask
 import yaml
-from dcegm.pre_processing.setup_model import create_model_dict
 from pytask import Product
 
 import dcegm
@@ -39,6 +38,7 @@ from caregiving.model.utility.utility_functions_additive import (
 )
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
+from dcegm.pre_processing.setup_model import create_model_dict
 
 
 @pytask.mark.baseline_model
@@ -78,12 +78,13 @@ def task_specify_model(
             "caregiving_type": np.arange(2, dtype=int),
             "education": np.arange(specs["n_education_types"], dtype=int),
             "already_retired": np.arange(2, dtype=int),
+            "mother_longer_dead": np.arange(2, dtype=int),
         },
         "stochastic_states": {
             "partner_state": np.arange(specs["n_partner_states"], dtype=int),
             "health": np.arange(specs["n_health_states"], dtype=int),
             "job_offer": np.arange(2, dtype=int),
-            "mother_dead": np.arange(3, dtype=int),
+            "mother_dead": np.arange(2, dtype=int),
             "mother_adl": np.arange(specs["n_adl_states_light_intensive"], dtype=int),
             "care_demand": np.arange(3, dtype=int),
         },

@@ -104,6 +104,8 @@ def next_period_deterministic_state(
     choice,
     lagged_choice,
     already_retired,
+    mother_dead,
+    mother_longer_dead,
 ):
     # is_already_retired = is_retired(choice)
     is_already_retired = is_retired(lagged_choice) & is_retired(choice)
@@ -118,6 +120,17 @@ def next_period_deterministic_state(
         "lagged_choice": choice,
         "already_retired": jnp.zeros_like(already_retired),
     }
+
+    # Update mother_longer_dead:
+    # - Leave it unchanged (same state as in period t-1) until mother_dead becomes 1
+    # - Then set it to 1 (in which case it remains 1, because it can never go back to 0)
+    # Logic: if mother_dead == 1 (just died this period) and mother_longer_dead == 0,
+    #        then set mother_longer_dead to 1. Otherwise, keep it unchanged.
+    mother_longer_dead_next = jnp.where(
+        (mother_dead == 1) & (mother_longer_dead == 0),
+        1,  # Just transitioned to dead, set to longer dead
+        mother_longer_dead,  # Otherwise keep unchanged
+    )
 
     # return jax.lax.select(
     #     is_already_retired,
@@ -145,6 +158,7 @@ def next_period_deterministic_state(
             states_already_retired["already_retired"],
             states_not_yet_retired["already_retired"],
         ),
+        "mother_longer_dead": mother_longer_dead_next,
     }
 
 
@@ -152,6 +166,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
     period,
     lagged_choice,
     already_retired,
+    mother_longer_dead,
     education,
     health,
     partner_state,
@@ -244,14 +259,16 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "health": health,
                 "partner_state": partner_state,
                 "mother_adl": 0,
-                "mother_dead": 2,
+                "mother_dead": 1,  # Dead (2-state system)
+                "mother_longer_dead": 1,  # Longer dead for proxy state
                 "care_demand": NO_CARE_DEMAND,
                 "job_offer": 0,
             }
             return state_proxy
-        elif (mother_dead == 1) | (mother_dead == 2):
-            # If mother is dead (recently or longer), no care demand and supply
-            # Preserve mother_dead state (1=recently died, 2=longer dead)
+        elif mother_dead == 1:
+            # If mother is dead, no care demand and supply
+            # Note: mother_longer_dead will be updated by deterministic state transition
+            # For proxy, we use a default value (will be corrected by deterministic update)
             state_proxy = {
                 "period": period,
                 "lagged_choice": lagged_choice,
@@ -261,7 +278,8 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "health": health,
                 "partner_state": partner_state,
                 "mother_adl": 0,
-                "mother_dead": 2,
+                "mother_dead": 1,
+                "mother_longer_dead": 1,  # Default for proxy (will be updated deterministically)
                 "care_demand": NO_CARE_DEMAND,
                 "job_offer": job_offer,
             }
@@ -280,6 +298,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "partner_state": partner_state,
                 "mother_adl": mother_adl,
                 "mother_dead": mother_dead,
+                "mother_longer_dead": mother_longer_dead,
                 "care_demand": care_demand,  # Outside caregiving window, no care demand
                 "job_offer": 0,
             }
@@ -297,6 +316,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "partner_state": partner_state,
                 "mother_adl": mother_adl,
                 "mother_dead": mother_dead,
+                "mother_longer_dead": mother_longer_dead,
                 "care_demand": care_demand,
                 "job_offer": 0,
             }
@@ -343,6 +363,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "partner_state": partner_state,
                 "mother_adl": mother_adl,
                 "mother_dead": mother_dead,
+                "mother_longer_dead": mother_longer_dead,
                 "care_demand": NO_CARE_DEMAND,
                 "job_offer": job_offer,
             }
@@ -359,6 +380,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "partner_state": partner_state,
                 "mother_adl": mother_adl,
                 "mother_dead": mother_dead,
+                "mother_longer_dead": mother_longer_dead,
                 "care_demand": NO_CARE_DEMAND,
                 "job_offer": job_offer,
             }
@@ -602,7 +624,7 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
     if caregiving_type == 1:
         if (
             is_no_care_demand(care_demand)
-            | (mother_dead > 0)  # mother_dead in [1, 2] means dead
+            | (mother_dead == 1)  # mother_dead == 1 means dead
             | (age < start_age_caregiving)
             | (age > end_age_caregiving)
         ):
@@ -683,7 +705,7 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
     elif caregiving_type == 0:
         if (
             is_no_care_demand(care_demand)
-            | (mother_dead > 0)  # mother_dead in [1, 2] means dead
+            | (mother_dead == 1)  # mother_dead == 1 means dead
             | (age < start_age_caregiving)
             | (age > end_age_caregiving)
         ):

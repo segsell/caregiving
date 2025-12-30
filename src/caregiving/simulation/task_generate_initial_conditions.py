@@ -314,11 +314,10 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         )
 
         # mother_dead if mother_health == PARENT_HEALTH_DEAD (3), else 0
-        # In initial conditions, if mother is dead, we set to "longer dead"
-        # because we don't know if death was recent, so no inheritance
+        # In initial conditions, use 2-state system: 0=alive, 1=dead
         mother_dead_agents[type_mask] = np.where(
             mother_health_agents[type_mask] == PARENT_HEALTH_DEAD,
-            PARENT_LONGER_DEAD,  # Set to longer dead
+            1,  # Set to dead
             0,  # Set to alive
         )
 
@@ -415,6 +414,11 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     exp_zero_mask = exp_agents == 0
     lagged_choice[exp_zero_mask] = 1
 
+    # Initialize mother_longer_dead:
+    # - Set to 0 if mother_dead == 0 (alive)
+    # - Set to 1 if mother_dead == 1 (dead, since we don't know if death was recent)
+    mother_longer_dead_agents = np.where(mother_dead_agents == 1, 1, 0)
+
     # In the first period, only NO_CARE choices are available (0, 1, 2, 3),
     # which correspond to retirement, unemployed, part-time, full-time.
     # The empirical lagged_choice values
@@ -432,6 +436,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         "partner_state": jnp.array(partner_states, dtype=jnp.uint8),
         # "mother_health": jnp.array(mother_health_agents, dtype=jnp.uint8),
         "mother_dead": jnp.array(mother_dead_agents, dtype=jnp.uint8),
+        "mother_longer_dead": jnp.array(mother_longer_dead_agents, dtype=jnp.uint8),
         "mother_adl": jnp.array(mother_adl_agents, dtype=jnp.uint8),
         "care_demand": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
         # "care_demand": jnp.where(

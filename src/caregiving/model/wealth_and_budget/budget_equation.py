@@ -29,6 +29,7 @@ def budget_constraint(
     partner_state,
     care_demand,
     mother_dead,
+    mother_longer_dead,
     asset_end_of_previous_period,  # A_{t-1}
     income_shock_previous_period,  # epsilon_{t - 1}
     params,
@@ -126,6 +127,7 @@ def budget_constraint(
         lagged_choice=lagged_choice,
         education=education,
         mother_dead=mother_dead,
+        mother_longer_dead=mother_longer_dead,
         model_specs=model_specs,
     )
 

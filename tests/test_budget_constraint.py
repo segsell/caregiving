@@ -11,7 +11,6 @@ import pytest
 from caregiving.config import BLD
 from caregiving.model.shared import (
     FULL_TIME_NO_CARE,
-    PARENT_LONGER_DEAD,
     PART_TIME_NO_CARE,
     RETIREMENT_NO_CARE,
     UNEMPLOYED_NO_CARE,
@@ -102,7 +101,8 @@ def test_budget_unemployed(
         experience=exp_cont,
         # sex=sex,
         care_demand=care_demand,
-        mother_dead=PARENT_LONGER_DEAD,
+        mother_dead=1,  # Dead (2-state system: 0=alive, 1=dead)
+        mother_longer_dead=1,  # Longer dead (no inheritance)
         asset_end_of_previous_period=savings,
         income_shock_previous_period=0,
         params=params,
@@ -157,7 +157,8 @@ def test_budget_unemployed(
         period=period,
         lagged_choice=UNEMPLOYED_NO_CARE[0].item(),
         education=education,
-        mother_dead=PARENT_LONGER_DEAD,
+        mother_dead=1,  # Dead (2-state system: 0=alive, 1=dead)
+        mother_longer_dead=1,  # Longer dead (no inheritance)
         model_specs=specs_internal,
     )
 
@@ -237,7 +238,8 @@ def test_budget_worker(
         experience=exp_cont,
         # sex=sex,
         care_demand=care_demand,
-        mother_dead=PARENT_LONGER_DEAD,
+        mother_dead=1,  # Dead (2-state system: 0=alive, 1=dead)
+        mother_longer_dead=1,  # Longer dead (no inheritance)
         asset_end_of_previous_period=savings,
         income_shock_previous_period=income_shock,
         params=params,
@@ -323,7 +325,8 @@ def test_budget_worker(
         period=period,
         lagged_choice=working_choice,
         education=education,
-        mother_dead=PARENT_LONGER_DEAD,
+        mother_dead=1,  # Dead (2-state system: 0=alive, 1=dead)
+        mother_longer_dead=1,  # Longer dead (no inheritance)
         model_specs=specs_internal,
     )
 
@@ -394,7 +397,8 @@ def test_retiree(
         experience=exp_cont,
         # sex=sex,
         care_demand=care_demand,
-        mother_dead=PARENT_LONGER_DEAD,
+        mother_dead=1,  # Dead (2-state system: 0=alive, 1=dead)
+        mother_longer_dead=1,  # Longer dead (no inheritance)
         asset_end_of_previous_period=savings,
         income_shock_previous_period=0,
         params=params,
@@ -465,7 +469,8 @@ def test_retiree(
         period=period,
         lagged_choice=RETIREMENT_NO_CARE[0].item(),
         education=education,
-        mother_dead=PARENT_LONGER_DEAD,
+        mother_dead=1,  # Dead (2-state system: 0=alive, 1=dead)
+        mother_longer_dead=1,  # Longer dead (no inheritance)
         model_specs=specs_internal,
     )
 
@@ -532,7 +537,8 @@ def test_fresh_retiree(
         experience=exp_cont,
         # sex=sex,
         care_demand=care_demand,
-        mother_dead=PARENT_LONGER_DEAD,
+        mother_dead=1,  # Dead (2-state system: 0=alive, 1=dead)
+        mother_longer_dead=1,  # Longer dead (no inheritance)
         asset_end_of_previous_period=savings,
         income_shock_previous_period=0,
         params=params,
@@ -620,7 +626,8 @@ def test_fresh_retiree(
         period=period,
         lagged_choice=RETIREMENT_NO_CARE[0].item(),
         education=education,
-        mother_dead=PARENT_LONGER_DEAD,
+        mother_dead=1,  # Dead (2-state system: 0=alive, 1=dead)
+        mother_longer_dead=1,  # Longer dead (no inheritance)
         model_specs=specs_internal,
     )
 
@@ -673,7 +680,8 @@ def test_government_budget_components(
         lagged_choice=working_choice,
         experience=exp_cont,
         care_demand=care_demand,
-        mother_dead=PARENT_LONGER_DEAD,
+        mother_dead=1,  # Dead (2-state system: 0=alive, 1=dead)
+        mother_longer_dead=1,  # Longer dead (no inheritance)
         asset_end_of_previous_period=savings,
         income_shock_previous_period=0,
         params=params,
