@@ -15,13 +15,13 @@ from caregiving.model.shared import (
     SEX,
     is_alive,
     is_dead,
+    is_formal_care,
     is_full_time,
     is_informal_care,
     is_part_time,
     is_retired,
     is_unemployed,
     is_working,
-    is_formal_care,
 )
 from caregiving.model.state_space import (
     get_next_period_experience,

@@ -13,9 +13,6 @@ from pytask import Product
 import dcegm
 from caregiving.config import BLD
 from caregiving.model.shared import DEAD
-from caregiving.simulation.simulate_no_care_demand import (
-    create_additional_variables_no_care_demand,
-)
 from caregiving.model.state_space_no_care_demand import create_state_space_functions
 from caregiving.model.task_specify_model_no_care_demand import (
     create_stochastic_states_transitions,
@@ -29,6 +26,9 @@ from caregiving.model.utility.utility_functions_additive_no_care_demand import (
 )
 from caregiving.model.wealth_and_budget.budget_equation_no_care_demand import (
     budget_constraint,
+)
+from caregiving.simulation.simulate_no_care_demand import (
+    create_additional_variables_no_care_demand,
 )
 
 jax.config.update("jax_enable_x64", True)
