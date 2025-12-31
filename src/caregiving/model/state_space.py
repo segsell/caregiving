@@ -251,11 +251,9 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "job_offer": 0,
             }
             return state_proxy
-        elif (mother_dead == PARENT_RECENTLY_DEAD) | (
-            mother_dead == PARENT_LONGER_DEAD
-        ):
-            # If mother is dead (recently or longer), no care demand and supply
-            # Preserve mother_dead state (1=recently died, 2=longer dead)
+        elif mother_dead == PARENT_RECENTLY_DEAD:
+            # If mother recently died, no care demand and supply
+            # Preserve mother_dead == 1 so inheritance can be calculated
             state_proxy = {
                 "period": period,
                 "lagged_choice": lagged_choice,
@@ -265,7 +263,23 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "health": health,
                 "partner_state": partner_state,
                 "mother_adl": 0,
-                "mother_dead": 2,
+                "mother_dead": PARENT_RECENTLY_DEAD,  # Preserve for inheritance calculation
+                "care_demand": NO_CARE_DEMAND,
+                "job_offer": job_offer,
+            }
+            return state_proxy
+        elif mother_dead == PARENT_LONGER_DEAD:
+            # If mother is longer dead, no care demand and supply
+            state_proxy = {
+                "period": period,
+                "lagged_choice": lagged_choice,
+                "already_retired": already_retired,
+                "education": education,
+                "caregiving_type": caregiving_type,
+                "health": health,
+                "partner_state": partner_state,
+                "mother_adl": 0,
+                "mother_dead": PARENT_LONGER_DEAD,
                 "care_demand": NO_CARE_DEMAND,
                 "job_offer": job_offer,
             }

@@ -15,10 +15,9 @@ from pytask import Product
 import dcegm
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import DEAD
-from caregiving.model.state_space import (
-    construct_experience_years,
-    create_state_space_functions,
-)
+from caregiving.model.state_space import create_state_space_functions
+
+from caregiving.simulation.simulate import create_additional_variables
 
 # from caregiving.simulation.simulate import simulate_scenario
 from caregiving.model.task_specify_model import create_stochastic_states_transitions
@@ -82,6 +81,8 @@ def task_solve_and_simulate_estimated_params(
     initial_states = pickle.load(path_to_initial_states.open("rb"))
 
     # =================================================================================
+    # Simulate scenario
+    # =================================================================================
     sim_df = model_solved.simulate(
         states_initial=initial_states,
         seed=specs["seed"],
@@ -90,128 +91,9 @@ def task_solve_and_simulate_estimated_params(
     sim_df = sim_df[sim_df["health"] != DEAD].copy()
     sim_df.reset_index(inplace=True)
 
-    sim_df["age"] = sim_df["period"] + specs["start_age"]
-    # sim_df = create_additional_variables(sim_df, specs)
+    # sim_df["age"] = sim_df["period"] + specs["start_age"]
+    sim_df = create_additional_variables(sim_df, specs)
     # =================================================================================
 
     # sim_df.to_csv(path_to_save_simulated_data, index=True)
     sim_df.to_pickle(path_to_save_simulated_data)
-
-
-# ==============================================================================
-# Additional variables related to the budget equation (see budget_equation.py).
-# ==============================================================================
-
-
-def _create_income_variables(df, specs):
-    """Create income related variables in the simulated dataframe.
-    Note: check budget equation first! They may already be there (under "aux").
-    """
-    df = df.copy()
-
-    # Create income vars:
-    # First, total income as the difference between wealth at the beginning of
-    # next period and savings.
-    df.loc[:, "total_income"] = df["assets_begin_of_period"] - df.groupby("agent")[
-        "savings"
-    ].shift(1)
-
-    # periodic savings and savings rate
-    df.loc[:, "savings_dec"] = df["total_income"] - df["consumption"]
-    df.loc[:, "savings_rate"] = df["savings_dec"] / df["total_income"]
-
-    # Create gross own income (without pension income)
-    df.loc[:, "gross_own_income"] = (
-        (df["choice"] == 0) * df["gross_retirement_income"]  # Retired  # noqa: PLR2004
-        + (df["choice"] == 1) * 0  # Unemployed  # noqa: PLR2004
-        + ((df["choice"] == 2) | (df["choice"] == 3))  # noqa: PLR2004
-        * df["gross_labor_income"]  # Part-time or full-time work
-    )
-    return df
-
-
-def _transform_states_into_variables(df, specs):
-    """Transform state variables into more interpretable variables."""
-    df = df.copy()
-
-    # Create additional variables
-    df.loc[:, "age"] = df["period"] + specs["start_age"]
-
-    # Create experience years
-    df.loc[:, "exp_years"] = construct_experience_years(
-        float_experience=df["experience"].values,
-        period=df["period"].values,
-        is_retired=df["lagged_choice"].values == 0,
-        model_specs=specs,
-    )
-
-    return df
-
-
-def _compute_working_hours(df, specs):
-    """Compute working hours based on employment choice and demographics."""
-    df = df.copy()
-
-    # Initialize working_hours column
-    df.loc[:, "working_hours"] = 0.0
-
-    for sex_var in (0, 1):
-        for edu_var in range(specs["n_education_types"]):
-            # Full-time work
-            mask_ft = (
-                (df["choice"] == 3)  # noqa: PLR2004
-                & (df["sex"] == sex_var)
-                & (df["education"] == edu_var)
-            )
-            df.loc[mask_ft, "working_hours"] = specs["av_annual_hours_ft"][
-                sex_var, edu_var
-            ]
-
-            # Part-time work
-            mask_pt = (
-                (df["choice"] == 2)  # noqa: PLR2004
-                & (df["sex"] == sex_var)
-                & (df["education"] == edu_var)
-            )
-            df.loc[mask_pt, "working_hours"] = specs["av_annual_hours_pt"][
-                sex_var, edu_var
-            ]
-
-    return df
-
-
-def _compute_actual_retirement_age(df):
-    """Compute actual retirement age based on choice variable."""
-    df = df.copy()
-
-    df_retirement = df[df["choice"] == 0].copy()
-    actual_retirement_ages = df_retirement.groupby("agent")["age"].min()
-    df.loc[:, "actual_retirement_age"] = df["agent"].map(actual_retirement_ages)
-    return df
-
-
-def create_realized_taste_shock(df, specs):
-    df.loc[:, "real_taste_shock"] = np.nan
-    for choice in range(specs["n_choices"]):
-        df.loc[df["choice"] == choice, "real_taste_shock"] = df.loc[
-            df["choice"] == choice, f"taste_shocks_{choice}"
-        ]
-    return df
-
-
-def create_real_utility(df, specs):
-    df = create_realized_taste_shock(df, specs)
-    df.loc[:, "real_util"] = df["utility"] + df["real_taste_shock"]
-    return df
-
-
-def create_additional_variables(df, specs):
-    """Wrapper function to create additional variables in the simulated dataframe."""
-    df = df.copy()
-
-    df = _create_income_variables(df, specs)
-    df = _transform_states_into_variables(df, specs)
-    df = _compute_working_hours(df, specs)
-    df = _compute_actual_retirement_age(df)
-    df = create_real_utility(df, specs)
-    return df

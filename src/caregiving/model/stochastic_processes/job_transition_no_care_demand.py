@@ -13,7 +13,7 @@ from caregiving.model.stochastic_processes.job_transition import (
 )
 
 
-def job_offer_process_transition(params, options, education, period, choice):
+def job_offer_process_transition(params, model_specs, education, period, choice):
     """Transition probability for next period job offer state.
 
     The values of process are the following:
@@ -26,9 +26,11 @@ def job_offer_process_transition(params, options, education, period, choice):
     unemployment_choice = is_unemployed(choice)
     labor_choice = is_working(choice)
 
-    job_sep_prob = options["job_sep_probs"][SEX, education, period]
+    job_sep_prob = model_specs["job_sep_probs"][SEX, education, period]
 
-    job_finding_prob = calc_job_finding_prob_women(period, education, params, options)
+    job_finding_prob = calc_job_finding_prob_women(
+        period, education, params, model_specs
+    )
 
     # Transition probability
     prob_no_job = (
