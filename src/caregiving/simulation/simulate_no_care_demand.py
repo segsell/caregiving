@@ -42,7 +42,6 @@ from caregiving.model.wealth_and_budget.wages_no_care_demand import (
     calculate_gross_labor_income,
 )
 
-
 # ==============================================================================
 # Additional variables related to the budget equation (see budget_equation.py).
 # ==============================================================================

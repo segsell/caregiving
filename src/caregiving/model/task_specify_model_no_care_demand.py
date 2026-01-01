@@ -12,7 +12,6 @@ from pytask import Product
 
 import dcegm
 from caregiving.config import BLD
-
 from caregiving.model.state_space_no_care_demand import create_state_space_functions
 from caregiving.model.stochastic_processes.adl_transition import death_transition
 from caregiving.model.stochastic_processes.health_transition import (
