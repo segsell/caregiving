@@ -5,8 +5,8 @@ import jax.numpy as jnp
 import numpy as np
 
 from caregiving.model.shared import (
-    PARENT_RECENTLY_DEAD,
     PARENT_LONGER_DEAD,
+    PARENT_RECENTLY_DEAD,
     SEX,
     is_alive,
     is_dead,
