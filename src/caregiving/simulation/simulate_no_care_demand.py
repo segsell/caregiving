@@ -74,6 +74,9 @@ def _create_income_variables_no_care_demand(df, specs):
     df.loc[:, "total_income"] = df["assets_begin_of_period"] - df.groupby("agent")[
         "savings"
     ].shift(1)
+    # df.loc[:, "total_income"] = (
+    #     df.groupby("agent")["assets_begin_of_period"].shift(-1) - df["savings"]
+    # )
 
     # periodic savings and savings rate
     df.loc[:, "savings_dec"] = df["total_income"] - df["consumption"]
@@ -99,6 +102,9 @@ def _transform_states_into_variables(df, specs):
     """Transform state variables into more interpretable variables."""
     df = df.copy()
 
+    # Create hard-coded sex variable
+    df.loc[:, "sex"] = SEX
+
     # Create additional variables
     df.loc[:, "age"] = df["period"] + specs["start_age"]
 
@@ -115,6 +121,7 @@ def _transform_states_into_variables(df, specs):
 def _compute_working_hours_no_care_demand(df, specs):
     """Compute working hours based on employment choice and demographics."""
     df = df.copy()
+    sex_var = SEX
 
     # Initialize working_hours column
     df.loc[:, "working_hours"] = 0.0
@@ -122,27 +129,22 @@ def _compute_working_hours_no_care_demand(df, specs):
     part_time_values = PART_TIME_NO_CARE_DEMAND.ravel().tolist()
     full_time_values = FULL_TIME_NO_CARE_DEMAND.ravel().tolist()
 
-    for sex_var in (0, 1):
-        for edu_var in range(specs["n_education_types"]):
-            # Full-time work
-            mask_ft = (
-                df["choice"].isin(full_time_values)
-                & (df["sex"] == sex_var)
-                & (df["education"] == edu_var)
-            )
-            df.loc[mask_ft, "working_hours"] = specs["av_annual_hours_ft"][
-                sex_var, edu_var
-            ]
+    for edu_var in range(specs["n_education_types"]):
+        # Full-time work
+        mask_ft = (
+            df["choice"].isin(full_time_values)
+            # & (df["sex"] == sex_var)
+            & (df["education"] == edu_var)
+        )
+        df.loc[mask_ft, "working_hours"] = specs["av_annual_hours_ft"][sex_var, edu_var]
 
-            # Part-time work
-            mask_pt = (
-                df["choice"].isin(part_time_values)
-                & (df["sex"] == sex_var)
-                & (df["education"] == edu_var)
-            )
-            df.loc[mask_pt, "working_hours"] = specs["av_annual_hours_pt"][
-                sex_var, edu_var
-            ]
+        # Part-time work
+        mask_pt = (
+            df["choice"].isin(part_time_values)
+            # & (df["sex"] == sex_var)
+            & (df["education"] == edu_var)
+        )
+        df.loc[mask_pt, "working_hours"] = specs["av_annual_hours_pt"][sex_var, edu_var]
 
     return df
 
@@ -162,10 +164,11 @@ def _compute_actual_retirement_age_no_care_demand(df):
 def create_realized_taste_shock(df, specs):
     """Create realized taste shock variable based on actual choice."""
     df.loc[:, "real_taste_shock"] = np.nan
-    for choice in range(specs["n_choices"]):
+    for choice in range(4):
         df.loc[df["choice"] == choice, "real_taste_shock"] = df.loc[
             df["choice"] == choice, f"taste_shocks_{choice}"
         ]
+
     return df
 
 

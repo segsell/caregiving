@@ -121,13 +121,13 @@ def budget_constraint(
         household_unemployment_benefits,
     )
 
-    # bequest_from_parent = calc_inheritance(
-    #     period=period,
-    #     lagged_choice=lagged_choice,
-    #     education=education,
-    #     mother_dead=mother_dead,
-    #     model_specs=model_specs,
-    # )
+    bequest_from_parent = calc_inheritance(
+        period=period,
+        lagged_choice=lagged_choice,
+        education=education,
+        mother_dead=mother_dead,
+        model_specs=model_specs,
+    )
 
     # # calculate beginning of period wealth M_t
     # assets_begin_of_period = (
@@ -140,7 +140,7 @@ def budget_constraint(
     )
     interest_rate = model_specs["interest_rate"]
     interest = interest_rate * assets_scaled
-    total_income_plus_interest = total_income + interest  # + bequest_from_parent
+    total_income_plus_interest = total_income + interest + bequest_from_parent
 
     # calculate beginning of period wealth M_t
     assets_begin_of_period = assets_scaled + total_income_plus_interest
@@ -180,7 +180,7 @@ def budget_constraint(
         / model_specs["wealth_unit"],
         "gross_labor_income": gross_labor_income / model_specs["wealth_unit"],
         "gross_retirement_income": gross_retirement_income / model_specs["wealth_unit"],
-        # "bequest_from_parent": bequest_from_parent / model_specs["wealth_unit"],
+        "bequest_from_parent": bequest_from_parent / model_specs["wealth_unit"],
         # Government budget components
         "income_tax": income_tax_total / model_specs["wealth_unit"],
         "own_ssc": own_ssc / model_specs["wealth_unit"],

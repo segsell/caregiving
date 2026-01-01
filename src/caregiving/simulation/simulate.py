@@ -133,6 +133,9 @@ def _transform_states_into_variables(df, specs):
     """Transform state variables into more interpretable variables."""
     df = df.copy()
 
+    # Create hard-coded sex variable
+    df.loc[:, "sex"] = SEX
+
     # Create additional variables
     df.loc[:, "age"] = df["period"] + specs["start_age"]
 
@@ -149,6 +152,7 @@ def _transform_states_into_variables(df, specs):
 def _compute_working_hours(df, specs):
     """Compute working hours based on employment choice and demographics."""
     df = df.copy()
+    sex_var = SEX
 
     # Initialize working_hours column
     df.loc[:, "working_hours"] = 0.0
@@ -156,27 +160,22 @@ def _compute_working_hours(df, specs):
     part_time_values = PART_TIME.ravel().tolist()
     full_time_values = FULL_TIME.ravel().tolist()
 
-    for sex_var in (0, 1):
-        for edu_var in range(specs["n_education_types"]):
-            # Full-time work
-            mask_ft = (
-                df["choice"].isin(full_time_values)
-                & (df["sex"] == sex_var)
-                & (df["education"] == edu_var)
-            )
-            df.loc[mask_ft, "working_hours"] = specs["av_annual_hours_ft"][
-                sex_var, edu_var
-            ]
+    for edu_var in range(specs["n_education_types"]):
+        # Full-time work
+        mask_ft = (
+            df["choice"].isin(full_time_values)
+            # & (df["sex"] == sex_var)
+            & (df["education"] == edu_var)
+        )
+        df.loc[mask_ft, "working_hours"] = specs["av_annual_hours_ft"][sex_var, edu_var]
 
-            # Part-time work
-            mask_pt = (
-                df["choice"].isin(part_time_values)
-                & (df["sex"] == sex_var)
-                & (df["education"] == edu_var)
-            )
-            df.loc[mask_pt, "working_hours"] = specs["av_annual_hours_pt"][
-                sex_var, edu_var
-            ]
+        # Part-time work
+        mask_pt = (
+            df["choice"].isin(part_time_values)
+            # & (df["sex"] == sex_var)
+            & (df["education"] == edu_var)
+        )
+        df.loc[mask_pt, "working_hours"] = specs["av_annual_hours_pt"][sex_var, edu_var]
 
     return df
 

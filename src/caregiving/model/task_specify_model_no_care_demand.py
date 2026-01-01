@@ -62,7 +62,8 @@ def task_specify_model_no_care_demand(
 
     # Load specifications
     n_periods = specs["n_periods"]
-    choices = np.arange(specs["n_choices"], dtype=int)
+    # No-care-demand model has 4 choices: retirement, unemployed, part-time, full-time
+    choices = np.arange(4, dtype=int)
 
     # Savings grid
     savings_grid = create_savings_grid()

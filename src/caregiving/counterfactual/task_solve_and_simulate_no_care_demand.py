@@ -45,7 +45,11 @@ def task_solve_and_simulate_no_care_demand(
     / "params"
     / "estimated_params_model.yaml",
     path_to_initial_states: Path = (
-        BLD / "model" / "initial_conditions" / "initial_states.pkl"
+        # BLD / "model" / "initial_conditions" / "initial_states.pkl"
+        BLD
+        / "model"
+        / "initial_conditions"
+        / "initial_states_no_care_demand.pkl"
     ),
     path_to_save_solution: Annotated[Path, Product] = BLD
     / "solve_and_simulate"

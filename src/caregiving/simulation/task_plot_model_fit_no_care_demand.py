@@ -120,7 +120,9 @@ def task_plot_model_fit_no_care_demand(  # noqa: PLR0915
         path_to_save_plot=path_to_save_wealth_age_bins_plot,
     )
 
-    plot_average_savings_decision(df_sim, path_to_save_savings_plot)
+    plot_average_savings_decision(
+        df_sim, path_to_save_savings_plot, end_age=specs["end_age"]
+    )
 
     # Use no care demand choice groups for plotting
     choice_groups_sim = {

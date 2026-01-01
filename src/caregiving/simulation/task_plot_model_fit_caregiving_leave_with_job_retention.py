@@ -50,6 +50,7 @@ from caregiving.simulation.plot_model_fit import (
 
 
 @pytask.mark.caregiving_leave_with_job_retention_model
+@pytask.mark.sim_estimated_params_caregiving_leave_with_job_retention
 @pytask.mark.model_fit_caregiving_leave_with_job_retention
 def task_plot_model_fit_caregiving_leave_with_job_retention(  # noqa: PLR0915
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
@@ -220,7 +221,9 @@ def task_plot_model_fit_caregiving_leave_with_job_retention(  # noqa: PLR0915
         path_to_save_plot=path_to_save_wealth_age_bins_plot,
     )
 
-    plot_average_savings_decision(df_sim, path_to_save_savings_plot)
+    plot_average_savings_decision(
+        df_sim, path_to_save_savings_plot, end_age=specs["end_age"]
+    )
 
     plot_choice_shares_by_education(
         df_emp, df_sim, specs, path_to_save_plot=path_to_save_labor_shares_by_educ_plot
