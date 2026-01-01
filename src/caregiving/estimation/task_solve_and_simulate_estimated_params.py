@@ -92,6 +92,7 @@ def task_solve_and_simulate_estimated_params(
 
     # sim_df["age"] = sim_df["period"] + specs["start_age"]
     sim_df = create_additional_variables(sim_df, specs)
+
     # =================================================================================
 
     # sim_df.to_csv(path_to_save_simulated_data, index=True)

@@ -59,10 +59,18 @@ def task_plot_inheritance_by_age(  # noqa: PLR0915
     / "plots"
     / "post_estimation"
     / "inheritance_amount_by_age_positive.png",
+    path_to_save_amount_check1_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "inheritance_amount_by_age_check1.png",
+    path_to_save_amount_check2_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "inheritance_amount_by_age_check2.png",
 ):
     """Plot inheritance share and amount by age from baseline simulated data.
 
-    Creates seven plots with 6 lines each (2 education × 3 care types):
+    Creates nine plots with 6 lines each (2 education × 3 care types) for plots 1-2, 4, 6-7, 9:
     1. Share of people with positive inheritance (gets_inheritance == 1)
        conditional on mother_dead == RECENTLY_DEAD, by age, education, and care type.
     2. Share of people with positive inheritance (gets_inheritance == 1)
@@ -75,6 +83,10 @@ def task_plot_inheritance_by_age(  # noqa: PLR0915
        by age, education, and care type.
     7. Average inheritance amount (conditional on bequest_from_parent > 0, whole sample)
        by age, education, and care type.
+    8. Average inheritance amount (conditional on bequest_from_parent > 0 AND mother_dead != RECENTLY_DEAD)
+       by age, education, and care type (sanity check - should be 0).
+    9. Average inheritance amount (conditional on bequest_from_parent > 0 AND gets_inheritance == 0)
+       by age, education, and care type (sanity check - should be 0).
 
     Parameters
     ----------
@@ -96,6 +108,10 @@ def task_plot_inheritance_by_age(  # noqa: PLR0915
         Path to save the inheritance amount plot (conditional on gets_inheritance == 0)
     path_to_save_amount_positive_plot : Path
         Path to save the inheritance amount plot (conditional on bequest_from_parent > 0)
+    path_to_save_amount_check1_plot : Path
+        Path to save the inheritance amount check plot (conditional on bequest_from_parent > 0 AND mother_dead != RECENTLY_DEAD)
+    path_to_save_amount_check2_plot : Path
+        Path to save the inheritance amount check plot (conditional on bequest_from_parent > 0 AND gets_inheritance == 0)
 
     """
 
@@ -145,9 +161,9 @@ def task_plot_inheritance_by_age(  # noqa: PLR0915
     df_sim.loc[df_sim["lagged_choice"].isin(light_care_values), "care_category"] = (
         "light_care"
     )
-    df_sim.loc[
-        df_sim["lagged_choice"].isin(intensive_care_values), "care_category"
-    ] = "intensive_care"
+    df_sim.loc[df_sim["lagged_choice"].isin(intensive_care_values), "care_category"] = (
+        "intensive_care"
+    )
 
     # Create indicator for mother recently dead (whole sample)
     df_sim["mother_recently_dead"] = (
@@ -195,9 +211,9 @@ def task_plot_inheritance_by_age(  # noqa: PLR0915
 
     # Calculate share with positive inheritance (gets_inheritance == 1) by age, education, and care category
     share_by_group = (
-        df_recently_dead.groupby(
-            ["age", "education", "care_category"], observed=False
-        )["gets_inheritance"]
+        df_recently_dead.groupby(["age", "education", "care_category"], observed=False)[
+            "gets_inheritance"
+        ]
         .mean()
         .reset_index()
     )
@@ -418,9 +434,9 @@ def task_plot_inheritance_by_age(  # noqa: PLR0915
 
     if len(df_positive) > 0:
         avg_amount_by_group = (
-            df_positive.groupby(
-                ["age", "education", "care_category"], observed=False
-            )["bequest_from_parent"]
+            df_positive.groupby(["age", "education", "care_category"], observed=False)[
+                "bequest_from_parent"
+            ]
             .mean()
             .reset_index()
         )
@@ -753,3 +769,183 @@ def task_plot_inheritance_by_age(  # noqa: PLR0915
     else:
         print("Warning: No observations with bequest_from_parent > 0 found.")
 
+    # =================================================================================
+    # Check Plot 1: Average inheritance amount (conditional on bequest_from_parent > 0 AND mother_dead != RECENTLY_DEAD)
+    # Whole sample, filtered to positive bequest AND mother NOT recently dead, grouped by education and care type
+    # This should be 0 or very small (sanity check)
+    # =================================================================================
+    # Filter to positive bequest AND mother NOT recently dead
+    df_check1 = df_sim.loc[
+        (df_sim["bequest_from_parent"] > 0)
+        & (df_sim["mother_dead"] != PARENT_RECENTLY_DEAD)
+    ].copy()
+
+    if len(df_check1) > 0:
+        # care_category is already created on df_sim, so it's available in df_check1
+        # Calculate average inheritance amount by age, education, and care category
+        avg_amount_check1_by_group = (
+            df_check1.groupby(["age", "education", "care_category"], observed=False)[
+                "bequest_from_parent"
+            ]
+            .mean()
+            .reset_index()
+        )
+
+        # Get all unique ages for check1 plot
+        ages_check1 = np.sort(df_check1["age"].unique())
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+        # Plot for each care type, then for each education level
+        for care_idx, (care_category, care_label) in enumerate(care_type_order):
+            linestyle = care_linestyles[care_idx]
+            linewidth = care_linewidths[care_idx]
+
+            # Filter to this care category
+            df_care = avg_amount_check1_by_group.loc[
+                avg_amount_check1_by_group["care_category"] == care_category
+            ].copy()
+
+            # Plot for each education level
+            for edu_var, edu_label in enumerate(specs["education_labels"]):
+                color = edu_colors[edu_var]
+
+                # Filter to this education level within this care category
+                df_edu_care = df_care.loc[df_care["education"] == edu_var].copy()
+
+                if len(df_edu_care) > 0:
+                    # Reindex to all ages and fill missing with NaN
+                    # Convert from wealth units to Euros
+                    amounts = (
+                        df_edu_care.set_index("age")["bequest_from_parent"]
+                        .reindex(ages_check1)
+                        .values
+                        * specs["wealth_unit"]
+                    )
+                    mask = ~np.isnan(amounts)
+                    if mask.sum() > 0:
+                        ax.plot(
+                            ages_check1[mask],
+                            amounts[mask],
+                            linewidth=linewidth,
+                            color=color,
+                            linestyle=linestyle,
+                            label=f"{edu_label}, {care_label}",
+                            alpha=0.8,
+                        )
+
+        ax.set_xlabel("Age", fontsize=12)
+        ax.set_ylabel("Average Inheritance Amount (€)", fontsize=12)
+        ax.set_title(
+            "Average Inheritance Amount by Age, Education, and Care Type (Baseline Model)\n"
+            "Conditional on bequest_from_parent > 0 AND mother_dead != RECENTLY_DEAD (Check)",
+            fontsize=13,
+        )
+        ax.grid(True, alpha=0.3)
+        ax.legend(loc="best", fontsize=9, ncol=2)
+        # Format y-axis with thousands separator
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f"{x:,.0f}"))
+
+        plt.tight_layout()
+        path_to_save_amount_check1_plot.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(path_to_save_amount_check1_plot, dpi=300)
+        plt.close(fig)
+
+        print(
+            f"Inheritance amount (check 1: positive bequest AND mother != RECENTLY_DEAD) by age plot saved to {path_to_save_amount_check1_plot}"
+        )
+        print(f"  Number of observations: {len(df_check1)} (should be 0 or very small)")
+    else:
+        print(
+            "Check 1: No observations with bequest_from_parent > 0 AND mother_dead != RECENTLY_DEAD found (expected)."
+        )
+
+    # =================================================================================
+    # Check Plot 2: Average inheritance amount (conditional on bequest_from_parent > 0 AND gets_inheritance == 0)
+    # Whole sample, filtered to positive bequest AND gets_inheritance == 0, grouped by education and care type
+    # This should be 0 or very small (sanity check)
+    # =================================================================================
+    # Filter to positive bequest AND gets_inheritance == 0
+    df_check2 = df_sim.loc[
+        (df_sim["bequest_from_parent"] > 0) & (df_sim["gets_inheritance"] == 0)
+    ].copy()
+
+    if len(df_check2) > 0:
+        # care_category is already created on df_sim, so it's available in df_check2
+        # Calculate average inheritance amount by age, education, and care category
+        avg_amount_check2_by_group = (
+            df_check2.groupby(["age", "education", "care_category"], observed=False)[
+                "bequest_from_parent"
+            ]
+            .mean()
+            .reset_index()
+        )
+
+        # Get all unique ages for check2 plot
+        ages_check2 = np.sort(df_check2["age"].unique())
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+        # Plot for each care type, then for each education level
+        for care_idx, (care_category, care_label) in enumerate(care_type_order):
+            linestyle = care_linestyles[care_idx]
+            linewidth = care_linewidths[care_idx]
+
+            # Filter to this care category
+            df_care = avg_amount_check2_by_group.loc[
+                avg_amount_check2_by_group["care_category"] == care_category
+            ].copy()
+
+            # Plot for each education level
+            for edu_var, edu_label in enumerate(specs["education_labels"]):
+                color = edu_colors[edu_var]
+
+                # Filter to this education level within this care category
+                df_edu_care = df_care.loc[df_care["education"] == edu_var].copy()
+
+                if len(df_edu_care) > 0:
+                    # Reindex to all ages and fill missing with NaN
+                    # Convert from wealth units to Euros
+                    amounts = (
+                        df_edu_care.set_index("age")["bequest_from_parent"]
+                        .reindex(ages_check2)
+                        .values
+                        * specs["wealth_unit"]
+                    )
+                    mask = ~np.isnan(amounts)
+                    if mask.sum() > 0:
+                        ax.plot(
+                            ages_check2[mask],
+                            amounts[mask],
+                            linewidth=linewidth,
+                            color=color,
+                            linestyle=linestyle,
+                            label=f"{edu_label}, {care_label}",
+                            alpha=0.8,
+                        )
+
+        ax.set_xlabel("Age", fontsize=12)
+        ax.set_ylabel("Average Inheritance Amount (€)", fontsize=12)
+        ax.set_title(
+            "Average Inheritance Amount by Age, Education, and Care Type (Baseline Model)\n"
+            "Conditional on bequest_from_parent > 0 AND gets_inheritance == 0 (Check)",
+            fontsize=13,
+        )
+        ax.grid(True, alpha=0.3)
+        ax.legend(loc="best", fontsize=9, ncol=2)
+        # Format y-axis with thousands separator
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f"{x:,.0f}"))
+
+        plt.tight_layout()
+        path_to_save_amount_check2_plot.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(path_to_save_amount_check2_plot, dpi=300)
+        plt.close(fig)
+
+        print(
+            f"Inheritance amount (check 2: positive bequest AND gets_inheritance == 0) by age plot saved to {path_to_save_amount_check2_plot}"
+        )
+        print(f"  Number of observations: {len(df_check2)} (should be 0 or very small)")
+    else:
+        print(
+            "Check 2: No observations with bequest_from_parent > 0 AND gets_inheritance == 0 found (expected)."
+        )
