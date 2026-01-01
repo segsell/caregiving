@@ -109,6 +109,7 @@ PARENT_MEDIUM_HEALTH = 1
 PARENT_GOOD_HEALTH = 2
 PARENT_HEALTH_DEAD = 3
 
+PARENT_ALIVE = 0
 PARENT_RECENTLY_DEAD = 1  # Mother recently died (inheritance paid this period)
 PARENT_LONGER_DEAD = 2  # Mother died in previous periods (no inheritance)
 

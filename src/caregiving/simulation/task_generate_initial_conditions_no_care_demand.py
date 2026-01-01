@@ -115,6 +115,7 @@ def task_generate_start_states_for_solution_no_care_demand(  # noqa: PLR0915
         not in (
             "mother_dead",
             "caregiving_type",
+            "gets_inheritance",
         )
     }
 
@@ -123,7 +124,9 @@ def task_generate_start_states_for_solution_no_care_demand(  # noqa: PLR0915
     states_dict["mother_dead"] = np.zeros_like(
         start_period_data["wealth"], dtype=np.uint8
     )
-
+    states_dict["gets_inheritance"] = np.zeros_like(
+        start_period_data["wealth"], dtype=np.uint8
+    )
     states_dict["assets_begin_of_period"] = (
         start_period_data["wealth"].values / specs["wealth_unit"]
     )
@@ -308,6 +311,7 @@ def task_generate_start_states_for_solution_no_care_demand(  # noqa: PLR0915
         "partner_state": jnp.array(partner_states, dtype=jnp.uint8),
         "mother_dead": jnp.array(mother_dead_agents, dtype=jnp.uint8),
         "caregiving_type": jnp.array(caregiving_type_agents, dtype=jnp.uint8),
+        "gets_inheritance": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
         "assets_begin_of_period": wealth_agents,
     }
 

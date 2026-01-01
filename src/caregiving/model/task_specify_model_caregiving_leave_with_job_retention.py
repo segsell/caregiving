@@ -15,6 +15,9 @@ from caregiving.config import BLD
 from caregiving.model.state_space_caregiving_leave_with_job_retention import (
     create_state_space_functions,
 )
+from caregiving.model.stochastic_processes.inheritance_transition import (
+    inheritance_transition,
+)
 from caregiving.model.stochastic_processes.adl_transition import (
     death_transition,
     limitations_with_adl_transition,
@@ -96,6 +99,7 @@ def task_specify_model_caregiving_leave_with_job_retention(
             "mother_dead": np.arange(3, dtype=int),
             "mother_adl": np.arange(specs["n_adl_states_light_intensive"], dtype=int),
             "care_demand": np.arange(3, dtype=int),
+            "gets_inheritance": np.arange(2, dtype=int),
         },
         "continuous_states": {
             "assets_end_of_period": savings_grid,
@@ -134,4 +138,5 @@ def create_stochastic_states_transitions():
         "mother_dead": death_transition,
         "mother_adl": limitations_with_adl_transition,
         "care_demand": care_demand_transition_adl_light_intensive,
+        "gets_inheritance": inheritance_transition,
     }

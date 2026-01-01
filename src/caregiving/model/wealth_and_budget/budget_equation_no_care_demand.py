@@ -1,6 +1,6 @@
 from jax import numpy as jnp
 
-from caregiving.model.shared import SEX
+from caregiving.model.shared import SEX, PARENT_RECENTLY_DEAD
 from caregiving.model.shared_no_care_demand import is_retired, is_working
 from caregiving.model.wealth_and_budget.government_budget import (
     calc_government_budget_components,
@@ -17,7 +17,7 @@ from caregiving.model.wealth_and_budget.transfers import (
     calc_unemployment_benefits,
 )
 from caregiving.model.wealth_and_budget.transfers_no_care_demand import (
-    calc_inheritance_no_care_demand,
+    calc_inheritance_amount_no_care_demand,
 )
 from caregiving.model.wealth_and_budget.wages_no_care_demand import (
     calc_labor_income_after_ssc,
@@ -31,6 +31,7 @@ def budget_constraint(
     experience,
     partner_state,
     mother_dead,
+    gets_inheritance,
     asset_end_of_previous_period,  # A_{t-1}
     income_shock_previous_period,  # epsilon_{t - 1}
     params,
@@ -118,16 +119,18 @@ def budget_constraint(
         household_unemployment_benefits,
     )
 
-    bequest_from_parent = calc_inheritance_no_care_demand(
+    # Only compute inheritance if mother recently died this period (state 1)
+    mother_died_recently = mother_dead == PARENT_RECENTLY_DEAD
+    inheritance_amount = calc_inheritance_amount_no_care_demand(
         period=period,
         education=education,
-        mother_dead=mother_dead,
         model_specs=model_specs,
     )
+    bequest_from_parent = mother_died_recently * gets_inheritance * inheritance_amount
 
     interest_rate = model_specs["interest_rate"]
     interest = interest_rate * assets_scaled
-    total_income_plus_interest = total_income + interest  # + bequest_from_parent
+    total_income_plus_interest = total_income + interest + bequest_from_parent
 
     # Calculate beginning of period wealth M_t
     assets_begin_of_period = assets_scaled + total_income_plus_interest

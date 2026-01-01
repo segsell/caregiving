@@ -1,6 +1,6 @@
 from jax import numpy as jnp
 
-from caregiving.model.shared import SEX, is_retired, is_working
+from caregiving.model.shared import PARENT_RECENTLY_DEAD, SEX, is_retired, is_working
 from caregiving.model.wealth_and_budget.government_budget import (
     calc_government_budget_components,
 )
@@ -14,7 +14,7 @@ from caregiving.model.wealth_and_budget.tax_and_ssc import calc_net_household_in
 from caregiving.model.wealth_and_budget.transfers import (
     calc_care_benefits_and_costs,
     calc_child_benefits,
-    calc_inheritance,
+    calc_inheritance_amount,
     calc_unemployment_benefits,
 )
 from caregiving.model.wealth_and_budget.wages import calc_labor_income_after_ssc
@@ -29,6 +29,7 @@ def budget_constraint(
     partner_state,
     care_demand,
     mother_dead,
+    gets_inheritance,
     asset_end_of_previous_period,  # A_{t-1}
     income_shock_previous_period,  # epsilon_{t - 1}
     params,
@@ -121,13 +122,15 @@ def budget_constraint(
         household_unemployment_benefits,
     )
 
-    bequest_from_parent = calc_inheritance(
+    # Only compute inheritance if mother recently died this period (state 1)
+    mother_died_recently = mother_dead == PARENT_RECENTLY_DEAD
+    inheritance_amount = calc_inheritance_amount(
         period=period,
         lagged_choice=lagged_choice,
         education=education,
-        mother_dead=mother_dead,
         model_specs=model_specs,
     )
+    bequest_from_parent = mother_died_recently * gets_inheritance * inheritance_amount
 
     # # calculate beginning of period wealth M_t
     # assets_begin_of_period = (

@@ -21,6 +21,9 @@ from caregiving.model.stochastic_processes.job_transition_no_care_demand import 
     job_offer_process_transition,
 )
 from caregiving.model.stochastic_processes.partner_transition import partner_transition
+from caregiving.model.stochastic_processes.inheritance_transition_no_care_demand import (
+    inheritance_transition_no_care_demand,
+)
 from caregiving.model.taste_shocks import shock_function_dict
 from caregiving.model.utility.bequest_utility import (
     create_final_period_utility_functions,
@@ -88,6 +91,7 @@ def task_specify_model_no_care_demand(
                 3, dtype=int
             ),  # Needed for inheritance calculation
             # No mother_adl or care_demand in counterfactual
+            "gets_inheritance": np.arange(2, dtype=int),
         },
         "continuous_states": {
             "assets_end_of_period": savings_grid,
@@ -108,7 +112,6 @@ def task_specify_model_no_care_demand(
         stochastic_states_transitions=create_stochastic_states_transitions(),
         model_save_path=path_to_save_model,
     )
-
     print("Counterfactual model without care_demand specified.", flush=True)
 
     return model
@@ -126,4 +129,5 @@ def create_stochastic_states_transitions():
         "health": health_transition,
         "mother_dead": death_transition,  # Needed for inheritance calculation
         # No mother_adl or care_demand in counterfactual
+        "gets_inheritance": inheritance_transition_no_care_demand,
     }

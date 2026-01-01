@@ -34,8 +34,8 @@ from caregiving.simulation.simulate_no_care_demand import (
 jax.config.update("jax_enable_x64", True)
 
 
-@pytask.mark.no_care_demand_model
 @pytask.mark.solve_no_care_demand
+@pytask.mark.no_care_demand_model
 def task_solve_and_simulate_no_care_demand(
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_model: Path = BLD / "model" / "model_no_care_demand.pkl",
@@ -62,6 +62,7 @@ def task_solve_and_simulate_no_care_demand(
 
     specs = pickle.load(path_to_specs.open("rb"))
     model_config = pickle.load(path_to_model_config.open("rb"))
+
     params = yaml.safe_load(path_to_estimated_params.open("rb"))
 
     model = dcegm.setup_model(

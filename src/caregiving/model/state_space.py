@@ -162,6 +162,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
     care_demand,
     job_offer,
     caregiving_type,
+    gets_inheritance,
     model_specs,
 ):
     start_age = model_specs["start_age"]
@@ -248,26 +249,27 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "mother_adl": 0,
                 "mother_dead": PARENT_LONGER_DEAD,
                 "care_demand": NO_CARE_DEMAND,
+                "gets_inheritance": 0,
                 "job_offer": 0,
             }
             return state_proxy
-        elif mother_dead == PARENT_RECENTLY_DEAD:
-            # If mother recently died, no care demand and supply
-            # Preserve mother_dead == 1 so inheritance can be calculated
-            state_proxy = {
-                "period": period,
-                "lagged_choice": lagged_choice,
-                "already_retired": already_retired,
-                "education": education,
-                "caregiving_type": caregiving_type,
-                "health": health,
-                "partner_state": partner_state,
-                "mother_adl": 0,
-                "mother_dead": PARENT_RECENTLY_DEAD,  # Preserve for inheritance calculation
-                "care_demand": NO_CARE_DEMAND,
-                "job_offer": job_offer,
-            }
-            return state_proxy
+        # elif mother_dead == PARENT_RECENTLY_DEAD:
+        #     # If mother recently died, no care demand and supply
+        #     # Preserve mother_dead == 1 so inheritance can be calculated
+        #     state_proxy = {
+        #         "period": period,
+        #         "lagged_choice": lagged_choice,
+        #         "already_retired": already_retired,
+        #         "education": education,
+        #         "caregiving_type": caregiving_type,
+        #         "health": health,
+        #         "partner_state": partner_state,
+        #         "mother_adl": 0,
+        #         "mother_dead": PARENT_RECENTLY_DEAD,  # Preserve for inheritance calculation
+        #         "care_demand": NO_CARE_DEMAND,
+        #         "job_offer": job_offer,
+        #     }
+        #     return state_proxy
         elif mother_dead == PARENT_LONGER_DEAD:
             # If mother is longer dead, no care demand and supply
             state_proxy = {
@@ -281,6 +283,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "mother_adl": 0,
                 "mother_dead": PARENT_LONGER_DEAD,
                 "care_demand": NO_CARE_DEMAND,
+                "gets_inheritance": 0,
                 "job_offer": job_offer,
             }
             return state_proxy
@@ -299,6 +302,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "mother_adl": mother_adl,
                 "mother_dead": mother_dead,
                 "care_demand": care_demand,  # Outside caregiving window, no care demand
+                "gets_inheritance": gets_inheritance,
                 "job_offer": 0,
             }
             return state_proxy
@@ -316,6 +320,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "mother_adl": mother_adl,
                 "mother_dead": mother_dead,
                 "care_demand": care_demand,
+                "gets_inheritance": gets_inheritance,
                 "job_offer": 0,
             }
             return state_proxy
@@ -362,6 +367,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "mother_adl": mother_adl,
                 "mother_dead": mother_dead,
                 "care_demand": NO_CARE_DEMAND,
+                "gets_inheritance": gets_inheritance,
                 "job_offer": job_offer,
             }
             return state_proxy
@@ -378,6 +384,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "mother_adl": mother_adl,
                 "mother_dead": mother_dead,
                 "care_demand": NO_CARE_DEMAND,
+                "gets_inheritance": gets_inheritance,
                 "job_offer": job_offer,
             }
             return state_proxy

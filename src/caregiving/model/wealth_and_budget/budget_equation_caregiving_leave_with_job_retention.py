@@ -3,6 +3,7 @@ from jax import numpy as jnp
 from caregiving.model.shared import (
     CARE_DEMAND_AND_NO_OTHER_SUPPLY,
     CARE_DEMAND_AND_OTHER_SUPPLY,
+    PARENT_RECENTLY_DEAD,
     SEX,
     had_ft_job_before_caregiving,
     had_no_job_before_caregiving,
@@ -30,7 +31,7 @@ from caregiving.model.wealth_and_budget.tax_and_ssc import (
 from caregiving.model.wealth_and_budget.transfers import (
     calc_care_benefits_and_costs,
     calc_child_benefits,
-    calc_inheritance,
+    calc_inheritance_amount,
     calc_unemployment_benefits,
 )
 from caregiving.model.wealth_and_budget.wages import calc_labor_income_after_ssc
@@ -45,6 +46,7 @@ def budget_constraint(
     partner_state,
     care_demand,
     mother_dead,
+    gets_inheritance,
     job_before_caregiving,
     asset_end_of_previous_period,  # A_{t-1}
     income_shock_previous_period,  # epsilon_{t - 1}
@@ -153,13 +155,15 @@ def budget_constraint(
         household_unemployment_benefits,
     )
 
-    bequest_from_parent = calc_inheritance(
+    # Only compute inheritance if mother recently died this period (state 1)
+    mother_died_recently = mother_dead == PARENT_RECENTLY_DEAD
+    inheritance_amount = calc_inheritance_amount(
         period=period,
         lagged_choice=lagged_choice,
         education=education,
-        mother_dead=mother_dead,
         model_specs=model_specs,
     )
+    bequest_from_parent = mother_died_recently * gets_inheritance * inheritance_amount
 
     interest_rate = model_specs["interest_rate"]
     interest = interest_rate * assets_scaled
