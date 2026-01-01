@@ -22,8 +22,6 @@ from caregiving.counterfactual.plotting_utils import (
 from caregiving.model.shared import INFORMAL_CARE
 
 
-@pytask.mark.counterfactual_differences
-@pytask.mark.counterfactual_differences_age_profiles
 @pytask.mark.counterfactual_differences_higher_formal_care_costs_age_profiles
 def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915, E501
     path_to_higher_formal_care_costs_data: Path = BLD
@@ -102,7 +100,7 @@ def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915, E5
     / "vs_no_care_demand"
     / "age_profiles"
     / "matched_differences_savings_rate_by_age.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = False,
     ever_care_demand: bool = True,
     age_min: int = 30,
@@ -125,13 +123,12 @@ def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915, E5
     ncd_outcomes = calculate_outcomes(df_ncd, choice_set_type="no_care_demand")
 
     # Calculate working hours
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     hfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_hfc, model_params, choice_set_type="original"
+        df_hfc, specs, choice_set_type="original"
     )
     ncd_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_ncd, model_params, choice_set_type="no_care_demand"
+        df_ncd, specs, choice_set_type="no_care_demand"
     )
 
     # Calculate additional outcomes
@@ -278,8 +275,6 @@ def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915, E5
     )
 
 
-@pytask.mark.counterfactual_differences
-@pytask.mark.counterfactual_differences_age_profiles
 @pytask.mark.counterfactual_differences_higher_formal_care_costs_age_profiles
 def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915, E501
     path_to_higher_formal_care_costs_data: Path = BLD
@@ -358,7 +353,7 @@ def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915, E501
     / "vs_baseline"
     / "age_profiles"
     / "matched_differences_savings_rate_by_age.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = False,
     ever_care_demand: bool = True,
     age_min: int = 30,
@@ -381,13 +376,12 @@ def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915, E501
     baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
 
     # Calculate working hours
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     hfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_hfc, model_params, choice_set_type="original"
+        df_hfc, specs, choice_set_type="original"
     )
     baseline_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_baseline, model_params, choice_set_type="original"
+        df_baseline, specs, choice_set_type="original"
     )
 
     # Calculate additional outcomes
@@ -534,8 +528,6 @@ def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915, E501
     )
 
 
-@pytask.mark.counterfactual_differences
-@pytask.mark.counterfactual_differences_age_profiles
 @pytask.mark.counterfactual_differences_higher_formal_care_costs_age_profiles
 def task_plot_matched_differences_by_age_vs_no_care_demand_up_to_90(  # noqa: PLR0915, E501
     path_to_higher_formal_care_costs_data: Path = BLD
@@ -614,7 +606,7 @@ def task_plot_matched_differences_by_age_vs_no_care_demand_up_to_90(  # noqa: PL
     / "vs_no_care_demand"
     / "age_profiles"
     / "matched_differences_savings_rate_by_age_up_to_90.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = False,
     ever_care_demand: bool = True,
     age_min: int = 30,
@@ -637,13 +629,12 @@ def task_plot_matched_differences_by_age_vs_no_care_demand_up_to_90(  # noqa: PL
     ncd_outcomes = calculate_outcomes(df_ncd, choice_set_type="no_care_demand")
 
     # Calculate working hours
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     hfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_hfc, model_params, choice_set_type="original"
+        df_hfc, specs, choice_set_type="original"
     )
     ncd_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_ncd, model_params, choice_set_type="no_care_demand"
+        df_ncd, specs, choice_set_type="no_care_demand"
     )
 
     # Calculate additional outcomes
@@ -789,8 +780,6 @@ def task_plot_matched_differences_by_age_vs_no_care_demand_up_to_90(  # noqa: PL
     )
 
 
-@pytask.mark.counterfactual_differences
-@pytask.mark.counterfactual_differences_age_profiles
 @pytask.mark.counterfactual_differences_higher_formal_care_costs_age_profiles
 def task_plot_matched_differences_by_age_vs_baseline_up_to_90(  # noqa: PLR0915, E501
     path_to_higher_formal_care_costs_data: Path = BLD
@@ -869,7 +858,7 @@ def task_plot_matched_differences_by_age_vs_baseline_up_to_90(  # noqa: PLR0915,
     / "vs_baseline"
     / "age_profiles"
     / "matched_differences_savings_rate_by_age_up_to_90.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = False,
     ever_care_demand: bool = True,
     age_min: int = 30,
@@ -892,13 +881,12 @@ def task_plot_matched_differences_by_age_vs_baseline_up_to_90(  # noqa: PLR0915,
     baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
 
     # Calculate working hours
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     hfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_hfc, model_params, choice_set_type="original"
+        df_hfc, specs, choice_set_type="original"
     )
     baseline_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_baseline, model_params, choice_set_type="original"
+        df_baseline, specs, choice_set_type="original"
     )
 
     # Calculate additional outcomes

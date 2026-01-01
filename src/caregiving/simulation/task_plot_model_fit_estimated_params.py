@@ -426,6 +426,7 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
     # =================================================================================
     # Caregiving transitions
     # =================================================================================
+
     # Create temporary choice columns for empirical data (from any_care)
     df_emp_care = df_emp_with_caregivers.copy()
     if "any_care" in df_emp_care.columns and "lagged_any_care" in df_emp_care.columns:

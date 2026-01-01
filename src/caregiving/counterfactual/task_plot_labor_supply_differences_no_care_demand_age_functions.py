@@ -92,7 +92,7 @@ def task_plot_matched_differences_by_age(  # noqa: PLR0915, E501
     / "no_care_demand"
     / "age_profiles"
     / "matched_differences_savings_rate_by_age.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = False,
     ever_care_demand: bool = True,
     age_min: int = 30,
@@ -121,13 +121,12 @@ def task_plot_matched_differences_by_age(  # noqa: PLR0915, E501
     c_outcomes = calculate_outcomes(df_c, choice_set_type="no_care_demand")
 
     # Calculate working hours
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     o_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_o, model_params, choice_set_type="original"
+        df_o, specs, choice_set_type="original"
     )
     c_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_c, model_params, choice_set_type="no_care_demand"
+        df_c, specs, choice_set_type="no_care_demand"
     )
 
     # Calculate additional outcomes (gross labor income, savings, wealth, savings_rate)

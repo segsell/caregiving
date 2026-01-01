@@ -108,6 +108,7 @@ def task_specify_model_no_care_demand(
         stochastic_states_transitions=create_stochastic_states_transitions(),
         model_save_path=path_to_save_model,
     )
+
     print("Counterfactual model without care_demand specified.", flush=True)
 
     return model

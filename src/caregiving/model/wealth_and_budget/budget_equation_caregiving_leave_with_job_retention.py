@@ -14,8 +14,8 @@ from caregiving.model.shared import (
     is_unemployed,
     is_working,
 )
-from caregiving.model.wealth_and_budget.government_budget import (
-    calc_government_budget_components,
+from caregiving.model.wealth_and_budget.government_budget_caregiving_leave_with_job_retention import (
+    calc_government_budget_components_caregiving_leave_with_job_retention,
 )
 from caregiving.model.wealth_and_budget.partner_income import (
     calc_partner_income_after_ssc,
@@ -176,7 +176,7 @@ def budget_constraint(
         total_tax_revenue,
         government_expenditures,
         net_government_budget,
-    ) = calc_government_budget_components(
+    ) = calc_government_budget_components_caregiving_leave_with_job_retention(
         household_income_tax_total=income_tax_total,
         was_worker=was_worker,
         was_retired=was_retired,
@@ -188,6 +188,7 @@ def budget_constraint(
         child_benefits=child_benefits,
         care_benefits_and_costs=care_benefits_and_costs,
         household_unemployment_benefits=household_unemployment_benefits,
+        caregiving_leave_top_up=caregiving_leave_top_up,
         model_specs=model_specs,
     )
 
@@ -204,6 +205,7 @@ def budget_constraint(
         "gross_labor_income": gross_labor_income / model_specs["wealth_unit"],
         "gross_retirement_income": gross_retirement_income / model_specs["wealth_unit"],
         "bequest_from_parent": bequest_from_parent / model_specs["wealth_unit"],
+        "caregiving_leave_top_up": caregiving_leave_top_up / model_specs["wealth_unit"],
         # Government budget components
         "income_tax": income_tax_total / model_specs["wealth_unit"],
         "own_ssc": own_ssc / model_specs["wealth_unit"],

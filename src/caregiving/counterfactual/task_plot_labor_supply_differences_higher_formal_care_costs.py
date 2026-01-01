@@ -44,7 +44,6 @@ from caregiving.counterfactual.task_plot_labor_supply_differences_no_care_demand
 from caregiving.model.shared import DEAD, INFORMAL_CARE
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_formal_care_costs
 def task_plot_matched_differences_by_distance(  # noqa: PLR0915, E501
     path_to_higher_formal_care_costs_data: Path = BLD
@@ -148,7 +147,6 @@ def task_plot_matched_differences_by_distance(  # noqa: PLR0915, E501
     )
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_formal_care_costs
 def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915, E501
     path_to_higher_formal_care_costs_data: Path = BLD
@@ -187,7 +185,7 @@ def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915, E501
     / "higher_formal_care_costs"
     / "vs_no_care_demand"
     / "matched_differences_working_hours_by_age_at_first_care.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
     ages_at_first_care: list[int] | None = None,
@@ -226,13 +224,12 @@ def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915, E501
     ncd_outcomes = calculate_outcomes(df_ncd, choice_set_type="no_care_demand")
 
     # Calculate working hours
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     hfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_hfc, model_params, choice_set_type="original"
+        df_hfc, specs, choice_set_type="original"
     )
     ncd_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_ncd, model_params, choice_set_type="no_care_demand"
+        df_ncd, specs, choice_set_type="no_care_demand"
     )
 
     # Calculate additional outcomes (gross labor income, savings, wealth)
@@ -394,7 +391,6 @@ def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915, E501
     )
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_formal_care_costs
 def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915, E501
     path_to_higher_formal_care_costs_data: Path = BLD
@@ -433,7 +429,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915, E
     / "higher_formal_care_costs"
     / "vs_no_care_demand"
     / "matched_differences_working_hours_by_age_bins_at_first_care.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
     min_age: int = 50,
@@ -471,13 +467,12 @@ def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915, E
     ncd_outcomes = calculate_outcomes(df_ncd, choice_set_type="no_care_demand")
 
     # Calculate working hours
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     hfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_hfc, model_params, choice_set_type="original"
+        df_hfc, specs, choice_set_type="original"
     )
     ncd_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_ncd, model_params, choice_set_type="no_care_demand"
+        df_ncd, specs, choice_set_type="no_care_demand"
     )
 
     # Calculate additional outcomes (gross labor income, savings, wealth)
@@ -667,7 +662,6 @@ def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915, E
 # ============================================================================
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_formal_care_costs
 def task_plot_matched_differences_by_distance_vs_baseline(  # noqa: PLR0915, E501
     path_to_higher_formal_care_costs_data: Path = BLD
@@ -773,7 +767,6 @@ def task_plot_matched_differences_by_distance_vs_baseline(  # noqa: PLR0915, E50
     )
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_formal_care_costs
 def task_plot_matched_differences_by_age_at_first_care_vs_baseline(  # noqa: PLR0915, E501
     path_to_higher_formal_care_costs_data: Path = BLD
@@ -812,7 +805,7 @@ def task_plot_matched_differences_by_age_at_first_care_vs_baseline(  # noqa: PLR
     / "higher_formal_care_costs"
     / "vs_baseline"
     / "matched_differences_working_hours_by_age_at_first_care.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
     ages_at_first_care: list[int] | None = None,
@@ -850,13 +843,12 @@ def task_plot_matched_differences_by_age_at_first_care_vs_baseline(  # noqa: PLR
     baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
 
     # Calculate working hours
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     hfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_hfc, model_params, choice_set_type="original"
+        df_hfc, specs, choice_set_type="original"
     )
     baseline_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_baseline, model_params, choice_set_type="original"
+        df_baseline, specs, choice_set_type="original"
     )
 
     # Calculate additional outcomes (gross labor income, savings, wealth)
@@ -1027,7 +1019,6 @@ def task_plot_matched_differences_by_age_at_first_care_vs_baseline(  # noqa: PLR
     )
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_formal_care_costs
 def task_plot_matched_differences_by_age_bins_at_first_care_vs_baseline(  # noqa: PLR0915, E501
     path_to_higher_formal_care_costs_data: Path = BLD
@@ -1066,7 +1057,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_vs_baseline(  # noqa
     / "higher_formal_care_costs"
     / "vs_baseline"
     / "matched_differences_working_hours_by_age_bins_at_first_care.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
     min_age: int = 50,
@@ -1103,13 +1094,12 @@ def task_plot_matched_differences_by_age_bins_at_first_care_vs_baseline(  # noqa
     baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
 
     # Calculate working hours
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     hfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_hfc, model_params, choice_set_type="original"
+        df_hfc, specs, choice_set_type="original"
     )
     baseline_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_baseline, model_params, choice_set_type="original"
+        df_baseline, specs, choice_set_type="original"
     )
 
     # Calculate additional outcomes (gross labor income, savings, wealth)
@@ -1311,7 +1301,6 @@ def task_plot_matched_differences_by_age_bins_at_first_care_vs_baseline(  # noqa
 # ============================================================================
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_formal_care_costs
 def task_plot_matched_differences_by_distance_by_care_demand(  # noqa: PLR0915, E501
     path_to_higher_formal_care_costs_data: Path = BLD
@@ -1459,7 +1448,6 @@ def task_plot_matched_differences_by_distance_by_care_demand(  # noqa: PLR0915, 
     plt.close()
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_formal_care_costs
 def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915, E501
     path_to_higher_formal_care_costs_data: Path = BLD
@@ -1504,7 +1492,7 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915,
     / "higher_formal_care_costs"
     / "vs_no_care_demand"
     / "matched_differences_care_by_age_at_first_care_demand.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
     ages_at_first_care_demand: list[int] | None = None,
@@ -1543,13 +1531,12 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915,
     ncd_outcomes = calculate_outcomes(df_ncd, choice_set_type="no_care_demand")
 
     # Calculate working hours
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     hfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_hfc, model_params, choice_set_type="original"
+        df_hfc, specs, choice_set_type="original"
     )
     ncd_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_ncd, model_params, choice_set_type="no_care_demand"
+        df_ncd, specs, choice_set_type="no_care_demand"
     )
 
     # Calculate additional outcomes (gross labor income, savings, wealth)
@@ -1735,7 +1722,6 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915,
     )
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_formal_care_costs
 def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915, E501
     path_to_higher_formal_care_costs_data: Path = BLD
@@ -1750,7 +1736,7 @@ def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915, E5
     / "higher_formal_care_costs"
     / "vs_no_care_demand"
     / "matched_differences_work_by_age.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = True,
     age_min: int = 30,
     age_max: int = 100,
@@ -1772,13 +1758,12 @@ def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915, E5
     ncd_outcomes = calculate_outcomes(df_ncd, choice_set_type="no_care_demand")
 
     # Calculate working hours
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     hfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_hfc, model_params, choice_set_type="original"
+        df_hfc, specs, choice_set_type="original"
     )
     ncd_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_ncd, model_params, choice_set_type="no_care_demand"
+        df_ncd, specs, choice_set_type="no_care_demand"
     )
 
     # Calculate additional outcomes
@@ -1884,7 +1869,6 @@ def task_plot_matched_differences_by_age_vs_no_care_demand(  # noqa: PLR0915, E5
     )
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_formal_care_costs
 def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915, E501
     path_to_higher_formal_care_costs_data: Path = BLD
@@ -1899,7 +1883,7 @@ def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915, E501
     / "higher_formal_care_costs"
     / "vs_baseline"
     / "matched_differences_work_by_age.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = True,
     age_min: int = 30,
     age_max: int = 100,
@@ -1920,13 +1904,12 @@ def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915, E501
     baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
 
     # Calculate working hours
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     hfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_hfc, model_params, choice_set_type="original"
+        df_hfc, specs, choice_set_type="original"
     )
     baseline_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_baseline, model_params, choice_set_type="original"
+        df_baseline, specs, choice_set_type="original"
     )
 
     # Calculate additional outcomes
@@ -2032,7 +2015,6 @@ def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915, E501
     )
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_formal_care_costs
 def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR0915, E501
     path_to_higher_formal_care_costs_data: Path = BLD
@@ -2077,7 +2059,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR
     / "higher_formal_care_costs"
     / "vs_no_care_demand"
     / "matched_differences_care_by_age_bins_at_first_care_demand.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
     min_age: int = 50,
@@ -2115,13 +2097,12 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR
     ncd_outcomes = calculate_outcomes(df_ncd, choice_set_type="no_care_demand")
 
     # Calculate working hours
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     hfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_hfc, model_params, choice_set_type="original"
+        df_hfc, specs, choice_set_type="original"
     )
     ncd_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_ncd, model_params, choice_set_type="no_care_demand"
+        df_ncd, specs, choice_set_type="no_care_demand"
     )
 
     # Calculate additional outcomes (gross labor income, savings, wealth)
@@ -2337,7 +2318,6 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR
 # ============================================================================
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_formal_care_costs
 def task_plot_matched_differences_by_distance_by_care_demand_vs_baseline(  # noqa: PLR0915, E501
     path_to_higher_formal_care_costs_data: Path = BLD
@@ -2488,7 +2468,6 @@ def task_plot_matched_differences_by_distance_by_care_demand_vs_baseline(  # noq
     plt.close()
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_formal_care_costs
 def task_plot_matched_differences_by_age_at_first_care_demand_vs_baseline(  # noqa: PLR0915, E501
     path_to_higher_formal_care_costs_data: Path = BLD
@@ -2533,7 +2512,7 @@ def task_plot_matched_differences_by_age_at_first_care_demand_vs_baseline(  # no
     / "higher_formal_care_costs"
     / "vs_baseline"
     / "matched_differences_care_by_age_at_first_care_demand.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
     ages_at_first_care_demand: list[int] | None = None,
@@ -2571,13 +2550,12 @@ def task_plot_matched_differences_by_age_at_first_care_demand_vs_baseline(  # no
     baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
 
     # Calculate working hours
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     hfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_hfc, model_params, choice_set_type="original"
+        df_hfc, specs, choice_set_type="original"
     )
     baseline_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_baseline, model_params, choice_set_type="original"
+        df_baseline, specs, choice_set_type="original"
     )
 
     # Calculate additional outcomes (gross labor income, savings, wealth)
@@ -2724,7 +2702,6 @@ def task_plot_matched_differences_by_age_at_first_care_demand_vs_baseline(  # no
     )
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_formal_care_costs
 def task_plot_matched_differences_by_age_bins_at_first_care_demand_vs_baseline(  # noqa: PLR0915, E501
     path_to_higher_formal_care_costs_data: Path = BLD
@@ -2769,7 +2746,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_vs_baseline( 
     / "higher_formal_care_costs"
     / "vs_baseline"
     / "matched_differences_care_by_age_bins_at_first_care_demand.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
     min_age: int = 50,
@@ -2806,13 +2783,12 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_vs_baseline( 
     baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
 
     # Calculate working hours
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     hfc_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_hfc, model_params, choice_set_type="original"
+        df_hfc, specs, choice_set_type="original"
     )
     baseline_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_baseline, model_params, choice_set_type="original"
+        df_baseline, specs, choice_set_type="original"
     )
 
     # Calculate additional outcomes (gross labor income, savings, wealth)
@@ -3029,7 +3005,6 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_vs_baseline( 
     )
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_formal_care_costs
 def task_plot_matched_differences_first_care_start_by_age_higher_formal_care_costs(  # noqa: PLR0915, E501
     path_to_higher_formal_care_costs_data: Path = BLD
@@ -3159,7 +3134,6 @@ def task_plot_matched_differences_first_care_start_by_age_higher_formal_care_cos
     plt.close()
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_formal_care_costs
 def task_plot_matched_differences_first_care_demand_start_by_age_higher_formal_care_costs(  # noqa: PLR0915, E501
     path_to_higher_formal_care_costs_data: Path = BLD

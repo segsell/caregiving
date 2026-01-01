@@ -160,6 +160,7 @@ def task_plot_model_fit_caregiving_leave_with_job_retention(  # noqa: PLR0915
             plot
         path_to_save_work_transition_age_bin_plot: Path to save work transitions by
             age bin plot
+
     """
 
     specs = pickle.load(path_to_specs.open("rb"))

@@ -104,7 +104,7 @@ def task_plot_matched_differences_by_age_cg_leave_vs_no_care_demand(  # noqa: PL
     / "vs_no_care_demand"
     / "age_profiles"
     / "matched_differences_savings_rate_by_age.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = False,
     ever_care_demand: bool = True,
     age_min: int = 30,
@@ -128,13 +128,12 @@ def task_plot_matched_differences_by_age_cg_leave_vs_no_care_demand(  # noqa: PL
     ncd_outcomes.update(ncd_additional)
 
     # Working hours (weekly) using standard helper
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     cg_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_cg, model_params, choice_set_type="original"
+        df_cg, specs, choice_set_type="original"
     )
     ncd_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_ncd, model_params, choice_set_type="no_care_demand"
+        df_ncd, specs, choice_set_type="no_care_demand"
     )
 
     cg_cols = create_outcome_columns(df_cg, cg_outcomes, "_o")
@@ -349,7 +348,7 @@ def task_plot_matched_differences_by_age_cg_leave_vs_baseline(  # noqa: PLR0915,
     / "vs_baseline"
     / "age_profiles"
     / "matched_differences_savings_rate_by_age.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = False,
     ever_care_demand: bool = True,
     age_min: int = 30,
@@ -373,13 +372,12 @@ def task_plot_matched_differences_by_age_cg_leave_vs_baseline(  # noqa: PLR0915,
     baseline_outcomes.update(baseline_additional)
 
     # Working hours (weekly) using standard helper
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     cg_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_cg, model_params, choice_set_type="original"
+        df_cg, specs, choice_set_type="original"
     )
     baseline_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_baseline, model_params, choice_set_type="original"
+        df_baseline, specs, choice_set_type="original"
     )
 
     cg_cols = create_outcome_columns(df_cg, cg_outcomes, "_o")
