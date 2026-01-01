@@ -17,13 +17,13 @@ from caregiving.model.stochastic_processes.adl_transition import death_transitio
 from caregiving.model.stochastic_processes.health_transition import (
     health_transition,
 )
+from caregiving.model.stochastic_processes.inheritance_transition_no_care_demand import (
+    inheritance_transition_no_care_demand,
+)
 from caregiving.model.stochastic_processes.job_transition_no_care_demand import (
     job_offer_process_transition,
 )
 from caregiving.model.stochastic_processes.partner_transition import partner_transition
-from caregiving.model.stochastic_processes.inheritance_transition_no_care_demand import (
-    inheritance_transition_no_care_demand,
-)
 from caregiving.model.taste_shocks import shock_function_dict
 from caregiving.model.utility.bequest_utility import (
     create_final_period_utility_functions,

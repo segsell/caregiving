@@ -7,8 +7,8 @@ Determines care type from lagged_choice to select appropriate column.
 import jax.numpy as jnp
 
 from caregiving.model.shared import (
-    is_informal_care,
     SEX,
+    is_informal_care,
 )
 
 
