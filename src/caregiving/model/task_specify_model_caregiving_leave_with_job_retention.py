@@ -15,9 +15,6 @@ from caregiving.config import BLD
 from caregiving.model.state_space_caregiving_leave_with_job_retention import (
     create_state_space_functions,
 )
-from caregiving.model.stochastic_processes.inheritance_transition import (
-    inheritance_transition,
-)
 from caregiving.model.stochastic_processes.adl_transition import (
     death_transition,
     limitations_with_adl_transition,
@@ -27,6 +24,9 @@ from caregiving.model.stochastic_processes.caregiving_transition import (
 )
 from caregiving.model.stochastic_processes.health_transition import (
     health_transition,
+)
+from caregiving.model.stochastic_processes.inheritance_transition import (
+    inheritance_transition,
 )
 from caregiving.model.stochastic_processes.job_transition_job_retention import (
     job_offer_process_transition_leave_with_job_retention,

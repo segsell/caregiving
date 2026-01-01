@@ -14,9 +14,6 @@ from pytask import Product
 import dcegm
 from caregiving.config import BLD
 from caregiving.model.state_space import create_state_space_functions
-from caregiving.model.stochastic_processes.inheritance_transition import (
-    inheritance_transition,
-)
 from caregiving.model.stochastic_processes.adl_transition import (
     death_transition,
     limitations_with_adl_transition,
@@ -26,6 +23,9 @@ from caregiving.model.stochastic_processes.caregiving_transition import (
 )
 from caregiving.model.stochastic_processes.health_transition import (
     health_transition,
+)
+from caregiving.model.stochastic_processes.inheritance_transition import (
+    inheritance_transition,
 )
 from caregiving.model.stochastic_processes.job_transition import (
     job_offer_process_transition,

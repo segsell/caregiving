@@ -145,9 +145,9 @@ def task_plot_inheritance_by_age(  # noqa: PLR0915
     df_sim.loc[df_sim["lagged_choice"].isin(light_care_values), "care_category"] = (
         "light_care"
     )
-    df_sim.loc[
-        df_sim["lagged_choice"].isin(intensive_care_values), "care_category"
-    ] = "intensive_care"
+    df_sim.loc[df_sim["lagged_choice"].isin(intensive_care_values), "care_category"] = (
+        "intensive_care"
+    )
 
     # Create indicator for mother recently dead (whole sample)
     df_sim["mother_recently_dead"] = (
@@ -195,9 +195,9 @@ def task_plot_inheritance_by_age(  # noqa: PLR0915
 
     # Calculate share with positive inheritance (gets_inheritance == 1) by age, education, and care category
     share_by_group = (
-        df_recently_dead.groupby(
-            ["age", "education", "care_category"], observed=False
-        )["gets_inheritance"]
+        df_recently_dead.groupby(["age", "education", "care_category"], observed=False)[
+            "gets_inheritance"
+        ]
         .mean()
         .reset_index()
     )
@@ -418,9 +418,9 @@ def task_plot_inheritance_by_age(  # noqa: PLR0915
 
     if len(df_positive) > 0:
         avg_amount_by_group = (
-            df_positive.groupby(
-                ["age", "education", "care_category"], observed=False
-            )["bequest_from_parent"]
+            df_positive.groupby(["age", "education", "care_category"], observed=False)[
+                "bequest_from_parent"
+            ]
             .mean()
             .reset_index()
         )
@@ -752,4 +752,3 @@ def task_plot_inheritance_by_age(  # noqa: PLR0915
         )
     else:
         print("Warning: No observations with bequest_from_parent > 0 found.")
-
