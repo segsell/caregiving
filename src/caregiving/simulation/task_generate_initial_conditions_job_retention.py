@@ -15,6 +15,7 @@ from pytask import Product
 from caregiving.config import BLD
 
 
+@pytask.mark.initial_conditions
 @pytask.mark.initial_conditions_job_retention
 def task_generate_start_states_for_solution_job_retention(
     path_to_baseline_states: Path = BLD

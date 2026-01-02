@@ -380,12 +380,16 @@ def get_next_period_experience(
     )
 
     # Update if working part or full time
-    exp_update = (
-        is_full_time(lagged_choice)
-        + is_part_time(lagged_choice)
-        * model_specs["exp_increase_part_time"]
-        * (1 - informal_care)
-        + is_part_time(lagged_choice) * informal_care
+    # Full pension point for caregivers that work part time (vs half if not caring)
+    # exp_update = (
+    #     is_full_time(lagged_choice)
+    #     + is_part_time(lagged_choice)
+    #     * model_specs["exp_increase_part_time"]
+    #     * (1 - informal_care)
+    #     + is_part_time(lagged_choice) * informal_care
+    # )
+    exp_update = is_full_time(lagged_choice) + is_part_time(lagged_choice) * (
+        model_specs["exp_increase_part_time"] * (1 - informal_care) + informal_care
     )
     exp_new_period = exp_years_last_period + exp_update
 

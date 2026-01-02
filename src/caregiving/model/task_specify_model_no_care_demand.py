@@ -34,7 +34,7 @@ from caregiving.model.utility.utility_functions_additive_no_care_demand import (
 from caregiving.model.wealth_and_budget.budget_equation_no_care_demand import (
     budget_constraint,
 )
-from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
+from caregiving.model.wealth_and_budget.savings_grid import create_end_of_period_assets
 
 
 @pytask.mark.no_care_demand_model
@@ -68,7 +68,7 @@ def task_specify_model_no_care_demand(
     choices = np.arange(4, dtype=int)
 
     # Savings grid
-    savings_grid = create_savings_grid()
+    savings_grid = create_end_of_period_assets()
 
     # Experience grid
     experience_grid = jnp.linspace(0, 1, specs["n_experience_grid_points"])
@@ -94,7 +94,7 @@ def task_specify_model_no_care_demand(
             "gets_inheritance": np.arange(2, dtype=int),
         },
         "continuous_states": {
-            "assets_end_of_period": savings_grid,
+            "assets_end_of_period": savings_grid / specs["wealth_unit"],
             "experience": experience_grid,
         },
         "n_quad_points": specs["quadrature_points_stochastic"],

@@ -41,11 +41,27 @@ from caregiving.model.utility.utility_functions_additive import (
     create_utility_functions,
 )
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
-from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
+from caregiving.model.wealth_and_budget.savings_grid import create_end_of_period_assets
 
 
-@pytask.mark.baseline_model
-def task_specify_model(
+# @pytask.mark.baseline_model
+# def task_specify_model(
+#     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+#     path_to_save_model_config: Annotated[Path, Product] = BLD
+#     / "model"
+#     / "model_config.pkl",
+#     path_to_save_model: Annotated[Path, Product] = BLD / "model" / "model.pkl",
+# ):
+
+#     model = specify_model(
+#         path_to_derived_specs=path_to_derived_specs,
+#         path_to_save_model_config=path_to_save_model_config,
+#         path_to_save_model=path_to_save_model,
+#     )
+#     return model
+
+
+def specify_model(
     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_save_model_config: Annotated[Path, Product] = BLD
     / "model"
@@ -62,7 +78,7 @@ def task_specify_model(
     choices = np.arange(specs["n_choices"], dtype=int)
 
     # Savings grid
-    savings_grid = create_savings_grid()
+    savings_grid = create_end_of_period_assets()
 
     # Experience grid
     experience_grid = jnp.linspace(0, 1, specs["n_experience_grid_points"])
@@ -92,7 +108,7 @@ def task_specify_model(
             "gets_inheritance": np.arange(2, dtype=int),
         },
         "continuous_states": {
-            "assets_end_of_period": savings_grid,
+            "assets_end_of_period": savings_grid / specs["wealth_unit"],
             "experience": experience_grid,
         },
         "n_quad_points": specs["quadrature_points_stochastic"],

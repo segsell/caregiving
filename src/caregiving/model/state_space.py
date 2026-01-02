@@ -67,6 +67,7 @@ from caregiving.model.shared import (
     is_formal_care,
     is_full_time,
     is_informal_care,
+    is_intensive_informal_care,
     is_no_care_demand,
     is_part_time,
     is_retired,
@@ -843,9 +844,11 @@ def get_next_period_experience(
     )
 
     # Update if working part or full time
-    exp_update = (
-        is_full_time(lagged_choice)
-        + is_part_time(lagged_choice) * model_specs["exp_increase_part_time"]
+    # Full pension point (1.0) for part-time workers providing intensive informal care
+    # Full-time workers are unaffected (always get 1.0)
+    intensive_care = is_intensive_informal_care(lagged_choice)
+    exp_update = is_full_time(lagged_choice) + is_part_time(lagged_choice) * (
+        model_specs["exp_increase_part_time"] * (1 - intensive_care) + intensive_care
     )
     exp_new_period = exp_years_last_period + exp_update
 

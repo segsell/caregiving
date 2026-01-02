@@ -159,10 +159,12 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
             "care_demand",
             "care_supply",
             "caregiving_type",
+            "gets_inheritance",
         )
     }
 
     states_dict["care_demand"] = np.zeros_like(start_period_data["wealth"])
+    states_dict["gets_inheritance"] = np.zeros_like(start_period_data["wealth"])
     states_dict["experience"] = start_period_data["experience"].values
     # Initialize mother_dead to 0 (alive) for all agents at initial period
     # (will be drawn later based on mother health)
@@ -438,7 +440,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         #     NO_CARE_DEMAND_ALIVE,
         # ),
         "caregiving_type": jnp.array(caregiving_type_agents, dtype=jnp.uint8),
-        "lagged_caregiving": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
+        "gets_inheritance": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
         "assets_begin_of_period": wealth_agents,
     }
     # type_mask_low = (sex_agents == sex_var) & (education_agents == 0)
