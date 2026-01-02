@@ -856,6 +856,21 @@ def task_plot_inheritance_by_age(  # noqa: PLR0915
         )
         print(f"  Number of observations: {len(df_check1)} (should be 0 or very small)")
     else:
+        # Create an empty plot to ensure the file exists (sanity check - expected to have 0 observations)
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.set_xlabel("Age", fontsize=12)
+        ax.set_ylabel("Average Inheritance Amount (€)", fontsize=12)
+        ax.set_title(
+            "Average Inheritance Amount by Age, Education, and Care Type (Baseline Model)\n"
+            "Conditional on bequest_from_parent > 0 AND mother_dead != RECENTLY_DEAD (Check)\n"
+            "No observations found (expected - sanity check)",
+            fontsize=13,
+        )
+        ax.grid(True, alpha=0.3)
+        plt.tight_layout()
+        path_to_save_amount_check1_plot.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(path_to_save_amount_check1_plot, dpi=300)
+        plt.close(fig)
         print(
             "Check 1: No observations with bequest_from_parent > 0 AND mother_dead != RECENTLY_DEAD found (expected)."
         )
@@ -946,6 +961,21 @@ def task_plot_inheritance_by_age(  # noqa: PLR0915
         )
         print(f"  Number of observations: {len(df_check2)} (should be 0 or very small)")
     else:
+        # Create an empty plot to ensure the file exists (sanity check - expected to have 0 observations)
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.set_xlabel("Age", fontsize=12)
+        ax.set_ylabel("Average Inheritance Amount (€)", fontsize=12)
+        ax.set_title(
+            "Average Inheritance Amount by Age, Education, and Care Type (Baseline Model)\n"
+            "Conditional on bequest_from_parent > 0 AND gets_inheritance == 0 (Check)\n"
+            "No observations found (expected - sanity check)",
+            fontsize=13,
+        )
+        ax.grid(True, alpha=0.3)
+        plt.tight_layout()
+        path_to_save_amount_check2_plot.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(path_to_save_amount_check2_plot, dpi=300)
+        plt.close(fig)
         print(
             "Check 2: No observations with bequest_from_parent > 0 AND gets_inheritance == 0 found (expected)."
         )

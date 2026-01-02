@@ -25,9 +25,6 @@ from caregiving.model.stochastic_processes.caregiving_transition import (
 from caregiving.model.stochastic_processes.health_transition import (
     health_transition,
 )
-from caregiving.model.stochastic_processes.inheritance_transition import (
-    inheritance_transition,
-)
 from caregiving.model.stochastic_processes.job_transition_job_retention import (
     job_offer_process_transition_leave_with_job_retention,
 )
@@ -47,7 +44,25 @@ from caregiving.model.wealth_and_budget.budget_equation_caregiving_leave_with_jo
 from caregiving.model.wealth_and_budget.savings_grid import create_end_of_period_assets
 
 
-# @pytask.mark.caregiving_leave_with_job_retention_model
+@pytask.mark.caregiving_leave_with_job_retention_model
+def task_specify_model_caregiving_leave_with_job_retention(
+    path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_save_model_config: Annotated[Path, Product] = BLD
+    / "model"
+    / "model_config_caregiving_leave_with_job_retention.pkl",
+    path_to_save_model: Annotated[Path, Product] = BLD
+    / "model"
+    / "model_caregiving_leave_with_job_retention.pkl",
+):
+
+    model = specify_model_caregiving_leave_with_job_retention(
+        path_to_derived_specs=path_to_derived_specs,
+        path_to_save_model_config=path_to_save_model_config,
+        path_to_save_model=path_to_save_model,
+    )
+    return model
+
+
 def specify_model_caregiving_leave_with_job_retention(
     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_save_model_config: Annotated[Path, Product] = BLD
