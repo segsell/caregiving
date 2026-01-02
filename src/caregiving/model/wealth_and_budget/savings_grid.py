@@ -31,7 +31,7 @@ def create_savings_grid_deprecated():
     section_4 = np.arange(start=100, stop=500, step=100)  # 4
     section_5 = np.arange(start=500, stop=1000, step=200)  # 3
     section_6 = np.arange(start=1000, stop=10000, step=2000)  # 5
-    section_7 = np.array([10_000])
+    section_7 = np.array([10_000, 100_000])
     savings_grid = np.concatenate(
         [section_1, section_2, section_3, section_4, section_5, section_6, section_7]
     )

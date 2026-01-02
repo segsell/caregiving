@@ -49,7 +49,7 @@ def task_solve_and_simulate_no_care_demand(
         BLD
         / "model"
         / "initial_conditions"
-        / "initial_states_no_care_demand.pkl"
+        / "initial_states.pkl"
     ),
     path_to_save_solution: Annotated[Path, Product] = BLD
     / "solve_and_simulate"

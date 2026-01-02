@@ -199,7 +199,9 @@ def calculate_additional_outcomes(df: pd.DataFrame) -> dict[str, np.ndarray]:
 
     Returns:
         Dictionary with keys:
-            'gross_labor_income', 'savings', 'wealth', 'savings_rate', 'consumption'
+            'gross_labor_income', 'savings', 'wealth', 'savings_rate', 'consumption',
+            'net_government_budget', 'total_tax_revenue', 'bequest_from_parent',
+            'caregiving_leave_top_up', 'gross_retirement_income', 'exp_years'
         Values are numpy arrays (zeros if the underlying column is missing).
     """
     outcomes = {}
@@ -239,6 +241,42 @@ def calculate_additional_outcomes(df: pd.DataFrame) -> dict[str, np.ndarray]:
         outcomes["consumption"] = df["consumption"].values
     else:
         outcomes["consumption"] = np.zeros(n)
+
+    # Net government budget
+    if "net_government_budget" in df.columns:
+        outcomes["net_government_budget"] = df["net_government_budget"].values
+    else:
+        outcomes["net_government_budget"] = np.zeros(n)
+
+    # Total tax revenue
+    if "total_tax_revenue" in df.columns:
+        outcomes["total_tax_revenue"] = df["total_tax_revenue"].values
+    else:
+        outcomes["total_tax_revenue"] = np.zeros(n)
+
+    # Bequest from parent (inheritance)
+    if "bequest_from_parent" in df.columns:
+        outcomes["bequest_from_parent"] = df["bequest_from_parent"].values
+    else:
+        outcomes["bequest_from_parent"] = np.zeros(n)
+
+    # Caregiving leave top-up
+    if "caregiving_leave_top_up" in df.columns:
+        outcomes["caregiving_leave_top_up"] = df["caregiving_leave_top_up"].values
+    else:
+        outcomes["caregiving_leave_top_up"] = np.zeros(n)
+
+    # Gross retirement income
+    if "gross_retirement_income" in df.columns:
+        outcomes["gross_retirement_income"] = df["gross_retirement_income"].values
+    else:
+        outcomes["gross_retirement_income"] = np.zeros(n)
+
+    # Experience years
+    if "exp_years" in df.columns:
+        outcomes["exp_years"] = df["exp_years"].values
+    else:
+        outcomes["exp_years"] = np.zeros(n)
 
     return outcomes
 

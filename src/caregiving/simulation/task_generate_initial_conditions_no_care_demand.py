@@ -45,6 +45,7 @@ from caregiving.simulation.task_generate_initial_conditions import (
 )
 
 
+@pytask.mark.skip()
 def task_generate_start_states_for_solution_no_care_demand(  # noqa: PLR0915
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_sample: Path = BLD / "data" / "soep_structural_estimation_sample.csv",

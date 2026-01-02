@@ -259,6 +259,7 @@ def calc_caregiving_leave_top_up(
         * If currently PT: top up so total income equals FT net wage.
         * If currently unemployed: top up to FT net wage.
     - Retired caregivers never receive wage replacement.
+
     """
     currently_caregiver = is_informal_care(lagged_choice)
     currently_part_time = is_part_time(lagged_choice)

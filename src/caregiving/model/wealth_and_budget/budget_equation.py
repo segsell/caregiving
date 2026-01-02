@@ -140,18 +140,9 @@ def budget_constraint(
     )
     bequest_from_parent = mother_died_recently * gets_inheritance * inheritance_amount
 
-    # # calculate beginning of period wealth M_t
-    # assets_begin_of_period = (
-    #     (1 + model_specs["interest_rate"]) * assets_scaled
-    #     + total_income
-    #     + bequest_from_parent
-    # )
-    total_income = jnp.maximum(
-        total_net_household_income, household_unemployment_benefits
-    )
     interest_rate = model_specs["interest_rate"]
     interest = interest_rate * assets_scaled
-    total_income_plus_interest = total_income + interest  # + bequest_from_parent
+    total_income_plus_interest = total_income + interest + bequest_from_parent
 
     # calculate beginning of period wealth M_t
     assets_begin_of_period = assets_scaled + total_income_plus_interest
