@@ -16,6 +16,7 @@ from caregiving.model.wealth_and_budget.transfers import (
     calc_child_benefits,
     calc_inheritance_amount,
     calc_unemployment_benefits,
+    draw_inheritance_outcome,
 )
 from caregiving.model.wealth_and_budget.wages import calc_labor_income_after_ssc
 
@@ -29,7 +30,7 @@ def budget_constraint(
     partner_state,
     care_demand,
     mother_dead,
-    gets_inheritance,
+    # gets_inheritance,
     asset_end_of_previous_period,  # A_{t-1}
     income_shock_previous_period,  # epsilon_{t - 1}
     params,
@@ -130,6 +131,13 @@ def budget_constraint(
         education=education,
         model_specs=model_specs,
     )
+    gets_inheritance = draw_inheritance_outcome(
+        period=period,
+        lagged_choice=lagged_choice,
+        education=education,
+        asset_end_of_previous_period=asset_end_of_previous_period,
+        model_specs=model_specs,
+    )
     bequest_from_parent = mother_died_recently * gets_inheritance * inheritance_amount
 
     # # calculate beginning of period wealth M_t
@@ -184,6 +192,7 @@ def budget_constraint(
         "gross_labor_income": gross_labor_income / model_specs["wealth_unit"],
         "gross_retirement_income": gross_retirement_income / model_specs["wealth_unit"],
         "bequest_from_parent": bequest_from_parent / model_specs["wealth_unit"],
+        "gets_inheritance": gets_inheritance,
         # Government budget components
         "income_tax": income_tax_total / model_specs["wealth_unit"],
         "own_ssc": own_ssc / model_specs["wealth_unit"],

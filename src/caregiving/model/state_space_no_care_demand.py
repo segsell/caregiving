@@ -94,7 +94,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
     partner_state,
     job_offer,
     mother_dead,
-    gets_inheritance,
+    # gets_inheritance,
     caregiving_type,
     model_specs,
 ):
@@ -141,7 +141,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "health": health,
                 "partner_state": partner_state,
                 "mother_dead": PARENT_LONGER_DEAD,
-                "gets_inheritance": 0,
+                # "gets_inheritance": 0,
                 "job_offer": 0,
                 "caregiving_type": caregiving_type,
             }
@@ -172,7 +172,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "health": health,
                 "partner_state": partner_state,
                 "mother_dead": PARENT_LONGER_DEAD,
-                "gets_inheritance": 0,
+                # "gets_inheritance": 0,
                 "job_offer": job_offer,
                 "caregiving_type": caregiving_type,
             }
@@ -188,7 +188,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "health": health,
                 "partner_state": partner_state,
                 "mother_dead": mother_dead,
-                "gets_inheritance": gets_inheritance,
+                # "gets_inheritance": gets_inheritance,
                 "job_offer": 0,
                 "caregiving_type": caregiving_type,
             }
@@ -204,7 +204,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "health": health,
                 "partner_state": partner_state,
                 "mother_dead": mother_dead,
-                "gets_inheritance": gets_inheritance,
+                # "gets_inheritance": gets_inheritance,
                 "job_offer": 0,
                 "caregiving_type": caregiving_type,
             }

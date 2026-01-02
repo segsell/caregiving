@@ -15,7 +15,7 @@ start_age_parents_mat: 50
 survival_min_age: 16
 
 end_age_children_in_household: 60
-start_age_caregiving: 40 #45
+start_age_caregiving: 45 #45
 end_age_caregiving: 70
 end_age_exog_care_supply: 80
 

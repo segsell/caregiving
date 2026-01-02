@@ -1,4 +1,5 @@
-from jax import numpy as jnp
+import jax
+import jax.numpy as jnp
 
 from caregiving.model.shared import PARENT_RECENTLY_DEAD, SEX
 from caregiving.model.shared_no_care_demand import is_retired, is_working
@@ -18,6 +19,7 @@ from caregiving.model.wealth_and_budget.transfers import (
 )
 from caregiving.model.wealth_and_budget.transfers_no_care_demand import (
     calc_inheritance_amount_no_care_demand,
+    draw_inheritance_outcome_no_care_demand,
 )
 from caregiving.model.wealth_and_budget.wages_no_care_demand import (
     calc_labor_income_after_ssc,
@@ -31,7 +33,7 @@ def budget_constraint(
     experience,
     partner_state,
     mother_dead,
-    gets_inheritance,
+    # gets_inheritance,
     asset_end_of_previous_period,  # A_{t-1}
     income_shock_previous_period,  # epsilon_{t - 1}
     params,
@@ -126,6 +128,13 @@ def budget_constraint(
         education=education,
         model_specs=model_specs,
     )
+    gets_inheritance = draw_inheritance_outcome_no_care_demand(
+        period=period,
+        education=education,
+        asset_end_of_previous_period=asset_end_of_previous_period,
+        model_specs=model_specs,
+    )
+
     bequest_from_parent = mother_died_recently * gets_inheritance * inheritance_amount
 
     interest_rate = model_specs["interest_rate"]
@@ -173,6 +182,7 @@ def budget_constraint(
         "gross_labor_income": gross_labor_income / model_specs["wealth_unit"],
         "gross_retirement_income": gross_retirement_income / model_specs["wealth_unit"],
         "bequest_from_parent": bequest_from_parent / model_specs["wealth_unit"],
+        "gets_inheritance": gets_inheritance,
         # Government budget components
         "income_tax": income_tax_total / model_specs["wealth_unit"],
         "own_ssc": own_ssc / model_specs["wealth_unit"],

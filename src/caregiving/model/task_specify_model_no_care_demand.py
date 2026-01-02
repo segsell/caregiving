@@ -91,7 +91,7 @@ def task_specify_model_no_care_demand(
                 3, dtype=int
             ),  # Needed for inheritance calculation
             # No mother_adl or care_demand in counterfactual
-            "gets_inheritance": np.arange(2, dtype=int),
+            # "gets_inheritance": np.arange(2, dtype=int),
         },
         "continuous_states": {
             "assets_end_of_period": savings_grid / specs["wealth_unit"],
@@ -112,7 +112,6 @@ def task_specify_model_no_care_demand(
         stochastic_states_transitions=create_stochastic_states_transitions(),
         model_save_path=path_to_save_model,
     )
-
     print("Counterfactual model without care_demand specified.", flush=True)
 
     return model
@@ -130,5 +129,5 @@ def create_stochastic_states_transitions():
         "health": health_transition,
         "mother_dead": death_transition,  # Needed for inheritance calculation
         # No mother_adl or care_demand in counterfactual
-        "gets_inheritance": inheritance_transition_no_care_demand,
+        # "gets_inheritance": inheritance_transition_no_care_demand,
     }

@@ -139,7 +139,7 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
     job_before_caregiving,
     job_offer,
     caregiving_type,
-    gets_inheritance,
+    # gets_inheritance,
     model_specs,
 ):
     """Sparsity condition for the job retention counterfactual model."""
@@ -215,7 +215,7 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
                 "mother_adl": 0,
                 "mother_dead": PARENT_LONGER_DEAD,
                 "care_demand": NO_CARE_DEMAND,
-                "gets_inheritance": 0,
+                # "gets_inheritance": 0,
                 "job_offer": 0,
                 "job_before_caregiving": 0,
             }
@@ -251,7 +251,7 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
                 "mother_adl": 0,
                 "mother_dead": PARENT_LONGER_DEAD,
                 "care_demand": NO_CARE_DEMAND,
-                "gets_inheritance": 0,
+                # "gets_inheritance": 0,
                 "job_offer": job_offer,
                 "job_before_caregiving": job_before_caregiving,
             }
@@ -271,7 +271,7 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
                 "mother_adl": mother_adl,
                 "mother_dead": mother_dead,
                 "care_demand": care_demand,  # Outside caregiving window, no care demand
-                "gets_inheritance": gets_inheritance,
+                # "gets_inheritance": gets_inheritance,
                 "job_offer": 0,
                 "job_before_caregiving": 0,
             }
@@ -290,7 +290,7 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
                 "mother_adl": mother_adl,
                 "mother_dead": mother_dead,
                 "care_demand": care_demand,
-                "gets_inheritance": gets_inheritance,
+                # "gets_inheritance": gets_inheritance,
                 "job_offer": 0,
                 "job_before_caregiving": job_before_caregiving,
             }
@@ -339,7 +339,7 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
                 "mother_dead": mother_dead,
                 "care_demand": NO_CARE_DEMAND,
                 "job_offer": job_offer,
-                "gets_inheritance": gets_inheritance,
+                # "gets_inheritance": gets_inheritance,
                 "job_before_caregiving": job_before_caregiving,
             }
             return state_proxy
@@ -357,7 +357,7 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
                 "mother_dead": mother_dead,
                 "care_demand": NO_CARE_DEMAND,
                 "job_offer": job_offer,
-                "gets_inheritance": gets_inheritance,
+                # "gets_inheritance": gets_inheritance,
                 "job_before_caregiving": job_before_caregiving,
             }
             return state_proxy
