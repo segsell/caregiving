@@ -36,7 +36,6 @@ from caregiving.model.wealth_and_budget.budget_equation_no_care_demand import (
 )
 from caregiving.model.wealth_and_budget.savings_grid import create_end_of_period_assets
 
-
 # @pytask.mark.no_care_demand_model
 # def task_specify_model_no_care_demand(
 #     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
