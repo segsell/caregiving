@@ -29,8 +29,8 @@ from caregiving.model.wealth_and_budget.budget_equation_no_care_demand import (
 )
 from caregiving.simulation.simulate_no_care_demand import (
     create_additional_variables_no_care_demand,
+    simulate_scenario,
 )
-from caregiving.simulation.simulate_no_care_demand import simulate_scenario
 
 jax.config.update("jax_enable_x64", True)
 

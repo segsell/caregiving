@@ -24,7 +24,6 @@ from caregiving.specs.caregiving_specs import (
     weight_adl_transitions_by_survival,
 )
 from caregiving.specs.derive_specs import read_and_derive_specs
-
 from caregiving.specs.experience_specs import create_max_experience
 
 # from caregiving.specs.experience_specs import add_experience_and_pp_specs
