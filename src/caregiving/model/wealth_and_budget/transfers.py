@@ -242,7 +242,7 @@ def draw_inheritance_outcome(
         base_seed
         + period * 100
         + lagged_choice * 7
-        + education * 3
+        + education * (3 + 1)
         + (1 - education)
         # + 100 * is_intensive_informal_care(lagged_choice)
         # + 50 * is_light_informal_care(lagged_choice)
