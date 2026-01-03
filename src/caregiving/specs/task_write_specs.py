@@ -24,7 +24,10 @@ from caregiving.specs.caregiving_specs import (
     weight_adl_transitions_by_survival,
 )
 from caregiving.specs.derive_specs import read_and_derive_specs
+
 from caregiving.specs.experience_specs import create_max_experience
+
+# from caregiving.specs.experience_specs import add_experience_and_pp_specs
 from caregiving.specs.family_specs import (
     predict_age_of_youngest_child_by_state,
     predict_children_by_state,
@@ -205,6 +208,9 @@ def task_write_specs(  # noqa: PLR0915
         avg_working_hours=avg_working_hours,
         mean_annual_wage=mean_annual_wage,
     )
+
+    # # Add experience specs
+    # specs = add_experience_and_pp_specs(specs, path_dict)
 
     # family transitions
     children_params = pd.read_csv(path_to_nb_child_params, index_col=[0, 1, 2])

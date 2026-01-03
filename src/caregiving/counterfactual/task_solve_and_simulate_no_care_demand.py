@@ -30,6 +30,7 @@ from caregiving.model.wealth_and_budget.budget_equation_no_care_demand import (
 from caregiving.simulation.simulate_no_care_demand import (
     create_additional_variables_no_care_demand,
 )
+from caregiving.simulation.simulate_no_care_demand import simulate_scenario
 
 jax.config.update("jax_enable_x64", True)
 
@@ -83,14 +84,16 @@ def task_solve_and_simulate_no_care_demand(
     initial_states = pickle.load(path_to_initial_states.open("rb"))
 
     # =================================================================================
-    sim_df = model_solved.simulate(
-        states_initial=initial_states,
-        seed=specs["seed"],
-    )
+    # sim_df = model_solved.simulate(
+    #     states_initial=initial_states,
+    #     seed=specs["seed"],
+    # )
 
-    sim_df = sim_df[sim_df["health"] != DEAD].copy()
-    sim_df.reset_index(inplace=True)
+    # sim_df = sim_df[sim_df["health"] != DEAD].copy()
+    # sim_df.reset_index(inplace=True)
 
-    sim_df = create_additional_variables_no_care_demand(sim_df, specs)
+    # sim_df = create_additional_variables_no_care_demand(sim_df, specs)
     # =================================================================================
+    sim_df = simulate_scenario(model_solved, initial_states, specs)
+
     sim_df.to_pickle(path_to_save_simulated_data)

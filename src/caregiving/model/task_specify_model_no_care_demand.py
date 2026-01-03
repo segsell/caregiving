@@ -44,6 +44,24 @@ def task_specify_model_no_care_demand(
     / "model"
     / "model_no_care_demand.pkl",
 ):
+
+    model = specify_model_no_care_demand(
+        path_to_derived_specs=path_to_derived_specs,
+        path_to_save_model_config=path_to_save_model_config,
+        path_to_save_model=path_to_save_model,
+    )
+    return model
+
+
+def specify_model_no_care_demand(
+    path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_save_model_config: Annotated[Path, Product] = BLD
+    / "model"
+    / "model_config_no_care_demand.pkl",
+    path_to_save_model: Annotated[Path, Product] = BLD
+    / "model"
+    / "model_no_care_demand.pkl",
+):
     """Generate counterfactual model without care_demand, caregiving_type, mother_adl.
 
     This counterfactual removes most care-related processes from the state space:
@@ -109,6 +127,7 @@ def task_specify_model_no_care_demand(
         model_save_path=path_to_save_model,
     )
     print("Counterfactual model without care_demand specified.", flush=True)
+
     return model
 
 

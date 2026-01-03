@@ -26,6 +26,7 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.simulation.simulate import simulate_scenario
+from caregiving.estimation.estimation_setup import draw_caregiving_type_from_params
 
 jax.config.update("jax_enable_x64", True)
 
@@ -116,6 +117,10 @@ def solve_and_simulate_estimated_params(
     # 2) Simulate
     initial_states = pickle.load(path_to_initial_states.open("rb"))
 
+    initial_states_adjusted = draw_caregiving_type_from_params(
+        initial_states, params, specs["seed"]
+    )
+
     # =================================================================================
     # Simulate scenario
     # =================================================================================
@@ -129,7 +134,7 @@ def solve_and_simulate_estimated_params(
 
     # # sim_df["age"] = sim_df["period"] + specs["start_age"]
     # sim_df = create_additional_variables(sim_df, specs)
-    sim_df = simulate_scenario(model_solved, initial_states, specs)
+    sim_df = simulate_scenario(model_solved, initial_states_adjusted, specs)
 
     # =================================================================================
 
