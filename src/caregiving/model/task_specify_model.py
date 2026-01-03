@@ -52,13 +52,11 @@ def task_specify_model(
     / "model_config.pkl",
     path_to_save_model: Annotated[Path, Product] = BLD / "model" / "model.pkl",
 ):
-
     model = specify_model(
         path_to_derived_specs=path_to_derived_specs,
         path_to_save_model_config=path_to_save_model_config,
         path_to_save_model=path_to_save_model,
     )
-
     return model
 
 

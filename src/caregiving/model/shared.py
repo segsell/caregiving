@@ -194,46 +194,52 @@ FULL_TIME_CHOICES = jnp.array([3])  # full-time
 
 # WORK_AND_NO_WORK = ALL.copy()
 
-ALL = jnp.arange(16)
+ALL = jnp.arange(
+    12
+)  # Reduced from 16 to 12: NO_CARE (0-3), FORMAL_CARE (4-7), INFORMAL_CARE (8-11)
 
 # Care arrangement types:
 # - NO_CARE (choices 0, 1, 2, 3):
 #   No formal care, someone else provides informal care
 #   (when caregiving_type == 0 and care_demand > 0).
 #   Order: retirement, unemployed, part-time, full-time.
-# - LIGHT_INFORMAL_CARE (choices 4, 5, 6, 7):
+# - FORMAL_CARE (choices 4, 5, 6, 7):
+#   Formal care is organized (available for both light and intensive care demand).
+#   Order: retirement, unemployed, part-time, full-time.
+# - LIGHT_INFORMAL_CARE (choices 8, 9, 10, 11):
 #   Agent provides light informal care (when caregiving_type 1 and care_demand 1).
 #   Order: retirement, unemployed, part-time, full-time.
 # - INTENSIVE_INFORMAL_CARE (choices 8, 9, 10, 11):
 #   Agent provides intensive informal care (when caregiving_type 1 and care_demand 2).
-#   Order: retirement, unemployed, part-time, full-time.
-# - FORMAL_CARE (choices 12, 13, 14, 15):
-#   Formal care is organized (available for both light and intensive care demand).
+#   Note: LIGHT and INTENSIVE now use the same choice set.
 #   Order: retirement, unemployed, part-time, full-time.
 
 NO_CARE = jnp.array([0, 1, 2, 3])  # No formal care, other provides informal care
-LIGHT_INFORMAL_CARE = jnp.array([4, 5, 6, 7])  # Agent provides light informal care
-INTENSIVE_INFORMAL_CARE = jnp.array(
-    [8, 9, 10, 11]
-)  # Agent provides intensive informal care
-FORMAL_CARE = jnp.array([12, 13, 14, 15])  # Formal care
+FORMAL_CARE = jnp.array([4, 5, 6, 7])  # Formal care
+# Light and intensive informal care now share the same choice set
+INFORMAL_CARE_CHOICES = jnp.array([8, 9, 10, 11])  # Shared informal care choices
+LIGHT_INFORMAL_CARE = INFORMAL_CARE_CHOICES  # Agent provides light informal care
+INTENSIVE_INFORMAL_CARE = (
+    INFORMAL_CARE_CHOICES  # Agent provides intensive informal care
+)
 
 # Legacy: INFORMAL_CARE includes both light and intensive (for backward compatibility)
-INFORMAL_CARE = jnp.concatenate([LIGHT_INFORMAL_CARE, INTENSIVE_INFORMAL_CARE])
+# Since LIGHT and INTENSIVE now share the same set, this is just the shared set
+INFORMAL_CARE = INFORMAL_CARE_CHOICES
 
 # Labor state arrays (across all care types)
 RETIREMENT = jnp.array(
-    [0, 4, 8, 12]
-)  # Retirement: NO_CARE, LIGHT_INFORMAL, INTENSIVE_INFORMAL, FORMAL
+    [0, 4, 8]
+)  # Retirement: NO_CARE, FORMAL, INFORMAL (light/intensive share same set)
 UNEMPLOYED = jnp.array(
-    [1, 5, 9, 13]
-)  # Unemployed: NO_CARE, LIGHT_INFORMAL, INTENSIVE_INFORMAL, FORMAL
+    [1, 5, 9]
+)  # Unemployed: NO_CARE, FORMAL, INFORMAL (light/intensive share same set)
 PART_TIME = jnp.array(
-    [2, 6, 10, 14]
-)  # Part-time: NO_CARE, LIGHT_INFORMAL, INTENSIVE_INFORMAL, FORMAL
+    [2, 6, 10]
+)  # Part-time: NO_CARE, FORMAL, INFORMAL (light/intensive share same set)
 FULL_TIME = jnp.array(
-    [3, 7, 11, 15]
-)  # Full-time: NO_CARE, LIGHT_INFORMAL, INTENSIVE_INFORMAL, FORMAL
+    [3, 7, 11]
+)  # Full-time: NO_CARE, FORMAL, INFORMAL (light/intensive share same set)
 
 WORK_AND_NO_WORK = ALL.copy()
 
@@ -246,32 +252,32 @@ FULL_TIME_NO_CARE = jnp.array([3])
 ALL_NO_CARE = jnp.array([0, 1, 2, 3])  # All no-care choices
 
 # Any care provided (i.e., exclude NO_CARE)
-ALL_CARE = jnp.concatenate([LIGHT_INFORMAL_CARE, INTENSIVE_INFORMAL_CARE, FORMAL_CARE])
+ALL_CARE = jnp.concatenate([FORMAL_CARE, INFORMAL_CARE_CHOICES])
 
 RETIREMENT_CARE = jnp.array(
-    [4, 8, 12]
-)  # Agent informal care (light, intensive) or formal
-UNEMPLOYED_CARE = jnp.array([5, 9, 13])
-PART_TIME_CARE = jnp.array([6, 10, 14])
-FULL_TIME_CARE = jnp.array([7, 11, 15])
+    [4, 8]
+)  # Agent formal care or informal care (light/intensive share same set)
+UNEMPLOYED_CARE = jnp.array([5, 9])
+PART_TIME_CARE = jnp.array([6, 10])
+FULL_TIME_CARE = jnp.array([7, 11])
 WORK_AND_NO_WORK_CARE = ALL_CARE.copy()
 
 # No informal care (NO_CARE or FORMAL_CARE only)
 NO_INFORMAL_CARE = jnp.concatenate([NO_CARE, FORMAL_CARE])
 
-RETIREMENT_NO_INFORMAL_CARE = jnp.array([0, 12])  # NO_CARE or FORMAL_CARE
-UNEMPLOYED_NO_INFORMAL_CARE = jnp.array([1, 13])
-PART_TIME_NO_INFORMAL_CARE = jnp.array([2, 14])
-FULL_TIME_NO_INFORMAL_CARE = jnp.array([3, 15])
+RETIREMENT_NO_INFORMAL_CARE = jnp.array([0, 4])  # NO_CARE or FORMAL_CARE
+UNEMPLOYED_NO_INFORMAL_CARE = jnp.array([1, 5])
+PART_TIME_NO_INFORMAL_CARE = jnp.array([2, 6])
+FULL_TIME_NO_INFORMAL_CARE = jnp.array([3, 7])
 ALL_NO_INFORMAL_CARE = jnp.concatenate([NO_CARE, FORMAL_CARE])
 
 WORK_AND_NO_WORK_NO_INFORMAL_CARE = ALL_NO_INFORMAL_CARE.copy()
 
-# No formal care (NO_CARE, LIGHT_INFORMAL_CARE, or INTENSIVE_INFORMAL_CARE)
-RETIREMENT_NO_FORMAL_CARE = jnp.array([0, 4, 8])
-UNEMPLOYED_NO_FORMAL_CARE = jnp.array([1, 5, 9])
-PART_TIME_NO_FORMAL_CARE = jnp.array([2, 6, 10])
-FULL_TIME_NO_FORMAL_CARE = jnp.array([3, 7, 11])
+# No formal care (NO_CARE or INFORMAL_CARE - light/intensive share same set)
+RETIREMENT_NO_FORMAL_CARE = jnp.array([0, 8])
+UNEMPLOYED_NO_FORMAL_CARE = jnp.array([1, 9])
+PART_TIME_NO_FORMAL_CARE = jnp.array([2, 10])
+FULL_TIME_NO_FORMAL_CARE = jnp.array([3, 11])
 
 # =====================================================================================
 # Combinations
@@ -297,10 +303,10 @@ ALL_NO_FORMAL_CARE = jnp.concatenate(
 
 # Choice sets for caregiving_type == 1 with light care demand (care_demand == 1)
 # Agent can choose: LIGHT_INFORMAL_CARE or FORMAL_CARE
-RETIREMENT_LIGHT_INFORMAL_OR_FORMAL = jnp.array([4, 12])
-UNEMPLOYED_LIGHT_INFORMAL_OR_FORMAL = jnp.array([5, 13])
-PART_TIME_LIGHT_INFORMAL_OR_FORMAL = jnp.array([6, 14])
-FULL_TIME_LIGHT_INFORMAL_OR_FORMAL = jnp.array([7, 15])
+RETIREMENT_LIGHT_INFORMAL_OR_FORMAL = jnp.array([4, 8])
+UNEMPLOYED_LIGHT_INFORMAL_OR_FORMAL = jnp.array([5, 9])
+PART_TIME_LIGHT_INFORMAL_OR_FORMAL = jnp.array([6, 10])
+FULL_TIME_LIGHT_INFORMAL_OR_FORMAL = jnp.array([7, 11])
 ALL_LIGHT_INFORMAL_OR_FORMAL = jnp.concatenate(
     [
         RETIREMENT_LIGHT_INFORMAL_OR_FORMAL,
@@ -329,10 +335,11 @@ WORK_AND_RETIREMENT_LIGHT_INFORMAL_OR_FORMAL = jnp.concatenate(
 
 # Choice sets for caregiving_type == 1 with intensive care demand (care_demand == 2)
 # Agent can choose: INTENSIVE_INFORMAL_CARE or FORMAL_CARE
-RETIREMENT_INTENSIVE_INFORMAL_OR_FORMAL = jnp.array([8, 12])
-UNEMPLOYED_INTENSIVE_INFORMAL_OR_FORMAL = jnp.array([9, 13])
-PART_TIME_INTENSIVE_INFORMAL_OR_FORMAL = jnp.array([10, 14])
-FULL_TIME_INTENSIVE_INFORMAL_OR_FORMAL = jnp.array([11, 15])
+# Note: Since LIGHT and INTENSIVE now share the same choice set, this is identical to LIGHT
+RETIREMENT_INTENSIVE_INFORMAL_OR_FORMAL = jnp.array([4, 8])
+UNEMPLOYED_INTENSIVE_INFORMAL_OR_FORMAL = jnp.array([5, 9])
+PART_TIME_INTENSIVE_INFORMAL_OR_FORMAL = jnp.array([6, 10])
+FULL_TIME_INTENSIVE_INFORMAL_OR_FORMAL = jnp.array([7, 11])
 ALL_INTENSIVE_INFORMAL_OR_FORMAL = jnp.concatenate(
     [
         RETIREMENT_INTENSIVE_INFORMAL_OR_FORMAL,
@@ -455,10 +462,11 @@ NO_NURSING_HOME_CARE = jnp.concatenate(
 
 # Choice sets for caregiving_type == 0 when care is needed
 # Agent can choose: NO_CARE or FORMAL_CARE (used for both light and intensive demand)
-RETIREMENT_NO_CARE_OR_FORMAL = jnp.array([0, 12])
-UNEMPLOYED_NO_CARE_OR_FORMAL = jnp.array([1, 13])
-PART_TIME_NO_CARE_OR_FORMAL = jnp.array([2, 14])
-FULL_TIME_NO_CARE_OR_FORMAL = jnp.array([3, 15])
+# Derived from RETIREMENT_NO_INFORMAL_CARE, etc. (which is NO_CARE or FORMAL_CARE)
+RETIREMENT_NO_CARE_OR_FORMAL = RETIREMENT_NO_INFORMAL_CARE
+UNEMPLOYED_NO_CARE_OR_FORMAL = UNEMPLOYED_NO_INFORMAL_CARE
+PART_TIME_NO_CARE_OR_FORMAL = PART_TIME_NO_INFORMAL_CARE
+FULL_TIME_NO_CARE_OR_FORMAL = FULL_TIME_NO_INFORMAL_CARE
 ALL_NO_CARE_OR_FORMAL = jnp.concatenate(
     [
         RETIREMENT_NO_CARE_OR_FORMAL,

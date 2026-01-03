@@ -20,8 +20,8 @@ end_age_caregiving: 70
 end_age_exog_care_supply: 80
 
 choice_labels: ["Retired", "Unemployed", "Part-time", "Full-time"]
-caregiving_labels: ["No Care", "Light Informal Care", "Intensive Informal Care", "Nursing Home Care"]
-# caregiving_labels: ["No Care", "Informal Care", "Formal Care"]
+# caregiving_labels: ["No Care", "Light Informal Care", "Intensive Informal Care", "Nursing Home Care"]
+caregiving_labels: ["No Care", "Formal Care", "Informal Care"]
 education_labels: ["Low Education", "High Education"]
 health_labels: ["Bad Health", "Good Health", "Death"]
 health_labels_three: ["Bad Health", "Medium Health", "Good Health", "Death"]

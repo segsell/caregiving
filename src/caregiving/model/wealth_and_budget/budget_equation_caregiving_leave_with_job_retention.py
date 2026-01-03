@@ -63,11 +63,11 @@ def budget_constraint(
     # Calculate partner income
     partner_income_after_ssc, gross_partner_income, gross_partner_pension = (
         calc_partner_income_after_ssc(
-            partner_state=partner_state,
-            sex=sex_var,
-            model_specs=model_specs,
-            education=education,
-            period=period,
+        partner_state=partner_state,
+        sex=sex_var,
+        model_specs=model_specs,
+        education=education,
+        period=period,
         )
     )
 
@@ -84,12 +84,12 @@ def budget_constraint(
     # Income lagged choice 1
     household_unemployment_benefits, _own_unemployment_benefits = (
         calc_unemployment_benefits(
-            assets=assets_scaled,
-            education=education,
-            sex=sex_var,
-            has_partner_int=has_partner_int,
-            period=period,
-            model_specs=model_specs,
+        assets=assets_scaled,
+        education=education,
+        sex=sex_var,
+        has_partner_int=has_partner_int,
+        period=period,
+        model_specs=model_specs,
         )
     )
 
