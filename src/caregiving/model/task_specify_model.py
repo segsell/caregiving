@@ -106,7 +106,6 @@ def specify_model(
             "mother_dead": np.arange(3, dtype=int),
             "mother_adl": np.arange(specs["n_adl_states_light_intensive"], dtype=int),
             "care_demand": np.arange(3, dtype=int),
-            # "gets_inheritance": np.arange(2, dtype=int),
         },
         "continuous_states": {
             "assets_end_of_period": savings_grid / specs["wealth_unit"],
@@ -145,7 +144,6 @@ def specify_model(
     )
 
     print("Model specified.", flush=True)
-
     return model
 
 
@@ -157,5 +155,4 @@ def create_stochastic_states_transitions():
         "mother_adl": limitations_with_adl_transition,
         "care_demand": care_demand_transition_adl_light_intensive,
         "mother_dead": death_transition,
-        # "gets_inheritance": inheritance_transition,
     }

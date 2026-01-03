@@ -184,299 +184,299 @@ def create_real_utility(df, specs):
 # =====================================================================================
 
 
-def simulate_scenario_no_care_demand(
-    model,
-    solution,
-    initial_states,
-    wealth_agents,
-    params,
-    model_specs,
-    seed,
-) -> pd.DataFrame:
-    """Simulate the counterfactual model and return a DataFrame."""
+# def simulate_scenario_no_care_demand(
+#     model,
+#     solution,
+#     initial_states,
+#     wealth_agents,
+#     params,
+#     model_specs,
+#     seed,
+# ) -> pd.DataFrame:
+#     """Simulate the counterfactual model and return a DataFrame."""
 
-    sim_dict = simulate_all_periods(
-        states_initial=initial_states,
-        wealth_initial=wealth_agents,
-        # n_periods=model_specs["model_params"]["n_periods"],
-        n_periods=model_specs["n_periods"],
-        params=params,
-        seed=seed,
-        endog_grid_solved=solution["endog_grid"],
-        value_solved=solution["value"],
-        policy_solved=solution["policy"],
-        model=model,
-        model_sim=model,
-    )
-    df = create_simulation_df(sim_dict)
+#     sim_dict = simulate_all_periods(
+#         states_initial=initial_states,
+#         wealth_initial=wealth_agents,
+#         # n_periods=model_specs["model_params"]["n_periods"],
+#         n_periods=model_specs["n_periods"],
+#         params=params,
+#         seed=seed,
+#         endog_grid_solved=solution["endog_grid"],
+#         value_solved=solution["value"],
+#         policy_solved=solution["policy"],
+#         model=model,
+#         model_sim=model,
+#     )
+#     df = create_simulation_df(sim_dict)
 
-    # Add derived variables
-    df["age"] = df.index.get_level_values("period") + model_specs["start_age"]
+#     # Add derived variables
+#     df["age"] = df.index.get_level_values("period") + model_specs["start_age"]
 
-    df["exp_years"] = construct_experience_years(
-        experience=df["experience"].values,
-        period=df.index.get_level_values("period").values,
-        max_exp_diffs_per_period=model_specs["max_exp_diffs_per_period"],
-    )
+#     df["exp_years"] = construct_experience_years(
+#         experience=df["experience"].values,
+#         period=df.index.get_level_values("period").values,
+#         max_exp_diffs_per_period=model_specs["max_exp_diffs_per_period"],
+#     )
 
-    # Assign working hours
-    df["working_hours"] = 0.0
-    part_time_values = PART_TIME_NO_CARE_DEMAND.ravel().tolist()
-    full_time_values = FULL_TIME_NO_CARE_DEMAND.ravel().tolist()
+#     # Assign working hours
+#     df["working_hours"] = 0.0
+#     part_time_values = PART_TIME_NO_CARE_DEMAND.ravel().tolist()
+#     full_time_values = FULL_TIME_NO_CARE_DEMAND.ravel().tolist()
 
-    sex_var = SEX
-    for edu_var in range(model_specs["n_education_types"]):
-        # full-time
-        df.loc[
-            df["choice"].isin(full_time_values) & (df["education"] == edu_var),
-            "working_hours",
-        ] = model_specs["av_annual_hours_ft"][sex_var, edu_var]
-        # part-time
-        df.loc[
-            df["choice"].isin(part_time_values) & (df["education"] == edu_var),
-            "working_hours",
-        ] = model_specs["av_annual_hours_pt"][sex_var, edu_var]
+#     sex_var = SEX
+#     for edu_var in range(model_specs["n_education_types"]):
+#         # full-time
+#         df.loc[
+#             df["choice"].isin(full_time_values) & (df["education"] == edu_var),
+#             "working_hours",
+#         ] = model_specs["av_annual_hours_ft"][sex_var, edu_var]
+#         # part-time
+#         df.loc[
+#             df["choice"].isin(part_time_values) & (df["education"] == edu_var),
+#             "working_hours",
+#         ] = model_specs["av_annual_hours_pt"][sex_var, edu_var]
 
-    # Income variables
-    df["assets_begin_of_period"] = df["savings"] + df["consumption"]
-    df["total_income"] = (
-        df.groupby("agent")["assets_begin_of_period"].shift(-1) - df["savings"]
-    )
-    df["income_wo_interest"] = df.groupby("agent")["assets_begin_of_period"].shift(
-        -1
-    ) - df["savings"] * (1 + model_specs["interest_rate"])
+#     # Income variables
+#     df["assets_begin_of_period"] = df["savings"] + df["consumption"]
+#     df["total_income"] = (
+#         df.groupby("agent")["assets_begin_of_period"].shift(-1) - df["savings"]
+#     )
+#     df["income_wo_interest"] = df.groupby("agent")["assets_begin_of_period"].shift(
+#         -1
+#     ) - df["savings"] * (1 + model_specs["interest_rate"])
 
-    df["savings_dec"] = df["total_income"] - df["consumption"]
-    df["savings_rate"] = df["savings_dec"] / df["total_income"]
+#     df["savings_dec"] = df["total_income"] - df["consumption"]
+#     df["savings_rate"] = df["savings_dec"] / df["total_income"]
 
-    # ===============================================================================
-    # Gross labor income computation
-    # ===============================================================================
-    work_values = part_time_values + full_time_values
+#     # ===============================================================================
+#     # Gross labor income computation
+#     # ===============================================================================
+#     work_values = part_time_values + full_time_values
 
-    # Convert pandas Series to numpy arrays for JAX
-    lagged_choice_array = np.asarray(df["lagged_choice"])
-    experience_years_array = np.asarray(df["exp_years"])
-    education_array = np.asarray(df["education"])
-    income_shock_array = np.asarray(df["income_shock"])
+#     # Convert pandas Series to numpy arrays for JAX
+#     lagged_choice_array = np.asarray(df["lagged_choice"])
+#     experience_years_array = np.asarray(df["exp_years"])
+#     education_array = np.asarray(df["education"])
+#     income_shock_array = np.asarray(df["income_shock"])
 
-    # Vectorized gross labor income calculation
-    vectorized_calc_gross_labor_income = jax.vmap(
-        lambda lc, exp, edu, shock: calculate_gross_labor_income(
-            lagged_choice=lc,
-            experience_years=exp,
-            education=edu,
-            sex=sex_var,
-            income_shock=shock,
-            model_specs=model_specs,
-        )
-    )
-    gross_labor_income_array = vectorized_calc_gross_labor_income(
-        lagged_choice_array,
-        experience_years_array,
-        education_array,
-        income_shock_array,
-    )
-    df["gross_labor_income"] = gross_labor_income_array * df["lagged_choice"].isin(
-        work_values
-    )
+#     # Vectorized gross labor income calculation
+#     vectorized_calc_gross_labor_income = jax.vmap(
+#         lambda lc, exp, edu, shock: calculate_gross_labor_income(
+#             lagged_choice=lc,
+#             experience_years=exp,
+#             education=edu,
+#             sex=sex_var,
+#             income_shock=shock,
+#             model_specs=model_specs,
+#         )
+#     )
+#     gross_labor_income_array = vectorized_calc_gross_labor_income(
+#         lagged_choice_array,
+#         experience_years_array,
+#         education_array,
+#         income_shock_array,
+#     )
+#     df["gross_labor_income"] = gross_labor_income_array * df["lagged_choice"].isin(
+#         work_values
+#     )
 
-    # Mother age
-    df["mother_age"] = (
-        df["age"].to_numpy()
-        + model_specs["mother_age_diff"][df["education"].to_numpy()]
-    )
+#     # Mother age
+#     df["mother_age"] = (
+#         df["age"].to_numpy()
+#         + model_specs["mother_age_diff"][df["education"].to_numpy()]
+#     )
 
-    return df
-
-
-def simulate_career_costs_no_care_demand(
-    model,
-    solution,
-    initial_states,
-    wealth_agents,
-    params,
-    options,
-    seed,
-) -> pd.DataFrame:
-    """Ultra-fast career costs simulation for no-care-demand model.
-
-    This function runs the simulation and computes individual income components
-    directly from the simulation dictionary for maximum speed, using the restricted
-    choice sets from the no-care-demand counterfactual.
-    """
-
-    # Run the simulation to get sim_dict
-    sim_dict = simulate_all_periods(
-        states_initial=initial_states,
-        wealth_initial=wealth_agents,
-        n_periods=options["model_params"]["n_periods"],
-        params=params,
-        seed=seed,
-        endog_grid_solved=solution["endog_grid"],
-        value_solved=solution["value"],
-        policy_solved=solution["policy"],
-        model=model,
-        model_sim=model,
-    )
-
-    # Build simulation DataFrame from sim_dict with income components
-    df = build_simulation_df_with_income_components_no_care_demand(
-        sim_dict, options, params
-    )
-
-    return df
+#     return df
 
 
-def build_simulation_df_with_income_components_no_care_demand(
-    sim_dict, options, params
-):
-    """Build simulation DataFrame and compute income components efficiently."""
+# def simulate_career_costs_no_care_demand(
+#     model,
+#     solution,
+#     initial_states,
+#     wealth_agents,
+#     params,
+#     options,
+#     seed,
+# ) -> pd.DataFrame:
+#     """Ultra-fast career costs simulation for no-care-demand model.
 
-    df = create_simulation_df(sim_dict)
+#     This function runs the simulation and computes individual income components
+#     directly from the simulation dictionary for maximum speed, using the restricted
+#     choice sets from the no-care-demand counterfactual.
+#     """
 
-    # Create additional variables
-    model_params = options["model_params"]
-    df["age"] = df.index.get_level_values("period") + model_params["start_age"]
+#     # Run the simulation to get sim_dict
+#     sim_dict = simulate_all_periods(
+#         states_initial=initial_states,
+#         wealth_initial=wealth_agents,
+#         n_periods=options["model_params"]["n_periods"],
+#         params=params,
+#         seed=seed,
+#         endog_grid_solved=solution["endog_grid"],
+#         value_solved=solution["value"],
+#         policy_solved=solution["policy"],
+#         model=model,
+#         model_sim=model,
+#     )
 
-    # Create experience years
-    df["exp_years"] = construct_experience_years(
-        experience=df["experience"].values,
-        period=df.index.get_level_values("period").values,
-        max_exp_diffs_per_period=model_params["max_exp_diffs_per_period"],
-    )
+#     # Build simulation DataFrame from sim_dict with income components
+#     df = build_simulation_df_with_income_components_no_care_demand(
+#         sim_dict, options, params
+#     )
 
-    # Assign working hours for choice 1 (unemployed)
-    df["working_hours"] = 0.0
+#     return df
 
-    # Use no-care-demand choice arrays
-    part_time_values = PART_TIME_NO_CARE_DEMAND.ravel().tolist()
-    full_time_values = FULL_TIME_NO_CARE_DEMAND.ravel().tolist()
-    work_values = WORK_NO_CARE_DEMAND.ravel().tolist()
-    retirement_values = RETIREMENT_NO_CARE_DEMAND.ravel().tolist()
 
-    sex_var = SEX
+# def build_simulation_df_with_income_components_no_care_demand(
+#     sim_dict, options, params
+# ):
+#     """Build simulation DataFrame and compute income components efficiently."""
 
-    for edu_var in range(model_params["n_education_types"]):
+#     df = create_simulation_df(sim_dict)
 
-        # full-time
-        df.loc[
-            df["choice"].isin(full_time_values) & (df["education"] == edu_var),
-            "working_hours",
-        ] = model_params["av_annual_hours_ft"][sex_var, edu_var]
+#     # Create additional variables
+#     model_params = options["model_params"]
+#     df["age"] = df.index.get_level_values("period") + model_params["start_age"]
 
-        # part-time
-        df.loc[
-            df["choice"].isin(part_time_values) & (df["education"] == edu_var),
-            "working_hours",
-        ] = model_params["av_annual_hours_pt"][sex_var, edu_var]
+#     # Create experience years
+#     df["exp_years"] = construct_experience_years(
+#         experience=df["experience"].values,
+#         period=df.index.get_level_values("period").values,
+#         max_exp_diffs_per_period=model_params["max_exp_diffs_per_period"],
+#     )
 
-    # Compute gross labor income using JAX vmap for vectorization
-    # Convert pandas Series to numpy arrays for JAX
-    lagged_choice_array = np.asarray(df["lagged_choice"])
-    experience_years_array = np.asarray(df["exp_years"])
-    education_array = np.asarray(df["education"])
-    income_shock_array = np.asarray(df["income_shock"])
-    savings_array = np.asarray(df["savings"])
-    has_partner_int_array = np.asarray((df["partner_state"] > 0).astype(int))
-    periods_array = np.asarray(df.index.get_level_values("period"))
+#     # Assign working hours for choice 1 (unemployed)
+#     df["working_hours"] = 0.0
 
-    # ===============================================================================
-    # Gross labor and pension income
-    # ===============================================================================
+#     # Use no-care-demand choice arrays
+#     part_time_values = PART_TIME_NO_CARE_DEMAND.ravel().tolist()
+#     full_time_values = FULL_TIME_NO_CARE_DEMAND.ravel().tolist()
+#     work_values = WORK_NO_CARE_DEMAND.ravel().tolist()
+#     retirement_values = RETIREMENT_NO_CARE_DEMAND.ravel().tolist()
 
-    # Female gross labor income
-    vectorized_calc_gross_labor_income = jax.vmap(
-        lambda lc, exp, edu, shock: calculate_gross_labor_income(
-            lagged_choice=lc,
-            experience_years=exp,
-            education=edu,
-            sex=sex_var,
-            income_shock=shock,
-            model_specs=model_params,
-        )
-    )
-    gross_labor_income_array = vectorized_calc_gross_labor_income(
-        lagged_choice_array,
-        experience_years_array,
-        education_array,
-        income_shock_array,
-    )
-    df["gross_labor_income"] = gross_labor_income_array * df["lagged_choice"].isin(
-        work_values
-    )
+#     sex_var = SEX
 
-    # Female gross pension income
-    vectorized_calc_gross_pension_income = jax.vmap(
-        lambda exp, edu: calc_gross_pension_income(
-            experience_years=exp,
-            education=edu,
-            sex=sex_var,
-            options=model_params,
-        )
-    )
-    gross_pension_income_array = vectorized_calc_gross_pension_income(
-        experience_years_array,
-        education_array,
-    )
-    df["gross_pension_income"] = gross_pension_income_array * df["lagged_choice"].isin(
-        retirement_values
-    )
+#     for edu_var in range(model_params["n_education_types"]):
 
-    # ===============================================================================
-    # Benefits and costs (NO CARE BENEFITS/COSTS IN NO-CARE-DEMAND MODEL)
-    # ===============================================================================
+#         # full-time
+#         df.loc[
+#             df["choice"].isin(full_time_values) & (df["education"] == edu_var),
+#             "working_hours",
+#         ] = model_params["av_annual_hours_ft"][sex_var, edu_var]
 
-    # Female unemployment benefits
-    vectorized_calc_unemployment_benefits = jax.vmap(
-        lambda assets, edu, has_partner_int, period: calc_unemployment_benefits(
-            assets=assets,
-            sex=sex_var,
-            education=edu,
-            has_partner_int=has_partner_int,
-            period=period,
-            model_specs=model_params,
-        )
-    )
-    unemployment_benefits_array = vectorized_calc_unemployment_benefits(
-        savings_array,
-        education_array,
-        has_partner_int_array,
-        periods_array,
-    )
-    df["unemployment_benefits"] = unemployment_benefits_array
+#         # part-time
+#         df.loc[
+#             df["choice"].isin(part_time_values) & (df["education"] == edu_var),
+#             "working_hours",
+#         ] = model_params["av_annual_hours_pt"][sex_var, edu_var]
 
-    # Child benefits
-    vectorized_calc_child_benefits = jax.vmap(
-        lambda edu, has_partner_int, period: calc_child_benefits(
-            education=edu,
-            sex=sex_var,
-            has_partner_int=has_partner_int,
-            period=period,
-            options=model_params,
-        )
-    )
-    child_benefits_array = vectorized_calc_child_benefits(
-        education_array,
-        has_partner_int_array,
-        periods_array,
-    )
-    df["child_benefits"] = child_benefits_array
+#     # Compute gross labor income using JAX vmap for vectorization
+#     # Convert pandas Series to numpy arrays for JAX
+#     lagged_choice_array = np.asarray(df["lagged_choice"])
+#     experience_years_array = np.asarray(df["exp_years"])
+#     education_array = np.asarray(df["education"])
+#     income_shock_array = np.asarray(df["income_shock"])
+#     savings_array = np.asarray(df["savings"])
+#     has_partner_int_array = np.asarray((df["partner_state"] > 0).astype(int))
+#     periods_array = np.asarray(df.index.get_level_values("period"))
 
-    # Calculate total individual income following budget equation logic
-    # Total net income = labor income + pension income + child benefits
-    df["total_gross_income"] = (
-        df["gross_labor_income"] + df["child_benefits"] + df["gross_pension_income"]
-    )
+#     # ===============================================================================
+#     # Gross labor and pension income
+#     # ===============================================================================
 
-    # Apply maximum with unemployment benefits (following budget equation)
-    # df["total_income"] = np.maximum(
-    #     df["total_gross_income"], df["unemployment_benefits"]
-    # ) * (df["health"] != DEAD)
-    df["total_income"] = np.where(
-        df["health"] != DEAD,
-        np.maximum(df["total_gross_income"], df["unemployment_benefits"]),
-        0,
-    )
+#     # Female gross labor income
+#     vectorized_calc_gross_labor_income = jax.vmap(
+#         lambda lc, exp, edu, shock: calculate_gross_labor_income(
+#             lagged_choice=lc,
+#             experience_years=exp,
+#             education=edu,
+#             sex=sex_var,
+#             income_shock=shock,
+#             model_specs=model_params,
+#         )
+#     )
+#     gross_labor_income_array = vectorized_calc_gross_labor_income(
+#         lagged_choice_array,
+#         experience_years_array,
+#         education_array,
+#         income_shock_array,
+#     )
+#     df["gross_labor_income"] = gross_labor_income_array * df["lagged_choice"].isin(
+#         work_values
+#     )
 
-    return df
+#     # Female gross pension income
+#     vectorized_calc_gross_pension_income = jax.vmap(
+#         lambda exp, edu: calc_gross_pension_income(
+#             experience_years=exp,
+#             education=edu,
+#             sex=sex_var,
+#             options=model_params,
+#         )
+#     )
+#     gross_pension_income_array = vectorized_calc_gross_pension_income(
+#         experience_years_array,
+#         education_array,
+#     )
+#     df["gross_pension_income"] = gross_pension_income_array * df["lagged_choice"].isin(
+#         retirement_values
+#     )
+
+#     # ===============================================================================
+#     # Benefits and costs (NO CARE BENEFITS/COSTS IN NO-CARE-DEMAND MODEL)
+#     # ===============================================================================
+
+#     # Female unemployment benefits
+#     vectorized_calc_unemployment_benefits = jax.vmap(
+#         lambda assets, edu, has_partner_int, period: calc_unemployment_benefits(
+#             assets=assets,
+#             sex=sex_var,
+#             education=edu,
+#             has_partner_int=has_partner_int,
+#             period=period,
+#             model_specs=model_params,
+#         )
+#     )
+#     unemployment_benefits_array = vectorized_calc_unemployment_benefits(
+#         savings_array,
+#         education_array,
+#         has_partner_int_array,
+#         periods_array,
+#     )
+#     df["unemployment_benefits"] = unemployment_benefits_array
+
+#     # Child benefits
+#     vectorized_calc_child_benefits = jax.vmap(
+#         lambda edu, has_partner_int, period: calc_child_benefits(
+#             education=edu,
+#             sex=sex_var,
+#             has_partner_int=has_partner_int,
+#             period=period,
+#             options=model_params,
+#         )
+#     )
+#     child_benefits_array = vectorized_calc_child_benefits(
+#         education_array,
+#         has_partner_int_array,
+#         periods_array,
+#     )
+#     df["child_benefits"] = child_benefits_array
+
+#     # Calculate total individual income following budget equation logic
+#     # Total net income = labor income + pension income + child benefits
+#     df["total_gross_income"] = (
+#         df["gross_labor_income"] + df["child_benefits"] + df["gross_pension_income"]
+#     )
+
+#     # Apply maximum with unemployment benefits (following budget equation)
+#     # df["total_income"] = np.maximum(
+#     #     df["total_gross_income"], df["unemployment_benefits"]
+#     # ) * (df["health"] != DEAD)
+#     df["total_income"] = np.where(
+#         df["health"] != DEAD,
+#         np.maximum(df["total_gross_income"], df["unemployment_benefits"]),
+#         0,
+#     )
+
+#     return df

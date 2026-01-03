@@ -93,5 +93,4 @@ def task_solve_and_simulate_no_care_demand(
 
     sim_df = create_additional_variables_no_care_demand(sim_df, specs)
     # =================================================================================
-
     sim_df.to_pickle(path_to_save_simulated_data)

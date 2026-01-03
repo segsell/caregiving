@@ -440,6 +440,7 @@ def simulate_moments_with_unobserved_type_shares(
     determined by the estimated parameters:
     - share_unobserved_type_low_educ  (education == 0)
     - share_unobserved_type_high_educ (education == 1)
+
     """
 
     if seed_generator is not None:

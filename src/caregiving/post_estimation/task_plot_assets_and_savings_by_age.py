@@ -45,136 +45,9 @@ from pytask import Product
 from caregiving.config import BLD
 
 
-def _extract_aux_variable(df_sim, var_name):
-    """Extract a variable from either direct column or aux dictionary."""
-    if var_name in df_sim.columns:
-        return df_sim[var_name]
-    elif "aux" in df_sim.columns:
-        return df_sim["aux"].apply(
-            lambda x: (x.get(var_name, np.nan) if isinstance(x, dict) else np.nan)
-        )
-    else:
-        return pd.Series(np.nan, index=df_sim.index)
-
-
-def _plot_asset_savings_outcome(
-    df_sim,
-    specs,
-    outcome_col,
-    ylabel,
-    title_suffix,
-    path_to_plot,
-    exclude_end_age=False,
-):
-    """Helper function to plot an asset/savings outcome by age and education.
-
-    Parameters
-    ----------
-    df_sim : pd.DataFrame
-        Simulated data
-    specs : dict
-        Model specifications
-    outcome_col : str
-        Column name to plot
-    ylabel : str
-        Y-axis label
-    title_suffix : str
-        Title suffix
-    path_to_plot : Path
-        Path to save the plot
-    exclude_end_age : bool
-        If True, exclude observations at the maximum age (end_age = 100)
-    """
-    # Filter out end_age if requested
-    df_plot = df_sim.copy()
-    if exclude_end_age:
-        end_age = specs.get("end_age", df_sim["age"].max())
-        df_plot = df_plot[df_plot["age"] < end_age].copy()
-
-    # Calculate average by age and education
-    avg_by_group = (
-        df_plot.groupby(["age", "education"], observed=False)[outcome_col]
-        .mean()
-        .reset_index()
-    )
-
-    # Get all unique ages
-    ages = np.sort(df_plot["age"].unique())
-
-    # Education labels
-    education_labels = specs.get("education_labels", ["Low", "High"])
-
-    # Colors for education levels
-    edu_colors = [plt.cm.tab10(i) for i in range(len(education_labels))]
-
-    # Create the plot
-    fig, ax = plt.subplots(figsize=(10, 6))
-
-    for edu_var, edu_label in enumerate(education_labels):
-        color = edu_colors[edu_var]
-
-        # Filter to this education level
-        df_edu = avg_by_group.loc[avg_by_group["education"] == edu_var].copy()
-
-        if len(df_edu) > 0:
-            # Reindex to all ages and fill missing with NaN
-            values = df_edu.set_index("age")[outcome_col].reindex(ages).values
-            mask = ~np.isnan(values)
-            if mask.sum() > 0:
-                ax.plot(
-                    ages[mask],
-                    values[mask],
-                    linewidth=2,
-                    color=color,
-                    label=edu_label,
-                    alpha=0.8,
-                )
-
-    ax.set_xlabel("Age", fontsize=12)
-    ax.set_ylabel(ylabel, fontsize=12)
-    ax.set_title(f"Average {title_suffix} by Age and Education", fontsize=13)
-    ax.grid(True, alpha=0.3)
-    ax.legend(loc="best", fontsize=10)
-
-    plt.tight_layout()
-    path_to_plot.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(path_to_plot, dpi=300, bbox_inches="tight")
-    plt.close(fig)
-
-    print(f"Plot saved to {path_to_plot}")
-
-
-def _add_aux_variables_to_df(df_sim):
-    """Extract aux variables and add them as columns to the dataframe."""
-    df = df_sim.copy()
-
-    # List of variables to extract from aux dict
-    aux_vars = [
-        "net_hh_income",
-        "hh_net_income_wo_interest",
-        "interest",
-        "joint_gross_labor_income",
-        "joint_gross_retirement_income",
-        "gross_labor_income",
-        "gross_retirement_income",
-        "bequest_from_parent",
-        "income_tax",
-        "own_ssc",
-        "partner_ssc",
-        "total_tax_revenue",
-        "government_expenditures",
-        "net_government_budget",
-    ]
-
-    for var in aux_vars:
-        if var not in df.columns:
-            df[var] = _extract_aux_variable(df_sim, var)
-
-    return df
-
-
 @pytask.mark.baseline_model
 @pytask.mark.post_estimation
+@pytask.mark.post_assets_and_savings
 def task_plot_assets_and_savings_by_age_baseline(  # noqa: PLR0915
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_simulated_data: Path = BLD
@@ -484,6 +357,7 @@ def task_plot_assets_and_savings_by_age_baseline(  # noqa: PLR0915
 
 @pytask.mark.caregiving_leave_with_job_retention_model
 @pytask.mark.post_estimation
+@pytask.mark.post_assets_and_savings
 def task_plot_assets_and_savings_by_age_caregiving_leave(  # noqa: PLR0915
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_simulated_data: Path = BLD
@@ -798,6 +672,7 @@ def task_plot_assets_and_savings_by_age_caregiving_leave(  # noqa: PLR0915
 
 @pytask.mark.no_care_demand_model
 @pytask.mark.post_estimation
+@pytask.mark.post_assets_and_savings
 def task_plot_assets_and_savings_by_age_no_care_demand(  # noqa: PLR0915
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_simulated_data: Path = BLD
@@ -911,6 +786,18 @@ def task_plot_assets_and_savings_by_age_no_care_demand(  # noqa: PLR0915
     / "assets_and_savings"
     / "no_care_demand"
     / "net_government_budget_by_age.png",
+    path_to_plot_income_shock_previous_period: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_care_demand"
+    / "income_shock_previous_period_by_age.png",
+    path_to_plot_income_shock_for_labor: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_care_demand"
+    / "income_shock_for_labor_by_age.png",
 ):
     """Plot average assets and savings by age and education from no care demand counterfactual simulated data.
 
@@ -1070,6 +957,18 @@ def task_plot_assets_and_savings_by_age_no_care_demand(  # noqa: PLR0915
             "Net Government Budget (No Care Demand)",
             False,
         ),
+        (
+            "income_shock_previous_period",
+            "Average Income Shock Previous Period",
+            "Income Shock Previous Period (No Care Demand)",
+            False,
+        ),
+        (
+            "income_shock_for_labor",
+            "Average Income Shock For Labor",
+            "Income Shock For Labor (No Care Demand)",
+            False,
+        ),
     ]
 
     path_params = [
@@ -1091,6 +990,8 @@ def task_plot_assets_and_savings_by_age_no_care_demand(  # noqa: PLR0915
         path_to_plot_total_tax_revenue,
         path_to_plot_government_expenditures,
         path_to_plot_net_government_budget,
+        path_to_plot_income_shock_previous_period,
+        path_to_plot_income_shock_for_labor,
     ]
 
     for (col, ylabel, title, exclude_age), path in zip(plot_configs, path_params):
@@ -1103,3 +1004,133 @@ def task_plot_assets_and_savings_by_age_no_care_demand(  # noqa: PLR0915
             path_to_plot=path,
             exclude_end_age=exclude_age,
         )
+
+
+def _extract_aux_variable(df_sim, var_name):
+    """Extract a variable from either direct column or aux dictionary."""
+    if var_name in df_sim.columns:
+        return df_sim[var_name]
+    elif "aux" in df_sim.columns:
+        return df_sim["aux"].apply(
+            lambda x: (x.get(var_name, np.nan) if isinstance(x, dict) else np.nan)
+        )
+    else:
+        return pd.Series(np.nan, index=df_sim.index)
+
+
+def _plot_asset_savings_outcome(
+    df_sim,
+    specs,
+    outcome_col,
+    ylabel,
+    title_suffix,
+    path_to_plot,
+    exclude_end_age=False,
+):
+    """Helper function to plot an asset/savings outcome by age and education.
+
+    Parameters
+    ----------
+    df_sim : pd.DataFrame
+        Simulated data
+    specs : dict
+        Model specifications
+    outcome_col : str
+        Column name to plot
+    ylabel : str
+        Y-axis label
+    title_suffix : str
+        Title suffix
+    path_to_plot : Path
+        Path to save the plot
+    exclude_end_age : bool
+        If True, exclude observations at the maximum age (end_age = 100)
+    """
+    # Filter out end_age if requested
+    df_plot = df_sim.copy()
+    if exclude_end_age:
+        end_age = specs.get("end_age", df_sim["age"].max())
+        df_plot = df_plot[df_plot["age"] < end_age].copy()
+
+    # Calculate average by age and education
+    avg_by_group = (
+        df_plot.groupby(["age", "education"], observed=False)[outcome_col]
+        .mean()
+        .reset_index()
+    )
+
+    # Get all unique ages
+    ages = np.sort(df_plot["age"].unique())
+
+    # Education labels
+    education_labels = specs.get("education_labels", ["Low", "High"])
+
+    # Colors for education levels
+    edu_colors = [plt.cm.tab10(i) for i in range(len(education_labels))]
+
+    # Create the plot
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    for edu_var, edu_label in enumerate(education_labels):
+        color = edu_colors[edu_var]
+
+        # Filter to this education level
+        df_edu = avg_by_group.loc[avg_by_group["education"] == edu_var].copy()
+
+        if len(df_edu) > 0:
+            # Reindex to all ages and fill missing with NaN
+            values = df_edu.set_index("age")[outcome_col].reindex(ages).values
+            mask = ~np.isnan(values)
+            if mask.sum() > 0:
+                ax.plot(
+                    ages[mask],
+                    values[mask],
+                    linewidth=2,
+                    color=color,
+                    label=edu_label,
+                    alpha=0.8,
+                )
+
+    ax.set_xlabel("Age", fontsize=12)
+    ax.set_ylabel(ylabel, fontsize=12)
+    ax.set_title(f"Average {title_suffix} by Age and Education", fontsize=13)
+    ax.grid(True, alpha=0.3)
+    ax.legend(loc="best", fontsize=10)
+
+    plt.tight_layout()
+    path_to_plot.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(path_to_plot, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+
+    print(f"Plot saved to {path_to_plot}")
+
+
+def _add_aux_variables_to_df(df_sim):
+    """Extract aux variables and add them as columns to the dataframe."""
+    df = df_sim.copy()
+
+    # List of variables to extract from aux dict
+    aux_vars = [
+        "net_hh_income",
+        "hh_net_income_wo_interest",
+        "interest",
+        "joint_gross_labor_income",
+        "joint_gross_retirement_income",
+        "gross_labor_income",
+        "gross_retirement_income",
+        "bequest_from_parent",
+        "income_tax",
+        "own_ssc",
+        "partner_ssc",
+        "total_tax_revenue",
+        "government_expenditures",
+        "net_government_budget",
+        "income_shock_previous_period",
+        "income_shock_for_labor",
+    ]
+
+    for var in aux_vars:
+        if var not in df.columns:
+            df[var] = _extract_aux_variable(df_sim, var)
+
+    return df

@@ -238,12 +238,13 @@ def draw_inheritance_outcome(
     # Draw a uniform random number [0, 1] using a deterministic seed from model_specs
     # Create a deterministic key based on seed and state for reproducibility
     base_seed = model_specs["seed"]
-    inheritance_seed = jnp.int64(
+    inheritance_seed = jnp.uint32(
         base_seed
         + period * 1000
         + education * 200
-        + 100 * is_intensive_informal_care(lagged_choice)
-        + 50 * is_light_informal_care(lagged_choice)
+        # + 100 * is_intensive_informal_care(lagged_choice)
+        # + 50 * is_light_informal_care(lagged_choice)
+        + lagged_choice * 10
         + asset_end_of_previous_period * 3
     )
     key = jax.random.PRNGKey(inheritance_seed)

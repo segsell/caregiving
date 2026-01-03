@@ -57,7 +57,6 @@ def budget_constraint(
         )
     )
 
-    # Income from lagged choice 0
     retirement_income_after_ssc, gross_retirement_income = calc_pensions_after_ssc(
         experience_years=experience_years,
         sex=sex_var,
@@ -67,7 +66,6 @@ def budget_constraint(
 
     has_partner_int = (partner_state > 0).astype(int)
 
-    # Income lagged choice 1
     household_unemployment_benefits, _own_unemployment_benefits = (
         calc_unemployment_benefits(
             assets=assets_scaled,
@@ -79,13 +77,18 @@ def budget_constraint(
         )
     )
 
-    # Income lagged choice 2
+    # For period 0, use mean income shock (0.0) since there's no previous period
+    income_shock_for_labor = jnp.where(
+        period == 0,
+        model_specs["income_shock_mean"],
+        income_shock_previous_period,
+    )
     labor_income_after_ssc, gross_labor_income = calc_labor_income_after_ssc(
         lagged_choice=lagged_choice,
         experience_years=experience_years,
         education=education,
         sex=sex_var,
-        income_shock=income_shock_previous_period,
+        income_shock=income_shock_for_labor,
         model_specs=model_specs,
     )
 
@@ -179,10 +182,14 @@ def budget_constraint(
             gross_partner_pension + gross_retirement_income
         )
         / model_specs["wealth_unit"],
+        "gross_partner_income": gross_partner_income / model_specs["wealth_unit"],
+        "gross_partner_pension": gross_partner_pension / model_specs["wealth_unit"],
         "gross_labor_income": gross_labor_income / model_specs["wealth_unit"],
         "gross_retirement_income": gross_retirement_income / model_specs["wealth_unit"],
         "bequest_from_parent": bequest_from_parent / model_specs["wealth_unit"],
         "gets_inheritance": gets_inheritance,
+        "income_shock_previous_period": income_shock_previous_period,
+        "income_shock_for_labor": income_shock_for_labor,
         # Government budget components
         "income_tax": income_tax_total / model_specs["wealth_unit"],
         "own_ssc": own_ssc / model_specs["wealth_unit"],
