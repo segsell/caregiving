@@ -14,6 +14,7 @@ from pytask import Product
 
 import dcegm
 from caregiving.config import BLD, SRC
+from caregiving.estimation.estimation_setup import draw_caregiving_type_from_params
 from caregiving.model.shared import DEAD
 from caregiving.model.state_space import create_state_space_functions
 
@@ -26,7 +27,6 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.simulation.simulate import simulate_scenario
-from caregiving.estimation.estimation_setup import draw_caregiving_type_from_params
 
 jax.config.update("jax_enable_x64", True)
 
