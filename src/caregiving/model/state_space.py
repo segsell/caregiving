@@ -27,7 +27,8 @@ from caregiving.model.shared import (
     NOT_WORKING_NO_CARE_OR_FORMAL,
     NOT_WORKING_NO_FORMAL_CARE,
     NOT_WORKING_NO_INFORMAL_CARE,
-    PARENT_DEAD,
+    PARENT_LONGER_DEAD,
+    PARENT_RECENTLY_DEAD,
     RETIREMENT,
     RETIREMENT_CARE,
     RETIREMENT_INTENSIVE_INFORMAL_OR_FORMAL,
@@ -66,6 +67,7 @@ from caregiving.model.shared import (
     is_formal_care,
     is_full_time,
     is_informal_care,
+    is_intensive_informal_care,
     is_no_care_demand,
     is_part_time,
     is_retired,
@@ -161,6 +163,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
     care_demand,
     job_offer,
     caregiving_type,
+    # gets_inheritance,
     model_specs,
 ):
     start_age = model_specs["start_age"]
@@ -245,13 +248,31 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "health": health,
                 "partner_state": partner_state,
                 "mother_adl": 0,
-                "mother_dead": 1,
+                "mother_dead": PARENT_LONGER_DEAD,
                 "care_demand": NO_CARE_DEMAND,
+                # "gets_inheritance": 0,
                 "job_offer": 0,
             }
             return state_proxy
-        elif mother_dead == 1:
-            # If mother is dead, no care demand and supply
+        # elif mother_dead == PARENT_RECENTLY_DEAD:
+        #     # If mother recently died, no care demand and supply
+        #     # Preserve mother_dead == 1 so inheritance can be calculated
+        #     state_proxy = {
+        #         "period": period,
+        #         "lagged_choice": lagged_choice,
+        #         "already_retired": already_retired,
+        #         "education": education,
+        #         "caregiving_type": caregiving_type,
+        #         "health": health,
+        #         "partner_state": partner_state,
+        #         "mother_adl": 0,
+        #         "mother_dead": PARENT_RECENTLY_DEAD,  # Preserve for inheritance calculation
+        #         "care_demand": NO_CARE_DEMAND,
+        #         "job_offer": job_offer,
+        #     }
+        #     return state_proxy
+        elif mother_dead == PARENT_LONGER_DEAD:
+            # If mother is longer dead, no care demand and supply
             state_proxy = {
                 "period": period,
                 "lagged_choice": lagged_choice,
@@ -261,8 +282,9 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "health": health,
                 "partner_state": partner_state,
                 "mother_adl": 0,
-                "mother_dead": 1,
+                "mother_dead": PARENT_LONGER_DEAD,
                 "care_demand": NO_CARE_DEMAND,
+                # "gets_inheritance": 0,
                 "job_offer": job_offer,
             }
             return state_proxy
@@ -281,6 +303,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "mother_adl": mother_adl,
                 "mother_dead": mother_dead,
                 "care_demand": care_demand,  # Outside caregiving window, no care demand
+                # "gets_inheritance": gets_inheritance,
                 "job_offer": 0,
             }
             return state_proxy
@@ -298,6 +321,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "mother_adl": mother_adl,
                 "mother_dead": mother_dead,
                 "care_demand": care_demand,
+                # "gets_inheritance": gets_inheritance,
                 "job_offer": 0,
             }
             return state_proxy
@@ -344,6 +368,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "mother_adl": mother_adl,
                 "mother_dead": mother_dead,
                 "care_demand": NO_CARE_DEMAND,
+                # "gets_inheritance": gets_inheritance,
                 "job_offer": job_offer,
             }
             return state_proxy
@@ -360,6 +385,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "mother_adl": mother_adl,
                 "mother_dead": mother_dead,
                 "care_demand": NO_CARE_DEMAND,
+                # "gets_inheritance": gets_inheritance,
                 "job_offer": job_offer,
             }
             return state_proxy
@@ -602,7 +628,7 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
     if caregiving_type == 1:
         if (
             is_no_care_demand(care_demand)
-            | (mother_dead == 1)
+            | (mother_dead > 0)  # mother_dead in [1, 2] means dead
             | (age < start_age_caregiving)
             | (age > end_age_caregiving)
         ):
@@ -683,7 +709,7 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
     elif caregiving_type == 0:
         if (
             is_no_care_demand(care_demand)
-            | (mother_dead == 1)
+            | (mother_dead > 0)  # mother_dead in [1, 2] means dead
             | (age < start_age_caregiving)
             | (age > end_age_caregiving)
         ):
@@ -818,9 +844,11 @@ def get_next_period_experience(
     )
 
     # Update if working part or full time
-    exp_update = (
-        is_full_time(lagged_choice)
-        + is_part_time(lagged_choice) * model_specs["exp_increase_part_time"]
+    # Full pension point (1.0) for part-time workers providing intensive informal care
+    # Full-time workers are unaffected (always get 1.0)
+    intensive_care = is_intensive_informal_care(lagged_choice)
+    exp_update = is_full_time(lagged_choice) + is_part_time(lagged_choice) * (
+        model_specs["exp_increase_part_time"] * (1 - intensive_care) + intensive_care
     )
     exp_new_period = exp_years_last_period + exp_update
 

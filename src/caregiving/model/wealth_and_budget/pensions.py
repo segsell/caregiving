@@ -20,7 +20,7 @@ def calc_pensions_after_ssc(
     )
     retirement_income = calc_after_ssc_income_pensioneer(retirement_income_gross)
 
-    return retirement_income
+    return retirement_income, retirement_income_gross
 
 
 def calc_gross_pension_income(experience_years, sex, education, model_specs):

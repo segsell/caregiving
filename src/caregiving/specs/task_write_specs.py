@@ -25,6 +25,8 @@ from caregiving.specs.caregiving_specs import (
 )
 from caregiving.specs.derive_specs import read_and_derive_specs
 from caregiving.specs.experience_specs import create_max_experience
+
+# from caregiving.specs.experience_specs import add_experience_and_pp_specs
 from caregiving.specs.family_specs import (
     predict_age_of_youngest_child_by_state,
     predict_children_by_state,
@@ -39,6 +41,10 @@ from caregiving.specs.health_specs import (
     read_in_health_transition_specs_good_medium_bad_df,
 )
 from caregiving.specs.income_specs import add_income_specs
+from caregiving.specs.inheritance_specs import (
+    read_in_inheritance_amount_specs,
+    read_in_inheritance_prob_specs,
+)
 
 jax.config.update("jax_enable_x64", True)
 
@@ -107,6 +113,16 @@ def task_write_specs(  # noqa: PLR0915
     / "estimation"
     / "stochastic_processes"
     / "adl_state_transition_matrix.csv",
+    path_to_inheritance_prob_spec7_params: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "inheritance_specs"
+    / "spec7_any_care_this_year_filter_parent_this_year_params.csv",
+    path_to_inheritance_amount_spec12_params: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "inheritance_amount_specs_two_care"
+    / "spec12_care_recent_filter_parent_recent_params.csv",
     path_to_save_survival_by_age: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
@@ -162,6 +178,14 @@ def task_write_specs(  # noqa: PLR0915
     / "estimation"
     / "stochastic_processes"
     / "death_transition_mat.csv",
+    path_to_save_inheritance_prob_mat: Annotated[Path, Product] = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "inheritance_prob_matrix.csv",
+    path_to_save_inheritance_amount_mat: Annotated[Path, Product] = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "inheritance_amount_matrix.csv",
 ) -> Dict[str, Any]:
     """Read in specs and add specs from first-step estimation."""
 
@@ -183,6 +207,9 @@ def task_write_specs(  # noqa: PLR0915
         avg_working_hours=avg_working_hours,
         mean_annual_wage=mean_annual_wage,
     )
+
+    # # Add experience specs
+    # specs = add_experience_and_pp_specs(specs, path_dict)
 
     # family transitions
     children_params = pd.read_csv(path_to_nb_child_params, index_col=[0, 1, 2])
@@ -330,7 +357,25 @@ def task_write_specs(  # noqa: PLR0915
         data_decision, specs, path_to_save_txt=path_to_save_max_exp_diff
     )
 
+    # Load inheritance parameters
+    inheritance_prob_spec7_params = pd.read_csv(
+        path_to_inheritance_prob_spec7_params, index_col=0
+    )
+    inheritance_amount_spec12_params = pd.read_csv(
+        path_to_inheritance_amount_spec12_params, index_col=0
+    )
+    specs["inheritance_prob_params"] = inheritance_prob_spec7_params
+    specs["inheritance_amount_params"] = inheritance_amount_spec12_params
+
+    # Precompute inheritance probability matrix by age, education, and care type
+    specs["inheritance_prob_mat"] = read_in_inheritance_prob_specs(
+        specs, path_to_save=path_to_save_inheritance_prob_mat
+    )
+    # Precompute inheritance amount matrix by age, education, and care type
+    specs["inheritance_amount_mat"] = read_in_inheritance_amount_specs(
+        specs, path_to_save=path_to_save_inheritance_amount_mat
+    )
+
     with path_to_save_specs_dict.open("wb") as f:
         pkl.dump(specs, f)
-
     return specs

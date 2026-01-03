@@ -20,7 +20,9 @@ from caregiving.model.shared_no_care_demand import (
 )
 
 
-def disutility_work(period, choice, education, partner_state, health, params, options):
+def disutility_work(
+    period, choice, education, partner_state, health, params, model_specs
+):
     retired = is_retired(choice)
     unemployed = is_unemployed(choice)
     working_part_time = is_part_time(choice)
@@ -31,7 +33,9 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     good_health = is_good_health(health)
 
     has_partner_int = (partner_state > 0).astype(int)
-    nb_children = options["children_by_state"][SEX, education, has_partner_int, period]
+    nb_children = model_specs["children_by_state"][
+        SEX, education, has_partner_int, period
+    ]
 
     disutil_ft_work = (
         params["disutil_ft_work_high_bad"] * bad_health * education
@@ -80,8 +84,8 @@ def disutility_work(period, choice, education, partner_state, health, params, op
     return disutility
 
 
-def consumption_scale(partner_state, education, period, options):
+def consumption_scale(partner_state, education, period, model_specs):
     has_partner = (partner_state > 0).astype(int)
-    nb_children = options["children_by_state"][SEX, education, has_partner, period]
+    nb_children = model_specs["children_by_state"][SEX, education, has_partner, period]
     hh_size = 1 + has_partner + nb_children
     return jnp.sqrt(hh_size)

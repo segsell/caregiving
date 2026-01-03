@@ -28,7 +28,8 @@ from caregiving.model.shared import (
     INITIAL_CONDITIONS_COHORT_LOW,
     MOTHER,
     NO_CARE_DEMAND,
-    PARENT_DEAD,
+    PARENT_HEALTH_DEAD,
+    PARENT_LONGER_DEAD,
     SEX,
     WORK_AND_UNEMPLOYED_NO_CARE,
 )
@@ -163,6 +164,11 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
 
     states_dict["care_demand"] = np.zeros_like(start_period_data["wealth"])
     states_dict["experience"] = start_period_data["experience"].values
+    # Initialize mother_dead to 0 (alive) for all agents at initial period
+    # (will be drawn later based on mother health)
+    states_dict["mother_dead"] = np.zeros_like(
+        start_period_data["wealth"], dtype=np.uint8
+    )
 
     states_dict["assets_begin_of_period"] = (
         start_period_data["wealth"].values / specs["wealth_unit"]
@@ -307,10 +313,14 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
             health_prob_by_age,
         )
 
-        # mother_dead: 1 if mother_health == PARENT_DEAD (3), else 0
-        mother_dead_agents[type_mask] = (
-            mother_health_agents[type_mask] == PARENT_DEAD
-        ).astype(np.uint8)
+        # mother_dead if mother_health == PARENT_HEALTH_DEAD (3), else 0
+        # In initial conditions, if mother is dead, we set to "longer dead"
+        # because we don't know if death was recent, so no inheritance
+        mother_dead_agents[type_mask] = np.where(
+            mother_health_agents[type_mask] == PARENT_HEALTH_DEAD,
+            PARENT_LONGER_DEAD,  # Set to longer dead
+            0,  # Set to alive
+        )
 
         # mother_adl: draw from empirical ADL distribution by age in parent_child data
         # If dead, ADL = 0 (No ADL). If alive, draw from empirical distribution
@@ -343,12 +353,10 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
             # "choice"
             "lagged_choice"
         ].value_counts(normalize=True)
-        lagged_choice_probs = pd.Series(
-            index=np.arange(0, model_specs["n_choices"]), data=0, dtype=float
-        )
+        lagged_choice_probs = pd.Series(index=np.arange(0, 4), data=0, dtype=float)
         lagged_choice_probs.update(empirical_lagged_choice_probs)
         lagged_choice_edu = np.random.choice(
-            model_specs["n_choices"], size=n_agents_edu, p=lagged_choice_probs.values
+            4, size=n_agents_edu, p=lagged_choice_probs.values
         )
         lagged_choice[type_mask] = lagged_choice_edu
 
@@ -430,7 +438,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         #     NO_CARE_DEMAND_ALIVE,
         # ),
         "caregiving_type": jnp.array(caregiving_type_agents, dtype=jnp.uint8),
-        "lagged_caregiving": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
+        # "gets_inheritance": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
         "assets_begin_of_period": wealth_agents,
     }
     # type_mask_low = (sex_agents == sex_var) & (education_agents == 0)
@@ -662,3 +670,15 @@ def draw_start_wealth_dist(start_period_data_edu, n_agents_edu, method="kde"):
     )
 
     return wealth_start_clipped
+
+
+# def scale_experience_years(experience_years, period, model_specs):
+#     """Scale experience between 0 and 1."""
+#     # If period is past the last working period, then we take the maximum experience
+#     scale_not_retired = jnp.take(
+#         model_specs["max_exps_period_working"], period, mode="clip"
+#     )
+#     # scale_retired = model_specs["max_pp_retirement"]
+#     # scale = is_retired * scale_retired + (1 - is_retired) * scale_not_retired
+
+#     return experience_years / scale_not_retired

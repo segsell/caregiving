@@ -24,6 +24,9 @@ from caregiving.model.stochastic_processes.caregiving_transition import (
 from caregiving.model.stochastic_processes.health_transition import (
     health_transition,
 )
+from caregiving.model.stochastic_processes.inheritance_transition import (
+    inheritance_transition,
+)
 from caregiving.model.stochastic_processes.job_transition import (
     job_offer_process_transition,
 )
@@ -38,11 +41,26 @@ from caregiving.model.utility.utility_functions_additive import (
     create_utility_functions,
 )
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
-from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
+from caregiving.model.wealth_and_budget.savings_grid import create_end_of_period_assets
 
 
 @pytask.mark.baseline_model
 def task_specify_model(
+    path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_save_model_config: Annotated[Path, Product] = BLD
+    / "model"
+    / "model_config.pkl",
+    path_to_save_model: Annotated[Path, Product] = BLD / "model" / "model.pkl",
+):
+    model = specify_model(
+        path_to_derived_specs=path_to_derived_specs,
+        path_to_save_model_config=path_to_save_model_config,
+        path_to_save_model=path_to_save_model,
+    )
+    return model
+
+
+def specify_model(
     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_save_model_config: Annotated[Path, Product] = BLD
     / "model"
@@ -59,7 +77,7 @@ def task_specify_model(
     choices = np.arange(specs["n_choices"], dtype=int)
 
     # Savings grid
-    savings_grid = create_savings_grid()
+    savings_grid = create_end_of_period_assets()
 
     # Experience grid
     experience_grid = jnp.linspace(0, 1, specs["n_experience_grid_points"])
@@ -83,12 +101,12 @@ def task_specify_model(
             "partner_state": np.arange(specs["n_partner_states"], dtype=int),
             "health": np.arange(specs["n_health_states"], dtype=int),
             "job_offer": np.arange(2, dtype=int),
-            "mother_dead": np.arange(2, dtype=int),
+            "mother_dead": np.arange(3, dtype=int),
             "mother_adl": np.arange(specs["n_adl_states_light_intensive"], dtype=int),
             "care_demand": np.arange(3, dtype=int),
         },
         "continuous_states": {
-            "assets_end_of_period": savings_grid,
+            "assets_end_of_period": savings_grid / specs["wealth_unit"],
             "experience": experience_grid,
         },
         "n_quad_points": specs["quadrature_points_stochastic"],
@@ -108,7 +126,6 @@ def task_specify_model(
     #     debug_info="state_space_df",
     # )
     # admissible_df = state_space_df[state_space_df["is_valid"]]
-
     model = dcegm.setup_model(
         model_specs=specs,
         model_config=model_config,
@@ -125,7 +142,6 @@ def task_specify_model(
     )
 
     print("Model specified.", flush=True)
-
     return model
 
 

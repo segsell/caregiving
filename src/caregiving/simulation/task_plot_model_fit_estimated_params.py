@@ -20,7 +20,6 @@ from caregiving.model.shared import (
     NO_INFORMAL_CARE,
     NOT_WORKING,
     NOT_WORKING_CHOICES,
-    PARENT_DEAD,
     RETIREMENT,
     SCALE_CAREGIVER_SHARE,
     SEX,
@@ -245,7 +244,9 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         bin_width=5,
         path_to_save_plot=path_to_save_wealth_age_bins_plot,
     )
-    # plot_average_savings_decision(df_sim, path_to_save_savings_plot)
+    plot_average_savings_decision(
+        df_sim, path_to_save_savings_plot, end_age=specs["end_age"]
+    )
 
     plot_choice_shares_by_education(
         df_emp,
@@ -425,6 +426,7 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
     # =================================================================================
     # Caregiving transitions
     # =================================================================================
+
     # Create temporary choice columns for empirical data (from any_care)
     df_emp_care = df_emp_with_caregivers.copy()
     if "any_care" in df_emp_care.columns and "lagged_any_care" in df_emp_care.columns:

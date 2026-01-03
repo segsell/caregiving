@@ -25,7 +25,7 @@ def calc_labor_income_after_ssc(
         model_specs: Model specifications containing wage parameters
 
     Returns:
-        Labor income after social security contributions
+        Tuple of (labor_income_after_ssc, gross_labor_income)
     """
     # Gross labor income
     gross_labor_income = calculate_gross_labor_income(
@@ -38,7 +38,7 @@ def calc_labor_income_after_ssc(
     )
     labor_income_after_ssc = calc_after_ssc_income_worker(gross_labor_income)
 
-    return labor_income_after_ssc
+    return labor_income_after_ssc, gross_labor_income
 
 
 def calculate_gross_labor_income(

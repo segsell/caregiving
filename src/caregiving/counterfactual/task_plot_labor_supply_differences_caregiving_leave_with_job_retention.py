@@ -195,7 +195,7 @@ def task_plot_matched_differences_by_age_at_first_care_cg_leave(  # noqa: PLR091
     / "caregiving_leave_with_job_retention"
     / "vs_no_care_demand"
     / "matched_differences_working_hours_by_age_at_first_care.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
     ages_at_first_care: list[int] | None = None,
@@ -215,13 +215,12 @@ def task_plot_matched_differences_by_age_at_first_care_cg_leave(  # noqa: PLR091
     cg_outcomes = calculate_outcomes(df_cg, choice_set_type="original")
     ncd_outcomes = calculate_outcomes(df_ncd, choice_set_type="no_care_demand")
 
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     cg_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_cg, model_params, choice_set_type="original"
+        df_cg, specs, choice_set_type="original"
     )
     ncd_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_ncd, model_params, choice_set_type="no_care_demand"
+        df_ncd, specs, choice_set_type="no_care_demand"
     )
 
     cg_additional = calculate_additional_outcomes(df_cg)
@@ -405,7 +404,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_cg_leave(  # noqa: P
     / "caregiving_leave_with_job_retention"
     / "vs_no_care_demand"
     / "matched_differences_working_hours_by_age_bins_at_first_care.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
     min_age: int = 50,
@@ -426,13 +425,12 @@ def task_plot_matched_differences_by_age_bins_at_first_care_cg_leave(  # noqa: P
     cg_outcomes = calculate_outcomes(df_cg, choice_set_type="original")
     ncd_outcomes = calculate_outcomes(df_ncd, choice_set_type="no_care_demand")
 
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     cg_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_cg, model_params, choice_set_type="original"
+        df_cg, specs, choice_set_type="original"
     )
     ncd_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_ncd, model_params, choice_set_type="no_care_demand"
+        df_ncd, specs, choice_set_type="no_care_demand"
     )
 
     cg_additional = calculate_additional_outcomes(df_cg)
@@ -643,7 +641,7 @@ def task_plot_matched_differences_by_age_at_first_care_demand_cg_leave(  # noqa:
     / "caregiving_leave_with_job_retention"
     / "vs_no_care_demand"
     / "matched_differences_care_by_age_at_first_care_demand.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
     ages_at_first_care_demand: list[int] | None = None,
@@ -665,13 +663,12 @@ def task_plot_matched_differences_by_age_at_first_care_demand_cg_leave(  # noqa:
     cg_outcomes = calculate_outcomes(df_cg, choice_set_type="original")
     ncd_outcomes = calculate_outcomes(df_ncd, choice_set_type="no_care_demand")
 
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     cg_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_cg, model_params, choice_set_type="original"
+        df_cg, specs, choice_set_type="original"
     )
     ncd_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_ncd, model_params, choice_set_type="no_care_demand"
+        df_ncd, specs, choice_set_type="no_care_demand"
     )
 
     cg_additional = calculate_additional_outcomes(df_cg)
@@ -886,7 +883,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_cg_leave(  # 
     / "caregiving_leave_with_job_retention"
     / "vs_no_care_demand"
     / "matched_differences_care_by_age_bins_at_first_care_demand.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
     min_age: int = 50,
@@ -907,13 +904,12 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_cg_leave(  # 
     cg_outcomes = calculate_outcomes(df_cg, choice_set_type="original")
     ncd_outcomes = calculate_outcomes(df_ncd, choice_set_type="no_care_demand")
 
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     cg_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_cg, model_params, choice_set_type="original"
+        df_cg, specs, choice_set_type="original"
     )
     ncd_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_ncd, model_params, choice_set_type="no_care_demand"
+        df_ncd, specs, choice_set_type="no_care_demand"
     )
 
     cg_additional = calculate_additional_outcomes(df_cg)
@@ -1180,7 +1176,7 @@ def task_plot_matched_differences_by_distance_to_first_care_all_outcomes(  # noq
     / "caregiving_leave_with_job_retention"
     / "vs_no_care_demand"
     / "matched_differences_consumption_by_distance_to_first_care.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
 ) -> None:
@@ -1195,13 +1191,12 @@ def task_plot_matched_differences_by_distance_to_first_care_all_outcomes(  # noq
     cg_outcomes = calculate_outcomes(df_cg, choice_set_type="original")
     ncd_outcomes = calculate_outcomes(df_ncd, choice_set_type="no_care_demand")
 
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     cg_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_cg, model_params, choice_set_type="original"
+        df_cg, specs, choice_set_type="original"
     )
     ncd_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_ncd, model_params, choice_set_type="no_care_demand"
+        df_ncd, specs, choice_set_type="no_care_demand"
     )
 
     cg_additional = calculate_additional_outcomes(df_cg)
@@ -1414,7 +1409,7 @@ def task_plot_matched_differences_by_distance_to_first_care_demand_all_outcomes(
     / "caregiving_leave_with_job_retention"
     / "vs_no_care_demand"
     / "matched_differences_consumption_by_distance_to_first_care_demand.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
 ) -> None:
@@ -1429,13 +1424,12 @@ def task_plot_matched_differences_by_distance_to_first_care_demand_all_outcomes(
     cg_outcomes = calculate_outcomes(df_cg, choice_set_type="original")
     ncd_outcomes = calculate_outcomes(df_ncd, choice_set_type="no_care_demand")
 
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     cg_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_cg, model_params, choice_set_type="original"
+        df_cg, specs, choice_set_type="original"
     )
     ncd_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_ncd, model_params, choice_set_type="no_care_demand"
+        df_ncd, specs, choice_set_type="no_care_demand"
     )
 
     cg_additional = calculate_additional_outcomes(df_cg)
@@ -1650,7 +1644,7 @@ def task_plot_matched_differences_by_distance_to_first_care_all_outcomes_vs_base
     / "caregiving_leave_with_job_retention"
     / "vs_baseline"
     / "matched_differences_consumption_by_distance_to_first_care.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
 ) -> None:
@@ -1664,13 +1658,12 @@ def task_plot_matched_differences_by_distance_to_first_care_all_outcomes_vs_base
     cg_outcomes = calculate_outcomes(df_cg, choice_set_type="original")
     baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
 
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     cg_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_cg, model_params, choice_set_type="original"
+        df_cg, specs, choice_set_type="original"
     )
     baseline_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_baseline, model_params, choice_set_type="original"
+        df_baseline, specs, choice_set_type="original"
     )
 
     cg_additional = calculate_additional_outcomes(df_cg)
@@ -1883,7 +1876,7 @@ def task_plot_matched_differences_by_distance_to_first_care_demand_all_outcomes_
     / "caregiving_leave_with_job_retention"
     / "vs_baseline"
     / "matched_differences_consumption_by_distance_to_first_care_demand.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
 ) -> None:
@@ -1897,13 +1890,12 @@ def task_plot_matched_differences_by_distance_to_first_care_demand_all_outcomes_
     cg_outcomes = calculate_outcomes(df_cg, choice_set_type="original")
     baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
 
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     cg_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_cg, model_params, choice_set_type="original"
+        df_cg, specs, choice_set_type="original"
     )
     baseline_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_baseline, model_params, choice_set_type="original"
+        df_baseline, specs, choice_set_type="original"
     )
 
     cg_additional = calculate_additional_outcomes(df_cg)
@@ -2082,7 +2074,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_cg_leave_vs_baseline
     / "caregiving_leave_with_job_retention"
     / "vs_baseline"
     / "matched_differences_working_hours_by_age_bins_at_first_care.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
     min_age: int = 50,
@@ -2102,13 +2094,12 @@ def task_plot_matched_differences_by_age_bins_at_first_care_cg_leave_vs_baseline
     cg_outcomes = calculate_outcomes(df_cg, choice_set_type="original")
     baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
 
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     cg_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_cg, model_params, choice_set_type="original"
+        df_cg, specs, choice_set_type="original"
     )
     baseline_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_baseline, model_params, choice_set_type="original"
+        df_baseline, specs, choice_set_type="original"
     )
 
     cg_additional = calculate_additional_outcomes(df_cg)
@@ -2319,7 +2310,7 @@ def task_plot_matched_differences_by_age_at_first_care_demand_cg_leave_vs_baseli
     / "caregiving_leave_with_job_retention"
     / "vs_baseline"
     / "matched_differences_care_by_age_at_first_care_demand.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
     ages_at_first_care_demand: list[int] | None = None,
@@ -2340,13 +2331,12 @@ def task_plot_matched_differences_by_age_at_first_care_demand_cg_leave_vs_baseli
     cg_outcomes = calculate_outcomes(df_cg, choice_set_type="original")
     baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
 
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     cg_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_cg, model_params, choice_set_type="original"
+        df_cg, specs, choice_set_type="original"
     )
     baseline_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_baseline, model_params, choice_set_type="original"
+        df_baseline, specs, choice_set_type="original"
     )
 
     cg_additional = calculate_additional_outcomes(df_cg)
@@ -2561,7 +2551,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_cg_leave_vs_b
     / "caregiving_leave_with_job_retention"
     / "vs_baseline"
     / "matched_differences_care_by_age_bins_at_first_care_demand.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
     min_age: int = 50,
@@ -2581,13 +2571,12 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_cg_leave_vs_b
     cg_outcomes = calculate_outcomes(df_cg, choice_set_type="original")
     baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
 
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     cg_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_cg, model_params, choice_set_type="original"
+        df_cg, specs, choice_set_type="original"
     )
     baseline_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_baseline, model_params, choice_set_type="original"
+        df_baseline, specs, choice_set_type="original"
     )
 
     cg_additional = calculate_additional_outcomes(df_cg)

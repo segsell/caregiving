@@ -9,7 +9,6 @@ from caregiving.model.shared import (
     DEAD,
     FULL_TIME_CHOICES,
     INFORMAL_CARE,
-    PARENT_DEAD,
     PART_TIME,
     SEX,
 )

@@ -11,7 +11,6 @@ import yaml
 from pytask import Product
 
 from caregiving.config import BLD, JET_COLOR_MAP, SRC
-from caregiving.model.shared import PARENT_DEAD
 from caregiving.model.utility.bequest_utility import utility_final_consume_all
 from caregiving.model.utility.utility_components import consumption_scale
 from caregiving.model.utility.utility_functions_additive import (
