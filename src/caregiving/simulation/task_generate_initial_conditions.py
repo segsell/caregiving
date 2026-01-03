@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-from dcegm.asset_correction import adjust_observed_assets
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
@@ -28,8 +27,7 @@ from caregiving.model.shared import (
     INITIAL_CONDITIONS_COHORT_LOW,
     MOTHER,
     NO_CARE_DEMAND,
-    PARENT_HEALTH_DEAD,
-    PARENT_LONGER_DEAD,
+    PARENT_DEAD,
     SEX,
     WORK_AND_UNEMPLOYED_NO_CARE,
 )
@@ -49,6 +47,7 @@ from caregiving.moments.task_create_soep_moments import (
     create_df_wealth,
 )
 from caregiving.utils import table
+from dcegm.asset_correction import adjust_observed_assets
 
 
 @pytask.mark.initial_conditions
@@ -74,7 +73,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     / "model"
     / "initial_conditions"
     / "survival_by_age.csv",
-    path_to_save_initial_states: Annotated[Path, Product] = BLD
+    path_to_save_discrete_states: Annotated[Path, Product] = BLD
     / "model"
     / "initial_conditions"
     / "initial_states.pkl",
@@ -164,11 +163,6 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
 
     states_dict["care_demand"] = np.zeros_like(start_period_data["wealth"])
     states_dict["experience"] = start_period_data["experience"].values
-    # Initialize mother_dead to 0 (alive) for all agents at initial period
-    # (will be drawn later based on mother health)
-    states_dict["mother_dead"] = np.zeros_like(
-        start_period_data["wealth"], dtype=np.uint8
-    )
 
     states_dict["assets_begin_of_period"] = (
         start_period_data["wealth"].values / specs["wealth_unit"]
@@ -313,14 +307,10 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
             health_prob_by_age,
         )
 
-        # mother_dead if mother_health == PARENT_HEALTH_DEAD (3), else 0
-        # In initial conditions, if mother is dead, we set to "longer dead"
-        # because we don't know if death was recent, so no inheritance
-        mother_dead_agents[type_mask] = np.where(
-            mother_health_agents[type_mask] == PARENT_HEALTH_DEAD,
-            PARENT_LONGER_DEAD,  # Set to longer dead
-            0,  # Set to alive
-        )
+        # mother_dead: 1 if mother_health == PARENT_DEAD (3), else 0
+        mother_dead_agents[type_mask] = (
+            mother_health_agents[type_mask] == PARENT_DEAD
+        ).astype(np.uint8)
 
         # mother_adl: draw from empirical ADL distribution by age in parent_child data
         # If dead, ADL = 0 (No ADL). If alive, draw from empirical distribution
@@ -353,10 +343,12 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
             # "choice"
             "lagged_choice"
         ].value_counts(normalize=True)
-        lagged_choice_probs = pd.Series(index=np.arange(0, 4), data=0, dtype=float)
+        lagged_choice_probs = pd.Series(
+            index=np.arange(0, model_specs["n_choices"]), data=0, dtype=float
+        )
         lagged_choice_probs.update(empirical_lagged_choice_probs)
         lagged_choice_edu = np.random.choice(
-            4, size=n_agents_edu, p=lagged_choice_probs.values
+            model_specs["n_choices"], size=n_agents_edu, p=lagged_choice_probs.values
         )
         lagged_choice[type_mask] = lagged_choice_edu
 
@@ -410,8 +402,8 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     exp_agents /= model_specs["max_exp_diffs_per_period"][0]
 
     # Set lagged choice to 1(unemployment) if experience is 0
-    exp_zero_mask = exp_agents == 0
-    lagged_choice[exp_zero_mask] = 1
+    # exp_zero_mask = exp_agents == 0
+    # lagged_choice[exp_zero_mask] = 1
 
     # In the first period, only NO_CARE choices are available (0, 1, 2, 3),
     # which correspond to retirement, unemployed, part-time, full-time.
@@ -438,13 +430,13 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         #     NO_CARE_DEMAND_ALIVE,
         # ),
         "caregiving_type": jnp.array(caregiving_type_agents, dtype=jnp.uint8),
-        # "gets_inheritance": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
+        "lagged_caregiving": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
         "assets_begin_of_period": wealth_agents,
     }
     # type_mask_low = (sex_agents == sex_var) & (education_agents == 0)
     # breakpoint()
 
-    with path_to_save_initial_states.open("wb") as f:
+    with path_to_save_discrete_states.open("wb") as f:
         pickle.dump(states, f)
 
 
