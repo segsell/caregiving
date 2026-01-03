@@ -241,10 +241,10 @@ def draw_inheritance_outcome(
     inheritance_seed = jnp.uint32(
         base_seed
         + period * 1000
-        + education * 200
+        + lagged_choice * 100
+        + education * 10
         # + 100 * is_intensive_informal_care(lagged_choice)
         # + 50 * is_light_informal_care(lagged_choice)
-        + lagged_choice * 10
         + asset_end_of_previous_period * 3
     )
     key = jax.random.PRNGKey(inheritance_seed)

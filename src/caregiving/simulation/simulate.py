@@ -77,6 +77,38 @@ jax.config.update("jax_enable_x64", True)
 #     )
 
 
+def simulate_scenario(model_solved, initial_states, model_specs):
+    sim_df = model_solved.simulate(
+        states_initial=initial_states,
+        seed=model_specs["seed"],
+    )
+
+    sim_df = sim_df[sim_df["health"] != DEAD].copy()
+    sim_df.reset_index(inplace=True)
+
+    sim_df = create_additional_variables(sim_df, model_specs)
+
+    return sim_df
+
+
+def simulate_scenario_slim(model_solved, initial_states, model_specs):
+    sim_df = model_solved.simulate(
+        states_initial=initial_states,
+        seed=model_specs["seed"],
+    )
+
+    sim_df = sim_df[sim_df["health"] != DEAD].copy()
+    sim_df.reset_index(inplace=True)
+
+    # Create hard-coded sex variable
+    sim_df.loc[:, "sex"] = SEX
+
+    # Create additional variables
+    sim_df.loc[:, "age"] = sim_df["period"] + model_specs["start_age"]
+
+    return sim_df
+
+
 # ==============================================================================
 # Additional variables related to the budget equation (see budget_equation.py).
 # ==============================================================================
@@ -215,7 +247,7 @@ def create_real_utility(df, specs):
 # =================================================================================
 
 
-def simulate_scenario(
+def simulate_scenario_deprecated(
     model,
     # solution_endog_grid,
     # solution_value,

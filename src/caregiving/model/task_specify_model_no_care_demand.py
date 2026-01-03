@@ -17,9 +17,6 @@ from caregiving.model.stochastic_processes.adl_transition import death_transitio
 from caregiving.model.stochastic_processes.health_transition import (
     health_transition,
 )
-from caregiving.model.stochastic_processes.inheritance_transition_no_care_demand import (
-    inheritance_transition_no_care_demand,
-)
 from caregiving.model.stochastic_processes.job_transition_no_care_demand import (
     job_offer_process_transition,
 )

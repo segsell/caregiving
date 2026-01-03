@@ -25,7 +25,7 @@ from caregiving.model.utility.bequest_utility import (
 )
 from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
-from caregiving.simulation.simulate import create_additional_variables
+from caregiving.simulation.simulate import simulate_scenario
 
 jax.config.update("jax_enable_x64", True)
 
@@ -119,16 +119,17 @@ def solve_and_simulate_estimated_params(
     # =================================================================================
     # Simulate scenario
     # =================================================================================
-    sim_df = model_solved.simulate(
-        states_initial=initial_states,
-        seed=specs["seed"],
-    )
+    # sim_df = model_solved.simulate(
+    #     states_initial=initial_states,
+    #     seed=specs["seed"],
+    # )
 
-    sim_df = sim_df[sim_df["health"] != DEAD].copy()
-    sim_df.reset_index(inplace=True)
+    # sim_df = sim_df[sim_df["health"] != DEAD].copy()
+    # sim_df.reset_index(inplace=True)
 
-    # sim_df["age"] = sim_df["period"] + specs["start_age"]
-    sim_df = create_additional_variables(sim_df, specs)
+    # # sim_df["age"] = sim_df["period"] + specs["start_age"]
+    # sim_df = create_additional_variables(sim_df, specs)
+    sim_df = simulate_scenario(model_solved, initial_states, specs)
 
     # =================================================================================
 
