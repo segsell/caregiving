@@ -148,7 +148,7 @@ util_informal_care_low_bad: 0.08737468493230734
 util_formal_care_good: -0.18674258901240745
 util_formal_care_bad: 0.04230013103518421
 share_unobserved_type_low_educ: 0.7
-share_unobserved_type_high_educ: 0.25
+share_unobserved_type_high_educ: 0.4
 # beta: 0.97
 # income_shock_mean: 0.0
 # income_shock_std: 0.16471062648214

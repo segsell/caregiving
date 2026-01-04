@@ -98,7 +98,8 @@ def specify_model_caregiving_leave_with_job_retention(
 
     # Build model_config with job_before_caregiving state
     model_config = {
-        "min_period_batch_segments": [33, 43, 44],
+        # "min_period_batch_segments": [33, 43, 44],
+        "min_period_batch_segments": [23, 33, 34],
         "n_periods": n_periods,
         "choices": choices,
         "deterministic_states": {

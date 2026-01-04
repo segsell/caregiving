@@ -63,6 +63,7 @@ def task_create_soep_moments(  # noqa: PLR0915
     start_age = specs["start_age"]
     start_age_caregivers = specs["start_age_caregiving"]
     end_age = specs["end_age_msm"]
+    end_age_caregiving = specs["end_age_caregiving"]
     start_year = 2001
     end_year = 2019
 
@@ -286,17 +287,24 @@ def task_create_soep_moments(  # noqa: PLR0915
         ddof=DEGREES_OF_FREEDOM
     )
 
-    # Caregiving labor shares using 3-year age bins
-    start_age_caregivers = specs["start_age_caregiving"]
-    age_bins_caregivers_3year = (
-        list(
-            range(start_age_caregivers, end_age + 1, 3)
-        ),  # bin edges: [40, 43, 46, 49, 52, 55, 58, 61, 64, 67, 70]
-        [
-            f"{s}_{s+2}" for s in range(start_age_caregivers, end_age - 1, 3)
-        ],  # bin labels: ["40_42", "43_45", "46_48", "49_51", "52_54", "55_57",
-        # "58_60", "61_63", "64_66", "67_69"]
-    )
+    # =================================================================================
+    # Calculate how many full 3-year bins we can fit
+    # Start from start_age_caregivers and create bins of size 3
+    # Stop when the next full bin would start beyond end_age_caregiving
+    bin_edges_caregivers = []
+    current_edge = start_age_caregivers
+    while current_edge + 3 <= end_age_caregiving + 1:
+        bin_edges_caregivers.append(current_edge)
+        current_edge += 3
+
+    # Add the final edge for the last full bin (needed for pd.cut with right=False)
+    if bin_edges_caregivers:
+        bin_edges_caregivers.append(bin_edges_caregivers[-1] + 3)
+
+    # Generate labels from bin edges (one fewer label than edges)
+    bin_labels_caregivers = [f"{s}_{s+2}" for s in bin_edges_caregivers[:-1]]
+    age_bins_caregivers_3year = (bin_edges_caregivers, bin_labels_caregivers)
+    # =================================================================================
 
     moments, variances = compute_labor_shares_by_age_bin(
         df_caregivers,

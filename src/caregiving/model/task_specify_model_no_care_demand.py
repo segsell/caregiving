@@ -50,6 +50,7 @@ def task_specify_model_no_care_demand(
         path_to_save_model_config=path_to_save_model_config,
         path_to_save_model=path_to_save_model,
     )
+
     return model
 
 
@@ -90,7 +91,8 @@ def specify_model_no_care_demand(
 
     # Build model_config without care-related states
     model_config = {
-        "min_period_batch_segments": [33, 43, 44],
+        # "min_period_batch_segments": [33, 43, 44],
+        "min_period_batch_segments": [23, 33, 34],
         "n_periods": n_periods,
         "choices": choices,
         "deterministic_states": {

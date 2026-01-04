@@ -35,7 +35,9 @@ jax.config.update("jax_enable_x64", True)
 def task_simulate_moments(
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_empirical_moments: Path = BLD / "moments" / "moments_full.csv",
-    path_to_simulated_data: Path = BLD / "solve_and_simulate" / "simulated_data.pkl",
+    path_to_simulated_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params.pkl",
     path_to_save_pandas_moments: Annotated[Path, Product] = BLD
     / "moments"
     / "simulated_moments_pandas.csv",

@@ -12,7 +12,6 @@ from pytask import Product
 
 from caregiving.config import BLD
 from caregiving.simulation.simulate_moments import (
-    plot_model_fit_labor_moments_by_education_pandas_jax,
     plot_model_fit_labor_moments_pandas_by_education,
 )
 from caregiving.simulation.simulate_moments_no_care_demand import (
@@ -22,8 +21,8 @@ from caregiving.simulation.simulate_moments_no_care_demand import (
 jax.config.update("jax_enable_x64", True)
 
 
-@pytask.mark.sim_estimated_params
 @pytask.mark.no_care_demand_model
+@pytask.mark.sim_estimated_params_no_care_demand
 def task_simulate_moments_estimated_params_no_care_demand(
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_empirical_moments: Path = BLD

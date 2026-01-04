@@ -442,7 +442,6 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         "assets_begin_of_period": wealth_agents,
     }
     # type_mask_low = (sex_agents == sex_var) & (education_agents == 0)
-    # breakpoint()
 
     with path_to_save_initial_states.open("wb") as f:
         pickle.dump(states, f)

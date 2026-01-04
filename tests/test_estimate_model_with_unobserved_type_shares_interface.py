@@ -201,3 +201,4 @@ def test_estimate_model_with_unobserved_type_shares_interface(temp_test_dir):
     assert len(saved_params) > 0, "Params file should contain data"
 
     print("✓ estimate_model_with_unobserved_type_shares interface test passed")
+

@@ -53,9 +53,10 @@ def simulate_moments_pandas(  # noqa: PLR0915
     # Prefer directly stored caregiving start age if available
     start_age_caregivers = model_specs["start_age_caregiving"]
     end_age = model_specs["end_age_msm"]
+    end_age_caregiving = model_specs["end_age_caregiving"]
 
     age_range = range(start_age, end_age + 1)
-    age_range_caregivers = range(start_age_caregivers, end_age + 1)
+    age_range_caregivers = range(start_age_caregivers, end_age_caregiving + 1)
     age_range_wealth = range(start_age, model_specs["end_age_wealth"] + 1)
 
     age_bins_caregivers_5year = (
@@ -64,10 +65,24 @@ def simulate_moments_pandas(  # noqa: PLR0915
             f"{s}_{s+4}" for s in range(45, 70, 5)
         ],  # ["40_44", "45_49", "50_54", "55_59", "60_64", "65_69"]
     )
-    # age_bins_75 = (
-    #     list(range(40, 80, 5)),  # [40, 45, … , 70]
-    #     [f"{s}_{s+4}" for s in range(40, 75, 5)],  # "40_44", …a
-    # )
+    # =================================================================================
+    # Calculate how many full 3-year bins we can fit
+    # Start from start_age_caregivers and create bins of size 3
+    # Stop when the next full bin would start beyond end_age_caregiving
+    bin_edges_caregivers = []
+    current_edge = start_age_caregivers
+    while current_edge + 3 <= end_age_caregiving + 1:
+        bin_edges_caregivers.append(current_edge)
+        current_edge += 3
+
+    # Add the final edge for the last full bin (needed for pd.cut with right=False)
+    if bin_edges_caregivers:
+        bin_edges_caregivers.append(bin_edges_caregivers[-1] + 3)
+
+    # Generate labels from bin edges (one fewer label than edges)
+    bin_labels_caregivers = [f"{s}_{s+2}" for s in bin_edges_caregivers[:-1]]
+    age_bins_caregivers_3year = (bin_edges_caregivers, bin_labels_caregivers)
+    # =================================================================================
 
     df_full = df_full.loc[df_full["health"] != DEAD].copy()
     df_full["mother_age"] = (
@@ -173,17 +188,6 @@ def simulate_moments_pandas(  # noqa: PLR0915
     # ================================================================================
     moments["share_informal_care_high_educ"] = df_caregivers["education"].mean()
     # ================================================================================
-
-    # Labor caregiver shares using 3-year age bins
-    age_bins_caregivers_3year = (
-        list(
-            range(start_age_caregivers, end_age + 1, 3)
-        ),  # [40, 43, 46, 49, 52, 55, 58, 61, 64, 67, 70]
-        [
-            f"{s}_{s+2}" for s in range(start_age_caregivers, end_age - 1, 3)
-        ],  # ["40_42", "43_45", "46_48", "49_51", "52_54", "55_57",
-        # "58_60", "61_63", "64_66", "67_69"]
-    )
 
     moments = create_labor_share_moments_by_age_bin_pandas(
         df_caregivers, moments, age_bins=age_bins_caregivers_3year, label="caregivers"
