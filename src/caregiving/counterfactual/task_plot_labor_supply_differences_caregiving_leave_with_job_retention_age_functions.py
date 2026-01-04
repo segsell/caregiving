@@ -482,7 +482,7 @@ def task_plot_matched_differences_by_age_cg_leave_vs_baseline(  # noqa: PLR0915,
         ("high_education", 1, "high_education"),
     ]
 
-    for spec_name, edu_filter, folder_name in specifications:
+    for _spec_name, edu_filter, folder_name in specifications:
         # Filter merged data by education if specified
         if edu_filter is not None:
             merged_spec = merged[merged["education"] == edu_filter].copy()

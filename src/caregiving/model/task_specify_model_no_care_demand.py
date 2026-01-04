@@ -44,7 +44,6 @@ def task_specify_model_no_care_demand(
     / "model"
     / "model_no_care_demand.pkl",
 ):
-
     model = specify_model_no_care_demand(
         path_to_derived_specs=path_to_derived_specs,
         path_to_save_model_config=path_to_save_model_config,

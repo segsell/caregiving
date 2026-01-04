@@ -24,7 +24,6 @@ from caregiving.model.shared import (
     is_working,
 )
 from caregiving.model.state_space import (
-    get_next_period_experience,
     state_specific_choice_set_with_caregiving,
 )
 from caregiving.model.wealth_and_budget.pensions import (
@@ -194,6 +193,9 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
     elif (not is_informal_care(lagged_choice)) & (job_before_caregiving != 0):
         return False
     # ================================================================================
+    # elif (care_demand == NO_CARE_DEMAND) & (job_before_caregiving != 0):
+    #     return False
+    # ================================================================================
     else:
         # Now turn to the states, where it is decided by the value of an exogenous
         # state if it is valid or not. For invalid states we provide a proxy child state
@@ -253,7 +255,7 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
                 "care_demand": NO_CARE_DEMAND,
                 # "gets_inheritance": 0,
                 "job_offer": job_offer,
-                "job_before_caregiving": job_before_caregiving,
+                "job_before_caregiving": 0,  # No job before caregiving when no care
             }
             return state_proxy
         # ================================================================================

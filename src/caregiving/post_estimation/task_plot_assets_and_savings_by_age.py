@@ -343,7 +343,9 @@ def task_plot_assets_and_savings_by_age_baseline(  # noqa: PLR0915
         path_to_plot_net_government_budget,
     ]
 
-    for (col, ylabel, title, exclude_age), path in zip(plot_configs, path_params):
+    for (col, ylabel, title, exclude_age), path in zip(
+        plot_configs, path_params, strict=True
+    ):
         _plot_asset_savings_outcome(
             df_sim=df_sim,
             specs=specs,
@@ -658,7 +660,9 @@ def task_plot_assets_and_savings_by_age_caregiving_leave(  # noqa: PLR0915
         path_to_plot_net_government_budget,
     ]
 
-    for (col, ylabel, title, exclude_age), path in zip(plot_configs, path_params):
+    for (col, ylabel, title, exclude_age), path in zip(
+        plot_configs, path_params, strict=True
+    ):
         _plot_asset_savings_outcome(
             df_sim=df_sim,
             specs=specs,
@@ -994,7 +998,9 @@ def task_plot_assets_and_savings_by_age_no_care_demand(  # noqa: PLR0915
         path_to_plot_income_shock_for_labor,
     ]
 
-    for (col, ylabel, title, exclude_age), path in zip(plot_configs, path_params):
+    for (col, ylabel, title, exclude_age), path in zip(
+        plot_configs, path_params, strict=True
+    ):
         _plot_asset_savings_outcome(
             df_sim=df_sim,
             specs=specs,

@@ -25,6 +25,8 @@ from caregiving.config import BLD
 from caregiving.model.shared import (
     FULL_TIME,
     INTENSIVE_INFORMAL_CARE,
+    JOB_RETENTION_FULL_TIME,
+    JOB_RETENTION_PART_TIME,
     LIGHT_INFORMAL_CARE,
     PART_TIME,
 )
@@ -33,7 +35,7 @@ from caregiving.model.shared import (
 @pytask.mark.caregiving_leave_with_job_retention_model
 @pytask.mark.post_estimation
 @pytask.mark.post_caregiving_leave_top_up
-def task_plot_caregiving_leave_top_up(  # noqa: PLR0913
+def task_plot_caregiving_leave_top_up(  # noqa: PLR0912, PLR0913, PLR0915
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_simulated_data: Path = BLD
     / "solve_and_simulate"
@@ -162,7 +164,8 @@ def task_plot_caregiving_leave_top_up(  # noqa: PLR0913
         df_filtered["job_before_caregiving"] == 1, "job_before_category"
     ] = "PT"
     df_filtered.loc[
-        df_filtered["job_before_caregiving"] == 2, "job_before_category"
+        df_filtered["job_before_caregiving"] == JOB_RETENTION_FULL_TIME,
+        "job_before_category",
     ] = "FT"
 
     # Filter to only PT and FT (exclude None)
@@ -205,7 +208,7 @@ def task_plot_caregiving_leave_top_up(  # noqa: PLR0913
     # Plot lines for each combination
     for edu_idx, edu_label in enumerate(education_labels):
         edu_color = edu_colors[edu_idx]
-        for job_type in ["PT", "FT"]:
+        for job_type in ("PT", "FT"):
             subset = plot_data_all[
                 (plot_data_all["education_label"] == edu_label)
                 & (plot_data_all["job_before_category"] == job_type)
@@ -250,7 +253,7 @@ def task_plot_caregiving_leave_top_up(  # noqa: PLR0913
     # Plot lines for each combination
     for edu_idx, edu_label in enumerate(education_labels):
         edu_color = edu_colors[edu_idx]
-        for job_type in ["PT", "FT"]:
+        for job_type in ("PT", "FT"):
             subset = plot_data_positive[
                 (plot_data_positive["education_label"] == edu_label)
                 & (plot_data_positive["job_before_category"] == job_type)
@@ -305,7 +308,7 @@ def task_plot_caregiving_leave_top_up(  # noqa: PLR0913
     # Plot lines for each combination
     for edu_idx, edu_label in enumerate(education_labels):
         edu_color = edu_colors[edu_idx]
-        for job_type in ["PT", "FT"]:
+        for job_type in ("PT", "FT"):
             subset = plot_data_caregiver[
                 (plot_data_caregiver["education_label"] == edu_label)
                 & (plot_data_caregiver["job_before_category"] == job_type)
@@ -358,7 +361,7 @@ def task_plot_caregiving_leave_top_up(  # noqa: PLR0913
     # Plot lines for each combination
     for edu_idx, edu_label in enumerate(education_labels):
         edu_color = edu_colors[edu_idx]
-        for job_type in ["PT", "FT"]:
+        for job_type in ("PT", "FT"):
             subset = plot_data_working[
                 (plot_data_working["education_label"] == edu_label)
                 & (plot_data_working["job_before_category"] == job_type)
@@ -403,7 +406,7 @@ def task_plot_caregiving_leave_top_up(  # noqa: PLR0913
     # Plot lines for each combination
     for edu_idx, edu_label in enumerate(education_labels):
         edu_color = edu_colors[edu_idx]
-        for job_type in ["PT", "FT"]:
+        for job_type in ("PT", "FT"):
             subset = plot_data_type1[
                 (plot_data_type1["education_label"] == edu_label)
                 & (plot_data_type1["job_before_category"] == job_type)
@@ -448,7 +451,8 @@ def task_plot_caregiving_leave_top_up(  # noqa: PLR0913
         df_all_types["job_before_caregiving"] == 1, "job_before_category"
     ] = "PT"
     df_all_types.loc[
-        df_all_types["job_before_caregiving"] == 2, "job_before_category"
+        df_all_types["job_before_caregiving"] == JOB_RETENTION_FULL_TIME,
+        "job_before_category",
     ] = "FT"
 
     # Filter to only PT and FT (exclude None)
@@ -469,7 +473,7 @@ def task_plot_caregiving_leave_top_up(  # noqa: PLR0913
     # Plot lines for each combination
     for edu_idx, edu_label in enumerate(education_labels):
         edu_color = edu_colors[edu_idx]
-        for job_type in ["PT", "FT"]:
+        for job_type in ("PT", "FT"):
             subset = plot_data_no_conditioning[
                 (plot_data_no_conditioning["education_label"] == edu_label)
                 & (plot_data_no_conditioning["job_before_category"] == job_type)

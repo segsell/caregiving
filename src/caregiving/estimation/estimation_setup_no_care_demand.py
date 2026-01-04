@@ -10,7 +10,6 @@ import numpy as np
 import optimagic as om
 import pandas as pd
 import yaml
-from dcegm.asset_correction import adjust_observed_assets
 
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import MACHINE_ZERO, RETIREMENT
@@ -32,6 +31,7 @@ from caregiving.simulation.simulate_moments_no_care_demand import (
 from caregiving.simulation.simulate_no_care_demand import (
     simulate_scenario_no_care_demand,
 )
+from dcegm.asset_correction import adjust_observed_assets
 
 jax.config.update("jax_enable_x64", True)
 

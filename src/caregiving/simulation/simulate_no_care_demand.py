@@ -9,8 +9,6 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pandas as pd
-from dcegm.simulation.sim_utils import create_simulation_df
-from dcegm.simulation.simulate import simulate_all_periods
 
 from caregiving.model.shared import DEAD, SEX
 from caregiving.model.shared_no_care_demand import (
@@ -41,6 +39,8 @@ from caregiving.model.wealth_and_budget.transfers import (
 from caregiving.model.wealth_and_budget.wages_no_care_demand import (
     calculate_gross_labor_income,
 )
+from dcegm.simulation.sim_utils import create_simulation_df
+from dcegm.simulation.simulate import simulate_all_periods
 
 
 def simulate_scenario(model_solved, initial_states, model_specs):
@@ -49,8 +49,11 @@ def simulate_scenario(model_solved, initial_states, model_specs):
         seed=model_specs["seed"],
     )
 
-    sim_df = sim_df[sim_df["health"] != DEAD].copy()
     sim_df.reset_index(inplace=True)
+
+    # Filter to only rows where health != DEAD and consumption is not NaN
+    # Do this early to avoid creating additional variables for rows we'll drop
+    sim_df = sim_df[(sim_df["health"] != DEAD) & (sim_df["consumption"].notna())].copy()
 
     sim_df = create_additional_variables_no_care_demand(sim_df, model_specs)
 
@@ -63,8 +66,11 @@ def simulate_scenario_slim(model_solved, initial_states, model_specs):
         seed=model_specs["seed"],
     )
 
-    sim_df = sim_df[sim_df["health"] != DEAD].copy()
     sim_df.reset_index(inplace=True)
+
+    # Filter to only rows where health != DEAD and consumption is not NaN
+    # Do this early to avoid creating additional variables for rows we'll drop
+    sim_df = sim_df[(sim_df["health"] != DEAD) & (sim_df["consumption"].notna())].copy()
 
     # Create hard-coded sex variable
     sim_df.loc[:, "sex"] = SEX

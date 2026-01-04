@@ -28,7 +28,6 @@ from caregiving.model.wealth_and_budget.budget_equation_no_care_demand import (
     budget_constraint,
 )
 from caregiving.simulation.simulate_no_care_demand import (
-    create_additional_variables_no_care_demand,
     simulate_scenario,
 )
 
@@ -94,6 +93,7 @@ def task_solve_and_simulate_no_care_demand(
 
     # sim_df = create_additional_variables_no_care_demand(sim_df, specs)
     # =================================================================================
+
     sim_df = simulate_scenario(model_solved, initial_states, specs)
 
     sim_df.to_pickle(path_to_save_simulated_data)

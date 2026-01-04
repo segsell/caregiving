@@ -189,7 +189,9 @@ def calculate_outcomes(
     return outcomes
 
 
-def calculate_additional_outcomes(df: pd.DataFrame) -> dict[str, np.ndarray]:
+def calculate_additional_outcomes(  # noqa: PLR0912
+    df: pd.DataFrame,
+) -> dict[str, np.ndarray]:
     """Extract additional outcomes for plotting.
 
     Args:

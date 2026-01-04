@@ -26,7 +26,7 @@ from caregiving.model.shared import (
 @pytask.mark.caregiving_leave_with_job_retention_model
 @pytask.mark.post_estimation
 @pytask.mark.post_estimation_inheritance
-def task_plot_inheritance_by_age_caregiving_leave(  # noqa: PLR0915
+def task_plot_inheritance_by_age_caregiving_leave(  # noqa: PLR0912, PLR0915
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_simulated_data: Path = BLD
     / "solve_and_simulate"
@@ -153,7 +153,6 @@ def task_plot_inheritance_by_age_caregiving_leave(  # noqa: PLR0915
     df_sim["lagged_choice"] = df_sim.groupby("agent", observed=False)["choice"].shift(1)
 
     # Create care category based on lagged choice
-    no_care_values = NO_CARE.ravel().tolist()
     light_care_values = LIGHT_INFORMAL_CARE.ravel().tolist()
     intensive_care_values = INTENSIVE_INFORMAL_CARE.ravel().tolist()
 

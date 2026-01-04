@@ -63,7 +63,7 @@ def task_plot_inheritance_probability_no_care_demand(
 
         probabilities = []
 
-        for period, age in zip(periods, ages, strict=True):
+        for period, _age in zip(periods, ages, strict=True):
             if period < 0 or period >= specs["n_periods"]:
                 probabilities.append(np.nan)
                 continue

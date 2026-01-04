@@ -23,7 +23,7 @@ from caregiving.model.shared import PARENT_RECENTLY_DEAD
 @pytask.mark.no_care_demand_model
 @pytask.mark.post_estimation
 @pytask.mark.post_estimation_inheritance_no_care_demand
-def task_plot_inheritance_by_age_no_care_demand(  # noqa: PLR0915
+def task_plot_inheritance_by_age_no_care_demand(  # noqa: PLR0912, PLR0915
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_simulated_data: Path = BLD
     / "solve_and_simulate"

@@ -15,11 +15,12 @@ import pytask
 from pytask import Product
 
 from caregiving.config import BLD
+from caregiving.model.shared import PARENT_LONGER_DEAD, PARENT_RECENTLY_DEAD
 from caregiving.model.stochastic_processes.adl_transition import death_transition
 
 
 @pytask.mark.pre_estimation_no_care_demand
-def task_plot_mother_dead_probability_no_care_demand(
+def task_plot_mother_dead_probability_no_care_demand(  # noqa: PLR0915
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_initial_states: Path = BLD
     / "model"
@@ -58,12 +59,10 @@ def task_plot_mother_dead_probability_no_care_demand(
     # Convert initial states to numpy
     mother_dead_initial = np.asarray(initial_states["mother_dead"], dtype=np.uint8)
     education_initial = np.asarray(initial_states["education"], dtype=np.uint8)
-    n_agents = len(mother_dead_initial)
 
     # Track probability distribution over states by education
     # States: 0=alive, 1=recently_dead, 2=longer_dead
     n_edu = specs["n_education_types"]
-    n_states = 3
 
     # Initialize state distributions by education
     # prob_by_state[edu][state] = probability of being in that state
@@ -73,12 +72,22 @@ def task_plot_mother_dead_probability_no_care_demand(
         n_edu_agents = mask_edu.sum()
         if n_edu_agents == 0:
             # If no agents in this education group, initialize to 0
-            prob_by_state[edu] = {0: 0.0, 1: 0.0, 2: 0.0}
+            prob_by_state[edu] = {
+                0: 0.0,
+                PARENT_RECENTLY_DEAD: 0.0,
+                PARENT_LONGER_DEAD: 0.0,
+            }
         else:
             prob_by_state[edu] = {
                 0: float((mother_dead_initial[mask_edu] == 0).sum() / n_edu_agents),
-                1: float((mother_dead_initial[mask_edu] == 1).sum() / n_edu_agents),
-                2: float((mother_dead_initial[mask_edu] == 2).sum() / n_edu_agents),
+                PARENT_RECENTLY_DEAD: float(
+                    (mother_dead_initial[mask_edu] == PARENT_RECENTLY_DEAD).sum()
+                    / n_edu_agents
+                ),
+                PARENT_LONGER_DEAD: float(
+                    (mother_dead_initial[mask_edu] == PARENT_LONGER_DEAD).sum()
+                    / n_edu_agents
+                ),
             }
 
     # Store probabilities over time
@@ -96,8 +105,8 @@ def task_plot_mother_dead_probability_no_care_demand(
 
             # Current state distribution
             prob_alive = prob_by_state[edu][0]
-            prob_recently_dead = prob_by_state[edu][1]
-            prob_longer_dead = prob_by_state[edu][2]
+            prob_recently_dead = prob_by_state[edu][PARENT_RECENTLY_DEAD]
+            prob_longer_dead = prob_by_state[edu][PARENT_LONGER_DEAD]
 
             # Transition from alive (state 0)
             if prob_alive > 0:
@@ -109,21 +118,27 @@ def task_plot_mother_dead_probability_no_care_demand(
                 )
                 # prob_vector = [alive_prob, recently_died_prob, longer_dead_prob]
                 prob_by_state_next[edu][0] += prob_alive * float(prob_vector[0])
-                prob_by_state_next[edu][1] += prob_alive * float(prob_vector[1])
-                prob_by_state_next[edu][2] += prob_alive * float(prob_vector[2])
+                prob_by_state_next[edu][PARENT_RECENTLY_DEAD] += prob_alive * float(
+                    prob_vector[PARENT_RECENTLY_DEAD]
+                )
+                prob_by_state_next[edu][PARENT_LONGER_DEAD] += prob_alive * float(
+                    prob_vector[PARENT_LONGER_DEAD]
+                )
 
             # Transition from recently_dead (state 1) -> longer_dead (state 2) with certainty
-            prob_by_state_next[edu][2] += prob_recently_dead
+            prob_by_state_next[edu][PARENT_LONGER_DEAD] += prob_recently_dead
 
             # Transition from longer_dead (state 2) -> longer_dead (state 2) with certainty
-            prob_by_state_next[edu][2] += prob_longer_dead
+            prob_by_state_next[edu][PARENT_LONGER_DEAD] += prob_longer_dead
 
         # Update state distribution
         prob_by_state = prob_by_state_next
 
         # Store probability of recently_dead for this period
         for edu in range(n_edu):
-            prob_recently_dead_by_edu[edu].append(prob_by_state[edu][1])
+            prob_recently_dead_by_edu[edu].append(
+                prob_by_state[edu][PARENT_RECENTLY_DEAD]
+            )
 
     # Convert periods to ages
     periods_plot = np.arange(n_periods + 1)  # +1 for initial period

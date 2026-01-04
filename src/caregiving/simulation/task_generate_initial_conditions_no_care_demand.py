@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-from dcegm.asset_correction import adjust_observed_assets
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
@@ -43,6 +42,7 @@ from caregiving.simulation.task_generate_initial_conditions import (
     draw_mother_health,
     draw_start_wealth_dist,
 )
+from dcegm.asset_correction import adjust_observed_assets
 
 
 @pytask.mark.skip()

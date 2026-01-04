@@ -399,7 +399,7 @@ def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915, E501
         df_jr, specs, choice_set_type="original"
     )
     baseline_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_baseline, model_params, choice_set_type="original"
+        df_baseline, specs, choice_set_type="original"
     )
 
     # Create outcome columns and merge
