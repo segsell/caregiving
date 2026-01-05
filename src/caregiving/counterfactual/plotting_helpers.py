@@ -231,7 +231,7 @@ def plot_three_line_differences(
         work_vals = prof["diff_work"].replace([np.inf, -np.inf], np.nan).dropna()
         ft_vals = prof["diff_ft"].replace([np.inf, -np.inf], np.nan).dropna()
         pt_vals = prof["diff_pt"].replace([np.inf, -np.inf], np.nan).dropna()
-        
+
         if len(work_vals) == 0 and len(ft_vals) == 0 and len(pt_vals) == 0:
             # No valid data, use default range
             ylim = (-0.1, 0.1)

@@ -23,8 +23,8 @@ from pytask import Product
 from caregiving.config import BLD
 from caregiving.model.shared import (
     NO_PARTNER,
-    PARTNER_WORKING,
     PARTNER_RETIRED,
+    PARTNER_WORKING,
 )
 
 

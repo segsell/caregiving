@@ -214,7 +214,6 @@ def task_plot_matched_differences_by_age_at_first_care_deprecated(  # noqa: PLR0
     ages_at_first_care: list[int] | None = None,
 ) -> None:
     """DEPRECATED: Split into individual tasks per outcome to reduce memory usage."""
-    pass
 
 
 # ============================================================================
@@ -1360,7 +1359,6 @@ def task_plot_matched_differences_by_age_bins_at_first_care_deprecated(  # noqa:
     bin_width: int = 3,
 ) -> None:
     """DEPRECATED: Split into individual tasks per outcome to reduce memory usage."""
-    pass
 
 
 # ============================================================================
@@ -2822,7 +2820,6 @@ def task_plot_matched_differences_by_age_at_first_care_demand_deprecated(  # noq
     ages_at_first_care_demand: list[int] | None = None,
 ) -> None:
     """DEPRECATED: Split into individual tasks per outcome to reduce memory usage."""
-    pass
 
 
 # ============================================================================
@@ -2999,7 +2996,6 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_deprecated(  
     bin_width: int = 3,
 ) -> None:
     """DEPRECATED: Split into individual tasks per outcome to reduce memory usage."""
-    pass
 
 
 # ============================================================================
