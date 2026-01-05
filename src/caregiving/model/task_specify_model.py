@@ -42,7 +42,7 @@ from caregiving.model.utility.utility_functions_additive import (
 )
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.model.wealth_and_budget.savings_grid import create_end_of_period_assets
-
+from caregiving.model.experience_baseline_model import define_experience_grid
 
 # @pytask.mark.baseline_model
 # def task_specify_model(
@@ -81,7 +81,7 @@ def specify_model(
     savings_grid = create_end_of_period_assets()
 
     # Experience grid
-    experience_grid = jnp.linspace(0, 1, specs["n_experience_grid_points"])
+    experience_grid = define_experience_grid(specs)
 
     model_config = {
         "min_period_batch_segments": [33, 43, 44],

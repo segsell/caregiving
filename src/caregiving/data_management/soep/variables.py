@@ -156,25 +156,25 @@ def create_education_type(data, drop_missing=True):
 # =====================================================================================
 
 
-def create_experience_variable_with_cap(data, exp_cap):
-    """This function creates an experience variable as the sum of full-time and 0.5
-    weighted part-time experience.
+# def create_experience_variable_with_cap(data, exp_cap):
+#     """This function creates an experience variable as the sum of full-time and 0.5
+#     weighted part-time experience.
 
-    It also enforces an experience cap.
+#     It also enforces an experience cap.
 
-    """
-    # Create experience variable
-    data = create_experience_variable(data)
-    # Enforce experience cap
-    data.loc[data["experience"] > exp_cap, "experience"] = exp_cap
-    return data
+#     """
+#     # Create experience variable
+#     data = create_experience_variable(data)
+#     # Enforce experience cap
+#     data.loc[data["experience"] > exp_cap, "experience"] = exp_cap
+#     return data
 
 
-def create_experience_variable(data, drop_invalid=True):
-    """This function creates an experience variable as the sum of full-time and 0.5
-    weighted part-time experience and rounds the sum."""
-    data = sum_experience_variables(data, drop_invalid=drop_invalid)
-    return data
+# def create_experience_variable(data, drop_invalid=True):
+#     """This function creates an experience variable as the sum of full-time and 0.5
+#     weighted part-time experience and rounds the sum."""
+#     data = sum_experience_variables(data, drop_invalid=drop_invalid)
+#     return data
 
 
 def sum_experience_variables(data, drop_invalid=True):

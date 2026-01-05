@@ -23,7 +23,7 @@ from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.model.wealth_and_budget.budget_equation_caregiving_leave_with_job_retention import (  # noqa: E501
     calc_caregiving_leave_top_up,
 )
-from caregiving.model.wealth_and_budget.pensions import (
+from caregiving.model.wealth_and_budget.pension_payments import (
     calc_gross_pension_income,
     calc_pensions_after_ssc,
 )

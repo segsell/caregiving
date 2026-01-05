@@ -221,13 +221,13 @@ def task_plot_matched_differences_by_distance_caregiving_leave(  # noqa: PLR0915
                 / "matched_differences_by_distance_caregiving_leave_with_job_retention.png"
             )
 
-            plot_three_line_differences(
-                prof=prof,
-                x_col="distance_to_first_care",
-                path_to_plot=plot_path,
-                xlabel="Year relative to start of first care spell",
-                window=window,
-            )
+    plot_three_line_differences(
+        prof=prof,
+        x_col="distance_to_first_care",
+        path_to_plot=plot_path,
+        xlabel="Year relative to start of first care spell",
+        window=window,
+    )
 
 
 @pytask.mark.counterfactual_differences
@@ -2491,12 +2491,12 @@ def task_plot_matched_differences_by_distance_to_first_care_all_outcomes_vs_base
                 plt.xlabel("Year relative to start of first care spell", fontsize=16)
                 plt.ylabel(config["ylabel"], fontsize=16)
                 plt.xlim(-window, window)
-                plt.grid(True, alpha=0.3)
-                plt.xticks(fontsize=16)
-                plt.yticks(fontsize=16)
-                plt.tight_layout()
-                plt.savefig(config["path"], dpi=300, bbox_inches="tight")
-                plt.close()
+        plt.grid(True, alpha=0.3)
+        plt.xticks(fontsize=16)
+        plt.yticks(fontsize=16)
+        plt.tight_layout()
+        plt.savefig(config["path"], dpi=300, bbox_inches="tight")
+        plt.close()
 
 
 @pytask.mark.counterfactual_differences

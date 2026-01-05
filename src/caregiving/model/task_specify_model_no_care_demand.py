@@ -32,6 +32,7 @@ from caregiving.model.wealth_and_budget.budget_equation_no_care_demand import (
     budget_constraint,
 )
 from caregiving.model.wealth_and_budget.savings_grid import create_end_of_period_assets
+from caregiving.model.experience_baseline_model import define_experience_grid
 
 
 @pytask.mark.no_care_demand_model
@@ -49,7 +50,6 @@ def task_specify_model_no_care_demand(
         path_to_save_model_config=path_to_save_model_config,
         path_to_save_model=path_to_save_model,
     )
-
     return model
 
 
@@ -86,12 +86,11 @@ def specify_model_no_care_demand(
     savings_grid = create_end_of_period_assets()
 
     # Experience grid
-    experience_grid = jnp.linspace(0, 1, specs["n_experience_grid_points"])
+    experience_grid = define_experience_grid(specs)
 
     # Build model_config without care-related states
     model_config = {
-        # "min_period_batch_segments": [33, 43, 44],
-        "min_period_batch_segments": [23, 33, 34],
+        "min_period_batch_segments": [33, 43, 44],
         "n_periods": n_periods,
         "choices": choices,
         "deterministic_states": {
@@ -128,7 +127,6 @@ def specify_model_no_care_demand(
         model_save_path=path_to_save_model,
     )
     print("Counterfactual model without care_demand specified.", flush=True)
-
     return model
 
 

@@ -4725,9 +4725,9 @@ def task_plot_matched_differences_by_age_deprecated(  # noqa: PLR0915, E501
             plot_configs = create_plot_configs(base_path, suffix)
 
             # Plot for this specification
-            plot_all_outcomes_by_age(
-                prof=prof,
-                plot_configs=plot_configs,
-                age_min=age_min,
-                age_max=age_max,
-            )
+    plot_all_outcomes_by_age(
+        prof=prof,
+        plot_configs=plot_configs,
+        age_min=age_min,
+        age_max=age_max,
+    )

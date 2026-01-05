@@ -39,7 +39,11 @@ min_SRA: 65
 max_SRA_baseline: 67
 resolution_age: 63
 informed_threshhold: 5
-#
+ERA_moves: false
+
+# Long insured parameters
+years_before_SRA_long_insured: 4
+min_long_insured_age: 63
 # Retirement parameters
 ret_years_before_SRA: 4
 min_ret_age: 63
@@ -68,6 +72,8 @@ early_retirement_penalty: 0.036
 late_retirement_bonus: 0.06
 monthly_pension_point_value_west_2010: 27.20
 monthly_pension_point_value_east_2010: 24.13
+pop_share_west: 0.827
+pop_share_east: 0.173
 
 # Caregiving leave parameters
 caregiving_leave_benefit_replacement_rate: 0.65

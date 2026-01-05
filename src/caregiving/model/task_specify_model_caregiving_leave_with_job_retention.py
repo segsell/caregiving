@@ -42,6 +42,7 @@ from caregiving.model.wealth_and_budget.budget_equation_caregiving_leave_with_jo
     budget_constraint,
 )
 from caregiving.model.wealth_and_budget.savings_grid import create_end_of_period_assets
+from caregiving.model.experience_baseline_model import define_experience_grid
 
 
 @pytask.mark.caregiving_leave_with_job_retention_model
@@ -94,7 +95,7 @@ def specify_model_caregiving_leave_with_job_retention(
     savings_grid = create_end_of_period_assets()
 
     # Experience grid
-    experience_grid = jnp.linspace(0, 1, specs["n_experience_grid_points"])
+    experience_grid = define_experience_grid(specs)
 
     # Build model_config with job_before_caregiving state
     model_config = {

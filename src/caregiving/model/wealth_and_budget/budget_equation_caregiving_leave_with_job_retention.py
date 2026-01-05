@@ -21,7 +21,7 @@ from caregiving.model.wealth_and_budget.government_budget_caregiving_leave_with_
 from caregiving.model.wealth_and_budget.partner_income import (
     calc_partner_income_after_ssc,
 )
-from caregiving.model.wealth_and_budget.pensions import (
+from caregiving.model.wealth_and_budget.pension_payments import (
     calc_pensions_after_ssc,
 )
 from caregiving.model.wealth_and_budget.tax_and_ssc import (
@@ -36,6 +36,7 @@ from caregiving.model.wealth_and_budget.transfers import (
     draw_inheritance_outcome,
 )
 from caregiving.model.wealth_and_budget.wages import calc_labor_income_after_ssc
+from caregiving.model.experience_baseline_model import construct_experience_years
 
 
 def budget_constraint(
@@ -56,9 +57,14 @@ def budget_constraint(
     sex_var = SEX
 
     assets_scaled = asset_end_of_previous_period * model_specs["wealth_unit"]
+
     # Recalculate experience
-    max_exp_period = period + model_specs["max_exp_diffs_per_period"][period]
-    experience_years = max_exp_period * experience
+    experience_years = construct_experience_years(
+        float_experience=experience,
+        period=period,
+        is_retired=is_retired(lagged_choice),
+        model_specs=model_specs,
+    )
 
     # Calculate partner income
     partner_income_after_ssc, gross_partner_income, gross_partner_pension = (
@@ -73,9 +79,7 @@ def budget_constraint(
 
     # Income from lagged choice 0
     retirement_income_after_ssc, gross_retirement_income = calc_pensions_after_ssc(
-        experience_years=experience_years,
-        sex=sex_var,
-        education=education,
+        pension_points=experience_years,
         model_specs=model_specs,
     )
 
@@ -118,6 +122,7 @@ def budget_constraint(
         income_shock_previous_period=income_shock_for_labor,
         sex=sex_var,
         labor_income_after_ssc=labor_income_after_ssc,
+        household_unemployment_benefits=household_unemployment_benefits,
         model_specs=model_specs,
     )
 
@@ -230,6 +235,7 @@ def budget_constraint(
         "bequest_from_parent": bequest_from_parent / model_specs["wealth_unit"],
         "gets_inheritance": gets_inheritance,
         "caregiving_leave_top_up": caregiving_leave_top_up / model_specs["wealth_unit"],
+        "own_income_after_ssc": own_income_after_ssc / model_specs["wealth_unit"],
         # Government budget components
         "income_tax": income_tax_total / model_specs["wealth_unit"],
         "income_tax_single": income_tax_single / model_specs["wealth_unit"],
@@ -251,6 +257,7 @@ def calc_caregiving_leave_top_up(
     income_shock_previous_period,
     sex,
     labor_income_after_ssc,
+    household_unemployment_benefits,
     model_specs,
 ):
     """Calculate additional wage replacement for caregiving leave.
@@ -318,18 +325,27 @@ def calc_caregiving_leave_top_up(
     mask_prior_ft_pt = eligible_base * prior_ft * currently_part_time
 
     # Top ups:
-    # - Prior none, now unemployed: lump-sum monthly_unemployment_benefits.
-    topup_prior_none = (
-        model_specs["monthly_unemployment_benefits"] * 12.0 * mask_prior_none_unemp
+    # - Prior none, now unemployed: no top-up needed.
+    #   (Unemployment benefits are already handled via jnp.maximum() in budget constraint,
+    #   so adding them here would cause double-counting)
+    topup_prior_none = 0.0 * mask_prior_none_unemp
+
+    # - Prior PT, now unemployed: top up to PT net wage, MINUS unemployment benefits
+    #   they're already receiving
+    topup_prior_pt = (
+        jnp.maximum(net_pt_income - household_unemployment_benefits, 0.0)
+        * mask_prior_pt_unemp
     )
 
-    # - Prior PT, now unemployed: top up to PT net wage.
-    topup_prior_pt = net_pt_income * mask_prior_pt_unemp
-
-    # - Prior FT, now unemployed: top up to FT net wage.
-    topup_prior_ft_unemp = net_ft_income * mask_prior_ft_unemp
+    # - Prior FT, now unemployed: top up to FT net wage, MINUS unemployment benefits
+    #   they're already receiving
+    topup_prior_ft_unemp = (
+        jnp.maximum(net_ft_income - household_unemployment_benefits, 0.0)
+        * mask_prior_ft_unemp
+    )
 
     # - Prior FT, now PT: top up so total income equals FT net wage.
+    #   (This case doesn't involve unemployment benefits, so no change needed)
     ft_gap = jnp.maximum(net_ft_income - labor_income_after_ssc, 0.0)
     topup_prior_ft_pt = ft_gap * mask_prior_ft_pt
 

@@ -33,6 +33,7 @@ from caregiving.model.shared import (
     SEX,
     WORK_AND_UNEMPLOYED_NO_CARE,
 )
+from caregiving.model.experience_baseline_model import scale_experience_years
 from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.stochastic_processes.job_transition import (
     job_offer_process_transition_initial_conditions,
@@ -407,8 +408,12 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         caregiving_type_agents[type_mask] = caregiving_type_edu
 
     # Transform it to be between 0 and 1
-    exp_agents /= model_specs["max_exp_diffs_per_period"][0]
-
+    exp_agents_scaled = scale_experience_years(
+        experience_years=exp_agents,
+        period=jnp.zeros_like(exp_agents, dtype=jnp.uint8),
+        is_retired=jnp.zeros_like(exp_agents, dtype=jnp.uint8),
+        model_specs=model_specs,
+    )
     # Set lagged choice to 1(unemployment) if experience is 0
     exp_zero_mask = exp_agents == 0
     lagged_choice[exp_zero_mask] = 1
@@ -425,7 +430,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         "lagged_choice": jnp.array(lagged_choice, dtype=jnp.uint8),
         # "policy_state": jnp.array(drawn_sras, dtype=jnp.uint8),
         "already_retired": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
-        "experience": jnp.array(exp_agents, dtype=jnp.float64),
+        "experience": jnp.array(exp_agents_scaled, dtype=jnp.float64),
         "job_offer": jnp.array(job_offer_agents, dtype=jnp.uint8),
         "partner_state": jnp.array(partner_states, dtype=jnp.uint8),
         # "mother_health": jnp.array(mother_health_agents, dtype=jnp.uint8),

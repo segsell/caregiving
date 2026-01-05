@@ -73,10 +73,8 @@ from caregiving.model.shared import (
     is_retired,
     is_unemployed,
 )
-from caregiving.model.wealth_and_budget.pensions import (
-    calc_experience_for_total_pension_points,
-    calc_total_pension_points,
-)
+
+from caregiving.model.experience_baseline_model import get_next_period_experience
 
 
 def create_state_space_functions():
@@ -794,8 +792,12 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
                     return ALL_NO_CARE
 
 
-# def get_next_period_experience(period, lagged_choice, experience, model_specs):
+# def get_next_period_experience(
+#     period, lagged_choice, already_retired, education, experience, model_specs
+# ):
 #     """Update experience based on lagged choice and period."""
+#     sex = SEX
+
 #     exp_years_last_period = construct_experience_years(
 #         experience=experience,
 #         period=period - 1,
@@ -803,95 +805,99 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
 #     )
 
 #     # Update if working part or full time
-#     exp_update = (
-#         is_full_time(lagged_choice)
-#         + is_part_time(lagged_choice) * model_specs["exp_increase_part_time"]
+#     # Full pension point (1.0) for part-time workers providing intensive informal care
+#     # Full-time workers are unaffected (always get 1.0)
+#     intensive_care = is_intensive_informal_care(lagged_choice)
+#     exp_update = is_full_time(lagged_choice) + is_part_time(lagged_choice) * (
+#         model_specs["exp_increase_part_time"] * (1 - intensive_care) + intensive_care
 #     )
 #     exp_new_period = exp_years_last_period + exp_update
 
-#     # # If retired, then we update experience according to the deduction function
-#     # fresh_retired = is_retired(lagged_choice)
+#     # If retired, then we update experience according to the deduction function
+#     fresh_retired = (already_retired == 0) & is_retired(lagged_choice)
 
-#     # # Calculate experience with early retirement penalty
-#     # experience_years_with_penalty = calc_experience_years_for_pension_adjustment(
-#     #     period=period,
-#     #     experience_years=exp_years_last_period,
-#     #     sex=sex,
-#     #     education=education,
-#     #     policy_state=policy_state,
-#     #     informed=informed,
-#     #     model_specs=model_specs,
-#     # )
-
-#     # # Update if fresh retired
-#     # exp_new_period = jax.lax.select(
-#     #     fresh_retired, experience_years_with_penalty, exp_new_period
-#     # )
-
-#     return (1 / (period + model_specs["max_exp_diffs_per_period"][period])) * exp_new_period
+#     # Calculate experience with early retirement penalty
+#     experience_years_with_penalty = calc_experience_years_for_pension_adjustment(
+#         period=period,
+#         experience_years=exp_years_last_period,
+#         sex=sex,
+#         education=education,
+#         model_specs=model_specs,
+#     )
+#     # Update if fresh retired
+#     exp_new_period = jax.lax.select(
+#         fresh_retired, experience_years_with_penalty, exp_new_period
+#     )
+#     return (
+#         1 / (period + model_specs["max_exp_diffs_per_period"][period])
+#     ) * exp_new_period
 
 
-def get_next_period_experience(
-    period, lagged_choice, already_retired, education, experience, model_specs
-):
-    """Update experience based on lagged choice and period."""
-    sex = SEX
+# # def calc_experience_years_for_pension_adjustment(
+# #     period, sex, experience_years, education, model_specs
+# # ):
+# #     """Calculate the reduced experience with early retirement penalty."""
+# #     # retirement age is last periods age
+# #     age = model_specs["start_age"] + period - 1
 
-    exp_years_last_period = construct_experience_years(
-        experience=experience,
-        period=period - 1,
-        max_exp_diffs_per_period=model_specs["max_exp_diffs_per_period"],
-    )
+# #     total_pension_points = calc_total_pension_points(
+# #         education=education,
+# #         experience_years=experience_years,
+# #         sex=sex,
+# #         model_specs=model_specs,
+# #     )
 
-    # Update if working part or full time
-    # Full pension point (1.0) for part-time workers providing intensive informal care
-    # Full-time workers are unaffected (always get 1.0)
-    intensive_care = is_intensive_informal_care(lagged_choice)
-    exp_update = is_full_time(lagged_choice) + is_part_time(lagged_choice) * (
-        model_specs["exp_increase_part_time"] * (1 - intensive_care) + intensive_care
-    )
-    exp_new_period = exp_years_last_period + exp_update
+# #     # Select penalty depending on age difference
+# #     pension_factor = (
+# #         1 - (age - model_specs["min_SRA"]) * model_specs["early_retirement_penalty"]
+# #     )
+# #     adjusted_pension_points = pension_factor * total_pension_points
 
-    # If retired, then we update experience according to the deduction function
-    fresh_retired = (already_retired == 0) & is_retired(lagged_choice)
-
-    # Calculate experience with early retirement penalty
-    experience_years_with_penalty = calc_experience_years_for_pension_adjustment(
-        period=period,
-        experience_years=exp_years_last_period,
-        sex=sex,
-        education=education,
-        model_specs=model_specs,
-    )
-    # Update if fresh retired
-    exp_new_period = jax.lax.select(
-        fresh_retired, experience_years_with_penalty, exp_new_period
-    )
-    return (
-        1 / (period + model_specs["max_exp_diffs_per_period"][period])
-    ) * exp_new_period
+# #     reduced_experience_years = calc_experience_for_total_pension_points(
+# #         total_pension_points=adjusted_pension_points,
+# #         sex=sex,
+# #         education=education,
+# #         model_specs=model_specs,
+# #     )
+# #     return reduced_experience_years
 
 
 # def calc_experience_years_for_pension_adjustment(
 #     period, sex, experience_years, education, model_specs
 # ):
 #     """Calculate the reduced experience with early retirement penalty."""
-#     # retirement age is last periods age
-#     age = model_specs["start_age"] + period - 1
-
 #     total_pension_points = calc_total_pension_points(
 #         education=education,
 #         experience_years=experience_years,
 #         sex=sex,
 #         model_specs=model_specs,
 #     )
+#     # retirement age is last periods age
+#     actual_retirement_age = model_specs["start_age"] + period - 1
+#     # SRA at retirement, difference to actual retirement age and boolean for early retirement
+#     # SRA_at_retirement = model_specs["min_SRA"]
+#     SRA_at_retirement = model_specs["min_SRA"]
+#     retirement_age_difference = jnp.abs(SRA_at_retirement - actual_retirement_age)
+#     early_retired_bool = actual_retirement_age < SRA_at_retirement
 
-#     # Select penalty depending on age difference
-#     pension_factor = (
-#         1 - (age - model_specs["min_SRA"]) * model_specs["early_retirement_penalty"]
+#     # deduction factor for early  retirement
+#     early_retirement_penalty_informed = model_specs["early_retirement_penalty"]
+#     early_retirement_penalty = (
+#         1 - early_retirement_penalty_informed * retirement_age_difference
 #     )
-#     adjusted_pension_points = pension_factor * total_pension_points
 
+#     # Total bonus for late retirement
+#     late_retirement_bonus = 1 + (
+#         model_specs["late_retirement_bonus"] * retirement_age_difference
+#     )
+
+#     # Select bonus or penalty depending on age difference
+#     pension_factor = jax.lax.select(
+#         early_retired_bool, early_retirement_penalty, late_retirement_bonus
+#     )
+#     # pension_factor = late_retirement_bonus
+
+#     adjusted_pension_points = pension_factor * total_pension_points
 #     reduced_experience_years = calc_experience_for_total_pension_points(
 #         total_pension_points=adjusted_pension_points,
 #         sex=sex,
@@ -901,51 +907,6 @@ def get_next_period_experience(
 #     return reduced_experience_years
 
 
-def calc_experience_years_for_pension_adjustment(
-    period, sex, experience_years, education, model_specs
-):
-    """Calculate the reduced experience with early retirement penalty."""
-    total_pension_points = calc_total_pension_points(
-        education=education,
-        experience_years=experience_years,
-        sex=sex,
-        model_specs=model_specs,
-    )
-    # retirement age is last periods age
-    actual_retirement_age = model_specs["start_age"] + period - 1
-    # SRA at retirement, difference to actual retirement age and boolean for early retirement
-    # SRA_at_retirement = model_specs["min_SRA"]
-    SRA_at_retirement = model_specs["min_SRA"]
-    retirement_age_difference = jnp.abs(SRA_at_retirement - actual_retirement_age)
-    early_retired_bool = actual_retirement_age < SRA_at_retirement
-
-    # deduction factor for early  retirement
-    early_retirement_penalty_informed = model_specs["early_retirement_penalty"]
-    early_retirement_penalty = (
-        1 - early_retirement_penalty_informed * retirement_age_difference
-    )
-
-    # Total bonus for late retirement
-    late_retirement_bonus = 1 + (
-        model_specs["late_retirement_bonus"] * retirement_age_difference
-    )
-
-    # Select bonus or penalty depending on age difference
-    pension_factor = jax.lax.select(
-        early_retired_bool, early_retirement_penalty, late_retirement_bonus
-    )
-    # pension_factor = late_retirement_bonus
-
-    adjusted_pension_points = pension_factor * total_pension_points
-    reduced_experience_years = calc_experience_for_total_pension_points(
-        total_pension_points=adjusted_pension_points,
-        sex=sex,
-        education=education,
-        model_specs=model_specs,
-    )
-    return reduced_experience_years
-
-
-def construct_experience_years(experience, period, max_exp_diffs_per_period):
-    """Experience and period can also be arrays."""
-    return experience * (period + max_exp_diffs_per_period[period])
+# def construct_experience_years(experience, period, max_exp_diffs_per_period):
+#     """Experience and period can also be arrays."""
+#     return experience * (period + max_exp_diffs_per_period[period])

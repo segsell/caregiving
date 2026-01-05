@@ -17,11 +17,14 @@ from caregiving.data_management.soep.auxiliary import (
 from caregiving.data_management.soep.variables import (
     create_choice_variable,
     create_education_type,
-    create_experience_variable,
+    # create_experience_variable,
     create_health_var_good_bad,
     create_partner_state,
     create_policy_state,
     generate_working_hours,
+)
+from caregiving.data_management.soep.soep_variables.experience import (
+    create_experience_and_working_years,
 )
 from caregiving.model.shared import N_MONTHS, N_WEEKS_IN_YEAR, PART_TIME, WORK
 from caregiving.specs.task_write_specs import read_and_derive_specs
@@ -211,7 +214,7 @@ def task_create_event_study_sample(
         event_study=True,
     )
 
-    df = create_experience_variable(df, drop_invalid=False)
+    df = create_experience_and_working_years(df, filter_missings=False)
     df = create_involuntary_versus_voluntary_job_separation_var(df)
     df = create_job_separation_fired(df)
 

@@ -12,7 +12,7 @@ from caregiving.model.shared import (
     PART_TIME,
     SEX,
 )
-from caregiving.model.state_space import construct_experience_years
+from caregiving.model.experience_baseline_model import construct_experience_years
 from caregiving.utils import table
 
 

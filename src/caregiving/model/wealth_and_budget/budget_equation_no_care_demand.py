@@ -9,7 +9,7 @@ from caregiving.model.wealth_and_budget.government_budget import (
 from caregiving.model.wealth_and_budget.partner_income import (
     calc_partner_income_after_ssc,
 )
-from caregiving.model.wealth_and_budget.pensions import (
+from caregiving.model.wealth_and_budget.pension_payments import (
     calc_pensions_after_ssc,
 )
 from caregiving.model.wealth_and_budget.tax_and_ssc import calc_net_household_income
@@ -24,6 +24,7 @@ from caregiving.model.wealth_and_budget.transfers_no_care_demand import (
 from caregiving.model.wealth_and_budget.wages_no_care_demand import (
     calc_labor_income_after_ssc,
 )
+from caregiving.model.experience_baseline_model import construct_experience_years
 
 
 def budget_constraint(
@@ -42,10 +43,14 @@ def budget_constraint(
     sex_var = SEX
 
     assets_scaled = asset_end_of_previous_period * model_specs["wealth_unit"]
-    # Recalculate experience
-    max_exp_period = period + model_specs["max_exp_diffs_per_period"][period]
-    experience_years = max_exp_period * experience
 
+    # Recalculate experience
+    experience_years = construct_experience_years(
+        float_experience=experience,
+        period=period,
+        is_retired=is_retired(lagged_choice),
+        model_specs=model_specs,
+    )
     # Calculate partner income
     partner_income_after_ssc, gross_partner_income, gross_partner_pension = (
         calc_partner_income_after_ssc(
@@ -57,10 +62,9 @@ def budget_constraint(
         )
     )
 
+    # Income from lagged choice 0
     retirement_income_after_ssc, gross_retirement_income = calc_pensions_after_ssc(
-        experience_years=experience_years,
-        sex=sex_var,
-        education=education,
+        pension_points=experience_years,
         model_specs=model_specs,
     )
 
@@ -192,6 +196,7 @@ def budget_constraint(
         "gets_inheritance": gets_inheritance,
         "income_shock_previous_period": income_shock_previous_period,
         "income_shock_for_labor": income_shock_for_labor,
+        "own_income_after_ssc": own_income_after_ssc / model_specs["wealth_unit"],
         # Government budget components
         "income_tax": income_tax_total / model_specs["wealth_unit"],
         "income_tax_single": income_tax_single / model_specs["wealth_unit"],

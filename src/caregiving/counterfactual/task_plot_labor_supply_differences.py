@@ -38,7 +38,7 @@ from caregiving.model.shared_no_care_demand import (
     UNEMPLOYED_NO_CARE_DEMAND,
     WORK_NO_CARE_DEMAND,
 )
-from caregiving.model.state_space import construct_experience_years
+from caregiving.model.experience_baseline_model import construct_experience_years
 from caregiving.model.wealth_and_budget.transfers import (
     calc_care_benefits_and_costs,
     calc_child_benefits,
@@ -615,13 +615,13 @@ def _compute_total_income_like_sim(df: pd.DataFrame) -> pd.DataFrame:
     total_income = 0 if dead else max(total_net_income, unemployment_benefits)
     """
     raise RuntimeError(
-        "_compute_total_income_like_sim now requires model_options. "
-        "Use _compute_total_income_like_sim_with_options."
+        "_compute_total_income_like_sim now requires specs. "
+        "Use _compute_total_income_like_sim_with_specs."
     )
 
 
 def _ensure_hours_column(
-    df: pd.DataFrame, *, model_options: dict, out_name: str, is_original: bool
+    df: pd.DataFrame, *, specs: dict, out_name: str, is_original: bool
 ) -> pd.DataFrame:
     df = df.copy()
     if out_name in df.columns:
@@ -629,12 +629,8 @@ def _ensure_hours_column(
     if "working_hours" in df.columns and out_name != "working_hours":
         df[out_name] = df["working_hours"]
         return df
-    # Compute from options using FT/PT mapping
-    mp = (
-        model_options["model_params"]
-        if "model_params" in model_options
-        else model_options
-    )
+    # Compute from specs using FT/PT mapping
+    mp = specs
     if is_original:
         part_time_values = np.asarray(PART_TIME).ravel().tolist()
         full_time_values = np.asarray(FULL_TIME).ravel().tolist()
@@ -655,26 +651,20 @@ def _ensure_hours_column(
     return df
 
 
-def _compute_total_income_like_sim_with_options(
-    df: pd.DataFrame, *, model_options: dict
+def _compute_total_income_like_sim_with_specs(
+    df: pd.DataFrame, *, specs: dict
 ) -> pd.DataFrame:
     """Compute total_income like in simulate builder.
 
-    Derives missing pieces via options.
+    Derives missing pieces via specs.
     """
     df = df.copy()
-    mp = (
-        model_options["model_params"]
-        if "model_params" in model_options
-        else model_options
-    )
+    mp = specs
 
     # Ensure gross labor income (reuse existing helper)
     # Decide scenario by presence of NC choices in data; default to baseline
     is_original = True
-    df = _compute_gross_income_columns(
-        df, is_original=is_original, model_options=model_options
-    )
+    df = _compute_gross_income_columns(df, is_original=is_original, specs=specs)
 
     # Prepare arrays
     savings_array = np.asarray(df.get("savings", np.zeros(len(df), dtype=float)))
@@ -710,7 +700,7 @@ def _compute_total_income_like_sim_with_options(
     # child benefits
     v_child = jax.vmap(
         lambda edu, hp, p: calc_child_benefits(
-            education=edu, sex=SEX, has_partner_int=hp, period=p, options=mp
+            education=edu, sex=SEX, has_partner_int=hp, period=p, model_specs=mp
         )
     )
     df["child_benefits_calc"] = v_child(
@@ -720,7 +710,7 @@ def _compute_total_income_like_sim_with_options(
     # care benefits and costs
     v_care = jax.vmap(
         lambda lc, edu, cd: calc_care_benefits_and_costs(
-            lagged_choice=lc, education=edu, care_demand=cd, options=mp
+            lagged_choice=lc, education=edu, care_demand=cd, model_specs=mp
         )
     )
     df["care_benefits_and_costs_calc"] = v_care(
@@ -746,15 +736,11 @@ def _compute_total_income_like_sim_with_options(
 
 
 def _compute_gross_income_columns(
-    df: pd.DataFrame, *, is_original: bool, model_options: dict
+    df: pd.DataFrame, *, is_original: bool, specs: dict
 ) -> pd.DataFrame:
     """Compute gross labor income using wage functions for each scenario."""
     df = df.copy()
-    mp = (
-        model_options["model_params"]
-        if "model_params" in model_options
-        else model_options
-    )
+    mp = specs
     func = (
         calculate_gross_labor_income_baseline
         if is_original
@@ -784,10 +770,18 @@ def _compute_gross_income_columns(
             )
             raise KeyError(msg)
 
+        # Derive is_retired from lagged_choice if not present
+        if "is_retired" not in df.columns:
+            retirement_values = np.asarray(RETIREMENT).ravel().tolist()
+            is_retired_array = df["lagged_choice"].isin(retirement_values).to_numpy()
+        else:
+            is_retired_array = df["is_retired"].to_numpy()
+
         df["exp_years"] = construct_experience_years(
-            experience=df["experience"].to_numpy(),
+            float_experience=df["experience"].to_numpy(),
             period=period_array,
-            max_exp_diffs_per_period=mp["max_exp_diffs_per_period"],
+            is_retired=is_retired_array,
+            model_specs=mp,
         )
     # ===============================================================================
 
@@ -805,7 +799,7 @@ def _compute_gross_income_columns(
             education=edu,
             sex=SEX,
             income_shock=shock,
-            options=mp,
+            model_specs=mp,
         )
     )
     gross_array = vectorized_calc_gross(
@@ -1464,8 +1458,7 @@ def task_plot_total_income_matched_differences_by_distance(
     path_to_no_care_demand_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_no_care_demand.pkl",
-    path_to_baseline_options: Path = BLD / "model" / "options.pkl",
-    path_to_no_care_options: Path = BLD / "model" / "options_no_care_demand.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
@@ -1478,19 +1471,14 @@ def task_plot_total_income_matched_differences_by_distance(
     df_o = pd.read_pickle(path_to_original_data)
     df_c = pd.read_pickle(path_to_no_care_demand_data)
 
-    options_o = pkl.load(path_to_baseline_options.open("rb"))
-    options_c = pkl.load(path_to_no_care_options.open("rb"))
+    specs = pkl.load(path_to_specs.open("rb"))
 
     # Ensure gross income exists prior to total income calc
-    df_o = _compute_gross_income_columns(
-        df_o, is_original=True, model_options=options_o
-    )
-    df_c = _compute_gross_income_columns(
-        df_c, is_original=False, model_options=options_c
-    )
+    df_o = _compute_gross_income_columns(df_o, is_original=True, specs=specs)
+    df_c = _compute_gross_income_columns(df_c, is_original=False, specs=specs)
 
-    df_o = _compute_total_income_like_sim_with_options(df_o, model_options=options_o)
-    df_c = _compute_total_income_like_sim_with_options(df_c, model_options=options_c)
+    df_o = _compute_total_income_like_sim_with_specs(df_o, specs=specs)
+    df_c = _compute_total_income_like_sim_with_specs(df_c, specs=specs)
 
     prof = _matched_diff_profile_by_distance(
         df_o,
@@ -1515,8 +1503,7 @@ def task_plot_gross_income_matched_differences_by_distance(
     path_to_no_care_demand_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_no_care_demand.pkl",
-    path_to_baseline_options: Path = BLD / "model" / "options.pkl",
-    path_to_no_care_options: Path = BLD / "model" / "options_no_care_demand.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
@@ -1529,15 +1516,10 @@ def task_plot_gross_income_matched_differences_by_distance(
     df_o = pd.read_pickle(path_to_original_data)
     df_c = pd.read_pickle(path_to_no_care_demand_data)
 
-    options_o = pkl.load(path_to_baseline_options.open("rb"))
-    options_c = pkl.load(path_to_no_care_options.open("rb"))
+    specs = pkl.load(path_to_specs.open("rb"))
 
-    df_o = _compute_gross_income_columns(
-        df_o, is_original=True, model_options=options_o
-    )
-    df_c = _compute_gross_income_columns(
-        df_c, is_original=False, model_options=options_c
-    )
+    df_o = _compute_gross_income_columns(df_o, is_original=True, specs=specs)
+    df_c = _compute_gross_income_columns(df_c, is_original=False, specs=specs)
     # No hours needed here; this task plots gross income directly
 
     prof = _matched_diff_profile_by_distance(
@@ -1568,8 +1550,7 @@ def task_plot_hourly_wage_matched_differences_by_distance(
     path_to_no_care_demand_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_no_care_demand.pkl",
-    path_to_baseline_options: Path = BLD / "model" / "options.pkl",
-    path_to_no_care_options: Path = BLD / "model" / "options_no_care_demand.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     hours_column: str = "average_hours",
     path_to_plot: Annotated[Path, Product] = BLD
     / "plots"
@@ -1586,22 +1567,17 @@ def task_plot_hourly_wage_matched_differences_by_distance(
     df_o = pd.read_pickle(path_to_original_data)
     df_c = pd.read_pickle(path_to_no_care_demand_data)
 
-    options_o = pkl.load(path_to_baseline_options.open("rb"))
-    options_c = pkl.load(path_to_no_care_options.open("rb"))
+    specs = pkl.load(path_to_specs.open("rb"))
 
-    df_o = _compute_gross_income_columns(
-        df_o, is_original=True, model_options=options_o
-    )
-    df_c = _compute_gross_income_columns(
-        df_c, is_original=False, model_options=options_c
-    )
+    df_o = _compute_gross_income_columns(df_o, is_original=True, specs=specs)
+    df_c = _compute_gross_income_columns(df_c, is_original=False, specs=specs)
 
-    # Ensure hours column exists; fall back to working_hours or compute from options
+    # Ensure hours column exists; fall back to working_hours or compute from specs
     df_o = _ensure_hours_column(
-        df_o, model_options=options_o, out_name=hours_column, is_original=True
+        df_o, specs=specs, out_name=hours_column, is_original=True
     )
     df_c = _ensure_hours_column(
-        df_c, model_options=options_c, out_name=hours_column, is_original=False
+        df_c, specs=specs, out_name=hours_column, is_original=False
     )
 
     df_o["hourly_wage_calc"] = _compute_hourly_wage(

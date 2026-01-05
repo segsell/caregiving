@@ -25,7 +25,7 @@ from caregiving.data_management.soep.task_create_event_study_sample import (
 from caregiving.data_management.soep.variables import (
     create_choice_variable,
     create_education_type,
-    create_experience_variable,
+    # create_experience_variable,
     create_health_var_good_bad,
     create_inheritance,
     create_kidage_youngest,
@@ -34,6 +34,9 @@ from caregiving.data_management.soep.variables import (
     create_policy_state,
     determine_observed_job_offers,
     generate_job_separation_var,
+)
+from caregiving.data_management.soep.soep_variables.experience import (
+    create_experience_and_working_years,
 )
 from caregiving.model.shared import (
     PART_TIME_CHOICES,
@@ -107,7 +110,8 @@ def task_create_main_estimation_sample(
     df["period"] = df["age"] - specs["start_age"]
 
     df = create_policy_state(df, specs)
-    df = create_experience_variable(df)
+    df = create_experience_and_working_years(df, filter_missings=True)
+
     df = create_education_type(df)
     df = create_inheritance(df, cpi_data=cpi, specs=specs)
 
@@ -256,7 +260,8 @@ def task_create_caregivers_sample(
     df["period"] = df["age"] - specs["start_age"]
 
     df = create_policy_state(df, specs)
-    df = create_experience_variable(df)
+    df = create_experience_and_working_years(df, filter_missings=True)
+
     df = create_education_type(df)
     df = create_health_var_good_bad(df, drop_missing=False)
     df = create_nursing_home(df)

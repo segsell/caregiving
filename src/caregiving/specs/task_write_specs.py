@@ -24,9 +24,10 @@ from caregiving.specs.caregiving_specs import (
     weight_adl_transitions_by_survival,
 )
 from caregiving.specs.derive_specs import read_and_derive_specs
-from caregiving.specs.experience_specs import create_max_experience
 
-# from caregiving.specs.experience_specs import add_experience_and_pp_specs
+# from caregiving.specs.experience_specs import create_max_experience
+
+from caregiving.specs.experience_pp_specs import add_experience_and_pp_specs
 from caregiving.specs.family_specs import (
     predict_age_of_youngest_child_by_state,
     predict_children_by_state,
@@ -135,9 +136,10 @@ def task_write_specs(  # noqa: PLR0915
     / "estimation"
     / "stochastic_processes"
     / "job_sep_probs.pkl",
-    path_to_struct_estimation_sample: Path = BLD
-    / "data"
-    / "soep_structural_estimation_sample.csv",
+    path_to_credited_periods_estimates: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "credited_periods_estimates.csv",
     path_to_save_health_death_transition_matrix_good_bad: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
@@ -156,10 +158,27 @@ def task_write_specs(  # noqa: PLR0915
     / "plots"
     / "stochastic_processes"
     / "health_death_transition_good_medium_bad.png",
-    path_to_save_max_exp_diff: Annotated[Path, Product] = BLD
+    # path_to_save_max_exp_diff: Annotated[Path, Product] = BLD
+    # / "model"
+    # / "specs"
+    # / "max_exp_diffs_per_period.txt",
+    path_to_save_max_pp_retirement: Annotated[Path, Product] = BLD
     / "model"
     / "specs"
-    / "max_exp_diffs_per_period.txt",
+    / "max_pp_retirement.txt",
+    path_to_save_max_exp_diff_period_working: Annotated[Path, Product] = BLD
+    / "model"
+    / "specs"
+    / "max_exp_diff_period_working.txt",
+    path_to_save_pp_for_exp_by_sex_edu: Annotated[Path, Product] = BLD
+    / "model"
+    / "specs"
+    / "pp_for_exp_by_sex_edu.pkl",
+    path_to_save_experience_threshold_very_long_insured: Annotated[Path, Product] = BLD
+    / "model"
+    / "specs"
+    / "experience_threshold_very_long_insured.txt",
+    #
     path_to_save_specs_dict: Annotated[Path, Product] = BLD
     / "model"
     / "specs"
@@ -192,6 +211,10 @@ def task_write_specs(  # noqa: PLR0915
     estimation_sample = pd.read_csv(path_to_sample, index_col=[0])
     specs = read_and_derive_specs(path_to_load_specs)
 
+    credited_periods_estimates = pd.read_csv(
+        path_to_credited_periods_estimates, index_col=0
+    )
+
     # Add income specs
     wage_params = pd.read_csv(path_to_wage_params, index_col=0)
     partner_wage_params_men = pd.read_csv(path_to_partner_wage_params_men)
@@ -208,9 +231,6 @@ def task_write_specs(  # noqa: PLR0915
         mean_annual_wage=mean_annual_wage,
     )
 
-    # # Add experience specs
-    # specs = add_experience_and_pp_specs(specs, path_dict)
-
     # family transitions
     children_params = pd.read_csv(path_to_nb_child_params, index_col=[0, 1, 2])
 
@@ -219,10 +239,23 @@ def task_write_specs(  # noqa: PLR0915
     )
 
     # Matches Bruno's & Max's result
-    specs["children_by_state"] = predict_children_by_state(children_params, specs)
+    specs["children_by_state"], specs["max_children"] = predict_children_by_state(
+        children_params, specs
+    )
     specs["child_age_youngest_by_state"] = predict_age_of_youngest_child_by_state(
         age_youngest_child_params,
         specs,
+    )
+
+    # Add experience specs
+    specs = add_experience_and_pp_specs(
+        estimation_sample=estimation_sample,
+        specs=specs,
+        exp_factor_for_credited_periods=credited_periods_estimates,
+        path_to_save_experience_threshold_very_long_insured=path_to_save_experience_threshold_very_long_insured,
+        path_to_save_max_pp_retirement=path_to_save_max_pp_retirement,
+        path_to_save_max_exp_diff_period_working=path_to_save_max_exp_diff_period_working,
+        path_to_save_pp_for_exp_by_sex_edu=path_to_save_pp_for_exp_by_sex_edu,
     )
 
     # Read in family transitions
@@ -350,12 +383,9 @@ def task_write_specs(  # noqa: PLR0915
         pkl.load(path_to_job_separation_probs.open("rb"))
     )
 
-    # Set initial experience
-    data_decision = pd.read_csv(path_to_struct_estimation_sample)
-
-    specs["max_exp_diffs_per_period"] = create_max_experience(
-        data_decision, specs, path_to_save_txt=path_to_save_max_exp_diff
-    )
+    # specs["max_exp_diffs_per_period"] = create_max_experience(
+    #     data_decision, specs, path_to_save_txt=path_to_save_max_exp_diff
+    # )
 
     # Load inheritance parameters
     inheritance_prob_spec7_params = pd.read_csv(
@@ -378,4 +408,5 @@ def task_write_specs(  # noqa: PLR0915
 
     with path_to_save_specs_dict.open("wb") as f:
         pkl.dump(specs, f)
+
     return specs

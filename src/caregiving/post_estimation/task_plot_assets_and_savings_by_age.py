@@ -20,6 +20,9 @@ Creates plots for variables from budget equation aux dict and related variables:
 - Total tax revenue
 - Government expenditures
 - Net government budget
+- Experience years (exp_years)
+- Own income after SSC
+- Experience
 
 For three models:
 - Baseline model
@@ -161,6 +164,24 @@ def task_plot_assets_and_savings_by_age_baseline(  # noqa: PLR0915
     / "assets_and_savings"
     / "baseline"
     / "net_government_budget_by_age.png",
+    path_to_plot_exp_years: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "baseline"
+    / "exp_years_by_age.png",
+    path_to_plot_own_income_after_ssc: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "baseline"
+    / "own_income_after_ssc_by_age.png",
+    path_to_plot_experience: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "baseline"
+    / "experience_by_age.png",
 ):
     """Plot average assets and savings by age and education from baseline simulated data.
 
@@ -320,6 +341,24 @@ def task_plot_assets_and_savings_by_age_baseline(  # noqa: PLR0915
             "Net Government Budget (Baseline Model)",
             False,
         ),
+        (
+            "exp_years",
+            "Average Experience Years",
+            "Experience Years (Baseline Model)",
+            False,
+        ),
+        (
+            "own_income_after_ssc",
+            "Average Own Income After SSC (in 1,000€)",
+            "Own Income After SSC (Baseline Model)",
+            False,
+        ),
+        (
+            "experience",
+            "Average Experience",
+            "Experience (Baseline Model)",
+            False,
+        ),
     ]
 
     path_params = [
@@ -341,6 +380,9 @@ def task_plot_assets_and_savings_by_age_baseline(  # noqa: PLR0915
         path_to_plot_total_tax_revenue,
         path_to_plot_government_expenditures,
         path_to_plot_net_government_budget,
+        path_to_plot_exp_years,
+        path_to_plot_own_income_after_ssc,
+        path_to_plot_experience,
     ]
 
     for (col, ylabel, title, exclude_age), path in zip(
@@ -473,6 +515,24 @@ def task_plot_assets_and_savings_by_age_caregiving_leave(  # noqa: PLR0915
     / "assets_and_savings"
     / "caregiving_leave"
     / "net_government_budget_by_age.png",
+    path_to_plot_exp_years: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "caregiving_leave"
+    / "exp_years_by_age.png",
+    path_to_plot_own_income_after_ssc: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "caregiving_leave"
+    / "own_income_after_ssc_by_age.png",
+    path_to_plot_experience: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "caregiving_leave"
+    / "experience_by_age.png",
 ):
     """Plot average assets and savings by age and education from caregiving leave counterfactual simulated data.
 
@@ -637,6 +697,24 @@ def task_plot_assets_and_savings_by_age_caregiving_leave(  # noqa: PLR0915
             "Net Government Budget (Caregiving Leave)",
             False,
         ),
+        (
+            "exp_years",
+            "Average Experience Years",
+            "Experience Years (Caregiving Leave)",
+            False,
+        ),
+        (
+            "own_income_after_ssc",
+            "Average Own Income After SSC (in 1,000€)",
+            "Own Income After SSC (Caregiving Leave)",
+            False,
+        ),
+        (
+            "experience",
+            "Average Experience",
+            "Experience (Caregiving Leave)",
+            False,
+        ),
     ]
 
     path_params = [
@@ -658,6 +736,9 @@ def task_plot_assets_and_savings_by_age_caregiving_leave(  # noqa: PLR0915
         path_to_plot_total_tax_revenue,
         path_to_plot_government_expenditures,
         path_to_plot_net_government_budget,
+        path_to_plot_exp_years,
+        path_to_plot_own_income_after_ssc,
+        path_to_plot_experience,
     ]
 
     for (col, ylabel, title, exclude_age), path in zip(
@@ -802,6 +883,24 @@ def task_plot_assets_and_savings_by_age_no_care_demand(  # noqa: PLR0915
     / "assets_and_savings"
     / "no_care_demand"
     / "income_shock_for_labor_by_age.png",
+    path_to_plot_exp_years: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_care_demand"
+    / "exp_years_by_age.png",
+    path_to_plot_own_income_after_ssc: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_care_demand"
+    / "own_income_after_ssc_by_age.png",
+    path_to_plot_experience: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_care_demand"
+    / "experience_by_age.png",
 ):
     """Plot average assets and savings by age and education from no care demand counterfactual simulated data.
 
@@ -973,6 +1072,24 @@ def task_plot_assets_and_savings_by_age_no_care_demand(  # noqa: PLR0915
             "Income Shock For Labor (No Care Demand)",
             False,
         ),
+        (
+            "exp_years",
+            "Average Experience Years",
+            "Experience Years (No Care Demand)",
+            False,
+        ),
+        (
+            "own_income_after_ssc",
+            "Average Own Income After SSC (in 1,000€)",
+            "Own Income After SSC (No Care Demand)",
+            False,
+        ),
+        (
+            "experience",
+            "Average Experience",
+            "Experience (No Care Demand)",
+            False,
+        ),
     ]
 
     path_params = [
@@ -996,6 +1113,9 @@ def task_plot_assets_and_savings_by_age_no_care_demand(  # noqa: PLR0915
         path_to_plot_net_government_budget,
         path_to_plot_income_shock_previous_period,
         path_to_plot_income_shock_for_labor,
+        path_to_plot_exp_years,
+        path_to_plot_own_income_after_ssc,
+        path_to_plot_experience,
     ]
 
     for (col, ylabel, title, exclude_age), path in zip(
@@ -1133,6 +1253,7 @@ def _add_aux_variables_to_df(df_sim):
         "net_government_budget",
         "income_shock_previous_period",
         "income_shock_for_labor",
+        "own_income_after_ssc",
     ]
 
     for var in aux_vars:
