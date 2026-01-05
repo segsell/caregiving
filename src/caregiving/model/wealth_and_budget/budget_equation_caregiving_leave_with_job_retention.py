@@ -82,7 +82,7 @@ def budget_constraint(
     has_partner_int = (partner_state > 0).astype(int)
 
     # Income lagged choice 1
-    household_unemployment_benefits, _own_unemployment_benefits = (
+    household_unemployment_benefits, own_unemployment_benefits = (
         calc_unemployment_benefits(
             assets=assets_scaled,
             education=education,
@@ -134,11 +134,13 @@ def budget_constraint(
     )
 
     # Calculate total household net income (taxes on earnings + wage replacement)
-    total_net_household_income, income_tax_total = calc_net_household_income(
-        own_income=own_income_after_ssc,
-        partner_income=partner_income_after_ssc,
-        has_partner_int=has_partner_int,
-        model_specs=model_specs,
+    total_net_household_income, income_tax_total, income_tax_single = (
+        calc_net_household_income(
+            own_income=own_income_after_ssc,
+            partner_income=partner_income_after_ssc,
+            has_partner_int=has_partner_int,
+            model_specs=model_specs,
+        )
     )
 
     child_benefits = calc_child_benefits(
@@ -194,6 +196,7 @@ def budget_constraint(
         government_expenditures,
         net_government_budget,
     ) = calc_government_budget_components_caregiving_leave_with_job_retention(
+        # single_income_tax_total=income_tax_single,
         household_income_tax_total=income_tax_total,
         was_worker=was_worker,
         was_retired=was_retired,
@@ -205,6 +208,7 @@ def budget_constraint(
         child_benefits=child_benefits,
         care_benefits_and_costs=care_benefits_and_costs,
         household_unemployment_benefits=household_unemployment_benefits,
+        # own_unemployment_benefits=own_unemployment_benefits,
         caregiving_leave_top_up=caregiving_leave_top_up,
         model_specs=model_specs,
     )
@@ -228,6 +232,7 @@ def budget_constraint(
         "caregiving_leave_top_up": caregiving_leave_top_up / model_specs["wealth_unit"],
         # Government budget components
         "income_tax": income_tax_total / model_specs["wealth_unit"],
+        "income_tax_single": income_tax_single / model_specs["wealth_unit"],
         "own_ssc": own_ssc / model_specs["wealth_unit"],
         "partner_ssc": partner_ssc / model_specs["wealth_unit"],
         "total_tax_revenue": total_tax_revenue / model_specs["wealth_unit"],

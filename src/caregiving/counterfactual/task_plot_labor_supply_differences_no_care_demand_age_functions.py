@@ -36,70 +36,80 @@ def task_plot_matched_differences_by_age(  # noqa: PLR0915, E501
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "all"
     / "matched_differences_work_by_age.png",
     path_to_plot_ft: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "all"
     / "matched_differences_full_time_by_age.png",
     path_to_plot_pt: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "all"
     / "matched_differences_part_time_by_age.png",
     path_to_plot_job_offer: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "all"
     / "matched_differences_job_offer_by_age.png",
     path_to_plot_hours_weekly: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "all"
     / "matched_differences_working_hours_by_age.png",
     path_to_plot_care: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "all"
     / "matched_differences_care_by_age.png",
     path_to_plot_gross_labor_income: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "all"
     / "matched_differences_gross_labor_income_by_age.png",
     path_to_plot_savings: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "all"
     / "matched_differences_savings_by_age.png",
     path_to_plot_wealth: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "all"
     / "matched_differences_wealth_by_age.png",
     path_to_plot_savings_rate: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "all"
     / "matched_differences_savings_rate_by_age.png",
     # Caregiving type 0 plots
@@ -107,70 +117,80 @@ def task_plot_matched_differences_by_age(  # noqa: PLR0915, E501
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "caregiving_type0"
     / "matched_differences_work_by_age.png",
     path_to_plot_ft_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "caregiving_type0"
     / "matched_differences_full_time_by_age.png",
     path_to_plot_pt_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "caregiving_type0"
     / "matched_differences_part_time_by_age.png",
     path_to_plot_job_offer_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "caregiving_type0"
     / "matched_differences_job_offer_by_age.png",
     path_to_plot_hours_weekly_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "caregiving_type0"
     / "matched_differences_working_hours_by_age.png",
     path_to_plot_care_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "caregiving_type0"
     / "matched_differences_care_by_age.png",
     path_to_plot_gross_labor_income_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "caregiving_type0"
     / "matched_differences_gross_labor_income_by_age.png",
     path_to_plot_savings_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "caregiving_type0"
     / "matched_differences_savings_by_age.png",
     path_to_plot_wealth_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "caregiving_type0"
     / "matched_differences_wealth_by_age.png",
     path_to_plot_savings_rate_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "caregiving_type0"
     / "matched_differences_savings_rate_by_age.png",
     # Caregiving type 1 plots
@@ -178,70 +198,80 @@ def task_plot_matched_differences_by_age(  # noqa: PLR0915, E501
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "caregiving_type1"
     / "matched_differences_work_by_age.png",
     path_to_plot_ft_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "caregiving_type1"
     / "matched_differences_full_time_by_age.png",
     path_to_plot_pt_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "caregiving_type1"
     / "matched_differences_part_time_by_age.png",
     path_to_plot_job_offer_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "caregiving_type1"
     / "matched_differences_job_offer_by_age.png",
     path_to_plot_hours_weekly_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "caregiving_type1"
     / "matched_differences_working_hours_by_age.png",
     path_to_plot_care_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "caregiving_type1"
     / "matched_differences_care_by_age.png",
     path_to_plot_gross_labor_income_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "caregiving_type1"
     / "matched_differences_gross_labor_income_by_age.png",
     path_to_plot_savings_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "caregiving_type1"
     / "matched_differences_savings_by_age.png",
     path_to_plot_wealth_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "caregiving_type1"
     / "matched_differences_wealth_by_age.png",
     path_to_plot_savings_rate_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
     / "no_care_demand"
-    / "age_profiles"
+    / "matched_differences"
+    / "all"
     / "caregiving_type1"
     / "matched_differences_savings_rate_by_age.png",
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
@@ -273,7 +303,7 @@ def task_plot_matched_differences_by_age(  # noqa: PLR0915, E501
     o_outcomes = calculate_outcomes(df_o, choice_set_type="original")
     c_outcomes = calculate_outcomes(df_c, choice_set_type="no_care_demand")
 
-    # Calculate working hours
+    # Load specs for working hours and additional outcomes
     specs = pickle.load(path_to_specs.open("rb"))
     o_outcomes["hours_weekly"] = calculate_working_hours_weekly(
         df_o, specs, choice_set_type="original"
@@ -283,8 +313,8 @@ def task_plot_matched_differences_by_age(  # noqa: PLR0915, E501
     )
 
     # Calculate additional outcomes (gross labor income, savings, wealth, savings_rate)
-    o_additional = calculate_additional_outcomes(df_o)
-    c_additional = calculate_additional_outcomes(df_c)
+    o_additional = calculate_additional_outcomes(df_o, specs)
+    c_additional = calculate_additional_outcomes(df_c, specs)
     o_outcomes.update(o_additional)
     c_outcomes.update(c_additional)
 
@@ -292,11 +322,13 @@ def task_plot_matched_differences_by_age(  # noqa: PLR0915, E501
     o_cols = create_outcome_columns(df_o, o_outcomes, "_o")
     c_cols = create_outcome_columns(df_c, c_outcomes, "_c")
 
-    # Add caregiving_type from original dataframe to o_cols for filtering
+    # Add caregiving_type and education from original dataframe to o_cols for filtering
     if "caregiving_type" in df_o.columns:
         o_cols["caregiving_type"] = df_o["caregiving_type"].values
+    if "education" in df_o.columns:
+        o_cols["education"] = df_o["education"].values
 
-    # Merge and compute differences (include full set of outcomes incl. consumption)
+    # Merge and compute differences (include full set of outcomes incl. consumption and bequest)
     outcome_names = [
         "work",
         "ft",
@@ -309,347 +341,177 @@ def task_plot_matched_differences_by_age(  # noqa: PLR0915, E501
         "wealth",
         "savings_rate",
         "consumption",
+        "bequest_from_parent",
     ]
     merged = merge_and_compute_differences(o_cols, c_cols, outcome_names)
 
     # Filter to age range
     merged = merged[(merged["age"] >= age_min) & (merged["age"] <= age_max)]
 
-    # Average differences by age (for all caregiving types)
-    prof_all = (
-        merged.groupby("age", observed=False)[
-            [
-                "diff_work",
-                "diff_ft",
-                "diff_pt",
-                "diff_job_offer",
-                "diff_hours_weekly",
-                "diff_care",
-                "diff_gross_labor_income",
-                "diff_savings",
-                "diff_wealth",
-                "diff_savings_rate",
-                "diff_consumption",
-            ]
-        ]
-        .mean()
-        .reset_index()
-    )
+    # Create nested splits: education (all, low, high) × caregiving_type (all, 0, 1)
+    education_specs = [
+        ("all", None, "all"),
+        ("low_education", 0, "low_education"),
+        ("high_education", 1, "high_education"),
+    ]
+    caregiving_type_specs = [
+        ("all", None, "all"),
+        ("caregiving_type0", 0, "caregiving_type0"),
+        ("caregiving_type1", 1, "caregiving_type1"),
+    ]
 
-    # Plot configurations for all types
-    plot_configs_all = {
-        "work": {
-            "ylabel": "Proportion Working\nDeviation from Counterfactual",
-            "title": "Employment Rate by Age",
-            "diff_col": "diff_work",
-            "path": path_to_plot_work,
-            "age_max": 70,
-        },
-        "ft": {
-            "ylabel": "Proportion Full-time\nDeviation from Counterfactual",
-            "title": "Full-time Employment by Age",
-            "diff_col": "diff_ft",
-            "path": path_to_plot_ft,
-            "age_max": 70,
-        },
-        "pt": {
-            "ylabel": "Proportion Part-time\nDeviation from Counterfactual",
-            "title": "Part-time Employment by Age",
-            "diff_col": "diff_pt",
-            "path": path_to_plot_pt,
-            "age_max": 70,
-        },
-        "job_offer": {
-            "ylabel": "Job Offer Probability\nDeviation from Counterfactual",
-            "title": "Job Offer Probability by Age",
-            "diff_col": "diff_job_offer",
-            "path": path_to_plot_job_offer,
-            "age_max": 70,
-        },
-        "hours_weekly": {
-            "ylabel": "Weekly Hours\nDeviation from Counterfactual",
-            "title": "Weekly Working Hours by Age",
-            "diff_col": "diff_hours_weekly",
-            "path": path_to_plot_hours_weekly,
-            "age_max": 70,
-        },
-        "care": {
-            "ylabel": "Care Probability\nDeviation from Counterfactual",
-            "title": "Care Probability by Age",
-            "diff_col": "diff_care",
-            "path": path_to_plot_care,
-            "age_max": 70,
-        },
-        "gross_labor_income": {
-            "ylabel": "Gross Labor Income\nDeviation from Counterfactual",
-            "title": "Gross Labor Income by Age",
-            "diff_col": "diff_gross_labor_income",
-            "path": path_to_plot_gross_labor_income,
-            "age_max": 90,
-        },
-        "savings": {
-            "ylabel": "Savings (in 1,000€)\nDeviation from Counterfactual",
-            "title": "Savings by Age",
-            "diff_col": "diff_savings",
-            "path": path_to_plot_savings,
-            "age_max": 90,
-        },
-        "wealth": {
-            "ylabel": "Wealth (in 1,000€)\nDeviation from Counterfactual",
-            "title": "Wealth by Age",
-            "diff_col": "diff_wealth",
-            "path": path_to_plot_wealth,
-            "age_max": 90,
-        },
-        "savings_rate": {
-            "ylabel": "Savings Rate\nDeviation from Counterfactual",
-            "title": "Savings Rate by Age",
-            "diff_col": "diff_savings_rate",
-            "path": path_to_plot_savings_rate,
-            "age_max": 90,
-        },
-        "consumption": {
-            "ylabel": "Consumption (in 1,000€)\nDeviation from Counterfactual",
-            "title": "Consumption by Age",
-            "diff_col": "diff_consumption",
-            "path": path_to_plot_savings.parent
-            / "matched_differences_consumption_by_age.png",
-            "age_max": 90,
-        },
-    }
-
-    # Plot for all caregiving types
-    plot_all_outcomes_by_age(
-        prof=prof_all,
-        plot_configs=plot_configs_all,
-        age_min=age_min,
-        age_max=age_max,
-    )
-
-    # Plot separately for caregiving_type 0 and 1 if caregiving_type column exists
-    if "caregiving_type" in merged.columns:
-        # Plot configurations for caregiving_type 0
-        plot_configs_type0 = {
+    # Helper function to create plot configs with dynamic paths
+    def create_plot_configs(base_path, suffix=""):
+        """Create plot configs dictionary with dynamic paths."""
+        title_suffix = f" ({suffix})" if suffix else ""
+        return {
             "work": {
                 "ylabel": "Proportion Working\nDeviation from Counterfactual",
-                "title": "Employment Rate by Age (Caregiving Type 0)",
+                "title": f"Employment Rate by Age{title_suffix}",
                 "diff_col": "diff_work",
-                "path": path_to_plot_work_type0,
+                "path": base_path / "matched_differences_work_by_age.png",
                 "age_max": 70,
             },
             "ft": {
                 "ylabel": "Proportion Full-time\nDeviation from Counterfactual",
-                "title": "Full-time Employment by Age (Caregiving Type 0)",
+                "title": f"Full-time Employment by Age{title_suffix}",
                 "diff_col": "diff_ft",
-                "path": path_to_plot_ft_type0,
+                "path": base_path / "matched_differences_full_time_by_age.png",
                 "age_max": 70,
             },
             "pt": {
                 "ylabel": "Proportion Part-time\nDeviation from Counterfactual",
-                "title": "Part-time Employment by Age (Caregiving Type 0)",
+                "title": f"Part-time Employment by Age{title_suffix}",
                 "diff_col": "diff_pt",
-                "path": path_to_plot_pt_type0,
+                "path": base_path / "matched_differences_part_time_by_age.png",
                 "age_max": 70,
             },
             "job_offer": {
                 "ylabel": "Job Offer Probability\nDeviation from Counterfactual",
-                "title": "Job Offer Probability by Age (Caregiving Type 0)",
+                "title": f"Job Offer Probability by Age{title_suffix}",
                 "diff_col": "diff_job_offer",
-                "path": path_to_plot_job_offer_type0,
+                "path": base_path / "matched_differences_job_offer_by_age.png",
                 "age_max": 70,
             },
             "hours_weekly": {
                 "ylabel": "Weekly Hours\nDeviation from Counterfactual",
-                "title": "Weekly Working Hours by Age (Caregiving Type 0)",
+                "title": f"Weekly Working Hours by Age{title_suffix}",
                 "diff_col": "diff_hours_weekly",
-                "path": path_to_plot_hours_weekly_type0,
+                "path": base_path / "matched_differences_working_hours_by_age.png",
                 "age_max": 70,
             },
             "care": {
                 "ylabel": "Care Probability\nDeviation from Counterfactual",
-                "title": "Care Probability by Age (Caregiving Type 0)",
+                "title": f"Care Probability by Age{title_suffix}",
                 "diff_col": "diff_care",
-                "path": path_to_plot_care_type0,
+                "path": base_path / "matched_differences_care_by_age.png",
                 "age_max": 70,
             },
             "gross_labor_income": {
                 "ylabel": "Gross Labor Income\nDeviation from Counterfactual",
-                "title": "Gross Labor Income by Age (Caregiving Type 0)",
+                "title": f"Gross Labor Income by Age{title_suffix}",
                 "diff_col": "diff_gross_labor_income",
-                "path": path_to_plot_gross_labor_income_type0,
+                "path": base_path / "matched_differences_gross_labor_income_by_age.png",
                 "age_max": 90,
             },
             "savings": {
                 "ylabel": "Savings (in 1,000€)\nDeviation from Counterfactual",
-                "title": "Savings by Age (Caregiving Type 0)",
+                "title": f"Savings by Age{title_suffix}",
                 "diff_col": "diff_savings",
-                "path": path_to_plot_savings_type0,
+                "path": base_path / "matched_differences_savings_by_age.png",
                 "age_max": 90,
             },
             "wealth": {
                 "ylabel": "Wealth (in 1,000€)\nDeviation from Counterfactual",
-                "title": "Wealth by Age (Caregiving Type 0)",
+                "title": f"Wealth by Age{title_suffix}",
                 "diff_col": "diff_wealth",
-                "path": path_to_plot_wealth_type0,
+                "path": base_path / "matched_differences_wealth_by_age.png",
                 "age_max": 90,
             },
             "savings_rate": {
                 "ylabel": "Savings Rate\nDeviation from Counterfactual",
-                "title": "Savings Rate by Age (Caregiving Type 0)",
+                "title": f"Savings Rate by Age{title_suffix}",
                 "diff_col": "diff_savings_rate",
-                "path": path_to_plot_savings_rate_type0,
+                "path": base_path / "matched_differences_savings_rate_by_age.png",
                 "age_max": 90,
             },
             "consumption": {
                 "ylabel": "Consumption (in 1,000€)\nDeviation from Counterfactual",
-                "title": "Consumption by Age (Caregiving Type 0)",
+                "title": f"Consumption by Age{title_suffix}",
                 "diff_col": "diff_consumption",
-                "path": path_to_plot_savings_type0.parent
-                / "matched_differences_consumption_by_age.png",
+                "path": base_path / "matched_differences_consumption_by_age.png",
+                "age_max": 90,
+            },
+            "bequest_from_parent": {
+                "ylabel": "Bequest from Parent (in 1,000€)\nDeviation from Counterfactual",
+                "title": f"Bequest from Parent by Age{title_suffix}",
+                "diff_col": "diff_bequest_from_parent",
+                "path": base_path
+                / "matched_differences_bequest_from_parent_by_age.png",
                 "age_max": 90,
             },
         }
 
-        # Plot configurations for caregiving_type 1
-        plot_configs_type1 = {
-            "work": {
-                "ylabel": "Proportion Working\nDeviation from Counterfactual",
-                "title": "Employment Rate by Age (Caregiving Type 1)",
-                "diff_col": "diff_work",
-                "path": path_to_plot_work_type1,
-                "age_max": 70,
-            },
-            "ft": {
-                "ylabel": "Proportion Full-time\nDeviation from Counterfactual",
-                "title": "Full-time Employment by Age (Caregiving Type 1)",
-                "diff_col": "diff_ft",
-                "path": path_to_plot_ft_type1,
-                "age_max": 70,
-            },
-            "pt": {
-                "ylabel": "Proportion Part-time\nDeviation from Counterfactual",
-                "title": "Part-time Employment by Age (Caregiving Type 1)",
-                "diff_col": "diff_pt",
-                "path": path_to_plot_pt_type1,
-                "age_max": 70,
-            },
-            "job_offer": {
-                "ylabel": "Job Offer Probability\nDeviation from Counterfactual",
-                "title": "Job Offer Probability by Age (Caregiving Type 1)",
-                "diff_col": "diff_job_offer",
-                "path": path_to_plot_job_offer_type1,
-                "age_max": 70,
-            },
-            "hours_weekly": {
-                "ylabel": "Weekly Hours\nDeviation from Counterfactual",
-                "title": "Weekly Working Hours by Age (Caregiving Type 1)",
-                "diff_col": "diff_hours_weekly",
-                "path": path_to_plot_hours_weekly_type1,
-                "age_max": 70,
-            },
-            "care": {
-                "ylabel": "Care Probability\nDeviation from Counterfactual",
-                "title": "Care Probability by Age (Caregiving Type 1)",
-                "diff_col": "diff_care",
-                "path": path_to_plot_care_type1,
-                "age_max": 70,
-            },
-            "gross_labor_income": {
-                "ylabel": "Gross Labor Income\nDeviation from Counterfactual",
-                "title": "Gross Labor Income by Age (Caregiving Type 1)",
-                "diff_col": "diff_gross_labor_income",
-                "path": path_to_plot_gross_labor_income_type1,
-                "age_max": 90,
-            },
-            "savings": {
-                "ylabel": "Savings (in 1,000€)\nDeviation from Counterfactual",
-                "title": "Savings by Age (Caregiving Type 1)",
-                "diff_col": "diff_savings",
-                "path": path_to_plot_savings_type1,
-                "age_max": 90,
-            },
-            "wealth": {
-                "ylabel": "Wealth (in 1,000€)\nDeviation from Counterfactual",
-                "title": "Wealth by Age (Caregiving Type 1)",
-                "diff_col": "diff_wealth",
-                "path": path_to_plot_wealth_type1,
-                "age_max": 90,
-            },
-            "savings_rate": {
-                "ylabel": "Savings Rate\nDeviation from Counterfactual",
-                "title": "Savings Rate by Age (Caregiving Type 1)",
-                "diff_col": "diff_savings_rate",
-                "path": path_to_plot_savings_rate_type1,
-                "age_max": 90,
-            },
-            "consumption": {
-                "ylabel": "Consumption (in 1,000€)\nDeviation from Counterfactual",
-                "title": "Consumption by Age (Caregiving Type 1)",
-                "diff_col": "diff_consumption",
-                "path": path_to_plot_savings_type1.parent
-                / "matched_differences_consumption_by_age.png",
-                "age_max": 90,
-            },
-        }
+    # Loop over education and caregiving_type combinations
+    for edu_name, edu_filter, edu_folder in education_specs:
+        # Filter by education if specified
+        if edu_filter is not None and "education" in merged.columns:
+            merged_edu = merged[merged["education"] == edu_filter].copy()
+        else:
+            merged_edu = merged.copy()
 
-        # Filter merged data by caregiving_type and create profiles
-        merged_type0 = merged[merged["caregiving_type"] == 0].copy()
-        merged_type1 = merged[merged["caregiving_type"] == 1].copy()
+        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+            # Filter by caregiving_type if specified
+            if cg_filter is not None and "caregiving_type" in merged_edu.columns:
+                merged_spec = merged_edu[
+                    merged_edu["caregiving_type"] == cg_filter
+                ].copy()
+            else:
+                merged_spec = merged_edu.copy()
 
-        # Average differences by age for caregiving_type 0
-        prof_type0 = (
-            merged_type0.groupby("age", observed=False)[
-                [
-                    "diff_work",
-                    "diff_ft",
-                    "diff_pt",
-                    "diff_job_offer",
-                    "diff_hours_weekly",
-                    "diff_care",
-                    "diff_gross_labor_income",
-                    "diff_savings",
-                    "diff_wealth",
-                    "diff_savings_rate",
-                    "diff_consumption",
+            # Create base path for this specification
+            # path_to_plot_work structure: .../matched_differences/all/all/filename.png
+            # We need: .../matched_differences/{edu_folder}/{cg_folder}/filename.png
+            base_path = path_to_plot_work.parent.parent.parent / edu_folder / cg_folder
+            base_path.mkdir(parents=True, exist_ok=True)
+
+            # Create title suffix
+            title_parts = []
+            if edu_name != "all":
+                title_parts.append(edu_name.replace("_", " ").title())
+            if cg_name != "all":
+                title_parts.append(cg_name.replace("_", " ").title())
+            suffix = ", ".join(title_parts) if title_parts else ""
+
+            # Average differences by age for this specification
+            prof = (
+                merged_spec.groupby("age", observed=False)[
+                    [
+                        "diff_work",
+                        "diff_ft",
+                        "diff_pt",
+                        "diff_job_offer",
+                        "diff_hours_weekly",
+                        "diff_care",
+                        "diff_gross_labor_income",
+                        "diff_savings",
+                        "diff_wealth",
+                        "diff_savings_rate",
+                        "diff_consumption",
+                        "diff_bequest_from_parent",
+                    ]
                 ]
-            ]
-            .mean()
-            .reset_index()
-        )
+                .mean()
+                .reset_index()
+            )
 
-        # Average differences by age for caregiving_type 1
-        prof_type1 = (
-            merged_type1.groupby("age", observed=False)[
-                [
-                    "diff_work",
-                    "diff_ft",
-                    "diff_pt",
-                    "diff_job_offer",
-                    "diff_hours_weekly",
-                    "diff_care",
-                    "diff_gross_labor_income",
-                    "diff_savings",
-                    "diff_wealth",
-                    "diff_savings_rate",
-                    "diff_consumption",
-                ]
-            ]
-            .mean()
-            .reset_index()
-        )
+            # Create plot configs for this specification
+            plot_configs = create_plot_configs(base_path, suffix)
 
-        # Plot for caregiving_type 0
-        plot_all_outcomes_by_age(
-            prof=prof_type0,
-            plot_configs=plot_configs_type0,
-            age_min=age_min,
-            age_max=age_max,
-        )
-
-        # Plot for caregiving_type 1
-        plot_all_outcomes_by_age(
-            prof=prof_type1,
-            plot_configs=plot_configs_type1,
-            age_min=age_min,
-            age_max=age_max,
-        )
+            # Plot for this specification
+            plot_all_outcomes_by_age(
+                prof=prof,
+                plot_configs=plot_configs,
+                age_min=age_min,
+                age_max=age_max,
+            )

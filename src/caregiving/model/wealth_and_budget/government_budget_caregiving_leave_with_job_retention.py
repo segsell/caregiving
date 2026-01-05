@@ -109,6 +109,9 @@ def calc_government_budget_components_caregiving_leave_with_job_retention(
 
     # 5. Calculate net government budget
     net_government_budget = total_tax_revenue - government_expenditures
+    # net_government_budget_single = (
+    #     household_income_tax_total / split_factor + own_ssc - government_expenditures
+    # )
 
     return (
         household_income_tax_total,

@@ -23,8 +23,8 @@ from pytask import Product
 from caregiving.config import BLD
 from caregiving.model.shared import (
     NO_PARTNER,
-    RETIRED_PARTNER,
-    WORKING_PARTNER,
+    PARTNER_WORKING,
+    PARTNER_RETIRED,
 )
 
 
@@ -96,10 +96,10 @@ def task_plot_partner_state_by_age_baseline(
 
     # Create binary indicators for each partner state
     df_sim["no_partner"] = (df_sim["partner_state"] == NO_PARTNER).astype(float)
-    df_sim["working_partner"] = (df_sim["partner_state"] == WORKING_PARTNER).astype(
+    df_sim["working_partner"] = (df_sim["partner_state"] == PARTNER_WORKING).astype(
         float
     )
-    df_sim["retired_partner"] = (df_sim["partner_state"] == RETIRED_PARTNER).astype(
+    df_sim["retired_partner"] = (df_sim["partner_state"] == PARTNER_RETIRED).astype(
         float
     )
 
@@ -233,10 +233,10 @@ def task_plot_partner_state_by_age_no_care_demand(
 
     # Create binary indicators for each partner state
     df_sim["no_partner"] = (df_sim["partner_state"] == NO_PARTNER).astype(float)
-    df_sim["working_partner"] = (df_sim["partner_state"] == WORKING_PARTNER).astype(
+    df_sim["working_partner"] = (df_sim["partner_state"] == PARTNER_WORKING).astype(
         float
     )
-    df_sim["retired_partner"] = (df_sim["partner_state"] == RETIRED_PARTNER).astype(
+    df_sim["retired_partner"] = (df_sim["partner_state"] == PARTNER_RETIRED).astype(
         float
     )
 

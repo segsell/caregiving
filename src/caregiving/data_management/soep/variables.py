@@ -663,19 +663,72 @@ def create_nursing_home(data):
     return data
 
 
-def create_inheritance(df):
+def _deflate_inheritance_amount(df, cpi_data, specs):
+    """Deflate inheritance amount using consumer price index.
+
+    Args:
+        df: DataFrame with MultiIndex (pid, syear) containing inheritance_amount
+            and year_inheritance columns
+        cpi_data: DataFrame with CPI data (should have int_year and cpi columns)
+        specs: Dictionary with specs including reference_year
+
+    Returns:
+        DataFrame with deflated inheritance_amount
+    """
+    # Reset index temporarily to work with year_inheritance
+    df_reset = df.reset_index()
+
+    # Prepare CPI data (exactly like deflate_wealth)
+    cpi_data_copy = cpi_data.rename(columns={"int_year": "year_inheritance"})
+
+    _base_year = specs["reference_year"]
+    base_year_cpi = cpi_data_copy.loc[
+        cpi_data_copy["year_inheritance"] == _base_year, "cpi"
+    ].iloc[0]
+
+    cpi_data_copy["cpi_normalized"] = cpi_data_copy["cpi"] / base_year_cpi
+
+    # Merge CPI data on year_inheritance (like deflate_wealth merges on syear)
+    df_reset = df_reset.merge(cpi_data_copy, on="year_inheritance", how="left")
+
+    # Deflate inheritance amount (only where both inheritance_amount and cpi_normalized are not NaN)
+    if "cpi_normalized" not in df_reset.columns:
+        raise ValueError(
+            "cpi_normalized column not found after merge. "
+            f"Columns after merge: {df_reset.columns.tolist()}"
+        )
+
+    mask = df_reset["inheritance_amount"].notna() & df_reset["cpi_normalized"].notna()
+    df_reset.loc[mask, "inheritance_amount"] = (
+        df_reset.loc[mask, "inheritance_amount"] / df_reset.loc[mask, "cpi_normalized"]
+    )
+
+    # Drop temporary CPI columns and restore index
+    df_reset = df_reset.drop(columns=["cpi", "cpi_normalized"])
+    df = df_reset.set_index(["pid", "syear"])
+
+    return df
+
+
+def create_inheritance(df, cpi_data, specs):
     """Create inheritance variables.
 
     Creates two variables:
     1. inheritance_this_year: Binary indicator (1 if inheritance received in syear, 0
        otherwise)
-    2. inheritance_amount: Amount of inheritance in Euros (NaN for negative values)
+    2. inheritance_amount: Amount of inheritance in Euros (NaN for negative values),
+       deflated to reference year
 
     Variables used:
     - plc0376_v1: Year inheritance from person 1
     - plc0386_v1: Year inheritance from person 2
     - plc0396_v1: Year inheritance from person 3
     - plc0383_h: Inheritance/gift amount in Euros
+
+    Args:
+        df: DataFrame with MultiIndex (pid, syear)
+        cpi_data: DataFrame with CPI data (should have int_year and cpi columns)
+        specs: Dictionary with specs including reference_year
 
     Note: Assumes pid and syear are always in MultiIndex.
 
@@ -736,6 +789,9 @@ def create_inheritance(df):
         df["inheritance_amount"] = df["plc0383_h"].where(df["plc0383_h"] >= 0, np.nan)
     else:
         df["inheritance_amount"] = np.nan
+
+    # Deflate inheritance amount
+    # df = _deflate_inheritance_amount(df, cpi_data, specs)
 
     # Print 20 largest inheritance amounts with year_inheritance
     print("\n" + "=" * 70)

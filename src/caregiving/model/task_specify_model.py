@@ -44,21 +44,21 @@ from caregiving.model.wealth_and_budget.savings_grid import create_end_of_period
 from dcegm.pre_processing.setup_model import create_model_dict
 
 
-@pytask.mark.baseline_model
-def task_specify_model(
-    path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
-    path_to_save_model_config: Annotated[Path, Product] = BLD
-    / "model"
-    / "model_config.pkl",
-    path_to_save_model: Annotated[Path, Product] = BLD / "model" / "model.pkl",
-):
-    model = specify_model(
-        path_to_derived_specs=path_to_derived_specs,
-        path_to_save_model_config=path_to_save_model_config,
-        path_to_save_model=path_to_save_model,
-    )
+# @pytask.mark.baseline_model
+# def task_specify_model(
+#     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+#     path_to_save_model_config: Annotated[Path, Product] = BLD
+#     / "model"
+#     / "model_config.pkl",
+#     path_to_save_model: Annotated[Path, Product] = BLD / "model" / "model.pkl",
+# ):
+#     model = specify_model(
+#         path_to_derived_specs=path_to_derived_specs,
+#         path_to_save_model_config=path_to_save_model_config,
+#         path_to_save_model=path_to_save_model,
+#     )
 
-    return model
+#     return model
 
 
 def specify_model(
@@ -84,8 +84,6 @@ def specify_model(
     experience_grid = jnp.linspace(0, 1, specs["n_experience_grid_points"])
 
     model_config = {
-        # "min_period_batch_segments": [33 - 5, 44 - 5],
-        # "min_period_batch_segments": [23, 33, 34],
         "min_period_batch_segments": [33, 43, 44],
         "n_periods": n_periods,
         "choices": choices,

@@ -49,12 +49,14 @@ def task_create_main_estimation_sample(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_raw: Path = BLD / "data" / "soep_estimation_data_raw.csv",
     path_to_wealth: Path = BLD / "data" / "soep_wealth_data.csv",
+    path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
     path_to_save: Annotated[Path, Product] = BLD
     / "data"
     / "soep_structural_estimation_sample.csv",
 ) -> None:
 
     specs = read_and_derive_specs(path_to_specs)
+    cpi = pd.read_csv(path_to_cpi, index_col=0)
     specs["start_year"] = 2001
     specs["end_year"] = 2019
 
@@ -107,7 +109,7 @@ def task_create_main_estimation_sample(
     df = create_policy_state(df, specs)
     df = create_experience_variable(df)
     df = create_education_type(df)
-    df = create_inheritance(df)
+    df = create_inheritance(df, cpi_data=cpi, specs=specs)
 
     # health variable not yet available for 2023
     # df = create_health_var_good_bad(df, drop_missing=False)

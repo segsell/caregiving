@@ -103,11 +103,13 @@ def budget_constraint(
     )
 
     # Calculate total houshold net income
-    total_net_household_income, income_tax_total = calc_net_household_income(
-        own_income=own_income_after_ssc,
-        partner_income=partner_income_after_ssc,
-        has_partner_int=has_partner_int,
-        model_specs=model_specs,
+    total_net_household_income, income_tax_total, income_tax_single = (
+        calc_net_household_income(
+            own_income=own_income_after_ssc,
+            partner_income=partner_income_after_ssc,
+            has_partner_int=has_partner_int,
+            model_specs=model_specs,
+        )
     )
 
     child_benefits = calc_child_benefits(
@@ -196,6 +198,7 @@ def budget_constraint(
         "income_shock_for_labor": income_shock_for_labor,
         # Government budget components
         "income_tax": income_tax_total / model_specs["wealth_unit"],
+        "income_tax_single": income_tax_single / model_specs["wealth_unit"],
         "own_ssc": own_ssc / model_specs["wealth_unit"],
         "partner_ssc": partner_ssc / model_specs["wealth_unit"],
         "total_tax_revenue": total_tax_revenue / model_specs["wealth_unit"],

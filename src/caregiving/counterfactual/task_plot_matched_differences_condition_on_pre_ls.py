@@ -48,6 +48,7 @@ def task_plot_matched_differences_condition_on_pre_ls(
     / "solve_and_simulate"
     / "simulated_data_no_care_demand.pkl",
     path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = False,
     ever_care_demand: bool = True,
     window: int = 20,
@@ -79,8 +80,9 @@ def task_plot_matched_differences_condition_on_pre_ls(
         ever_care_demand=ever_care_demand,
     )
 
-    # Load options
+    # Load options and specs
     options = pickle.load(path_to_options.open("rb"))
+    specs = pickle.load(path_to_specs.open("rb"))
 
     # Create output directory
     output_dir = (
@@ -101,6 +103,7 @@ def task_plot_matched_differences_condition_on_pre_ls(
                 df_o=df_o,
                 df_c=df_c,
                 options=options,
+                specs=specs,
                 event_type=event_type,
                 labor_supply_state=ls_state,
                 ages=ages,
@@ -323,6 +326,7 @@ def create_event_study_plots(
     df_o: pd.DataFrame,
     df_c: pd.DataFrame,
     options: dict,
+    specs: dict,
     event_type: str,  # 'care' or 'care_demand'
     labor_supply_state: str,  # 'unemployed', 'part_time', 'full_time'
     ages: list[int],
@@ -355,8 +359,8 @@ def create_event_study_plots(
     )
 
     # Calculate additional outcomes
-    o_additional = calculate_additional_outcomes(df_o)
-    c_additional = calculate_additional_outcomes(df_c)
+    o_additional = calculate_additional_outcomes(df_o, specs)
+    c_additional = calculate_additional_outcomes(df_c, specs)
     o_outcomes.update(o_additional)
     c_outcomes.update(c_additional)
 

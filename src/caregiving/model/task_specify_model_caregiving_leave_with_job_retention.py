@@ -98,11 +98,14 @@ def specify_model_caregiving_leave_with_job_retention(
 
     # Build model_config with job_before_caregiving state
     model_config = {
-        # "min_period_batch_segments": [33, 43, 44],
-        "min_period_batch_segments": [23, 33, 34],
+        "min_period_batch_segments": [33, 43, 44],
         "n_periods": n_periods,
         "choices": choices,
         "deterministic_states": {
+            "caregiving_type": [1],
+            "education": [0],
+            "partner_state": [0],
+            "health": [1],
             "caregiving_type": np.arange(2, dtype=int),
             "education": np.arange(specs["n_education_types"], dtype=int),
             "already_retired": np.arange(2, dtype=int),

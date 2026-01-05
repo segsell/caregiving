@@ -191,6 +191,7 @@ def calculate_outcomes(
 
 def calculate_additional_outcomes(  # noqa: PLR0912
     df: pd.DataFrame,
+    specs: dict,
 ) -> dict[str, np.ndarray]:
     """Extract additional outcomes for plotting.
 
@@ -198,6 +199,7 @@ def calculate_additional_outcomes(  # noqa: PLR0912
         df: DataFrame with 'gross_labor_income', 'savings_dec',
             'assets_begin_of_period', 'savings_rate', and optionally
             'consumption'.
+        specs: Model specifications dict containing 'wealth_unit' key.
 
     Returns:
         Dictionary with keys:
@@ -209,11 +211,14 @@ def calculate_additional_outcomes(  # noqa: PLR0912
     outcomes = {}
     n = len(df)
 
-    # Gross labor income (convert from annual to monthly)
+    # Gross labor income (convert from annual to monthly, then scale by wealth_unit)
     # Note: gross_labor_income is ALWAYS stored as ANNUAL in the simulated data
-    # (calculated using av_annual_hours_pt/ft), so we always divide by 12
+    # (calculated using av_annual_hours_pt/ft), so we divide by 12 to get monthly.
+    # Then multiply by wealth_unit since it's scaled down inside the model.
     if "gross_labor_income" in df.columns:
-        outcomes["gross_labor_income"] = (df["gross_labor_income"] / 12).values
+        outcomes["gross_labor_income"] = (
+            df["gross_labor_income"] / 12 * specs["wealth_unit"]
+        ).values
     else:
         # If column doesn't exist, create zeros
         outcomes["gross_labor_income"] = np.zeros(n)
@@ -262,9 +267,13 @@ def calculate_additional_outcomes(  # noqa: PLR0912
     else:
         outcomes["bequest_from_parent"] = np.zeros(n)
 
-    # Caregiving leave top-up
+    # Caregiving leave top-up (convert from annual to monthly, then scale by wealth_unit)
+    # Note: caregiving_leave_top_up is stored as annual / wealth_unit in the budget equation,
+    # so we multiply by wealth_unit to get back to annual scale, then divide by 12 for monthly
     if "caregiving_leave_top_up" in df.columns:
-        outcomes["caregiving_leave_top_up"] = df["caregiving_leave_top_up"].values
+        outcomes["caregiving_leave_top_up"] = (
+            df["caregiving_leave_top_up"] / 12 * specs["wealth_unit"]
+        ).values
     else:
         outcomes["caregiving_leave_top_up"] = np.zeros(n)
 
