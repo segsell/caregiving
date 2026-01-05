@@ -1,13 +1,12 @@
 import pickle as pkl
 
-import numpy as np
 import jax.numpy as jnp
-
-from caregiving.model.shared import RETIREMENT_CHOICES, SEX
+import numpy as np
 
 from caregiving.model.pension_system.experience_stock import (
     calc_pension_points_for_experience,
 )
+from caregiving.model.shared import RETIREMENT_CHOICES, SEX
 from caregiving.model.wealth_and_budget.wages import calc_hourly_wage
 
 

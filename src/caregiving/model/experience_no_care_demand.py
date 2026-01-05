@@ -1,6 +1,13 @@
 import jax
 import jax.numpy as jnp
 
+from caregiving.model.experience_baseline_model import (
+    construct_experience_years,
+    scale_experience_years,
+)
+from caregiving.model.pension_system.experience_stock import (
+    calc_pension_points_for_experience,
+)
 from caregiving.model.shared import (
     SEX,
 )
@@ -8,13 +15,6 @@ from caregiving.model.shared_no_care_demand import (
     is_full_time,
     is_part_time,
     is_retired,
-)
-from caregiving.model.pension_system.experience_stock import (
-    calc_pension_points_for_experience,
-)
-from caregiving.model.experience_baseline_model import (
-    construct_experience_years,
-    scale_experience_years,
 )
 
 jax.config.update("jax_enable_x64", True)

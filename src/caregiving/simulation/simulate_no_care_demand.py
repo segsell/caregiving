@@ -7,7 +7,7 @@ choice arrays from shared_no_care_demand to assign working hours, etc.
 
 import numpy as np
 
-
+from caregiving.model.experience_baseline_model import construct_experience_years
 from caregiving.model.shared import DEAD, SEX
 from caregiving.model.shared_no_care_demand import (
     FULL_TIME_NO_CARE_DEMAND,
@@ -15,7 +15,6 @@ from caregiving.model.shared_no_care_demand import (
     RETIREMENT_NO_CARE_DEMAND,
     UNEMPLOYED_NO_CARE_DEMAND,
 )
-from caregiving.model.experience_baseline_model import construct_experience_years
 
 
 def simulate_scenario(model_solved, initial_states, model_specs):

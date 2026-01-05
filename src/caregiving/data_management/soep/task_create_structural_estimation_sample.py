@@ -17,15 +17,17 @@ from caregiving.data_management.soep.auxiliary import (
     filter_years,
     recode_sex,
 )
+from caregiving.data_management.soep.soep_variables.experience import (
+    create_experience_and_working_years,
+)
 from caregiving.data_management.soep.task_create_event_study_sample import (
     create_caregiving,
     create_parent_info,
     create_sibling_info,
 )
-from caregiving.data_management.soep.variables import (
+from caregiving.data_management.soep.variables import (  # create_experience_variable,
     create_choice_variable,
     create_education_type,
-    # create_experience_variable,
     create_health_var_good_bad,
     create_inheritance,
     create_kidage_youngest,
@@ -34,9 +36,6 @@ from caregiving.data_management.soep.variables import (
     create_policy_state,
     determine_observed_job_offers,
     generate_job_separation_var,
-)
-from caregiving.data_management.soep.soep_variables.experience import (
-    create_experience_and_working_years,
 )
 from caregiving.model.shared import (
     PART_TIME_CHOICES,

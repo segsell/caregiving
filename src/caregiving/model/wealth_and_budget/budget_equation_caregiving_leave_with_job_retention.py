@@ -1,5 +1,6 @@
 from jax import numpy as jnp
 
+from caregiving.model.experience_baseline_model import construct_experience_years
 from caregiving.model.shared import (
     CARE_DEMAND_AND_NO_OTHER_SUPPLY,
     CARE_DEMAND_AND_OTHER_SUPPLY,
@@ -36,7 +37,6 @@ from caregiving.model.wealth_and_budget.transfers import (
     draw_inheritance_outcome,
 )
 from caregiving.model.wealth_and_budget.wages import calc_labor_income_after_ssc
-from caregiving.model.experience_baseline_model import construct_experience_years
 
 
 def budget_constraint(

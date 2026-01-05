@@ -16,6 +16,7 @@ from sklearn.neighbors import KernelDensity
 
 import dcegm
 from caregiving.config import BLD
+from caregiving.model.experience_baseline_model import scale_experience_years
 from caregiving.model.shared import (
     ALL_NO_CARE,
     CARE_DEMAND_INTENSIVE,
@@ -33,7 +34,6 @@ from caregiving.model.shared import (
     SEX,
     WORK_AND_UNEMPLOYED_NO_CARE,
 )
-from caregiving.model.experience_baseline_model import scale_experience_years
 from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.stochastic_processes.job_transition import (
     job_offer_process_transition_initial_conditions,

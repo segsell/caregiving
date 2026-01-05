@@ -2,16 +2,15 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from caregiving.model.shared import (
-    SEX,
-    is_retired,
-    is_intensive_informal_care,
-    is_full_time,
-    is_part_time,
-    is_retired,
-)
 from caregiving.model.pension_system.experience_stock import (
     calc_pension_points_for_experience,
+)
+from caregiving.model.shared import (
+    SEX,
+    is_full_time,
+    is_intensive_informal_care,
+    is_part_time,
+    is_retired,
 )
 
 

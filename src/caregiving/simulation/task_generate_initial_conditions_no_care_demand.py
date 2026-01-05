@@ -16,6 +16,7 @@ from sklearn.neighbors import KernelDensity
 
 import dcegm
 from caregiving.config import BLD
+from caregiving.model.experience_baseline_model import scale_experience_years
 from caregiving.model.shared import (
     MOTHER,
     PARENT_HEALTH_DEAD,
@@ -43,7 +44,6 @@ from caregiving.simulation.task_generate_initial_conditions import (
     draw_mother_health,
     draw_start_wealth_dist,
 )
-from caregiving.model.experience_baseline_model import scale_experience_years
 
 
 @pytask.mark.skip()
