@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-from dcegm.asset_correction import adjust_observed_assets
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
@@ -50,6 +49,7 @@ from caregiving.moments.task_create_soep_moments import (
     create_df_wealth,
 )
 from caregiving.utils import table
+from dcegm.asset_correction import adjust_observed_assets
 
 
 @pytask.mark.initial_conditions
@@ -447,6 +447,21 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         "assets_begin_of_period": wealth_agents,
     }
     # type_mask_low = (sex_agents == sex_var) & (education_agents == 0)
+    # import seaborn as sns
+    # import matplotlib.pyplot as plt
+
+    # df = pd.DataFrame(
+    #     {
+    #         "exp_empirical": start_period_data["experience"].values,
+    #     }
+    # )
+
+    # fig, ax = plt.subplots(1, 1, figsize=(8, 4))
+    # sns.histplot(data=df, x="exp_empirical", ax=ax, kde=True)
+    # ax.set_title("Experience (Empirical)")
+    # plt.tight_layout()
+    # plt.show()
+    # breakpoint()
 
     with path_to_save_initial_states.open("wb") as f:
         pickle.dump(states, f)

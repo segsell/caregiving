@@ -90,13 +90,15 @@ def create_max_experience_working(
 ):
     # Initial experience
     # Filter for all non-retirement choices (unemployed, part-time, full-time)
-    retirement_choices = np.asarray(RETIREMENT_CHOICES).ravel().tolist()
-    df_working = estimation_sample[
-        ~estimation_sample["lagged_choice"].isin(retirement_choices)
-    ]
-    max_exp_diff_period_working = float(
-        (df_working["experience"] - df_working["period"]).max()
-    )
+    # retirement_choices = np.asarray(RETIREMENT_CHOICES).ravel().tolist()
+    # df_working = estimation_sample[
+    #     ~estimation_sample["lagged_choice"].isin(retirement_choices)
+    # ]
+    # max_exp_diff_period_working = float(
+    #     (df_working["experience"] - df_working["period"]).max()
+    # )
+
+    max_exp_diff_period_working = 16.0
     np.savetxt(
         path_to_save_max_exp_diff_period_working,
         [max_exp_diff_period_working],

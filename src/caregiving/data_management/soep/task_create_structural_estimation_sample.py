@@ -18,7 +18,7 @@ from caregiving.data_management.soep.auxiliary import (
     recode_sex,
 )
 from caregiving.data_management.soep.soep_variables.experience import (
-    create_experience_and_working_years,
+    create_experience_variable_with_cap,
 )
 from caregiving.data_management.soep.task_create_event_study_sample import (
     create_caregiving,
@@ -46,306 +46,309 @@ from caregiving.specs.task_write_specs import read_and_derive_specs
 from caregiving.utils import table
 
 
-# @pytask.mark.estimation_sample
-# def task_create_main_estimation_sample(
-#     path_to_specs: Path = SRC / "specs.yaml",
-#     path_to_raw: Path = BLD / "data" / "soep_estimation_data_raw.csv",
-#     path_to_wealth: Path = BLD / "data" / "soep_wealth_data.csv",
-#     path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
-#     path_to_save: Annotated[Path, Product] = BLD
-#     / "data"
-#     / "soep_structural_estimation_sample.csv",
-# ) -> None:
+@pytask.mark.estimation_sample
+def task_create_main_estimation_sample(
+    path_to_specs: Path = SRC / "specs.yaml",
+    path_to_raw: Path = BLD / "data" / "soep_estimation_data_raw.csv",
+    path_to_wealth: Path = BLD / "data" / "soep_wealth_data.csv",
+    path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
+    path_to_save: Annotated[Path, Product] = BLD
+    / "data"
+    / "soep_structural_estimation_sample.csv",
+) -> None:
 
-#     specs = read_and_derive_specs(path_to_specs)
-#     cpi = pd.read_csv(path_to_cpi, index_col=0)
-#     specs["start_year"] = 2001
-#     specs["end_year"] = 2019
+    specs = read_and_derive_specs(path_to_specs)
+    cpi = pd.read_csv(path_to_cpi, index_col=0)
 
-#     # merged_data = pd.read_csv(path_to_raw, index_col=[0, 1])
-#     df = pd.read_csv(path_to_raw, index_col=[0, 1])
+    specs["start_year"] = 2001
+    specs["end_year"] = 2019
 
-#     df = create_partner_state(df, filter_missing=True)
-#     df = create_kidage_youngest(df)
+    # merged_data = pd.read_csv(path_to_raw, index_col=[0, 1])
+    df = pd.read_csv(path_to_raw, index_col=[0, 1])
 
-#     df = create_parent_info(df, filter_missing=False)
-#     df = create_sibling_info(df, filter_missing=False)
+    df = create_partner_state(df, filter_missing=True)
+    df = create_kidage_youngest(df)
 
-#     df = create_choice_variable(df)
-#     df = create_caregiving(df, filter_missing=False)
+    df = create_parent_info(df, filter_missing=False)
+    df = create_sibling_info(df, filter_missing=False)
 
-#     # filter data. Leave additional years in for lagging and leading.
-#     df = filter_data(df, specs)
+    df = create_choice_variable(df)
+    df = create_caregiving(df, filter_missing=False)
 
-#     # df = generate_job_separation_var(df)
-#     # df = create_lagged_and_lead_variables(
-#     #     df, specs, lead_job_sep=True, drop_missing_lagged_choice=True
-#     # )
+    # filter data. Leave additional years in for lagging and leading.
+    df = filter_data(df, specs)
 
-#     df = generate_job_separation_var(df)
-#     df = create_lagged_and_lead_variables(
-#         df, specs, lead_job_sep=True, drop_missing_lagged_choice=True
-#     )
-#     # Create lagged_any_care variable from any_care
-#     # pid is in the index (level 0)
-#     df["lagged_any_care"] = df.groupby(level=0)["any_care"].shift(1)
+    # df = generate_job_separation_var(df)
+    # df = create_lagged_and_lead_variables(
+    #     df, specs, lead_job_sep=True, drop_missing_lagged_choice=True
+    # )
 
-#     df = create_alreay_retired_variable(df)
-#     # df = df.reset_index()
-#     # df = df.sort_values(["pid", "syear"])
+    df = generate_job_separation_var(df)
+    df = create_lagged_and_lead_variables(
+        df, specs, lead_job_sep=True, drop_missing_lagged_choice=True
+    )
+    # Create lagged_any_care variable from any_care
+    # pid is in the index (level 0)
+    df["lagged_any_care"] = df.groupby(level=0)["any_care"].shift(1)
 
-#     # retired_values = np.asarray(RETIREMENT).ravel().tolist()
-#     # df["retire_flag"] = (
-#     #     df["lagged_choice"].isin(retired_values) & df["choice"].isin(retired_values)
-#     # ).astype(int)
-#     # df["already_retired"] = df.groupby("pid")["retire_flag"].cummax()
+    df = create_alreay_retired_variable(df)
+    # df = df.reset_index()
+    # df = df.sort_values(["pid", "syear"])
 
-#     # df.drop(columns=["retire_flag"], inplace=True)
-#     # df.set_index(["pid", "syear"], inplace=True)
+    # retired_values = np.asarray(RETIREMENT).ravel().tolist()
+    # df["retire_flag"] = (
+    #     df["lagged_choice"].isin(retired_values) & df["choice"].isin(retired_values)
+    # ).astype(int)
+    # df["already_retired"] = df.groupby("pid")["retire_flag"].cummax()
 
-#     wealth = pd.read_csv(path_to_wealth, index_col=[0])
-#     df = add_wealth_data(df, wealth, drop_missing=False)
+    # df.drop(columns=["retire_flag"], inplace=True)
+    # df.set_index(["pid", "syear"], inplace=True)
 
-#     df["period"] = df["age"] - specs["start_age"]
+    wealth = pd.read_csv(path_to_wealth, index_col=[0])
+    df = add_wealth_data(df, wealth, drop_missing=False)
 
-#     df = create_policy_state(df, specs)
-#     df = create_experience_and_working_years(df, filter_missings=True)
+    df["period"] = df["age"] - specs["start_age"]
 
-#     df = create_education_type(df)
-#     df = create_inheritance(df, cpi_data=cpi, specs=specs)
+    df = create_policy_state(df, specs)
 
-#     # health variable not yet available for 2023
-#     # df = create_health_var_good_bad(df, drop_missing=False)
-#     df = create_health_var_good_bad(df, drop_missing=True)
-#     df = create_nursing_home(df)
+    df = create_experience_variable_with_cap(df, exp_cap=specs["start_age"] - 14)
 
-#     df = enforce_model_choice_restriction(df, specs)
+    df = create_education_type(df)
+    df = create_inheritance(df, cpi_data=cpi, specs=specs)
 
-#     # Construct job offer state
-#     was_fired_last_period = df["job_sep_this_year"] == 1
-#     df = determine_observed_job_offers(
-#         df, working_choices=WORK_CHOICES, was_fired_last_period=was_fired_last_period
-#     )
+    # health variable not yet available for 2023
+    # df = create_health_var_good_bad(df, drop_missing=False)
+    df = create_health_var_good_bad(df, drop_missing=True)
+    df = create_nursing_home(df)
 
-#     # Filter out part-time men
-#     part_time_values = np.asarray(PART_TIME_CHOICES).ravel().tolist()
-#     mask = df["sex"] == 0
-#     df = df.loc[~(mask & df["choice"].isin(part_time_values))]
-#     df = df.loc[~(mask & df["lagged_choice"].isin(part_time_values))]
+    df = enforce_model_choice_restriction(df, specs)
 
-#     df["has_sister"] = (df["n_sisters"] > 0).astype(int)
-#     df["mother_age_diff"] = df["mother_age"] - df["age"]
-#     df["father_age_diff"] = df["father_age"] - df["age"]
+    # Construct job offer state
+    was_fired_last_period = df["job_sep_this_year"] == 1
+    df = determine_observed_job_offers(
+        df, working_choices=WORK_CHOICES, was_fired_last_period=was_fired_last_period
+    )
 
-#     _obs_per_pid = df.groupby("pid").size().rename("n_obs")
+    # Filter out part-time men
+    part_time_values = np.asarray(PART_TIME_CHOICES).ravel().tolist()
+    mask = df["sex"] == 0
+    df = df.loc[~(mask & df["choice"].isin(part_time_values))]
+    df = df.loc[~(mask & df["lagged_choice"].isin(part_time_values))]
 
-#     # Keep relevant columns (i.e. state variables) and set their minimal datatype
-#     type_dict = {
-#         "pid": "int32",
-#         "syear": "int16",
-#         "gebjahr": "int16",
-#         "age": "int8",
-#         "period": "int8",
-#         "choice": "int8",
-#         "lagged_choice": "float32",  # can be NA
-#         "policy_state": "int8",
-#         "policy_state_value": "int8",
-#         "already_retired": "int8",
-#         "partner_state": "int8",
-#         "job_offer": "int8",
-#         "experience": "int8",
-#         "wealth": "float32",
-#         "education": "int8",
-#         "health": "float16",
-#         "nursing_home": "float16",
-#         "sex": "int8",
-#         "children": "int8",
-#         "kidage_youngest": "int8",
-#         # caregiving, contains nans
-#         "any_care": "float32",
-#         "lagged_any_care": "float32",
-#         "light_care": "float32",
-#         "intensive_care": "float32",
-#         "has_sister": "float32",
-#         "n_siblings": "float32",
-#         "mother_age_diff": "float32",
-#         "father_age_diff": "float32",
-#         "mother_alive": "float32",
-#         "father_alive": "float32",
-#         "mother_died_this_year": "float32",
-#         "father_died_this_year": "float32",
-#         "inheritance_this_year": "float32",
-#         "inheritance_amount": "float32",
-#     }
-#     # df = df.reset_index(level="syear")
-#     # Reset both levels of the index to make pid and syear regular columns
-#     df = df.reset_index()
-#     df = df[list(type_dict.keys())]
-#     df = df.astype(type_dict)
+    df["has_sister"] = (df["n_sisters"] > 0).astype(int)
+    df["mother_age_diff"] = df["mother_age"] - df["age"]
+    df["father_age_diff"] = df["father_age"] - df["age"]
 
-#     # print_data_description(df)
+    _obs_per_pid = df.groupby("pid").size().rename("n_obs")
 
-#     # Anonymize and save data
-#     # df.reset_index(drop=True, inplace=True)
-#     # df.to_csv(path_to_save)
+    # Keep relevant columns (i.e. state variables) and set their minimal datatype
+    type_dict = {
+        "pid": "int32",
+        "syear": "int16",
+        "gebjahr": "int16",
+        "age": "int8",
+        "period": "int8",
+        "choice": "int8",
+        "lagged_choice": "float32",  # can be NA
+        "policy_state": "int8",
+        "policy_state_value": "int8",
+        "already_retired": "int8",
+        "partner_state": "int8",
+        "job_offer": "int8",
+        "experience": "int8",
+        "wealth": "float32",
+        "education": "int8",
+        "health": "float16",
+        "nursing_home": "float16",
+        "sex": "int8",
+        "children": "int8",
+        "kidage_youngest": "int8",
+        # caregiving, contains nans
+        "any_care": "float32",
+        "lagged_any_care": "float32",
+        "light_care": "float32",
+        "intensive_care": "float32",
+        "has_sister": "float32",
+        "n_siblings": "float32",
+        "mother_age_diff": "float32",
+        "father_age_diff": "float32",
+        "mother_alive": "float32",
+        "father_alive": "float32",
+        "mother_died_this_year": "float32",
+        "father_died_this_year": "float32",
+        "inheritance_this_year": "float32",
+        "inheritance_amount": "float32",
+    }
+    # df = df.reset_index(level="syear")
+    # Reset both levels of the index to make pid and syear regular columns
+    df = df.reset_index()
+    df = df[list(type_dict.keys())]
+    df = df.astype(type_dict)
 
-#     # Save without index (pid and syear are now columns)
-#     df.to_csv(path_to_save, index=True)
+    # print_data_description(df)
+
+    # Anonymize and save data
+    # df.reset_index(drop=True, inplace=True)
+    # df.to_csv(path_to_save)
+
+    # Save without index (pid and syear are now columns)
+    df.to_csv(path_to_save, index=True)
 
 
-# @pytask.mark.caregivers_sample
-# def task_create_caregivers_sample(
-#     path_to_specs: Path = SRC / "specs.yaml",
-#     path_to_raw: Path = BLD / "data" / "soep_estimation_data_raw.csv",
-#     path_to_wealth: Path = BLD / "data" / "soep_wealth_data.csv",
-#     path_to_save: Annotated[Path, Product] = BLD
-#     / "data"
-#     / "soep_structural_caregivers_sample.csv",
-# ) -> None:
+@pytask.mark.caregivers_sample
+def task_create_caregivers_sample(
+    path_to_specs: Path = SRC / "specs.yaml",
+    path_to_raw: Path = BLD / "data" / "soep_estimation_data_raw.csv",
+    path_to_wealth: Path = BLD / "data" / "soep_wealth_data.csv",
+    path_to_save: Annotated[Path, Product] = BLD
+    / "data"
+    / "soep_structural_caregivers_sample.csv",
+) -> None:
 
-#     specs = read_and_derive_specs(path_to_specs)
-#     specs["start_year"] = 2001
-#     specs["end_year"] = 2019
+    specs = read_and_derive_specs(path_to_specs)
+    specs["start_year"] = 2001
+    specs["end_year"] = 2019
 
-#     # merged_data = pd.read_csv(path_to_raw, index_col=[0, 1])
-#     df = pd.read_csv(path_to_raw, index_col=[0, 1])
+    # merged_data = pd.read_csv(path_to_raw, index_col=[0, 1])
+    df = pd.read_csv(path_to_raw, index_col=[0, 1])
 
-#     df = create_partner_state(df, filter_missing=True)
-#     df = create_kidage_youngest(df)
+    df = create_partner_state(df, filter_missing=True)
+    df = create_kidage_youngest(df)
 
-#     df = create_parent_info(df, filter_missing=False)
-#     df = create_sibling_info(df, filter_missing=False)
+    df = create_parent_info(df, filter_missing=False)
+    df = create_sibling_info(df, filter_missing=False)
 
-#     df = create_choice_variable(df)
-#     df = create_caregiving(df, filter_missing=False)
+    df = create_choice_variable(df)
+    df = create_caregiving(df, filter_missing=False)
 
-#     # filter data. Leave additional years in for lagging and leading.
-#     # df = filter_data(df, specs)
-#     df = filter_below_age(df, specs["start_age"] - 1)
-#     df = recode_sex(df)
-#     df = filter_years(df, start_year=2001, end_year=2023)
-#     syear_counts = df.index.get_level_values("syear").value_counts().sort_index()
-#     print("Number of observations per year in the sample:\n" + str(syear_counts))
+    # filter data. Leave additional years in for lagging and leading.
+    # df = filter_data(df, specs)
+    df = filter_below_age(df, specs["start_age"] - 1)
+    df = recode_sex(df)
+    df = filter_years(df, start_year=2001, end_year=2023)
+    syear_counts = df.index.get_level_values("syear").value_counts().sort_index()
+    print("Number of observations per year in the sample:\n" + str(syear_counts))
 
-#     df = generate_job_separation_var(df)
-#     df = create_lagged_and_lead_variables(
-#         df,
-#         specs,
-#         lead_job_sep=True,
-#         drop_missing_lagged_choice=False,
-#         start_year=2001,
-#         end_year=2023,
-#     )
-#     # Create lagged_any_care variable from any_care
-#     # pid is in the index (level 0)
-#     df["lagged_any_care"] = df.groupby(level=0)["any_care"].shift(1)
+    df = generate_job_separation_var(df)
+    df = create_lagged_and_lead_variables(
+        df,
+        specs,
+        lead_job_sep=True,
+        drop_missing_lagged_choice=False,
+        start_year=2001,
+        end_year=2023,
+    )
+    # Create lagged_any_care variable from any_care
+    # pid is in the index (level 0)
+    df["lagged_any_care"] = df.groupby(level=0)["any_care"].shift(1)
 
-#     df = create_alreay_retired_variable(df)
-#     # df = df.reset_index()
-#     # df = df.sort_values(["pid", "syear"])
+    df = create_alreay_retired_variable(df)
+    # df = df.reset_index()
+    # df = df.sort_values(["pid", "syear"])
 
-#     # retired_values = np.asarray(RETIREMENT).ravel().tolist()
-#     # df["retire_flag"] = (
-#     #     df["lagged_choice"].isin(retired_values) & df["choice"].isin(retired_values)
-#     # ).astype(int)
-#     # df["already_retired"] = df.groupby("pid")["retire_flag"].cummax()
+    # retired_values = np.asarray(RETIREMENT).ravel().tolist()
+    # df["retire_flag"] = (
+    #     df["lagged_choice"].isin(retired_values) & df["choice"].isin(retired_values)
+    # ).astype(int)
+    # df["already_retired"] = df.groupby("pid")["retire_flag"].cummax()
 
-#     # df.drop(columns=["retire_flag"], inplace=True)
-#     # df.set_index(["pid", "syear"], inplace=True)
+    # df.drop(columns=["retire_flag"], inplace=True)
+    # df.set_index(["pid", "syear"], inplace=True)
 
-#     wealth = pd.read_csv(path_to_wealth, index_col=[0])
-#     df = add_wealth_data(df, wealth, drop_missing=False)
+    wealth = pd.read_csv(path_to_wealth, index_col=[0])
+    df = add_wealth_data(df, wealth, drop_missing=False)
 
-#     df["period"] = df["age"] - specs["start_age"]
+    df["period"] = df["age"] - specs["start_age"]
 
-#     df = create_policy_state(df, specs)
-#     df = create_experience_and_working_years(df, filter_missings=True)
+    df = create_policy_state(df, specs)
 
-#     df = create_education_type(df)
-#     df = create_health_var_good_bad(df, drop_missing=False)
-#     df = create_nursing_home(df)
+    df = create_experience_variable_with_cap(df, exp_cap=specs["start_age"] - 14)
 
-#     df = enforce_model_choice_restriction(df, specs)
+    df = create_education_type(df)
+    df = create_health_var_good_bad(df, drop_missing=False)
+    df = create_nursing_home(df)
 
-#     # Construct job offer state
-#     was_fired_last_period = df["job_sep_this_year"] == 1
-#     df = determine_observed_job_offers(
-#         df, working_choices=WORK_CHOICES, was_fired_last_period=was_fired_last_period
-#     )
+    df = enforce_model_choice_restriction(df, specs)
 
-#     # Filter out part-time men
-#     part_time_values = np.asarray(PART_TIME_CHOICES).ravel().tolist()
-#     mask = df["sex"] == 0
-#     df = df.loc[~(mask & df["choice"].isin(part_time_values))]
-#     df = df.loc[~(mask & df["lagged_choice"].isin(part_time_values))]
+    # Construct job offer state
+    was_fired_last_period = df["job_sep_this_year"] == 1
+    df = determine_observed_job_offers(
+        df, working_choices=WORK_CHOICES, was_fired_last_period=was_fired_last_period
+    )
 
-#     df["has_sister"] = (df["n_sisters"] > 0).astype(int)
-#     df["mother_age_diff"] = df["mother_age"] - df["age"]
-#     df["father_age_diff"] = df["father_age"] - df["age"]
+    # Filter out part-time men
+    part_time_values = np.asarray(PART_TIME_CHOICES).ravel().tolist()
+    mask = df["sex"] == 0
+    df = df.loc[~(mask & df["choice"].isin(part_time_values))]
+    df = df.loc[~(mask & df["lagged_choice"].isin(part_time_values))]
 
-#     # _obs_per_pid = df.groupby("pid").size().rename("n_obs")
+    df["has_sister"] = (df["n_sisters"] > 0).astype(int)
+    df["mother_age_diff"] = df["mother_age"] - df["age"]
+    df["father_age_diff"] = df["father_age"] - df["age"]
 
-#     # Keep relevant columns (i.e. state variables) and set their minimal datatype
-#     type_dict = {
-#         "syear": "int16",
-#         "gebjahr": "int16",
-#         "age": "int8",
-#         "period": "int8",
-#         "choice": "int8",
-#         "lagged_choice": "float32",  # can be NA
-#         "policy_state": "int8",
-#         "policy_state_value": "int8",
-#         "already_retired": "int8",
-#         "partner_state": "int8",
-#         "job_offer": "int8",
-#         "experience": "int8",
-#         "wealth": "float32",
-#         "education": "int8",
-#         "health": "float16",  # can be NA
-#         "nursing_home": "float16",
-#         "sex": "int8",
-#         "children": "int8",
-#         "kidage_youngest": "int8",
-#         # caregiving, contains nans
-#         "any_care": "float32",
-#         "lagged_any_care": "float32",  # can be NA
-#         "light_care": "float32",
-#         "intensive_care": "float32",
-#         "has_sister": "float32",
-#         "n_siblings": "float32",
-#         "mother_age_diff": "float32",
-#         "father_age_diff": "float32",
-#         "mother_alive": "float32",
-#         "father_alive": "float32",
-#     }
+    # _obs_per_pid = df.groupby("pid").size().rename("n_obs")
 
-#     # #
-#     # df = df.reset_index(level=["syear", "pid"])
-#     # df["age_at_first_care"] = (
-#     #     df.loc[df["any_care"] == 1].groupby("pid")["age"].transform("min")
-#     # )
+    # Keep relevant columns (i.e. state variables) and set their minimal datatype
+    type_dict = {
+        "syear": "int16",
+        "gebjahr": "int16",
+        "age": "int8",
+        "period": "int8",
+        "choice": "int8",
+        "lagged_choice": "float32",  # can be NA
+        "policy_state": "int8",
+        "policy_state_value": "int8",
+        "already_retired": "int8",
+        "partner_state": "int8",
+        "job_offer": "int8",
+        "experience": "int8",
+        "wealth": "float32",
+        "education": "int8",
+        "health": "float16",  # can be NA
+        "nursing_home": "float16",
+        "sex": "int8",
+        "children": "int8",
+        "kidage_youngest": "int8",
+        # caregiving, contains nans
+        "any_care": "float32",
+        "lagged_any_care": "float32",  # can be NA
+        "light_care": "float32",
+        "intensive_care": "float32",
+        "has_sister": "float32",
+        "n_siblings": "float32",
+        "mother_age_diff": "float32",
+        "father_age_diff": "float32",
+        "mother_alive": "float32",
+        "father_alive": "float32",
+    }
 
-#     # first_care = df.loc[df["any_care"] == 1].groupby("pid")["age"].min()
-#     # df["_age_at_first_care"] = df["pid"].map(first_care)
+    # #
+    # df = df.reset_index(level=["syear", "pid"])
+    # df["age_at_first_care"] = (
+    #     df.loc[df["any_care"] == 1].groupby("pid")["age"].transform("min")
+    # )
 
-#     # mean_first_care_age = (
-#     #     df.query("any_care == 1")
-#     #     .groupby("pid")["age"]
-#     #     .min()  # one value per pid
-#     #     .mean()  # sample mean over those who ever provided care
-#     # )
-#     # _mean_first_care_age = df.drop_duplicates("pid")["age_at_first_care"].mean()
-#     # #
+    # first_care = df.loc[df["any_care"] == 1].groupby("pid")["age"].min()
+    # df["_age_at_first_care"] = df["pid"].map(first_care)
 
-#     df = df.reset_index(level="syear")
-#     df = df[list(type_dict.keys())]
-#     df = df.astype(type_dict)
+    # mean_first_care_age = (
+    #     df.query("any_care == 1")
+    #     .groupby("pid")["age"]
+    #     .min()  # one value per pid
+    #     .mean()  # sample mean over those who ever provided care
+    # )
+    # _mean_first_care_age = df.drop_duplicates("pid")["age_at_first_care"].mean()
+    # #
 
-#     # print_data_description(df)
+    df = df.reset_index(level="syear")
+    df = df[list(type_dict.keys())]
+    df = df.astype(type_dict)
 
-#     # Anonymize and save data
-#     df.reset_index(drop=True, inplace=True)
-#     df.to_csv(path_to_save)
+    # print_data_description(df)
+
+    # Anonymize and save data
+    df.reset_index(drop=True, inplace=True)
+    df.to_csv(path_to_save)
 
 
 def add_wealth_data(data, wealth, drop_missing=False):

@@ -15,7 +15,7 @@ from caregiving.data_management.soep.auxiliary import (
     filter_data,
 )
 from caregiving.data_management.soep.soep_variables.experience import (
-    create_experience_and_working_years,
+    create_experience_variable_with_cap,
 )
 from caregiving.data_management.soep.variables import (  # create_experience_variable,
     create_choice_variable,
@@ -213,7 +213,9 @@ def task_create_event_study_sample(
         event_study=True,
     )
 
-    df = create_experience_and_working_years(df, filter_missings=False)
+    df = create_experience_variable_with_cap(
+        df, exp_cap=specs["start_age"] - 14, filter_missings=False
+    )
     df = create_involuntary_versus_voluntary_job_separation_var(df)
     df = create_job_separation_fired(df)
 

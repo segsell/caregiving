@@ -6,15 +6,16 @@ def _print_filter(before, after, msg):
     print(f"{after} {msg} ({pct:+.2f}%)")
 
 
-def _create_experience_variable_with_cap(data, exp_cap):
+def create_experience_variable_with_cap(data, exp_cap, filter_missings=True):
     """This function creates an experience variable as the sum of full-time and 0.5
     weighted part-time experience.
     It als enforces an experience cap.
     """
     # Create experience variable
-    data = create_experience_and_working_years(data)
+    data = create_experience_and_working_years(data, filter_missings=filter_missings)
     # Enforce experience cap
     data.loc[data["experience"] > exp_cap, "experience"] = exp_cap
+
     return data
 
 

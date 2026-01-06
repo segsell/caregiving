@@ -64,7 +64,6 @@ def get_next_period_experience(
     )
 
     # Update if working part or full time
-    # Update if working part or full time
     # Full pension point (1.0) for part-time workers providing intensive informal care
     # Full-time workers are unaffected (always get 1.0)
     intensive_care = is_intensive_informal_care(lagged_choice)

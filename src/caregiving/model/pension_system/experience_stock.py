@@ -54,12 +54,10 @@ def calc_pension_points_for_experience(
         model_specs=model_specs,
     )
 
-    # Total bonus for late retirement
-    pension_points_late_retirement = (
-        1
-        + (0.06 * retirement_age_difference)
-        # 1 + (model_specs["late_retirement_bonus"] * retirement_age_difference)
-    ) * total_pension_points
+    # # Total bonus for late retirement
+    # pension_points_late_retirement = (
+    #     1 + (model_specs["late_retirement_bonus"] * retirement_age_difference)
+    # ) * total_pension_points
 
     # Select bonus or penalty depending on age difference
     adjusted_pension_points = jax.lax.select(
