@@ -1,19 +1,18 @@
 from jax import numpy as jnp
 
+from caregiving.model.experience_baseline_model import construct_experience_years
 from caregiving.model.shared import (
     CARE_DEMAND_AND_NO_OTHER_SUPPLY,
     CARE_DEMAND_AND_OTHER_SUPPLY,
     PARENT_RECENTLY_DEAD,
     SEX,
-    had_ft_job_before_caregiving,
-    had_no_job_before_caregiving,
-    had_pt_job_before_caregiving,
-    is_informal_care,
+    is_formal_care,
     is_no_care,
-    is_part_time,
     is_retired,
-    is_unemployed,
     is_working,
+)
+from caregiving.model.wealth_and_budget.caregiving_leave_top_up import (
+    calc_caregiving_leave_top_up,
 )
 from caregiving.model.wealth_and_budget.government_budget_caregiving_leave_with_job_retention import (
     calc_government_budget_components_caregiving_leave_with_job_retention,
@@ -24,19 +23,14 @@ from caregiving.model.wealth_and_budget.partner_income import (
 from caregiving.model.wealth_and_budget.pension_payments import (
     calc_pensions_after_ssc,
 )
-from caregiving.model.wealth_and_budget.tax_and_ssc import (
-    calc_after_ssc_income_worker,
-    calc_net_household_income,
-)
+from caregiving.model.wealth_and_budget.tax_and_ssc import calc_net_household_income
 from caregiving.model.wealth_and_budget.transfers import (
-    calc_care_benefits_and_costs,
     calc_child_benefits,
     calc_inheritance_amount,
     calc_unemployment_benefits,
     draw_inheritance_outcome,
 )
 from caregiving.model.wealth_and_budget.wages import calc_labor_income_after_ssc
-from caregiving.model.experience_baseline_model import construct_experience_years
 
 
 def budget_constraint(
@@ -155,16 +149,15 @@ def budget_constraint(
         period=period,
         model_specs=model_specs,
     )
-    # Standard care benefits and costs (remain post-tax transfers)
-    care_benefits_and_costs = calc_care_benefits_and_costs(
-        lagged_choice=lagged_choice,
-        education=education,
-        care_demand=care_demand,
-        model_specs=model_specs,
+
+    # Formal care costs only (no informal care cash benefits, as caregiving leave top-up replaces them)
+    formal_care = is_formal_care(lagged_choice)
+    annual_formal_care_costs = (
+        -model_specs["formal_care_costs"] * formal_care * 12 * 0.5
     )
 
     total_income = jnp.maximum(
-        total_net_household_income + child_benefits + care_benefits_and_costs,
+        total_net_household_income + child_benefits,
         household_unemployment_benefits,
     )
 
@@ -187,7 +180,9 @@ def budget_constraint(
 
     interest_rate = model_specs["interest_rate"]
     interest = interest_rate * assets_scaled
-    total_income_plus_interest = total_income + interest + bequest_from_parent
+    total_income_plus_interest = (
+        total_income + interest + annual_formal_care_costs + bequest_from_parent
+    )
 
     # Calculate beginning of period wealth M_t
     assets_begin_of_period = assets_scaled + total_income_plus_interest
@@ -211,7 +206,7 @@ def budget_constraint(
         gross_partner_income=gross_partner_income,
         gross_partner_pension=gross_partner_pension,
         child_benefits=child_benefits,
-        care_benefits_and_costs=care_benefits_and_costs,
+        care_benefits_and_costs=annual_formal_care_costs,  # Only formal care costs (no benefits
         household_unemployment_benefits=household_unemployment_benefits,
         # own_unemployment_benefits=own_unemployment_benefits,
         caregiving_leave_top_up=caregiving_leave_top_up,
@@ -247,110 +242,3 @@ def budget_constraint(
     }
 
     return assets_begin_of_period / model_specs["wealth_unit"], aux
-
-
-def calc_caregiving_leave_top_up(
-    lagged_choice,
-    education,
-    job_before_caregiving,
-    experience_years,
-    income_shock_previous_period,
-    sex,
-    labor_income_after_ssc,
-    household_unemployment_benefits,
-    model_specs,
-):
-    """Calculate additional wage replacement for caregiving leave.
-
-    This adds on top of the baseline care benefits and costs.
-
-    Policy:
-    - job_before_caregiving: 0 = none, 1 = PT, 2 = FT.
-    - Only caregivers (current informal care) who are NOT retired are eligible.
-    - Previously non-working (0):
-        * If currently unemployed: receive a lump-sum (monthly_unemployment_benefits).
-        * If currently working (PT/FT): no top up.
-    - Previously PT (1):
-        * If currently PT: no top up.
-        * If currently unemployed: top up to PT net wage.
-        * If currently FT: no top up (working more than before).
-    - Previously FT (2):
-        * If currently FT: no top up.
-        * If currently PT: top up so total income equals FT net wage.
-        * If currently unemployed: top up to FT net wage.
-    - Retired caregivers never receive wage replacement.
-
-    """
-    currently_caregiver = is_informal_care(lagged_choice)
-    currently_part_time = is_part_time(lagged_choice)
-    currently_unemployed = is_unemployed(lagged_choice)
-    currently_retired = is_retired(lagged_choice)
-
-    # Base eligibility: caregiver and not retired
-    eligible_base = currently_caregiver * (1 - currently_retired)
-
-    prior_none = had_no_job_before_caregiving(job_before_caregiving)
-    prior_pt = had_pt_job_before_caregiving(job_before_caregiving)
-    prior_ft = had_ft_job_before_caregiving(job_before_caregiving)
-
-    # Construct full-time equivalent annual labor income (gross → after SSC),
-    # based on the current experience and income shock.
-    gamma_0 = model_specs["gamma_0"][sex, education]
-    gamma_1 = model_specs["gamma_1"][sex, education]
-    hourly_wage = jnp.exp(
-        gamma_0 + gamma_1 * jnp.log(experience_years + 1) + income_shock_previous_period
-    )
-
-    # Full-time annual hours and minimum wage
-    av_hours_ft = model_specs["av_annual_hours_ft"][sex, education]
-    annual_min_wage_ft = model_specs["annual_min_wage_ft"]
-
-    gross_ft_income = hourly_wage * av_hours_ft
-    gross_ft_income_min_checked = jnp.maximum(gross_ft_income, annual_min_wage_ft)
-
-    # Net-of-SSC full-time income
-    net_ft_income = calc_after_ssc_income_worker(gross_ft_income_min_checked)
-
-    # Net PT income (full PT schedule)
-    av_hours_pt = model_specs["av_annual_hours_pt"][sex, education]
-    annual_min_wage_pt = model_specs["annual_min_wage_pt"][sex, education]
-    gross_pt_income = hourly_wage * av_hours_pt
-    gross_pt_income_min_checked = jnp.maximum(gross_pt_income, annual_min_wage_pt)
-    net_pt_income = calc_after_ssc_income_worker(gross_pt_income_min_checked)
-
-    # Masks for specific cases
-    mask_prior_none_unemp = eligible_base * prior_none * currently_unemployed
-    mask_prior_pt_unemp = eligible_base * prior_pt * currently_unemployed
-    mask_prior_ft_unemp = eligible_base * prior_ft * currently_unemployed
-    mask_prior_ft_pt = eligible_base * prior_ft * currently_part_time
-
-    # Top ups:
-    # - Prior none, now unemployed: no top-up needed.
-    #   (Unemployment benefits are already handled via jnp.maximum() in budget constraint,
-    #   so adding them here would cause double-counting)
-    topup_prior_none = 0.0 * mask_prior_none_unemp
-
-    # - Prior PT, now unemployed: top up to PT net wage, MINUS unemployment benefits
-    #   they're already receiving
-    topup_prior_pt = (
-        jnp.maximum(net_pt_income - household_unemployment_benefits, 0.0)
-        * mask_prior_pt_unemp
-    )
-
-    # - Prior FT, now unemployed: top up to FT net wage, MINUS unemployment benefits
-    #   they're already receiving
-    topup_prior_ft_unemp = (
-        jnp.maximum(net_ft_income - household_unemployment_benefits, 0.0)
-        * mask_prior_ft_unemp
-    )
-
-    # - Prior FT, now PT: top up so total income equals FT net wage.
-    #   (This case doesn't involve unemployment benefits, so no change needed)
-    ft_gap = jnp.maximum(net_ft_income - labor_income_after_ssc, 0.0)
-    topup_prior_ft_pt = ft_gap * mask_prior_ft_pt
-
-    wage_replacement_annual = (
-        topup_prior_none + topup_prior_pt + topup_prior_ft_unemp + topup_prior_ft_pt
-    )
-
-    return wage_replacement_annual

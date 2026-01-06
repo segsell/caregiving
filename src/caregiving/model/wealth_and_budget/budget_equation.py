@@ -1,5 +1,6 @@
 from jax import numpy as jnp
 
+from caregiving.model.experience_baseline_model import construct_experience_years
 from caregiving.model.shared import PARENT_RECENTLY_DEAD, SEX, is_retired, is_working
 from caregiving.model.wealth_and_budget.government_budget import (
     calc_government_budget_components,
@@ -7,10 +8,10 @@ from caregiving.model.wealth_and_budget.government_budget import (
 from caregiving.model.wealth_and_budget.partner_income import (
     calc_partner_income_after_ssc,
 )
-from caregiving.model.wealth_and_budget.tax_and_ssc import calc_net_household_income
 from caregiving.model.wealth_and_budget.pension_payments import (
     calc_pensions_after_ssc,
 )
+from caregiving.model.wealth_and_budget.tax_and_ssc import calc_net_household_income
 from caregiving.model.wealth_and_budget.transfers import (
     calc_care_benefits_and_costs,
     calc_child_benefits,
@@ -19,7 +20,6 @@ from caregiving.model.wealth_and_budget.transfers import (
     draw_inheritance_outcome,
 )
 from caregiving.model.wealth_and_budget.wages import calc_labor_income_after_ssc
-from caregiving.model.experience_baseline_model import construct_experience_years
 
 
 def budget_constraint(
@@ -130,7 +130,7 @@ def budget_constraint(
     )
 
     total_income = jnp.maximum(
-        total_net_household_income + child_benefits + care_benfits_and_costs,
+        total_net_household_income + child_benefits,
         household_unemployment_benefits,
     )
 
@@ -153,7 +153,9 @@ def budget_constraint(
 
     interest_rate = model_specs["interest_rate"]
     interest = interest_rate * assets_scaled
-    total_income_plus_interest = total_income + interest + bequest_from_parent
+    total_income_plus_interest = (
+        total_income + interest + care_benfits_and_costs + bequest_from_parent
+    )
 
     # calculate beginning of period wealth M_t
     assets_begin_of_period = assets_scaled + total_income_plus_interest

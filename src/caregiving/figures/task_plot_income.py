@@ -20,8 +20,8 @@ from caregiving.model.shared import (
     UNEMPLOYED_CARE,
 )
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
-from caregiving.model.wealth_and_budget.budget_equation_caregiving_leave_with_job_retention import (  # noqa: E501
-    calc_caregiving_leave_top_up,
+from caregiving.model.wealth_and_budget.caregiving_leave_top_up import (  # noqa: E501
+    calc_full_caregiving_leave_top_up,
 )
 from caregiving.model.wealth_and_budget.pension_payments import (
     calc_gross_pension_income,
@@ -95,7 +95,7 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
 
         # Prior none (0), now unemployed caregiver
         topup_prior_none_unemp[i] = float(
-            calc_caregiving_leave_top_up(
+            calc_full_caregiving_leave_top_up(
                 lagged_choice=choice_unemp_care,
                 education=edu_var,
                 job_before_caregiving=0,
@@ -109,7 +109,7 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
 
         # Prior PT (1), now unemployed caregiver
         topup_prior_pt_unemp[i] = float(
-            calc_caregiving_leave_top_up(
+            calc_full_caregiving_leave_top_up(
                 lagged_choice=choice_unemp_care,
                 education=edu_var,
                 job_before_caregiving=1,
@@ -123,7 +123,7 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
 
         # Prior FT (2), now unemployed caregiver
         topup_prior_ft_unemp[i] = float(
-            calc_caregiving_leave_top_up(
+            calc_full_caregiving_leave_top_up(
                 lagged_choice=choice_unemp_care,
                 education=edu_var,
                 job_before_caregiving=2,
@@ -137,7 +137,7 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
 
         # Prior FT (2), now PT caregiver
         topup_prior_ft_pt[i] = float(
-            calc_caregiving_leave_top_up(
+            calc_full_caregiving_leave_top_up(
                 lagged_choice=choice_pt_care,
                 education=edu_var,
                 job_before_caregiving=2,

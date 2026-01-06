@@ -24,9 +24,6 @@ from caregiving.specs.caregiving_specs import (
     weight_adl_transitions_by_survival,
 )
 from caregiving.specs.derive_specs import read_and_derive_specs
-
-# from caregiving.specs.experience_specs import create_max_experience
-
 from caregiving.specs.experience_pp_specs import add_experience_and_pp_specs
 from caregiving.specs.family_specs import (
     predict_age_of_youngest_child_by_state,
@@ -46,6 +43,9 @@ from caregiving.specs.inheritance_specs import (
     read_in_inheritance_amount_specs,
     read_in_inheritance_prob_specs,
 )
+
+# from caregiving.specs.experience_specs import create_max_experience
+
 
 jax.config.update("jax_enable_x64", True)
 
@@ -178,7 +178,6 @@ def task_write_specs(  # noqa: PLR0915
     / "model"
     / "specs"
     / "experience_threshold_very_long_insured.txt",
-    #
     path_to_save_specs_dict: Annotated[Path, Product] = BLD
     / "model"
     / "specs"
@@ -408,5 +407,4 @@ def task_write_specs(  # noqa: PLR0915
 
     with path_to_save_specs_dict.open("wb") as f:
         pkl.dump(specs, f)
-
     return specs
