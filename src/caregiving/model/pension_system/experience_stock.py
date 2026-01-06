@@ -34,10 +34,12 @@ def calc_pension_points_for_experience(
         sex * model_specs["max_children"][1, education, has_partner_int] * 3
     )
     total_pension_points += mothers_pension
+
     # retirement age is last periods age
     actual_retirement_age = jnp.minimum(
         model_specs["start_age"] + period - 1, model_specs["max_ret_age"]
     )
+
     # SRA at retirement, difference to actual retirement age and boolean for early retirement
     SRA_at_retirement = model_specs["min_SRA"]
     retirement_age_difference = jnp.abs(SRA_at_retirement - actual_retirement_age)
@@ -54,14 +56,17 @@ def calc_pension_points_for_experience(
 
     # Total bonus for late retirement
     pension_points_late_retirement = (
-        1 + (model_specs["late_retirement_bonus"] * retirement_age_difference)
+        1
+        + (0.06 * retirement_age_difference)
+        # 1 + (model_specs["late_retirement_bonus"] * retirement_age_difference)
     ) * total_pension_points
 
     # Select bonus or penalty depending on age difference
     adjusted_pension_points = jax.lax.select(
         early_retired_bool,
         on_true=pension_points_early_retired,
-        on_false=pension_points_late_retirement,
+        # on_false=pension_points_late_retirement,
+        on_false=total_pension_points,
     )
 
     return adjusted_pension_points

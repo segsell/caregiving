@@ -23,6 +23,10 @@ Creates plots for variables from budget equation aux dict and related variables:
 - Experience years (exp_years)
 - Own income after SSC
 - Experience
+- Already retired (already_retired)
+- Is retired (is_retired)
+- Fresh retired (fresh_retired = (already_retired == 0) & (is_retired == 1))
+- Actual retirement age (actual_retirement_age)
 
 For three models:
 - Baseline model
@@ -182,6 +186,30 @@ def task_plot_assets_and_savings_by_age_baseline(  # noqa: PLR0915
     / "assets_and_savings"
     / "baseline"
     / "experience_by_age.png",
+    path_to_plot_already_retired: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "baseline"
+    / "already_retired_by_age.png",
+    path_to_plot_is_retired: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "baseline"
+    / "is_retired_by_age.png",
+    path_to_plot_fresh_retired: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "baseline"
+    / "fresh_retired_by_age.png",
+    path_to_plot_actual_retirement_age: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "baseline"
+    / "actual_retirement_age_by_age.png",
 ):
     """Plot average assets and savings by age and education from baseline simulated data.
 
@@ -229,6 +257,12 @@ def task_plot_assets_and_savings_by_age_baseline(  # noqa: PLR0915
 
     # Extract aux variables and add as columns
     df_sim = _add_aux_variables_to_df(df_sim)
+
+    # Calculate fresh_retired: (already_retired == 0) & (is_retired == 1)
+    if "already_retired" in df_sim.columns and "is_retired" in df_sim.columns:
+        df_sim["fresh_retired"] = (
+            (df_sim["already_retired"] == 0) & (df_sim["is_retired"] == 1)
+        ).astype(float)
 
     # Verify required columns exist
     required_cols = [
@@ -359,6 +393,30 @@ def task_plot_assets_and_savings_by_age_baseline(  # noqa: PLR0915
             "Experience (Baseline Model)",
             False,
         ),
+        (
+            "already_retired",
+            "Average Already Retired",
+            "Already Retired (Baseline Model)",
+            False,
+        ),
+        (
+            "is_retired",
+            "Average Is Retired",
+            "Is Retired (Baseline Model)",
+            False,
+        ),
+        (
+            "fresh_retired",
+            "Average Fresh Retired",
+            "Fresh Retired (Baseline Model)",
+            False,
+        ),
+        (
+            "actual_retirement_age",
+            "Average Actual Retirement Age",
+            "Actual Retirement Age (Baseline Model)",
+            False,
+        ),
     ]
 
     path_params = [
@@ -383,6 +441,10 @@ def task_plot_assets_and_savings_by_age_baseline(  # noqa: PLR0915
         path_to_plot_exp_years,
         path_to_plot_own_income_after_ssc,
         path_to_plot_experience,
+        path_to_plot_already_retired,
+        path_to_plot_is_retired,
+        path_to_plot_fresh_retired,
+        path_to_plot_actual_retirement_age,
     ]
 
     for (col, ylabel, title, exclude_age), path in zip(
@@ -533,6 +595,30 @@ def task_plot_assets_and_savings_by_age_caregiving_leave(  # noqa: PLR0915
     / "assets_and_savings"
     / "caregiving_leave"
     / "experience_by_age.png",
+    path_to_plot_already_retired: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "caregiving_leave"
+    / "already_retired_by_age.png",
+    path_to_plot_is_retired: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "caregiving_leave"
+    / "is_retired_by_age.png",
+    path_to_plot_fresh_retired: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "caregiving_leave"
+    / "fresh_retired_by_age.png",
+    path_to_plot_actual_retirement_age: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "caregiving_leave"
+    / "actual_retirement_age_by_age.png",
 ):
     """Plot average assets and savings by age and education from caregiving leave counterfactual simulated data.
 
@@ -580,6 +666,12 @@ def task_plot_assets_and_savings_by_age_caregiving_leave(  # noqa: PLR0915
 
     # Extract aux variables and add as columns
     df_sim = _add_aux_variables_to_df(df_sim)
+
+    # Calculate fresh_retired: (already_retired == 0) & (is_retired == 1)
+    if "already_retired" in df_sim.columns and "is_retired" in df_sim.columns:
+        df_sim["fresh_retired"] = (
+            (df_sim["already_retired"] == 0) & (df_sim["is_retired"] == 1)
+        ).astype(float)
 
     # Verify required columns exist
     required_cols = [
@@ -715,6 +807,30 @@ def task_plot_assets_and_savings_by_age_caregiving_leave(  # noqa: PLR0915
             "Experience (Caregiving Leave)",
             False,
         ),
+        (
+            "already_retired",
+            "Average Already Retired",
+            "Already Retired (Caregiving Leave)",
+            False,
+        ),
+        (
+            "is_retired",
+            "Average Is Retired",
+            "Is Retired (Caregiving Leave)",
+            False,
+        ),
+        (
+            "fresh_retired",
+            "Average Fresh Retired",
+            "Fresh Retired (Caregiving Leave)",
+            False,
+        ),
+        (
+            "actual_retirement_age",
+            "Average Actual Retirement Age",
+            "Actual Retirement Age (Caregiving Leave)",
+            False,
+        ),
     ]
 
     path_params = [
@@ -739,6 +855,10 @@ def task_plot_assets_and_savings_by_age_caregiving_leave(  # noqa: PLR0915
         path_to_plot_exp_years,
         path_to_plot_own_income_after_ssc,
         path_to_plot_experience,
+        path_to_plot_already_retired,
+        path_to_plot_is_retired,
+        path_to_plot_fresh_retired,
+        path_to_plot_actual_retirement_age,
     ]
 
     for (col, ylabel, title, exclude_age), path in zip(
@@ -755,6 +875,7 @@ def task_plot_assets_and_savings_by_age_caregiving_leave(  # noqa: PLR0915
         )
 
 
+@pytask.mark.post_estimation_no_care_demand_model
 @pytask.mark.no_care_demand_model
 @pytask.mark.post_estimation
 @pytask.mark.post_assets_and_savings
@@ -901,6 +1022,30 @@ def task_plot_assets_and_savings_by_age_no_care_demand(  # noqa: PLR0915
     / "assets_and_savings"
     / "no_care_demand"
     / "experience_by_age.png",
+    path_to_plot_already_retired: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_care_demand"
+    / "already_retired_by_age.png",
+    path_to_plot_is_retired: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_care_demand"
+    / "is_retired_by_age.png",
+    path_to_plot_fresh_retired: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_care_demand"
+    / "fresh_retired_by_age.png",
+    path_to_plot_actual_retirement_age: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_care_demand"
+    / "actual_retirement_age_by_age.png",
 ):
     """Plot average assets and savings by age and education from no care demand counterfactual simulated data.
 
@@ -915,6 +1060,7 @@ def task_plot_assets_and_savings_by_age_no_care_demand(  # noqa: PLR0915
         Path to no care demand counterfactual simulated data pkl file
     path_to_plot_* : Path
         Paths to save the plots
+
     """
     # Load specs and simulated data
     with path_to_specs.open("rb") as f:
@@ -948,6 +1094,12 @@ def task_plot_assets_and_savings_by_age_no_care_demand(  # noqa: PLR0915
 
     # Extract aux variables and add as columns
     df_sim = _add_aux_variables_to_df(df_sim)
+
+    # Calculate fresh_retired: (already_retired == 0) & (is_retired == 1)
+    if "already_retired" in df_sim.columns and "is_retired" in df_sim.columns:
+        df_sim["fresh_retired"] = (
+            (df_sim["already_retired"] == 0) & (df_sim["is_retired"] == 1)
+        ).astype(float)
 
     # Verify required columns exist
     required_cols = [
@@ -1090,6 +1242,30 @@ def task_plot_assets_and_savings_by_age_no_care_demand(  # noqa: PLR0915
             "Experience (No Care Demand)",
             False,
         ),
+        (
+            "already_retired",
+            "Average Already Retired",
+            "Already Retired (No Care Demand)",
+            False,
+        ),
+        (
+            "is_retired",
+            "Average Is Retired",
+            "Is Retired (No Care Demand)",
+            False,
+        ),
+        (
+            "fresh_retired",
+            "Average Fresh Retired",
+            "Fresh Retired (No Care Demand)",
+            False,
+        ),
+        (
+            "actual_retirement_age",
+            "Average Actual Retirement Age",
+            "Actual Retirement Age (No Care Demand)",
+            False,
+        ),
     ]
 
     path_params = [
@@ -1116,6 +1292,10 @@ def task_plot_assets_and_savings_by_age_no_care_demand(  # noqa: PLR0915
         path_to_plot_exp_years,
         path_to_plot_own_income_after_ssc,
         path_to_plot_experience,
+        path_to_plot_already_retired,
+        path_to_plot_is_retired,
+        path_to_plot_fresh_retired,
+        path_to_plot_actual_retirement_age,
     ]
 
     for (col, ylabel, title, exclude_age), path in zip(
@@ -1178,12 +1358,20 @@ def _plot_asset_savings_outcome(
         end_age = specs.get("end_age", df_sim["age"].max())
         df_plot = df_plot[df_plot["age"] < end_age].copy()
 
-    # Calculate average by age and education
-    avg_by_group = (
-        df_plot.groupby(["age", "education"], observed=False)[outcome_col]
-        .mean()
-        .reset_index()
-    )
+    # For experience, calculate min, max, and mean; otherwise just mean
+    if outcome_col == "experience":
+        stats_by_group = (
+            df_plot.groupby(["age", "education"], observed=False)[outcome_col]
+            .agg(["mean", "min", "max"])
+            .reset_index()
+        )
+    else:
+        # Calculate average by age and education
+        avg_by_group = (
+            df_plot.groupby(["age", "education"], observed=False)[outcome_col]
+            .mean()
+            .reset_index()
+        )
 
     # Get all unique ages
     ages = np.sort(df_plot["age"].unique())
@@ -1200,26 +1388,81 @@ def _plot_asset_savings_outcome(
     for edu_var, edu_label in enumerate(education_labels):
         color = edu_colors[edu_var]
 
-        # Filter to this education level
-        df_edu = avg_by_group.loc[avg_by_group["education"] == edu_var].copy()
+        if outcome_col == "experience":
+            # Filter to this education level
+            df_edu = stats_by_group.loc[stats_by_group["education"] == edu_var].copy()
 
-        if len(df_edu) > 0:
-            # Reindex to all ages and fill missing with NaN
-            values = df_edu.set_index("age")[outcome_col].reindex(ages).values
-            mask = ~np.isnan(values)
-            if mask.sum() > 0:
-                ax.plot(
-                    ages[mask],
-                    values[mask],
-                    linewidth=2,
-                    color=color,
-                    label=edu_label,
-                    alpha=0.8,
-                )
+            if len(df_edu) > 0:
+                # Plot mean (average)
+                mean_values = df_edu.set_index("age")["mean"].reindex(ages).values
+                mean_mask = ~np.isnan(mean_values)
+                if mean_mask.sum() > 0:
+                    ax.plot(
+                        ages[mean_mask],
+                        mean_values[mean_mask],
+                        linewidth=2,
+                        color=color,
+                        label=f"{edu_label} (Average)",
+                        alpha=0.8,
+                        linestyle="-",
+                    )
+
+                # Plot min (lowest)
+                min_values = df_edu.set_index("age")["min"].reindex(ages).values
+                min_mask = ~np.isnan(min_values)
+                if min_mask.sum() > 0:
+                    ax.plot(
+                        ages[min_mask],
+                        min_values[min_mask],
+                        linewidth=1.5,
+                        color=color,
+                        label=f"{edu_label} (Lowest)",
+                        alpha=0.6,
+                        linestyle="--",
+                    )
+
+                # Plot max (highest)
+                max_values = df_edu.set_index("age")["max"].reindex(ages).values
+                max_mask = ~np.isnan(max_values)
+                if max_mask.sum() > 0:
+                    ax.plot(
+                        ages[max_mask],
+                        max_values[max_mask],
+                        linewidth=1.5,
+                        color=color,
+                        label=f"{edu_label} (Highest)",
+                        alpha=0.6,
+                        linestyle=":",
+                    )
+        else:
+            # Filter to this education level
+            df_edu = avg_by_group.loc[avg_by_group["education"] == edu_var].copy()
+
+            if len(df_edu) > 0:
+                # Reindex to all ages and fill missing with NaN
+                values = df_edu.set_index("age")[outcome_col].reindex(ages).values
+                mask = ~np.isnan(values)
+                if mask.sum() > 0:
+                    ax.plot(
+                        ages[mask],
+                        values[mask],
+                        linewidth=2,
+                        color=color,
+                        label=edu_label,
+                        alpha=0.8,
+                    )
 
     ax.set_xlabel("Age", fontsize=12)
     ax.set_ylabel(ylabel, fontsize=12)
-    ax.set_title(f"Average {title_suffix} by Age and Education", fontsize=13)
+    # Update title for experience plots to reflect min/max/mean
+    if outcome_col == "experience":
+        ax.set_title(
+            f"Experience (Min/Average/Max) {title_suffix} by Age and Education",
+            fontsize=13,
+        )
+        ax.set_ylim(0, 1)
+    else:
+        ax.set_title(f"Average {title_suffix} by Age and Education", fontsize=13)
     ax.grid(True, alpha=0.3)
     ax.legend(loc="best", fontsize=10)
 

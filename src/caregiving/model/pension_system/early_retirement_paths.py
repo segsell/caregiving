@@ -28,9 +28,6 @@ def calc_early_retirement_pension_points(
 
     """
 
-    # Check if the individual gets disability pension
-    # disability_pension_bool = health == model_specs["disabled_health_var"]
-
     # Check if the individual is eligible for very long insured pension
     very_long_insured_bool = check_very_long_insured(
         retirement_age_difference=retirement_age_difference,
@@ -38,14 +35,6 @@ def calc_early_retirement_pension_points(
         sex=sex,
         model_specs=model_specs,
     )
-
-    # # Additional pension points if disability retired.
-    # total_points_disability = calc_disability_pension_points(
-    #     SRA_at_retirement=SRA_at_retirement,
-    #     actual_retirement_age=actual_retirement_age,
-    #     total_pension_points=total_pension_points,
-    #     model_specs=model_specs,
-    # )
 
     # Choose deduction factor according to information state
     early_retirement_penalty = model_specs["early_retirement_penalty"]
@@ -65,31 +54,7 @@ def calc_early_retirement_pension_points(
         on_false=early_retirement_pension_points,
     )
 
-    # # If disabled the pension points are always the highest.
-    # pension_points_early_retired = jax.lax.select(
-    #     disability_pension_bool,
-    #     on_true=total_points_disability,
-    #     on_false=pension_points_early_retired,
-    # )
-
     return pension_points_early_retired
-
-
-# def calc_disability_pension_points(
-#     total_pension_points, actual_retirement_age, SRA_at_retirement, model_specs
-# ):
-#     """Calculate the disability pension points."""
-#     # Average points per year worked. Ensure that we do not divide by more than 47 years.
-#     # Otherwise disability gets worse past 65.
-#     work_span_so_far = jnp.minimum(actual_retirement_age - 18, 47)
-#     average_points_work_span = total_pension_points / work_span_so_far
-#     # Fill up for span 65 - 18 = 47
-#     # total_work_span =  SRA_at_retirement - 18
-#     total_points_disability = 47 * average_points_work_span
-#     # Penalty years. If disability pension(then limit to 3 years) and only until 63
-#     penalty_years_disability = (63.0 - actual_retirement_age).clip(max=3.0, min=0.0)
-#     disability_reduction_factor = 1 - penalty_years_disability * model_specs["ERP"]
-#     return total_points_disability * disability_reduction_factor
 
 
 def check_very_long_insured(
