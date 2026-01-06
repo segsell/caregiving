@@ -8,6 +8,7 @@ touching the original job-retention specification.
 import jax
 import jax.numpy as jnp
 
+from caregiving.model.experience_baseline_model import get_next_period_experience
 from caregiving.model.shared import (
     NO_CARE_DEMAND,
     PARENT_LONGER_DEAD,
@@ -26,7 +27,6 @@ from caregiving.model.shared import (
 from caregiving.model.state_space import (
     state_specific_choice_set_with_caregiving,
 )
-from caregiving.model.experience_baseline_model import get_next_period_experience
 
 
 def create_state_space_functions():

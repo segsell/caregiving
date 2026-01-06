@@ -12,6 +12,7 @@ from pytask import Product
 
 import dcegm
 from caregiving.config import BLD
+from caregiving.model.experience_baseline_model import define_experience_grid
 from caregiving.model.state_space_caregiving_leave_with_job_retention import (
     create_state_space_functions,
 )
@@ -42,7 +43,6 @@ from caregiving.model.wealth_and_budget.budget_equation_caregiving_leave_with_jo
     budget_constraint,
 )
 from caregiving.model.wealth_and_budget.savings_grid import create_end_of_period_assets
-from caregiving.model.experience_baseline_model import define_experience_grid
 
 
 @pytask.mark.caregiving_leave_with_job_retention_model

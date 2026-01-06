@@ -4,6 +4,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
+from caregiving.model.experience_no_care_demand import get_next_period_experience
 from caregiving.model.shared import (
     PARENT_LONGER_DEAD,
     PARENT_RECENTLY_DEAD,
@@ -27,7 +28,6 @@ from caregiving.model.shared_no_care_demand import (
 from caregiving.model.state_space import (
     apply_retirement_constraint_for_SRA,
 )
-from caregiving.model.experience_no_care_demand import get_next_period_experience
 
 
 def create_state_space_functions():

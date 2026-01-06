@@ -17,6 +17,7 @@ from linearmodels.panel import PanelOLS
 from pytask import Product
 
 from caregiving.config import BLD, JET_COLOR_MAP
+from caregiving.model.experience_baseline_model import construct_experience_years
 from caregiving.model.shared import (
     DEAD,
     FULL_TIME,
@@ -38,7 +39,6 @@ from caregiving.model.shared_no_care_demand import (
     UNEMPLOYED_NO_CARE_DEMAND,
     WORK_NO_CARE_DEMAND,
 )
-from caregiving.model.experience_baseline_model import construct_experience_years
 from caregiving.model.wealth_and_budget.transfers import (
     calc_care_benefits_and_costs,
     calc_child_benefits,

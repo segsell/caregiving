@@ -4,6 +4,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
+from caregiving.model.experience_baseline_model import get_next_period_experience
 from caregiving.model.shared import (
     ALL,
     ALL_CARE,
@@ -73,8 +74,6 @@ from caregiving.model.shared import (
     is_retired,
     is_unemployed,
 )
-
-from caregiving.model.experience_baseline_model import get_next_period_experience
 
 
 def create_state_space_functions():

@@ -7,6 +7,7 @@ import pandas as pd
 from dcegm.simulation.sim_utils import create_simulation_df
 from dcegm.simulation.simulate import simulate_all_periods
 
+from caregiving.model.experience_baseline_model import construct_experience_years
 from caregiving.model.shared import (
     DEAD,
     FULL_TIME,
@@ -21,7 +22,6 @@ from caregiving.model.shared import (
     is_unemployed,
     is_working,
 )
-from caregiving.model.experience_baseline_model import construct_experience_years
 
 jax.config.update("jax_enable_x64", True)
 
