@@ -25,7 +25,6 @@ from caregiving.counterfactual.plotting_utils import (
 
 
 @pytask.mark.counterfactual_differences
-@pytask.mark.counterfactual_differences_age_profiles
 @pytask.mark.counterfactual_differences_full_cg_leave_age_profiles
 def task_plot_matched_differences_by_age_cg_leave_vs_baseline(  # noqa: PLR0915, E501
     path_to_cg_leave_data: Path = BLD
@@ -365,7 +364,6 @@ def task_plot_matched_differences_by_age_cg_leave_vs_baseline(  # noqa: PLR0915,
 
 
 @pytask.mark.counterfactual_differences
-@pytask.mark.counterfactual_differences_age_profiles
 @pytask.mark.counterfactual_differences_full_cg_leave_age_profiles
 def task_plot_matched_differences_by_age_cg_leave_vs_baseline(  # noqa: PLR0915, E501
     path_to_cg_leave_data: Path = BLD

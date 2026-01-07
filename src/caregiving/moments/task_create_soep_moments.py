@@ -244,7 +244,7 @@ def task_create_soep_moments(  # noqa: PLR0915
 
     # =================================================================================
     caregiver_shares = {
-        # "share_informal_care_age_bin_40_44": 0.02980982 + 0.010,
+        "share_informal_care_age_bin_40_44": 0.02980982 + 0.010,
         "share_informal_care_age_bin_45_49": 0.04036255 + 0.015,
         "share_informal_care_age_bin_50_54": 0.05350986 + 0.021,
         "share_informal_care_age_bin_55_59": 0.06193384 + 0.027,

@@ -19,6 +19,7 @@ from caregiving.data_management.soep.auxiliary import (
 )
 from caregiving.data_management.soep.soep_variables.experience import (
     create_experience_variable_with_cap,
+    create_experience_and_working_years,
 )
 from caregiving.data_management.soep.task_create_event_study_sample import (
     create_caregiving,
@@ -112,6 +113,7 @@ def task_create_main_estimation_sample(
     df = create_policy_state(df, specs)
 
     df = create_experience_variable_with_cap(df, exp_cap=specs["start_age"] - 14)
+    # df = create_experience_and_working_years(df, filter_missings=True)
 
     df = create_education_type(df)
     df = create_inheritance(df, cpi_data=cpi, specs=specs)
@@ -263,6 +265,7 @@ def task_create_caregivers_sample(
     df = create_policy_state(df, specs)
 
     df = create_experience_variable_with_cap(df, exp_cap=specs["start_age"] - 14)
+    # df = create_experience_and_working_years(df, filter_missings=True)
 
     df = create_education_type(df)
     df = create_health_var_good_bad(df, drop_missing=False)

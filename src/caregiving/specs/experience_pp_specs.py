@@ -98,7 +98,7 @@ def create_max_experience_working(
     #     (df_working["experience"] - df_working["period"]).max()
     # )
 
-    max_exp_diff_period_working = 16.0
+    max_exp_diff_period_working = specs["start_age"] - 14
     np.savetxt(
         path_to_save_max_exp_diff_period_working,
         [max_exp_diff_period_working],

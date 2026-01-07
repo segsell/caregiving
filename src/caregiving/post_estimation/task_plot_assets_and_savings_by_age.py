@@ -1060,7 +1060,6 @@ def task_plot_assets_and_savings_by_age_no_care_demand(  # noqa: PLR0915
         Path to no care demand counterfactual simulated data pkl file
     path_to_plot_* : Path
         Paths to save the plots
-
     """
     # Load specs and simulated data
     with path_to_specs.open("rb") as f:

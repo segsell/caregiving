@@ -125,6 +125,12 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
     / "plots"
     / "model_fit_estimated_params"
     / "share_caregivers_by_age_bin.png",
+    path_to_save_caregiver_share_by_age_bin_presentation_plot: Annotated[
+        Path, Product
+    ] = BLD
+    / "plots"
+    / "model_fit_estimated_params"
+    / "share_caregivers_by_age_bin_presentation.png",
     path_to_save_care_demand_by_age_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "model_fit_estimated_params"
@@ -268,6 +274,8 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         df_emp_caregivers,
         df_sim_caregivers,
         specs,
+        age_min=start_age_caregivers,
+        age_max=end_age,
         path_to_save_plot=path_to_save_labor_shares_caregivers_by_age,
     )
 
@@ -314,6 +322,37 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         age_max=75,
         scale=SCALE_CAREGIVER_SHARE,
         path_to_save_plot=path_to_save_caregiver_share_by_age_bin_plot,
+    )
+
+    emp_moms_presentation = emp_moms.copy()
+    emp_moms_presentation["share_informal_care_age_bin_40_44"] = (
+        0.021 * SCALE_CAREGIVER_SHARE
+    )
+    emp_moms_presentation["share_informal_care_age_bin_45_49"] = (
+        0.03236255 * SCALE_CAREGIVER_SHARE
+    )
+    emp_moms_presentation["share_informal_care_age_bin_50_54"] = (
+        0.05290986 * SCALE_CAREGIVER_SHARE
+    )
+    emp_moms_presentation["share_informal_care_age_bin_55_59"] = (
+        0.07413384 * SCALE_CAREGIVER_SHARE
+    )
+    emp_moms_presentation["share_informal_care_age_bin_60_64"] = (
+        0.06994824 * SCALE_CAREGIVER_SHARE
+    )
+    emp_moms_presentation["share_informal_care_age_bin_65_69"] = (
+        0.03079298 * SCALE_CAREGIVER_SHARE
+    )
+
+    plot_caregiver_shares_by_age_bins(
+        emp_moms_presentation,
+        df_sim,
+        specs,
+        choice_set=INFORMAL_CARE,
+        age_min=40,
+        age_max=75,
+        scale=SCALE_CAREGIVER_SHARE,
+        path_to_save_plot=path_to_save_caregiver_share_by_age_bin_presentation_plot,
     )
 
     plot_simulated_care_demand_by_age(

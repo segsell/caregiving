@@ -60,9 +60,9 @@ def simulate_moments_pandas(  # noqa: PLR0915
     age_range_wealth = range(start_age, model_specs["end_age_wealth"] + 1)
 
     age_bins_caregivers_5year = (
-        list(range(45, 75, 5)),  # [40, 45, 50, 55, 60, 65, 70]
+        list(range(40, 75, 5)),  # [40, 45, 50, 55, 60, 65, 70]
         [
-            f"{s}_{s+4}" for s in range(45, 70, 5)
+            f"{s}_{s+4}" for s in range(40, 70, 5)
         ],  # ["40_44", "45_49", "50_54", "55_59", "60_64", "65_69"]
     )
     # =================================================================================

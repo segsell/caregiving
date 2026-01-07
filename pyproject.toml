@@ -66,9 +66,15 @@ counterfactual_differences_forced_care_demand_at_50 = "Forced care demand at 50 
 counterfactual_forced_care_demand_at_50 = "Forced care demand at 50 counterfactual tasks"
 counterfactual_differences_caregiving_leave_with_job_retention = "Caregiving leave with job retention counterfactual differences"
 counterfactual_differences_full_caregiving_leave_with_job_retention = "Full caregiving leave with job retention counterfactual differences"
+counterfactual_differences_caregiving_leave_vs_baseline = "Caregiving leave vs baseline counterfactual differences"
+counterfactual_differences_full_caregiving_leave_with_job_retention_vs_baseline = "Full caregiving leave with job retention vs baseline counterfactual differences"
+counterfactual_differences_full_caregiving_leave_vs_baseline = "Full caregiving leave vs baseline counterfactual differences"
+counterfactual_differences_full_caregiving_leave_vs_caregiving_leave = "Full caregiving leave vs caregiving leave counterfactual differences"
 counterfactual_differences_no_cash_benefits_higher_formal_care_costs = "No cash benefits higher formal care costs counterfactual differences"
 counterfactual_differences_higher_ret_age = "Higher retirement age counterfactual differences"
 counterfactual_differences_higher_ret_age_vs_no_care_demand = "Higher retirement age vs no care demand counterfactual differences"
+counterfactual_differences_no_care_demand_vs_baseline = "No care demand vs baseline counterfactual differences"
+counterfactual_differences_no_inheritance_vs_no_care_demand = "No inheritance vs no care demand counterfactual differences"
 counterfactual_differences_pre_ls = "Counterfactual differences conditioned on pre-labor supply"
 # Age profile analysis
 counterfactual_differences_age_profiles = "Counterfactual age profile differences (all counterfactuals)"
@@ -84,6 +90,8 @@ counterfactual_differences_higher_ret_age_age_profiles = "Higher retirement age 
 temp_recreate_data = "Temporary data recreation tasks"
 # Career costs
 career_costs = "Career costs computation tasks"
+career_costs_caregiving_leave_with_job_retention = "Career costs for caregiving leave with job retention"
+career_costs_full_caregiving_leave_with_job_retention = "Career costs for full caregiving leave with job retention"
 # Plotting
 figures = "Figure generation tasks"
 bar_chart = "Bar chart plotting tasks"

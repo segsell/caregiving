@@ -28,9 +28,10 @@ def budget_constraint(
     # sex,
     partner_state,
     care_demand,
+    mother_dead,
+    # gets_inheritance,
     asset_end_of_previous_period,  # A_{t-1}
     income_shock_previous_period,  # epsilon_{t - 1}
-    params,
     model_specs,
 ):
     sex_var = SEX
@@ -127,13 +128,13 @@ def budget_constraint(
     )
 
     total_income = jnp.maximum(
-        total_net_household_income + child_benefits + care_benfits_and_costs,
+        total_net_household_income + child_benefits,
         household_unemployment_benefits,
     )
 
     interest_rate = model_specs["interest_rate"]
     interest = interest_rate * assets_scaled
-    total_income_plus_interest = total_income + interest
+    total_income_plus_interest = total_income + interest + care_benfits_and_costs
 
     # calculate beginning of period wealth M_t
     assets_begin_of_period = assets_scaled + total_income_plus_interest
@@ -175,8 +176,15 @@ def budget_constraint(
         "gross_partner_pension": gross_partner_pension / model_specs["wealth_unit"],
         "gross_labor_income": gross_labor_income / model_specs["wealth_unit"],
         "gross_retirement_income": gross_retirement_income / model_specs["wealth_unit"],
+        # "bequest_from_parent": bequest_from_parent / model_specs["wealth_unit"],
+        # "gets_inheritance": gets_inheritance,
         "income_shock_previous_period": income_shock_previous_period,
         "income_shock_for_labor": income_shock_for_labor,
+        "own_income_after_ssc": own_income_after_ssc / model_specs["wealth_unit"],
+        "care_benefits_and_costs": care_benfits_and_costs / model_specs["wealth_unit"],
+        "child_benefits": child_benefits / model_specs["wealth_unit"],
+        "household_unemployment_benefits": household_unemployment_benefits
+        / model_specs["wealth_unit"],
         # Government budget components
         "income_tax": income_tax_total / model_specs["wealth_unit"],
         "income_tax_single": income_tax_single / model_specs["wealth_unit"],

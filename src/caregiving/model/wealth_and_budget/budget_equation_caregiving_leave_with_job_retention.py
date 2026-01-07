@@ -231,6 +231,10 @@ def budget_constraint(
         "gets_inheritance": gets_inheritance,
         "caregiving_leave_top_up": caregiving_leave_top_up / model_specs["wealth_unit"],
         "own_income_after_ssc": own_income_after_ssc / model_specs["wealth_unit"],
+        # "care_benefits_and_costs": care_benfits_and_costs / model_specs["wealth_unit"],
+        "child_benefits": child_benefits / model_specs["wealth_unit"],
+        "household_unemployment_benefits": household_unemployment_benefits
+        / model_specs["wealth_unit"],
         # Government budget components
         "income_tax": income_tax_total / model_specs["wealth_unit"],
         "income_tax_single": income_tax_single / model_specs["wealth_unit"],
