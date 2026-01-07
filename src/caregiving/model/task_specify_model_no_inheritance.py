@@ -45,7 +45,6 @@ from caregiving.model.wealth_and_budget.budget_equation_no_inheritance import (
 )
 from caregiving.model.wealth_and_budget.savings_grid import create_end_of_period_assets
 
-
 # @pytask.mark.no_inheritance
 # @pytask.mark.baseline_model_no_inheritance
 # def task_specify_model_no_inheritance(
