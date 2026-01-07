@@ -13,7 +13,6 @@ from caregiving.model.wealth_and_budget.pension_payments import (
 )
 from caregiving.model.wealth_and_budget.tax_and_ssc import calc_net_household_income
 from caregiving.model.wealth_and_budget.transfers import (
-    calc_care_benefits_and_costs,
     calc_child_benefits,
     calc_unemployment_benefits,
 )
@@ -120,12 +119,6 @@ def budget_constraint(
         period=period,
         model_specs=model_specs,
     )
-    care_benfits_and_costs = calc_care_benefits_and_costs(
-        lagged_choice=lagged_choice,
-        education=education,
-        care_demand=care_demand,
-        model_specs=model_specs,
-    )
 
     total_income = jnp.maximum(
         total_net_household_income + child_benefits,
@@ -134,7 +127,7 @@ def budget_constraint(
 
     interest_rate = model_specs["interest_rate"]
     interest = interest_rate * assets_scaled
-    total_income_plus_interest = total_income + interest + care_benfits_and_costs
+    total_income_plus_interest = total_income + interest
 
     # calculate beginning of period wealth M_t
     assets_begin_of_period = assets_scaled + total_income_plus_interest
@@ -157,7 +150,7 @@ def budget_constraint(
         gross_partner_income=gross_partner_income,
         gross_partner_pension=gross_partner_pension,
         child_benefits=child_benefits,
-        care_benefits_and_costs=care_benfits_and_costs,
+        care_benefits_and_costs=jnp.zeros_like(child_benefits),
         household_unemployment_benefits=household_unemployment_benefits,
         model_specs=model_specs,
     )
@@ -181,7 +174,6 @@ def budget_constraint(
         "income_shock_previous_period": income_shock_previous_period,
         "income_shock_for_labor": income_shock_for_labor,
         "own_income_after_ssc": own_income_after_ssc / model_specs["wealth_unit"],
-        "care_benefits_and_costs": care_benfits_and_costs / model_specs["wealth_unit"],
         "child_benefits": child_benefits / model_specs["wealth_unit"],
         "household_unemployment_benefits": household_unemployment_benefits
         / model_specs["wealth_unit"],

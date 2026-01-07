@@ -28,10 +28,11 @@ Creates plots for variables from budget equation aux dict and related variables:
 - Fresh retired (fresh_retired = (already_retired == 0) & (is_retired == 1))
 - Actual retirement age (actual_retirement_age)
 
-For three models:
+For four models:
 - Baseline model
 - Caregiving leave counterfactual
 - No care demand counterfactual
+- Baseline model without inheritance
 
 Each plot shows 2 lines: Low education and High education.
 
@@ -224,6 +225,7 @@ def task_plot_assets_and_savings_by_age_baseline(  # noqa: PLR0915
         Path to baseline simulated data pkl file
     path_to_plot_* : Path
         Paths to save the plots
+
     """
     # Load specs and simulated data
     with path_to_specs.open("rb") as f:
@@ -461,6 +463,422 @@ def task_plot_assets_and_savings_by_age_baseline(  # noqa: PLR0915
         )
 
 
+@pytask.mark.no_inheritance
+@pytask.mark.baseline_model_no_inheritance
+@pytask.mark.post_estimation
+@pytask.mark.post_assets_and_savings
+def task_plot_assets_and_savings_by_age_no_inheritance(  # noqa: PLR0915
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_simulated_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_no_inheritance.pkl",
+    path_to_plot_assets_begin: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_inheritance"
+    / "assets_begin_of_period_by_age.png",
+    path_to_plot_savings_dec: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_inheritance"
+    / "savings_dec_by_age.png",
+    path_to_plot_total_income: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_inheritance"
+    / "total_income_by_age.png",
+    path_to_plot_savings: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_inheritance"
+    / "savings_by_age.png",
+    path_to_plot_savings_rate: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_inheritance"
+    / "savings_rate_by_age.png",
+    path_to_plot_net_hh_income: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_inheritance"
+    / "net_hh_income_by_age.png",
+    path_to_plot_interest: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_inheritance"
+    / "interest_by_age.png",
+    path_to_plot_joint_gross_labor_income: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_inheritance"
+    / "joint_gross_labor_income_by_age.png",
+    path_to_plot_joint_gross_retirement_income: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_inheritance"
+    / "joint_gross_retirement_income_by_age.png",
+    path_to_plot_gross_labor_income: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_inheritance"
+    / "gross_labor_income_by_age.png",
+    path_to_plot_gross_retirement_income: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_inheritance"
+    / "gross_retirement_income_by_age.png",
+    path_to_plot_bequest_from_parent: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_inheritance"
+    / "bequest_from_parent_by_age.png",
+    path_to_plot_income_tax: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_inheritance"
+    / "income_tax_by_age.png",
+    path_to_plot_own_ssc: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_inheritance"
+    / "own_ssc_by_age.png",
+    path_to_plot_partner_ssc: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_inheritance"
+    / "partner_ssc_by_age.png",
+    path_to_plot_total_tax_revenue: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_inheritance"
+    / "total_tax_revenue_by_age.png",
+    path_to_plot_government_expenditures: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_inheritance"
+    / "government_expenditures_by_age.png",
+    path_to_plot_net_government_budget: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_inheritance"
+    / "net_government_budget_by_age.png",
+    path_to_plot_exp_years: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_inheritance"
+    / "exp_years_by_age.png",
+    path_to_plot_own_income_after_ssc: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_inheritance"
+    / "own_income_after_ssc_by_age.png",
+    path_to_plot_experience: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_inheritance"
+    / "experience_by_age.png",
+    path_to_plot_already_retired: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_inheritance"
+    / "already_retired_by_age.png",
+    path_to_plot_is_retired: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_inheritance"
+    / "is_retired_by_age.png",
+    path_to_plot_fresh_retired: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_inheritance"
+    / "fresh_retired_by_age.png",
+    path_to_plot_actual_retirement_age: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "assets_and_savings"
+    / "no_inheritance"
+    / "actual_retirement_age_by_age.png",
+):
+    """Plot average assets and savings by age and education from no inheritance simulated data.
+
+    Creates plots for all variables from budget equation aux dict and related variables.
+    Each plot shows 2 lines (Low and High education).
+
+    Parameters
+    ----------
+    path_to_specs : Path
+        Path to full specs pkl file containing model parameters
+    path_to_simulated_data : Path
+        Path to no inheritance simulated data pkl file
+    path_to_plot_* : Path
+        Paths to save the plots
+
+    """
+    # Load specs and simulated data
+    with path_to_specs.open("rb") as f:
+        specs = pickle.load(f)
+
+    df_sim = pd.read_pickle(path_to_simulated_data)
+
+    # Check if agent and period are in the index (MultiIndex) or already columns
+    if isinstance(df_sim.index, pd.MultiIndex):
+        df_sim = df_sim.reset_index()
+    elif "agent" not in df_sim.columns:
+        if hasattr(df_sim.index, "names") and "agent" in df_sim.index.names:
+            df_sim = df_sim.reset_index()
+        else:
+            raise ValueError(
+                f"Cannot find 'agent' column or index level. "
+                f"Available columns: {df_sim.columns.tolist()}, "
+                f"Index names: {df_sim.index.names if hasattr(df_sim.index, 'names') else 'N/A'}"
+            )
+
+    # Verify agent and period columns exist
+    if "agent" not in df_sim.columns or "period" not in df_sim.columns:
+        raise ValueError(
+            f"Missing required columns 'agent' or 'period'. "
+            f"Available columns: {df_sim.columns.tolist()}"
+        )
+
+    # Create age variable if not already present
+    if "age" not in df_sim.columns:
+        df_sim["age"] = df_sim["period"] + specs["start_age"]
+
+    # Extract aux variables and add as columns
+    df_sim = _add_aux_variables_to_df(df_sim)
+
+    # Calculate fresh_retired: (already_retired == 0) & (is_retired == 1)
+    if "already_retired" in df_sim.columns and "is_retired" in df_sim.columns:
+        df_sim["fresh_retired"] = (
+            (df_sim["already_retired"] == 0) & (df_sim["is_retired"] == 1)
+        ).astype(float)
+
+    # Verify required columns exist
+    required_cols = [
+        "education",
+        "assets_begin_of_period",
+        "savings_dec",
+        "total_income",
+        "savings",
+        "savings_rate",
+    ]
+    missing_cols = [col for col in required_cols if col not in df_sim.columns]
+    if missing_cols:
+        raise ValueError(
+            f"Missing required columns: {missing_cols}. "
+            f"Available columns: {df_sim.columns.tolist()}"
+        )
+
+    # Plot configurations: (column_name, ylabel, title_suffix, exclude_end_age)
+    plot_configs = [
+        (
+            "assets_begin_of_period",
+            "Average Assets Begin of Period (in 1,000€)",
+            "Assets Begin of Period (No Inheritance)",
+            False,
+        ),
+        (
+            "savings_dec",
+            "Average Savings Decision (in 1,000€)",
+            "Savings Decision (No Inheritance)",
+            True,
+        ),
+        (
+            "total_income",
+            "Average Total Income (in 1,000€)",
+            "Total Income (No Inheritance)",
+            False,
+        ),
+        ("savings", "Average Savings (in 1,000€)", "Savings (No Inheritance)", True),
+        (
+            "savings_rate",
+            "Average Savings Rate",
+            "Savings Rate (No Inheritance)",
+            True,
+        ),
+        (
+            "net_hh_income",
+            "Average Net Household Income (in 1,000€)",
+            "Net Household Income (No Inheritance)",
+            False,
+        ),
+        (
+            "interest",
+            "Average Interest (in 1,000€)",
+            "Interest (No Inheritance)",
+            False,
+        ),
+        (
+            "joint_gross_labor_income",
+            "Average Joint Gross Labor Income (in 1,000€)",
+            "Joint Gross Labor Income (No Inheritance)",
+            False,
+        ),
+        (
+            "joint_gross_retirement_income",
+            "Average Joint Gross Retirement Income (in 1,000€)",
+            "Joint Gross Retirement Income (No Inheritance)",
+            False,
+        ),
+        (
+            "gross_labor_income",
+            "Average Gross Labor Income (in 1,000€)",
+            "Gross Labor Income (No Inheritance)",
+            False,
+        ),
+        (
+            "gross_retirement_income",
+            "Average Gross Retirement Income (in 1,000€)",
+            "Gross Retirement Income (No Inheritance)",
+            False,
+        ),
+        (
+            "bequest_from_parent",
+            "Average Bequest from Parent (in 1,000€)",
+            "Bequest from Parent (No Inheritance)",
+            False,
+        ),
+        (
+            "income_tax",
+            "Average Income Tax (in 1,000€)",
+            "Income Tax (No Inheritance)",
+            False,
+        ),
+        ("own_ssc", "Average Own SSC (in 1,000€)", "Own SSC (No Inheritance)", False),
+        (
+            "partner_ssc",
+            "Average Partner SSC (in 1,000€)",
+            "Partner SSC (No Inheritance)",
+            False,
+        ),
+        (
+            "total_tax_revenue",
+            "Average Total Tax Revenue (in 1,000€)",
+            "Total Tax Revenue (No Inheritance)",
+            False,
+        ),
+        (
+            "government_expenditures",
+            "Average Government Expenditures (in 1,000€)",
+            "Government Expenditures (No Inheritance)",
+            False,
+        ),
+        (
+            "net_government_budget",
+            "Average Net Government Budget (in 1,000€)",
+            "Net Government Budget (No Inheritance)",
+            False,
+        ),
+        (
+            "exp_years",
+            "Average Experience Years",
+            "Experience Years (No Inheritance)",
+            False,
+        ),
+        (
+            "own_income_after_ssc",
+            "Average Own Income After SSC (in 1,000€)",
+            "Own Income After SSC (No Inheritance)",
+            False,
+        ),
+        (
+            "experience",
+            "Average Experience",
+            "Experience (No Inheritance)",
+            False,
+        ),
+        (
+            "already_retired",
+            "Average Already Retired",
+            "Already Retired (No Inheritance)",
+            False,
+        ),
+        (
+            "is_retired",
+            "Average Is Retired",
+            "Is Retired (No Inheritance)",
+            False,
+        ),
+        (
+            "fresh_retired",
+            "Average Fresh Retired",
+            "Fresh Retired (No Inheritance)",
+            False,
+        ),
+        (
+            "actual_retirement_age",
+            "Average Actual Retirement Age",
+            "Actual Retirement Age (No Inheritance)",
+            False,
+        ),
+    ]
+
+    path_params = [
+        path_to_plot_assets_begin,
+        path_to_plot_savings_dec,
+        path_to_plot_total_income,
+        path_to_plot_savings,
+        path_to_plot_savings_rate,
+        path_to_plot_net_hh_income,
+        path_to_plot_interest,
+        path_to_plot_joint_gross_labor_income,
+        path_to_plot_joint_gross_retirement_income,
+        path_to_plot_gross_labor_income,
+        path_to_plot_gross_retirement_income,
+        path_to_plot_bequest_from_parent,
+        path_to_plot_income_tax,
+        path_to_plot_own_ssc,
+        path_to_plot_partner_ssc,
+        path_to_plot_total_tax_revenue,
+        path_to_plot_government_expenditures,
+        path_to_plot_net_government_budget,
+        path_to_plot_exp_years,
+        path_to_plot_own_income_after_ssc,
+        path_to_plot_experience,
+        path_to_plot_already_retired,
+        path_to_plot_is_retired,
+        path_to_plot_fresh_retired,
+        path_to_plot_actual_retirement_age,
+    ]
+
+    for (col, ylabel, title, exclude_age), path in zip(
+        plot_configs, path_params, strict=True
+    ):
+        _plot_asset_savings_outcome(
+            df_sim=df_sim,
+            specs=specs,
+            outcome_col=col,
+            ylabel=ylabel,
+            title_suffix=title,
+            path_to_plot=path,
+            exclude_end_age=exclude_age,
+        )
+
+
 @pytask.mark.caregiving_leave_with_job_retention_model
 @pytask.mark.post_estimation
 @pytask.mark.post_assets_and_savings
@@ -633,6 +1051,7 @@ def task_plot_assets_and_savings_by_age_caregiving_leave(  # noqa: PLR0915
         Path to caregiving leave counterfactual simulated data pkl file
     path_to_plot_* : Path
         Paths to save the plots
+
     """
     # Load specs and simulated data
     with path_to_specs.open("rb") as f:
@@ -1060,6 +1479,7 @@ def task_plot_assets_and_savings_by_age_no_care_demand(  # noqa: PLR0915
         Path to no care demand counterfactual simulated data pkl file
     path_to_plot_* : Path
         Paths to save the plots
+
     """
     # Load specs and simulated data
     with path_to_specs.open("rb") as f:

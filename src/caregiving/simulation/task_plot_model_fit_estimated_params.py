@@ -97,6 +97,12 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
     / "plots"
     / "model_fit_estimated_params"
     / "labor_shares_caregivers_by_age.png",
+    path_to_save_labor_shares_intensive_caregivers_by_age: Annotated[
+        Path, Product
+    ] = BLD
+    / "plots"
+    / "model_fit_estimated_params"
+    / "labor_shares_intensive_caregivers_by_age.png",
     # path_to_save_labor_shares_caregivers_by_age_bin: Annotated[Path, Product] = BLD
     # / "plots"
     # / "model_fit_estimated_params"
@@ -277,6 +283,15 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         age_min=start_age_caregivers,
         age_max=end_age,
         path_to_save_plot=path_to_save_labor_shares_caregivers_by_age,
+    )
+
+    plot_choice_shares_by_education(
+        df_emp_intensive_caregivers,
+        df_sim_intensive_caregivers,
+        specs,
+        age_min=start_age_caregivers,
+        age_max=end_age,
+        path_to_save_plot=path_to_save_labor_shares_intensive_caregivers_by_age,
     )
 
     # Define age range for caregivers (40-75) and use 3-year bins

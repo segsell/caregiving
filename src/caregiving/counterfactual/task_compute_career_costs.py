@@ -352,7 +352,7 @@ def task_compute_career_costs_full_caregiving_leave_with_job_retention(
     path_to_npv_summary: Annotated[Path, Product] = BLD
     / "counterfactual"
     / "npv_summary_full_caregiving_leave_with_job_retention.csv",
-    restrict_to_ever_caregivers: bool = False,
+    restrict_to_ever_caregivers: bool = True,
     restrict_to_ever_care_demand: bool = False,
 ) -> None:
     """Compute career costs as NPV difference between baseline and counterfactual."""
@@ -480,8 +480,8 @@ def task_compute_career_costs_full_caregiving_leave_with_job_retention(
 def compute_career_npv(
     df: pd.DataFrame,
     beta: float,
-    include_bequest_from_parent: bool = True,
-    only_own_income: bool = False,
+    include_bequest_from_parent: bool = False,
+    only_own_income: bool = True,
 ) -> pd.DataFrame:
     """Compute net present value of total income."""
 

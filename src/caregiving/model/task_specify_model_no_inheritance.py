@@ -46,24 +46,24 @@ from caregiving.model.wealth_and_budget.savings_grid import create_end_of_period
 from caregiving.model.experience_baseline_model import define_experience_grid
 
 
-@pytask.mark.no_inheritance
-@pytask.mark.baseline_model_no_inheritance
-def task_specify_model_no_inheritance(
-    path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
-    path_to_save_model_config: Annotated[Path, Product] = BLD
-    / "model"
-    / "model_config_no_inheritance.pkl",
-    path_to_save_model: Annotated[Path, Product] = BLD
-    / "model"
-    / "model_no_inheritance.pkl",
-):
-    model = specify_model_no_inheritance(
-        path_to_derived_specs=path_to_derived_specs,
-        path_to_save_model_config=path_to_save_model_config,
-        path_to_save_model=path_to_save_model,
-    )
+# @pytask.mark.no_inheritance
+# @pytask.mark.baseline_model_no_inheritance
+# def task_specify_model_no_inheritance(
+#     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+#     path_to_save_model_config: Annotated[Path, Product] = BLD
+#     / "model"
+#     / "model_config_no_inheritance.pkl",
+#     path_to_save_model: Annotated[Path, Product] = BLD
+#     / "model"
+#     / "model_no_inheritance.pkl",
+# ):
+#     model = specify_model_no_inheritance(
+#         path_to_derived_specs=path_to_derived_specs,
+#         path_to_save_model_config=path_to_save_model_config,
+#         path_to_save_model=path_to_save_model,
+#     )
 
-    return model
+#     return model
 
 
 def specify_model_no_inheritance(

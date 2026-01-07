@@ -33,43 +33,43 @@ from caregiving.simulation.simulate import simulate_scenario
 jax.config.update("jax_enable_x64", True)
 
 
-# @pytask.mark.no_inheritance
-@pytask.mark.baseline_model_no_inheritance
-def task_solve_and_simulate_estimated_params(
-    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
-    path_to_model: Path = BLD / "model" / "model_no_inheritance.pkl",
-    path_to_model_config: Path = BLD / "model" / "model_config_no_inheritance.pkl",
-    path_to_estimated_params: Path = BLD
-    / "model"
-    / "params"
-    / "estimated_params_model.yaml",
-    path_to_initial_states: Path = (
-        BLD / "model" / "initial_conditions" / "initial_states.pkl"
-    ),
-    path_to_save_solution: Annotated[Path, Product] = BLD
-    / "solve_and_simulate"
-    / "solution_no_inheritance.pkl",
-    # path_to_save_simulation_model: Annotated[Path, Product] = BLD
-    # / "model"
-    # / "model_for_simulation_estimated_params.pkl",
-    path_to_save_simulated_data: Annotated[Path, Product] = BLD
-    / "solve_and_simulate"
-    / "simulated_data_no_inheritance.pkl",
-    # path_to_save_simulated_data_jax: Annotated[Path, Product] = BLD
-    # / "solve_and_simulate"
-    # / "simulated_data_jax_estimated_params.pkl",
-) -> None:
-    """Solve and simulate the model for estimated parameters."""
+# # @pytask.mark.no_inheritance
+# @pytask.mark.baseline_model_no_inheritance
+# def task_solve_and_simulate_estimated_params(
+#     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+#     path_to_model: Path = BLD / "model" / "model_no_inheritance.pkl",
+#     path_to_model_config: Path = BLD / "model" / "model_config_no_inheritance.pkl",
+#     path_to_estimated_params: Path = BLD
+#     / "model"
+#     / "params"
+#     / "estimated_params_model.yaml",
+#     path_to_initial_states: Path = (
+#         BLD / "model" / "initial_conditions" / "initial_states.pkl"
+#     ),
+#     path_to_save_solution: Annotated[Path, Product] = BLD
+#     / "solve_and_simulate"
+#     / "solution_no_inheritance.pkl",
+#     # path_to_save_simulation_model: Annotated[Path, Product] = BLD
+#     # / "model"
+#     # / "model_for_simulation_estimated_params.pkl",
+#     path_to_save_simulated_data: Annotated[Path, Product] = BLD
+#     / "solve_and_simulate"
+#     / "simulated_data_no_inheritance.pkl",
+#     # path_to_save_simulated_data_jax: Annotated[Path, Product] = BLD
+#     # / "solve_and_simulate"
+#     # / "simulated_data_jax_estimated_params.pkl",
+# ) -> None:
+#     """Solve and simulate the model for estimated parameters."""
 
-    solve_and_simulate_no_inheritance(
-        path_to_specs=path_to_specs,
-        path_to_model=path_to_model,
-        path_to_model_config=path_to_model_config,
-        path_to_estimated_params=path_to_estimated_params,
-        path_to_initial_states=path_to_initial_states,
-        path_to_save_solution=path_to_save_solution,
-        path_to_save_simulated_data=path_to_save_simulated_data,
-    )
+#     solve_and_simulate_no_inheritance(
+#         path_to_specs=path_to_specs,
+#         path_to_model=path_to_model,
+#         path_to_model_config=path_to_model_config,
+#         path_to_estimated_params=path_to_estimated_params,
+#         path_to_initial_states=path_to_initial_states,
+#         path_to_save_solution=path_to_save_solution,
+#         path_to_save_simulated_data=path_to_save_simulated_data,
+#     )
 
 
 def solve_and_simulate_no_inheritance(

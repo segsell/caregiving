@@ -1,4 +1,4 @@
-"""Age-based plotting functions for no inheritance vs no care demand counterfactual comparison."""
+"""Age-based plotting functions for no care demand counterfactual."""
 
 import pickle
 from pathlib import Path
@@ -22,19 +22,20 @@ from caregiving.counterfactual.plotting_utils import (
 from caregiving.model.shared import INFORMAL_CARE
 
 
-@pytask.mark.counterfactual_differences_no_inheritance_vs_no_care_demand
-def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # noqa: PLR0915, E501
-    path_to_no_inheritance_data: Path = BLD
+@pytask.mark.counterfactual_differences
+@pytask.mark.counterfactual_differences_age_profiles
+@pytask.mark.counterfactual_differences_no_care_demand_age_profiles
+def task_plot_matched_differences_by_age_no_care_demand(  # noqa: PLR0915, E501
+    path_to_original_data: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_no_inheritance.pkl",
+    / "simulated_data_estimated_params.pkl",
     path_to_no_care_demand_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_no_care_demand.pkl",
     path_to_plot_work: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "all"
@@ -42,8 +43,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_ft: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "all"
@@ -51,8 +51,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_pt: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "all"
@@ -60,8 +59,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_job_offer: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "all"
@@ -69,8 +67,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_hours_weekly: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "all"
@@ -78,8 +75,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_care: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "all"
@@ -87,8 +83,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_gross_labor_income: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "all"
@@ -96,8 +91,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_savings: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "all"
@@ -105,8 +99,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_wealth: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "all"
@@ -114,8 +107,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_savings_rate: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "all"
@@ -123,18 +115,24 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_savings_dec: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "all"
     / "age_profiles_savings_dec_by_age.png",
+    path_to_plot_gets_inheritance: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "no_care_demand"
+    / "age_profiles"
+    / "all"
+    / "all"
+    / "age_profiles_gets_inheritance_by_age.png",
     # Caregiving type 0 plots
     path_to_plot_work_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type0"
@@ -142,8 +140,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_ft_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type0"
@@ -151,8 +148,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_pt_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type0"
@@ -160,8 +156,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_job_offer_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type0"
@@ -169,8 +164,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_hours_weekly_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type0"
@@ -178,8 +172,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_care_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type0"
@@ -187,8 +180,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_gross_labor_income_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type0"
@@ -196,8 +188,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_savings_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type0"
@@ -205,8 +196,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_wealth_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type0"
@@ -214,8 +204,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_savings_rate_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type0"
@@ -223,18 +212,24 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_savings_dec_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type0"
     / "age_profiles_savings_dec_by_age.png",
+    path_to_plot_gets_inheritance_type0: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "no_care_demand"
+    / "age_profiles"
+    / "all"
+    / "caregiving_type0"
+    / "age_profiles_gets_inheritance_by_age.png",
     # Caregiving type 1 plots
     path_to_plot_work_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type1"
@@ -242,8 +237,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_ft_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type1"
@@ -251,8 +245,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_pt_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type1"
@@ -260,8 +253,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_job_offer_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type1"
@@ -269,8 +261,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_hours_weekly_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type1"
@@ -278,8 +269,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_care_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type1"
@@ -287,8 +277,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_gross_labor_income_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type1"
@@ -296,8 +285,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_savings_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type1"
@@ -305,8 +293,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_wealth_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type1"
@@ -314,8 +301,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_savings_rate_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type1"
@@ -323,18 +309,24 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_savings_dec_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type1"
     / "age_profiles_savings_dec_by_age.png",
+    path_to_plot_gets_inheritance_type1: Annotated[Path, Product] = BLD
+    / "plots"
+    / "counterfactual"
+    / "no_care_demand"
+    / "age_profiles"
+    / "all"
+    / "caregiving_type1"
+    / "age_profiles_gets_inheritance_by_age.png",
     # Additional outcomes - all/all
     path_to_plot_net_hh_income: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "all"
@@ -342,8 +334,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_income_tax: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "all"
@@ -351,8 +342,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_income_tax_single: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "all"
@@ -360,8 +350,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_total_tax_revenue: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "all"
@@ -369,8 +358,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_net_government_budget: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "all"
@@ -378,8 +366,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_own_income_after_ssc: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "all"
@@ -387,8 +374,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_exp_years: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "all"
@@ -396,8 +382,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_caregiving_leave_top_up: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "all"
@@ -406,8 +391,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_net_hh_income_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type0"
@@ -415,8 +399,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_income_tax_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type0"
@@ -424,8 +407,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_income_tax_single_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type0"
@@ -433,8 +415,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_total_tax_revenue_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type0"
@@ -442,8 +423,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_net_government_budget_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type0"
@@ -451,8 +431,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_own_income_after_ssc_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type0"
@@ -460,8 +439,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_exp_years_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type0"
@@ -469,8 +447,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_caregiving_leave_top_up_type0: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type0"
@@ -479,8 +456,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_net_hh_income_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type1"
@@ -488,8 +464,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_income_tax_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type1"
@@ -497,8 +472,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_income_tax_single_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type1"
@@ -506,8 +480,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_total_tax_revenue_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type1"
@@ -515,8 +488,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_net_government_budget_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type1"
@@ -524,8 +496,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_own_income_after_ssc_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type1"
@@ -533,8 +504,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_exp_years_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type1"
@@ -542,19 +512,18 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     path_to_plot_caregiving_leave_top_up_type1: Annotated[Path, Product] = BLD
     / "plots"
     / "counterfactual"
-    / "matched_differences"
-    / "no_inheritance_vs_no_care_demand"
+    / "no_care_demand"
     / "age_profiles"
     / "all"
     / "caregiving_type1"
     / "age_profiles_caregiving_leave_top_up_by_age.png",
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
-    ever_caregivers: bool = False,
-    ever_care_demand: bool = True,
+    ever_caregivers: bool = True,
+    ever_care_demand: bool = False,
     age_min: int = 30,
     age_max: int = 100,
 ) -> None:
-    """Compute matched period differences (no-inheritance - no-care-demand) by age.
+    """Compute matched period differences (orig - no-care-demand) by age.
 
     Steps:
       1) Restrict to alive and (optionally) ever-caregivers.
@@ -567,7 +536,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     """
     # Load and prepare data
     df_o, df_c = prepare_dataframes_for_comparison(
-        pd.read_pickle(path_to_no_inheritance_data),
+        pd.read_pickle(path_to_original_data),
         pd.read_pickle(path_to_no_care_demand_data),
         ever_caregivers=ever_caregivers,
         ever_care_demand=ever_care_demand,
@@ -612,6 +581,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
         "own_income_after_ssc",
         "exp_years",
         "caregiving_leave_top_up",
+        "gets_inheritance",
     ]
     for outcome_name in additional_outcome_names:
         if outcome_name in df_o.columns:
@@ -623,6 +593,26 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
         else:
             c_outcomes[outcome_name] = np.zeros(len(df_c))
 
+    # Construct bequest amount conditional on being positive at the outcome level
+    # (use NaN for non-positive to get conditional means in groupby)
+    if "bequest_from_parent" in df_o.columns:
+        o_outcomes["bequest_from_parent_positive"] = np.where(
+            df_o["bequest_from_parent"] > 0,
+            df_o["bequest_from_parent"],
+            np.nan,
+        )
+    else:
+        o_outcomes["bequest_from_parent_positive"] = np.full(len(df_o), np.nan)
+
+    if "bequest_from_parent" in df_c.columns:
+        c_outcomes["bequest_from_parent_positive"] = np.where(
+            df_c["bequest_from_parent"] > 0,
+            df_c["bequest_from_parent"],
+            np.nan,
+        )
+    else:
+        c_outcomes["bequest_from_parent_positive"] = np.full(len(df_c), np.nan)
+
     # Create outcome columns and merge
     o_cols = create_outcome_columns(df_o, o_outcomes, "_o")
     c_cols = create_outcome_columns(df_c, c_outcomes, "_c")
@@ -633,7 +623,8 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
     if "education" in df_o.columns:
         o_cols["education"] = df_o["education"].values
 
-    # Merge and compute differences (include full set of outcomes incl. consumption and bequest)
+    # Merge and compute differences (include full set of outcomes incl. consumption,
+    # bequests, and inheritance indicators)
     outcome_names = [
         "work",
         "ft",
@@ -648,6 +639,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
         "savings_dec",
         "consumption",
         "bequest_from_parent",
+        "bequest_from_parent_positive",
         "net_hh_income",
         "income_tax",
         "income_tax_single",
@@ -656,6 +648,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
         "own_income_after_ssc",
         "exp_years",
         "caregiving_leave_top_up",
+        "gets_inheritance",
     ]
     merged = merge_and_compute_differences(o_cols, c_cols, outcome_names)
 
@@ -680,127 +673,135 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
         title_suffix = f" ({suffix})" if suffix else ""
         return {
             "work": {
-                "ylabel": "Proportion Working\nDeviation from No Care Demand",
+                "ylabel": "Proportion Working\nDeviation from Counterfactual",
                 "title": f"Employment Rate by Age{title_suffix}",
                 "diff_col": "diff_work",
                 "path": base_path / "matched_differences_work_by_age.png",
                 "age_max": 70,
             },
             "ft": {
-                "ylabel": "Proportion Full-time\nDeviation from No Care Demand",
+                "ylabel": "Proportion Full-time\nDeviation from Counterfactual",
                 "title": f"Full-time Employment by Age{title_suffix}",
                 "diff_col": "diff_ft",
                 "path": base_path / "matched_differences_full_time_by_age.png",
                 "age_max": 70,
             },
             "pt": {
-                "ylabel": "Proportion Part-time\nDeviation from No Care Demand",
+                "ylabel": "Proportion Part-time\nDeviation from Counterfactual",
                 "title": f"Part-time Employment by Age{title_suffix}",
                 "diff_col": "diff_pt",
                 "path": base_path / "matched_differences_part_time_by_age.png",
                 "age_max": 70,
             },
             "job_offer": {
-                "ylabel": "Job Offer Probability\nDeviation from No Care Demand",
+                "ylabel": "Job Offer Probability\nDeviation from Counterfactual",
                 "title": f"Job Offer Probability by Age{title_suffix}",
                 "diff_col": "diff_job_offer",
                 "path": base_path / "matched_differences_job_offer_by_age.png",
                 "age_max": 70,
             },
             "hours_weekly": {
-                "ylabel": "Weekly Hours\nDeviation from No Care Demand",
+                "ylabel": "Weekly Hours\nDeviation from Counterfactual",
                 "title": f"Weekly Working Hours by Age{title_suffix}",
                 "diff_col": "diff_hours_weekly",
                 "path": base_path / "matched_differences_working_hours_by_age.png",
                 "age_max": 70,
             },
             "care": {
-                "ylabel": "Care Probability\nDeviation from No Care Demand",
+                "ylabel": "Care Probability\nDeviation from Counterfactual",
                 "title": f"Care Probability by Age{title_suffix}",
                 "diff_col": "diff_care",
                 "path": base_path / "matched_differences_care_by_age.png",
                 "age_max": 70,
             },
             "gross_labor_income": {
-                "ylabel": "Gross Labor Income\nDeviation from No Care Demand",
+                "ylabel": "Gross Labor Income\nDeviation from Counterfactual",
                 "title": f"Gross Labor Income by Age{title_suffix}",
                 "diff_col": "diff_gross_labor_income",
                 "path": base_path / "matched_differences_gross_labor_income_by_age.png",
                 "age_max": 90,
             },
             "savings": {
-                "ylabel": "Savings (in 1,000€)\nDeviation from No Care Demand",
+                "ylabel": "Savings (in 1,000€)\nDeviation from Counterfactual",
                 "title": f"Savings by Age{title_suffix}",
                 "diff_col": "diff_savings",
                 "path": base_path / "matched_differences_savings_by_age.png",
                 "age_max": 90,
             },
             "wealth": {
-                "ylabel": "Wealth (in 1,000€)\nDeviation from No Care Demand",
+                "ylabel": "Wealth (in 1,000€)\nDeviation from Counterfactual",
                 "title": f"Wealth by Age{title_suffix}",
                 "diff_col": "diff_wealth",
                 "path": base_path / "matched_differences_wealth_by_age.png",
                 "age_max": 90,
             },
             "savings_rate": {
-                "ylabel": "Savings Rate\nDeviation from No Care Demand",
+                "ylabel": "Savings Rate\nDeviation from Counterfactual",
                 "title": f"Savings Rate by Age{title_suffix}",
                 "diff_col": "diff_savings_rate",
                 "path": base_path / "matched_differences_savings_rate_by_age.png",
                 "age_max": 90,
             },
             "savings_dec": {
-                "ylabel": "Savings Decision (in 1,000€)\nDeviation from No Care Demand",
+                "ylabel": "Savings Decision (in 1,000€)\nDeviation from Counterfactual",
                 "title": f"Savings Decision by Age{title_suffix}",
                 "diff_col": "diff_savings_dec",
                 "path": base_path / "matched_differences_savings_dec_by_age.png",
                 "age_max": 90,
             },
             "consumption": {
-                "ylabel": "Consumption (in 1,000€)\nDeviation from No Care Demand",
+                "ylabel": "Consumption (in 1,000€)\nDeviation from Counterfactual",
                 "title": f"Consumption by Age{title_suffix}",
                 "diff_col": "diff_consumption",
                 "path": base_path / "matched_differences_consumption_by_age.png",
                 "age_max": 90,
             },
             "bequest_from_parent": {
-                "ylabel": "Bequest from Parent (in 1,000€)\nDeviation from No Care Demand",
+                "ylabel": "Bequest from Parent (in 1,000€)\nDeviation from Counterfactual",
                 "title": f"Bequest from Parent by Age{title_suffix}",
                 "diff_col": "diff_bequest_from_parent",
                 "path": base_path
                 / "matched_differences_bequest_from_parent_by_age.png",
                 "age_max": 90,
             },
+            "bequest_from_parent_positive": {
+                "ylabel": "Bequest from Parent, conditional on > 0 (in 1,000€)\nDeviation from Counterfactual",
+                "title": f"Bequest from Parent (conditional on > 0) by Age{title_suffix}",
+                "diff_col": "diff_bequest_from_parent_positive",
+                "path": base_path
+                / "matched_differences_bequest_from_parent_positive_by_age.png",
+                "age_max": 90,
+            },
             "net_hh_income": {
-                "ylabel": "Net Household Income (in 1,000€)\nDeviation from No Care Demand",
+                "ylabel": "Net Household Income (in 1,000€)\nDeviation from Counterfactual",
                 "title": f"Net Household Income by Age{title_suffix}",
                 "diff_col": "diff_net_hh_income",
                 "path": base_path / "matched_differences_net_hh_income_by_age.png",
                 "age_max": 90,
             },
             "income_tax": {
-                "ylabel": "Income Tax (in 1,000€)\nDeviation from No Care Demand",
+                "ylabel": "Income Tax (in 1,000€)\nDeviation from Counterfactual",
                 "title": f"Income Tax by Age{title_suffix}",
                 "diff_col": "diff_income_tax",
                 "path": base_path / "matched_differences_income_tax_by_age.png",
                 "age_max": 90,
             },
             "income_tax_single": {
-                "ylabel": "Income Tax Single (in 1,000€)\nDeviation from No Care Demand",
+                "ylabel": "Income Tax Single (in 1,000€)\nDeviation from Counterfactual",
                 "title": f"Income Tax Single by Age{title_suffix}",
                 "diff_col": "diff_income_tax_single",
                 "path": base_path / "matched_differences_income_tax_single_by_age.png",
                 "age_max": 90,
             },
             "total_tax_revenue": {
-                "ylabel": "Total Tax Revenue (in 1,000€)\nDeviation from No Care Demand",
+                "ylabel": "Total Tax Revenue (in 1,000€)\nDeviation from Counterfactual",
                 "title": f"Total Tax Revenue by Age{title_suffix}",
                 "diff_col": "diff_total_tax_revenue",
                 "path": base_path / "matched_differences_total_tax_revenue_by_age.png",
                 "age_max": 90,
             },
             "net_government_budget": {
-                "ylabel": "Net Government Budget (in 1,000€)\nDeviation from No Care Demand",
+                "ylabel": "Net Government Budget (in 1,000€)\nDeviation from Counterfactual",
                 "title": f"Net Government Budget by Age{title_suffix}",
                 "diff_col": "diff_net_government_budget",
                 "path": base_path
@@ -808,7 +809,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
                 "age_max": 90,
             },
             "own_income_after_ssc": {
-                "ylabel": "Own Income After SSC (in 1,000€)\nDeviation from No Care Demand",
+                "ylabel": "Own Income After SSC (in 1,000€)\nDeviation from Counterfactual",
                 "title": f"Own Income After SSC by Age{title_suffix}",
                 "diff_col": "diff_own_income_after_ssc",
                 "path": base_path
@@ -816,18 +817,25 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
                 "age_max": 90,
             },
             "exp_years": {
-                "ylabel": "Experience Years\nDeviation from No Care Demand",
+                "ylabel": "Experience Years\nDeviation from Counterfactual",
                 "title": f"Experience Years by Age{title_suffix}",
                 "diff_col": "diff_exp_years",
                 "path": base_path / "matched_differences_exp_years_by_age.png",
                 "age_max": 90,
             },
             "caregiving_leave_top_up": {
-                "ylabel": "Caregiving Leave Top-up (in 1,000€)\nDeviation from No Care Demand",
+                "ylabel": "Caregiving Leave Top-up (in 1,000€)\nDeviation from Counterfactual",
                 "title": f"Caregiving Leave Top-up by Age{title_suffix}",
                 "diff_col": "diff_caregiving_leave_top_up",
                 "path": base_path
                 / "matched_differences_caregiving_leave_top_up_by_age.png",
+                "age_max": 90,
+            },
+            "gets_inheritance": {
+                "ylabel": "Share Getting Inheritance\nDeviation from Counterfactual",
+                "title": f"Share Getting Inheritance by Age{title_suffix}",
+                "diff_col": "diff_gets_inheritance",
+                "path": base_path / "matched_differences_gets_inheritance_by_age.png",
                 "age_max": 90,
             },
         }
@@ -850,8 +858,8 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
                 merged_spec = merged_edu.copy()
 
             # Create base path for this specification
-            # path_to_plot_work structure: .../matched_differences/no_care_demand_vs_baseline/age_profiles/all/all/filename.png
-            # We need: .../matched_differences/no_care_demand_vs_baseline/age_profiles/{edu_folder}/{cg_folder}/filename.png
+            # path_to_plot_work structure: .../matched_differences/all/all/filename.png
+            # We need: .../matched_differences/{edu_folder}/{cg_folder}/filename.png
             base_path = path_to_plot_work.parent.parent.parent / edu_folder / cg_folder
             base_path.mkdir(parents=True, exist_ok=True)
 
@@ -864,32 +872,37 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
             suffix = ", ".join(title_parts) if title_parts else ""
 
             # Average differences by age for this specification
+            diff_cols = [
+                "diff_work",
+                "diff_ft",
+                "diff_pt",
+                "diff_job_offer",
+                "diff_hours_weekly",
+                "diff_care",
+                "diff_gross_labor_income",
+                "diff_savings",
+                "diff_wealth",
+                "diff_savings_rate",
+                "diff_savings_dec",
+                "diff_consumption",
+                "diff_bequest_from_parent",
+                "diff_bequest_from_parent_positive",
+                "diff_net_hh_income",
+                "diff_income_tax",
+                "diff_income_tax_single",
+                "diff_total_tax_revenue",
+                "diff_net_government_budget",
+                "diff_own_income_after_ssc",
+                "diff_exp_years",
+                "diff_caregiving_leave_top_up",
+                "diff_gets_inheritance",
+            ]
+
+            # Keep only columns that actually exist in merged_spec to avoid KeyErrors
+            existing_diff_cols = [c for c in diff_cols if c in merged_spec.columns]
+
             prof = (
-                merged_spec.groupby("age", observed=False)[
-                    [
-                        "diff_work",
-                        "diff_ft",
-                        "diff_pt",
-                        "diff_job_offer",
-                        "diff_hours_weekly",
-                        "diff_care",
-                        "diff_gross_labor_income",
-                        "diff_savings",
-                        "diff_wealth",
-                        "diff_savings_rate",
-                        "diff_savings_dec",
-                        "diff_consumption",
-                        "diff_bequest_from_parent",
-                        "diff_net_hh_income",
-                        "diff_income_tax",
-                        "diff_income_tax_single",
-                        "diff_total_tax_revenue",
-                        "diff_net_government_budget",
-                        "diff_own_income_after_ssc",
-                        "diff_exp_years",
-                        "diff_caregiving_leave_top_up",
-                    ]
-                ]
+                merged_spec.groupby("age", observed=False)[existing_diff_cols]
                 .mean()
                 .reset_index()
             )
@@ -919,6 +932,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
                     "own_income_after_ssc": path_to_plot_own_income_after_ssc,
                     "exp_years": path_to_plot_exp_years,
                     "caregiving_leave_top_up": path_to_plot_caregiving_leave_top_up,
+                    "gets_inheritance": path_to_plot_gets_inheritance,
                 }
                 for outcome_key, declared_path in declared_paths_map.items():
                     if outcome_key in plot_configs:
@@ -946,6 +960,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
                     "own_income_after_ssc": path_to_plot_own_income_after_ssc_type0,
                     "exp_years": path_to_plot_exp_years_type0,
                     "caregiving_leave_top_up": path_to_plot_caregiving_leave_top_up_type0,
+                    "gets_inheritance": path_to_plot_gets_inheritance_type0,
                 }
                 for outcome_key, declared_path in declared_paths_map.items():
                     if outcome_key in plot_configs:
@@ -972,6 +987,7 @@ def task_plot_matched_differences_by_age_no_inheritance_vs_no_care_demand(  # no
                     "own_income_after_ssc": path_to_plot_own_income_after_ssc_type1,
                     "exp_years": path_to_plot_exp_years_type1,
                     "caregiving_leave_top_up": path_to_plot_caregiving_leave_top_up_type1,
+                    "gets_inheritance": path_to_plot_gets_inheritance_type1,
                 }
                 for outcome_key, declared_path in declared_paths_map.items():
                     if outcome_key in plot_configs:

@@ -613,6 +613,9 @@ def task_plot_matched_differences_by_age_full_caregiving_leave_vs_baseline(  # n
         "own_income_after_ssc",
         "exp_years",
         "caregiving_leave_top_up",
+        "bequest_from_parent",
+        "gets_inheritance",
+        "care_benefits_and_costs",
     ]
     for outcome_name in additional_outcome_names:
         if outcome_name in df_o.columns:
@@ -649,6 +652,8 @@ def task_plot_matched_differences_by_age_full_caregiving_leave_vs_baseline(  # n
         "savings_dec",
         "consumption",
         "bequest_from_parent",
+        "gets_inheritance",
+        "care_benefits_and_costs",
         "net_hh_income",
         "income_tax",
         "income_tax_single",
