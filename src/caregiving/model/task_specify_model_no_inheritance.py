@@ -12,6 +12,7 @@ from pytask import Product
 
 import dcegm
 from caregiving.config import BLD
+from caregiving.model.experience_baseline_model import define_experience_grid
 from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.stochastic_processes.adl_transition import (
     death_transition,
@@ -43,7 +44,6 @@ from caregiving.model.wealth_and_budget.budget_equation_no_inheritance import (
     budget_constraint,
 )
 from caregiving.model.wealth_and_budget.savings_grid import create_end_of_period_assets
-from caregiving.model.experience_baseline_model import define_experience_grid
 
 
 # @pytask.mark.no_inheritance

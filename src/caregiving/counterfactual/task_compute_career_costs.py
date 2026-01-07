@@ -30,8 +30,8 @@ from caregiving.model.utility.bequest_utility import (
 )
 from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
-from caregiving.simulation.simulate import simulate_scenario
 from caregiving.simulation import simulate_no_care_demand
+from caregiving.simulation.simulate import simulate_scenario
 
 
 @pytask.mark.career_costs
