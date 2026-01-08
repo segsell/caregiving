@@ -24,6 +24,7 @@ caregivers_sample = "Caregivers sample tasks"
 baseline_model = "Baseline model tasks"
 baseline_model_no_inheritance = "Baseline model without inheritance tasks"
 no_inheritance = "No inheritance model tasks"
+start_params = "Start parameters tasks"
 job_retention = "Job retention counterfactual tasks"
 lower_formal_care_costs = "Lower formal care costs counterfactual tasks"
 higher_formal_care_costs = "Higher formal care costs counterfactual tasks"
@@ -33,6 +34,7 @@ no_care_demand_model_no_inheritance = "No care demand counterfactual model witho
 caregiving_leave_with_job_retention_model = "Caregiving leave with job retention counterfactual model tasks"
 full_caregiving_leave_with_job_retention_model = "Full caregiving leave with job retention counterfactual model tasks"
 specs = "Specs tasks"
+inheritance_specs = "Inheritance specification tasks"
 # Simulation
 sim = "Simulation tasks"
 sim_estimated_params = "Simulation with estimated parameters"
@@ -88,10 +90,13 @@ counterfactual_differences_no_cash_benefits_higher_formal_care_costs_age_profile
 counterfactual_differences_higher_ret_age_age_profiles = "Higher retirement age counterfactual age profile differences"
 # Temporary tasks
 temp_recreate_data = "Temporary data recreation tasks"
+# Debugging
+debugging = "Debugging and comparison tasks"
 # Career costs
 career_costs = "Career costs computation tasks"
 career_costs_caregiving_leave_with_job_retention = "Career costs for caregiving leave with job retention"
 career_costs_full_caregiving_leave_with_job_retention = "Career costs for full caregiving leave with job retention"
+government_budget = "Government budget computation tasks"
 # Plotting
 figures = "Figure generation tasks"
 bar_chart = "Bar chart plotting tasks"
@@ -108,6 +113,7 @@ inheritance = "Inheritance-related tasks"
 # Post estimation
 post_estimation = "Post estimation tasks"
 post_estimation_no_care_demand_model = "Post estimation tasks for no care demand model"
+post_estimation_caregivers = "Post-estimation caregiver analysis tasks"
 care_demand_post_estimation = "Care demand post estimation tasks"
 post_estimation_care_demand = "Post-estimation care demand plotting tasks"
 post_estimation_inheritance = "Post-estimation inheritance analysis tasks"

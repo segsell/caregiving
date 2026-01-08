@@ -332,14 +332,14 @@ def task_plot_matched_differences_pt_by_age_at_first_care(
     colors = get_distinct_colors(len(ages_at_first_care))
 
     # Loop over nested splits
-    for edu_name, edu_filter, edu_folder in education_specs:
+    for _edu_name, edu_filter, edu_folder in education_specs:
         # Filter by education if specified
         if edu_filter is not None and "education" in merged.columns:
             merged_edu = merged[merged["education"] == edu_filter].copy()
         else:
             merged_edu = merged.copy()
 
-        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+        for _cg_name, cg_filter, cg_folder in caregiving_type_specs:
             # Filter by caregiving_type if specified
             if cg_filter is not None and "caregiving_type" in merged_edu.columns:
                 merged_spec = merged_edu[
@@ -435,14 +435,14 @@ def task_plot_matched_differences_ft_by_age_at_first_care(
     ]
 
     # Loop over nested splits
-    for edu_name, edu_filter, edu_folder in education_specs:
+    for _edu_name, edu_filter, edu_folder in education_specs:
         # Filter by education if specified
         if edu_filter is not None and "education" in merged.columns:
             merged_edu = merged[merged["education"] == edu_filter].copy()
         else:
             merged_edu = merged.copy()
 
-        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+        for _cg_name, cg_filter, cg_folder in caregiving_type_specs:
             # Filter by caregiving_type if specified
             if cg_filter is not None and "caregiving_type" in merged_edu.columns:
                 merged_spec = merged_edu[
@@ -538,14 +538,14 @@ def task_plot_matched_differences_work_by_age_at_first_care(
     ]
 
     # Loop over nested splits
-    for edu_name, edu_filter, edu_folder in education_specs:
+    for _edu_name, edu_filter, edu_folder in education_specs:
         # Filter by education if specified
         if edu_filter is not None and "education" in merged.columns:
             merged_edu = merged[merged["education"] == edu_filter].copy()
         else:
             merged_edu = merged.copy()
 
-        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+        for _cg_name, cg_filter, cg_folder in caregiving_type_specs:
             # Filter by caregiving_type if specified
             if cg_filter is not None and "caregiving_type" in merged_edu.columns:
                 merged_spec = merged_edu[
@@ -641,14 +641,14 @@ def task_plot_matched_differences_job_offer_by_age_at_first_care(
     ]
 
     # Loop over nested splits
-    for edu_name, edu_filter, edu_folder in education_specs:
+    for _edu_name, edu_filter, edu_folder in education_specs:
         # Filter by education if specified
         if edu_filter is not None and "education" in merged.columns:
             merged_edu = merged[merged["education"] == edu_filter].copy()
         else:
             merged_edu = merged.copy()
 
-        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+        for _cg_name, cg_filter, cg_folder in caregiving_type_specs:
             # Filter by caregiving_type if specified
             if cg_filter is not None and "caregiving_type" in merged_edu.columns:
                 merged_spec = merged_edu[
@@ -744,14 +744,14 @@ def task_plot_matched_differences_hours_weekly_by_age_at_first_care(
     ]
 
     # Loop over nested splits
-    for edu_name, edu_filter, edu_folder in education_specs:
+    for _edu_name, edu_filter, edu_folder in education_specs:
         # Filter by education if specified
         if edu_filter is not None and "education" in merged.columns:
             merged_edu = merged[merged["education"] == edu_filter].copy()
         else:
             merged_edu = merged.copy()
 
-        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+        for _cg_name, cg_filter, cg_folder in caregiving_type_specs:
             # Filter by caregiving_type if specified
             if cg_filter is not None and "caregiving_type" in merged_edu.columns:
                 merged_spec = merged_edu[
@@ -847,14 +847,14 @@ def task_plot_matched_differences_gross_labor_income_by_age_at_first_care(
     ]
 
     # Loop over nested splits
-    for edu_name, edu_filter, edu_folder in education_specs:
+    for _edu_name, edu_filter, edu_folder in education_specs:
         # Filter by education if specified
         if edu_filter is not None and "education" in merged.columns:
             merged_edu = merged[merged["education"] == edu_filter].copy()
         else:
             merged_edu = merged.copy()
 
-        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+        for _cg_name, cg_filter, cg_folder in caregiving_type_specs:
             # Filter by caregiving_type if specified
             if cg_filter is not None and "caregiving_type" in merged_edu.columns:
                 merged_spec = merged_edu[
@@ -950,14 +950,14 @@ def task_plot_matched_differences_savings_by_age_at_first_care(
     ]
 
     # Loop over nested splits
-    for edu_name, edu_filter, edu_folder in education_specs:
+    for _edu_name, edu_filter, edu_folder in education_specs:
         # Filter by education if specified
         if edu_filter is not None and "education" in merged.columns:
             merged_edu = merged[merged["education"] == edu_filter].copy()
         else:
             merged_edu = merged.copy()
 
-        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+        for _cg_name, cg_filter, cg_folder in caregiving_type_specs:
             # Filter by caregiving_type if specified
             if cg_filter is not None and "caregiving_type" in merged_edu.columns:
                 merged_spec = merged_edu[
@@ -1053,14 +1053,14 @@ def task_plot_matched_differences_wealth_by_age_at_first_care(
     ]
 
     # Loop over nested splits
-    for edu_name, edu_filter, edu_folder in education_specs:
+    for _edu_name, edu_filter, edu_folder in education_specs:
         # Filter by education if specified
         if edu_filter is not None and "education" in merged.columns:
             merged_edu = merged[merged["education"] == edu_filter].copy()
         else:
             merged_edu = merged.copy()
 
-        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+        for _cg_name, cg_filter, cg_folder in caregiving_type_specs:
             # Filter by caregiving_type if specified
             if cg_filter is not None and "caregiving_type" in merged_edu.columns:
                 merged_spec = merged_edu[
@@ -1417,14 +1417,14 @@ def task_plot_matched_differences_pt_by_age_bins_at_first_care(
     ]
 
     # Loop over nested splits
-    for edu_name, edu_filter, edu_folder in education_specs:
+    for _edu_name, edu_filter, edu_folder in education_specs:
         # Filter by education if specified
         if edu_filter is not None and "education" in merged.columns:
             merged_edu = merged[merged["education"] == edu_filter].copy()
         else:
             merged_edu = merged.copy()
 
-        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+        for _cg_name, cg_filter, cg_folder in caregiving_type_specs:
             # Filter by caregiving_type if specified
             if cg_filter is not None and "caregiving_type" in merged_edu.columns:
                 merged_spec = merged_edu[
@@ -1526,14 +1526,14 @@ def task_plot_matched_differences_ft_by_age_bins_at_first_care(
     ]
 
     # Loop over nested splits
-    for edu_name, edu_filter, edu_folder in education_specs:
+    for _edu_name, edu_filter, edu_folder in education_specs:
         # Filter by education if specified
         if edu_filter is not None and "education" in merged.columns:
             merged_edu = merged[merged["education"] == edu_filter].copy()
         else:
             merged_edu = merged.copy()
 
-        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+        for _cg_name, cg_filter, cg_folder in caregiving_type_specs:
             # Filter by caregiving_type if specified
             if cg_filter is not None and "caregiving_type" in merged_edu.columns:
                 merged_spec = merged_edu[
@@ -1635,14 +1635,14 @@ def task_plot_matched_differences_work_by_age_bins_at_first_care(
     ]
 
     # Loop over nested splits
-    for edu_name, edu_filter, edu_folder in education_specs:
+    for _edu_name, edu_filter, edu_folder in education_specs:
         # Filter by education if specified
         if edu_filter is not None and "education" in merged.columns:
             merged_edu = merged[merged["education"] == edu_filter].copy()
         else:
             merged_edu = merged.copy()
 
-        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+        for _cg_name, cg_filter, cg_folder in caregiving_type_specs:
             # Filter by caregiving_type if specified
             if cg_filter is not None and "caregiving_type" in merged_edu.columns:
                 merged_spec = merged_edu[
@@ -1744,14 +1744,14 @@ def task_plot_matched_differences_job_offer_by_age_bins_at_first_care(
     ]
 
     # Loop over nested splits
-    for edu_name, edu_filter, edu_folder in education_specs:
+    for _edu_name, edu_filter, edu_folder in education_specs:
         # Filter by education if specified
         if edu_filter is not None and "education" in merged.columns:
             merged_edu = merged[merged["education"] == edu_filter].copy()
         else:
             merged_edu = merged.copy()
 
-        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+        for _cg_name, cg_filter, cg_folder in caregiving_type_specs:
             # Filter by caregiving_type if specified
             if cg_filter is not None and "caregiving_type" in merged_edu.columns:
                 merged_spec = merged_edu[
@@ -1853,14 +1853,14 @@ def task_plot_matched_differences_hours_weekly_by_age_bins_at_first_care(
     ]
 
     # Loop over nested splits
-    for edu_name, edu_filter, edu_folder in education_specs:
+    for _edu_name, edu_filter, edu_folder in education_specs:
         # Filter by education if specified
         if edu_filter is not None and "education" in merged.columns:
             merged_edu = merged[merged["education"] == edu_filter].copy()
         else:
             merged_edu = merged.copy()
 
-        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+        for _cg_name, cg_filter, cg_folder in caregiving_type_specs:
             # Filter by caregiving_type if specified
             if cg_filter is not None and "caregiving_type" in merged_edu.columns:
                 merged_spec = merged_edu[
@@ -1962,14 +1962,14 @@ def task_plot_matched_differences_gross_labor_income_by_age_bins_at_first_care(
     ]
 
     # Loop over nested splits
-    for edu_name, edu_filter, edu_folder in education_specs:
+    for _edu_name, edu_filter, edu_folder in education_specs:
         # Filter by education if specified
         if edu_filter is not None and "education" in merged.columns:
             merged_edu = merged[merged["education"] == edu_filter].copy()
         else:
             merged_edu = merged.copy()
 
-        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+        for _cg_name, cg_filter, cg_folder in caregiving_type_specs:
             # Filter by caregiving_type if specified
             if cg_filter is not None and "caregiving_type" in merged_edu.columns:
                 merged_spec = merged_edu[
@@ -2071,14 +2071,14 @@ def task_plot_matched_differences_savings_by_age_bins_at_first_care(
     ]
 
     # Loop over nested splits
-    for edu_name, edu_filter, edu_folder in education_specs:
+    for _edu_name, edu_filter, edu_folder in education_specs:
         # Filter by education if specified
         if edu_filter is not None and "education" in merged.columns:
             merged_edu = merged[merged["education"] == edu_filter].copy()
         else:
             merged_edu = merged.copy()
 
-        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+        for _cg_name, cg_filter, cg_folder in caregiving_type_specs:
             # Filter by caregiving_type if specified
             if cg_filter is not None and "caregiving_type" in merged_edu.columns:
                 merged_spec = merged_edu[
@@ -2180,14 +2180,14 @@ def task_plot_matched_differences_wealth_by_age_bins_at_first_care(
     ]
 
     # Loop over nested splits
-    for edu_name, edu_filter, edu_folder in education_specs:
+    for _edu_name, edu_filter, edu_folder in education_specs:
         # Filter by education if specified
         if edu_filter is not None and "education" in merged.columns:
             merged_edu = merged[merged["education"] == edu_filter].copy()
         else:
             merged_edu = merged.copy()
 
-        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+        for _cg_name, cg_filter, cg_folder in caregiving_type_specs:
             # Filter by caregiving_type if specified
             if cg_filter is not None and "caregiving_type" in merged_edu.columns:
                 merged_spec = merged_edu[
@@ -2289,14 +2289,14 @@ def task_plot_matched_differences_savings_rate_by_age_bins_at_first_care(
     ]
 
     # Loop over nested splits
-    for edu_name, edu_filter, edu_folder in education_specs:
+    for _edu_name, edu_filter, edu_folder in education_specs:
         # Filter by education if specified
         if edu_filter is not None and "education" in merged.columns:
             merged_edu = merged[merged["education"] == edu_filter].copy()
         else:
             merged_edu = merged.copy()
 
-        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+        for _cg_name, cg_filter, cg_folder in caregiving_type_specs:
             # Filter by caregiving_type if specified
             if cg_filter is not None and "caregiving_type" in merged_edu.columns:
                 merged_spec = merged_edu[
@@ -3078,14 +3078,14 @@ def task_plot_matched_differences_pt_by_age_bins_at_first_care_demand(
     ]
 
     # Loop over nested splits
-    for edu_name, edu_filter, edu_folder in education_specs:
+    for _edu_name, edu_filter, edu_folder in education_specs:
         # Filter by education if specified
         if edu_filter is not None and "education" in merged.columns:
             merged_edu = merged[merged["education"] == edu_filter].copy()
         else:
             merged_edu = merged.copy()
 
-        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+        for _cg_name, cg_filter, cg_folder in caregiving_type_specs:
             # Filter by caregiving_type if specified
             if cg_filter is not None and "caregiving_type" in merged_edu.columns:
                 merged_spec = merged_edu[
@@ -3187,14 +3187,14 @@ def task_plot_matched_differences_ft_by_age_bins_at_first_care_demand(
     ]
 
     # Loop over nested splits
-    for edu_name, edu_filter, edu_folder in education_specs:
+    for _edu_name, edu_filter, edu_folder in education_specs:
         # Filter by education if specified
         if edu_filter is not None and "education" in merged.columns:
             merged_edu = merged[merged["education"] == edu_filter].copy()
         else:
             merged_edu = merged.copy()
 
-        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+        for _cg_name, cg_filter, cg_folder in caregiving_type_specs:
             # Filter by caregiving_type if specified
             if cg_filter is not None and "caregiving_type" in merged_edu.columns:
                 merged_spec = merged_edu[
@@ -3296,14 +3296,14 @@ def task_plot_matched_differences_work_by_age_bins_at_first_care_demand(
     ]
 
     # Loop over nested splits
-    for edu_name, edu_filter, edu_folder in education_specs:
+    for _edu_name, edu_filter, edu_folder in education_specs:
         # Filter by education if specified
         if edu_filter is not None and "education" in merged.columns:
             merged_edu = merged[merged["education"] == edu_filter].copy()
         else:
             merged_edu = merged.copy()
 
-        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+        for _cg_name, cg_filter, cg_folder in caregiving_type_specs:
             # Filter by caregiving_type if specified
             if cg_filter is not None and "caregiving_type" in merged_edu.columns:
                 merged_spec = merged_edu[
@@ -3405,14 +3405,14 @@ def task_plot_matched_differences_job_offer_by_age_bins_at_first_care_demand(
     ]
 
     # Loop over nested splits
-    for edu_name, edu_filter, edu_folder in education_specs:
+    for _edu_name, edu_filter, edu_folder in education_specs:
         # Filter by education if specified
         if edu_filter is not None and "education" in merged.columns:
             merged_edu = merged[merged["education"] == edu_filter].copy()
         else:
             merged_edu = merged.copy()
 
-        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+        for _cg_name, cg_filter, cg_folder in caregiving_type_specs:
             # Filter by caregiving_type if specified
             if cg_filter is not None and "caregiving_type" in merged_edu.columns:
                 merged_spec = merged_edu[
@@ -3514,14 +3514,14 @@ def task_plot_matched_differences_hours_weekly_by_age_bins_at_first_care_demand(
     ]
 
     # Loop over nested splits
-    for edu_name, edu_filter, edu_folder in education_specs:
+    for _edu_name, edu_filter, edu_folder in education_specs:
         # Filter by education if specified
         if edu_filter is not None and "education" in merged.columns:
             merged_edu = merged[merged["education"] == edu_filter].copy()
         else:
             merged_edu = merged.copy()
 
-        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+        for _cg_name, cg_filter, cg_folder in caregiving_type_specs:
             # Filter by caregiving_type if specified
             if cg_filter is not None and "caregiving_type" in merged_edu.columns:
                 merged_spec = merged_edu[
@@ -3623,14 +3623,14 @@ def task_plot_matched_differences_care_by_age_bins_at_first_care_demand(
     ]
 
     # Loop over nested splits
-    for edu_name, edu_filter, edu_folder in education_specs:
+    for _edu_name, edu_filter, edu_folder in education_specs:
         # Filter by education if specified
         if edu_filter is not None and "education" in merged.columns:
             merged_edu = merged[merged["education"] == edu_filter].copy()
         else:
             merged_edu = merged.copy()
 
-        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+        for _cg_name, cg_filter, cg_folder in caregiving_type_specs:
             # Filter by caregiving_type if specified
             if cg_filter is not None and "caregiving_type" in merged_edu.columns:
                 merged_spec = merged_edu[
@@ -3732,14 +3732,14 @@ def task_plot_matched_differences_gross_labor_income_by_age_bins_at_first_care_d
     ]
 
     # Loop over nested splits
-    for edu_name, edu_filter, edu_folder in education_specs:
+    for _edu_name, edu_filter, edu_folder in education_specs:
         # Filter by education if specified
         if edu_filter is not None and "education" in merged.columns:
             merged_edu = merged[merged["education"] == edu_filter].copy()
         else:
             merged_edu = merged.copy()
 
-        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+        for _cg_name, cg_filter, cg_folder in caregiving_type_specs:
             # Filter by caregiving_type if specified
             if cg_filter is not None and "caregiving_type" in merged_edu.columns:
                 merged_spec = merged_edu[
@@ -3841,14 +3841,14 @@ def task_plot_matched_differences_savings_by_age_bins_at_first_care_demand(
     ]
 
     # Loop over nested splits
-    for edu_name, edu_filter, edu_folder in education_specs:
+    for _edu_name, edu_filter, edu_folder in education_specs:
         # Filter by education if specified
         if edu_filter is not None and "education" in merged.columns:
             merged_edu = merged[merged["education"] == edu_filter].copy()
         else:
             merged_edu = merged.copy()
 
-        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+        for _cg_name, cg_filter, cg_folder in caregiving_type_specs:
             # Filter by caregiving_type if specified
             if cg_filter is not None and "caregiving_type" in merged_edu.columns:
                 merged_spec = merged_edu[
@@ -3950,14 +3950,14 @@ def task_plot_matched_differences_wealth_by_age_bins_at_first_care_demand(
     ]
 
     # Loop over nested splits
-    for edu_name, edu_filter, edu_folder in education_specs:
+    for _edu_name, edu_filter, edu_folder in education_specs:
         # Filter by education if specified
         if edu_filter is not None and "education" in merged.columns:
             merged_edu = merged[merged["education"] == edu_filter].copy()
         else:
             merged_edu = merged.copy()
 
-        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+        for _cg_name, cg_filter, cg_folder in caregiving_type_specs:
             # Filter by caregiving_type if specified
             if cg_filter is not None and "caregiving_type" in merged_edu.columns:
                 merged_spec = merged_edu[
@@ -4059,14 +4059,14 @@ def task_plot_matched_differences_savings_rate_by_age_bins_at_first_care_demand(
     ]
 
     # Loop over nested splits
-    for edu_name, edu_filter, edu_folder in education_specs:
+    for _edu_name, edu_filter, edu_folder in education_specs:
         # Filter by education if specified
         if edu_filter is not None and "education" in merged.columns:
             merged_edu = merged[merged["education"] == edu_filter].copy()
         else:
             merged_edu = merged.copy()
 
-        for cg_name, cg_filter, cg_folder in caregiving_type_specs:
+        for _cg_name, cg_filter, cg_folder in caregiving_type_specs:
             # Filter by caregiving_type if specified
             if cg_filter is not None and "caregiving_type" in merged_edu.columns:
                 merged_spec = merged_edu[

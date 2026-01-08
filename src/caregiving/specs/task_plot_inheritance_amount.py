@@ -41,7 +41,7 @@ def task_plot_inheritance_amount_by_age(
 
     # Get metadata
     start_age = specs["start_age"]
-    end_age_caregiving = specs["end_age_caregiving"]
+    _end_age_caregiving = specs["end_age_caregiving"]  # Unused but kept for reference
     sex_labels = specs["sex_labels"]  # ["Men", "Women"]
     education_labels = specs["education_labels"]  # ["Low", "High"]
 
@@ -107,7 +107,7 @@ def task_plot_inheritance_amount_by_age(
             legend_labels.append(f"{edu_label}, {care_labels[care_type_idx]}")
 
     # Create single vertical legend
-    leg = ax.legend(
+    _leg = ax.legend(
         legend_handles,
         legend_labels,
         loc="best",
@@ -236,7 +236,7 @@ def task_plot_inheritance_probability_by_age(
             legend_labels.append(f"{edu_label}, {care_labels[care_type_name]}")
 
     # Create single vertical legend
-    leg = ax.legend(
+    _leg = ax.legend(
         legend_handles,
         legend_labels,
         loc="best",

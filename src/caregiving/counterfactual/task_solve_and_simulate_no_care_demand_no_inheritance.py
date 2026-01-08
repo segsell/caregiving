@@ -14,7 +14,7 @@ import dcegm
 from caregiving.config import BLD
 from caregiving.model.shared import DEAD
 from caregiving.model.state_space_no_care_demand import create_state_space_functions
-from caregiving.model.task_specify_model_no_care_demand import (
+from caregiving.model.task_specify_model_no_care_demand_no_inheritance import (
     create_stochastic_states_transitions,
 )
 from caregiving.model.taste_shocks import shock_function_dict

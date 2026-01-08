@@ -16,7 +16,7 @@ import dcegm
 from caregiving.config import BLD, SRC
 from caregiving.estimation.estimation_setup import draw_caregiving_type_from_params
 from caregiving.model.shared import DEAD
-from caregiving.model.state_space import create_state_space_functions
+from caregiving.model.state_space_no_inheritance import create_state_space_functions
 
 # from caregiving.simulation.simulate import simulate_scenario
 from caregiving.model.task_specify_model import create_stochastic_states_transitions
@@ -35,7 +35,7 @@ jax.config.update("jax_enable_x64", True)
 
 # # @pytask.mark.no_inheritance
 # @pytask.mark.baseline_model_no_inheritance
-# def task_solve_and_simulate_estimated_params(
+# def task_solve_and_simulate_no_inheritance(
 #     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
 #     path_to_model: Path = BLD / "model" / "model_no_inheritance.pkl",
 #     path_to_model_config: Path = BLD / "model" / "model_config_no_inheritance.pkl",

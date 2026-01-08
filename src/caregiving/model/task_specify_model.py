@@ -8,7 +8,6 @@ import jax.numpy as jnp
 import numpy as np
 import pytask
 import yaml
-from dcegm.pre_processing.setup_model import create_model_dict
 from pytask import Product
 
 import dcegm
@@ -40,6 +39,7 @@ from caregiving.model.utility.utility_functions_additive import (
 )
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.model.wealth_and_budget.savings_grid import create_end_of_period_assets
+from dcegm.pre_processing.setup_model import create_model_dict
 
 # @pytask.mark.baseline_model
 # def task_specify_model(
@@ -48,7 +48,7 @@ from caregiving.model.wealth_and_budget.savings_grid import create_end_of_period
 #     / "model"
 #     / "model_config.pkl",
 #     path_to_save_model: Annotated[Path, Product] = BLD / "model" / "model.pkl",
-# ):
+# )
 #     model = specify_model(
 #         path_to_derived_specs=path_to_derived_specs,
 #         path_to_save_model_config=path_to_save_model_config,

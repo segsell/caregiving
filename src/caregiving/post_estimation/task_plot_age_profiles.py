@@ -66,16 +66,16 @@ def task_plot_age_profiles_caregivers(
     / "post_estimation"
     / "age_profiles"
     / "own_income_after_ssc_by_age_caregivers.png",
-    path_to_plot_bequest_from_parent: Annotated[Path, Product] = BLD
-    / "plots"
-    / "post_estimation"
-    / "age_profiles"
-    / "bequest_from_parent_by_age_caregivers.png",
-    path_to_plot_bequest_from_parent_positive: Annotated[Path, Product] = BLD
-    / "plots"
-    / "post_estimation"
-    / "age_profiles"
-    / "bequest_from_parent_positive_by_age_caregivers.png",
+    # path_to_plot_bequest_from_parent: Annotated[Path, Product] = BLD
+    # / "plots"
+    # / "post_estimation"
+    # / "age_profiles"
+    # / "bequest_from_parent_by_age_caregivers.png",
+    # path_to_plot_bequest_from_parent_positive: Annotated[Path, Product] = BLD
+    # / "plots"
+    # / "post_estimation"
+    # / "age_profiles"
+    # / "bequest_from_parent_positive_by_age_caregivers.png",
     path_to_plot_working_hours: Annotated[Path, Product] = BLD
     / "plots"
     / "post_estimation"
@@ -224,20 +224,6 @@ def task_plot_age_profiles_caregivers(
         df_no_care_demand["choice"].isin(work_values_no_care_demand).astype(float)
     )
 
-    # Weekly working hours (derived from annual hours)
-    df_baseline["working_hours_weekly"] = df_baseline["working_hours"] / N_WEEKS_IN_YEAR
-    df_no_care_demand["working_hours_weekly"] = (
-        df_no_care_demand["working_hours"] / N_WEEKS_IN_YEAR
-    )
-
-    # Bequest conditional on being positive
-    df_baseline["bequest_from_parent_positive"] = df_baseline[
-        "bequest_from_parent"
-    ].where(df_baseline["bequest_from_parent"] > 0)
-    df_no_care_demand["bequest_from_parent_positive"] = df_no_care_demand[
-        "bequest_from_parent"
-    ].where(df_no_care_demand["bequest_from_parent"] > 0)
-
     # Full-time and part-time indicators for both scenarios
     ft_values_baseline = np.asarray(FULL_TIME).ravel().tolist()
     pt_values_baseline = np.asarray(PART_TIME).ravel().tolist()
@@ -263,37 +249,14 @@ def task_plot_age_profiles_caregivers(
         df_no_care_demand["working_hours"] / N_WEEKS_IN_YEAR
     )
 
-    # Bequest conditional on being positive
-    df_baseline["bequest_from_parent_positive"] = df_baseline[
-        "bequest_from_parent"
-    ].where(df_baseline["bequest_from_parent"] > 0)
-    df_no_care_demand["bequest_from_parent_positive"] = df_no_care_demand[
-        "bequest_from_parent"
-    ].where(df_no_care_demand["bequest_from_parent"] > 0)
-
-    # Weekly working hours (derived from annual hours)
-    df_baseline["working_hours_weekly"] = df_baseline["working_hours"] / N_WEEKS_IN_YEAR
-    df_no_care_demand["working_hours_weekly"] = (
-        df_no_care_demand["working_hours"] / N_WEEKS_IN_YEAR
-    )
-
-    # Bequest conditional on being positive
-    df_baseline["bequest_from_parent_positive"] = df_baseline[
-        "bequest_from_parent"
-    ].where(df_baseline["bequest_from_parent"] > 0)
-    df_no_care_demand["bequest_from_parent_positive"] = df_no_care_demand[
-        "bequest_from_parent"
-    ].where(df_no_care_demand["bequest_from_parent"] > 0)
-
     # Verify required columns exist
     required_cols = [
         "assets_begin_of_period",
         "savings_dec",
         "employment",
         "own_income_after_ssc",
-        "bequest_from_parent",
         "gets_inheritance",
-        "working_hours",
+        "working_hours_weekly",
         "full_time",
         "part_time",
     ]
@@ -340,18 +303,18 @@ def task_plot_age_profiles_caregivers(
             "Own Income After SSC by Age (Caregivers, baseline vs no care demand)",
             path_to_plot_own_income_after_ssc,
         ),
-        (
-            "bequest_from_parent",
-            "Average Bequest from Parent (in 1,000€)",
-            "Bequest from Parent by Age (Caregivers, baseline vs no care demand)",
-            path_to_plot_bequest_from_parent,
-        ),
-        (
-            "bequest_from_parent_positive",
-            "Average Bequest from Parent, conditional on > 0 (in 1,000€)",
-            "Bequest from Parent (conditional on > 0) by Age (Caregivers, baseline vs no care demand)",
-            path_to_plot_bequest_from_parent_positive,
-        ),
+        # (
+        #     "bequest_from_parent",
+        #     "Average Bequest from Parent (in 1,000€)",
+        #     "Bequest from Parent by Age (Caregivers, baseline vs no care demand)",
+        #     path_to_plot_bequest_from_parent,
+        # ),
+        # (
+        #     "bequest_from_parent_positive",
+        #     "Average Bequest from Parent, conditional on > 0 (in 1,000€)",
+        #     "Bequest from Parent (conditional on > 0) by Age (Caregivers, baseline vs no care demand)",
+        #     path_to_plot_bequest_from_parent_positive,
+        # ),
         (
             "gets_inheritance",
             "Share Getting Inheritance",

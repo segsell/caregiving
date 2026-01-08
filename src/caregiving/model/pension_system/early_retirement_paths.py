@@ -64,8 +64,8 @@ def check_very_long_insured(
     (Rente besonders für langjährig Versicherte)."""
 
     policy_state_value = model_specs["min_SRA"]
-    # Get diff of SRA value to 67
-    sra_diff_67 = jnp.maximum(67 - policy_state_value, 0)
+    # Get diff of SRA value to 67 (unused but kept for reference)
+    _sra_diff_67 = jnp.maximum(67 - policy_state_value, 0)
 
     experience_threshold = model_specs["experience_threshold_very_long_insured"][sex]
     enough_years = experience_years >= experience_threshold

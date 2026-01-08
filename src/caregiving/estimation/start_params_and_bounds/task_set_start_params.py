@@ -5,7 +5,7 @@ from typing import Annotated
 
 import pandas as pd
 import yaml
-from pytask import Product, task
+from pytask import Product, mark, task
 
 from caregiving.config import BLD, SRC
 
@@ -34,6 +34,7 @@ SCENARIOS = {
 
 for scenario, scenario_params in SCENARIOS.items():
 
+    @mark.start_params
     @task(
         name=f"task_load_and_set_start_params_{scenario}",
         kwargs={

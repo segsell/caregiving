@@ -593,26 +593,6 @@ def task_plot_matched_differences_by_age_no_care_demand(  # noqa: PLR0915, E501
         else:
             c_outcomes[outcome_name] = np.zeros(len(df_c))
 
-    # Construct bequest amount conditional on being positive at the outcome level
-    # (use NaN for non-positive to get conditional means in groupby)
-    if "bequest_from_parent" in df_o.columns:
-        o_outcomes["bequest_from_parent_positive"] = np.where(
-            df_o["bequest_from_parent"] > 0,
-            df_o["bequest_from_parent"],
-            np.nan,
-        )
-    else:
-        o_outcomes["bequest_from_parent_positive"] = np.full(len(df_o), np.nan)
-
-    if "bequest_from_parent" in df_c.columns:
-        c_outcomes["bequest_from_parent_positive"] = np.where(
-            df_c["bequest_from_parent"] > 0,
-            df_c["bequest_from_parent"],
-            np.nan,
-        )
-    else:
-        c_outcomes["bequest_from_parent_positive"] = np.full(len(df_c), np.nan)
-
     # Create outcome columns and merge
     o_cols = create_outcome_columns(df_o, o_outcomes, "_o")
     c_cols = create_outcome_columns(df_c, c_outcomes, "_c")
@@ -623,8 +603,8 @@ def task_plot_matched_differences_by_age_no_care_demand(  # noqa: PLR0915, E501
     if "education" in df_o.columns:
         o_cols["education"] = df_o["education"].values
 
-    # Merge and compute differences (include full set of outcomes incl. consumption,
-    # bequests, and inheritance indicators)
+    # Merge and compute differences (include full set of outcomes incl. consumption
+    # and inheritance indicators)
     outcome_names = [
         "work",
         "ft",
@@ -638,8 +618,6 @@ def task_plot_matched_differences_by_age_no_care_demand(  # noqa: PLR0915, E501
         "savings_rate",
         "savings_dec",
         "consumption",
-        "bequest_from_parent",
-        "bequest_from_parent_positive",
         "net_hh_income",
         "income_tax",
         "income_tax_single",
@@ -756,22 +734,6 @@ def task_plot_matched_differences_by_age_no_care_demand(  # noqa: PLR0915, E501
                 "path": base_path / "matched_differences_consumption_by_age.png",
                 "age_max": 90,
             },
-            "bequest_from_parent": {
-                "ylabel": "Bequest from Parent (in 1,000€)\nDeviation from Counterfactual",
-                "title": f"Bequest from Parent by Age{title_suffix}",
-                "diff_col": "diff_bequest_from_parent",
-                "path": base_path
-                / "matched_differences_bequest_from_parent_by_age.png",
-                "age_max": 90,
-            },
-            "bequest_from_parent_positive": {
-                "ylabel": "Bequest from Parent, conditional on > 0 (in 1,000€)\nDeviation from Counterfactual",
-                "title": f"Bequest from Parent (conditional on > 0) by Age{title_suffix}",
-                "diff_col": "diff_bequest_from_parent_positive",
-                "path": base_path
-                / "matched_differences_bequest_from_parent_positive_by_age.png",
-                "age_max": 90,
-            },
             "net_hh_income": {
                 "ylabel": "Net Household Income (in 1,000€)\nDeviation from Counterfactual",
                 "title": f"Net Household Income by Age{title_suffix}",
@@ -885,8 +847,6 @@ def task_plot_matched_differences_by_age_no_care_demand(  # noqa: PLR0915, E501
                 "diff_savings_rate",
                 "diff_savings_dec",
                 "diff_consumption",
-                "diff_bequest_from_parent",
-                "diff_bequest_from_parent_positive",
                 "diff_net_hh_income",
                 "diff_income_tax",
                 "diff_income_tax_single",

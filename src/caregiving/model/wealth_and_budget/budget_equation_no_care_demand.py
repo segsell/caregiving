@@ -139,6 +139,7 @@ def budget_constraint(
     )
     gets_inheritance = draw_inheritance_outcome_no_care_demand(
         period=period,
+        lagged_choice=lagged_choice,
         education=education,
         asset_end_of_previous_period=asset_end_of_previous_period,
         model_specs=model_specs,

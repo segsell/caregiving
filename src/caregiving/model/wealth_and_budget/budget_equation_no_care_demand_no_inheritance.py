@@ -173,6 +173,7 @@ def budget_constraint(
         "gross_retirement_income": gross_retirement_income / model_specs["wealth_unit"],
         "income_shock_previous_period": income_shock_previous_period,
         "income_shock_for_labor": income_shock_for_labor,
+        "own_income_after_ssc": own_income_after_ssc / model_specs["wealth_unit"],
         # Government budget components
         "income_tax": income_tax_total / model_specs["wealth_unit"],
         "income_tax_single": income_tax_single / model_specs["wealth_unit"],

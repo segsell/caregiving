@@ -12,6 +12,7 @@ from pytask import Product
 
 import dcegm
 from caregiving.config import BLD
+from caregiving.model.experience_baseline_model import define_experience_grid
 from caregiving.model.state_space_no_care_demand import create_state_space_functions
 from caregiving.model.stochastic_processes.adl_transition import death_transition
 from caregiving.model.stochastic_processes.health_transition import (
@@ -87,12 +88,11 @@ def specify_model_no_care_demand_no_inheritance(
     savings_grid = create_end_of_period_assets()
 
     # Experience grid
-    experience_grid = jnp.linspace(0, 1, specs["n_experience_grid_points"])
+    experience_grid = define_experience_grid(specs)
 
     # Build model_config without care-related states
     model_config = {
-        # "min_period_batch_segments": [33, 43, 44],
-        "min_period_batch_segments": [23, 33, 34],
+        "min_period_batch_segments": [33, 43, 44],
         "n_periods": n_periods,
         "choices": choices,
         "deterministic_states": {

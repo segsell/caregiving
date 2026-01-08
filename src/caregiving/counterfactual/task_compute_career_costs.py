@@ -65,7 +65,7 @@ def task_compute_career_costs(
     # Baseline
     # ===============================================================================
 
-    specs = pkl.load(path_to_specs.open("rb"))
+    _specs = pkl.load(path_to_specs.open("rb"))  # Unused but kept for future use
 
     df_baseline = pd.read_pickle(path_to_original_data)
     df_no_care_demand = pd.read_pickle(path_to_no_care_demand_data)
@@ -213,7 +213,7 @@ def task_compute_career_costs_caregiving_leave_with_job_retention(
     # Baseline
     # ===============================================================================
 
-    specs = pkl.load(path_to_specs.open("rb"))
+    _specs = pkl.load(path_to_specs.open("rb"))  # Unused but kept for future use
 
     df_baseline = pd.read_pickle(path_to_caregiving_leave_data)
     df_no_care_demand = pd.read_pickle(path_to_no_care_demand_data)
@@ -361,7 +361,7 @@ def task_compute_career_costs_full_caregiving_leave_with_job_retention(
     # Baseline
     # ===============================================================================
 
-    specs = pkl.load(path_to_specs.open("rb"))
+    _specs = pkl.load(path_to_specs.open("rb"))  # Unused but kept for future use
 
     df_baseline = pd.read_pickle(path_to_caregiving_leave_data)
     df_no_care_demand = pd.read_pickle(path_to_no_care_demand_data)
@@ -624,7 +624,7 @@ def task_compute_government_budget_caregiving_leave(
     max_ret_age = specs["max_ret_age"]
 
     df = pd.read_pickle(path_to_caregiving_leave_data)
-    df_baseline = pd.read_pickle(path_to_baseline_data)
+    _df_baseline = pd.read_pickle(path_to_baseline_data)  # Unused (commented code)
     # net = (
     #     (df["income_tax_single"].sum() - df_baseline["income_tax_single"].sum())
     #     + (
@@ -718,7 +718,6 @@ def task_compute_government_budget_caregiving_leave(
         }
     )
     result.to_csv(path_to_output, index=False)
-    breakpoint()
 
     print(f"Government budget sums saved to {path_to_output}")
     print(f"Net government budget: {total_net_government_budget:.2f}")

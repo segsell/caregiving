@@ -83,5 +83,4 @@ def task_solve_and_simulate_no_care_demand(
     # 2) Simulate
     initial_states = pickle.load(path_to_initial_states.open("rb"))
     sim_df = simulate_scenario(model_solved, initial_states, specs)
-
     sim_df.to_pickle(path_to_save_simulated_data)
