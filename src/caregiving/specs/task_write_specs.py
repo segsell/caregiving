@@ -36,6 +36,7 @@ from caregiving.specs.health_specs import (
     read_in_health_transition_specs_df,
     read_in_health_transition_specs_good_medium_bad,
     read_in_health_transition_specs_good_medium_bad_df,
+    read_in_health_transition_specs_with_caregiving,
 )
 from caregiving.specs.income_specs import add_income_specs
 from caregiving.specs.inheritance_specs import (
@@ -89,6 +90,10 @@ def task_write_specs(  # noqa: PLR0915
     / "estimation"
     / "stochastic_processes"
     / "health_transition_matrix.csv",
+    path_to_health_transition_mat_with_caregiving: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "health_transition_matrix_with_caregiving.csv",
     path_to_mortality_transition_mat: Path = BLD
     / "estimation"
     / "stochastic_processes"
@@ -266,25 +271,38 @@ def task_write_specs(  # noqa: PLR0915
     ) = read_in_partner_transition_specs(partner_trans_prop, specs)
 
     # Read in health transition matrix including death probabilities
+    death_prob_df = pd.read_csv(path_to_mortality_transition_mat)
+
     health_trans_probs_df = pd.read_csv(
         path_to_health_transition_mat,
     )
-    death_prob_df = pd.read_csv(path_to_mortality_transition_mat)
     specs["health_trans_mat"] = read_in_health_transition_specs(
         health_trans_probs_df, death_prob_df, specs
     )
+    # Health transition matrix with lagged intensive caregiving
+    health_trans_probs_df_with_caregiving = pd.read_csv(
+        path_to_health_transition_mat_with_caregiving,
+    )
+    specs["health_trans_mat_with_caregiving"] = (
+        read_in_health_transition_specs_with_caregiving(
+            health_trans_probs_df_with_caregiving, death_prob_df, specs
+        )
+    )
 
-    health_death_trans_mat = read_in_health_transition_specs_df(
-        health_trans_probs_df=health_trans_probs_df,
-        death_prob_df=death_prob_df,
-        specs=specs,
-    )
-    health_death_trans_mat.to_csv(path_to_save_health_death_transition_matrix_good_bad)
-    plot_health_death_transitions_good_bad(
-        specs=specs,
-        df=health_death_trans_mat,
-        path_to_save_plot=path_to_save_health_death_transition_good_bad,
-    )
+    # health_death_trans_mat = read_in_health_transition_specs_df(
+    #     health_trans_probs_df=health_trans_probs_df,
+    #     death_prob_df=death_prob_df,
+    #     specs=specs,
+    # )
+    # health_death_trans_mat.to_csv(
+    #     path_to_save_health_death_transition_matrix_good_bad
+    # )
+
+    # plot_health_death_transitions_good_bad(
+    #     specs=specs,
+    #     df=health_death_trans_mat,
+    #     path_to_save_plot=path_to_save_health_death_transition_good_bad,
+    # )
 
     if "health_labels_three" in specs.keys():
         # Read in health transition matrix including death probabilities

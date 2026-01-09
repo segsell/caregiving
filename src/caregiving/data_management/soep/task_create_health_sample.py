@@ -17,6 +17,9 @@ from caregiving.data_management.soep.auxiliary import (
     recode_sex,
     span_dataframe,
 )
+from caregiving.data_management.soep.task_create_event_study_sample import (
+    create_caregiving,
+)
 from caregiving.data_management.soep.variables import (
     clean_health_create_states,
     create_education_type,
@@ -44,6 +47,8 @@ def task_create_health_transition_sample_good_bad(
 
     df = pd.read_csv(path_to_raw_data, index_col=["pid", "syear"])
 
+    df = create_caregiving(df, filter_missing=False)
+
     # Pre-Filter estimation years
     df = filter_years(df, specs["start_year"] - 1, specs["end_year"] + 1)
 
@@ -61,7 +66,25 @@ def task_create_health_transition_sample_good_bad(
     df = span_dataframe(df, specs["start_year"] - 1, specs["end_year"] + 1)
     df = clean_health_create_states(df)
 
-    df = df[["age", "education", "health", "lead_health", "sex"]]
+    # Create lagged intensive caregiving variable
+    # Ensure we have pid in index or as a column for grouping
+    if "pid" not in df.index.names and "pid" not in df.columns:
+        raise ValueError("pid must be in index or columns for lagging")
+
+    # Sort by pid and syear to ensure proper lagging
+    if "pid" in df.index.names:
+        df = df.sort_index(level="pid")
+        if "syear" in df.index.names:
+            df = df.sort_index(level=["pid", "syear"])
+        df["lagged_intensive_care"] = df.groupby(level="pid")["intensive_care"].shift(1)
+    else:
+        df = df.sort_values(by=["pid", "syear"])
+        df["lagged_intensive_care"] = df.groupby("pid")["intensive_care"].shift(1)
+
+    # Keep lagged_intensive_care in the final dataset
+    df = df[
+        ["age", "education", "health", "lead_health", "sex", "lagged_intensive_care"]
+    ]
 
     print(
         str(len(df))

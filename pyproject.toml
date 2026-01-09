@@ -78,6 +78,8 @@ counterfactual_differences_higher_ret_age_vs_no_care_demand = "Higher retirement
 counterfactual_differences_no_care_demand_vs_baseline = "No care demand vs baseline counterfactual differences"
 counterfactual_differences_no_inheritance_vs_no_care_demand = "No inheritance vs no care demand counterfactual differences"
 counterfactual_differences_pre_ls = "Counterfactual differences conditioned on pre-labor supply"
+counterfactual_differences_end_of_caregiving = "Counterfactual differences at end of caregiving tasks"
+counterfactual_differences_end_of_caregiving_intensity = "Counterfactual differences at end of caregiving by intensity tasks"
 # Age profile analysis
 counterfactual_differences_age_profiles = "Counterfactual age profile differences (all counterfactuals)"
 counterfactual_differences_job_retention_age_profiles = "Job retention counterfactual age profile differences"
@@ -92,6 +94,9 @@ counterfactual_differences_higher_ret_age_age_profiles = "Higher retirement age 
 temp_recreate_data = "Temporary data recreation tasks"
 # Debugging
 debugging = "Debugging and comparison tasks"
+debug_assets = "Debug assets comparison tasks"
+debug_assets_baseline = "Debug assets baseline comparison tasks"
+debug_accumulated_difference = "Debug accumulated difference tasks"
 # Career costs
 career_costs = "Career costs computation tasks"
 career_costs_caregiving_leave_with_job_retention = "Career costs for caregiving leave with job retention"
@@ -110,6 +115,8 @@ initial_wealth = "Initial wealth plotting tasks"
 plot_incomes = "Income plotting tasks"
 family_transition = "Family transition plotting tasks"
 inheritance = "Inheritance-related tasks"
+job_offer_probs = "Job offer probability plotting tasks"
+health_transition = "Health transition estimation and plotting tasks"
 # Post estimation
 post_estimation = "Post estimation tasks"
 post_estimation_no_care_demand_model = "Post estimation tasks for no care demand model"
