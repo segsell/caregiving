@@ -5,13 +5,11 @@ import pandas as pd
 
 from caregiving.model.experience_baseline_model import construct_experience_years
 from caregiving.model.shared import (
-    DEAD,
     FULL_TIME_CHOICES,
     INFORMAL_CARE,
     PART_TIME,
     SEX,
 )
-from caregiving.utils import table
 from dcegm.simulation.sim_utils import create_simulation_df
 from dcegm.simulation.simulate import simulate_all_periods
 

@@ -3,8 +3,6 @@
 import numpy as np
 import pandas as pd
 
-from caregiving.utils import table
-
 # from src.caregiving.model.shared import FULL_TIME, PART_TIME, UNEMPLOYED, RETIRED
 
 PGEMPLST_UNEMPLOYED = 5
@@ -691,7 +689,8 @@ def _deflate_inheritance_amount(df, cpi_data, specs):
     # Merge CPI data on year_inheritance (like deflate_wealth merges on syear)
     df_reset = df_reset.merge(cpi_data_copy, on="year_inheritance", how="left")
 
-    # Deflate inheritance amount (only where both inheritance_amount and cpi_normalized are not NaN)
+    # # Deflate inheritance amount (only where both inheritance_amount and cpi_no
+    # rmalized are not NaN)
     if "cpi_normalized" not in df_reset.columns:
         raise ValueError(
             "cpi_normalized column not found after merge. "

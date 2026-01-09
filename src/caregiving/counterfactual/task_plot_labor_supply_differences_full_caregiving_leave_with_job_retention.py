@@ -21,10 +21,8 @@ from caregiving.counterfactual.plotting_helpers import (
     calculate_simple_outcomes,
     get_age_at_first_event,
     get_distinct_colors,
-    plot_all_outcomes_by_age,
     plot_all_outcomes_by_group,
     plot_three_line_differences,
-    prepare_dataframes_simple,
 )
 from caregiving.counterfactual.plotting_utils import (
     _ensure_agent_period,
@@ -32,7 +30,6 @@ from caregiving.counterfactual.plotting_utils import (
     calculate_outcomes,
     calculate_working_hours_weekly,
     create_outcome_columns,
-    merge_and_compute_differences,
     prepare_dataframes_for_comparison,
 )
 from caregiving.counterfactual.task_plot_labor_supply_differences import (
@@ -180,9 +177,9 @@ def task_plot_matched_differences_by_distance_caregiving_leave(  # noqa: PLR0915
         ("caregiving_type1", 1, "caregiving_type1"),
     ]
 
-    for edu_label, edu_value, edu_dir in education_specs:
+    for _edu_label, edu_value, edu_dir in education_specs:
         for (
-            full_cg_type_label,
+            _full_cg_type_label,
             full_cg_type_value,
             full_cg_type_dir,
         ) in caregiving_type_specs:
@@ -233,9 +230,9 @@ def task_plot_matched_differences_by_distance_caregiving_leave(  # noqa: PLR0915
             # We need: .../matched_differences/{edu_dir}/{full_cg_type_dir}/filename.png
             base_path = path_to_plot.parent.parent.parent / edu_dir / full_cg_type_dir
             base_path.mkdir(parents=True, exist_ok=True)
-            plot_path = (
-                base_path
-                / "matched_differences_by_distance_full_caregiving_leave_with_job_retention.png"
+            plot_path = base_path / (
+                "matched_differences_by_distance_"
+                "full_caregiving_leave_with_job_retention.png"
             )
 
             # Save plot for this subgroup
@@ -248,7 +245,7 @@ def task_plot_matched_differences_by_distance_caregiving_leave(  # noqa: PLR0915
             )
 
             # Also save to declared product path for the all/all case
-            if edu_dir == "all" and full_cg_type_dir == "all":
+            if edu_dir == full_cg_type_dir == "all":
                 path_to_plot.parent.mkdir(parents=True, exist_ok=True)
                 plot_three_line_differences(
                     prof=prof,
@@ -261,7 +258,8 @@ def task_plot_matched_differences_by_distance_caregiving_leave(  # noqa: PLR0915
 
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_full_caregiving_leave_with_job_retention
-def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: PLR0912, PLR0915
+    # noqa: E501
     path_to_full_cg_leave_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params.pkl",
@@ -450,7 +448,9 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
             "wealth": {
                 "path": base_path
                 / "matched_differences_wealth_by_age_at_first_care.png",
-                "ylabel": "Wealth at Beginning of Period\nDeviation from No Care Demand",
+                "ylabel": (
+                    "Wealth at Beginning of Period\n" "Deviation from No Care Demand"
+                ),
                 "diff_col": "diff_wealth",
             },
             "savings_rate": {
@@ -473,9 +473,9 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
             },
         }
 
-    for edu_label, edu_value, edu_dir in education_specs:
+    for _edu_label, edu_value, edu_dir in education_specs:
         for (
-            full_cg_type_label,
+            _full_cg_type_label,
             full_cg_type_value,
             full_cg_type_dir,
         ) in caregiving_type_specs:
@@ -540,9 +540,15 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
                         / "matched_differences"
                         / edu_dir
                         / full_cg_type_dir
-                        / "matched_differences_caregiving_leave_top_up_by_age_at_first_care.png"
+                        / (
+                            "matched_differences_caregiving_leave_top_up_by_age_"
+                            "at_first_care.png"
+                        )
                     ),
-                    "ylabel": "Caregiving Leave Top-up (Monthly)\nDeviation from No Care Demand",
+                    "ylabel": (
+                        "Caregiving Leave Top-up (Monthly)\n"
+                        "Deviation from No Care Demand"
+                    ),
                     "diff_col": "diff_caregiving_leave_top_up",
                 }
             else:
@@ -563,7 +569,7 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
             base_path.mkdir(parents=True, exist_ok=True)
 
             # Update plot_configs paths for "all/all" case to use declared product paths
-            if edu_dir == "all" and full_cg_type_dir == "all":
+            if edu_dir == full_cg_type_dir == "all":
                 declared_paths_map = {
                     "pt": path_to_plot_pt,
                     "ft": path_to_plot_ft,
@@ -590,7 +596,8 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 # @pytask.mark.skip()
 # @pytask.mark.counterfactual_differences
 # @pytask.mark.counterfactual_differences_full_caregiving_leave_with_job_retention
-# def task_plot_matched_differences_by_age_bins_at_first_care_full_cg_leave(  # noqa: PLR0915, E501
+# def task_plot_matched_differences_by_age_bins_at_first_care_full_cg_leave(
+#  # noqa: PLR0915, E501
 #     path_to_full_cg_leave_data: Path = BLD
 #     / "solve_and_simulate"
 #     / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params.pkl",
@@ -748,13 +755,15 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 #             "pt": {
 #                 "path": base_path
 #                 / "matched_differences_part_time_by_age_bins_at_first_care.png",
-#                 "ylabel": "Proportion Part-Time Working\nDeviation from No Care Demand",
+# "ylabel": "Proportion Part-Time Working\nDeviation
+# from No Care Demand",
 #                 "diff_col": "diff_pt",
 #             },
 #             "ft": {
 #                 "path": base_path
 #                 / "matched_differences_full_time_by_age_bins_at_first_care.png",
-#                 "ylabel": "Proportion Full-Time Working\nDeviation from No Care Demand",
+# "ylabel": "Proportion Full-Time Working\nDeviation
+# from No Care Demand",
 #                 "diff_col": "diff_ft",
 #             },
 #             "work": {
@@ -766,19 +775,23 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 #             "job_offer": {
 #                 "path": base_path
 #                 / "matched_differences_job_offer_by_age_bins_at_first_care.png",
-#                 "ylabel": "Job Offer Probability Difference\nDeviation from No Care Demand",
+# "ylabel": "Job Offer Probability
+# Difference\nDeviation from No Care Demand",
 #                 "diff_col": "diff_job_offer",
 #             },
 #             "hours_weekly": {
 #                 "path": base_path
 #                 / "matched_differences_working_hours_by_age_bins_at_first_care.png",
-#                 "ylabel": "Weekly Working Hours Difference\nDeviation from No Care Demand",
+# "ylabel": "Weekly Working Hours
+# Difference\nDeviation from No Care Demand",
 #                 "diff_col": "diff_hours_weekly",
 #             },
 #             "gross_labor_income": {
 #                 "path": base_path
-#                 / "matched_differences_gross_labor_income_by_age_bins_at_first_care.png",
-#                 "ylabel": "Gross Labor Income (Monthly)\nDeviation from No Care Demand",
+# /
+# "matched_differences_gross_labor_income_by_age_bins_at_first_care.png",
+# "ylabel": "Gross Labor Income
+# (Monthly)\nDeviation from No Care Demand",
 #                 "diff_col": "diff_gross_labor_income",
 #             },
 #             "savings": {
@@ -790,7 +803,8 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 #             "wealth": {
 #                 "path": base_path
 #                 / "matched_differences_wealth_by_age_bins_at_first_care.png",
-#                 "ylabel": "Wealth at Beginning of Period\nDeviation from No Care Demand",
+# "ylabel": "Wealth at Beginning of
+# Period\nDeviation from No Care Demand",
 #                 "diff_col": "diff_wealth",
 #             },
 #             "savings_rate": {
@@ -807,7 +821,8 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 #             },
 #             "bequest_from_parent": {
 #                 "path": base_path
-#                 / "matched_differences_bequest_from_parent_by_age_bins_at_first_care.png",
+# /
+# "matched_differences_bequest_from_parent_by_age_bins_at_first_care.png",
 #                 "ylabel": "Bequest from Parent\nDeviation from No Care Demand",
 #                 "diff_col": "diff_bequest_from_parent",
 #             },
@@ -878,9 +893,13 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 #                         / "matched_differences"
 #                         / edu_dir
 #                         / full_cg_type_dir
-#                         / "matched_differences_caregiving_leave_top_up_by_age_bins_at_first_care.png"
+#                         / (
+#                             "matched_differences_caregiving_leave_top_up_by_age"
+#                             "_bins_at_first_care.png"
+#                         ),
 #                     ),
-#                     "ylabel": "Caregiving Leave Top-up (Monthly)\nDeviation from No Care Demand",
+# "ylabel": "Caregiving Leave Top-up
+# (Monthly)\nDeviation from No Care Demand",
 #                     "diff_col": "diff_caregiving_leave_top_up",
 #                 }
 #             else:
@@ -929,7 +948,8 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 # @pytask.mark.skip()
 # @pytask.mark.counterfactual_differences
 # @pytask.mark.counterfactual_differences_full_caregiving_leave_with_job_retention
-# def task_plot_matched_differences_by_age_at_first_care_demand_full_cg_leave(  # noqa: PLR0915, E501
+# def task_plot_matched_differences_by_age_at_first_care_demand_full_cg_leave
+# (  # noqa: PLR0915, E501
 #     path_to_full_cg_leave_data: Path = BLD
 #     / "solve_and_simulate"
 #     / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params.pkl",
@@ -1059,7 +1079,8 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 #     )
 #     merged = merged.merge(first_care_demand_with_age, on="agent", how="left")
 
-#     merged = merged[merged["age_at_first_care_demand"].isin(ages_at_first_care_demand)]
+# merged = merged[merged["age_at_first_care_demand"].isin(ages_at_first_care_
+# demand)]
 
 #     merged = merged[
 #         (merged["distance_to_first_care_demand"] >= -window)
@@ -1087,20 +1108,23 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 #             "pt": {
 #                 "path": base_path
 #                 / "matched_differences_part_time_by_age_at_first_care_demand.png",
-#                 "ylabel": "Proportion Part-Time Working\nDeviation from No Care Demand",
+# "ylabel": "Proportion Part-Time Working\nDeviation
+# from No Care Demand",
 #                 "diff_col": "diff_pt",
 #                 "xlabel": "Year relative to first care demand",
 #             },
 #             "ft": {
 #                 "path": base_path
 #                 / "matched_differences_full_time_by_age_at_first_care_demand.png",
-#                 "ylabel": "Proportion Full-Time Working\nDeviation from No Care Demand",
+# "ylabel": "Proportion Full-Time Working\nDeviation
+# from No Care Demand",
 #                 "diff_col": "diff_ft",
 #                 "xlabel": "Year relative to first care demand",
 #             },
 #             "work": {
 #                 "path": base_path
-#                 / "matched_differences_employment_rate_by_age_at_first_care_demand.png",
+# /
+# "matched_differences_employment_rate_by_age_at_first_care_demand.png",
 #                 "ylabel": "Proportion Working\nDeviation from No Care Demand",
 #                 "diff_col": "diff_work",
 #                 "xlabel": "Year relative to first care demand",
@@ -1108,28 +1132,35 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 #             "job_offer": {
 #                 "path": base_path
 #                 / "matched_differences_job_offer_by_age_at_first_care_demand.png",
-#                 "ylabel": "Job Offer Probability Difference\nDeviation from No Care Demand",
+# "ylabel": "Job Offer Probability
+# Difference\nDeviation from No Care Demand",
 #                 "diff_col": "diff_job_offer",
 #                 "xlabel": "Year relative to first care demand",
 #             },
 #             "hours_weekly": {
 #                 "path": base_path
 #                 / "matched_differences_working_hours_by_age_at_first_care_demand.png",
-#                 "ylabel": "Weekly Working Hours Difference\nDeviation from No Care Demand",
+# "ylabel": "Weekly Working Hours
+# Difference\nDeviation from No Care Demand",
 #                 "diff_col": "diff_hours_weekly",
 #                 "xlabel": "Year relative to first care demand",
 #             },
 #             "care": {
 #                 "path": base_path
 #                 / "matched_differences_care_by_age_at_first_care_demand.png",
-#                 "ylabel": "Probability of Providing Care\nDeviation from No Care Demand",
+# "ylabel": "Probability of Providing
+# Care\nDeviation from No Care Demand",
 #                 "diff_col": "diff_care",
 #                 "xlabel": "Year relative to first care demand",
 #             },
 #             "gross_labor_income": {
 #                 "path": base_path
-#                 / "matched_differences_gross_labor_income_by_age_at_first_care_demand.png",
-#                 "ylabel": "Gross Labor Income (Monthly)\nDeviation from No Care Demand",
+#                 / (
+#                     "matched_differences_gross_labor_income_by_age_at_first_"
+#                     f"care_demand.png"
+#                 ),
+# "ylabel": "Gross Labor Income
+# (Monthly)\nDeviation from No Care Demand",
 #                 "diff_col": "diff_gross_labor_income",
 #                 "xlabel": "Year relative to first care demand",
 #             },
@@ -1143,7 +1174,8 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 #             "wealth": {
 #                 "path": base_path
 #                 / "matched_differences_wealth_by_age_at_first_care_demand.png",
-#                 "ylabel": "Wealth at Beginning of Period\nDeviation from No Care Demand",
+# "ylabel": "Wealth at Beginning of
+# Period\nDeviation from No Care Demand",
 #                 "diff_col": "diff_wealth",
 #                 "xlabel": "Year relative to first care demand",
 #             },
@@ -1163,7 +1195,10 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 #             },
 #             "bequest_from_parent": {
 #                 "path": base_path
-#                 / "matched_differences_bequest_from_parent_by_age_at_first_care_demand.png",
+#                 / (
+#                     "matched_differences_bequest_from_parent_by_age_at_first_"
+#                     f"care_demand.png"
+#                 ),
 #                 "ylabel": "Bequest from Parent\nDeviation from No Care Demand",
 #                 "diff_col": "diff_bequest_from_parent",
 #                 "xlabel": "Year relative to first care demand",
@@ -1241,9 +1276,13 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 #                         / "matched_differences"
 #                         / edu_dir
 #                         / full_cg_type_dir
-#                         / "matched_differences_caregiving_leave_top_up_by_age_at_first_care_demand.png"
+#                 / (
+#                     "matched_differences_caregiving_leave_top_up_by_age_"
+#                     f"at_first_care_demand.png"
+#                 )
 #                     ),
-#                     "ylabel": "Caregiving Leave Top-up (Monthly)\nDeviation from No Care Demand",
+# "ylabel": "Caregiving Leave Top-up
+# (Monthly)\nDeviation from No Care Demand",
 #                     "diff_col": "diff_caregiving_leave_top_up",
 #                     "xlabel": "Year relative to first care demand",
 #                 }
@@ -1279,7 +1318,8 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 # @pytask.mark.skip()
 # @pytask.mark.counterfactual_differences
 # @pytask.mark.counterfactual_differences_full_caregiving_leave_with_job_retention
-# def task_plot_matched_differences_by_age_bins_at_first_care_demand_full_cg_leave(  # noqa: PLR0915, E501
+# def task_plot_matched_differences_by_age_bins_at_first_care_demand_full_cg_
+# leave(  # noqa: PLR0915, E501
 #     path_to_full_cg_leave_data: Path = BLD
 #     / "solve_and_simulate"
 #     / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params.pkl",
@@ -1444,50 +1484,68 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 #         return {
 #             "pt": {
 #                 "path": base_path
-#                 / "matched_differences_part_time_by_age_bins_at_first_care_demand.png",
-#                 "ylabel": "Proportion Part-Time Working\nDeviation from No Care Demand",
+# /
+# "matched_differences_part_time_by_age_bins_at_first_care_demand.png",
+# "ylabel": "Proportion Part-Time Working\nDeviation
+# from No Care Demand",
 #                 "diff_col": "diff_pt",
 #                 "xlabel": "Year relative to first care demand",
 #             },
 #             "ft": {
 #                 "path": base_path
-#                 / "matched_differences_full_time_by_age_bins_at_first_care_demand.png",
-#                 "ylabel": "Proportion Full-Time Working\nDeviation from No Care Demand",
+# /
+# "matched_differences_full_time_by_age_bins_at_first_care_demand.png",
+# "ylabel": "Proportion Full-Time Working\nDeviation
+# from No Care Demand",
 #                 "diff_col": "diff_ft",
 #                 "xlabel": "Year relative to first care demand",
 #             },
 #             "work": {
 #                 "path": base_path
-#                 / "matched_differences_employment_rate_by_age_bins_at_first_care_demand.png",
+#                 / (
+#                     "matched_differences_employment_rate_by_age_bins_at_"
+#                     f"first_care_demand.png"
+#                 ),
 #                 "ylabel": "Proportion Working\nDeviation from No Care Demand",
 #                 "diff_col": "diff_work",
 #                 "xlabel": "Year relative to first care demand",
 #             },
 #             "job_offer": {
 #                 "path": base_path
-#                 / "matched_differences_job_offer_by_age_bins_at_first_care_demand.png",
-#                 "ylabel": "Job Offer Probability Difference\nDeviation from No Care Demand",
+# /
+# "matched_differences_job_offer_by_age_bins_at_first_care_demand.png",
+# "ylabel": "Job Offer Probability
+# Difference\nDeviation from No Care Demand",
 #                 "diff_col": "diff_job_offer",
 #                 "xlabel": "Year relative to first care demand",
 #             },
 #             "hours_weekly": {
 #                 "path": base_path
-#                 / "matched_differences_working_hours_by_age_bins_at_first_care_demand.png",
-#                 "ylabel": "Weekly Working Hours Difference\nDeviation from No Care Demand",
+#                 / (
+#                     "matched_differences_working_hours_by_age_bins_at_"
+#                     f"first_care_demand.png"
+#                 ),
+# "ylabel": "Weekly Working Hours
+# Difference\nDeviation from No Care Demand",
 #                 "diff_col": "diff_hours_weekly",
 #                 "xlabel": "Year relative to first care demand",
 #             },
 #             "care": {
 #                 "path": base_path
 #                 / "matched_differences_care_by_age_bins_at_first_care_demand.png",
-#                 "ylabel": "Probability of Providing Care\nDeviation from No Care Demand",
+# "ylabel": "Probability of Providing
+# Care\nDeviation from No Care Demand",
 #                 "diff_col": "diff_care",
 #                 "xlabel": "Year relative to first care demand",
 #             },
 #             "gross_labor_income": {
 #                 "path": base_path
-#                 / "matched_differences_gross_labor_income_by_age_bins_at_first_care_demand.png",
-#                 "ylabel": "Gross Labor Income (Monthly)\nDeviation from No Care Demand",
+#                 / (
+#                     "matched_differences_gross_labor_income_by_age_bins_"
+#                     f"at_first_care_demand.png"
+#                 ),
+# "ylabel": "Gross Labor Income
+# (Monthly)\nDeviation from No Care Demand",
 #                 "diff_col": "diff_gross_labor_income",
 #                 "xlabel": "Year relative to first care demand",
 #             },
@@ -1501,27 +1559,33 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 #             "wealth": {
 #                 "path": base_path
 #                 / "matched_differences_wealth_by_age_bins_at_first_care_demand.png",
-#                 "ylabel": "Wealth at Beginning of Period\nDeviation from No Care Demand",
+# "ylabel": "Wealth at Beginning of
+# Period\nDeviation from No Care Demand",
 #                 "diff_col": "diff_wealth",
 #                 "xlabel": "Year relative to first care demand",
 #             },
 #             "savings_rate": {
 #                 "path": base_path
-#                 / "matched_differences_savings_rate_by_age_bins_at_first_care_demand.png",
+# /
+# "matched_differences_savings_rate_by_age_bins_at_first_care_demand.png",
 #                 "ylabel": "Savings Rate\nDeviation from No Care Demand",
 #                 "diff_col": "diff_savings_rate",
 #                 "xlabel": "Year relative to first care demand",
 #             },
 #             "consumption": {
 #                 "path": base_path
-#                 / "matched_differences_consumption_by_age_bins_at_first_care_demand.png",
+# /
+# "matched_differences_consumption_by_age_bins_at_first_care_demand.png",
 #                 "ylabel": "Consumption\nDeviation from No Care Demand",
 #                 "diff_col": "diff_consumption",
 #                 "xlabel": "Year relative to first care demand",
 #             },
 #             "bequest_from_parent": {
 #                 "path": base_path
-#                 / "matched_differences_bequest_from_parent_by_age_bins_at_first_care_demand.png",
+#                 / (
+#                     "matched_differences_bequest_from_parent_by_age_bins_"
+#                     f"at_first_care_demand.png"
+#                 ),
 #                 "ylabel": "Bequest from Parent\nDeviation from No Care Demand",
 #                 "diff_col": "diff_bequest_from_parent",
 #                 "xlabel": "Year relative to first care demand",
@@ -1595,9 +1659,13 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 #                         / "matched_differences"
 #                         / edu_dir
 #                         / full_cg_type_dir
-#                         / "matched_differences_caregiving_leave_top_up_by_age_bins_at_first_care_demand.png"
+#                 / (
+#                     "matched_differences_caregiving_leave_top_up_by_age_"
+#                     f"bins_at_first_care_demand.png"
+#                 )
 #                     ),
-#                     "ylabel": "Caregiving Leave Top-up (Monthly)\nDeviation from No Care Demand",
+# "ylabel": "Caregiving Leave Top-up
+# (Monthly)\nDeviation from No Care Demand",
 #                     "diff_col": "diff_caregiving_leave_top_up",
 #                     "xlabel": "Year relative to first care demand",
 #                 }
@@ -1612,7 +1680,8 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 #             prof["age_bin_start"] = (
 #                 prof["age_bin_label"].str.split("-").str[0].astype(int)
 #             )
-#             prof = prof.sort_values(["age_bin_start", "distance_to_first_care_demand"])
+# prof =
+# prof.sort_values(["age_bin_start", "distance_to_first_care_demand"])
 
 #             unique_bins = (
 #                 merged_filtered[["age_bin_label", "age_bin_start"]]
@@ -1647,7 +1716,8 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 # @pytask.mark.skip()
 # @pytask.mark.counterfactual_differences
 # @pytask.mark.counterfactual_differences_full_caregiving_leave_with_job_retention
-# def task_plot_matched_differences_by_distance_to_first_care_all_outcomes(  # noqa: PLR0915, E501
+# def task_plot_matched_differences_by_distance_to_first_care_all_outcomes(
+# # noqa: PLR0915, E501
 #     path_to_full_cg_leave_data: Path = BLD
 #     / "solve_and_simulate"
 #     / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params.pkl",
@@ -1871,7 +1941,8 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 #                 },
 #                 "hours_weekly": {
 #                     "path": base_path
-#                     / "matched_differences_hours_weekly_by_distance_to_first_care.png",
+# /
+# "matched_differences_hours_weekly_by_distance_to_first_care.png",
 #                     "ylabel": "Weekly Working Hours\nDeviation from No Care Demand",
 #                     "diff_col": "diff_hours_weekly",
 #                 },
@@ -1883,8 +1954,10 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 #                 },
 #                 "gross_labor_income": {
 #                     "path": base_path
-#                     / "matched_differences_gross_labor_income_by_distance_to_first_care.png",
-#                     "ylabel": "Gross Labor Income (Monthly)\nDeviation from No Care Demand",
+# /
+# "matched_differences_gross_labor_income_by_distance_to_first_care.png",
+# "ylabel": "Gross Labor Income
+# (Monthly)\nDeviation from No Care Demand",
 #                     "diff_col": "diff_gross_labor_income",
 #                 },
 #                 "savings": {
@@ -1901,20 +1974,24 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 #                 },
 #                 "savings_rate": {
 #                     "path": base_path
-#                     / "matched_differences_savings_rate_by_distance_to_first_care.png",
+# /
+# "matched_differences_savings_rate_by_distance_to_first_care.png",
 #                     "ylabel": "Savings Rate\nDeviation from No Care Demand",
 #                     "diff_col": "diff_savings_rate",
 #                 },
 #                 "consumption": {
 #                     "path": base_path
 #                     / "matched_differences_consumption_by_distance_to_first_care.png",
-#                     "ylabel": "Consumption (in 1,000€)\nDeviation from No Care Demand",
+# "ylabel": "Consumption (in 1,000€)\nDeviation
+# from No Care Demand",
 #                     "diff_col": "diff_consumption",
 #                 },
 #                 "bequest_from_parent": {
 #                     "path": base_path
-#                     / "matched_differences_bequest_from_parent_by_distance_to_first_care.png",
-#                     "ylabel": "Bequest from Parent (in 1,000€)\nDeviation from No Care Demand",
+# /
+# "matched_differences_bequest_from_parent_by_distance_to_first_care.png",
+# "ylabel": "Bequest from Parent (in
+# 1,000€)\nDeviation from No Care Demand",
 #                     "diff_col": "diff_bequest_from_parent",
 #                 },
 #             }
@@ -1923,8 +2000,12 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 #             if "diff_caregiving_leave_top_up" in prof.columns:
 #                 plot_configs["caregiving_leave_top_up"] = {
 #                     "path": base_path
-#                     / "matched_differences_caregiving_leave_top_up_by_distance_to_first_care.png",
-#                     "ylabel": "Caregiving Leave Top-up (Monthly)\nDeviation from No Care Demand",
+#                 / (
+#                     "matched_differences_caregiving_leave_top_up_by_distance_"
+#                     f"to_first_care.png"
+#                 ),
+# "ylabel": "Caregiving Leave Top-up
+# (Monthly)\nDeviation from No Care Demand",
 #                     "diff_col": "diff_caregiving_leave_top_up",
 #                 }
 
@@ -1957,7 +2038,8 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 # @pytask.mark.skip()
 # @pytask.mark.counterfactual_differences
 # @pytask.mark.counterfactual_differences_full_caregiving_leave_with_job_retention
-# def task_plot_matched_differences_by_distance_to_first_care_demand_all_outcomes(  # noqa: PLR0915, E501
+# def task_plot_matched_differences_by_distance_to_first_care_demand_all_outc
+# omes(  # noqa: PLR0915, E501
 #     path_to_full_cg_leave_data: Path = BLD
 #     / "solve_and_simulate"
 #     / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params.pkl",
@@ -2177,13 +2259,15 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 #                 },
 #                 "job_offer": {
 #                     "path": base_path
-#                     / "matched_differences_job_offer_by_distance_to_first_care_demand.png",
+# /
+# "matched_differences_job_offer_by_distance_to_first_care_demand.png",
 #                     "ylabel": "Job Offer Probability\nDeviation from No Care Demand",
 #                     "diff_col": "diff_job_offer",
 #                 },
 #                 "hours_weekly": {
 #                     "path": base_path
-#                     / "matched_differences_hours_weekly_by_distance_to_first_care_demand.png",
+# /
+# "matched_differences_hours_weekly_by_distance_to_first_care_demand.png",
 #                     "ylabel": "Weekly Working Hours\nDeviation from No Care Demand",
 #                     "diff_col": "diff_hours_weekly",
 #                 },
@@ -2195,38 +2279,51 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 #                 },
 #                 "gross_labor_income": {
 #                     "path": base_path
-#                     / "matched_differences_gross_labor_income_by_distance_to_first_care_demand.png",
-#                     "ylabel": "Gross Labor Income (Monthly)\nDeviation from No Care Demand",
+#                 / (
+#                     "matched_differences_gross_labor_income_by_distance_"
+#                     f"to_first_care_demand.png"
+#                 ),
+# "ylabel": "Gross Labor Income
+# (Monthly)\nDeviation from No Care Demand",
 #                     "diff_col": "diff_gross_labor_income",
 #                 },
 #                 "savings": {
 #                     "path": base_path
-#                     / "matched_differences_savings_by_distance_to_first_care_demand.png",
+# /
+# "matched_differences_savings_by_distance_to_first_care_demand.png",
 #                     "ylabel": "Savings (in 1,000€)\nDeviation from No Care Demand",
 #                     "diff_col": "diff_savings",
 #                 },
 #                 "wealth": {
 #                     "path": base_path
-#                     / "matched_differences_wealth_by_distance_to_first_care_demand.png",
+# /
+# "matched_differences_wealth_by_distance_to_first_care_demand.png",
 #                     "ylabel": "Wealth (in 1,000€)\nDeviation from No Care Demand",
 #                     "diff_col": "diff_wealth",
 #                 },
 #                 "savings_rate": {
 #                     "path": base_path
-#                     / "matched_differences_savings_rate_by_distance_to_first_care_demand.png",
+# /
+# "matched_differences_savings_rate_by_distance_to_first_care_demand.png",
 #                     "ylabel": "Savings Rate\nDeviation from No Care Demand",
 #                     "diff_col": "diff_savings_rate",
 #                 },
 #                 "consumption": {
 #                     "path": base_path
-#                     / "matched_differences_consumption_by_distance_to_first_care_demand.png",
-#                     "ylabel": "Consumption (in 1,000€)\nDeviation from No Care Demand",
+# /
+# "matched_differences_consumption_by_distance_to_first_care_demand.png",
+# "ylabel": "Consumption (in 1,000€)\nDeviation
+# from No Care Demand",
 #                     "diff_col": "diff_consumption",
 #                 },
 #                 "bequest_from_parent": {
 #                     "path": base_path
-#                     / "matched_differences_bequest_from_parent_by_distance_to_first_care_demand.png",
-#                     "ylabel": "Bequest from Parent (in 1,000€)\nDeviation from No Care Demand",
+#                 / (
+#                     "matched_differences_bequest_from_parent_by_distance_"
+#                     f"to_first_care_demand.png"
+#                 ),
+# "ylabel": "Bequest from Parent (in
+# 1,000€)\nDeviation from No Care Demand",
 #                     "diff_col": "diff_bequest_from_parent",
 #                 },
 #             }
@@ -2235,8 +2332,12 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 #             if "diff_caregiving_leave_top_up" in prof.columns:
 #                 plot_configs["caregiving_leave_top_up"] = {
 #                     "path": base_path
-#                     / "matched_differences_caregiving_leave_top_up_by_distance_to_first_care_demand.png",
-#                     "ylabel": "Caregiving Leave Top-up (Monthly)\nDeviation from No Care Demand",
+#                 / (
+#                     "matched_differences_caregiving_leave_top_up_by_distance_"
+#                     f"to_first_care_demand.png"
+#                 ),
+# "ylabel": "Caregiving Leave Top-up
+# (Monthly)\nDeviation from No Care Demand",
 #                     "diff_col": "diff_caregiving_leave_top_up",
 #                 }
 
@@ -2268,7 +2369,8 @@ def task_plot_matched_differences_by_age_at_first_care_full_cg_leave(  # noqa: P
 
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_full_caregiving_leave_with_job_retention
-def task_plot_matched_differences_by_distance_to_first_care_all_outcomes_vs_baseline(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_distance_to_first_care_all_outcomes_vs_baseline(  # noqa: PLR0912, PLR0915
+    # noqa: E501
     path_to_full_cg_leave_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params.pkl",
@@ -2429,9 +2531,9 @@ def task_plot_matched_differences_by_distance_to_first_care_all_outcomes_vs_base
         ("caregiving_type1", 1, "caregiving_type1"),
     ]
 
-    for edu_label, edu_value, edu_dir in education_specs:
+    for _edu_label, edu_value, edu_dir in education_specs:
         for (
-            full_cg_type_label,
+            _full_cg_type_label,
             full_cg_type_value,
             full_cg_type_dir,
         ) in caregiving_type_specs:
@@ -2502,8 +2604,8 @@ def task_plot_matched_differences_by_distance_to_first_care_all_outcomes_vs_base
                     "diff_col": "diff_care",
                 },
                 "gross_labor_income": {
-                    "path": base_path
-                    / "matched_differences_gross_labor_income_by_distance_to_first_care.png",
+                    "path": base_path  # noqa: E501
+                    / "matched_differences_gross_labor_income_by_distance_to_first_care.png",  # noqa: E501
                     "ylabel": "Gross Labor Income (Monthly)\nDeviation from Baseline",
                     "diff_col": "diff_gross_labor_income",
                 },
@@ -2533,8 +2635,10 @@ def task_plot_matched_differences_by_distance_to_first_care_all_outcomes_vs_base
                 },
                 "bequest_from_parent": {
                     "path": base_path
-                    / "matched_differences_bequest_from_parent_by_distance_to_first_care.png",
-                    "ylabel": "Bequest from Parent (in 1,000€)\nDeviation from Baseline",
+                    / "matched_differences_bequest_from_parent_by_distance_to_first_care.png",  # noqa: E501
+                    "ylabel": (
+                        "Bequest from Parent (in 1,000€)\n" "Deviation from Baseline"
+                    ),
                     "diff_col": "diff_bequest_from_parent",
                 },
             }
@@ -2543,8 +2647,13 @@ def task_plot_matched_differences_by_distance_to_first_care_all_outcomes_vs_base
             if "diff_caregiving_leave_top_up" in prof.columns:
                 plot_configs["caregiving_leave_top_up"] = {
                     "path": base_path
-                    / "matched_differences_caregiving_leave_top_up_by_distance_to_first_care.png",
-                    "ylabel": "Caregiving Leave Top-up (Monthly)\nDeviation from Baseline",
+                    / (
+                        "matched_differences_caregiving_leave_top_up_by_distance_to_first_"
+                        "care.png"
+                    ),
+                    "ylabel": (
+                        "Caregiving Leave Top-up (Monthly)\n" "Deviation from Baseline"
+                    ),
                     "diff_col": "diff_caregiving_leave_top_up",
                 }
 
@@ -2564,13 +2673,13 @@ def task_plot_matched_differences_by_distance_to_first_care_all_outcomes_vs_base
             }
 
             # Update plot_configs paths for "all/all" case to use declared product paths
-            if edu_dir == "all" and full_cg_type_dir == "all":
+            if edu_dir == full_cg_type_dir == "all":
                 for outcome_key, declared_path in declared_paths.items():
                     if outcome_key in plot_configs:
                         plot_configs[outcome_key]["path"] = declared_path
 
             # Plot each outcome separately
-            for outcome_key, config in plot_configs.items():
+            for config in plot_configs.values():
                 diff_col = config["diff_col"]
                 if diff_col not in prof.columns:
                     continue
@@ -2598,6 +2707,7 @@ def task_plot_matched_differences_by_distance_to_first_care_all_outcomes_vs_base
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_full_caregiving_leave_with_job_retention
 def task_plot_matched_differences_by_distance_to_first_care_demand_all_outcomes_vs_baseline(  # noqa: PLR0915, E501
+    # noqa: E501
     path_to_full_cg_leave_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params.pkl",
@@ -2760,9 +2870,9 @@ def task_plot_matched_differences_by_distance_to_first_care_demand_all_outcomes_
         ("caregiving_type1", 1, "caregiving_type1"),
     ]
 
-    for edu_label, edu_value, edu_dir in education_specs:
+    for _edu_label, edu_value, edu_dir in education_specs:
         for (
-            full_cg_type_label,
+            _full_cg_type_label,
             full_cg_type_value,
             full_cg_type_dir,
         ) in caregiving_type_specs:
@@ -2815,14 +2925,14 @@ def task_plot_matched_differences_by_distance_to_first_care_demand_all_outcomes_
                     "diff_col": "diff_pt",
                 },
                 "job_offer": {
-                    "path": base_path
-                    / "matched_differences_job_offer_by_distance_to_first_care_demand.png",
+                    "path": base_path  # noqa: E501
+                    / "matched_differences_job_offer_by_distance_to_first_care_demand.png",  # noqa: E501
                     "ylabel": "Job Offer Probability\nDeviation from Baseline",
                     "diff_col": "diff_job_offer",
                 },
                 "hours_weekly": {
-                    "path": base_path
-                    / "matched_differences_hours_weekly_by_distance_to_first_care_demand.png",
+                    "path": base_path  # noqa: E501
+                    / "matched_differences_hours_weekly_by_distance_to_first_care_demand.png",  # noqa: E501
                     "ylabel": "Weekly Working Hours\nDeviation from Baseline",
                     "diff_col": "diff_hours_weekly",
                 },
@@ -2834,13 +2944,21 @@ def task_plot_matched_differences_by_distance_to_first_care_demand_all_outcomes_
                 },
                 "gross_labor_income": {
                     "path": base_path
-                    / "matched_differences_gross_labor_income_by_distance_to_first_care_demand.png",
+                    / (
+                        "matched_differences_gross_labor_income_by_distance_to_first_care_"
+                        "demand.png"
+                    ),
                     "ylabel": "Gross Labor Income (Monthly)\nDeviation from Baseline",
                     "diff_col": "diff_gross_labor_income",
                 },
                 "savings": {
-                    "path": base_path
-                    / "matched_differences_savings_by_distance_to_first_care_demand.png",
+                    "path": (
+                        base_path
+                        / (
+                            "matched_differences_savings_by_distance_to_"
+                            "first_care_demand.png"
+                        )
+                    ),
                     "ylabel": "Savings (in 1,000€)\nDeviation from Baseline",
                     "diff_col": "diff_savings",
                 },
@@ -2851,21 +2969,26 @@ def task_plot_matched_differences_by_distance_to_first_care_demand_all_outcomes_
                     "diff_col": "diff_wealth",
                 },
                 "savings_rate": {
-                    "path": base_path
-                    / "matched_differences_savings_rate_by_distance_to_first_care_demand.png",
+                    "path": base_path  # noqa: E501
+                    / "matched_differences_savings_rate_by_distance_to_first_care_demand.png",  # noqa: E501
                     "ylabel": "Savings Rate\nDeviation from Baseline",
                     "diff_col": "diff_savings_rate",
                 },
                 "consumption": {
-                    "path": base_path
-                    / "matched_differences_consumption_by_distance_to_first_care_demand.png",
+                    "path": base_path  # noqa: E501
+                    / "matched_differences_consumption_by_distance_to_first_care_demand.png",  # noqa: E501
                     "ylabel": "Consumption (in 1,000€)\nDeviation from Baseline",
                     "diff_col": "diff_consumption",
                 },
                 "bequest_from_parent": {
                     "path": base_path
-                    / "matched_differences_bequest_from_parent_by_distance_to_first_care_demand.png",
-                    "ylabel": "Bequest from Parent (in 1,000€)\nDeviation from Baseline",
+                    / (
+                        "matched_differences_bequest_from_parent_by_distance_to_first_care_"
+                        "demand.png"
+                    ),
+                    "ylabel": (
+                        "Bequest from Parent (in 1,000€)\n" "Deviation from Baseline"
+                    ),
                     "diff_col": "diff_bequest_from_parent",
                 },
             }
@@ -2874,8 +2997,14 @@ def task_plot_matched_differences_by_distance_to_first_care_demand_all_outcomes_
             if "diff_caregiving_leave_top_up" in prof.columns:
                 plot_configs["caregiving_leave_top_up"] = {
                     "path": base_path
-                    / "matched_differences_caregiving_leave_top_up_by_distance_to_first_care_demand.png",
-                    "ylabel": "Caregiving Leave Top-up (Monthly)\nDeviation from Baseline",
+                    / (
+                        # noqa: E501
+                        "matched_differences_caregiving_leave_top_up_by_distance_to_first_care_"  # noqa: E501
+                        "demand.png"
+                    ),
+                    "ylabel": (
+                        "Caregiving Leave Top-up (Monthly)\n" "Deviation from Baseline"
+                    ),
                     "diff_col": "diff_caregiving_leave_top_up",
                 }
 
@@ -2919,8 +3048,7 @@ def task_plot_matched_differences_by_distance_to_first_care_demand_all_outcomes_
                 plt.savefig(config["path"], dpi=300, bbox_inches="tight")
                 # Also save to declared product path for "all/all" case
                 if (
-                    edu_dir == "all"
-                    and full_cg_type_dir == "all"
+                    edu_dir == full_cg_type_dir == "all"
                     and outcome_key in declared_paths
                 ):
                     declared_paths[outcome_key].parent.mkdir(
@@ -2934,7 +3062,8 @@ def task_plot_matched_differences_by_distance_to_first_care_demand_all_outcomes_
 
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_full_caregiving_leave_with_job_retention
-def task_plot_matched_differences_by_age_bins_at_first_care_full_cg_leave_vs_baseline(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_bins_at_first_care_full_cg_leave_vs_baseline(  # noqa: PLR0912, PLR0915
+    # noqa: E501
     path_to_full_cg_leave_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params.pkl",
@@ -3119,8 +3248,13 @@ def task_plot_matched_differences_by_age_bins_at_first_care_full_cg_leave_vs_bas
                 "diff_col": "diff_hours_weekly",
             },
             "gross_labor_income": {
-                "path": base_path
-                / "matched_differences_gross_labor_income_by_age_bins_at_first_care.png",
+                "path": (
+                    base_path
+                    / (
+                        "matched_differences_gross_labor_income_by_age_"
+                        "bins_at_first_care.png"
+                    )
+                ),
                 "ylabel": "Gross Labor Income (Monthly)\nDeviation from Baseline",
                 "diff_col": "diff_gross_labor_income",
             },
@@ -3149,16 +3283,21 @@ def task_plot_matched_differences_by_age_bins_at_first_care_full_cg_leave_vs_bas
                 "diff_col": "diff_consumption",
             },
             "bequest_from_parent": {
-                "path": base_path
-                / "matched_differences_bequest_from_parent_by_age_bins_at_first_care.png",
+                "path": (
+                    base_path
+                    / (
+                        "matched_differences_bequest_from_parent_by_age_"
+                        "bins_at_first_care.png"
+                    )
+                ),
                 "ylabel": "Bequest from Parent\nDeviation from Baseline",
                 "diff_col": "diff_bequest_from_parent",
             },
         }
 
-    for edu_label, edu_value, edu_dir in education_specs:
+    for _edu_label, edu_value, edu_dir in education_specs:
         for (
-            full_cg_type_label,
+            _full_cg_type_label,
             full_cg_type_value,
             full_cg_type_dir,
         ) in caregiving_type_specs:
@@ -3221,9 +3360,14 @@ def task_plot_matched_differences_by_age_bins_at_first_care_full_cg_leave_vs_bas
                         / "matched_differences"
                         / edu_dir
                         / full_cg_type_dir
-                        / "matched_differences_caregiving_leave_top_up_by_age_bins_at_first_care.png"
+                        / (
+                            "matched_differences_caregiving_leave_top_up_by_age_bins_at_first_"
+                            "care.png"
+                        )
                     ),
-                    "ylabel": "Caregiving Leave Top-up (Monthly)\nDeviation from Baseline",
+                    "ylabel": (
+                        "Caregiving Leave Top-up (Monthly)\n" "Deviation from Baseline"
+                    ),
                     "diff_col": "diff_caregiving_leave_top_up",
                 }
             else:
@@ -3258,7 +3402,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_full_cg_leave_vs_bas
             base_path.mkdir(parents=True, exist_ok=True)
 
             # Update plot_configs paths for "all/all" case to use declared product paths
-            if edu_dir == "all" and full_cg_type_dir == "all":
+            if edu_dir == full_cg_type_dir == "all":
                 declared_paths_map = {
                     "pt": path_to_plot_pt,
                     "ft": path_to_plot_ft,
@@ -3284,7 +3428,8 @@ def task_plot_matched_differences_by_age_bins_at_first_care_full_cg_leave_vs_bas
 
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_full_caregiving_leave_with_job_retention
-def task_plot_matched_differences_by_age_at_first_care_demand_full_cg_leave_vs_baseline(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_at_first_care_demand_full_cg_leave_vs_baseline(  # noqa: PLR0912, PLR0915
+    # noqa: E501
     path_to_full_cg_leave_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params.pkl",
@@ -3482,7 +3627,10 @@ def task_plot_matched_differences_by_age_at_first_care_demand_full_cg_leave_vs_b
             },
             "gross_labor_income": {
                 "path": base_path
-                / "matched_differences_gross_labor_income_by_age_at_first_care_demand.png",
+                / (
+                    "matched_differences_gross_labor_income_by_age_at_first_care_"
+                    "demand.png"
+                ),
                 "ylabel": "Gross Labor Income (Monthly)\nDeviation from Baseline",
                 "diff_col": "diff_gross_labor_income",
                 "xlabel": "Year relative to first care demand",
@@ -3517,16 +3665,19 @@ def task_plot_matched_differences_by_age_at_first_care_demand_full_cg_leave_vs_b
             },
             "bequest_from_parent": {
                 "path": base_path
-                / "matched_differences_bequest_from_parent_by_age_at_first_care_demand.png",
+                / (
+                    "matched_differences_bequest_from_parent_by_age_at_first_care_"
+                    "demand.png"
+                ),
                 "ylabel": "Bequest from Parent\nDeviation from Baseline",
                 "diff_col": "diff_bequest_from_parent",
                 "xlabel": "Year relative to first care demand",
             },
         }
 
-    for edu_label, edu_value, edu_dir in education_specs:
+    for _edu_label, edu_value, edu_dir in education_specs:
         for (
-            full_cg_type_label,
+            _full_cg_type_label,
             full_cg_type_value,
             full_cg_type_dir,
         ) in caregiving_type_specs:
@@ -3595,9 +3746,14 @@ def task_plot_matched_differences_by_age_at_first_care_demand_full_cg_leave_vs_b
                         / "matched_differences"
                         / edu_dir
                         / full_cg_type_dir
-                        / "matched_differences_caregiving_leave_top_up_by_age_at_first_care_demand.png"
+                        / (
+                            "matched_differences_caregiving_leave_top_up_by_age_at_first_care_"
+                            "demand.png"
+                        )
                     ),
-                    "ylabel": "Caregiving Leave Top-up (Monthly)\nDeviation from Baseline",
+                    "ylabel": (
+                        "Caregiving Leave Top-up (Monthly)\n" "Deviation from Baseline"
+                    ),
                     "diff_col": "diff_caregiving_leave_top_up",
                     "xlabel": "Year relative to first care demand",
                 }
@@ -3619,7 +3775,7 @@ def task_plot_matched_differences_by_age_at_first_care_demand_full_cg_leave_vs_b
             base_path.mkdir(parents=True, exist_ok=True)
 
             # Update plot_configs paths for "all/all" case to use declared product paths
-            if edu_dir == "all" and full_cg_type_dir == "all":
+            if edu_dir == full_cg_type_dir == "all":
                 declared_paths_map = {
                     "pt": path_to_plot_pt,
                     "ft": path_to_plot_ft,
@@ -3646,7 +3802,8 @@ def task_plot_matched_differences_by_age_at_first_care_demand_full_cg_leave_vs_b
 
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_full_caregiving_leave_with_job_retention
-def task_plot_matched_differences_by_age_bins_at_first_care_demand_full_cg_leave_vs_baseline(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_bins_at_first_care_demand_full_cg_leave_vs_baseline(  # noqa: PLR0912, PLR0915, E501
+    # noqa: E501
     path_to_full_cg_leave_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params.pkl",
@@ -3824,7 +3981,10 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_full_cg_leave
             },
             "work": {
                 "path": base_path
-                / "matched_differences_employment_rate_by_age_bins_at_first_care_demand.png",
+                / (
+                    "matched_differences_employment_rate_by_age_bins_at_first_care_"
+                    "demand.png"
+                ),
                 "ylabel": "Proportion Working\nDeviation from Baseline",
                 "diff_col": "diff_work",
                 "xlabel": "Year relative to first care demand",
@@ -3838,7 +3998,10 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_full_cg_leave
             },
             "hours_weekly": {
                 "path": base_path
-                / "matched_differences_working_hours_by_age_bins_at_first_care_demand.png",
+                / (
+                    "matched_differences_working_hours_by_age_bins_at_first_care_"
+                    "demand.png"
+                ),
                 "ylabel": "Weekly Working Hours Difference\nDeviation from Baseline",
                 "diff_col": "diff_hours_weekly",
                 "xlabel": "Year relative to first care demand",
@@ -3852,7 +4015,10 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_full_cg_leave
             },
             "gross_labor_income": {
                 "path": base_path
-                / "matched_differences_gross_labor_income_by_age_bins_at_first_care_demand.png",
+                / (
+                    "matched_differences_gross_labor_income_by_age_bins_at_first_care_"
+                    "demand.png"
+                ),
                 "ylabel": "Gross Labor Income (Monthly)\nDeviation from Baseline",
                 "diff_col": "diff_gross_labor_income",
                 "xlabel": "Year relative to first care demand",
@@ -3872,31 +4038,44 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_full_cg_leave
                 "xlabel": "Year relative to first care demand",
             },
             "savings_rate": {
-                "path": base_path
-                / "matched_differences_savings_rate_by_age_bins_at_first_care_demand.png",
+                "path": (
+                    base_path
+                    / (
+                        "matched_differences_savings_rate_by_age_bins_"
+                        "at_first_care_demand.png"
+                    )
+                ),
                 "ylabel": "Savings Rate\nDeviation from Baseline",
                 "diff_col": "diff_savings_rate",
                 "xlabel": "Year relative to first care demand",
             },
             "consumption": {
-                "path": base_path
-                / "matched_differences_consumption_by_age_bins_at_first_care_demand.png",
+                "path": (
+                    base_path
+                    / (
+                        "matched_differences_consumption_by_age_bins_"
+                        "at_first_care_demand.png"
+                    )
+                ),
                 "ylabel": "Consumption\nDeviation from Baseline",
                 "diff_col": "diff_consumption",
                 "xlabel": "Year relative to first care demand",
             },
             "bequest_from_parent": {
                 "path": base_path
-                / "matched_differences_bequest_from_parent_by_age_bins_at_first_care_demand.png",
+                / (
+                    "matched_differences_bequest_from_parent_by_age_bins_at_first_care_"
+                    "demand.png"
+                ),
                 "ylabel": "Bequest from Parent\nDeviation from Baseline",
                 "diff_col": "diff_bequest_from_parent",
                 "xlabel": "Year relative to first care demand",
             },
         }
 
-    for edu_label, edu_value, edu_dir in education_specs:
+    for _edu_label, edu_value, edu_dir in education_specs:
         for (
-            full_cg_type_label,
+            _full_cg_type_label,
             full_cg_type_value,
             full_cg_type_dir,
         ) in caregiving_type_specs:
@@ -3961,9 +4140,15 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_full_cg_leave
                         / "matched_differences"
                         / edu_dir
                         / full_cg_type_dir
-                        / "matched_differences_caregiving_leave_top_up_by_age_bins_at_first_care_demand.png"
+                        / (
+                            # noqa: E501
+                            "matched_differences_caregiving_leave_top_up_by_age_bins_at_first_care_"  # noqa: E501
+                            "demand.png"
+                        )
                     ),
-                    "ylabel": "Caregiving Leave Top-up (Monthly)\nDeviation from Baseline",
+                    "ylabel": (
+                        "Caregiving Leave Top-up (Monthly)\n" "Deviation from Baseline"
+                    ),
                     "diff_col": "diff_caregiving_leave_top_up",
                     "xlabel": "Year relative to first care demand",
                 }
@@ -3999,7 +4184,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_full_cg_leave
             base_path.mkdir(parents=True, exist_ok=True)
 
             # Update plot_configs paths for "all/all" case to use declared product paths
-            if edu_dir == "all" and full_cg_type_dir == "all":
+            if edu_dir == full_cg_type_dir == "all":
                 declared_paths_map = {
                     "pt": path_to_plot_pt,
                     "ft": path_to_plot_ft,
@@ -4026,7 +4211,8 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_full_cg_leave
 
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_full_caregiving_leave_with_job_retention
-def task_plot_matched_differences_first_care_start_by_age_full_cg_leave(  # noqa: PLR0915, E501
+def task_plot_matched_differences_first_care_start_by_age_full_cg_leave(  # noqa: PLR0915
+    # noqa: E501
     path_to_full_cg_leave_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params.pkl",
@@ -4214,7 +4400,7 @@ def task_plot_matched_differences_first_care_start_by_age_full_cg_leave(  # noqa
             plt.tight_layout()
             plt.savefig(plot_path, dpi=300, bbox_inches="tight")
             # Also save to declared product path for "all/all" case
-            if edu_dir == "all" and full_cg_type_dir == "all":
+            if edu_dir == full_cg_type_dir == "all":
                 path_to_plot.parent.mkdir(parents=True, exist_ok=True)
                 # Re-save the same figure to the declared path
                 plt.savefig(path_to_plot, dpi=300, bbox_inches="tight")
@@ -4223,7 +4409,8 @@ def task_plot_matched_differences_first_care_start_by_age_full_cg_leave(  # noqa
 
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_full_caregiving_leave_with_job_retention
-def task_plot_matched_differences_first_care_demand_start_by_age_full_cg_leave(  # noqa: PLR0915, E501
+def task_plot_matched_differences_first_care_demand_start_by_age_full_cg_leave(  # noqa: PLR0912, PLR0915
+    # noqa: E501
     path_to_full_cg_leave_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params.pkl",
@@ -4267,7 +4454,8 @@ def task_plot_matched_differences_first_care_demand_start_by_age_full_cg_leave( 
     if "age" not in df_full_cg.columns or "age" not in df_baseline.columns:
         raise ValueError("Age column required but not found in data")
 
-    # Find first period where care_demand > 0 for each agent - include education and caregiving_type if available
+    # # Find first period where care_demand > 0 for each agent - include educatio
+    # n and caregiving_type if available
     care_demand_mask_cg = df_full_cg["care_demand"] > 0
     cols_to_select = ["agent", "period", "age"]
     if "education" in df_full_cg.columns:
@@ -4459,7 +4647,7 @@ def task_plot_matched_differences_first_care_demand_start_by_age_full_cg_leave( 
             plt.tight_layout()
             plt.savefig(plot_path, dpi=300, bbox_inches="tight")
             # Also save to declared product path for "all/all" case
-            if edu_dir == "all" and full_cg_type_dir == "all":
+            if edu_dir == full_cg_type_dir == "all":
                 path_to_plot.parent.mkdir(parents=True, exist_ok=True)
                 # Re-save the same figure to the declared path
                 plt.savefig(path_to_plot, dpi=300, bbox_inches="tight")

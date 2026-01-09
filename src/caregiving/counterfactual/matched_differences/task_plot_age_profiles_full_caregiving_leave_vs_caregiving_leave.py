@@ -1,4 +1,7 @@
-"""Age-based plotting functions for full caregiving leave vs caregiving leave counterfactual."""
+"""Age-based plotting functions.
+
+Full caregiving leave vs caregiving leave counterfactual.
+"""
 
 import pickle
 from pathlib import Path
@@ -19,13 +22,13 @@ from caregiving.counterfactual.plotting_utils import (
     merge_and_compute_differences,
     prepare_dataframes_for_comparison,
 )
-from caregiving.model.shared import INFORMAL_CARE
 
 
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_age_profiles
 @pytask.mark.counterfactual_differences_full_caregiving_leave_vs_caregiving_leave
-def task_plot_matched_differences_by_age_full_caregiving_leave_vs_caregiving_leave(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_full_caregiving_leave_vs_caregiving_leave(  # noqa: PLR0912, PLR0915
+    # noqa: E501
     path_to_full_caregiving_leave_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params.pkl",
@@ -556,7 +559,9 @@ def task_plot_matched_differences_by_age_full_caregiving_leave_vs_caregiving_lea
     age_min: int = 30,
     age_max: int = 100,
 ) -> None:
-    """Compute matched period differences (full caregiving leave - caregiving leave) by age.
+    """Compute matched period differences.
+
+    Full caregiving leave - caregiving leave by age.
 
     Steps:
       1) Restrict to alive and (optionally) ever-caregivers.
@@ -637,7 +642,8 @@ def task_plot_matched_differences_by_age_full_caregiving_leave_vs_caregiving_lea
     if "education" in df_o.columns:
         o_cols["education"] = df_o["education"].values
 
-    # Merge and compute differences (include full set of outcomes incl. consumption and bequest)
+    # # Merge and compute differences (include full set of outcomes incl. consump
+    # tion and bequest)
     outcome_names = [
         "work",
         "ft",
@@ -756,7 +762,9 @@ def task_plot_matched_differences_by_age_full_caregiving_leave_vs_caregiving_lea
                 "age_max": 90,
             },
             "savings_dec": {
-                "ylabel": "Savings Decision (in 1,000€)\nDeviation from Caregiving Leave",
+                "ylabel": (
+                    "Savings Decision (in 1,000€)\nDeviation from " "Caregiving Leave("
+                ),  # noqa: E501
                 "title": f"Savings Decision by Age{title_suffix}",
                 "diff_col": "diff_savings_dec",
                 "path": base_path / "matched_differences_savings_dec_by_age.png",
@@ -770,16 +778,20 @@ def task_plot_matched_differences_by_age_full_caregiving_leave_vs_caregiving_lea
                 "age_max": 90,
             },
             "bequest_from_parent": {
-                "ylabel": "Bequest from Parent (in 1,000€)\nDeviation from Caregiving Leave",
-                "title": f"Bequest from Parent by Age{title_suffix}",
+                "ylabel": (
+                    "Bequest from Parent (in 1,000€)\nDeviation from "
+                    "Caregiving Leave"
+                ),  # noqa: E501
                 "diff_col": "diff_bequest_from_parent",
                 "path": base_path
                 / "matched_differences_bequest_from_parent_by_age.png",
                 "age_max": 90,
             },
             "net_hh_income": {
-                "ylabel": "Net Household Income (in 1,000€)\nDeviation from Caregiving Leave",
-                "title": f"Net Household Income by Age{title_suffix}",
+                "ylabel": (
+                    "Net Household Income (in 1,000€)\nDeviation "
+                    "from Caregiving Leave"
+                ),  # noqa: E501
                 "diff_col": "diff_net_hh_income",
                 "path": base_path / "matched_differences_net_hh_income_by_age.png",
                 "age_max": 90,
@@ -792,21 +804,28 @@ def task_plot_matched_differences_by_age_full_caregiving_leave_vs_caregiving_lea
                 "age_max": 90,
             },
             "income_tax_single": {
-                "ylabel": "Income Tax Single (in 1,000€)\nDeviation from Caregiving Leave",
+                "ylabel": (
+                    "Income Tax Single (in 1,000€)\nDeviation from " "Caregiving Leave"
+                ),  # noqa: E501
                 "title": f"Income Tax Single by Age{title_suffix}",
                 "diff_col": "diff_income_tax_single",
                 "path": base_path / "matched_differences_income_tax_single_by_age.png",
                 "age_max": 90,
             },
             "total_tax_revenue": {
-                "ylabel": "Total Tax Revenue (in 1,000€)\nDeviation from Caregiving Leave",
+                "ylabel": (
+                    "Total Tax Revenue (in 1,000€)\nDeviation from " "Caregiving Leave"
+                ),  # noqa: E501
                 "title": f"Total Tax Revenue by Age{title_suffix}",
                 "diff_col": "diff_total_tax_revenue",
                 "path": base_path / "matched_differences_total_tax_revenue_by_age.png",
                 "age_max": 90,
             },
             "net_government_budget": {
-                "ylabel": "Net Government Budget (in 1,000€)\nDeviation from Caregiving Leave",
+                "ylabel": (
+                    "Net Government Budget (in 1,000€)\nDeviation "
+                    "from Caregiving Leave"
+                ),  # noqa: E501
                 "title": f"Net Government Budget by Age{title_suffix}",
                 "diff_col": "diff_net_government_budget",
                 "path": base_path
@@ -814,7 +833,10 @@ def task_plot_matched_differences_by_age_full_caregiving_leave_vs_caregiving_lea
                 "age_max": 90,
             },
             "own_income_after_ssc": {
-                "ylabel": "Own Income After SSC (in 1,000€)\nDeviation from Caregiving Leave",
+                "ylabel": (
+                    "Own Income After SSC (in 1,000€)\nDeviation "
+                    "from Caregiving Leave"
+                ),  # noqa: E501
                 "title": f"Own Income After SSC by Age{title_suffix}",
                 "diff_col": "diff_own_income_after_ssc",
                 "path": base_path
@@ -829,7 +851,10 @@ def task_plot_matched_differences_by_age_full_caregiving_leave_vs_caregiving_lea
                 "age_max": 90,
             },
             "caregiving_leave_top_up": {
-                "ylabel": "Caregiving Leave Top-up (in 1,000€)\nDeviation from Caregiving Leave",
+                "ylabel": (
+                    "Caregiving Leave Top-up (in 1,000€)\nDeviation "
+                    "from Caregiving Leave"
+                ),  # noqa: E501
                 "title": f"Caregiving Leave Top-up by Age{title_suffix}",
                 "diff_col": "diff_caregiving_leave_top_up",
                 "path": base_path
@@ -904,7 +929,7 @@ def task_plot_matched_differences_by_age_full_caregiving_leave_vs_caregiving_lea
             plot_configs = create_plot_configs(base_path, suffix)
 
             # Update plot_configs paths for "all/all" case to use declared product paths
-            if edu_folder == "all" and cg_folder == "all":
+            if edu_folder == cg_folder == "all":
                 declared_paths_map = {
                     "work": path_to_plot_work,
                     "ft": path_to_plot_ft,
@@ -951,11 +976,12 @@ def task_plot_matched_differences_by_age_full_caregiving_leave_vs_caregiving_lea
                     "net_government_budget": path_to_plot_net_government_budget_type0,
                     "own_income_after_ssc": path_to_plot_own_income_after_ssc_type0,
                     "exp_years": path_to_plot_exp_years_type0,
-                    "caregiving_leave_top_up": path_to_plot_caregiving_leave_top_up_type0,
+                    "caregiving_leave_top_up": path_to_plot_caregiving_leave_top_up_type0,  # noqa: E501
                 }
                 for outcome_key, declared_path in declared_paths_map.items():
                     if outcome_key in plot_configs:
                         plot_configs[outcome_key]["path"] = declared_path
+                        # noqa: E501
 
             elif edu_folder == "all" and cg_folder == "caregiving_type1":
                 declared_paths_map = {
@@ -977,11 +1003,14 @@ def task_plot_matched_differences_by_age_full_caregiving_leave_vs_caregiving_lea
                     "net_government_budget": path_to_plot_net_government_budget_type1,
                     "own_income_after_ssc": path_to_plot_own_income_after_ssc_type1,
                     "exp_years": path_to_plot_exp_years_type1,
-                    "caregiving_leave_top_up": path_to_plot_caregiving_leave_top_up_type1,
+                    "caregiving_leave_top_up": (
+                        path_to_plot_caregiving_leave_top_up_type0
+                    ),
                 }
                 for outcome_key, declared_path in declared_paths_map.items():
                     if outcome_key in plot_configs:
                         plot_configs[outcome_key]["path"] = declared_path
+                        # noqa: E501
 
             # Plot for this specification
             plot_all_outcomes_by_age(

@@ -17,21 +17,12 @@ import dcegm
 from caregiving.config import BLD
 from caregiving.model.experience_baseline_model import scale_experience_years
 from caregiving.model.shared import (
-    ALL_NO_CARE,
-    CARE_DEMAND_INTENSIVE,
-    CARE_DEMAND_LIGHT,
     END_YEAR_PARENT_GENERATION,
     FEMALE,
-    INITIAL_CONDITIONS_AGE_HIGH,
-    INITIAL_CONDITIONS_AGE_LOW,
-    INITIAL_CONDITIONS_COHORT_HIGH,
-    INITIAL_CONDITIONS_COHORT_LOW,
     MOTHER,
-    NO_CARE_DEMAND,
     PARENT_HEALTH_DEAD,
     PARENT_LONGER_DEAD,
     SEX,
-    WORK_AND_UNEMPLOYED_NO_CARE,
 )
 from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.stochastic_processes.job_transition import (
@@ -44,11 +35,6 @@ from caregiving.model.utility.bequest_utility import (
 )
 from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
-from caregiving.moments.task_create_soep_moments import (
-    create_df_non_caregivers,
-    create_df_wealth,
-)
-from caregiving.utils import table
 from dcegm.asset_correction import adjust_observed_assets
 
 

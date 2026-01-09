@@ -1,6 +1,5 @@
 """Estimate inheritance probability and amount regressions."""
 
-import pickle as pkl
 from pathlib import Path
 from typing import Annotated
 

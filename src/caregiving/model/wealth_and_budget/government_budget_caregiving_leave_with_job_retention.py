@@ -1,4 +1,5 @@
-"""Government budget calculations for tax revenue and expenditures for caregiving leave counterfactual."""
+"""Government budget calculations for tax revenue and expenditures for  # noqa: E501
+caregiving leave counterfactual."""
 
 from jax import numpy as jnp
 
@@ -24,9 +25,11 @@ def calc_government_budget_components_caregiving_leave_with_job_retention(
     caregiving_leave_top_up,
     model_specs,
 ):
-    """Calculate government budget components (revenue and expenditures) for caregiving leave counterfactual.
+    """Calculate government budget components (revenue and expenditures)  # noqa: E501
+    for caregiving leave counterfactual.
 
-    This function includes the caregiving leave top-up as an additional government expenditure.
+    This function includes the caregiving leave top-up as an additional  # noqa: E501
+    government expenditure.
 
     Returns tax revenue, government expenditures (benefits), and net budget.
 

@@ -21,7 +21,6 @@ from caregiving.counterfactual.plotting_helpers import (
     calculate_simple_outcomes,
     get_age_at_first_event,
     get_distinct_colors,
-    plot_all_outcomes_by_age,
     plot_all_outcomes_by_group,
     plot_three_line_differences,
     prepare_dataframes_simple,
@@ -32,7 +31,6 @@ from caregiving.counterfactual.plotting_utils import (
     calculate_outcomes,
     calculate_working_hours_weekly,
     create_outcome_columns,
-    merge_and_compute_differences,
     prepare_dataframes_for_comparison,
 )
 from caregiving.counterfactual.task_plot_labor_supply_differences import (
@@ -769,7 +767,8 @@ def task_plot_matched_differences_by_distance_vs_baseline(  # noqa: PLR0915, E50
 
 
 @pytask.mark.counterfactual_differences_job_retention
-def task_plot_matched_differences_by_age_at_first_care_vs_baseline(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_at_first_care_vs_baseline(
+    # noqa: E501
     path_to_job_retention_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_job_retention_estimated_params.pkl",
@@ -1015,7 +1014,8 @@ def task_plot_matched_differences_by_age_at_first_care_vs_baseline(  # noqa: PLR
 
 
 @pytask.mark.counterfactual_differences_job_retention
-def task_plot_matched_differences_by_age_bins_at_first_care_vs_baseline(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_bins_at_first_care_vs_baseline(
+    # noqa: E501
     path_to_job_retention_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_job_retention_estimated_params.pkl",
@@ -1722,7 +1722,8 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915,
 
 
 @pytask.mark.counterfactual_differences_job_retention
-def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_bins_at_first_care_demand(
+    # noqa: E501
     path_to_job_retention_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_job_retention_estimated_params.pkl",
@@ -1977,7 +1978,8 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR
 
 
 @pytask.mark.counterfactual_differences_job_retention
-def task_plot_matched_differences_by_distance_by_care_demand_vs_baseline(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_distance_by_care_demand_vs_baseline(
+    # noqa: E501
     path_to_job_retention_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_job_retention_estimated_params.pkl",
@@ -2130,7 +2132,8 @@ def task_plot_matched_differences_by_distance_by_care_demand_vs_baseline(  # noq
 
 
 @pytask.mark.counterfactual_differences_job_retention
-def task_plot_matched_differences_by_age_at_first_care_demand_vs_baseline(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_at_first_care_demand_vs_baseline(
+    # noqa: E501
     path_to_job_retention_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_job_retention_estimated_params.pkl",
@@ -2362,7 +2365,8 @@ def task_plot_matched_differences_by_age_at_first_care_demand_vs_baseline(  # no
 
 
 @pytask.mark.counterfactual_differences_job_retention
-def task_plot_matched_differences_by_age_bins_at_first_care_demand_vs_baseline(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_bins_at_first_care_demand_vs_baseline(
+    # noqa: E501
     path_to_job_retention_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_job_retention_estimated_params.pkl",
@@ -2611,7 +2615,8 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_vs_baseline( 
 
 
 @pytask.mark.counterfactual_differences_job_retention
-def task_plot_matched_differences_first_care_start_by_age_job_retention(  # noqa: PLR0915, E501
+def task_plot_matched_differences_first_care_start_by_age_job_retention(
+    # noqa: E501
     path_to_job_retention_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_job_retention_estimated_params.pkl",
@@ -2739,7 +2744,8 @@ def task_plot_matched_differences_first_care_start_by_age_job_retention(  # noqa
 
 
 @pytask.mark.counterfactual_differences_job_retention
-def task_plot_matched_differences_first_care_demand_start_by_age_job_retention(  # noqa: PLR0915, E501
+def task_plot_matched_differences_first_care_demand_start_by_age_job_retention(  # noqa: PLR0915
+    # noqa: E501
     path_to_job_retention_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_job_retention_estimated_params.pkl",

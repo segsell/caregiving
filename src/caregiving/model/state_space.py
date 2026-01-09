@@ -1,76 +1,42 @@
 """State space for the model with care demand and caregiving."""
 
-import jax
 import jax.numpy as jnp
 import numpy as np
 
 from caregiving.model.experience_baseline_model import get_next_period_experience
 from caregiving.model.shared import (
-    ALL,
-    ALL_CARE,
     ALL_INTENSIVE_INFORMAL_OR_FORMAL,
     ALL_LIGHT_INFORMAL_OR_FORMAL,
     ALL_NO_CARE,
     ALL_NO_CARE_OR_FORMAL,
-    ALL_NO_FORMAL_CARE,
-    ALL_NO_INFORMAL_CARE,
-    CARE_DEMAND_INTENSIVE,
     CARE_DEMAND_LIGHT,
-    FORMAL_CARE,
-    INTENSIVE_INFORMAL_CARE,
-    LIGHT_INFORMAL_CARE,
     NO_CARE_DEMAND,
-    NOT_WORKING,
-    NOT_WORKING_CARE,
     NOT_WORKING_INTENSIVE_INFORMAL_OR_FORMAL,
     NOT_WORKING_LIGHT_INFORMAL_OR_FORMAL,
     NOT_WORKING_NO_CARE,
     NOT_WORKING_NO_CARE_OR_FORMAL,
-    NOT_WORKING_NO_FORMAL_CARE,
-    NOT_WORKING_NO_INFORMAL_CARE,
     PARENT_LONGER_DEAD,
-    PARENT_RECENTLY_DEAD,
-    RETIREMENT,
-    RETIREMENT_CARE,
     RETIREMENT_INTENSIVE_INFORMAL_OR_FORMAL,
     RETIREMENT_LIGHT_INFORMAL_OR_FORMAL,
     RETIREMENT_NO_CARE,
     RETIREMENT_NO_CARE_OR_FORMAL,
-    RETIREMENT_NO_FORMAL_CARE,
-    RETIREMENT_NO_INFORMAL_CARE,
-    SEX,
-    UNEMPLOYED,
-    UNEMPLOYED_CARE,
     UNEMPLOYED_INTENSIVE_INFORMAL_OR_FORMAL,
     UNEMPLOYED_LIGHT_INFORMAL_OR_FORMAL,
     UNEMPLOYED_NO_CARE,
     UNEMPLOYED_NO_CARE_OR_FORMAL,
-    UNEMPLOYED_NO_FORMAL_CARE,
-    UNEMPLOYED_NO_INFORMAL_CARE,
-    WORK_AND_RETIREMENT,
-    WORK_AND_RETIREMENT_CARE,
     WORK_AND_RETIREMENT_INTENSIVE_INFORMAL_OR_FORMAL,
     WORK_AND_RETIREMENT_LIGHT_INFORMAL_OR_FORMAL,
     WORK_AND_RETIREMENT_NO_CARE,
     WORK_AND_RETIREMENT_NO_CARE_OR_FORMAL,
-    WORK_AND_RETIREMENT_NO_FORMAL_CARE,
-    WORK_AND_RETIREMENT_NO_INFORMAL_CARE,
-    WORK_AND_UNEMPLOYED,
-    WORK_AND_UNEMPLOYED_CARE,
     WORK_AND_UNEMPLOYED_INTENSIVE_INFORMAL_OR_FORMAL,
     WORK_AND_UNEMPLOYED_LIGHT_INFORMAL_OR_FORMAL,
     WORK_AND_UNEMPLOYED_NO_CARE,
     WORK_AND_UNEMPLOYED_NO_CARE_OR_FORMAL,
-    WORK_AND_UNEMPLOYED_NO_FORMAL_CARE,
-    WORK_AND_UNEMPLOYED_NO_INFORMAL_CARE,
     is_alive,
     is_dead,
     is_formal_care,
-    is_full_time,
     is_informal_care,
-    is_intensive_informal_care,
     is_no_care_demand,
-    is_part_time,
     is_retired,
     is_unemployed,
 )
@@ -182,7 +148,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
         return False
     elif (age <= min_ret_age_state_space + 1) & (already_retired == 1):
         return False
-    # elif (age >= model_specs["min_SRA_baseline"] + 1) & (is_unemployed(lagged_choice)):
+    # elif (age >= model_specs["min_SRA_baseline"] + 1) & (is_unemployed(lagged_choice)):  # noqa: E501
     elif (age > SRA_pol_state) & (is_unemployed(lagged_choice)):
         return False
     elif (not is_retired(lagged_choice)) & (already_retired == 1):
@@ -263,7 +229,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
         #         "health": health,
         #         "partner_state": partner_state,
         #         "mother_adl": 0,
-        #         "mother_dead": PARENT_RECENTLY_DEAD,  # Preserve for inheritance calculation
+        #         "mother_dead": PARENT_RECENTLY_DEAD,  # Preserve for inheritance calculation  # noqa: E501
         #         "care_demand": NO_CARE_DEMAND,
         #         "job_offer": job_offer,
         #     }
@@ -285,7 +251,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "job_offer": job_offer,
             }
             return state_proxy
-        # ================================================================================
+        # ================================================================================  # noqa: E501
         elif age > max_ret_age + 1:
             # If age is larger than max_ret_age + 1, the individual can only be
             # longer retired.
@@ -437,14 +403,14 @@ def apply_retirement_constraint_for_SRA(SRA, model_specs):
 
 
 # def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR0915
-#     period, lagged_choice, job_offer, health, caregiving_type, care_demand, model_specs
+#     period, lagged_choice, job_offer, health, caregiving_type, care_demand, model_specs  # noqa: E501
 # ):
 #     age = period + model_specs["start_age"]
 #     start_age_caregiving = model_specs["start_age_caregiving"]
 #     end_age_caregiving = model_specs["end_age_caregiving"]
 
-#     SRA_pol_state = model_specs["min_SRA"]  # + policy_state  # * model_specs["SRA_grid_size"]
-#     min_ret_age_pol_state = apply_retirement_constraint_for_SRA(SRA_pol_state, model_specs)
+#     SRA_pol_state = model_specs["min_SRA"]  # + policy_state  # * model_specs["SRA_grid_size"]  # noqa: E501
+#     min_ret_age_pol_state = apply_retirement_constraint_for_SRA(SRA_pol_state, model_specs)  # noqa: E501
 
 #     # Light care demand (care_demand == 1) with caregiving_type == 1
 #     # Agent can choose: LIGHT_INFORMAL_CARE or FORMAL_CARE
@@ -873,7 +839,7 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
 #     )
 #     # retirement age is last periods age
 #     actual_retirement_age = model_specs["start_age"] + period - 1
-#     # SRA at retirement, difference to actual retirement age and boolean for early retirement
+#     # SRA at retirement, difference to actual retirement age and boolean for early retirement  # noqa: E501
 #     # SRA_at_retirement = model_specs["min_SRA"]
 #     SRA_at_retirement = model_specs["min_SRA"]
 #     retirement_age_difference = jnp.abs(SRA_at_retirement - actual_retirement_age)

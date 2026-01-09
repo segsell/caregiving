@@ -5,19 +5,16 @@ from pathlib import Path
 from typing import Annotated
 
 import jax
-import jax.numpy as jnp
-import pytask
 import yaml
 from pytask import Product
 
 import dcegm
 from caregiving.config import BLD
 from caregiving.estimation.estimation_setup import draw_caregiving_type_from_params
-from caregiving.model.shared import DEAD
 from caregiving.model.state_space_caregiving_leave_with_job_retention import (
     create_state_space_functions,
 )
-from caregiving.model.task_specify_model_full_caregiving_leave_with_job_retention import (
+from caregiving.model.task_specify_model_full_caregiving_leave_with_job_retention import (  # noqa: E501
     create_stochastic_states_transitions,
 )
 from caregiving.model.taste_shocks import shock_function_dict
@@ -57,7 +54,7 @@ def solve_and_simulate_full_caregiving_leave_with_job_retention_estimated_params
     / "solve_and_simulate"
     / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params.pkl",
 ) -> None:
-    """Solve and simulate the full caregiving-leave-with-job-retention counterfactual model."""
+    """Solve and simulate the full caregiving-leave-with-job-retention counterfactual model."""  # noqa: E501
 
     specs = pickle.load(path_to_specs.open("rb"))
     model_config = pickle.load(path_to_model_config.open("rb"))
@@ -95,7 +92,8 @@ def solve_and_simulate_full_caregiving_leave_with_job_retention_estimated_params
 
     # # sim_df["age"] = sim_df["period"] + specs["start_age"]
     # sim_df = create_additional_variables(sim_df, specs)
-    # # =================================================================================
+    # # # =======================================================================
+    # ==========
     sim_df = simulate_scenario(model_solved, initial_states_adjusted, specs)
 
     sim_df.to_pickle(path_to_save_simulated_data)

@@ -1,8 +1,5 @@
 import numpy as np
-import pandas as pd
 from jax import numpy as jnp
-
-from caregiving.model.shared import FULL_TIME_CHOICES, PART_TIME
 
 
 def add_income_specs(

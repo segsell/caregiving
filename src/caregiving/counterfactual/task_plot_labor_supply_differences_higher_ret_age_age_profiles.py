@@ -4,7 +4,6 @@ import pickle
 from pathlib import Path
 from typing import Annotated
 
-import numpy as np
 import pandas as pd
 import pytask
 from pytask import Product
@@ -19,11 +18,11 @@ from caregiving.counterfactual.plotting_utils import (
     merge_and_compute_differences,
     prepare_dataframes_for_comparison,
 )
-from caregiving.model.shared import INFORMAL_CARE
 
 
 @pytask.mark.counterfactual_differences_higher_ret_age_age_profiles
-def task_plot_matched_differences_by_age_higher_ret_age_vs_baseline(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_higher_ret_age_vs_baseline(
+    # noqa: E501
     path_to_higher_ret_age_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_higher_ret_age_estimated_params.pkl",

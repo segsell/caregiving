@@ -36,8 +36,10 @@ For four models:
 
 Each plot shows 2 lines: Low education and High education.
 
-Note: Savings, savings_dec, and savings_rate plots exclude the maximum age (end_age = 100).
-All plots are organized into subfolders: assets_and_savings/baseline/, assets_and_savings/caregiving_leave/, assets_and_savings/no_care_demand/
+Note: Savings, savings_dec,
+    and savings_rate plots exclude the maximum age (end_age = 100).
+All plots are organized into subfolders: assets_and_savings/baseline/,
+    assets_and_savings/caregiving_leave/, assets_and_savings/no_care_demand/
 """
 
 import pickle
@@ -212,7 +214,8 @@ def task_plot_assets_and_savings_by_age_baseline(  # noqa: PLR0915
     / "baseline"
     / "actual_retirement_age_by_age.png",
 ):
-    """Plot average assets and savings by age and education from baseline simulated data.
+    """Plot average assets and savings by age and education from baseline  # noqa: E501
+    simulated data.
 
     Creates plots for all variables from budget equation aux dict and related variables.
     Each plot shows 2 lines (Low and High education).
@@ -240,10 +243,13 @@ def task_plot_assets_and_savings_by_age_baseline(  # noqa: PLR0915
         if hasattr(df_sim.index, "names") and "agent" in df_sim.index.names:
             df_sim = df_sim.reset_index()
         else:
+            index_names = (
+                df_sim.index.names if hasattr(df_sim.index, "names") else "N/A"
+            )
             raise ValueError(
-                f"Cannot find 'agent' column or index level. "
+                "Cannot find 'agent' column or index level. "
                 f"Available columns: {df_sim.columns.tolist()}, "
-                f"Index names: {df_sim.index.names if hasattr(df_sim.index, 'names') else 'N/A'}"
+                f"Index names: {index_names}"
             )
 
     # Verify agent and period columns exist
@@ -623,7 +629,8 @@ def task_plot_assets_and_savings_by_age_no_inheritance(  # noqa: PLR0915
     / "no_inheritance"
     / "actual_retirement_age_by_age.png",
 ):
-    """Plot average assets and savings by age and education from no inheritance simulated data.
+    """Plot average assets and savings by age and education from no  # noqa: E501
+    inheritance simulated data.
 
     Creates plots for all variables from budget equation aux dict and related variables.
     Each plot shows 2 lines (Low and High education).
@@ -651,10 +658,13 @@ def task_plot_assets_and_savings_by_age_no_inheritance(  # noqa: PLR0915
         if hasattr(df_sim.index, "names") and "agent" in df_sim.index.names:
             df_sim = df_sim.reset_index()
         else:
+            index_names = (
+                df_sim.index.names if hasattr(df_sim.index, "names") else "N/A"
+            )
             raise ValueError(
-                f"Cannot find 'agent' column or index level. "
+                "Cannot find 'agent' column or index level. "
                 f"Available columns: {df_sim.columns.tolist()}, "
-                f"Index names: {df_sim.index.names if hasattr(df_sim.index, 'names') else 'N/A'}"
+                f"Index names: {index_names}"
             )
 
     # Verify agent and period columns exist
@@ -1038,7 +1048,8 @@ def task_plot_assets_and_savings_by_age_caregiving_leave(  # noqa: PLR0915
     / "caregiving_leave"
     / "actual_retirement_age_by_age.png",
 ):
-    """Plot average assets and savings by age and education from caregiving leave counterfactual simulated data.
+    """Plot average assets and savings by age and education from  # noqa: E501
+    caregiving leave counterfactual simulated data.
 
     Creates plots for all variables from budget equation aux dict and related variables.
     Each plot shows 2 lines (Low and High education).
@@ -1066,10 +1077,13 @@ def task_plot_assets_and_savings_by_age_caregiving_leave(  # noqa: PLR0915
         if hasattr(df_sim.index, "names") and "agent" in df_sim.index.names:
             df_sim = df_sim.reset_index()
         else:
+            index_names = (
+                df_sim.index.names if hasattr(df_sim.index, "names") else "N/A"
+            )
             raise ValueError(
-                f"Cannot find 'agent' column or index level. "
+                "Cannot find 'agent' column or index level. "
                 f"Available columns: {df_sim.columns.tolist()}, "
-                f"Index names: {df_sim.index.names if hasattr(df_sim.index, 'names') else 'N/A'}"
+                f"Index names: {index_names}"
             )
 
     # Verify agent and period columns exist
@@ -1466,7 +1480,8 @@ def task_plot_assets_and_savings_by_age_no_care_demand(  # noqa: PLR0915
     / "no_care_demand"
     / "actual_retirement_age_by_age.png",
 ):
-    """Plot average assets and savings by age and education from no care demand counterfactual simulated data.
+    """Plot average assets and savings by age and education from no care  # noqa: E501
+    demand counterfactual simulated data.
 
     Creates plots for all variables from budget equation aux dict and related variables.
     Each plot shows 2 lines (Low and High education).
@@ -1494,10 +1509,13 @@ def task_plot_assets_and_savings_by_age_no_care_demand(  # noqa: PLR0915
         if hasattr(df_sim.index, "names") and "agent" in df_sim.index.names:
             df_sim = df_sim.reset_index()
         else:
+            index_names = (
+                df_sim.index.names if hasattr(df_sim.index, "names") else "N/A"
+            )
             raise ValueError(
-                f"Cannot find 'agent' column or index level. "
+                "Cannot find 'agent' column or index level. "
                 f"Available columns: {df_sim.columns.tolist()}, "
-                f"Index names: {df_sim.index.names if hasattr(df_sim.index, 'names') else 'N/A'}"
+                f"Index names: {index_names}"
             )
 
     # Verify agent and period columns exist
@@ -1743,7 +1761,7 @@ def _extract_aux_variable(df_sim, var_name):
         return pd.Series(np.nan, index=df_sim.index)
 
 
-def _plot_asset_savings_outcome(
+def _plot_asset_savings_outcome(  # noqa: PLR0912
     df_sim,
     specs,
     outcome_col,

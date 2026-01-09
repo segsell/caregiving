@@ -19,7 +19,6 @@ from caregiving.counterfactual.plotting_helpers import (
     get_age_at_first_event,
     get_distinct_colors,
     plot_all_outcomes_by_age,
-    plot_all_outcomes_by_group,
     plot_multi_line_differences_by_group,
     plot_three_line_differences,
     prepare_dataframes_simple,
@@ -171,11 +170,13 @@ def task_plot_matched_differences_by_distance(  # noqa: PLR0915, E501
 
 
 # NOTE: This task has been split into individual tasks per outcome to reduce
-# memory usage. See tasks below starting with task_plot_matched_differences_*_by_age_at_first_care
+# memory usage. See tasks below starting with task_plot_matched_differences_*
+# _by_age_at_first_care
 @pytask.mark.skip()
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_no_care_demand
-def task_plot_matched_differences_by_age_at_first_care_deprecated(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_at_first_care_deprecated(
+    # noqa: E501
     path_to_original_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
@@ -279,7 +280,7 @@ def _plot_with_nested_splits(
 
             # Aggregate based on whether we have grouping
             if group_col is not None:
-                # Group by distance and group_col (e.g., age_at_first_care, age_bin_label)
+                # Group by distance and group_col (e.g., age_at_first_care, age_bin_label)  # noqa: E501
                 groupby_cols = ["distance_to_first_care", group_col]
                 prof = (
                     merged_spec.groupby(groupby_cols, observed=False)[
@@ -438,7 +439,8 @@ def _process_data_for_age_at_first_care(
         & (merged["distance_to_first_care"] <= window)
     ]
 
-    # Return full merged dataframe (not aggregated) so calling functions can do nested splits
+    # # Return full merged dataframe (not aggregated) so calling functions can do
+    #  nested splits
     return merged
 
 
@@ -975,7 +977,7 @@ def task_plot_matched_differences_gross_labor_income_by_age_at_first_care(
     window: int = 20,
     ages_at_first_care: list[int] | None = None,
 ) -> None:
-    """Compute matched period differences for gross labor income by age at first care."""
+    """Compute matched period differences for gross labor income by age at first care."""  # noqa: E501
     if ages_at_first_care is None:
         ages_at_first_care = [45, 50, 54, 58, 62]
 
@@ -1314,11 +1316,13 @@ def task_plot_matched_differences_savings_rate_by_age_at_first_care(
 
 
 # NOTE: This task has been split into individual tasks per outcome to reduce
-# memory usage. See tasks below starting with task_plot_matched_differences_*_by_age_bins_at_first_care
+# memory usage. See tasks below starting with task_plot_matched_differences_*
+# _by_age_bins_at_first_care
 @pytask.mark.skip()
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_no_care_demand
-def task_plot_matched_differences_by_age_bins_at_first_care_deprecated(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_bins_at_first_care_deprecated(
+    # noqa: E501
     path_to_original_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
@@ -1509,7 +1513,8 @@ def _process_data_for_age_bins_at_first_care(
         .tolist()
     )
 
-    # Return full merged dataframe (not aggregated) so calling functions can do nested splits
+    # # Return full merged dataframe (not aggregated) so calling functions can do
+    #  nested splits
     return merged, unique_bins
 
 
@@ -1538,7 +1543,7 @@ def task_plot_matched_differences_pt_by_age_bins_at_first_care(
     max_age: int = 62,
     bin_width: int = 3,
 ) -> None:
-    """Compute matched period differences for part-time work by age bins at first care."""
+    """Compute matched period differences for part-time work by age bins at first care."""  # noqa: E501
     # Get merged dataframe and unique bins from helper
     merged, unique_bins = _process_data_for_age_bins_at_first_care(
         path_to_original_data=path_to_original_data,
@@ -1646,7 +1651,7 @@ def task_plot_matched_differences_ft_by_age_bins_at_first_care(
     max_age: int = 62,
     bin_width: int = 3,
 ) -> None:
-    """Compute matched period differences for full-time work by age bins at first care."""
+    """Compute matched period differences for full-time work by age bins at first care."""  # noqa: E501
     # Get merged dataframe and unique bins from helper
     merged, unique_bins = _process_data_for_age_bins_at_first_care(
         path_to_original_data=path_to_original_data,
@@ -1754,7 +1759,7 @@ def task_plot_matched_differences_work_by_age_bins_at_first_care(
     max_age: int = 62,
     bin_width: int = 3,
 ) -> None:
-    """Compute matched period differences for employment rate by age bins at first care."""
+    """Compute matched period differences for employment rate by age bins at first care."""  # noqa: E501
     # Get merged dataframe and unique bins from helper
     merged, unique_bins = _process_data_for_age_bins_at_first_care(
         path_to_original_data=path_to_original_data,
@@ -1970,7 +1975,7 @@ def task_plot_matched_differences_hours_weekly_by_age_bins_at_first_care(
     max_age: int = 62,
     bin_width: int = 3,
 ) -> None:
-    """Compute matched period differences for working hours by age bins at first care."""
+    """Compute matched period differences for working hours by age bins at first care."""  # noqa: E501
     # Get merged dataframe and unique bins from helper
     merged, unique_bins = _process_data_for_age_bins_at_first_care(
         path_to_original_data=path_to_original_data,
@@ -2078,7 +2083,7 @@ def task_plot_matched_differences_gross_labor_income_by_age_bins_at_first_care(
     max_age: int = 62,
     bin_width: int = 3,
 ) -> None:
-    """Compute matched period differences for gross labor income by age bins at first care."""
+    """Compute matched period differences for gross labor income by age bins at first care."""  # noqa: E501
     # Get merged dataframe and unique bins from helper
     merged, unique_bins = _process_data_for_age_bins_at_first_care(
         path_to_original_data=path_to_original_data,
@@ -2772,11 +2777,13 @@ def task_plot_matched_differences_by_distance_by_care_demand(  # noqa: PLR0915, 
 
 
 # NOTE: This task has been split into individual tasks per outcome to reduce
-# memory usage. See tasks below starting with task_plot_matched_differences_*_by_age_at_first_care_demand
+# memory usage. See tasks below starting with task_plot_matched_differences_*
+# _by_age_at_first_care_demand
 @pytask.mark.skip()
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_no_care_demand
-def task_plot_matched_differences_by_age_at_first_care_demand_deprecated(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_at_first_care_demand_deprecated(
+    # noqa: E501
     path_to_original_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
@@ -2941,16 +2948,19 @@ def _process_data_for_age_at_first_care_demand(
         & (merged["distance_to_first_care_demand"] <= window)
     ]
 
-    # Return full merged dataframe (not aggregated) so calling functions can do nested splits
+    # # Return full merged dataframe (not aggregated) so calling functions can do
+    #  nested splits
     return merged
 
 
 # NOTE: This task has been split into individual tasks per outcome to reduce
-# memory usage. See tasks below starting with task_plot_matched_differences_*_by_age_bins_at_first_care_demand
+# memory usage. See tasks below starting with task_plot_matched_differences_*
+# _by_age_bins_at_first_care_demand
 @pytask.mark.skip()
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_no_care_demand
-def task_plot_matched_differences_by_age_bins_at_first_care_demand_deprecated(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_bins_at_first_care_demand_deprecated(
+    # noqa: E501
     path_to_original_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
@@ -3147,7 +3157,8 @@ def _process_data_for_age_bins_at_first_care_demand(
         .tolist()
     )
 
-    # Return full merged dataframe (not aggregated) so calling functions can do nested splits
+    # # Return full merged dataframe (not aggregated) so calling functions can do
+    #  nested splits
     return merged, unique_bins
 
 
@@ -3176,7 +3187,7 @@ def task_plot_matched_differences_pt_by_age_bins_at_first_care_demand(
     max_age: int = 62,
     bin_width: int = 3,
 ) -> None:
-    """Compute matched period differences for part-time work by age bins at first care demand."""
+    """Compute matched period differences for part-time work by age bins at first care demand."""  # noqa: E501
     # Get merged dataframe and unique bins from helper
     merged, unique_bins = _process_data_for_age_bins_at_first_care_demand(
         path_to_original_data=path_to_original_data,
@@ -3284,7 +3295,7 @@ def task_plot_matched_differences_ft_by_age_bins_at_first_care_demand(
     max_age: int = 62,
     bin_width: int = 3,
 ) -> None:
-    """Compute matched period differences for full-time work by age bins at first care demand."""
+    """Compute matched period differences for full-time work by age bins at first care demand."""  # noqa: E501
     # Get merged dataframe and unique bins from helper
     merged, unique_bins = _process_data_for_age_bins_at_first_care_demand(
         path_to_original_data=path_to_original_data,
@@ -3392,7 +3403,7 @@ def task_plot_matched_differences_work_by_age_bins_at_first_care_demand(
     max_age: int = 62,
     bin_width: int = 3,
 ) -> None:
-    """Compute matched period differences for employment rate by age bins at first care demand."""
+    """Compute matched period differences for employment rate by age bins at first care demand."""  # noqa: E501
     # Get merged dataframe and unique bins from helper
     merged, unique_bins = _process_data_for_age_bins_at_first_care_demand(
         path_to_original_data=path_to_original_data,
@@ -3500,7 +3511,7 @@ def task_plot_matched_differences_job_offer_by_age_bins_at_first_care_demand(
     max_age: int = 62,
     bin_width: int = 3,
 ) -> None:
-    """Compute matched period differences for job offer by age bins at first care demand."""
+    """Compute matched period differences for job offer by age bins at first care demand."""  # noqa: E501
     # Get merged dataframe and unique bins from helper
     merged, unique_bins = _process_data_for_age_bins_at_first_care_demand(
         path_to_original_data=path_to_original_data,
@@ -3608,7 +3619,7 @@ def task_plot_matched_differences_hours_weekly_by_age_bins_at_first_care_demand(
     max_age: int = 62,
     bin_width: int = 3,
 ) -> None:
-    """Compute matched period differences for working hours by age bins at first care demand."""
+    """Compute matched period differences for working hours by age bins at first care demand."""  # noqa: E501
     # Get merged dataframe and unique bins from helper
     merged, unique_bins = _process_data_for_age_bins_at_first_care_demand(
         path_to_original_data=path_to_original_data,
@@ -3824,7 +3835,7 @@ def task_plot_matched_differences_gross_labor_income_by_age_bins_at_first_care_d
     max_age: int = 62,
     bin_width: int = 3,
 ) -> None:
-    """Compute matched period differences for gross labor income by age bins at first care demand."""
+    """Compute matched period differences for gross labor income by age bins at first care demand."""  # noqa: E501
     # Get merged dataframe and unique bins from helper
     merged, unique_bins = _process_data_for_age_bins_at_first_care_demand(
         path_to_original_data=path_to_original_data,
@@ -3932,7 +3943,7 @@ def task_plot_matched_differences_savings_by_age_bins_at_first_care_demand(
     max_age: int = 62,
     bin_width: int = 3,
 ) -> None:
-    """Compute matched period differences for savings by age bins at first care demand."""
+    """Compute matched period differences for savings by age bins at first care demand."""  # noqa: E501
     # Get merged dataframe and unique bins from helper
     merged, unique_bins = _process_data_for_age_bins_at_first_care_demand(
         path_to_original_data=path_to_original_data,
@@ -4040,7 +4051,7 @@ def task_plot_matched_differences_wealth_by_age_bins_at_first_care_demand(
     max_age: int = 62,
     bin_width: int = 3,
 ) -> None:
-    """Compute matched period differences for wealth by age bins at first care demand."""
+    """Compute matched period differences for wealth by age bins at first care demand."""  # noqa: E501
     # Get merged dataframe and unique bins from helper
     merged, unique_bins = _process_data_for_age_bins_at_first_care_demand(
         path_to_original_data=path_to_original_data,
@@ -4148,7 +4159,7 @@ def task_plot_matched_differences_savings_rate_by_age_bins_at_first_care_demand(
     max_age: int = 62,
     bin_width: int = 3,
 ) -> None:
-    """Compute matched period differences for savings rate by age bins at first care demand."""
+    """Compute matched period differences for savings rate by age bins at first care demand."""  # noqa: E501
     # Get merged dataframe and unique bins from helper
     merged, unique_bins = _process_data_for_age_bins_at_first_care_demand(
         path_to_original_data=path_to_original_data,
@@ -4469,7 +4480,7 @@ def task_plot_matched_differences_forced_care_demand_at_50(  # noqa: PLR0915, E5
 
 
 @pytask.mark.counterfactual_differences_no_care_demand
-@pytask.mark.skip()  # Deprecated: replaced by task_plot_matched_differences_by_age in age_functions module
+@pytask.mark.skip()  # Deprecated: replaced by task_plot_matched_differences_by_age in age_functions module  # noqa: E501
 def task_plot_matched_differences_by_age_deprecated(  # noqa: PLR0915, E501
     path_to_original_data: Path = BLD
     / "solve_and_simulate"
@@ -4519,7 +4530,8 @@ def task_plot_matched_differences_by_age_deprecated(  # noqa: PLR0915, E501
         df_c, specs, choice_set_type="no_care_demand"
     )
 
-    # Calculate additional outcomes (gross labor income, savings, wealth, savings_rate, consumption, bequest)
+    # # Calculate additional outcomes (gross labor income, savings, wealth, saving
+    # s_rate, consumption, bequest)
     o_additional = calculate_additional_outcomes(df_o, specs)
     c_additional = calculate_additional_outcomes(df_c, specs)
     o_outcomes.update(o_additional)
@@ -4652,7 +4664,7 @@ def task_plot_matched_differences_by_age_deprecated(  # noqa: PLR0915, E501
                 "age_max": 90,
             },
             "bequest_from_parent": {
-                "ylabel": "Bequest from Parent (in 1,000€)\nDeviation from Counterfactual",
+                "ylabel": "Bequest from Parent (in 1,000€)\nDeviation from Counterfactual",  # noqa: E501
                 "title": f"Bequest from Parent by Age{title_suffix}",
                 "diff_col": "diff_bequest_from_parent",
                 "path": base_path
@@ -4689,10 +4701,10 @@ def task_plot_matched_differences_by_age_deprecated(  # noqa: PLR0915, E501
 
             # Create title suffix
             title_parts = []
-            if edu_name != "all":
-                title_parts.append(edu_name.replace("_", " ").title())
-            if cg_name != "all":
-                title_parts.append(cg_name.replace("_", " ").title())
+            if _edu_name != "all":
+                title_parts.append(_edu_name.replace("_", " ").title())
+            if _cg_name != "all":
+                title_parts.append(_cg_name.replace("_", " ").title())
             suffix = ", ".join(title_parts) if title_parts else ""
 
             # Average differences by age for this specification

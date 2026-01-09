@@ -1,6 +1,7 @@
 """Plot inheritance receipt probability for no care demand model.
 
-Visualizes the inheritance receipt probability from the inheritance_transition_no_care_demand
+Visualizes the inheritance receipt probability from the  # noqa: E501
+inheritance_transition_no_care_demand
 function by age and education.
 """
 
@@ -14,7 +15,7 @@ import pytask
 from pytask import Product
 
 from caregiving.config import BLD
-from caregiving.model.stochastic_processes.inheritance_transition_no_care_demand import (
+from caregiving.model.stochastic_processes.inheritance_transition_no_care_demand import (  # noqa: E501
     inheritance_transition_no_care_demand,
 )
 
@@ -28,7 +29,8 @@ def task_plot_inheritance_probability_no_care_demand(
     / "stochastic_processes"
     / "inheritance_probability_no_care_demand.png",
 ):
-    """Plot inheritance receipt probability by age and education for no care demand model.
+    """Plot inheritance receipt probability by age and education for no  # noqa: E501
+    care demand model.
 
     Uses the inheritance_transition_no_care_demand function to compute probabilities
     and plots them by age with separate lines for low and high education.

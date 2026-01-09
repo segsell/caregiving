@@ -94,7 +94,8 @@ def calc_full_caregiving_leave_top_up(
 
     # Top ups:
     # - Prior none, now unemployed: no top-up needed.
-    #   (Unemployment benefits are already handled via jnp.maximum() in budget constraint,
+    # #   (Unemployment benefits are already handled via jnp.maximum() in budget
+    # constraint,
     #   so adding them here would cause double-counting)
     topup_prior_none = 0.0 * mask_prior_none_unemp
 
@@ -135,7 +136,8 @@ def calc_caregiving_leave_top_up(
     household_unemployment_benefits,
     model_specs,
 ):
-    """Calculate additional wage replacement for caregiving leave (65% replacement with bounds).
+    """Calculate additional wage replacement for caregiving leave (65%  # noqa: E501
+    replacement with bounds).
 
     This adds on top of the baseline care benefits and costs.
 
@@ -150,12 +152,15 @@ def calc_caregiving_leave_top_up(
         * If currently working (PT/FT): no top up.
     - Previously PT (1):
         * If currently PT: no top up.
-        * If currently unemployed: top up to 65% of PT net wage (with bounds), MINUS unemployment benefits.
+        * If currently unemployed: top up to 65% of PT net wage (with bounds),
+            MINUS unemployment benefits.
         * If currently FT: no top up (working more than before).
     - Previously FT (2):
         * If currently FT: no top up.
-        * If currently PT: top up to 65% of FT net wage (with bounds), MINUS current PT labor income.
-        * If currently unemployed: top up to 65% of FT net wage (with bounds), MINUS unemployment benefits.
+        * If currently PT: top up to 65% of FT net wage (with bounds),
+            MINUS current PT labor income.
+        * If currently unemployed: top up to 65% of FT net wage (with bounds),
+            MINUS unemployment benefits.
     - Retired caregivers never receive wage replacement.
 
     """
@@ -205,7 +210,8 @@ def calc_caregiving_leave_top_up(
     net_pt_income = calc_after_ssc_income_worker(gross_pt_income_min_checked)
 
     # Calculate 65% replacement with bounds for PT and FT
-    # Apply bounds: benefit = min(max(replacement_rate * net_wage, lower_bound), upper_bound)
+    # # Apply bounds: benefit = min(max(replacement_rate * net_wage, lower_bound)
+    # , upper_bound)
     benefit_pt = jnp.clip(
         replacement_rate * net_pt_income,
         lower_bound_annual,
@@ -225,7 +231,8 @@ def calc_caregiving_leave_top_up(
 
     # Top ups:
     # - Prior none, now unemployed: no top-up needed.
-    #   (Unemployment benefits are already handled via jnp.maximum() in budget constraint,
+    # #   (Unemployment benefits are already handled via jnp.maximum() in budget
+    # constraint,
     #   so adding them here would cause double-counting)
     topup_prior_none = 0.0 * mask_prior_none_unemp
 

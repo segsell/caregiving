@@ -7,13 +7,11 @@ Plots outcomes by age at first care spell or first care demand.
 
 import pickle
 from pathlib import Path
-from typing import Annotated
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytask
-from pytask import Product
 
 from caregiving.config import BLD, JET_COLOR_MAP
 from caregiving.counterfactual.plotting_helpers import get_age_at_first_event
@@ -28,7 +26,6 @@ from caregiving.counterfactual.plotting_utils import (
 )
 from caregiving.model.shared import (
     CARE_DEMAND_AND_NO_OTHER_SUPPLY,
-    DEAD,
     FULL_TIME,
     INFORMAL_CARE,
     PART_TIME,

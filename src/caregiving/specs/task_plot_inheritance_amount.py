@@ -84,8 +84,8 @@ def task_plot_inheritance_amount_by_age(
     legend_handles = []
     legend_labels = []
 
-    for care_type_idx in [2, 1, 0]:  # Intensive, Light, No care
-        for edu_idx in [0, 1]:  # Low education, High education
+    for care_type_idx in (2, 1, 0):  # Intensive, Light, No care
+        for edu_idx in (0, 1):  # Low education, High education
             color = JET_COLOR_MAP[edu_idx]  # Blue for low, orange for high
 
             # Extract data for this education and care type
@@ -153,7 +153,8 @@ def task_plot_inheritance_probability_by_age(
     Plots inheritance_prob_mat from specs for women only, broken down by:
     - Education: Low (blue) and High (orange)
     - Caregiving type: Informal care (solid), No informal care (dashed)
-    Note: Light and intensive care have the same probability, so combined as "Informal care"
+    Note: Light and intensive care have the same probability,
+        so combined as "Informal care"
     """
     # Load specs
     with path_to_specs.open("rb") as f:
@@ -162,7 +163,8 @@ def task_plot_inheritance_probability_by_age(
     # Get inheritance probability matrix
     # Shape: (n_sexes, n_periods, n_education, 3)
     # Last dimension: [no_care, light_care, intensive_care]
-    # Note: light_care and intensive_care have the same probability (both use any_care=1)
+    # # Note: light_care and intensive_care have the same probability (both use a
+    # ny_care=1)
     inheritance_prob_mat = np.array(specs["inheritance_prob_mat"])
 
     # Get metadata
@@ -215,7 +217,7 @@ def task_plot_inheritance_probability_by_age(
     ]
 
     for care_type_name, care_type_idx in care_types:
-        for edu_idx in [0, 1]:  # Low education, High education
+        for edu_idx in (0, 1):  # Low education, High education
             color = JET_COLOR_MAP[edu_idx]  # Blue for low, orange for high
 
             # Extract data for this education and care type

@@ -14,7 +14,6 @@ from pytask import Product
 from caregiving.config import BLD, JET_COLOR_MAP
 from caregiving.model.shared import (
     FULL_TIME,
-    FULL_TIME_CARE,
     PART_TIME,
     PART_TIME_CARE,
     UNEMPLOYED_CARE,

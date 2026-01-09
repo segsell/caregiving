@@ -4,7 +4,6 @@ from itertools import product
 from pathlib import Path
 from typing import Annotated
 
-import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -12,19 +11,12 @@ import pytask
 from pytask import Product
 
 from caregiving.config import BLD, SRC
-from caregiving.data_management.share.task_create_parent_child_data_set import (
-    AGE_BINS_PARENTS,
-    AGE_LABELS_PARENTS,
-    weighted_shares_and_counts,
-)
 from caregiving.model.shared import (
     BAD_HEALTH,
     DEAD,
     FULL_TIME_CHOICES,
     GOOD_HEALTH,
-    NOT_WORKING,
     NOT_WORKING_CHOICES,
-    PARENT_BAD_HEALTH,
     PARENT_WEIGHTS_SHARE,
     PART_TIME_CHOICES,
     RETIREMENT_CHOICES,
@@ -33,11 +25,9 @@ from caregiving.model.shared import (
     UNEMPLOYED_CHOICES,
     WEALTH_MOMENTS_SCALE,
     WEALTH_QUANTILE_CUTOFF,
-    WORK,
     WORK_CHOICES,
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
-from caregiving.utils import table
 
 DEGREES_OF_FREEDOM = 1
 

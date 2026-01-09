@@ -40,7 +40,8 @@ def calc_pension_points_for_experience(
         model_specs["start_age"] + period - 1, model_specs["max_ret_age"]
     )
 
-    # SRA at retirement, difference to actual retirement age and boolean for early retirement
+    # # SRA at retirement, difference to actual retirement age and boolean for ea
+    # rly retirement
     SRA_at_retirement = model_specs["min_SRA"]
     retirement_age_difference = jnp.abs(SRA_at_retirement - actual_retirement_age)
     early_retired_bool = actual_retirement_age < SRA_at_retirement

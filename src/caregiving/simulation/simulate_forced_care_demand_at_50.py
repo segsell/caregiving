@@ -44,7 +44,8 @@
 #     seed,
 #     forced_age: int = 50,
 # ) -> pd.DataFrame:
-#     """Simulate the model with forced care_demand == 2 and mother_health == 0 at age 50.
+# """Simulate the model with forced care_demand == 2 and mother_health == 0 a
+# t age 50.
 
 #     This function:
 #     1. Runs baseline simulation from start_age to forced_age - 1 (age 49)

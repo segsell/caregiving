@@ -3,7 +3,6 @@
 from pathlib import Path
 from typing import Annotated
 
-import numpy as np
 import pandas as pd
 from pytask import Product
 

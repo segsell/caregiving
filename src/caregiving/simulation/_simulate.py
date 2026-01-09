@@ -879,7 +879,7 @@
 #         "choice_combination_care",
 #         "choice_formal_care",
 #     ]
-#     columns_to_nan += [col for col in data.columns if col.startswith("mother_age_bin")]
+#     columns_to_nan += [col for col in data.columns if col.startswith("mother_age_bin")]  # noqa: E501
 
 #     # Set the specified columns to NaN where mother_health != 1
 #     data.loc[data["mother_health"] != BAD_HEALTH, columns_to_nan] = np.nan
@@ -993,7 +993,7 @@
 
 #     # retirement benefits
 #     data.loc[:, "pension_factor"] = (
-#         1 - (data.loc[:, "age"] - RETIREMENT_AGE) * options["early_retirement_penalty"]
+#         1 - (data.loc[:, "age"] - RETIREMENT_AGE) * options["early_retirement_penalty"]  # noqa: E501
 #     )
 #     data.loc[:, "retirement_income_gross_one_year"] = (
 #         options["pension_point_value"]

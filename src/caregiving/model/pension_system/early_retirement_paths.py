@@ -1,5 +1,4 @@
 import jax
-import numpy as np
 from jax import numpy as jnp
 
 
@@ -10,7 +9,8 @@ def calc_early_retirement_pension_points(
     sex,
     model_specs,
 ):
-    """Calculate the pension points for early retirement for different paths. We implemented
+    """Calculate the pension points for early retirement for different  # noqa: E501
+    paths. We implemented
     three ways to retire before the SRA:
 
         - Pension for long insured
@@ -20,10 +20,13 @@ def calc_early_retirement_pension_points(
     We also check, which pension is best, given multiple are possible. There we use the
     following:
         - This function is only used, if the person freshly retires.
-        - Disability pension is always better than pension for long insured, as the pension
-          points fill up to the same level as if you would have worked until SRA and your
+        - Disability pension is always better than pension for long insured,
+            as the pension
+          points fill up to the same level as if you would have worked  # noqa: E501
+          until SRA and your
           deductions are limited to 3 years.
-        - Pension for very long insured is always better than the pension for long insured.
+        - Pension for very long insured is always better than the pension  # noqa: E501
+        for long insured.
           So we only check if very long insured path is better than disability pension.
 
     """
@@ -69,17 +72,21 @@ def check_very_long_insured(
 
     experience_threshold = model_specs["experience_threshold_very_long_insured"][sex]
     enough_years = experience_years >= experience_threshold
-    close_enough_to_SRA = retirement_age_difference <= 2
+    close_enough_to_SRA = retirement_age_difference <= 2  # noqa: PLR2004
 
     return enough_years & close_enough_to_SRA
 
 
 def retirement_age_long_insured(SRA, model_specs):
     """Everyone can retire 4 years before the SRA but must be at least at 63 y/o.
-    That means that we assume 1) everyone qualifies for "Rente für langjährig Versicherte" and 2) that
-    the threshhold for "Rente für langjährig Versicherte" moves with the SRA. "Rente für besonders langjährig
-    Versicherte" only differs with respect to deductions. Not with respect to entry age. We introduce the
-    lower bound of 63 as this is the current law, even for individuals with SRA below 67.
+    That means that we assume 1) everyone qualifies for "Rente für  # noqa: E501
+    langjährig Versicherte" and 2) that
+    the threshold for "Rente für langjährig Versicherte" moves with the  # noqa: E501
+    SRA. "Rente für besonders langjährig
+    Versicherte" only differs with respect to deductions. Not with respect  # noqa: E501
+    to entry age. We introduce the
+    lower bound of 63 as this is the current law,
+        even for individuals with SRA below 67.
     """
     # if model_specs["ERA_moves"]:
     #     return jnp.maximum(

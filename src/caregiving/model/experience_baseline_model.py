@@ -18,7 +18,8 @@ def define_experience_grid(specs):
     # Experience grid
     experience_grid = np.linspace(0, 1, 11)
     # # Add very long insured threshold to experience grid and sort
-    # experience_grid = np.append(experience_grid, specs["very_long_insured_grid_points"])
+    # # experience_grid = np.append(experience_grid, specs["very_long_insured_gri
+    # d_points"])
     # # Delete 0.5
     # experience_grid = experience_grid[
     #     (~np.isclose(experience_grid, 0.5))
@@ -84,7 +85,8 @@ def get_next_period_experience(
         model_specs=model_specs,
     )
 
-    # If fresh retired, the experience function returns pension points. Now the value and policy function
+    # # If fresh retired, the experience function returns pension points. Now the
+    #  value and policy function
     # are calculated on a pension point grid. We do not need experience any more.
     exp_years_this_period = jax.lax.select(
         fresh_retired, on_true=pension_points, on_false=exp_years_this_period
@@ -102,7 +104,8 @@ def get_next_period_experience(
 
 
 def construct_experience_years(float_experience, period, is_retired, model_specs):
-    """Experience and period can also be arrays. We have to distinguish between the phases where individals are already
+    """Experience and period can also be arrays. We have to distinguish  # noqa: E501
+    between the phases where individuals are already
     longer retired or not."""
     # If period is past the last working period, then we take the maximum experience
     scale_not_retired = jnp.take(

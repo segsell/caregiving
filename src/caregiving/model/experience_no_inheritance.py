@@ -6,7 +6,6 @@ for part-time workers. Part-time workers always receive reduced experience credi
 """
 
 import jax
-import jax.numpy as jnp
 
 from caregiving.model.experience_baseline_model import (
     construct_experience_years,
@@ -84,7 +83,8 @@ def get_next_period_experience(
 
     # Update if working part or full time
     # NOTE: No intensive care bonus - part-time workers always get reduced credit
-    # This differs from baseline model where part-time intensive caregivers get full credit (1.0)
+    # # This differs from baseline model where part-time intensive caregivers get
+    #  full credit (1.0)
     exp_update = is_full_time(lagged_choice) + is_part_time(lagged_choice) * (
         model_specs["exp_increase_part_time"]
     )
@@ -102,7 +102,8 @@ def get_next_period_experience(
         model_specs=model_specs,
     )
 
-    # If fresh retired, the experience function returns pension points. Now the value and policy function
+    # # If fresh retired, the experience function returns pension points. Now the
+    #  value and policy function
     # are calculated on a pension point grid. We do not need experience any more.
     exp_years_this_period = jax.lax.select(
         fresh_retired, on_true=pension_points, on_false=exp_years_this_period

@@ -70,7 +70,7 @@ def temp_test_dir():
 
 
 def test_estimate_model_with_unobserved_type_shares_interface(temp_test_dir):
-    """Test estimate_model_with_unobserved_type_shares interface with mocked optimization."""
+    """Test estimate_model_with_unobserved_type_shares interface with mocked optimization."""  # noqa: E501
 
     # Check if required files exist, skip test if not
     required_files = [

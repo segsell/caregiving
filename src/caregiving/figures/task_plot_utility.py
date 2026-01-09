@@ -6,11 +6,10 @@ from typing import Annotated
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import yaml
 from pytask import Product
 
-from caregiving.config import BLD, JET_COLOR_MAP, SRC
+from caregiving.config import BLD, SRC
 from caregiving.model.utility.bequest_utility import utility_final_consume_all
 from caregiving.model.utility.utility_components import consumption_scale
 from caregiving.model.utility.utility_functions_additive import (

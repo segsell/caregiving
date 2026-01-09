@@ -157,7 +157,8 @@ def task_plot_matched_differences_by_distance_higher_ret_age(  # noqa: PLR0915, 
 
 
 @pytask.mark.counterfactual_differences_higher_ret_age
-def task_plot_matched_differences_by_age_at_first_care_higher_ret_age_vs_baseline(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_at_first_care_higher_ret_age_vs_baseline(
+    # noqa: E501
     path_to_higher_ret_age_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_higher_ret_age_estimated_params.pkl",
@@ -379,7 +380,8 @@ def task_plot_matched_differences_by_age_at_first_care_higher_ret_age_vs_baselin
 
 
 @pytask.mark.counterfactual_differences_higher_ret_age
-def task_plot_matched_differences_by_age_bins_at_first_care_higher_ret_age_vs_baseline(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_bins_at_first_care_higher_ret_age_vs_baseline(
+    # noqa: E501
     path_to_higher_ret_age_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_higher_ret_age_estimated_params.pkl",
@@ -860,7 +862,8 @@ def task_plot_matched_differences_by_age_at_first_care_demand_higher_ret_age_vs_
 
 
 @pytask.mark.counterfactual_differences_higher_ret_age
-def task_plot_matched_differences_first_care_start_by_age_higher_ret_age(  # noqa: PLR0915, E501
+def task_plot_matched_differences_first_care_start_by_age_higher_ret_age(
+    # noqa: E501
     path_to_higher_ret_age_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_higher_ret_age_estimated_params.pkl",
@@ -989,7 +992,8 @@ def task_plot_matched_differences_first_care_start_by_age_higher_ret_age(  # noq
 
 
 @pytask.mark.counterfactual_differences_higher_ret_age
-def task_plot_matched_differences_first_care_demand_start_by_age_higher_ret_age(  # noqa: PLR0915, E501
+def task_plot_matched_differences_first_care_demand_start_by_age_higher_ret_age(  # noqa: PLR0915
+    # noqa: E501
     path_to_higher_ret_age_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_higher_ret_age_estimated_params.pkl",

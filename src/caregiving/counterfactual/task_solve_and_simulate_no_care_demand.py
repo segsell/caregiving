@@ -5,14 +5,12 @@ from pathlib import Path
 from typing import Annotated
 
 import jax
-import jax.numpy as jnp
 import pytask
 import yaml
 from pytask import Product
 
 import dcegm
 from caregiving.config import BLD
-from caregiving.model.shared import DEAD
 from caregiving.model.state_space_no_care_demand import create_state_space_functions
 from caregiving.model.task_specify_model_no_care_demand import (
     create_stochastic_states_transitions,

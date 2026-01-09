@@ -31,7 +31,8 @@ def task_plot_mother_dead_probability_no_care_demand(  # noqa: PLR0915
     / "pre_estimation"
     / "mother_dead_probability_no_care_demand.png",
 ):
-    """Plot mother recently dead probability by age and education for no care demand model.
+    """Plot mother recently dead probability by age and education for no  # noqa: E501
+    care demand model.
 
     Simulates forward from initial states distribution, tracking the probability of
     mother being recently dead (PARENT_RECENTLY_DEAD) over time by education.
@@ -125,10 +126,12 @@ def task_plot_mother_dead_probability_no_care_demand(  # noqa: PLR0915
                     prob_vector[PARENT_LONGER_DEAD]
                 )
 
-            # Transition from recently_dead (state 1) -> longer_dead (state 2) with certainty
+            # Transition from recently_dead (state 1) -> longer_dead (state 2)
+            # with certainty.
             prob_by_state_next[edu][PARENT_LONGER_DEAD] += prob_recently_dead
 
-            # Transition from longer_dead (state 2) -> longer_dead (state 2) with certainty
+            # Transition from longer_dead (state 2) -> longer_dead (state 2)
+            # with certainty.
             prob_by_state_next[edu][PARENT_LONGER_DEAD] += prob_longer_dead
 
         # Update state distribution

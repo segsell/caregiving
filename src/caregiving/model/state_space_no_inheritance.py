@@ -30,7 +30,8 @@ def create_state_space_functions():
         Dictionary containing:
         - "state_specific_choice_set": state_specific_choice_set_with_caregiving
         - "next_period_deterministic_state": next_period_deterministic_state
-        - "next_period_experience": get_next_period_experience (from experience_no_inheritance)
+        - "next_period_experience": get_next_period_experience (from  # noqa: E501
+        experience_no_inheritance)
         - "sparsity_condition": sparsity_condition
     """
     return {

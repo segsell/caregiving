@@ -18,7 +18,6 @@ from caregiving.data_management.soep.auxiliary import (
     recode_sex,
 )
 from caregiving.data_management.soep.soep_variables.experience import (
-    create_experience_and_working_years,
     create_experience_variable_with_cap,
 )
 from caregiving.data_management.soep.task_create_event_study_sample import (
@@ -44,7 +43,6 @@ from caregiving.model.shared import (
     WORK_CHOICES,
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
-from caregiving.utils import table
 
 
 @pytask.mark.estimation_sample

@@ -1,32 +1,15 @@
 """Simulate moments for no care demand counterfactual."""
 
-import re
-from itertools import product
-from typing import Optional
-
-import jax.numpy as jnp
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from caregiving.data_management.share.task_create_parent_child_data_set import (
-    AGE_BINS_PARENTS,
-    AGE_LABELS_PARENTS,
-)
-from caregiving.model.shared import (
-    SEX,
-    WEALTH_MOMENTS_SCALE,
-)
 from caregiving.model.shared_no_care_demand import (
     FULL_TIME_NO_CARE_DEMAND,
-    NOT_WORKING_NO_CARE_DEMAND,
     PART_TIME_NO_CARE_DEMAND,
     RETIREMENT_NO_CARE_DEMAND,
     UNEMPLOYED_NO_CARE_DEMAND,
-    WORK_NO_CARE_DEMAND,
 )
 from caregiving.simulation.simulate_moments import (
-    compute_transition_moments_pandas_for_age_bins,
     create_mean_by_age,
 )
 

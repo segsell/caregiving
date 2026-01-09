@@ -11,7 +11,6 @@ The plots will be saved to: bld/plots/counterfactual/plot_style_draft/
 """
 
 import pickle
-from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -20,10 +19,8 @@ import pandas as pd
 from caregiving.config import BLD
 from caregiving.counterfactual.plotting_helpers import (
     get_age_at_first_event,
-    get_distinct_colors,
 )
 from caregiving.counterfactual.plotting_utils import (
-    _ensure_agent_period,
     calculate_outcomes,
     calculate_working_hours_weekly,
     create_outcome_columns,

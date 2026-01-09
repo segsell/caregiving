@@ -8,25 +8,15 @@ import jax
 import numpy as np
 import pandas as pd
 import pytask
-from numpy.testing import assert_array_almost_equal as aaae
 from pytask import Product
 
-from caregiving.config import BLD, SRC
-from caregiving.model.shared import (
-    FULL_TIME_CHOICES,
-    NOT_WORKING,
-    PART_TIME,
-    WORK,
-)
+from caregiving.config import BLD
 from caregiving.simulation.simulate_moments import (
     plot_model_fit_labor_moments_by_education_pandas_jax,
-    plot_model_fit_labor_moments_pandas,
     plot_model_fit_labor_moments_pandas_by_education,
-    plot_transition_shares_by_age_bins,
     simulate_moments_jax,
     simulate_moments_pandas,
 )
-from caregiving.specs.task_write_specs import read_and_derive_specs
 
 jax.config.update("jax_enable_x64", True)
 

@@ -1,20 +1,15 @@
 """Estimate the mortality matrix given two health states."""
 
-import itertools
 from pathlib import Path
 from typing import Annotated
 
 import matplotlib.pyplot as plt
 import numpy as np
-import optimagic as om
 import pandas as pd
-import pytask
-import statsmodels.api as sm
 from pytask import Product
 
 from caregiving.config import BLD, JET_COLOR_MAP, SRC
 from caregiving.specs.derive_specs import read_and_derive_specs
-from caregiving.stochastic_processes.auxiliary import loglike
 
 # @pytask.mark.skip(reason="This task is not used in the current pipeline.")
 # def task_estimate_mortality(

@@ -9,7 +9,7 @@ def _print_filter(before, after, msg):
 def create_experience_variable_with_cap(data, exp_cap, filter_missings=True):
     """This function creates an experience variable as the sum of full-time and 0.5
     weighted part-time experience.
-    It als enforces an experience cap.
+    It also enforces an experience cap.
     """
     # Create experience variable
     data = create_experience_and_working_years(data, filter_missings=filter_missings)
@@ -21,7 +21,8 @@ def create_experience_variable_with_cap(data, exp_cap, filter_missings=True):
 
 def create_experience_and_working_years(data, filter_missings=True):
     """This function creates an experience variable as the sum of full-time and 0.5
-    weighted part-time experience. Additional it creates the working years as sum of both.
+    weighted part-time experience. Additional it creates the working years  # noqa: E501
+    as sum of both.
     In both variables we ensure only valid experience by scaling part time experience.
     """
     data = scale_part_time_exp(data)
@@ -111,9 +112,11 @@ def raw_working_years(data, filter_missings=True):
 
 
 def scale_part_time_exp(data):
-    """Check if years of part plus full time exceed age minus 14 (not allowed to work before)"""
+    """Check if years of part plus full time exceed age minus 14 (not  # noqa: E501
+    allowed to work before)"""
     max_years = data["age"] - 14
     exp_exceeding = ((data["pgexpft"] + data["pgexppt"]) - max_years).clip(lower=0)
-    # Deduct exceeding experience from part time experience. Assume if worked both, you worked full
+    # # Deduct exceeding experience from part time experience. Assume if worked b
+    # oth, you worked full
     data.loc[:, "pgexppt"] -= exp_exceeding
     return data

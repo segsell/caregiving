@@ -5,8 +5,6 @@ from pathlib import Path
 from typing import Annotated
 
 import jax
-import jax.numpy as jnp
-import pytask
 import yaml
 from pytask import Product
 
@@ -56,7 +54,7 @@ def solve_and_simulate_caregiving_leave_with_job_retention_estimated_params(
     / "solve_and_simulate"
     / "simulated_data_caregiving_leave_with_job_retention_estimated_params.pkl",
 ) -> None:
-    """Solve and simulate the caregiving-leave-with-job-retention counterfactual model."""
+    """Solve and simulate the caregiving-leave-with-job-retention counterfactual model."""  # noqa: E501
 
     specs = pickle.load(path_to_specs.open("rb"))
     model_config = pickle.load(path_to_model_config.open("rb"))

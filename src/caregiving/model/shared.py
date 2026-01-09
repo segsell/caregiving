@@ -195,9 +195,12 @@ FULL_TIME_CHOICES = jnp.array([3])  # full-time
 
 # WORK_AND_NO_WORK = ALL.copy()
 
-ALL = jnp.arange(
-    16
-)  # NO_CARE (0-3), FORMAL_CARE (4-7), LIGHT_INFORMAL_CARE (8-11), INTENSIVE_INFORMAL_CARE (12-15)
+ALL = jnp.arange(16)
+# Choice indices:
+# - NO_CARE (0-3)
+# - FORMAL_CARE (4-7)
+# - LIGHT_INFORMAL_CARE (8-11)
+# - INTENSIVE_INFORMAL_CARE (12-15)
 
 # Care arrangement types:
 # - NO_CARE (choices 0, 1, 2, 3):

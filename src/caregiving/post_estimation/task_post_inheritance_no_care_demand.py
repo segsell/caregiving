@@ -72,20 +72,26 @@ def task_plot_inheritance_by_age_no_care_demand(  # noqa: PLR0912, PLR0915
        conditional on mother_dead == RECENTLY_DEAD, by age and education.
     2. Share of people with positive inheritance (gets_inheritance == 1)
        conditional on lagged mother_dead == RECENTLY_DEAD, by age and education.
-    3. Share of individuals with mother recently dead (whole sample), by age and education.
-    4. Average inheritance amount (conditional on mother recently dead AND positive inheritance)
+    3. Share of individuals with mother recently dead (whole sample),
+        by age and education.
+    4. Average inheritance amount (conditional on mother recently dead AND  # noqa: E501
+    positive inheritance)
        by age and education.
     5. Average inheritance amount (unconditional, whole sample) by age and education.
-    6. Average inheritance amount (conditional on mother recently dead AND gets_inheritance == 0)
+    6. Average inheritance amount (conditional on mother recently dead AND  # noqa: E501
+    gets_inheritance == 0)
        by age and education.
     7. Average inheritance amount (conditional on bequest_from_parent > 0, whole sample)
        by age and education.
-    8. Average inheritance amount (conditional on bequest_from_parent > 0 AND mother_dead != RECENTLY_DEAD)
+    8. Average inheritance amount (conditional on bequest_from_parent > 0  # noqa: E501
+    AND mother_dead != RECENTLY_DEAD)
        by age and education (sanity check - should be 0).
-    9. Average inheritance amount (conditional on bequest_from_parent > 0 AND gets_inheritance == 0)
+    9. Average inheritance amount (conditional on bequest_from_parent > 0  # noqa: E501
+    AND gets_inheritance == 0)
        by age and education (sanity check - should be 0).
 
-    Since there is no care in the no care demand model, we only distinguish by education level,
+    Since there is no care in the no care demand model,
+        we only distinguish by education level,
     not by care type.
 
     Parameters
@@ -97,7 +103,8 @@ def task_plot_inheritance_by_age_no_care_demand(  # noqa: PLR0912, PLR0915
     path_to_save_share_plot : Path
         Path to save the share plot (conditional on current period mother recently dead)
     path_to_save_share_lagged_plot : Path
-        Path to save the lagged share plot (conditional on previous period mother recently dead)
+        Path to save the lagged share plot (conditional on previous period  # noqa: E501
+        mother recently dead)
     path_to_save_mother_dead_share_plot : Path
         Path to save the mother recently dead share plot (whole sample)
     path_to_save_amount_plot : Path
@@ -107,11 +114,14 @@ def task_plot_inheritance_by_age_no_care_demand(  # noqa: PLR0912, PLR0915
     path_to_save_amount_no_inheritance_plot : Path
         Path to save the inheritance amount plot (conditional on gets_inheritance == 0)
     path_to_save_amount_positive_plot : Path
-        Path to save the inheritance amount plot (conditional on bequest_from_parent > 0)
+        Path to save the inheritance amount plot (conditional on  # noqa: E501
+        bequest_from_parent > 0)
     path_to_save_amount_check1_plot : Path
-        Path to save the inheritance amount check plot (conditional on bequest_from_parent > 0 AND mother_dead != RECENTLY_DEAD)
+        Path to save the inheritance amount check plot (conditional on  # noqa: E501
+        bequest_from_parent > 0 AND mother_dead != RECENTLY_DEAD)
     path_to_save_amount_check2_plot : Path
-        Path to save the inheritance amount check plot (conditional on bequest_from_parent > 0 AND gets_inheritance == 0)
+        Path to save the inheritance amount check plot (conditional on  # noqa: E501
+        bequest_from_parent > 0 AND gets_inheritance == 0)
 
     """
     # Load specs and simulated data
@@ -127,10 +137,13 @@ def task_plot_inheritance_by_age_no_care_demand(  # noqa: PLR0912, PLR0915
         if hasattr(df_sim.index, "names") and "agent" in df_sim.index.names:
             df_sim = df_sim.reset_index()
         else:
+            index_names = (
+                df_sim.index.names if hasattr(df_sim.index, "names") else "N/A"
+            )
             raise ValueError(
-                f"Cannot find 'agent' column or index level. "
+                "Cannot find 'agent' column or index level. "
                 f"Available columns: {df_sim.columns.tolist()}, "
-                f"Index names: {df_sim.index.names if hasattr(df_sim.index, 'names') else 'N/A'}"
+                f"Index names: {index_names}"
             )
 
     # Verify agent and period columns exist
@@ -163,7 +176,8 @@ def task_plot_inheritance_by_age_no_care_demand(  # noqa: PLR0912, PLR0915
     # Filter to mother recently dead (PARENT_RECENTLY_DEAD = 1) in current period
     df_recently_dead = df_sim.loc[df_sim["mother_dead"] == PARENT_RECENTLY_DEAD].copy()
 
-    # Filter to lagged mother recently dead (PARENT_RECENTLY_DEAD = 1) in previous period
+    # # Filter to lagged mother recently dead (PARENT_RECENTLY_DEAD = 1) in previ
+    # ous period
     df_lagged_recently_dead = df_sim.loc[
         df_sim["lagged_mother_recently_dead"] == 1
     ].copy()
@@ -175,7 +189,8 @@ def task_plot_inheritance_by_age_no_care_demand(  # noqa: PLR0912, PLR0915
             f"Available columns: {df_recently_dead.columns.tolist()}"
         )
 
-    # Calculate share with positive inheritance (gets_inheritance == 1) by age and education
+    # # Calculate share with positive inheritance (gets_inheritance == 1) by age
+    # and education
     share_by_group = (
         df_recently_dead.groupby(["age", "education"], observed=False)[
             "gets_inheritance"
@@ -295,8 +310,9 @@ def task_plot_inheritance_by_age_no_care_demand(  # noqa: PLR0912, PLR0915
     plt.close(fig)
 
     print(
-        f"Inheritance share by age (lagged) plot saved to {path_to_save_share_lagged_plot}"
-    )
+        "Inheritance share by age (lagged) plot saved to "
+        f"{path_to_save_share_lagged_plot}"
+    )  # noqa: E501
 
     # =================================================================================
     # Plot: Share with mother recently dead (whole sample) by age
@@ -355,8 +371,9 @@ def task_plot_inheritance_by_age_no_care_demand(  # noqa: PLR0912, PLR0915
     plt.close(fig)
 
     print(
-        f"Mother recently dead share by age plot saved to {path_to_save_mother_dead_share_plot}"
-    )
+        "Mother recently dead share by age plot saved to "
+        f"{path_to_save_mother_dead_share_plot}"
+    )  # noqa: E501
 
     # =================================================================================
     # Plot: Average inheritance amount (conditional on positive) by age
@@ -369,7 +386,8 @@ def task_plot_inheritance_by_age_no_care_demand(  # noqa: PLR0912, PLR0915
             f"Available columns: {df_recently_dead.columns.tolist()}"
         )
 
-    # Calculate average inheritance amount (conditional on positive) by age and education
+    # # Calculate average inheritance amount (conditional on positive) by age and
+    #  education
     # First, filter to positive inheritance only
     df_positive = df_recently_dead.loc[df_recently_dead["gets_inheritance"] == 1].copy()
 
@@ -439,12 +457,18 @@ def task_plot_inheritance_by_age_no_care_demand(  # noqa: PLR0912, PLR0915
         print("INHERITANCE AMOUNT SUMMARY STATISTICS")
         print("=" * 70)
         print(f"Total observations with positive inheritance: {len(df_positive)}")
-        print(
-            f"Average inheritance amount (conditional on positive): €{df_positive['bequest_from_parent'].mean() * specs['wealth_unit']:,.0f}"
+        avg_amount = df_positive["bequest_from_parent"].mean() * specs["wealth_unit"]
+        median_amount = (
+            df_positive["bequest_from_parent"].median() * specs["wealth_unit"]
         )
         print(
-            f"Median inheritance amount (conditional on positive): €{df_positive['bequest_from_parent'].median() * specs['wealth_unit']:,.0f}"
-        )
+            "Average inheritance amount (conditional on positive): "
+            f"€{avg_amount:,.0f}"
+        )  # noqa: E501
+        print(
+            "Median inheritance amount (conditional on positive): "
+            f"€{median_amount:,.0f}"
+        )  # noqa: E501
         print("=" * 70 + "\n")
     else:
         print("Warning: No observations with positive inheritance found.")
@@ -519,12 +543,14 @@ def task_plot_inheritance_by_age_no_care_demand(  # noqa: PLR0912, PLR0915
     plt.close(fig)
 
     print(
-        f"Inheritance amount (unconditional) by age plot saved to {path_to_save_amount_unconditional_plot}"
-    )
+        "Inheritance amount (unconditional) by age plot saved to "
+        f"{path_to_save_amount_unconditional_plot}"
+    )  # noqa: E501
 
     # =================================================================================
     # Plot: Average inheritance amount (conditional on gets_inheritance == 0) by age
-    # Conditional on mother recently dead AND gets_inheritance == 0, grouped by education
+    # # Conditional on mother recently dead AND gets_inheritance == 0, grouped by
+    #  education
     # =================================================================================
     # Filter to gets_inheritance == 0 within mother recently dead sample
     df_no_inheritance = df_recently_dead.loc[
@@ -594,8 +620,9 @@ def task_plot_inheritance_by_age_no_care_demand(  # noqa: PLR0912, PLR0915
         plt.close(fig)
 
         print(
-            f"Inheritance amount (no inheritance) by age plot saved to {path_to_save_amount_no_inheritance_plot}"
-        )
+            "Inheritance amount (no inheritance) by age plot saved to "
+            f"{path_to_save_amount_no_inheritance_plot}"
+        )  # noqa: E501
     else:
         print("Warning: No observations with gets_inheritance == 0 found.")
 
@@ -611,7 +638,8 @@ def task_plot_inheritance_by_age_no_care_demand(  # noqa: PLR0912, PLR0915
         )
 
     # Filter to positive bequest_from_parent (which already incorporates both conditions
-    # from the budget equation: mother_dead == PARENT_RECENTLY_DEAD AND gets_inheritance == 1)
+    # # from the budget equation: mother_dead == PARENT_RECENTLY_DEAD AND gets_in
+    # heritance == 1)
     df_positive_bequest = df_sim.loc[df_sim["bequest_from_parent"] > 0].copy()
 
     if len(df_positive_bequest) > 0:
@@ -675,14 +703,17 @@ def task_plot_inheritance_by_age_no_care_demand(  # noqa: PLR0912, PLR0915
         plt.close(fig)
 
         print(
-            f"Inheritance amount (positive bequest) by age plot saved to {path_to_save_amount_positive_plot}"
-        )
+            "Inheritance amount (positive bequest) by age plot saved to "
+            f"{path_to_save_amount_positive_plot}"
+        )  # noqa: E501
     else:
         print("Warning: No observations with bequest_from_parent > 0 found.")
 
     # =================================================================================
-    # Check Plot 1: Average inheritance amount (conditional on bequest_from_parent > 0 AND mother_dead != RECENTLY_DEAD)
-    # Whole sample, filtered to positive bequest AND mother NOT recently dead, grouped by education
+    # # Check Plot 1: Average inheritance amount (conditional on bequest_from_par
+    # ent > 0 AND mother_dead != RECENTLY_DEAD)
+    # # Whole sample, filtered to positive bequest AND mother NOT recently dead,
+    # grouped by education
     # This should be 0 or very small (sanity check)
     # =================================================================================
     # Filter to positive bequest AND mother NOT recently dead
@@ -740,10 +771,14 @@ def task_plot_inheritance_by_age_no_care_demand(  # noqa: PLR0912, PLR0915
         ax.set_xlabel("Age", fontsize=12)
         ax.set_ylabel("Average Inheritance Amount (€)", fontsize=12)
         ax.set_title(
-            "Average Inheritance Amount by Age and Education (No Care Demand Model)\n"
-            "Conditional on bequest_from_parent > 0 AND mother_dead != RECENTLY_DEAD (Check)",
+            (
+                "Average Inheritance Amount by Age and Education "
+                "(No Care Demand Model)\n"
+                "Conditional on bequest_from_parent > 0 "
+                "AND mother_dead != RECENTLY_DEAD (Check)"
+            ),
             fontsize=13,
-        )
+        )  # noqa: E501
         ax.grid(True, alpha=0.3)
         ax.legend(loc="best", fontsize=10)
         # Format y-axis with thousands separator
@@ -755,32 +790,42 @@ def task_plot_inheritance_by_age_no_care_demand(  # noqa: PLR0912, PLR0915
         plt.close(fig)
 
         print(
-            f"Inheritance amount (check 1: positive bequest AND mother != RECENTLY_DEAD) by age plot saved to {path_to_save_amount_check1_plot}"
-        )
+            "Inheritance amount (check 1: positive bequest AND mother != "
+            "RECENTLY_DEAD) by age plot saved to "
+            f"{path_to_save_amount_check1_plot}"
+        )  # noqa: E501
         print(f"  Number of observations: {len(df_check1)} (should be 0 or very small)")
     else:
-        # Create an empty plot to ensure the file exists (sanity check - expected to have 0 observations)
+        # # Create an empty plot to ensure the file exists (sanity check - expected t
+        # o have 0 observations)
         fig, ax = plt.subplots(figsize=(10, 6))
         ax.set_xlabel("Age", fontsize=12)
         ax.set_ylabel("Average Inheritance Amount (€)", fontsize=12)
         ax.set_title(
-            "Average Inheritance Amount by Age and Education (No Care Demand Model)\n"
-            "Conditional on bequest_from_parent > 0 AND mother_dead != RECENTLY_DEAD (Check)\n"
-            "No observations found (expected - sanity check)",
+            (
+                "Average Inheritance Amount by Age and Education "
+                "(No Care Demand Model)\n"
+                "Conditional on bequest_from_parent > 0 "
+                "AND mother_dead != RECENTLY_DEAD (Check)\n"
+                "No observations found (expected - sanity check)"
+            ),
             fontsize=13,
-        )
+        )  # noqa: E501
         ax.grid(True, alpha=0.3)
         plt.tight_layout()
         path_to_save_amount_check1_plot.parent.mkdir(parents=True, exist_ok=True)
         plt.savefig(path_to_save_amount_check1_plot, dpi=300)
         plt.close(fig)
         print(
-            "Check 1: No observations with bequest_from_parent > 0 AND mother_dead != RECENTLY_DEAD found (expected)."
-        )
+            "Check 1: No observations with bequest_from_parent > 0 "
+            "AND mother_dead != RECENTLY_DEAD found (expected)."
+        )  # noqa: E501
 
     # =================================================================================
-    # Check Plot 2: Average inheritance amount (conditional on bequest_from_parent > 0 AND gets_inheritance == 0)
-    # Whole sample, filtered to positive bequest AND gets_inheritance == 0, grouped by education
+    # # Check Plot 2: Average inheritance amount (conditional on bequest_from_par
+    # ent > 0 AND gets_inheritance == 0)
+    # # Whole sample, filtered to positive bequest AND gets_inheritance == 0, gro
+    # uped by education
     # This should be 0 or very small (sanity check)
     # =================================================================================
     # Filter to positive bequest AND gets_inheritance == 0
@@ -852,11 +897,14 @@ def task_plot_inheritance_by_age_no_care_demand(  # noqa: PLR0912, PLR0915
         plt.close(fig)
 
         print(
-            f"Inheritance amount (check 2: positive bequest AND gets_inheritance == 0) by age plot saved to {path_to_save_amount_check2_plot}"
-        )
+            "Inheritance amount (check 2: positive bequest AND "
+            "gets_inheritance == 0) by age plot saved to "
+            f"{path_to_save_amount_check2_plot}"
+        )  # noqa: E501
         print(f"  Number of observations: {len(df_check2)} (should be 0 or very small)")
     else:
-        # Create an empty plot to ensure the file exists (sanity check - expected to have 0 observations)
+        # # Create an empty plot to ensure the file exists (sanity check - expected t
+        # o have 0 observations)
         fig, ax = plt.subplots(figsize=(10, 6))
         ax.set_xlabel("Age", fontsize=12)
         ax.set_ylabel("Average Inheritance Amount (€)", fontsize=12)
@@ -872,5 +920,6 @@ def task_plot_inheritance_by_age_no_care_demand(  # noqa: PLR0912, PLR0915
         plt.savefig(path_to_save_amount_check2_plot, dpi=300)
         plt.close(fig)
         print(
-            "Check 2: No observations with bequest_from_parent > 0 AND gets_inheritance == 0 found (expected)."
-        )
+            "Check 2: No observations with bequest_from_parent > 0 "
+            "AND gets_inheritance == 0 found (expected)."
+        )  # noqa: E501

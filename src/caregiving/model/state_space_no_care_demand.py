@@ -1,14 +1,10 @@
 """State space for the model without care demand."""
 
-import jax
 import jax.numpy as jnp
-import numpy as np
 
 from caregiving.model.experience_no_care_demand import get_next_period_experience
 from caregiving.model.shared import (
     PARENT_LONGER_DEAD,
-    PARENT_RECENTLY_DEAD,
-    SEX,
     is_alive,
     is_dead,
 )
@@ -19,9 +15,6 @@ from caregiving.model.shared_no_care_demand import (
     UNEMPLOYED_NO_CARE_DEMAND,
     WORK_AND_RETIREMENT_NO_CARE_DEMAND,
     WORK_AND_UNEMPLOYED_NO_CARE_DEMAND,
-    WORK_NO_CARE_DEMAND,
-    is_full_time,
-    is_part_time,
     is_retired,
     is_unemployed,
 )
@@ -153,7 +146,8 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
         #         "education": education,
         #         "health": health,
         #         "partner_state": partner_state,
-        #         "mother_dead": PARENT_RECENTLY_DEAD,  # Preserve for inheritance calculation
+        # #         "mother_dead": PARENT_RECENTLY_DEAD,  # Preserve for inheritance
+        # calculation
         #         "gets_inheritance": 1,
         #         "job_offer": job_offer,
         #         "caregiving_type": caregiving_type,

@@ -1,7 +1,7 @@
 from jax import numpy as jnp
 
 from caregiving.model.experience_baseline_model import construct_experience_years
-from caregiving.model.shared import PARENT_RECENTLY_DEAD, SEX, is_retired, is_working
+from caregiving.model.shared import SEX, is_retired, is_working
 from caregiving.model.wealth_and_budget.government_budget import (
     calc_government_budget_components,
 )

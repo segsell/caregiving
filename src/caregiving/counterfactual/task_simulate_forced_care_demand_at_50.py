@@ -18,7 +18,7 @@
 # from caregiving.model.utility.bequest_utility import (
 #     create_final_period_utility_functions,
 # )
-# from caregiving.model.utility.utility_functions_additive import create_utility_functions
+# from caregiving.model.utility.utility_functions_additive import create_utility_functions  # noqa: E501
 # from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 # from caregiving.simulation.simulate import setup_model_for_simulation_baseline
 # from caregiving.simulation.simulate_forced_care_demand_at_50 import (
@@ -42,13 +42,13 @@
 
 #     This uses the baseline solution and initial states, but forces care_demand = 2
 #     (care demand and no other supply) and mother_health = 0 (bad health) at the
-#     specified age. All other state variables and stochastic processes proceed normally.
+#     specified age. All other state variables and stochastic processes proceed normally.  # noqa: E501
 
 #     Args:
 #         path_to_solution_model: Path to baseline model structure
 #         path_to_options: Path to baseline options
 #         path_to_params: Path to model parameters
-#         path_to_baseline_solution: Path to baseline solution (value, policy, endog_grid)
+#         path_to_baseline_solution: Path to baseline solution (value, policy, endog_grid)  # noqa: E501
 #         path_to_discrete_states: Path to baseline initial discrete states
 #         path_to_wealth: Path to baseline initial wealth
 #         path_to_save_simulated_data: Path to save simulation results
@@ -63,7 +63,7 @@
 
 #     # Load initial states and wealth
 #     initial_states = pickle.load(path_to_discrete_states.open("rb"))
-#     wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
+#     wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())  # noqa: E501
 
 #     # Setup model for simulation (using baseline model structure)
 #     model_for_simulation = setup_model_for_simulation_baseline(
@@ -95,7 +95,7 @@
 #     path_to_baseline_solution: Path = BLD
 #     / "solve_and_simulate"
 #     / "solution_estimated_params.pkl",
-#     path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",
+#     path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",  # noqa: E501
 #     path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
 #     path_to_save_simulated_data: Annotated[Path, Product] = BLD
 #     / "solve_and_simulate"
@@ -123,7 +123,7 @@
 #     path_to_baseline_solution: Path = BLD
 #     / "solve_and_simulate"
 #     / "solution_estimated_params.pkl",
-#     path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",
+#     path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",  # noqa: E501
 #     path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
 #     path_to_save_simulated_data: Annotated[Path, Product] = BLD
 #     / "solve_and_simulate"
@@ -151,7 +151,7 @@
 #     path_to_baseline_solution: Path = BLD
 #     / "solve_and_simulate"
 #     / "solution_estimated_params.pkl",
-#     path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",
+#     path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",  # noqa: E501
 #     path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
 #     path_to_save_simulated_data: Annotated[Path, Product] = BLD
 #     / "solve_and_simulate"
@@ -179,7 +179,7 @@
 #     path_to_baseline_solution: Path = BLD
 #     / "solve_and_simulate"
 #     / "solution_estimated_params.pkl",
-#     path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",
+#     path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",  # noqa: E501
 #     path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
 #     path_to_save_simulated_data: Annotated[Path, Product] = BLD
 #     / "solve_and_simulate"
@@ -207,7 +207,7 @@
 #     path_to_baseline_solution: Path = BLD
 #     / "solve_and_simulate"
 #     / "solution_estimated_params.pkl",
-#     path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",
+#     path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",  # noqa: E501
 #     path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
 #     path_to_save_simulated_data: Annotated[Path, Product] = BLD
 #     / "solve_and_simulate"

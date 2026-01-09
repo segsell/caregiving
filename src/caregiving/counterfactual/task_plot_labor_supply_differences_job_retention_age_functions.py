@@ -4,7 +4,6 @@ import pickle
 from pathlib import Path
 from typing import Annotated
 
-import numpy as np
 import pandas as pd
 import pytask
 from pytask import Product
@@ -19,7 +18,6 @@ from caregiving.counterfactual.plotting_utils import (
     merge_and_compute_differences,
     prepare_dataframes_for_comparison,
 )
-from caregiving.model.shared import INFORMAL_CARE
 
 
 @pytask.mark.counterfactual_differences_job_retention_age_profiles

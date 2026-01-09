@@ -25,7 +25,6 @@ from caregiving.data_management.soep.variables import (
     create_nursing_home,
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
-from caregiving.utils import table
 
 NURSING_HOME_AGE_LOW = 65
 NURSING_HOME_AGE_HIGH = 105

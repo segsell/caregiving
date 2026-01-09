@@ -2,20 +2,15 @@
 
 import pickle
 from pathlib import Path
-from typing import Annotated, Any, Dict, List, Tuple
+from typing import Annotated
 
 import jax
-import jax.numpy as jnp
-import numpy as np
-import pandas as pd
-import pytask
 import yaml
 from pytask import Product
 
 import dcegm
-from caregiving.config import BLD, SRC
+from caregiving.config import BLD
 from caregiving.estimation.estimation_setup import draw_caregiving_type_from_params
-from caregiving.model.shared import DEAD
 from caregiving.model.state_space_no_inheritance import create_state_space_functions
 
 # from caregiving.simulation.simulate import simulate_scenario

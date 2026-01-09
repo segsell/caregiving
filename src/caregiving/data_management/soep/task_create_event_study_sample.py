@@ -25,9 +25,8 @@ from caregiving.data_management.soep.variables import (  # create_experience_var
     create_policy_state,
     generate_working_hours,
 )
-from caregiving.model.shared import N_MONTHS, N_WEEKS_IN_YEAR, PART_TIME, WORK
+from caregiving.model.shared import N_MONTHS, N_WEEKS_IN_YEAR
 from caregiving.specs.task_write_specs import read_and_derive_specs
-from caregiving.utils import table
 
 
 @pytask.mark.skip()

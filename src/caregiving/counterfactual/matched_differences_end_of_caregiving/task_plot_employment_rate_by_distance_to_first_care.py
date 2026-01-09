@@ -31,7 +31,7 @@ from caregiving.model.shared import (
 
 @pytask.mark.counterfactual_differences_end_of_caregiving
 @pytask.mark.counterfactual_differences_no_care_demand
-def task_plot_employment_rate_by_distance_to_first_care(
+def task_plot_employment_rate_by_distance_to_first_care(  # noqa: PLR0912, PLR0915
     path_to_original_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
@@ -60,7 +60,8 @@ def task_plot_employment_rate_by_distance_to_first_care(
       3) Calculate employment outcomes (work indicator) for both scenarios.
       4) Merge on (agent, period) to ensure matched comparison.
       5) Compute distance_to_first_care from baseline, attach to merged.
-      6) Aggregate employment rates by distance (baseline and counterfactual separately).
+      6) Aggregate employment rates by distance (baseline and
+      counterfactual separately).
       7) Plot both series on same graph.
 
     Args:
@@ -132,7 +133,8 @@ def task_plot_employment_rate_by_distance_to_first_care(
     #   - People who stopped after different durations
     #
     # This is the MOST INCLUSIVE group - it represents the average employment rate
-    # across ALL caregivers at each distance from their first care period, regardless of:
+    # # across ALL caregivers at each distance from their first care period, rega
+    # rdless of:
     #   - Current caregiving status
     #   - Caregiving duration
     #   - Whether they stopped/resumed
@@ -140,12 +142,15 @@ def task_plot_employment_rate_by_distance_to_first_care(
     # Example at distance = 2 (t=2):
     #   - Person A: Provided care only at t=0 → included
     #   - Person B: Provided care at t=0, t=1, stopped at t=2 → included
-    #   - Person C: Provided care at t=0, t=1, t=2, t=3 → included (still providing care)
+    # #   - Person C: Provided care at t=0, t=1, t=2, t=3 → included (still provi
+    # ding care)
     #   - Person D: Provided care at t=0, stopped, resumed at t=5 → included
     #   - Person E: Provided care continuously from t=0 to t=10 → included
     #
-    # The baseline line is thus a WEIGHTED AVERAGE of all these different caregiving patterns,
-    # where the weights are determined by how many people fall into each pattern at each distance.
+    # # The baseline line is thus a WEIGHTED AVERAGE of all these different careg
+    # iving patterns,
+    # # where the weights are determined by how many people fall into each pattern
+    # at each distance.
     prof = (
         merged.groupby("distance_to_first_care", observed=False)[["work_o", "work_c"]]
         .mean()
@@ -168,15 +173,17 @@ def task_plot_employment_rate_by_distance_to_first_care(
     # 2. Baseline employment rate, conditioned on current_caregiving == 0, after t=1
     #
     # HETEROGENEOUS GROUP LOGIC:
-    # This group includes ALL people who are NOT currently providing care at each distance >= 1,
-    # regardless of their caregiving history. This makes it heterogeneous because it mixes:
+    # # This group includes ALL people who are NOT currently providing care at ea
+    # ch distance >= 1,
+    # # regardless of their caregiving history. This makes it heterogeneous becau
+    # se it mixes:
     #
-    # Example at distance = 2 (t=2):
-    #   - Person A: Provided care only at t=0, stopped at t=1 → included (not providing care at t=2)
-    #   - Person B: Provided care at t=0, t=1, stopped at t=2 → included (not providing care at t=2)
-    #   - Person C: Provided care at t=0, t=1, t=2, stopped at t=3 → NOT included at t=2 (still providing care)
-    #   - Person D: Provided care at t=0, stopped at t=1, resumed at t=5, stopped at t=6 → included at t=2 (not providing care)
-    #   - Person E: Provided care at t=0, t=1, t=2, t=3, stopped at t=4 → NOT included at t=2 (still providing care)
+    # Example at distance = 2 (t=2):  # noqa: E501
+    # #   - Person A: Provided care only at t=0, stopped at t=1 → included (not providing care at t=2)  # noqa: E501
+    # #   - Person B: Provided care at t=0, t=1, stopped at t=2 → included (not providing care at t=2)  # noqa: E501
+    # #   - Person C: Provided care at t=0, t=1, t=2, stopped at t=3 → NOT included at t=2 (still providing care)  # noqa: E501
+    # #   - Person D: Provided care at t=0, stopped at t=1, resumed at t=5, stopped at t=6 → included at t=2 (not providing care)  # noqa: E501
+    # #   - Person E: Provided care at t=0, t=1, t=2, t=3, stopped at t=4 → NOT included at t=2 (still providing care)  # noqa: E501
     #
     # So at each distance, this group is a MIX of:
     #   - People who stopped after 1 period (t=0 only)
@@ -184,7 +191,8 @@ def task_plot_employment_rate_by_distance_to_first_care(
     #   - People who stopped after 3+ periods (but stopped before this distance)
     #   - People who stopped, resumed, and stopped again
     #
-    # This is why it's heterogeneous - the composition changes at each distance, and people
+    # # This is why it's heterogeneous - the composition changes at each distance
+    # , and people
     # with different caregiving histories are mixed together.
     # COMMENTED OUT - not plotting heterogeneous group at the moment
     # merged_no_care = merged[
@@ -213,9 +221,11 @@ def task_plot_employment_rate_by_distance_to_first_care(
     # Identify 1-year caregivers:
     # - Must provide care at distance 0 (current_caregiving == 1)
     # - Must NOT provide care at distance 1 (current_caregiving == 0)
-    # NOTE: We check that they don't resume at distance 2 (the period immediately after stopping)
+    # # NOTE: We check that they don't resume at distance 2 (the period immediate
+    # ly after stopping)
     # to ensure a "clean break" - this excludes people who have a brief interruption but
-    # continue caregiving. However, if they resume much later (e.g., t=10), they're still included.
+    # # continue caregiving. However, if they resume much later (e.g., t=10), the
+    # y're still included.
     agents_1_year = []
     for agent in agent_care_matrix.index:
         # Get caregiving status at each distance, handling missing values
@@ -235,7 +245,7 @@ def task_plot_employment_rate_by_distance_to_first_care(
         # This ensures a "clean break" rather than a brief interruption
         care_at_2 = (
             agent_care_matrix.loc[agent, 2] == 0
-            if 2 in agent_care_matrix.columns
+            if 2 in agent_care_matrix.columns  # noqa: PLR2004
             and pd.notna(agent_care_matrix.loc[agent, 2])
             else True  # If missing, assume they don't resume (lenient)
         )
@@ -246,9 +256,11 @@ def task_plot_employment_rate_by_distance_to_first_care(
     # Identify 2-year caregivers:
     # - Must provide care at distance 0 and 1 (current_caregiving == 1)
     # - Must NOT provide care at distance 2 (current_caregiving == 0)
-    # NOTE: We check that they don't resume at distance 3 (the period immediately after stopping)
+    # # NOTE: We check that they don't resume at distance 3 (the period immediate
+    # ly after stopping)
     # to ensure a "clean break" - this excludes people who have a brief interruption but
-    # continue caregiving. However, if they resume much later (e.g., t=10), they're still included.
+    # # continue caregiving. However, if they resume much later (e.g., t=10), the
+    # y're still included.
     agents_2_year = []
     for agent in agent_care_matrix.index:
         # Get caregiving status at each distance, handling missing values
@@ -266,7 +278,7 @@ def task_plot_employment_rate_by_distance_to_first_care(
         )
         care_at_2 = (
             agent_care_matrix.loc[agent, 2] == 0
-            if 2 in agent_care_matrix.columns
+            if 2 in agent_care_matrix.columns  # noqa: PLR2004
             and pd.notna(agent_care_matrix.loc[agent, 2])
             else True  # If missing, assume they stopped (lenient)
         )
@@ -274,7 +286,7 @@ def task_plot_employment_rate_by_distance_to_first_care(
         # This ensures a "clean break" rather than a brief interruption
         care_at_3 = (
             agent_care_matrix.loc[agent, 3] == 0
-            if 3 in agent_care_matrix.columns
+            if 3 in agent_care_matrix.columns  # noqa: PLR2004
             and pd.notna(agent_care_matrix.loc[agent, 3])
             else True  # If missing, assume they don't resume (lenient)
         )
@@ -285,9 +297,11 @@ def task_plot_employment_rate_by_distance_to_first_care(
     # Identify 3-year caregivers:
     # - Must provide care at distance 0, 1, and 2 (current_caregiving == 1)
     # - Must NOT provide care at distance 3 (current_caregiving == 0)
-    # NOTE: We check that they don't resume at distance 4 (the period immediately after stopping)
+    # # NOTE: We check that they don't resume at distance 4 (the period immediate
+    # ly after stopping)
     # to ensure a "clean break" - this excludes people who have a brief interruption but
-    # continue caregiving. However, if they resume much later (e.g., t=10), they're still included.
+    # # continue caregiving. However, if they resume much later (e.g., t=10), the
+    # y're still included.
     agents_3_year = []
     for agent in agent_care_matrix.index:
         # Get caregiving status at each distance, handling missing values
@@ -305,13 +319,13 @@ def task_plot_employment_rate_by_distance_to_first_care(
         )
         care_at_2 = (
             agent_care_matrix.loc[agent, 2] == 1
-            if 2 in agent_care_matrix.columns
+            if 2 in agent_care_matrix.columns  # noqa: PLR2004
             and pd.notna(agent_care_matrix.loc[agent, 2])
             else False
         )
         care_at_3 = (
             agent_care_matrix.loc[agent, 3] == 0
-            if 3 in agent_care_matrix.columns
+            if 3 in agent_care_matrix.columns  # noqa: PLR2004
             and pd.notna(agent_care_matrix.loc[agent, 3])
             else True  # If missing, assume they stopped (lenient)
         )
@@ -319,7 +333,7 @@ def task_plot_employment_rate_by_distance_to_first_care(
         # This ensures a "clean break" rather than a brief interruption
         care_at_4 = (
             agent_care_matrix.loc[agent, 4] == 0
-            if 4 in agent_care_matrix.columns
+            if 4 in agent_care_matrix.columns  # noqa: PLR2004
             and pd.notna(agent_care_matrix.loc[agent, 4])
             else True  # If missing, assume they don't resume (lenient)
         )
@@ -330,9 +344,11 @@ def task_plot_employment_rate_by_distance_to_first_care(
     # Identify 4-year caregivers:
     # - Must provide care at distance 0, 1, 2, and 3 (current_caregiving == 1)
     # - Must NOT provide care at distance 4 (current_caregiving == 0)
-    # NOTE: We check that they don't resume at distance 5 (the period immediately after stopping)
+    # # NOTE: We check that they don't resume at distance 5 (the period immediate
+    # ly after stopping)
     # to ensure a "clean break" - this excludes people who have a brief interruption but
-    # continue caregiving. However, if they resume much later (e.g., t=10), they're still included.
+    # # continue caregiving. However, if they resume much later (e.g., t=10), the
+    # y're still included.
     agents_4_year = []
     for agent in agent_care_matrix.index:
         # Get caregiving status at each distance, handling missing values
@@ -350,19 +366,19 @@ def task_plot_employment_rate_by_distance_to_first_care(
         )
         care_at_2 = (
             agent_care_matrix.loc[agent, 2] == 1
-            if 2 in agent_care_matrix.columns
+            if 2 in agent_care_matrix.columns  # noqa: PLR2004
             and pd.notna(agent_care_matrix.loc[agent, 2])
             else False
         )
         care_at_3 = (
             agent_care_matrix.loc[agent, 3] == 1
-            if 3 in agent_care_matrix.columns
+            if 3 in agent_care_matrix.columns  # noqa: PLR2004
             and pd.notna(agent_care_matrix.loc[agent, 3])
             else False
         )
         care_at_4 = (
             agent_care_matrix.loc[agent, 4] == 0
-            if 4 in agent_care_matrix.columns
+            if 4 in agent_care_matrix.columns  # noqa: PLR2004
             and pd.notna(agent_care_matrix.loc[agent, 4])
             else True  # If missing, assume they stopped (lenient)
         )
@@ -370,7 +386,7 @@ def task_plot_employment_rate_by_distance_to_first_care(
         # This ensures a "clean break" rather than a brief interruption
         care_at_5 = (
             agent_care_matrix.loc[agent, 5] == 0
-            if 5 in agent_care_matrix.columns
+            if 5 in agent_care_matrix.columns  # noqa: PLR2004
             and pd.notna(agent_care_matrix.loc[agent, 5])
             else True  # If missing, assume they don't resume (lenient)
         )
@@ -493,7 +509,8 @@ def task_plot_employment_rate_by_distance_to_first_care(
     #         markersize=4,
     #     )
 
-    # Plot baseline employment rate for 2-year caregivers (care at t=0 and t=1, then stop)
+    # # Plot baseline employment rate for 2-year caregivers (care at t=0 and t=1,
+    #  then stop)
     if len(prof_2_year) > 0:
         plt.plot(
             prof_2_year["distance_to_first_care"],
@@ -506,7 +523,8 @@ def task_plot_employment_rate_by_distance_to_first_care(
             markersize=4,
         )
 
-    # Plot baseline employment rate for 3-year caregivers (care at t=0, t=1, t=2, then stop)
+    # # Plot baseline employment rate for 3-year caregivers (care at t=0, t=1, t=
+    # 2, then stop)
     if len(prof_3_year) > 0:
         plt.plot(
             prof_3_year["distance_to_first_care"],
@@ -519,7 +537,8 @@ def task_plot_employment_rate_by_distance_to_first_care(
             markersize=4,
         )
 
-    # Plot baseline employment rate for 4-year caregivers (care at t=0, t=1, t=2, t=3, then stop)
+    # # Plot baseline employment rate for 4-year caregivers (care at t=0, t=1, t=
+    # 2, t=3, then stop)
     if len(prof_4_year) > 0:
         plt.plot(
             prof_4_year["distance_to_first_care"],
@@ -541,7 +560,10 @@ def task_plot_employment_rate_by_distance_to_first_care(
     plt.xlabel("Year relative to start of first care spell", fontsize=16)
     plt.ylabel("Employment Rate", fontsize=16)
     plt.title(
-        "Employment Rate by Distance to First Caregiving Spell\n(Baseline vs No Care Demand)",
+        (
+            "Employment Rate by Distance to First Caregiving Spell\n"
+            "(Baseline vs No Care Demand)"
+        ),
         fontsize=18,
     )
     plt.xlim(-window, window)
@@ -574,15 +596,19 @@ def task_plot_employment_rate_by_intensity_and_distance(
     ever_care_demand: bool = False,
     window: int = 20,
 ) -> None:
-    """Plot employment rate by caregiving intensity and distance to first caregiving spell.
+    """Plot employment rate by caregiving intensity and distance to first
+    caregiving spell.
 
-    Creates an event study plot comparing employment rates for people currently providing
-    light care vs intensive care at each distance from their first caregiving spell (t=0).
+    Creates an event study plot comparing employment rates for people  # noqa: E501
+    currently providing
+    light care vs intensive care at each distance from their first  "
+                    f"caregiving spell (t=0).
     This shows how employment responds to current caregiving intensity at each point.
 
     NOTE: This analysis is heterogeneous - the composition of people in each intensity
     group changes at each distance because people can switch between light and intensive
-    care, or stop providing care. This is similar to "Currently Providing Care" but
+    care, or stop providing care. This is similar to "),
+    # noqa: E501
     split by intensity.
 
     Steps:
@@ -592,7 +618,8 @@ def task_plot_employment_rate_by_intensity_and_distance(
       4) Merge on (agent, period) to ensure matched comparison.
       5) Compute distance_to_first_care from baseline, attach to merged.
       6) Identify current caregiving intensity (light vs intensive) at each distance.
-      7) Aggregate employment rates by distance and intensity (baseline and counterfactual separately).
+      7) Aggregate employment rates by distance and intensity (baseline  "
+                    f"and counterfactual separately).
       8) Plot both intensity groups on same graph.
 
     Args:
@@ -744,7 +771,10 @@ def task_plot_employment_rate_by_intensity_and_distance(
     plt.xlabel("Year relative to start of first care spell", fontsize=16)
     plt.ylabel("Employment Rate", fontsize=16)
     plt.title(
-        "Employment Rate by Caregiving Intensity and Distance to First Caregiving Spell\n"
+        (
+            "Employment Rate by Caregiving Intensity and Distance to First  "
+            "Caregiving Spell\n"
+        ),  # noqa: E501
         "(Baseline: Light vs Intensive Care)",
         fontsize=18,
     )

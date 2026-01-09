@@ -10,8 +10,6 @@ import pandas as pd
 import pytask
 import yaml
 from pytask import Product
-from scipy import stats
-from sklearn.neighbors import KernelDensity
 
 import dcegm
 from caregiving.config import BLD

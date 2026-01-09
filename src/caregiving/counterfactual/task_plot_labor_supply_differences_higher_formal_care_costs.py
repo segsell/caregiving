@@ -768,7 +768,8 @@ def task_plot_matched_differences_by_distance_vs_baseline(  # noqa: PLR0915, E50
 
 
 @pytask.mark.counterfactual_differences_higher_formal_care_costs
-def task_plot_matched_differences_by_age_at_first_care_vs_baseline(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_at_first_care_vs_baseline(
+    # noqa: E501
     path_to_higher_formal_care_costs_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_higher_formal_care_costs_estimated_params.pkl",
@@ -1020,7 +1021,8 @@ def task_plot_matched_differences_by_age_at_first_care_vs_baseline(  # noqa: PLR
 
 
 @pytask.mark.counterfactual_differences_higher_formal_care_costs
-def task_plot_matched_differences_by_age_bins_at_first_care_vs_baseline(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_bins_at_first_care_vs_baseline(
+    # noqa: E501
     path_to_higher_formal_care_costs_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_higher_formal_care_costs_estimated_params.pkl",
@@ -2016,7 +2018,8 @@ def task_plot_matched_differences_by_age_vs_baseline(  # noqa: PLR0915, E501
 
 
 @pytask.mark.counterfactual_differences_higher_formal_care_costs
-def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_bins_at_first_care_demand(
+    # noqa: E501
     path_to_higher_formal_care_costs_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_higher_formal_care_costs_estimated_params.pkl",
@@ -2319,7 +2322,8 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand(  # noqa: PLR
 
 
 @pytask.mark.counterfactual_differences_higher_formal_care_costs
-def task_plot_matched_differences_by_distance_by_care_demand_vs_baseline(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_distance_by_care_demand_vs_baseline(
+    # noqa: E501
     path_to_higher_formal_care_costs_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_higher_formal_care_costs_estimated_params.pkl",
@@ -2469,7 +2473,8 @@ def task_plot_matched_differences_by_distance_by_care_demand_vs_baseline(  # noq
 
 
 @pytask.mark.counterfactual_differences_higher_formal_care_costs
-def task_plot_matched_differences_by_age_at_first_care_demand_vs_baseline(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_at_first_care_demand_vs_baseline(
+    # noqa: E501
     path_to_higher_formal_care_costs_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_higher_formal_care_costs_estimated_params.pkl",
@@ -2703,7 +2708,8 @@ def task_plot_matched_differences_by_age_at_first_care_demand_vs_baseline(  # no
 
 
 @pytask.mark.counterfactual_differences_higher_formal_care_costs
-def task_plot_matched_differences_by_age_bins_at_first_care_demand_vs_baseline(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_bins_at_first_care_demand_vs_baseline(
+    # noqa: E501
     path_to_higher_formal_care_costs_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_higher_formal_care_costs_estimated_params.pkl",
@@ -3006,7 +3012,8 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_vs_baseline( 
 
 
 @pytask.mark.counterfactual_differences_higher_formal_care_costs
-def task_plot_matched_differences_first_care_start_by_age_higher_formal_care_costs(  # noqa: PLR0915, E501
+def task_plot_matched_differences_first_care_start_by_age_higher_formal_care_costs(
+    # noqa: E501
     path_to_higher_formal_care_costs_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_higher_formal_care_costs_estimated_params.pkl",

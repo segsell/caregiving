@@ -13,7 +13,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytask
-from linearmodels.panel import PanelOLS
 from pytask import Product
 
 from caregiving.config import BLD, JET_COLOR_MAP

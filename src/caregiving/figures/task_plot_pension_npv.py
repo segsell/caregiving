@@ -6,11 +6,10 @@ from typing import Annotated
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import pytask
 from pytask import Product
 
-from caregiving.config import BLD, JET_COLOR_MAP, SRC
+from caregiving.config import BLD
 from caregiving.model.wealth_and_budget.tax_and_ssc import (
     calc_after_ssc_income_pensioneer,
 )

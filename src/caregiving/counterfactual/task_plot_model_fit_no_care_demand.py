@@ -6,7 +6,6 @@ from typing import Annotated
 
 import pandas as pd
 import pytask
-import yaml
 from pytask import Product
 
 from caregiving.config import BLD

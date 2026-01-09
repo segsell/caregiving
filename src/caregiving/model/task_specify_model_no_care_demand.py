@@ -4,10 +4,8 @@ import pickle
 from pathlib import Path
 from typing import Annotated
 
-import jax.numpy as jnp
 import numpy as np
 import pytask
-import yaml
 from pytask import Product
 
 import dcegm
@@ -69,7 +67,7 @@ def specify_model_no_care_demand(
     - caregiving_type
     - mother_adl
 
-    Note: mother_dead is kept to allow inheritance calculation (even though there's no care).
+    Note: mother_dead is kept to allow inheritance calculation (even though there's no care).  # noqa: E501
 
     All other specifications are kept identical to the baseline.
     """
@@ -133,7 +131,7 @@ def specify_model_no_care_demand(
 def create_stochastic_states_transitions():
     """Create stochastic state transitions for no care demand counterfactual.
 
-    Excludes care_demand and mother_adl transitions, but includes mother_dead for inheritance.
+    Excludes care_demand and mother_adl transitions, but includes mother_dead for inheritance.  # noqa: E501
 
     """
     return {

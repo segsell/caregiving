@@ -18,14 +18,16 @@ def calc_inheritance_amount_no_care_demand(
     """Calculate inheritance amount for no care demand counterfactual.
 
     Uses precomputed inheritance amount matrix from specs.
-    In the no care demand counterfactual, there is no caregiving, so uses no_care column (index 0).
+    In the no care demand counterfactual, there is no caregiving,
+        so uses no_care column (index 0).
 
     Args:
         period: Current period
         education: Education level
         model_specs: Model specifications dictionary containing:
             - inheritance_amount_mat: Precomputed amount matrix of shape
-              (n_sexes, n_periods, n_education, 3) where last dim is [no_care, light_care, intensive_care]
+              (n_sexes, n_periods, n_education, 3) where last dim is [no_care,
+                  light_care, intensive_care]
 
     Returns:
         Expected inheritance amount (conditional on positive inheritance).
@@ -50,7 +52,8 @@ def draw_inheritance_outcome_no_care_demand(
     asset_end_of_previous_period,
     model_specs,
 ):
-    """Draw inheritance outcome (0 or 1) using Bernoulli distribution for no care demand model.
+    """Draw inheritance outcome (0 or 1) using Bernoulli distribution for  # noqa: E501
+    no care demand model.
 
     Uses precomputed inheritance probability matrix and performs a Bernoulli draw
     with a deterministic seed based on state variables for reproducibility.
@@ -58,10 +61,12 @@ def draw_inheritance_outcome_no_care_demand(
     Args:
         period: Current period
         education: Education level
-        asset_end_of_previous_period: Assets at end of previous period (for seed variation)
+        asset_end_of_previous_period: Assets at end of previous period  # noqa: E501
+        (for seed variation)
         model_specs: Model specifications dictionary containing:
             - inheritance_prob_mat: Precomputed probability matrix of shape
-              (n_sexes, n_periods, n_education, 3) where last dim is [no_care, light_care, intensive_care]
+              (n_sexes, n_periods, n_education, 3) where last dim is [no_care,
+                  light_care, intensive_care]
             - seed: Base random seed
 
     Returns:

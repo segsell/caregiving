@@ -15,7 +15,6 @@ from caregiving.config import BLD, SRC
 from caregiving.specs.caregiving_specs import (
     read_in_adl_state_transition_specs,
     read_in_adl_state_transition_specs_light_intensive,
-    read_in_adl_transition_specs,
     read_in_adl_transition_specs_binary,
     read_in_care_supply_transition_specs,
     read_in_death_transition_specs,
@@ -251,9 +250,9 @@ def task_write_specs(  # noqa: PLR0915
         estimation_sample=estimation_sample,
         specs=specs,
         exp_factor_for_credited_periods=credited_periods_estimates,
-        path_to_save_experience_threshold_very_long_insured=path_to_save_experience_threshold_very_long_insured,
+        path_to_save_experience_threshold_very_long_insured=path_to_save_experience_threshold_very_long_insured,  # noqa: E501
         path_to_save_max_pp_retirement=path_to_save_max_pp_retirement,
-        path_to_save_max_exp_diff_period_working=path_to_save_max_exp_diff_period_working,
+        path_to_save_max_exp_diff_period_working=path_to_save_max_exp_diff_period_working,  # noqa: E501
         path_to_save_pp_for_exp_by_sex_edu=path_to_save_pp_for_exp_by_sex_edu,
     )
 

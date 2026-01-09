@@ -345,8 +345,6 @@ def _prepare_data_for_comparison(
     """
     import pickle
 
-    import numpy as np
-
     # Load specifications
     specs = pickle.load(path_to_specs.open("rb"))
 
@@ -929,7 +927,8 @@ def task_compare_outcomes_current_caregivers(
                 outcome_col=outcome_col,
             )
 
-            # Merge outcome with filtered base (baseline already filtered, counterfactual full)
+            # # Merge outcome with filtered base (baseline already filtered, counterfactu  # noqa: E501
+            # al full)
             df_ni_final = df_ni_filtered.merge(
                 df_ni_outcome[["agent", "period", outcome_col]],
                 on=["agent", "period"],
@@ -1226,7 +1225,8 @@ def task_compare_outcomes_current_non_caregivers(
         outcome_col=None,
     )
 
-    # Step 2: Filter baseline to currently NOT providing care (NOT matched - counterfactual unchanged)
+    # # Step 2: Filter baseline to currently NOT providing care (NOT matched - co
+    # unterfactual unchanged)
     care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
     df_ni_filtered = df_ni_base[~df_ni_base["choice"].isin(care_codes)].copy()
     df_ncd_ni_filtered = df_ncd_ni_base.copy()  # Counterfactual unchanged
@@ -1381,7 +1381,8 @@ def task_compare_outcomes_current_non_caregivers(
                 outcome_col=outcome_col,
             )
 
-            # Merge outcome with filtered base (baseline already filtered, counterfactual full)
+            # # Merge outcome with filtered base (baseline already filtered, counterfactu  # noqa: E501
+            # al full)
             df_ni_final = df_ni_filtered.merge(
                 df_ni_outcome[["agent", "period", outcome_col]],
                 on=["agent", "period"],
@@ -1407,7 +1408,7 @@ def task_compare_outcomes_current_non_caregivers(
                 ylabel=ylabel,
                 path_level=path_level,
                 path_diff=path_diff,
-                title_suffix="Currently Not Providing Care (Baseline Only - Not Matched)",
+                title_suffix="Currently Not Providing Care (Baseline Only - Not Matched)",  # noqa: E501
             )
 
         # Free memory
@@ -1843,7 +1844,8 @@ def task_compare_outcomes_ever_caregivers(
                 outcome_col=outcome_col,
             )
 
-            # Filter outcome data to match our filtered base (already matched to caregiver IDs)
+            # # Filter outcome data to match our filtered base (already matched to caregi  # noqa: E501
+            # ver IDs)
             df_ni_outcome_filtered = df_ni_outcome[
                 df_ni_outcome["agent"].isin(caregiver_ids_set)
             ].copy()
@@ -1882,7 +1884,7 @@ def task_compare_outcomes_ever_caregivers(
                 ylabel=ylabel,
                 path_level=path_level,
                 path_diff=path_diff,
-                title_suffix="Ever Caregivers (Matched: Same Agent IDs in Both Scenarios)",
+                title_suffix="Ever Caregivers (Matched: Same Agent IDs in Both Scenarios)",  # noqa: E501
             )
 
         # Free memory
@@ -2323,7 +2325,8 @@ def task_compare_outcomes_ever_non_caregivers(
                 outcome_col=outcome_col,
             )
 
-            # Filter outcome data to match our filtered base (already matched to non-caregiver IDs)
+            # # Filter outcome data to match our filtered base (already matched to non-ca  # noqa: E501
+            # regiver IDs)
             df_ni_outcome_filtered = df_ni_outcome[
                 df_ni_outcome["agent"].isin(non_caregiver_ids_set)
             ].copy()
@@ -2362,7 +2365,7 @@ def task_compare_outcomes_ever_non_caregivers(
                 ylabel=ylabel,
                 path_level=path_level,
                 path_diff=path_diff,
-                title_suffix="Ever Non-Caregivers (Matched: Same Agent IDs in Both Scenarios)",
+                title_suffix="Ever Non-Caregivers (Matched: Same Agent IDs in Both Scenarios)",  # noqa: E501
             )
 
         # Free memory

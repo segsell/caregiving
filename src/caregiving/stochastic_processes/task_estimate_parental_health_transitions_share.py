@@ -10,13 +10,10 @@ from typing import Annotated
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import statsmodels.api as sm
 import statsmodels.formula.api as smf
-import yaml
 from pytask import Product
 
 from caregiving.config import BLD
-from caregiving.model.shared import FEMALE, MALE
 
 
 def table(df_col):

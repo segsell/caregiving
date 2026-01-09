@@ -11,28 +11,22 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytask
-import statsmodels.api as sm
 import statsmodels.formula.api as smf
-import yaml
-from numpy.testing import assert_array_almost_equal as aaae
 from pytask import Product
 
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import (
-    ADL_0,
     ADL_1,
     ADL_2,
     ADL_3,
     END_YEAR_PARENT_GENERATION,
     FEMALE,
     MALE,
-    MIN_AGE_PARENTS,
     PARENT_GOOD_HEALTH,
     PARENT_HEALTH_DEAD,
     PARENT_MEDIUM_HEALTH,
 )
 from caregiving.specs.derive_specs import read_and_derive_specs
-from caregiving.utils import table
 
 
 @pytask.mark.dip

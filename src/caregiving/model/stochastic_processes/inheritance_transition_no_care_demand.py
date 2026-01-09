@@ -13,7 +13,8 @@ def inheritance_transition_no_care_demand(period, education, model_specs):
     """Transition probability for receiving inheritance (no care demand counterfactual).
 
     Uses precomputed inheritance probability matrix from specs.
-    In the no care demand counterfactual, there is no caregiving, so uses no_care column (index 0).
+    In the no care demand counterfactual, there is no caregiving,
+        so uses no_care column (index 0).
 
     Parameters
     ----------
@@ -24,7 +25,8 @@ def inheritance_transition_no_care_demand(period, education, model_specs):
     model_specs : dict
         Model specifications dictionary containing:
         - inheritance_prob_mat: Precomputed probability matrix of shape
-          (n_sexes, n_periods, n_education, 3) where last dim is [no_care, light_care, intensive_care]
+          (n_sexes, n_periods, n_education, 3) where last dim is [no_care,
+              light_care, intensive_care]
 
     Returns
     -------

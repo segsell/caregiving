@@ -22,12 +22,14 @@ def add_experience_and_pp_specs(
     specs = add_very_long_insured_specs(
         specs,
         exp_factor_for_credited_periods,
-        path_to_save_experience_threshold_very_long_insured=path_to_save_experience_threshold_very_long_insured,
+        # noqa: E501
+        path_to_save_experience_threshold_very_long_insured=path_to_save_experience_threshold_very_long_insured,  # noqa: E501
     )
     specs = create_max_experience_working(
         estimation_sample,
         specs=specs,
-        path_to_save_max_exp_diff_period_working=path_to_save_max_exp_diff_period_working,
+        # noqa: E501
+        path_to_save_max_exp_diff_period_working=path_to_save_max_exp_diff_period_working,  # noqa: E501
     )
     specs = create_pension_points_per_exp(
         estimation_sample,
@@ -40,9 +42,10 @@ def add_experience_and_pp_specs(
 
 
 def create_max_pension_point(specs, path_to_save_max_pp_retirement):
-    # Now calculate maximum experience bonus accross sexes and add them.
+    # Now calculate maximum experience bonus across sexes and add them.
     # We can ensure with that, that the rescaled experience is always between  0 and 1.
-    # First, age of fresh retirement (so age after retirement is chosen) is min_SRA + 1 and last age of fresh
+    # # First, age of fresh retirement (so age after retirement is chosen) is min
+    # _SRA + 1 and last age of fresh
     # retirement can be max_ret_age + 1
     ret_periods = (
         np.arange(specs["min_SRA"] + 1, specs["max_ret_age"] + 2) - specs["start_age"]
@@ -55,11 +58,11 @@ def create_max_pension_point(specs, path_to_save_max_pp_retirement):
     for sex_var in range(specs["n_sexes"]):
         for edu_var in range(specs["n_education_types"]):
             for i, period in enumerate(ret_periods):
-                for health_id, _health in enumerate([1, 2]):
+                for health_id in range(len([1, 2])):
                     max_exp_period = specs["max_exps_period_working"][period]
 
-                    # The largest bonus can be obtained by being informed and working after the
-                    # longest after the SRA.
+                    # The largest bonus can be obtained by being informed and
+                    # working the longest after the SRA.
                     pension_points = calc_pension_points_for_experience(
                         period=period,
                         sex=sex_var,
@@ -117,7 +120,8 @@ def create_max_experience_working(
     # Assign the maximum experience for all the periods one can choose very long insured
     max_exps_period_working[min_period_very_long_insured:] = max_exps_period_working[-1]
 
-    # And now create sex specific interpolation grid points for experience exact at very long insured threshold
+    # # And now create sex specific interpolation grid points for experience exac
+    # t at very long insured threshold
     exp_thresholds_very_long_insured = specs["experience_threshold_very_long_insured"]
     exp_thresholds_not_very_long_insured = exp_thresholds_very_long_insured - 0.5
     # Now duplicate the grid point
@@ -139,8 +143,10 @@ def add_very_long_insured_specs(
     exp_factor_for_credited_periods,
     path_to_save_experience_threshold_very_long_insured,
 ):
-    """This function adds experience thresholds to be eligible for very long insured retirement path.
-    We scale the 45 year of credited periods threshold by a sex specific multiplicator of experience.
+    """This function adds experience thresholds to be eligible for very  # noqa: E501
+    long insured retirement path.
+    We scale the 45 year of credited periods threshold by a sex specific  # noqa: E501
+    multiplicator of experience.
 
     """
 

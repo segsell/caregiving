@@ -9,10 +9,9 @@ import numpy as np
 import pandas as pd
 from matplotlib import colors as mcolors
 
-from caregiving.config import BLD, JET_COLOR_MAP
+from caregiving.config import JET_COLOR_MAP
 from caregiving.model.shared import (
     DEAD,
-    FILL_VALUE,
     FULL_TIME,
     FULL_TIME_CHOICES,
     PART_TIME,
@@ -23,7 +22,6 @@ from caregiving.model.shared import (
     UNEMPLOYED,
     UNEMPLOYED_CHOICES,
 )
-from caregiving.utils import table
 
 # ====================================================================================
 # Wealth

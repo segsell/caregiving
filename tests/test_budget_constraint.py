@@ -26,7 +26,6 @@ from caregiving.model.wealth_and_budget.partner_income import (
 )
 from caregiving.model.wealth_and_budget.tax_and_ssc import (
     calc_health_ltc_contr,
-    calc_inc_tax_for_single_income,
     calc_net_household_income,
     calc_pension_unempl_contr,
 )

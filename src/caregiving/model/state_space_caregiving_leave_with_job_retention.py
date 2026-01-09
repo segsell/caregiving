@@ -5,19 +5,15 @@ separate module so we can later add caregiving-leave-specific logic without
 touching the original job-retention specification.
 """
 
-import jax
 import jax.numpy as jnp
 
 from caregiving.model.experience_baseline_model import get_next_period_experience
 from caregiving.model.shared import (
     NO_CARE_DEMAND,
     PARENT_LONGER_DEAD,
-    PARENT_RECENTLY_DEAD,
-    SEX,
     is_alive,
     is_dead,
     is_formal_care,
-    is_full_time,
     is_informal_care,
     is_part_time,
     is_retired,
@@ -158,7 +154,8 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
         return False
     elif (age <= min_ret_age_state_space + 1) & (already_retired == 1):
         return False
-    # elif (age >= model_specs["min_SRA_baseline"] + 1) & (is_unemployed(lagged_choice)):
+    # # elif (age >= model_specs["min_SRA_baseline"] + 1) & (is_unemployed(lagged
+    # _choice)):
     elif (age > SRA_pol_state) & (is_unemployed(lagged_choice)):
         return False
     elif (not is_retired(lagged_choice)) & (already_retired == 1):
@@ -228,7 +225,8 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
         #         "health": health,
         #         "partner_state": partner_state,
         #         "mother_adl": 0,
-        #         "mother_dead": PARENT_RECENTLY_DEAD,  # Preserve for inheritance calculation
+        # #         "mother_dead": PARENT_RECENTLY_DEAD,  # Preserve for inheritance
+        # calculation
         #         "care_demand": NO_CARE_DEMAND,
         #         "job_offer": job_offer,
         #         "job_before_caregiving": job_before_caregiving,
@@ -249,11 +247,13 @@ def sparsity_condition_with_job_retention(  # noqa: PLR0911, PLR0912
                 "care_demand": NO_CARE_DEMAND,
                 # "gets_inheritance": 0,
                 "job_offer": job_offer,
-                # "job_before_caregiving": job_before_caregiving,  # No job before caregiving when no care
+                # # "job_before_caregiving": job_before_caregiving,  # No job before caregivi  # noqa: E501
+                # ng when no care
                 "job_before_caregiving": 0,  # No job before caregiving when no care
             }
             return state_proxy
-        # ================================================================================
+        # # =========================================================================
+        # =======
         elif age > max_ret_age + 1:
             # If age is larger than max_ret_age + 1, the individual can only be
             # longer retired.

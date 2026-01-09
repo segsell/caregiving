@@ -10,11 +10,9 @@ from typing import Annotated
 import numpy as np
 import pandas as pd
 import pytask
-import yaml
 from pytask import Product
 
-import dcegm
-from caregiving.config import BLD, SRC
+from caregiving.config import BLD
 from caregiving.model.shared import (
     BETA_NPV,
     DEAD,
@@ -22,16 +20,6 @@ from caregiving.model.shared import (
     NPV_END_AGE,
     NPV_START_AGE,
 )
-from caregiving.model.state_space import create_state_space_functions
-from caregiving.model.task_specify_model import create_stochastic_states_transitions
-from caregiving.model.taste_shocks import shock_function_dict
-from caregiving.model.utility.bequest_utility import (
-    create_final_period_utility_functions,
-)
-from caregiving.model.utility.utility_functions_additive import create_utility_functions
-from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
-from caregiving.simulation import simulate_no_care_demand
-from caregiving.simulation.simulate import simulate_scenario
 
 
 @pytask.mark.career_costs
@@ -153,7 +141,9 @@ def task_compute_career_costs(
     )
 
     # Filter out agents with zero or very small baseline NPV to avoid division by zero
-    _merged_npv = _merged_npv[_merged_npv["career_npv_baseline"] > 1e-10].copy()
+    _merged_npv = _merged_npv[
+        _merged_npv["career_npv_baseline"] > 1e-10  # noqa: PLR2004
+    ].copy()
 
     _npv_care = 1 - (
         _merged_npv["career_npv_no_care_demand"] / _merged_npv["career_npv_baseline"]
@@ -188,7 +178,7 @@ def task_compute_career_costs_caregiving_leave_with_job_retention(
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_caregiving_leave_data: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_caregiving_leave_with_job_retention_estimated_params_career_costs.pkl",
+    / "simulated_data_caregiving_leave_with_job_retention_estimated_params_career_costs.pkl",  # noqa: E501
     path_to_no_care_demand_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_no_care_demand_career_costs.pkl",
@@ -301,7 +291,9 @@ def task_compute_career_costs_caregiving_leave_with_job_retention(
     )
 
     # Filter out agents with zero or very small baseline NPV to avoid division by zero
-    _merged_npv = _merged_npv[_merged_npv["career_npv_baseline"] > 1e-10].copy()
+    _merged_npv = _merged_npv[
+        _merged_npv["career_npv_baseline"] > 1e-10  # noqa: PLR2004
+    ].copy()
 
     _npv_care = 1 - (
         _merged_npv["career_npv_no_care_demand"] / _merged_npv["career_npv_baseline"]
@@ -336,7 +328,7 @@ def task_compute_career_costs_full_caregiving_leave_with_job_retention(
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_caregiving_leave_data: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params_career_costs.pkl",
+    / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params_career_costs.pkl",  # noqa: E501
     path_to_no_care_demand_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_no_care_demand_career_costs.pkl",
@@ -449,7 +441,9 @@ def task_compute_career_costs_full_caregiving_leave_with_job_retention(
     )
 
     # Filter out agents with zero or very small baseline NPV to avoid division by zero
-    _merged_npv = _merged_npv[_merged_npv["career_npv_baseline"] > 1e-10].copy()
+    _merged_npv = _merged_npv[
+        _merged_npv["career_npv_baseline"] > 1e-10  # noqa: PLR2004
+    ].copy()
 
     _npv_care = 1 - (
         _merged_npv["career_npv_no_care_demand"] / _merged_npv["career_npv_baseline"]
@@ -499,7 +493,7 @@ def compute_career_npv(
     if only_own_income:
         base_sum = df_filtered["own_income_after_ssc"]
     else:
-        # Efficiently handle missing variables: compute sum directly without creating intermediate Series
+        # Efficiently handle missing variables: compute sum directly without creating intermediate Series  # noqa: E501
         # This avoids memory overhead from creating full columns with zeros
         base_sum = (
             df_filtered["own_income_after_ssc"]

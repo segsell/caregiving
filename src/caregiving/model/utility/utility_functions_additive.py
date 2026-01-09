@@ -4,26 +4,7 @@ import jax
 import jax.numpy as jnp
 
 from caregiving.model.shared import (  # is_nursing_home_care,
-    CARE_DEMAND_AND_NO_OTHER_SUPPLY,
-    CARE_DEMAND_AND_OTHER_SUPPLY,
-    PARENT_BAD_HEALTH,
-    PARENT_GOOD_HEALTH,
-    PARENT_MEDIUM_HEALTH,
-    PERIOD_SCALE,
-    SEX,
-    is_bad_health,
-    is_child_age_0_to_3,
-    is_child_age_4_to_6,
-    is_child_age_7_to_9,
     is_dead,
-    is_full_time,
-    is_good_health,
-    is_informal_care,
-    is_intensive_informal_care,
-    is_light_informal_care,
-    is_no_care,
-    is_part_time,
-    is_unemployed,
 )
 from caregiving.model.utility.bequest_utility import utility_final_consume_all
 from caregiving.model.utility.utility_components import (

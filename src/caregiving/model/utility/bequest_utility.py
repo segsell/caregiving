@@ -1,7 +1,5 @@
 """Utility of bequest in the final period."""
 
-from typing import Any
-
 import jax
 import jax.numpy as jnp
 

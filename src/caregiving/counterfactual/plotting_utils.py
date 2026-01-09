@@ -267,9 +267,12 @@ def calculate_additional_outcomes(  # noqa: PLR0912
     else:
         outcomes["bequest_from_parent"] = np.zeros(n)
 
-    # Caregiving leave top-up (convert from annual to monthly, then scale by wealth_unit)
-    # Note: caregiving_leave_top_up is stored as annual / wealth_unit in the budget equation,
-    # so we multiply by wealth_unit to get back to annual scale, then divide by 12 for monthly
+    # # Caregiving leave top-up (convert from annual to monthly, then scale by we
+    # alth_unit)
+    # # Note: caregiving_leave_top_up is stored as annual / wealth_unit in the by
+    # dget equation,
+    # # so we multiply by wealth_unit to get back to annual scale, then divide by
+    #  12 for monthly
     if "caregiving_leave_top_up" in df.columns:
         outcomes["caregiving_leave_top_up"] = (
             df["caregiving_leave_top_up"] / 12 * specs["wealth_unit"]

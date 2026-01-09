@@ -7,7 +7,6 @@ import pytest
 
 from caregiving.config import BLD
 from caregiving.model.shared import (
-    MOTHER,
     PARENT_LONGER_DEAD,
     PARENT_RECENTLY_DEAD,
 )

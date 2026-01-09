@@ -7,7 +7,6 @@ import pickle
 from pathlib import Path
 from typing import Annotated
 
-import numpy as np
 import pandas as pd
 import pytask
 from pytask import Product
@@ -26,7 +25,7 @@ from caregiving.counterfactual.plotting_utils import (
 
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_cg_leave_age_profiles
-def task_plot_matched_differences_by_age_cg_leave_vs_no_care_demand(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_cg_leave_vs_no_care_demand(  # noqa: E501
     path_to_cg_leave_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_caregiving_leave_with_job_retention_estimated_params.pkl",
@@ -282,7 +281,9 @@ def task_plot_matched_differences_by_age_cg_leave_vs_no_care_demand(  # noqa: PL
                 "age_max": 90,
             },
             "bequest_from_parent": {
-                "ylabel": "Bequest from Parent (in 1,000€)\nDeviation from No Care Demand",
+                "ylabel": (
+                    "Bequest from Parent (in 1,000€)\nDeviation from  " "No Care Demand"
+                ),  # noqa: E501,
                 "title": f"Bequest from Parent by Age{title_suffix}",
                 "diff_col": "diff_bequest_from_parent",
                 "path": base_path
@@ -290,7 +291,10 @@ def task_plot_matched_differences_by_age_cg_leave_vs_no_care_demand(  # noqa: PL
                 "age_max": 90,
             },
             "caregiving_leave_top_up": {
-                "ylabel": "Caregiving Leave Top-up (Monthly, in 1,000€)\nDeviation from No Care Demand",
+                "ylabel": (
+                    "Caregiving Leave Top-up (Monthly, "
+                    "in 1,000€)\nDeviation from No Care Demand"
+                ),
                 "title": f"Caregiving Leave Top-up by Age{title_suffix}",
                 "diff_col": "diff_caregiving_leave_top_up",
                 "path": base_path
@@ -582,7 +586,8 @@ def task_plot_matched_differences_by_age_cg_leave_vs_baseline(  # noqa: PLR0915,
     ]
     merged = merge_and_compute_differences(cg_cols, baseline_cols, outcome_names)
 
-    # Add education to merged dataframe (education is time-invariant, so same for each agent)
+    # # Add education to merged dataframe (education is time-invariant, so same f
+    # or each agent)
     if "education" in df_cg.columns:
         merged = merged.merge(
             df_cg[["agent", "period", "age", "education"]],
@@ -710,7 +715,9 @@ def task_plot_matched_differences_by_age_cg_leave_vs_baseline(  # noqa: PLR0915,
                 "age_max": 90,
             },
             "caregiving_leave_top_up": {
-                "ylabel": "Caregiving Leave Top-Up (in 1,000€)\nDeviation from Baseline",
+                "ylabel": (
+                    "Caregiving Leave Top-Up (in 1,000€)\nDeviation  " "from Baseline"
+                ),  # noqa: E501,
                 "title": f"Caregiving Leave Top-Up by Age{title_suffix}",
                 "diff_col": "diff_caregiving_leave_top_up",
                 "path": base_path
@@ -718,7 +725,9 @@ def task_plot_matched_differences_by_age_cg_leave_vs_baseline(  # noqa: PLR0915,
                 "age_max": 90,
             },
             "gross_retirement_income": {
-                "ylabel": "Gross Retirement Income (in 1,000€)\nDeviation from Baseline",
+                "ylabel": (
+                    "Gross Retirement Income (in 1,000€)\nDeviation  " "from Baseline"
+                ),  # noqa: E501,
                 "title": f"Gross Retirement Income by Age{title_suffix}",
                 "diff_col": "diff_gross_retirement_income",
                 "path": base_path

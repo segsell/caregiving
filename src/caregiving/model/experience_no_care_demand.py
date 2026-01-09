@@ -1,5 +1,4 @@
 import jax
-import jax.numpy as jnp
 
 from caregiving.model.experience_baseline_model import (
     construct_experience_years,
@@ -67,7 +66,8 @@ def get_next_period_experience(
         model_specs=model_specs,
     )
 
-    # If fresh retired, the experience function returns pension points. Now the value and policy function
+    # # If fresh retired, the experience function returns pension points. Now the
+    #  value and policy function
     # are calculated on a pension point grid. We do not need experience any more.
     exp_years_this_period = jax.lax.select(
         fresh_retired, on_true=pension_points, on_false=exp_years_this_period

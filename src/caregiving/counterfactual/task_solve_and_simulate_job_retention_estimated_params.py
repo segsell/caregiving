@@ -27,7 +27,7 @@
 # from caregiving.model.utility.bequest_utility import (
 #     create_final_period_utility_functions,
 # )
-# from caregiving.model.utility.utility_functions_additive import create_utility_functions
+# from caregiving.model.utility.utility_functions_additive import create_utility_functions  # noqa: E501
 # from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 # from caregiving.simulation.simulate import simulate_scenario
 
@@ -96,7 +96,7 @@
 
 #     # 2) Simulate
 #     initial_states = pickle.load(path_to_discrete_states.open("rb"))
-#     wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
+#     wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())  # noqa: E501
 
 #     model_for_simulation = load_and_setup_model(
 #         options=options,

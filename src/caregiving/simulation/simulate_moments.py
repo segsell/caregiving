@@ -9,28 +9,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from caregiving.data_management.share.task_create_parent_child_data_set import (
-    AGE_BINS_PARENTS,
-    AGE_LABELS_PARENTS,
-)
 from caregiving.model.shared import (  # NURSING_HOME_CARE,
-    CARE_DEMAND_AND_NO_OTHER_SUPPLY,
-    CARE_DEMAND_AND_OTHER_SUPPLY,
     DEAD,
     FULL_TIME,
     INFORMAL_CARE,
-    INFORMAL_CARE_OR_OTHER_CARE,
     INTENSIVE_INFORMAL_CARE,
     LIGHT_INFORMAL_CARE,
-    NO_CARE,
     NO_INFORMAL_CARE,
-    NO_NURSING_HOME_CARE,
     NOT_WORKING,
-    NOT_WORKING_CARE,
     PART_TIME,
     RETIREMENT,
     SCALE_CAREGIVER_SHARE,
-    SEX,
     UNEMPLOYED,
     WEALTH_MOMENTS_SCALE,
     WORK,
@@ -1611,7 +1600,8 @@ def create_moments_jax(sim_df, min_age, max_age, model_specs):  # noqa: PLR0915
         max_age=max_age,
     )
 
-    # # ==============================================================================  # noqa: E501
+    # # ==============================================================================
+    # noqa: E501
     # # Care mix
     # age_bins_parents = [(a, a + 5) for a in range(65, 90, 5)]
     # age_bins_parents.append((90, np.inf))
@@ -1641,7 +1631,8 @@ def create_moments_jax(sim_df, min_age, max_age, model_specs):  # noqa: PLR0915
     #     extra_mask=nursing_home_mask,
     #     age_var="mother_age",
     # )
-    # # ==============================================================================  # noqa: E501
+    # # ==============================================================================
+    # noqa: E501
 
     # # share_pure_informal_care_by_parent_age_bin = get_share_by_age_bin(
     # #     arr_domestic_care,

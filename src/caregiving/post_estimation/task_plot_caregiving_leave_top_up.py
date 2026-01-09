@@ -1,6 +1,7 @@
 """Plot caregiving leave top-up by age, education, and job before caregiving.
 
-Creates multiple plots showing average caregiving leave top-up with different conditions:
+Creates multiple plots showing average caregiving leave top-up with  # noqa: E501
+different conditions:
 - Conditional on caregiving_type == 1 (all observations)
 - Conditional on caregiving_type == 1 AND caregiving_leave_top_up > 0
 - Conditional on providing informal care (current period) AND caregiving_type == 1
@@ -65,13 +66,16 @@ def task_plot_caregiving_leave_top_up(  # noqa: PLR0912, PLR0913, PLR0915
     / "post_estimation"
     / "caregiving_leave_top_up_by_age_no_conditioning.png",
 ):
-    """Plot average caregiving leave top-up by age, education, and job before caregiving.
+    """Plot average caregiving leave top-up by age, education,
+        and job before caregiving.
 
     Creates multiple plots with different conditioning:
     1. Average top-up conditional on caregiving_type == 1 (all observations)
     2. Average top-up conditional on caregiving_type == 1 AND top_up > 0
-    3. Average top-up conditional on providing informal care (current period) AND caregiving_type == 1
-    4. Average top-up conditional on currently working (PT or FT) AND caregiving_type == 1
+    3. Average top-up conditional on providing informal care (current  # noqa: E501
+    period) AND caregiving_type == 1
+    4. Average top-up conditional on currently working (PT or FT) AND  # noqa: E501
+    caregiving_type == 1
     5. Average top-up conditional on caregiving_type == 1 only (explicit labeling)
     6. Average top-up with no conditioning (all caregiving_types)
 
@@ -94,7 +98,8 @@ def task_plot_caregiving_leave_top_up(  # noqa: PLR0912, PLR0913, PLR0915
     path_to_plot_caregiver : Path
         Path to save the plot for observations where agent is providing informal care
     path_to_plot_working : Path
-        Path to save the plot for observations where agent is currently working (PT or FT)
+        Path to save the plot for observations where agent is currently  # noqa: E501
+        working (PT or FT)
     path_to_plot_type1_only : Path
         Path to save the plot for caregiving_type == 1 only (explicit labeling)
     path_to_plot_no_conditioning : Path
@@ -114,10 +119,13 @@ def task_plot_caregiving_leave_top_up(  # noqa: PLR0912, PLR0913, PLR0915
         if hasattr(df_sim.index, "names") and "agent" in df_sim.index.names:
             df_sim = df_sim.reset_index()
         else:
+            index_names = (
+                df_sim.index.names if hasattr(df_sim.index, "names") else "N/A"
+            )
             raise ValueError(
-                f"Cannot find 'agent' column or index level. "
+                "Cannot find 'agent' column or index level. "
                 f"Available columns: {df_sim.columns.tolist()}, "
-                f"Index names: {df_sim.index.names if hasattr(df_sim.index, 'names') else 'N/A'}"
+                f"Index names: {index_names}"
             )
 
     # Handle aux variables - they may be stored directly as columns or in an "aux" dict
@@ -154,7 +162,8 @@ def task_plot_caregiving_leave_top_up(  # noqa: PLR0912, PLR0913, PLR0915
     if "age" not in df_sim.columns:
         df_sim["age"] = df_sim["period"] + specs["start_age"]
 
-    # Filter to caregiving_type == 1 (only these can provide informal care and go on leave)
+    # # Filter to caregiving_type == 1 (only these can provide informal care and
+    # go on leave)
     df_filtered = df_sim.loc[df_sim["caregiving_type"] == 1].copy()
 
     # Create job_before_caregiving category
@@ -227,7 +236,10 @@ def task_plot_caregiving_leave_top_up(  # noqa: PLR0912, PLR0913, PLR0915
     ax.set_xlabel("Age", fontsize=12)
     ax.set_ylabel("Average Caregiving Leave Top-Up (in 1,000€)", fontsize=12)
     ax.set_title(
-        "Average Caregiving Leave Top-Up by Age\n(Caregiving Type 1, PT/FT Job Before Caregiving)",
+        (
+            "Average Caregiving Leave Top-Up by Age\n"
+            "(Caregiving Type 1, PT/FT Job Before Caregiving)"
+        ),
         fontsize=14,
         fontweight="bold",
     )
@@ -327,8 +339,11 @@ def task_plot_caregiving_leave_top_up(  # noqa: PLR0912, PLR0913, PLR0915
     ax.set_xlabel("Age", fontsize=12)
     ax.set_ylabel("Average Caregiving Leave Top-Up (in 1,000€)", fontsize=12)
     ax.set_title(
-        "Average Caregiving Leave Top-Up by Age (Providing Informal Care)\n"
-        "(Caregiving Type 1, PT/FT Job Before Caregiving, Currently Providing Informal Care)",
+        (
+            "Average Caregiving Leave Top-Up by Age (Providing Informal Care)\n"
+            "(Caregiving Type 1, PT/FT Job Before Caregiving, "
+            "Currently Providing Informal Care)"
+        ),
         fontsize=14,
         fontweight="bold",
     )
@@ -396,7 +411,8 @@ def task_plot_caregiving_leave_top_up(  # noqa: PLR0912, PLR0913, PLR0915
     plt.savefig(path_to_plot_working, dpi=300, bbox_inches="tight")
     plt.close()
 
-    # Plot 5: Only caregiving_type == 1 (explicit labeling, same as Plot 1 but with different title)
+    # # Plot 5: Only caregiving_type == 1 (explicit labeling, same as Plot 1 but
+    # with different title)
     # This is the same data as Plot 1, but with explicit labeling in the title
     plot_data_type1 = create_plot_data(df_filtered)
 

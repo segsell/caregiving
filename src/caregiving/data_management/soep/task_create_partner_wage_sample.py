@@ -12,7 +12,6 @@ from caregiving.data_management.soep.variables import (
     create_education_type,
     create_partner_state,
 )
-from caregiving.model.shared import N_MONTHS, N_WEEKS_IN_YEAR, PART_TIME, WORK
 from caregiving.specs.derive_specs import read_and_derive_specs
 
 

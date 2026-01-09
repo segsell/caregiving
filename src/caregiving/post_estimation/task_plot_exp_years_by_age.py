@@ -60,10 +60,13 @@ def task_plot_exp_years_by_age_baseline(
         if hasattr(df_sim.index, "names") and "agent" in df_sim.index.names:
             df_sim = df_sim.reset_index()
         else:
+            index_names = (
+                df_sim.index.names if hasattr(df_sim.index, "names") else "N/A"
+            )
             raise ValueError(
-                f"Cannot find 'agent' column or index level. "
+                "Cannot find 'agent' column or index level. "
                 f"Available columns: {df_sim.columns.tolist()}, "
-                f"Index names: {df_sim.index.names if hasattr(df_sim.index, 'names') else 'N/A'}"
+                f"Index names: {index_names}"
             )
 
     # Verify agent and period columns exist
@@ -159,7 +162,8 @@ def task_plot_exp_years_by_age_caregiving_leave(
     / "post_estimation"
     / "exp_years_by_age_caregiving_leave.png",
 ):
-    """Plot average experience years by age and education from caregiving leave counterfactual simulated data.
+    """Plot average experience years by age and education from caregiving  # noqa: E501
+    leave counterfactual simulated data.
 
     Creates one plot with 2 lines (Low and High education).
 
@@ -186,10 +190,13 @@ def task_plot_exp_years_by_age_caregiving_leave(
         if hasattr(df_sim.index, "names") and "agent" in df_sim.index.names:
             df_sim = df_sim.reset_index()
         else:
+            index_names = (
+                df_sim.index.names if hasattr(df_sim.index, "names") else "N/A"
+            )
             raise ValueError(
-                f"Cannot find 'agent' column or index level. "
+                "Cannot find 'agent' column or index level. "
                 f"Available columns: {df_sim.columns.tolist()}, "
-                f"Index names: {df_sim.index.names if hasattr(df_sim.index, 'names') else 'N/A'}"
+                f"Index names: {index_names}"
             )
 
     # Verify agent and period columns exist
@@ -285,7 +292,8 @@ def task_plot_exp_years_by_age_no_care_demand(
     / "post_estimation"
     / "exp_years_by_age_no_care_demand.png",
 ):
-    """Plot average experience years by age and education from no care demand counterfactual simulated data.
+    """Plot average experience years by age and education from no care  # noqa: E501
+    demand counterfactual simulated data.
 
     Creates one plot with 2 lines (Low and High education).
 
@@ -312,10 +320,13 @@ def task_plot_exp_years_by_age_no_care_demand(
         if hasattr(df_sim.index, "names") and "agent" in df_sim.index.names:
             df_sim = df_sim.reset_index()
         else:
+            index_names = (
+                df_sim.index.names if hasattr(df_sim.index, "names") else "N/A"
+            )
             raise ValueError(
-                f"Cannot find 'agent' column or index level. "
+                "Cannot find 'agent' column or index level. "
                 f"Available columns: {df_sim.columns.tolist()}, "
-                f"Index names: {df_sim.index.names if hasattr(df_sim.index, 'names') else 'N/A'}"
+                f"Index names: {index_names}"
             )
 
     # Verify agent and period columns exist

@@ -258,7 +258,7 @@ def task_compare_asset_differences_baseline_vs_no_care_demand(
 
 @pytask.mark.debug_accumulated_difference
 @pytask.mark.debug_assets_baseline
-def task_compare_accumulated_difference_baseline_vs_no_care_demand(
+def task_compare_accumulated_difference_baseline_vs_no_care_demand(  # noqa: PLR0915
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_baseline_data: Path = BLD
     / "solve_and_simulate"
@@ -2499,7 +2499,8 @@ def task_compare_outcomes_ever_non_caregivers(
                 )
             )
 
-            # Filter outcome data to match our filtered base (already matched to non-caregiver IDs)
+            # # Filter outcome data to match our filtered base (already matched to non-ca  # noqa: E501
+            # regiver IDs)
             df_baseline_outcome_filtered = df_baseline_outcome[
                 df_baseline_outcome["agent"].isin(non_caregiver_ids_set)
             ].copy()
@@ -2538,7 +2539,7 @@ def task_compare_outcomes_ever_non_caregivers(
                 ylabel=ylabel,
                 path_level=path_level,
                 path_diff=path_diff,
-                title_suffix="Ever Non-Caregivers (Matched: Same Agent IDs in Both Scenarios)",
+                title_suffix="Ever Non-Caregivers (Matched: Same Agent IDs in Both Scenarios)",  # noqa: E501
             )
 
         # Free memory

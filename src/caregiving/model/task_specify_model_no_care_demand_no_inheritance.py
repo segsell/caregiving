@@ -4,10 +4,8 @@ import pickle
 from pathlib import Path
 from typing import Annotated
 
-import jax.numpy as jnp
 import numpy as np
 import pytask
-import yaml
 from pytask import Product
 
 import dcegm
@@ -29,7 +27,7 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions_additive_no_care_demand import (
     create_utility_functions,
 )
-from caregiving.model.wealth_and_budget.budget_equation_no_care_demand_no_inheritance import (
+from caregiving.model.wealth_and_budget.budget_equation_no_care_demand_no_inheritance import (  # noqa: E501
     budget_constraint,
 )
 from caregiving.model.wealth_and_budget.savings_grid import create_end_of_period_assets
@@ -71,7 +69,8 @@ def specify_model_no_care_demand_no_inheritance(
     - caregiving_type
     - mother_adl
 
-    Note: mother_dead is kept to allow inheritance calculation (even though there's no care).
+    Note: mother_dead is kept to allow inheritance calculation (even  # noqa: E501
+    though there's no care).
 
     All other specifications are kept identical to the baseline.
     """
@@ -136,7 +135,8 @@ def specify_model_no_care_demand_no_inheritance(
 def create_stochastic_states_transitions():
     """Create stochastic state transitions for no care demand counterfactual.
 
-    Excludes care_demand and mother_adl transitions, but includes mother_dead for inheritance.
+    Excludes care_demand and mother_adl transitions,
+        but includes mother_dead for inheritance.
 
     """
     return {

@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from pytask import Product
 
-from caregiving.config import BLD, JET_COLOR_MAP, SRC
+from caregiving.config import BLD, JET_COLOR_MAP
 
 
 def task_plot_healthy_unhealthy(

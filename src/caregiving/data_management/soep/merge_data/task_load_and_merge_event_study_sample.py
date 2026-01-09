@@ -3,12 +3,10 @@
 from pathlib import Path
 from typing import Annotated
 
-import numpy as np
 import pandas as pd
 from pytask import Product
 
 from caregiving.config import BLD, SRC
-from caregiving.utils import table
 
 
 def task_load_and_merge_event_study_sample(

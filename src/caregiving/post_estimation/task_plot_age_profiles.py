@@ -38,7 +38,7 @@ from caregiving.model.shared_no_care_demand import (
 
 @pytask.mark.baseline_model
 @pytask.mark.post_estimation_caregivers
-def task_plot_age_profiles_caregivers(
+def task_plot_age_profiles_caregivers(  # noqa: PLR0912, PLR0915
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_simulated_data: Path = BLD
     / "solve_and_simulate"
@@ -139,7 +139,7 @@ def task_plot_age_profiles_caregivers(
             raise ValueError(
                 f"Cannot find 'agent' column or index level. "
                 f"Available columns: {df_baseline.columns.tolist()}, "
-                f"Index names: {df_baseline.index.names if hasattr(df_baseline.index, 'names') else 'N/A'}"
+                f"Index names: {df_baseline.index.names if hasattr(df_baseline.index, 'names') else 'N/A'}"  # noqa: E501
             )
 
     # Verify agent and period columns exist
@@ -186,7 +186,7 @@ def task_plot_age_profiles_caregivers(
             raise ValueError(
                 f"Cannot find 'agent' column or index level in no care demand data. "
                 f"Available columns: {df_no_care_demand.columns.tolist()}, "
-                f"Index names: {df_no_care_demand.index.names if hasattr(df_no_care_demand.index, 'names') else 'N/A'}"
+                f"Index names: {df_no_care_demand.index.names if hasattr(df_no_care_demand.index, 'names') else 'N/A'}"  # noqa: E501
             )
 
     if (
@@ -273,7 +273,7 @@ def task_plot_age_profiles_caregivers(
         )
     if missing_cols_no_care_demand:
         raise ValueError(
-            f"Missing required columns in no care demand data: {missing_cols_no_care_demand}. "
+            f"Missing required columns in no care demand data: {missing_cols_no_care_demand}. "  # noqa: E501
             f"Available columns: {df_no_care_demand.columns.tolist()}"
         )
 
@@ -312,7 +312,8 @@ def task_plot_age_profiles_caregivers(
         # (
         #     "bequest_from_parent_positive",
         #     "Average Bequest from Parent, conditional on > 0 (in 1,000€)",
-        #     "Bequest from Parent (conditional on > 0) by Age (Caregivers, baseline vs no care demand)",
+        # #     "Bequest from Parent (conditional on > 0) by Age (Caregivers, baselin
+        # e vs no care demand)",
         #     path_to_plot_bequest_from_parent_positive,
         # ),
         (
@@ -354,7 +355,7 @@ def task_plot_age_profiles_caregivers(
 
 @pytask.mark.baseline_model
 @pytask.mark.post_estimation_caregivers
-def task_plot_age_profile_differences_caregivers(
+def task_plot_age_profile_differences_caregivers(  # noqa: PLR0912, PLR0915
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_simulated_data: Path = BLD
     / "solve_and_simulate"
@@ -448,7 +449,7 @@ def task_plot_age_profile_differences_caregivers(
             raise ValueError(
                 f"Cannot find 'agent' column or index level. "
                 f"Available columns: {df_baseline.columns.tolist()}, "
-                f"Index names: {df_baseline.index.names if hasattr(df_baseline.index, 'names') else 'N/A'}"
+                f"Index names: {df_baseline.index.names if hasattr(df_baseline.index, 'names') else 'N/A'}"  # noqa: E501
             )
 
     if "agent" not in df_baseline.columns or "period" not in df_baseline.columns:
@@ -489,7 +490,7 @@ def task_plot_age_profile_differences_caregivers(
             raise ValueError(
                 f"Cannot find 'agent' column or index level in no care demand data. "
                 f"Available columns: {df_no_care_demand.columns.tolist()}, "
-                f"Index names: {df_no_care_demand.index.names if hasattr(df_no_care_demand.index, 'names') else 'N/A'}"
+                f"Index names: {df_no_care_demand.index.names if hasattr(df_no_care_demand.index, 'names') else 'N/A'}"  # noqa: E501
             )
 
     if (
@@ -567,7 +568,7 @@ def task_plot_age_profile_differences_caregivers(
         )
     if missing_cols_no_care_demand:
         raise ValueError(
-            f"Missing required columns in no care demand data: {missing_cols_no_care_demand}. "
+            f"Missing required columns in no care demand data: {missing_cols_no_care_demand}. "  # noqa: E501
             f"Available columns: {df_no_care_demand.columns.tolist()}"
         )
 
@@ -582,7 +583,10 @@ def task_plot_age_profile_differences_caregivers(
         (
             "savings_dec",
             "Baseline - No care demand (in 1,000€)",
-            "Savings Decision difference by Age (Caregivers, baseline - no care demand)",
+            (
+                "Savings Decision difference by Age (Caregivers, "
+                "baseline - no care demand)"
+            ),
             path_to_plot_savings_dec_diff,
         ),
         (
@@ -594,43 +598,61 @@ def task_plot_age_profile_differences_caregivers(
         (
             "own_income_after_ssc",
             "Baseline - No care demand (in 1,000€)",
-            "Own Income After SSC difference by Age (Caregivers, baseline - no care demand)",
+            (
+                "Own Income After SSC difference by Age (Caregivers, "
+                "baseline - no care demand)"
+            ),
             path_to_plot_own_income_after_ssc_diff,
         ),
         (
             "bequest_from_parent",
             "Baseline - No care demand (in 1,000€)",
-            "Bequest from Parent difference by Age (Caregivers, baseline - no care demand)",
+            (
+                "Bequest from Parent difference by Age (Caregivers "
+                "baseline - no care demand)"
+            ),
             path_to_plot_bequest_from_parent_diff,
         ),
         (
             "bequest_from_parent_positive",
             "Baseline - No care demand (in 1,000€)",
-            "Bequest from Parent (conditional on > 0) difference by Age (Caregivers, baseline - no care demand)",
+            "Bequest from Parent (conditional on > 0) difference by Age (Caregivers, baseline - no care demand)",  # noqa: E501
             path_to_plot_bequest_from_parent_positive_diff,
         ),
         (
             "working_hours_weekly",
             "Baseline - No care demand (weekly hours)",
-            "Working Hours (weekly) difference by Age (Caregivers, baseline - no care demand)",
+            (
+                "Working Hours (weekly) difference by Age (Caregivers "
+                "baseline - no care demand)"
+            ),
             path_to_plot_working_hours_diff,
         ),
         (
             "full_time",
             "Baseline - No care demand (share full-time)",
-            "Full-time Employment difference by Age (Caregivers, baseline - no care demand)",
+            (
+                "Full-time Employment difference by Age (Caregivers "
+                "baseline - no care demand)"
+            ),
             path_to_plot_full_time_diff,
         ),
         (
             "part_time",
             "Baseline - No care demand (share part-time)",
-            "Part-time Employment difference by Age (Caregivers, baseline - no care demand)",
+            (
+                "Part-time Employment difference by Age (Caregivers "
+                "baseline - no care demand)"
+            ),
             path_to_plot_part_time_diff,
         ),
         (
             "gets_inheritance",
             "Baseline - No care demand (share getting inheritance)",
-            "Share Getting Inheritance difference by Age (Caregivers, baseline - no care demand)",
+            (
+                "Share Getting Inheritance difference by Age (Caregivers "
+                "baseline - no care demand)"
+            ),
             path_to_plot_gets_inheritance_diff,
         ),
     ]

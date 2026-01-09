@@ -19,13 +19,13 @@ from caregiving.counterfactual.plotting_utils import (
     merge_and_compute_differences,
     prepare_dataframes_for_comparison,
 )
-from caregiving.model.shared import INFORMAL_CARE
 
 
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_age_profiles
 @pytask.mark.counterfactual_differences_full_caregiving_leave_vs_baseline
-def task_plot_matched_differences_by_age_full_caregiving_leave_vs_baseline(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_full_caregiving_leave_vs_baseline(  # noqa: PLR0912, PLR0915
+    # noqa: E501
     path_to_full_caregiving_leave_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params.pkl",
@@ -637,7 +637,8 @@ def task_plot_matched_differences_by_age_full_caregiving_leave_vs_baseline(  # n
     if "education" in df_o.columns:
         o_cols["education"] = df_o["education"].values
 
-    # Merge and compute differences (include full set of outcomes incl. consumption and bequest)
+    # # Merge and compute differences (include full set of outcomes incl. consump
+    # tion and bequest)
     outcome_names = [
         "work",
         "ft",
@@ -829,7 +830,7 @@ def task_plot_matched_differences_by_age_full_caregiving_leave_vs_baseline(  # n
                 "age_max": 90,
             },
             "caregiving_leave_top_up": {
-                "ylabel": "Caregiving Leave Top-up (in 1,000€)\nDeviation from Baseline",
+                "ylabel": "Caregiving Leave Top-up (in 1,000€)\nDeviation from Baseline",  # noqa: E501
                 "title": f"Caregiving Leave Top-up by Age{title_suffix}",
                 "diff_col": "diff_caregiving_leave_top_up",
                 "path": base_path
@@ -904,7 +905,7 @@ def task_plot_matched_differences_by_age_full_caregiving_leave_vs_baseline(  # n
             plot_configs = create_plot_configs(base_path, suffix)
 
             # Update plot_configs paths for "all/all" case to use declared product paths
-            if edu_folder == "all" and cg_folder == "all":
+            if edu_folder == cg_folder == "all":
                 declared_paths_map = {
                     "work": path_to_plot_work,
                     "ft": path_to_plot_ft,
@@ -951,7 +952,7 @@ def task_plot_matched_differences_by_age_full_caregiving_leave_vs_baseline(  # n
                     "net_government_budget": path_to_plot_net_government_budget_type0,
                     "own_income_after_ssc": path_to_plot_own_income_after_ssc_type0,
                     "exp_years": path_to_plot_exp_years_type0,
-                    "caregiving_leave_top_up": path_to_plot_caregiving_leave_top_up_type0,
+                    "caregiving_leave_top_up": path_to_plot_caregiving_leave_top_up_type0,  # noqa: E501
                 }
                 for outcome_key, declared_path in declared_paths_map.items():
                     if outcome_key in plot_configs:
@@ -977,7 +978,7 @@ def task_plot_matched_differences_by_age_full_caregiving_leave_vs_baseline(  # n
                     "net_government_budget": path_to_plot_net_government_budget_type1,
                     "own_income_after_ssc": path_to_plot_own_income_after_ssc_type1,
                     "exp_years": path_to_plot_exp_years_type1,
-                    "caregiving_leave_top_up": path_to_plot_caregiving_leave_top_up_type1,
+                    "caregiving_leave_top_up": path_to_plot_caregiving_leave_top_up_type1,  # noqa: E501
                 }
                 for outcome_key, declared_path in declared_paths_map.items():
                     if outcome_key in plot_configs:

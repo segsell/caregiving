@@ -2,19 +2,16 @@ from jax import numpy as jnp
 
 from caregiving.model.experience_baseline_model import construct_experience_years
 from caregiving.model.shared import (
-    CARE_DEMAND_AND_NO_OTHER_SUPPLY,
-    CARE_DEMAND_AND_OTHER_SUPPLY,
     PARENT_RECENTLY_DEAD,
     SEX,
     is_formal_care,
-    is_no_care,
     is_retired,
     is_working,
 )
 from caregiving.model.wealth_and_budget.caregiving_leave_top_up import (
     calc_full_caregiving_leave_top_up,
 )
-from caregiving.model.wealth_and_budget.government_budget_caregiving_leave_with_job_retention import (
+from caregiving.model.wealth_and_budget.government_budget_caregiving_leave_with_job_retention import (  # noqa: E501
     calc_government_budget_components_caregiving_leave_with_job_retention,
 )
 from caregiving.model.wealth_and_budget.partner_income import (
@@ -150,7 +147,8 @@ def budget_constraint(
         model_specs=model_specs,
     )
 
-    # Formal care costs only (no informal care cash benefits, as caregiving leave top-up replaces them)
+    # # Formal care costs only (no informal care cash benefits, as caregiving lea
+    # ve top-up replaces them)
     formal_care = is_formal_care(lagged_choice)
     annual_formal_care_costs = (
         -model_specs["formal_care_costs"] * formal_care * 12 * 0.5
@@ -231,7 +229,8 @@ def budget_constraint(
         "gets_inheritance": gets_inheritance,
         "caregiving_leave_top_up": caregiving_leave_top_up / model_specs["wealth_unit"],
         "own_income_after_ssc": own_income_after_ssc / model_specs["wealth_unit"],
-        # "care_benefits_and_costs": care_benfits_and_costs / model_specs["wealth_unit"],
+        # # "care_benefits_and_costs": care_benfits_and_costs / model_specs["wealth_u
+        # nit"],
         "child_benefits": child_benefits / model_specs["wealth_unit"],
         "household_unemployment_benefits": household_unemployment_benefits
         / model_specs["wealth_unit"],

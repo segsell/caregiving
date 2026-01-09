@@ -7,14 +7,12 @@ from typing import Annotated
 import numpy as np
 import pandas as pd
 import pytask
-import yaml
 from pytask import Product
 
 from caregiving.config import BLD
 from caregiving.model.shared import (
     NOT_WORKING_CHOICES,
     SEX,
-    WEALTH_QUANTILE_CUTOFF,
     WORK_CHOICES,
 )
 from caregiving.model.shared_no_care_demand import (
@@ -28,18 +26,8 @@ from caregiving.model.shared_no_care_demand import (
 from caregiving.moments.task_create_soep_moments import adjust_and_trim_wealth_data
 from caregiving.simulation.plot_model_fit import (
     plot_average_savings_decision,
-    plot_average_wealth,
-    plot_caregiver_shares_by_age,
-    plot_caregiver_shares_by_age_bins,
-    plot_choice_shares,
     plot_choice_shares_by_education,
-    plot_choice_shares_by_education_age_bins,
-    plot_choice_shares_overall,
-    plot_choice_shares_overall_age_bins,
-    plot_choice_shares_single,
     plot_job_offer_share_by_age,
-    plot_simulated_care_demand_by_age,
-    plot_states,
     plot_transitions_by_age,
     plot_transitions_by_age_bins,
     plot_wealth_by_age_and_education,

@@ -2,13 +2,11 @@ import jax
 from jax import numpy as jnp
 
 from caregiving.model.shared import (
-    PARENT_RECENTLY_DEAD,
     SEX,
     is_formal_care,
     is_informal_care,
     is_intensive_informal_care,
     is_light_informal_care,
-    is_no_care,
 )
 
 
@@ -147,7 +145,8 @@ def calc_inheritance_amount(
 
     Uses precomputed inheritance amount matrix from specs.
     Determines care type from lagged_choice to select appropriate column:
-    - no_care (index 0): if lagged_choice is not in LIGHT_INFORMAL_CARE or INTENSIVE_INFORMAL_CARE
+    - no_care (index 0): if lagged_choice is not in LIGHT_INFORMAL_CARE or  # noqa: E501
+    INTENSIVE_INFORMAL_CARE
     - light_care (index 1): if lagged_choice is in LIGHT_INFORMAL_CARE
     - intensive_care (index 2): if lagged_choice is in INTENSIVE_INFORMAL_CARE
 
@@ -157,7 +156,8 @@ def calc_inheritance_amount(
         education: Education level
         model_specs: Model specifications dictionary containing:
             - inheritance_amount_mat: Precomputed amount matrix of shape
-              (n_sexes, n_periods, n_education, 3) where last dim is [no_care, light_care, intensive_care]
+              (n_sexes, n_periods, n_education, 3) where last dim is [no_care,
+                  light_care, intensive_care]
 
     Returns:
         Expected inheritance amount (conditional on positive inheritance).
@@ -201,19 +201,23 @@ def draw_inheritance_outcome(
     asset_end_of_previous_period,
     model_specs,
 ):
-    """Draw inheritance outcome (0 or 1) using Bernoulli distribution for baseline model.
+    """Draw inheritance outcome (0 or 1) using Bernoulli distribution for  # noqa: E501
+    baseline model.
 
     Uses precomputed inheritance probability matrix and performs a Bernoulli draw
     with a deterministic seed based on state variables for reproducibility.
 
     Args:
         period: Current period
-        lagged_choice: Choice from previous period (d_{t-1}) - used to determine care type
+        lagged_choice: Choice from previous period (d_{t-1}) - used to  # noqa: E501
+        determine care type
         education: Education level
-        asset_end_of_previous_period: Assets at end of previous period (for seed variation)
+        asset_end_of_previous_period: Assets at end of previous period  # noqa: E501
+        (for seed variation)
         model_specs: Model specifications dictionary containing:
             - inheritance_prob_mat: Precomputed probability matrix of shape
-              (n_sexes, n_periods, n_education, 3) where last dim is [no_care, light_care, intensive_care]
+              (n_sexes, n_periods, n_education, 3) where last dim is [no_care,
+                  light_care, intensive_care]
             - seed: Base random seed
 
     Returns:

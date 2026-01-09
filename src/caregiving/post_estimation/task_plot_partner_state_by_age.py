@@ -68,10 +68,13 @@ def task_plot_partner_state_by_age_baseline(
         if hasattr(df_sim.index, "names") and "agent" in df_sim.index.names:
             df_sim = df_sim.reset_index()
         else:
+            index_names = (
+                df_sim.index.names if hasattr(df_sim.index, "names") else "N/A"
+            )
             raise ValueError(
-                f"Cannot find 'agent' column or index level. "
+                "Cannot find 'agent' column or index level. "
                 f"Available columns: {df_sim.columns.tolist()}, "
-                f"Index names: {df_sim.index.names if hasattr(df_sim.index, 'names') else 'N/A'}"
+                f"Index names: {index_names}"
             )
 
     # Verify agent and period columns exist
@@ -177,7 +180,8 @@ def task_plot_partner_state_by_age_no_care_demand(
     / "post_estimation"
     / "partner_state_by_age_no_care_demand.png",
 ):
-    """Plot partner state shares by age and education from no care demand counterfactual simulated data.
+    """Plot partner state shares by age and education from no care demand  # noqa: E501
+    counterfactual simulated data.
 
     Creates a plot with 6 lines:
     - Low education: No partner, Working partner, Retired partner
@@ -205,10 +209,13 @@ def task_plot_partner_state_by_age_no_care_demand(
         if hasattr(df_sim.index, "names") and "agent" in df_sim.index.names:
             df_sim = df_sim.reset_index()
         else:
+            index_names = (
+                df_sim.index.names if hasattr(df_sim.index, "names") else "N/A"
+            )
             raise ValueError(
-                f"Cannot find 'agent' column or index level. "
+                "Cannot find 'agent' column or index level. "
                 f"Available columns: {df_sim.columns.tolist()}, "
-                f"Index names: {df_sim.index.names if hasattr(df_sim.index, 'names') else 'N/A'}"
+                f"Index names: {index_names}"
             )
 
     # Verify agent and period columns exist

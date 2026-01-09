@@ -291,7 +291,8 @@ def test_estimate_model_scalar_interface(temp_test_dir):
     assert hasattr(saved_result, "params")
     assert hasattr(saved_result, "success")
     print(
-        "✓ estimate_model_with_unobserved_type_shares scalar optimization interface test passed"
+        "✓ estimate_model_with_unobserved_type_shares scalar optimization "
+        "interface test passed"
     )
 
 

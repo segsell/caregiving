@@ -1,4 +1,3 @@
-import jax
 import jax.numpy as jnp
 
 from caregiving.model.experience_baseline_model import construct_experience_years
@@ -198,7 +197,8 @@ def budget_constraint(
         "income_shock_previous_period": income_shock_previous_period,
         "income_shock_for_labor": income_shock_for_labor,
         "own_income_after_ssc": own_income_after_ssc / model_specs["wealth_unit"],
-        # "care_benefits_and_costs": care_benfits_and_costs / model_specs["wealth_unit"],
+        # # "care_benefits_and_costs": care_benfits_and_costs / model_specs["wealth_u
+        # nit"],
         "child_benefits": child_benefits / model_specs["wealth_unit"],
         "household_unemployment_benefits": household_unemployment_benefits
         / model_specs["wealth_unit"],

@@ -19,7 +19,7 @@
 # from caregiving.model.utility.bequest_utility import (
 #     create_final_period_utility_functions,
 # )
-# from caregiving.model.utility.utility_functions_additive import create_utility_functions
+# from caregiving.model.utility.utility_functions_additive import create_utility_functions  # noqa: E501
 # from caregiving.model.wealth_and_budget.budget_equation_higher_formal_care_costs import (  # noqa: E501
 #     budget_constraint,
 # )
@@ -30,13 +30,13 @@
 
 # @pytask.mark.solve_higher_formal_care_costs
 # def task_solve_and_simulate_higher_formal_care_costs_estimated_params(
-#     path_to_solution_model: Path = BLD / "model" / "model_higher_formal_care_costs.pkl",
+#     path_to_solution_model: Path = BLD / "model" / "model_higher_formal_care_costs.pkl",  # noqa: E501
 #     path_to_options: Path = BLD / "model" / "options_higher_formal_care_costs.pkl",
 #     path_to_estimated_params: Path = BLD
 #     / "model"
 #     / "params"
 #     / "estimated_params_model.yaml",
-#     path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",
+#     path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",  # noqa: E501
 #     path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
 #     path_to_save_solution: Annotated[Path, Product] = BLD
 #     / "solve_and_simulate"
@@ -45,15 +45,15 @@
 #     / "solve_and_simulate"
 #     / "simulated_data_higher_formal_care_costs_estimated_params.pkl",
 # ) -> None:
-#     """Solve and simulate the higher formal care costs model with estimated parameters.
+#     """Solve and simulate the higher formal care costs model with estimated parameters.  # noqa: E501
 
-#     This function solves and simulates the higher formal care costs counterfactual model
+#     This function solves and simulates the higher formal care costs counterfactual model  # noqa: E501
 #     using estimated parameters. The higher formal care costs model implements a policy
-#     where formal care costs are increased by 50% (multiplied by 1.5), making formal care
+#     where formal care costs are increased by 50% (multiplied by 1.5), making formal care  # noqa: E501
 #     more expensive.
 
 #     Args:
-#         path_to_solution_model: Path to the higher formal care costs model for solution
+#         path_to_solution_model: Path to the higher formal care costs model for solution  # noqa: E501
 #         path_to_options: Path to the higher formal care costs model options
 #         path_to_estimated_params: Path to the estimated parameters
 #         path_to_discrete_states: Path to discrete initial states
@@ -81,7 +81,7 @@
 
 #     # 2) Simulate
 #     initial_states = pickle.load(path_to_discrete_states.open("rb"))
-#     wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
+#     wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())  # noqa: E501
 
 #     model_for_simulation = load_and_setup_model(
 #         options=options,
