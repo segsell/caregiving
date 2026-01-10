@@ -18,6 +18,8 @@ from caregiving.config import BLD
 from caregiving.estimation.estimation_setup import draw_caregiving_type_from_params
 from caregiving.model.shared import (
     FULL_TIME_NO_CARE,
+    INTENSIVE_INFORMAL_CARE,
+    LIGHT_INFORMAL_CARE,
     PART_TIME_NO_CARE,
     RETIREMENT_NO_CARE,
     SEX,
@@ -278,11 +280,16 @@ def load_specs():
 @pytest.mark.parametrize(
     "period, lagged_choice, education, asset_end_of_previous_period",
     [
+        # No informal care choices (care_type_idx = 0)
         (0, UNEMPLOYED_NO_CARE[0].item(), 0, 10.0),
         (10, PART_TIME_NO_CARE[0].item(), 0, 15.0),
         (20, FULL_TIME_NO_CARE[0].item(), 1, 20.0),
         (30, RETIREMENT_NO_CARE[0].item(), 1, 25.0),
-        (40, UNEMPLOYED_NO_CARE[0].item(), 1, 30.0),
+        # Informal care choices (care_type_idx = 1)
+        (10, LIGHT_INFORMAL_CARE[0].item(), 0, 15.0),  # Retirement + light informal
+        (20, LIGHT_INFORMAL_CARE[2].item(), 1, 20.0),  # Part-time + light informal
+        (30, INTENSIVE_INFORMAL_CARE[0].item(), 1, 25.0),  # Retirement + intensive
+        (40, INTENSIVE_INFORMAL_CARE[3].item(), 0, 30.0),  # Full-time + intensive
     ],
 )
 def test_draw_inheritance_outcome_binary_values(
@@ -348,6 +355,9 @@ def test_draw_inheritance_outcome_reproducibility(load_specs):
         (20, FULL_TIME_NO_CARE[0].item(), 1, 15.0),  # Different period
         (10, FULL_TIME_NO_CARE[0].item(), 0, 15.0),  # Different lagged_choice
         (10, PART_TIME_NO_CARE[0].item(), 1, 15.0),  # Different education
+        # Test with informal care choices
+        (10, LIGHT_INFORMAL_CARE[1].item(), 0, 15.0),  # Unemployed + light informal
+        (20, INTENSIVE_INFORMAL_CARE[2].item(), 1, 20.0),  # Part-time + intensive
     ],
 )
 def test_draw_inheritance_outcome_different_inputs(
@@ -379,12 +389,18 @@ def test_draw_inheritance_outcome_different_inputs(
         "prob, expected_outcome"
     ),
     [
-        # Test with prob=0.0 should always give 0
+        # Test with prob=0.0 should always give 0 (no informal care)
         (10, UNEMPLOYED_NO_CARE[0].item(), 0, 15.0, 0.0, 0),
         (10, PART_TIME_NO_CARE[0].item(), 0, 15.0, 0.0, 0),
-        # Test with prob=1.0 should always give 1
+        # Test with prob=1.0 should always give 1 (no informal care)
         (10, UNEMPLOYED_NO_CARE[0].item(), 0, 15.0, 1.0, 1),
         (10, PART_TIME_NO_CARE[0].item(), 1, 20.0, 1.0, 1),
+        # Test with prob=0.0 should always give 0 (informal care)
+        (10, LIGHT_INFORMAL_CARE[0].item(), 0, 15.0, 0.0, 0),
+        (10, INTENSIVE_INFORMAL_CARE[2].item(), 1, 20.0, 0.0, 0),
+        # Test with prob=1.0 should always give 1 (informal care)
+        (10, LIGHT_INFORMAL_CARE[1].item(), 0, 15.0, 1.0, 1),
+        (10, INTENSIVE_INFORMAL_CARE[3].item(), 1, 20.0, 1.0, 1),
     ],
 )
 def test_draw_inheritance_outcome_extreme_probabilities(
@@ -406,10 +422,10 @@ def test_draw_inheritance_outcome_extreme_probabilities(
     """
     model_specs = copy.deepcopy(load_specs)
     # Set extreme probabilities in the matrix
-    # Determine care type (no_care=0, any_care=1) based on lagged_choice
-    # UNEMPLOYED_NO_CARE, RETIREMENT_NO_CARE, PART_TIME_NO_CARE,
-    # FULL_TIME_NO_CARE are all no_care (0) because is_informal_care()
-    # returns False for these choices
+    # Determine care type index based on lagged_choice:
+    # - care_type_idx = 0: NO_CARE or FORMAL_CARE (no informal care)
+    # - care_type_idx = 1: LIGHT_INFORMAL_CARE or INTENSIVE_INFORMAL_CARE
+    #   (any informal care)
     care_type_idx = int(is_informal_care(lagged_choice).astype(int))
     # SEX=1 means index 1 (female) in the matrix
     sex_idx = SEX  # SEX = 1
@@ -437,6 +453,7 @@ def test_draw_inheritance_outcome_extreme_probabilities(
 @pytest.mark.parametrize(
     "period, education, lagged_choice, prob",
     [
+        # No informal care choices (care_type_idx = 0)
         (10, 0, UNEMPLOYED_NO_CARE[0].item(), 0.2),
         (10, 0, PART_TIME_NO_CARE[0].item(), 0.3),
         (10, 0, FULL_TIME_NO_CARE[0].item(), 0.5),
@@ -444,6 +461,11 @@ def test_draw_inheritance_outcome_extreme_probabilities(
         (20, 1, UNEMPLOYED_NO_CARE[0].item(), 0.3),
         (20, 1, PART_TIME_NO_CARE[0].item(), 0.5),
         (30, 0, RETIREMENT_NO_CARE[0].item(), 0.4),
+        # Informal care choices (care_type_idx = 1)
+        (10, 0, LIGHT_INFORMAL_CARE[0].item(), 0.3),  # Retirement + light
+        (20, 1, LIGHT_INFORMAL_CARE[2].item(), 0.4),  # Part-time + light
+        (15, 0, INTENSIVE_INFORMAL_CARE[1].item(), 0.5),  # Unemployed + intensive
+        (25, 1, INTENSIVE_INFORMAL_CARE[3].item(), 0.6),  # Full-time + intensive
     ],
 )
 def test_draw_inheritance_outcome_respects_probability(
@@ -454,9 +476,13 @@ def test_draw_inheritance_outcome_respects_probability(
     asset_base = 15.0
 
     # Set a specific probability for this combination
-    # Determine care type index from lagged_choice
+    # Determine care type index from lagged_choice:
+    # - care_type_idx = 0: NO_CARE or FORMAL_CARE (no informal care)
+    # - care_type_idx = 1: LIGHT_INFORMAL_CARE or INTENSIVE_INFORMAL_CARE
+    #   (any informal care)
     care_type_idx = int(is_informal_care(lagged_choice).astype(int))
     sex_idx = SEX  # SEX = 1 (female, index 1)
+    # Deep copy once per test, not per iteration
     model_specs = copy.deepcopy(load_specs)
     model_specs["inheritance_prob_mat"] = (
         model_specs["inheritance_prob_mat"]
