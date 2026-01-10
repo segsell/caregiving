@@ -153,7 +153,8 @@ def test_budget_unemployed(
         model_specs=specs_internal,
     )
 
-    # Calculate household unemployment benefits (NOTE: parameter order is sex before education)
+    # Calculate household unemployment benefits
+    # (NOTE: parameter order is sex before education)
     household_unemployment_benefits, _ = calc_unemployment_benefits(
         assets=savings_scaled,
         sex=SEX,
@@ -163,8 +164,9 @@ def test_budget_unemployed(
         model_specs=specs_internal,
     )
 
-    # Budget equation uses: total_income = max(total_net_household_income + child_benefits,
-    # household_unemployment_benefits)
+    # Budget equation uses:
+    # total_income = max(total_net_household_income + child_benefits,
+    #                    household_unemployment_benefits)
     total_income = np.maximum(
         total_net_household_income + child_benefits, household_unemployment_benefits
     )
@@ -262,7 +264,8 @@ def test_budget_worker(
         gamma_array  # Use same gamma for ln_exp coefficient
     )
 
-    # Convert experience: experience from grid is in years, need to normalize for budget_constraint
+    # Convert experience: experience from grid is in years,
+    # need to normalize for budget_constraint
     is_retired_val = is_retired(working_choice)
     max_exp_period = jnp.take(
         specs_internal["max_exps_period_working"], period, mode="clip"
@@ -300,7 +303,8 @@ def test_budget_worker(
     savings_scaled = savings * specs_internal["wealth_unit"]
 
     # Calculate labor income using current function
-    # Note: For period 0, income_shock_for_labor = income_shock_mean, otherwise = income_shock
+    # Note: For period 0, income_shock_for_labor = income_shock_mean,
+    #       otherwise = income_shock
     income_shock_for_labor = (
         specs_internal.get("income_shock_mean", 0.0) if period == 0 else income_shock
     )
@@ -344,7 +348,8 @@ def test_budget_worker(
         model_specs=specs_internal,
     )
 
-    # Calculate household unemployment benefits (NOTE: parameter order is sex before education)
+    # Calculate household unemployment benefits
+    # (NOTE: parameter order is sex before education)
     household_unemployment_benefits, _ = calc_unemployment_benefits(
         assets=savings_scaled,
         sex=SEX,
@@ -354,8 +359,9 @@ def test_budget_worker(
         model_specs=specs_internal,
     )
 
-    # Budget equation uses: total_income = max(total_net_household_income + child_benefits,
-    # household_unemployment_benefits)
+    # Budget equation uses:
+    # total_income = max(total_net_household_income + child_benefits,
+    #                    household_unemployment_benefits)
     total_income = np.maximum(
         total_net_household_income + child_benefits, household_unemployment_benefits
     )
@@ -429,7 +435,8 @@ def test_retiree(
 ):
     specs_internal = load_specs
 
-    # For retirees, experience should be converted to pension points using construct_experience_years
+    # For retirees, experience should be converted to pension points
+    # using construct_experience_years
     lagged_choice_val = RETIREMENT_NO_CARE[0].item()
     is_retired_val = is_retired(lagged_choice_val)
 
@@ -465,7 +472,8 @@ def test_retiree(
     savings_scaled = savings * specs_internal["wealth_unit"]
 
     # Calculate pension using current function
-    # Note: calc_pensions_after_ssc takes pension_points (which is experience_years for retirees)
+    # Note: calc_pensions_after_ssc takes pension_points
+    # (which is experience_years for retirees)
     retirement_income_after_ssc, gross_retirement_income = calc_pensions_after_ssc(
         pension_points=experience_years,
         model_specs=specs_internal,
@@ -502,7 +510,8 @@ def test_retiree(
         model_specs=specs_internal,
     )
 
-    # Calculate household unemployment benefits (NOTE: parameter order is sex before education)
+    # Calculate household unemployment benefits
+    # (NOTE: parameter order is sex before education)
     household_unemployment_benefits, _ = calc_unemployment_benefits(
         assets=savings_scaled,
         sex=SEX,
@@ -512,8 +521,9 @@ def test_retiree(
         model_specs=specs_internal,
     )
 
-    # Budget equation uses: total_income = max(total_net_household_income + child_benefits,
-    # household_unemployment_benefits)
+    # Budget equation uses:
+    # total_income = max(total_net_household_income + child_benefits,
+    #                    household_unemployment_benefits)
     total_income = np.maximum(
         total_net_household_income + child_benefits, household_unemployment_benefits
     )
@@ -595,9 +605,11 @@ def test_fresh_retiree(
     # mechanic we test here, i.e. the experience adjustment
     partner_state = 1  # PARTNER_WORKING
 
-    # For fresh retirees, experience should be converted using construct_experience_years
-    # Note: The current budget_constraint implementation doesn't apply early retirement
-    # penalties directly - those are handled through experience years calculation elsewhere.
+    # For fresh retirees, experience should be converted using
+    # construct_experience_years
+    # Note: The current budget_constraint implementation doesn't apply
+    # early retirement penalties directly - those are handled through
+    # experience years calculation elsewhere.
     # Here we match the current implementation behavior.
     lagged_choice_val = RETIREMENT_NO_CARE[0].item()
     is_retired_val = is_retired(lagged_choice_val)
@@ -672,7 +684,8 @@ def test_fresh_retiree(
         model_specs=specs_internal,
     )
 
-    # Calculate household unemployment benefits (NOTE: parameter order is sex before education)
+    # Calculate household unemployment benefits
+    # (NOTE: parameter order is sex before education)
     household_unemployment_benefits, _ = calc_unemployment_benefits(
         assets=savings_scaled,
         sex=SEX,
@@ -682,8 +695,9 @@ def test_fresh_retiree(
         model_specs=specs_internal,
     )
 
-    # Budget equation uses: total_income = max(total_net_household_income + child_benefits,
-    # household_unemployment_benefits)
+    # Budget equation uses:
+    # total_income = max(total_net_household_income + child_benefits,
+    #                    household_unemployment_benefits)
     total_income = np.maximum(
         total_net_household_income + child_benefits, household_unemployment_benefits
     )

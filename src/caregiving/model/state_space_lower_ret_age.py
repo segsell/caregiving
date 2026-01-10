@@ -202,7 +202,9 @@
 #     age = period + options["start_age"]
 #     max_ret_age = 65
 #     SRA_pol_state = options["min_SRA"]  # use options (was 60)
-#     min_ret_age_pol_state = apply_retirement_constraint_for_SRA(SRA_pol_state, options)
+#     min_ret_age_pol_state = apply_retirement_constraint_for_SRA(
+#         SRA_pol_state, options
+#     )
 
 #     if (care_demand == 0) | (age > options["end_age_msm"]):
 #         if is_dead(health):
@@ -282,7 +284,9 @@
 #     exp_new_period = jax.lax.select(
 #         fresh_retired, experience_years_with_penalty, exp_new_period
 #     )
-#     return (1 / (period + options["max_exp_diffs_per_period"][period])) * exp_new_period
+#     return (
+#         1 / (period + options["max_exp_diffs_per_period"][period])
+#     ) * exp_new_period
 
 
 # def calc_experience_years_for_pension_adjustment(

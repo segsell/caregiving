@@ -374,7 +374,10 @@ def test_draw_inheritance_outcome_different_inputs(
 
 
 @pytest.mark.parametrize(
-    "period, lagged_choice, education, asset_end_of_previous_period, prob, expected_outcome",
+    (
+        "period, lagged_choice, education, asset_end_of_previous_period, "
+        "prob, expected_outcome"
+    ),
     [
         # Test with prob=0.0 should always give 0
         (10, UNEMPLOYED_NO_CARE[0].item(), 0, 15.0, 0.0, 0),
@@ -396,14 +399,17 @@ def test_draw_inheritance_outcome_extreme_probabilities(
     """Test draw_inheritance_outcome with extreme probabilities (0 and 1).
 
     This tests the core mechanics:
-    - With p=0: outcome is always 0 (prob >= uniform_draw is never true since prob=0)
-    - With p=1: outcome is always 1 (prob >= uniform_draw is always true since uniform_draw < 1.0)
+    - With p=0: outcome is always 0 (prob >= uniform_draw is never true
+      since prob=0)
+    - With p=1: outcome is always 1 (prob >= uniform_draw is always true
+      since uniform_draw < 1.0)
     """
     model_specs = copy.deepcopy(load_specs)
     # Set extreme probabilities in the matrix
     # Determine care type (no_care=0, any_care=1) based on lagged_choice
-    # UNEMPLOYED_NO_CARE, RETIREMENT_NO_CARE, PART_TIME_NO_CARE, FULL_TIME_NO_CARE are all no_care (0)
-    # because is_informal_care() returns False for these choices
+    # UNEMPLOYED_NO_CARE, RETIREMENT_NO_CARE, PART_TIME_NO_CARE,
+    # FULL_TIME_NO_CARE are all no_care (0) because is_informal_care()
+    # returns False for these choices
     care_type_idx = int(is_informal_care(lagged_choice).astype(int))
     # SEX=1 means index 1 (female) in the matrix
     sex_idx = SEX  # SEX = 1

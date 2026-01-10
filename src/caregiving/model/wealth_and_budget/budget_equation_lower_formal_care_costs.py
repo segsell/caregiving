@@ -108,7 +108,8 @@
 
 #     # Aggregate over choice own income
 #     own_income_after_ssc = (
-#         was_worker * labor_income_after_ssc + was_retired * retirement_income_after_ssc
+#         was_worker * labor_income_after_ssc
+#         + was_retired * retirement_income_after_ssc
 #     )
 
 #     # Calculate total houshold net income

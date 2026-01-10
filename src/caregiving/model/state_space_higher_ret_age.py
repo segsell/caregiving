@@ -46,9 +46,9 @@
 #     }
 
 
-# # =====================================================================================
+# # ============================================================================
 # # State transitions
-# # =====================================================================================
+# # ============================================================================
 
 
 # def next_period_endogenous_state(
@@ -147,8 +147,9 @@
 #     elif (age > max_ret_age + 1) & (already_retired != 1):
 #         return False
 #     else:
-#         # Now turn to the states, where it is decided by the value of an exogenous
-#         # state if it is valid or not. For invalid states we provide a proxy child state
+#         # Now turn to the states, where it is decided by the value of an
+#         # exogenous state if it is valid or not. For invalid states we
+#         # provide a proxy child state
 #         if is_dead(health):
 #             # Lead all states with death to last period death states
 #             # with job offer 0 (not relevant for bequest). You could be in principle
@@ -357,7 +358,8 @@
 #     # elif (care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY) & (
 #     #     age <= options["end_age_msm"]
 #     # ):  # & (age >= 40):
-#     #     # elif (care_demand > 0) & (age <= options["end_age_msm"]):  # & (age >= 40):
+#     #     # elif (care_demand > 0) & (age <= options["end_age_msm"]):
+#     #     # (age >= 40):
 #     #     # elif (care_demand == 1) & (care_supply == 0):  # & (age >= 40):
 #     #     # Care must be provided informally or organized formally
 #     #     if is_dead(health):
@@ -498,7 +500,9 @@
 #     exp_new_period = jax.lax.select(
 #         fresh_retired, experience_years_with_penalty, exp_new_period
 #     )
-#     return (1 / (period + options["max_exp_diffs_per_period"][period])) * exp_new_period
+#     return (
+#         1 / (period + options["max_exp_diffs_per_period"][period])
+#     ) * exp_new_period
 
 
 # # def calc_experience_years_for_pension_adjustment(
