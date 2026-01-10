@@ -106,9 +106,12 @@ def test_budget_unemployed(
     if period == 0:
         income_shock_prev = specs_internal.get("income_shock_mean", 0.0)
 
+    # Convert partner_state to JAX array for budget_constraint
+    partner_state_jax = jnp.asarray(partner_state)
+
     wealth, _ = budget_constraint(
         period=period,
-        partner_state=partner_state,
+        partner_state=partner_state_jax,
         education=education,
         lagged_choice=lagged_choice_val,
         experience=exp_cont,
@@ -287,9 +290,12 @@ def test_budget_worker(
     if period == 0:
         income_shock_prev = specs_internal.get("income_shock_mean", 0.0)
 
+    # Convert partner_state to JAX array for budget_constraint
+    partner_state_jax = jnp.asarray(partner_state)
+
     wealth, _ = budget_constraint(
         period=period,
-        partner_state=partner_state,
+        partner_state=partner_state_jax,
         education=education,
         lagged_choice=working_choice,
         experience=exp_cont,
@@ -318,7 +324,7 @@ def test_budget_worker(
     )
     own_income_after_ssc = labor_income_after_ssc
 
-    has_partner_int = (partner_state > 0).astype(int)
+    has_partner_int = int(partner_state > 0)
 
     # Calculate partner income using current function
     partner_income_after_ssc, gross_partner_income, gross_partner_pension = (
@@ -456,9 +462,12 @@ def test_retiree(
     if period == 0:
         income_shock_prev = specs_internal.get("income_shock_mean", 0.0)
 
+    # Convert partner_state to JAX array for budget_constraint
+    partner_state_jax = jnp.asarray(partner_state)
+
     wealth, _ = budget_constraint(
         period=period,
-        partner_state=partner_state,
+        partner_state=partner_state_jax,
         education=education,
         lagged_choice=lagged_choice_val,
         experience=exp_cont,
@@ -480,7 +489,7 @@ def test_retiree(
     )
     own_income_after_ssc = retirement_income_after_ssc
 
-    has_partner_int = (partner_state > 0).astype(int)
+    has_partner_int = int(partner_state > 0)
 
     # Calculate partner income using current function
     partner_income_after_ssc, gross_partner_income, gross_partner_pension = (
@@ -630,9 +639,12 @@ def test_fresh_retiree(
     if period == 0:
         income_shock_prev = specs_internal.get("income_shock_mean", 0.0)
 
+    # Convert partner_state to JAX array for budget_constraint
+    partner_state_jax = jnp.asarray(partner_state)
+
     wealth, _ = budget_constraint(
         period=period,
-        partner_state=partner_state,
+        partner_state=partner_state_jax,
         education=education,
         lagged_choice=lagged_choice_val,
         experience=exp_cont,
@@ -654,7 +666,7 @@ def test_fresh_retiree(
     )
     own_income_after_ssc = retirement_income_after_ssc
 
-    has_partner_int = (partner_state > 0).astype(int)
+    has_partner_int = int(partner_state > 0)
 
     # Calculate partner income using current function
     partner_income_after_ssc, gross_partner_income, gross_partner_pension = (
