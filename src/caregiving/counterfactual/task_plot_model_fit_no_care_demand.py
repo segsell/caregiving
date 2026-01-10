@@ -6,7 +6,6 @@ from typing import Annotated
 
 import pandas as pd
 import pytask
-import yaml
 from pytask import Product
 
 from caregiving.config import BLD
@@ -30,7 +29,6 @@ from caregiving.simulation.plot_model_fit import (
 )
 
 
-@pytask.mark.skip()
 @pytask.mark.model_fit
 def task_plot_model_fit_no_care_demand(
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",

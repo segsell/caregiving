@@ -2,8 +2,6 @@ import jax.numpy as jnp
 
 from caregiving.model.shared import (  # NO_CARE_DEMAND_DEAD,
     MOTHER,
-    PARENT_DEAD,
-    SHARE_CARE_TO_MOTHER,
 )
 from caregiving.model.stochastic_processes.adl_transition import (
     limitations_with_adl_transition,
@@ -28,7 +26,7 @@ def care_demand_transition_adl_light_intensive(
     mother_adl : int
         Current ADL state (0=No ADL, 1=ADL 1, 2=ADL 2 or ADL 3)
     mother_dead : int
-        Mother death status (1=dead, 0=alive)
+        Mother death status (0=alive, 1=recently died, 2=longer dead)
     period : int
         Current period
     education : int
@@ -58,9 +56,10 @@ def care_demand_transition_adl_light_intensive(
 
     # Restrict care demand to the caregiving window and to living mothers.
     # Outside the window or if mother is dead: no care demand (state 0).
-    # If mother_dead == 1, then in_caregiving_window = 0 → care_demand = 0.
+    # If mother_dead in [1, 2] (dead), then in_caregiving_window = 0 → care_demand = 0.
+    is_mother_alive = mother_dead == 0
     in_caregiving_window = (
-        (1 - mother_dead)
+        is_mother_alive
         * (period >= start_period_caregiving - 1)
         * (period < end_period_caregiving)
     )
@@ -70,10 +69,10 @@ def care_demand_transition_adl_light_intensive(
     # - ADL 1 -> care_demand 1 (light)
     # - ADL 2/3 -> care_demand 2 (intensive)
     #
-    # When mother_dead == 1: in_caregiving_window = 0, so:
+    # When mother_dead in [1, 2] (dead): in_caregiving_window = 0, so:
     # - p_no_care = prob_adl[0] + prob_adl[1] + prob_adl[2] = 1.0
     # - p_light = 0, p_intensive = 0
-    # This guarantees care_demand == 0 whenever mother_dead == 1.
+    # This guarantees care_demand == 0 whenever mother is dead.
     p_no_care = prob_adl[0] + (1 - in_caregiving_window) * (prob_adl[1] + prob_adl[2])
     p_light = prob_adl[1] * in_caregiving_window
     p_intensive = prob_adl[2] * in_caregiving_window
@@ -229,7 +228,7 @@ def care_demand_and_supply_transition_adl(
     mother_adl : int
         Current ADL state (0=No ADL, 1=ADL 1, 2=ADL 2 or ADL 3)
     mother_dead : int
-        Mother death status (1=dead, 0=alive)
+        Mother death status (0=alive, 1=recently died, 2=longer dead)
     period : int
         Current period
     education : int
@@ -257,9 +256,10 @@ def care_demand_and_supply_transition_adl(
 
     # Care demand is probability of any ADL (ADL 1 OR ADL 2 or ADL 3)
     # Who provides care depends on caregiving_type (handled in choice set)
+    is_mother_alive = mother_dead == 0
     care_demand = (
         (prob_adl[1] + prob_adl[2])
-        * (1 - mother_dead)
+        * is_mother_alive
         * (period >= start_period_caregiving - 1)
         * (period < end_period_caregiving)
     )

@@ -1,36 +1,24 @@
 """Plot raw SOEP data."""
 
 import re
-from itertools import product
 from pathlib import Path
 from typing import Annotated, Optional
 
-import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib import colors as mcolors
 from pytask import Product
 
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import (
     BAD_HEALTH,
-    DEAD,
-    FILL_VALUE,
     FULL_TIME_CHOICES,
     GOOD_HEALTH,
-    NOT_WORKING,
-    PARENT_WEIGHTS_SHARE,
-    PART_TIME,
     PART_TIME_CHOICES,
-    RETIREMENT,
     RETIREMENT_CHOICES,
     SEX,
-    UNEMPLOYED,
     UNEMPLOYED_CHOICES,
     WEALTH_MOMENTS_SCALE,
-    WEALTH_QUANTILE_CUTOFF,
-    WORK,
 )
 from caregiving.moments.task_create_soep_moments import (
     create_df_caregivers,
@@ -39,7 +27,6 @@ from caregiving.moments.task_create_soep_moments import (
     create_df_with_caregivers,
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
-from caregiving.utils import table
 
 DEGREES_OF_FREEDOM = 1
 

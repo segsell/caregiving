@@ -1,18 +1,14 @@
 """Merge SOEP modules."""
 
-import itertools
 from pathlib import Path
 from typing import Annotated
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import statsmodels.api as sm
-import statsmodels.formula.api as smf
 from pytask import Product
 
 from caregiving.config import BLD, SRC
-from caregiving.utils import table
 
 SYEAR_IS = 2016
 MALE = 1

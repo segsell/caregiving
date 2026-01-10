@@ -4,13 +4,12 @@ import pickle
 from pathlib import Path
 from typing import Annotated
 
-import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
 import pytask
 from pytask import Product
 
-from caregiving.config import BLD, JET_COLOR_MAP
+from caregiving.config import BLD
 from caregiving.model.stochastic_processes.adl_transition import death_transition
 
 

@@ -213,8 +213,6 @@ lambda_high: 2
 # Job finding
 job_finding_logit_const_women: 5
 job_finding_logit_age_women: 0.5
-job_finding_logit_age_squared_women: 0.5
-job_finding_logit_age_cubed_women: 0.5
 job_finding_logit_high_educ_women: 5
 
 

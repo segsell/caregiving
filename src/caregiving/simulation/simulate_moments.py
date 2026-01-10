@@ -9,31 +9,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from caregiving.data_management.share.task_create_parent_child_data_set import (
-    AGE_BINS_PARENTS,
-    AGE_LABELS_PARENTS,
-)
 from caregiving.model.shared import (  # NURSING_HOME_CARE,
-    CARE_DEMAND_AND_NO_OTHER_SUPPLY,
-    CARE_DEMAND_AND_OTHER_SUPPLY,
     DEAD,
     FULL_TIME,
     INFORMAL_CARE,
-    INFORMAL_CARE_OR_OTHER_CARE,
     INTENSIVE_INFORMAL_CARE,
     LIGHT_INFORMAL_CARE,
-    NO_CARE,
     NO_INFORMAL_CARE,
-    NO_NURSING_HOME_CARE,
     NOT_WORKING,
-    NOT_WORKING_CARE,
-    PARENT_BAD_HEALTH,
-    PARENT_DEAD,
-    PARENT_MEDIUM_HEALTH,
     PART_TIME,
     RETIREMENT,
     SCALE_CAREGIVER_SHARE,
-    SEX,
     UNEMPLOYED,
     WEALTH_MOMENTS_SCALE,
     WORK,
@@ -56,21 +42,36 @@ def simulate_moments_pandas(  # noqa: PLR0915
     # Prefer directly stored caregiving start age if available
     start_age_caregivers = model_specs["start_age_caregiving"]
     end_age = model_specs["end_age_msm"]
+    end_age_caregiving = model_specs["end_age_caregiving"]
 
     age_range = range(start_age, end_age + 1)
-    age_range_caregivers = range(start_age_caregivers, end_age + 1)
+    age_range_caregivers = range(start_age_caregivers, end_age_caregiving + 1)
     age_range_wealth = range(start_age, model_specs["end_age_wealth"] + 1)
 
     age_bins_caregivers_5year = (
-        list(range(45, 75, 5)),  # [40, 45, 50, 55, 60, 65, 70]
+        list(range(40, 75, 5)),  # [40, 45, 50, 55, 60, 65, 70]
         [
-            f"{s}_{s+4}" for s in range(45, 70, 5)
+            f"{s}_{s+4}" for s in range(40, 70, 5)
         ],  # ["40_44", "45_49", "50_54", "55_59", "60_64", "65_69"]
     )
-    # age_bins_75 = (
-    #     list(range(40, 80, 5)),  # [40, 45, … , 70]
-    #     [f"{s}_{s+4}" for s in range(40, 75, 5)],  # "40_44", …a
-    # )
+    # =================================================================================
+    # Calculate how many full 3-year bins we can fit
+    # Start from start_age_caregivers and create bins of size 3
+    # Stop when the next full bin would start beyond end_age_caregiving
+    bin_edges_caregivers = []
+    current_edge = start_age_caregivers
+    while current_edge + 3 <= end_age_caregiving + 1:
+        bin_edges_caregivers.append(current_edge)
+        current_edge += 3
+
+    # Add the final edge for the last full bin (needed for pd.cut with right=False)
+    if bin_edges_caregivers:
+        bin_edges_caregivers.append(bin_edges_caregivers[-1] + 3)
+
+    # Generate labels from bin edges (one fewer label than edges)
+    bin_labels_caregivers = [f"{s}_{s+2}" for s in bin_edges_caregivers[:-1]]
+    age_bins_caregivers_3year = (bin_edges_caregivers, bin_labels_caregivers)
+    # =================================================================================
 
     df_full = df_full.loc[df_full["health"] != DEAD].copy()
     df_full["mother_age"] = (
@@ -133,14 +134,14 @@ def simulate_moments_pandas(  # noqa: PLR0915
     moments = create_mean_by_age(
         df_wealth_low,
         moments,
-        variable="wealth_beginning_of_period",
+        variable="assets_begin_of_period",
         age_range=age_range_wealth,
         label="low_education",
     )
     moments = create_mean_by_age(
         df_wealth_high,
         moments,
-        variable="wealth_beginning_of_period",
+        variable="assets_begin_of_period",
         age_range=age_range_wealth,
         label="high_education",
     )
@@ -176,17 +177,6 @@ def simulate_moments_pandas(  # noqa: PLR0915
     # ================================================================================
     moments["share_informal_care_high_educ"] = df_caregivers["education"].mean()
     # ================================================================================
-
-    # Labor caregiver shares using 3-year age bins
-    age_bins_caregivers_3year = (
-        list(
-            range(start_age_caregivers, end_age + 1, 3)
-        ),  # [40, 43, 46, 49, 52, 55, 58, 61, 64, 67, 70]
-        [
-            f"{s}_{s+2}" for s in range(start_age_caregivers, end_age - 1, 3)
-        ],  # ["40_42", "43_45", "46_48", "49_51", "52_54", "55_57",
-        # "58_60", "61_63", "64_66", "67_69"]
-    )
 
     moments = create_labor_share_moments_by_age_bin_pandas(
         df_caregivers, moments, age_bins=age_bins_caregivers_3year, label="caregivers"
@@ -858,7 +848,7 @@ def create_mean_by_age(
     moments : dict
         Updated in place.
     variable : str
-        Column to average (e.g., "wealth_beginning_of_period").
+        Column to average (e.g., "assets_begin_of_period").
     age_range : sequence of int
         Ages to include (e.g., range(40, 71)).
     label : str | None
@@ -1182,14 +1172,14 @@ def create_moments_jax(sim_df, min_age, max_age, model_specs):  # noqa: PLR0915
     mean_wealth_by_age_low_educ = get_mean_by_age(
         arr_all_low_educ,
         ind=idx,
-        variable="wealth_beginning_of_period",
+        variable="assets_begin_of_period",
         min_age=min_age,
         max_age=end_age_wealth,
     )
     mean_wealth_by_age_high_educ = get_mean_by_age(
         arr_all_high_educ,
         ind=idx,
-        variable="wealth_beginning_of_period",
+        variable="assets_begin_of_period",
         min_age=min_age,
         max_age=end_age_wealth,
     )
@@ -1610,7 +1600,8 @@ def create_moments_jax(sim_df, min_age, max_age, model_specs):  # noqa: PLR0915
         max_age=max_age,
     )
 
-    # # ==============================================================================  # noqa: E501
+    # # ==============================================================================
+    # noqa: E501
     # # Care mix
     # age_bins_parents = [(a, a + 5) for a in range(65, 90, 5)]
     # age_bins_parents.append((90, np.inf))
@@ -1640,7 +1631,8 @@ def create_moments_jax(sim_df, min_age, max_age, model_specs):  # noqa: PLR0915
     #     extra_mask=nursing_home_mask,
     #     age_var="mother_age",
     # )
-    # # ==============================================================================  # noqa: E501
+    # # ==============================================================================
+    # noqa: E501
 
     # # share_pure_informal_care_by_parent_age_bin = get_share_by_age_bin(
     # #     arr_domestic_care,

@@ -20,7 +20,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
-from linearmodels.panel.model import PanelOLS
 from pytask import Product
 
 from caregiving.config import BLD, JET_COLOR_MAP, SRC

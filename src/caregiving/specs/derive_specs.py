@@ -13,10 +13,10 @@ def read_and_derive_specs(spec_path):
 
     # Age offset between agent matrices and parent matrices
     specs["agent_to_parent_mat_age_offset"] = (
-        specs["start_age_parents"] - specs["start_age"]
+        specs["start_age_parents_mat"] - specs["start_age"]
     )
     specs["parent_to_survival_mat_age_offset"] = (
-        specs["start_age_parents"] - specs["survival_min_age"]
+        specs["start_age_parents_mat"] - specs["survival_min_age"]
     )
     specs["start_period_caregiving"] = (
         specs["start_age_caregiving"] - specs["start_age"]

@@ -45,11 +45,11 @@
 # # def task_plot_model_fit_for_slides(  # noqa: PLR0915
 # #     path_to_options: Path = BLD / "model" / "options.pkl",
 # #     path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
-# #     path_to_start_params: Path = BLD / "model" / "params" / "start_params_model.yaml",
+# #     path_to_start_params: Path = BLD / "model" / "params" / "start_params_model.yaml",  # noqa: E501
 # #     path_to_empirical_data: Path = BLD
 # #     / "data"
 # #     / "soep_structural_estimation_sample.csv",
-# #     path_to_simulated_data: Path = BLD / "solve_and_simulate" / "simulated_data.pkl",
+# #     path_to_simulated_data: Path = BLD / "solve_and_simulate" / "simulated_data.pkl",  # noqa: E501
 # #     path_to_save_wealth_plot: Annotated[Path, Product] = BLD
 # #     / "plots"
 # #     / "slides"
@@ -66,7 +66,7 @@
 # #     / "plots"
 # #     / "slides"
 # #     / "labor_shares_caregivers_by_age.png",
-# #     # path_to_save_labor_shares_caregivers_by_age_bin: Annotated[Path, Product] = BLD
+# #     # path_to_save_labor_shares_caregivers_by_age_bin: Annotated[Path, Product] = BLD  # noqa: E501
 # #     # / "plots"
 # #     # / "slides"
 # #     # / "labor_shares_caregivers_by_age_bin.png",

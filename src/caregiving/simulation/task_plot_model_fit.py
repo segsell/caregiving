@@ -136,7 +136,7 @@
 #     )
 #     specs = model_full["options"]["model_params"]
 
-#     emp_moms = pd.read_csv(path_to_empirical_moments, index_col=[0]).squeeze("columns")
+#     emp_moms = pd.read_csv(path_to_empirical_moments, index_col=[0]).squeeze("columns")  # noqa: E501
 
 #     df_emp = pd.read_csv(path_to_empirical_data, index_col=[0])
 #     # df_emp_wealth = pd.read_csv(path_to_wealth_sample, index_col=[0])
@@ -211,7 +211,7 @@
 #     # # )
 
 #     plot_choice_shares_by_education(
-#         df_emp, df_sim, specs, path_to_save_plot=path_to_save_labor_shares_by_educ_plot
+#         df_emp, df_sim, specs, path_to_save_plot=path_to_save_labor_shares_by_educ_plot  # noqa: E501
 #     )
 #     test_choice_shares_sum_to_one(df_emp, df_sim, specs)
 
@@ -327,13 +327,13 @@
 #     # # _share_informal_care = df_sim.loc[
 #     # #     df_sim["informal_care"] == 1, "care_demand"
 #     # # ].mean()
-#     share_informal_care = df_sim.loc[df_sim["care_demand"] == 1, "informal_care"].mean()
+#     share_informal_care = df_sim.loc[df_sim["care_demand"] == 1, "informal_care"].mean()  # noqa: E501
 #     print(f"Share informal caregivers (cond. on care demand): {share_informal_care}")
 
 #     share_caregivers_high_edu = df_sim.loc[
 #         (df_sim["informal_care"] == 1), "education"
 #     ].mean()
-#     print(f"Share high education (cond. on informal care): {share_caregivers_high_edu}")
+#     print(f"Share high education (cond. on informal care): {share_caregivers_high_edu}")  # noqa: E501
 #     # plot_choice_shares(df_emp, df_sim, specs)
 #     # discrete_state_names = model_full["model_structure"]["discrete_states_names"]
 #     # plot_states(df_emp, df_sim, discrete_state_names, specs)
@@ -379,7 +379,7 @@
 #         path_to_save_plot=path_to_save_work_transition_age_bin_plot,
 #     )
 
-#     # =================================================================================
+#     # =================================================================================  # noqa: E501
 
 #     # df_sim["formal_care"] = np.nan
 
@@ -397,7 +397,7 @@
 #     # ] = 0
 
 #     # print(f"Share of formal_care: {df_sim['formal_care'].mean()}")
-#     # =================================================================================
+#     # =================================================================================  # noqa: E501
 
 #     data_emp = df_emp.copy()
 #     mask = (

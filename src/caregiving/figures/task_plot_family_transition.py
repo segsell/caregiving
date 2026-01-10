@@ -10,7 +10,7 @@ import pandas as pd
 import pytask
 from pytask import Product
 
-from caregiving.config import BLD, JET_COLOR_MAP, SRC
+from caregiving.config import BLD, JET_COLOR_MAP
 
 
 @pytask.mark.family_transition

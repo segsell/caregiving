@@ -6,7 +6,6 @@ from typing import Annotated
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import pytask
 import statsmodels.formula.api as smf
 from pytask import Product
 

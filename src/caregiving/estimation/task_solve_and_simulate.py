@@ -27,7 +27,7 @@
 # # from caregiving.model.utility.bequest_utility import (
 # #     create_final_period_utility_functions,
 # # )
-# # from caregiving.model.utility.utility_functions_additive import create_utility_functions
+# # from caregiving.model.utility.utility_functions_additive import create_utility_functions  # noqa: E501
 # # from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 # # from caregiving.simulation.simulate import simulate_scenario
 
@@ -39,8 +39,8 @@
 # # def task_solve_and_simulate_start_params(
 # #     path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
 # #     path_to_options: Path = BLD / "model" / "options.pkl",
-# #     path_to_start_params: Path = BLD / "model" / "params" / "start_params_model.yaml",
-# #     path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",
+# #     path_to_start_params: Path = BLD / "model" / "params" / "start_params_model.yaml",  # noqa: E501
+# #     path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",  # noqa: E501
 # #     path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
 # #     path_to_save_solution: Annotated[Path, Product] = BLD
 # #     / "solve_and_simulate"
@@ -70,13 +70,13 @@
 # #         solution_dict["policy"],
 # #         solution_dict["endog_grid"],
 # #     ) = get_solve_func_for_model(model_for_solution)(params)
-# #     # value, policy, endog_grid = get_solve_func_for_model(model_for_solution)(params)
+# #     # value, policy, endog_grid = get_solve_func_for_model(model_for_solution)(params)  # noqa: E501
 
 # #     pickle.dump(solution_dict, path_to_save_solution.open("wb"))
 
 # #     # 2) Simulate
 # #     initial_states = pickle.load(path_to_discrete_states.open("rb"))
-# #     wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
+# #     wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())  # noqa: E501
 
 # #     model_for_simulation = load_and_setup_model(
 # #         options=options,

@@ -6,7 +6,10 @@ import numpy as np
 import pytest
 
 from caregiving.config import BLD
-from caregiving.model.shared import MOTHER
+from caregiving.model.shared import (
+    PARENT_LONGER_DEAD,
+    PARENT_RECENTLY_DEAD,
+)
 from caregiving.model.stochastic_processes.adl_transition import (
     death_transition,
     limitations_with_adl_transition,
@@ -27,8 +30,10 @@ from caregiving.model.stochastic_processes.caregiving_transition import (
         (1, 0, 5, 0),
         # After caregiving window
         (2, 0, 60, 1),
-        # Mother already dead (regardless of window)
+        # Mother already dead (recently died, state 1)
         (1, 1, 10, 0),
+        # Mother longer dead (state 2)
+        (0, 2, 10, 0),
     ],
 )
 def test_care_demand_transition_adl_light_intensive_sums_to_one(
@@ -55,8 +60,9 @@ def test_care_demand_transition_adl_light_intensive_sums_to_one(
     # 2) Behavior inside vs. outside caregiving window (and for dead mothers)
     end_period_caregiving = model_specs["end_age_caregiving"] - model_specs["start_age"]
     start_period_caregiving = model_specs["start_period_caregiving"]
+    is_mother_alive = mother_dead == 0
     in_caregiving_window = (
-        (1 - mother_dead)
+        is_mother_alive
         * (period >= start_period_caregiving - 1)
         * (period < end_period_caregiving)
     )
@@ -329,3 +335,92 @@ def test_care_demand_transition_adl_light_intensive_sums_to_one(
 
 #     expected_p_intensive = alive_prob * prob_adl[2]
 #     assert np.isclose(probs[3], expected_p_intensive, atol=1e-6)
+
+
+@pytest.mark.parametrize(
+    "period, mother_dead, education",
+    [
+        # Test alive mother (state 0)
+        (10, 0, 0),
+        (20, 0, 1),
+        (30, 0, 0),
+        # Test recently died mother (state 1) - should transition to state 2
+        (10, 1, 0),
+        (20, 1, 1),
+        # Test longer dead mother (state 2) - should stay in state 2
+        (10, 2, 0),
+        (20, 2, 1),
+        (30, 2, 0),
+    ],
+)
+def test_death_transition_three_states(period, mother_dead, education):
+    """Test death_transition function with 3-state system.
+
+    States:
+    - 0: alive
+    - 1: recently died (inheritance paid this period)
+    - 2: longer dead (died in previous periods)
+
+    Transition logic:
+    - State 0 -> can stay 0 (alive) or transition to 1 (recently died)
+    - State 1 -> transitions to 2 (longer dead) with certainty
+    - State 2 -> stays at 2 (longer dead) with certainty
+    """
+    # Load model_specs from BLD
+    model_specs = pickle.load((BLD / "model" / "specs" / "specs_full.pkl").open("rb"))
+
+    probs = death_transition(
+        period=period,
+        mother_dead=mother_dead,
+        education=education,
+        model_specs=model_specs,
+    )
+
+    # 1) Probabilities must sum to 1
+    assert np.isclose(
+        probs.sum(), 1.0, atol=1e-8
+    ), f"Probabilities sum to {probs.sum()}, expected 1.0"
+
+    # 2) Must have 3 states: [alive_prob, recently_died_prob, longer_dead_prob]
+    assert probs.shape == (3,), f"Expected shape (3,), got {probs.shape}"
+
+    # 3) All probabilities must be non-negative
+    assert np.all(probs >= 0), f"Negative probabilities found: {probs}"
+
+    # 4) Test specific transition behavior
+    if mother_dead == 0:
+        # If alive: can stay alive or die (become recently dead)
+        # Both probabilities should be between 0 and 1
+        assert 0.0 <= probs[0] <= 1.0, f"Alive prob should be [0,1], got {probs[0]}"
+        assert (
+            0.0 <= probs[1] <= 1.0
+        ), f"Recently died prob should be [0,1], got {probs[1]}"
+        assert np.isclose(
+            probs[2], 0.0, atol=1e-8
+        ), f"If alive, longer dead prob should be 0, got {probs[2]}"
+        # Alive and recently died should sum to 1
+        assert np.isclose(
+            probs[0] + probs[1], 1.0, atol=1e-8
+        ), f"Alive + recently died should sum to 1, got {probs[0] + probs[1]}"
+    elif mother_dead == PARENT_RECENTLY_DEAD:
+        # If recently died: transitions to longer dead (state 2) with certainty
+        assert np.isclose(
+            probs[0], 0.0, atol=1e-8
+        ), f"If recently died, alive prob should be 0, got {probs[0]}"
+        assert np.isclose(
+            probs[1], 0.0, atol=1e-8
+        ), f"If recently died, recently died prob should be 0, got {probs[1]}"
+        assert np.isclose(
+            probs[2], 1.0, atol=1e-8
+        ), f"If recently died, longer dead prob should be 1, got {probs[2]}"
+    elif mother_dead == PARENT_LONGER_DEAD:
+        # If longer dead: stays longer dead (state 2) with certainty
+        assert np.isclose(
+            probs[0], 0.0, atol=1e-8
+        ), f"If longer dead, alive prob should be 0, got {probs[0]}"
+        assert np.isclose(
+            probs[1], 0.0, atol=1e-8
+        ), f"If longer dead, recently died prob should be 0, got {probs[1]}"
+        assert np.isclose(
+            probs[2], 1.0, atol=1e-8
+        ), f"If longer dead, longer dead prob should be 1, got {probs[2]}"

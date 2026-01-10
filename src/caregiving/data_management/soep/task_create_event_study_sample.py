@@ -14,18 +14,19 @@ from caregiving.data_management.soep.auxiliary import (
     enforce_model_choice_restriction,
     filter_data,
 )
-from caregiving.data_management.soep.variables import (
+from caregiving.data_management.soep.soep_variables.experience import (
+    create_experience_variable_with_cap,
+)
+from caregiving.data_management.soep.variables import (  # create_experience_variable,
     create_choice_variable,
     create_education_type,
-    create_experience_variable,
     create_health_var_good_bad,
     create_partner_state,
     create_policy_state,
     generate_working_hours,
 )
-from caregiving.model.shared import N_MONTHS, N_WEEKS_IN_YEAR, PART_TIME, WORK
+from caregiving.model.shared import N_MONTHS, N_WEEKS_IN_YEAR
 from caregiving.specs.task_write_specs import read_and_derive_specs
-from caregiving.utils import table
 
 
 @pytask.mark.skip()
@@ -211,7 +212,9 @@ def task_create_event_study_sample(
         event_study=True,
     )
 
-    df = create_experience_variable(df, drop_invalid=False)
+    df = create_experience_variable_with_cap(
+        df, exp_cap=specs["start_age"] - 14, filter_missings=False
+    )
     df = create_involuntary_versus_voluntary_job_separation_var(df)
     df = create_job_separation_fired(df)
 
@@ -382,6 +385,19 @@ def create_parent_info(df, filter_missing=False):
     df_age["father_age"] = np.where(
         df_age["father_alive"] == 1, df_age["father_age"], np.nan
     )
+
+    # Create death indicators: 1 if parent died this year (syear == death year)
+    df_age["mother_died_this_year"] = 0
+    df_age.loc[
+        (df_age["mydeath"].notna()) & (df_age["syear"] == df_age["mydeath"]),
+        "mother_died_this_year",
+    ] = 1
+
+    df_age["father_died_this_year"] = 0
+    df_age.loc[
+        (df_age["fydeath"].notna()) & (df_age["syear"] == df_age["fydeath"]),
+        "father_died_this_year",
+    ] = 1
 
     df_age.set_index(["pid", "syear"], inplace=True)
 

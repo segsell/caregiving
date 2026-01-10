@@ -246,7 +246,7 @@
 #     "utility_informal_and_formal_care": -1,
 #     ### fixed
 #     "beta": 0.95,  # 0.98
-#     "lambda": 1e-16,  # Taste shock scale/variance. Almost equal zero = no taste shocks
+#     "lambda": 1e-16,  # Taste shock scale/variance. Almost equal zero = no taste shocks  # noqa: E501
 #     "sigma": 1,  # Income shock scale/variance.
 # }
 

@@ -4,7 +4,6 @@ import pickle
 from pathlib import Path
 from typing import Annotated
 
-import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
 import pytask

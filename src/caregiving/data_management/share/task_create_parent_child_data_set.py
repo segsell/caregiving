@@ -3,11 +3,9 @@
 from pathlib import Path
 from typing import Annotated
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytask
-import statsmodels.api as sm
 from pytask import Product
 
 from caregiving.config import BLD
@@ -18,7 +16,6 @@ from caregiving.model.shared import (
     PARENT_GOOD_HEALTH,
     PARENT_MEDIUM_HEALTH,
 )
-from caregiving.utils import count, describe, table
 
 WAVE_1 = 1
 WAVE_2 = 2

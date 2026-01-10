@@ -2,6 +2,7 @@
 source:
 
 https://www.deutsche-rentenversicherung.de/SharedDocs/Downloads/DE/Statistiken-und-Berichte/statistikpublikationen/rv_in_zeitreihen.html
+# noqa: E501
 
 """
 

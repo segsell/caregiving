@@ -1,7 +1,6 @@
 """Functions for pre and post estimation setup."""
 
 import pickle
-import time
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional
 
@@ -10,18 +9,17 @@ import jax.numpy as jnp
 import numpy as np
 import optimagic as om
 import pandas as pd
-import yaml
 
-from caregiving.config import BLD, SRC
+from caregiving.config import BLD
 from caregiving.model.shared import MACHINE_ZERO
 
 jax.config.update("jax_enable_x64", True)
 
 
 def estimate_model(
-    model: Dict[str, Any],
-    start_params: Dict[str, Any],
+    model_class: Dict[str, Any],
     model_specs: Dict[str, Any],
+    start_params: Dict[str, Any],
     algo: str,
     algo_options: Dict[str, Any],
     lower_bounds: Dict[str, float],
@@ -178,7 +176,7 @@ def estimate_model(
 
     simulate_moments_given_params = partial(
         simulate_moments,
-        model_class=model,
+        model_class=model_class,
         initial_states=initial_states,
         model_specs=model_specs,
         fixed_seed=fixed_seed,
@@ -236,10 +234,9 @@ def estimate_model(
 
 
 def estimate_model_with_unobserved_type_shares(
-    model_for_simulation: Dict[str, Any],
-    start_params: Dict[str, Any],
-    solve_func: callable,
+    model_class: Dict[str, Any],
     model_specs: Dict[str, Any],
+    start_params: Dict[str, Any],
     algo: str,
     algo_options: Dict[str, Any],
     lower_bounds: Dict[str, float],
@@ -290,17 +287,29 @@ def estimate_model_with_unobserved_type_shares(
     empirical_moments = np.array(
         pd.read_csv(path_to_empirical_moments, index_col=0).squeeze()
     )
+    empirical_variances = np.array(
+        pd.read_csv(path_to_empirical_variance, index_col=0).squeeze()
+    )
 
-    if weighting_method in ("identity", "unit"):
-        weights = np.eye(len(empirical_moments))
-    elif weighting_method == "estimated":
-        weights = pd.read_csv(path_to_empirical_variance, index_col=0).to_numpy()
+    # if weighting_method in ("identity", "unit"):
+    #     weights = np.eye(len(empirical_moments))
+    # elif weighting_method == "estimated":
+    #     weights = pd.read_csv(path_to_empirical_variance, index_col=0).to_numpy()
+    # else:
+    #     raise ValueError("weighting_method must be in ['identity', 'estimated']")
+    if weighting_method == "identity":
+        weights = np.identity(empirical_moments.shape[0])
+    elif weighting_method == "diagonal":
+        # Use robust diagonal weights to avoid numerical issues
+        empirical_variances_reg = empirical_variances.copy()
+        close_to_zero = empirical_variances_reg < MACHINE_ZERO
+        # Replace zero variances with a small positive value to avoid division by zero
+        empirical_variances_reg[close_to_zero] = 1e-6
+        weight_elements = 1 / empirical_variances_reg
+        weight_elements = np.sqrt(weight_elements)
+        weights = np.diag(weight_elements)
     else:
-        raise ValueError("weighting_method must be in ['identity', 'estimated']")
-
-    if least_squares:
-        empirical_moments = empirical_moments.to_numpy()
-        weights = weights.to_numpy()
+        raise ValueError(f"Unknown weighting method: {weighting_method}")
 
     constraints_list: List[om.constraints.Constraint] = []
 
@@ -318,9 +327,8 @@ def estimate_model_with_unobserved_type_shares(
 
     simulate_moments_given_params = partial(
         simulate_moments_with_unobserved_type_shares,
-        solve_func=solve_func,
         initial_states=initial_states,
-        model_for_simulation=model_for_simulation,
+        model_class=model_class,
         model_specs=model_specs,
         fixed_seed=fixed_seed,
         seed_generator=seed_generator,
@@ -402,18 +410,16 @@ def simulate_moments(
         # extremely fast: draws a uint64 from PCG64
         # seed = int(seed_generator.integers(0, 2**63, dtype=np.uint64))
         # seed = int(seed_generator.integers(0, 2**16, dtype=np.uint16))
-        seed = int(seed_generator.integers(0, 2**32, dtype=np.uint32))
+        model_specs["seed"] = int(seed_generator.integers(0, 2**32, dtype=np.uint32))
     else:
-        seed = fixed_seed
+        model_specs["seed"] = fixed_seed
 
     model_solved = model_class.solve(params)
 
     sim_df = simulate_scenario_func(
         model_solved=model_solved,
         initial_states=initial_states,
-        params=params,
         model_specs=model_specs,
-        seed=seed,
     )
 
     simulated_moments = simulate_moments_func(sim_df, model_specs=model_specs)
@@ -440,6 +446,7 @@ def simulate_moments_with_unobserved_type_shares(
     determined by the estimated parameters:
     - share_unobserved_type_low_educ  (education == 0)
     - share_unobserved_type_high_educ (education == 1)
+
     """
 
     if seed_generator is not None:
@@ -460,9 +467,7 @@ def simulate_moments_with_unobserved_type_shares(
     sim_df = simulate_scenario_func(
         model_solved=model_solved,
         initial_states=adjusted_initial_states,
-        params=params,
         model_specs=model_specs,
-        seed=seed,
     )
 
     simulated_moments = simulate_moments_func(sim_df, model_specs=model_specs)

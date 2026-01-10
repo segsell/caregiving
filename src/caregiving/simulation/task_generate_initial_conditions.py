@@ -16,21 +16,14 @@ from sklearn.neighbors import KernelDensity
 
 import dcegm
 from caregiving.config import BLD
+from caregiving.model.experience_baseline_model import scale_experience_years
 from caregiving.model.shared import (
-    ALL_NO_CARE,
-    CARE_DEMAND_INTENSIVE,
-    CARE_DEMAND_LIGHT,
     END_YEAR_PARENT_GENERATION,
     FEMALE,
-    INITIAL_CONDITIONS_AGE_HIGH,
-    INITIAL_CONDITIONS_AGE_LOW,
-    INITIAL_CONDITIONS_COHORT_HIGH,
-    INITIAL_CONDITIONS_COHORT_LOW,
     MOTHER,
-    NO_CARE_DEMAND,
-    PARENT_DEAD,
+    PARENT_HEALTH_DEAD,
+    PARENT_LONGER_DEAD,
     SEX,
-    WORK_AND_UNEMPLOYED_NO_CARE,
 )
 from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.stochastic_processes.job_transition import (
@@ -43,11 +36,6 @@ from caregiving.model.utility.bequest_utility import (
 )
 from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
-from caregiving.moments.task_create_soep_moments import (
-    create_df_non_caregivers,
-    create_df_wealth,
-)
-from caregiving.utils import table
 
 
 @pytask.mark.initial_conditions
@@ -163,6 +151,11 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
 
     states_dict["care_demand"] = np.zeros_like(start_period_data["wealth"])
     states_dict["experience"] = start_period_data["experience"].values
+    # Initialize mother_dead to 0 (alive) for all agents at initial period
+    # (will be drawn later based on mother health)
+    states_dict["mother_dead"] = np.zeros_like(
+        start_period_data["wealth"], dtype=np.uint8
+    )
 
     states_dict["assets_begin_of_period"] = (
         start_period_data["wealth"].values / specs["wealth_unit"]
@@ -307,10 +300,14 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
             health_prob_by_age,
         )
 
-        # mother_dead: 1 if mother_health == PARENT_DEAD (3), else 0
-        mother_dead_agents[type_mask] = (
-            mother_health_agents[type_mask] == PARENT_DEAD
-        ).astype(np.uint8)
+        # mother_dead if mother_health == PARENT_HEALTH_DEAD (3), else 0
+        # In initial conditions, if mother is dead, we set to "longer dead"
+        # because we don't know if death was recent, so no inheritance
+        mother_dead_agents[type_mask] = np.where(
+            mother_health_agents[type_mask] == PARENT_HEALTH_DEAD,
+            PARENT_LONGER_DEAD,  # Set to longer dead
+            0,  # Set to alive
+        )
 
         # mother_adl: draw from empirical ADL distribution by age in parent_child data
         # If dead, ADL = 0 (No ADL). If alive, draw from empirical distribution
@@ -343,12 +340,10 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
             # "choice"
             "lagged_choice"
         ].value_counts(normalize=True)
-        lagged_choice_probs = pd.Series(
-            index=np.arange(0, model_specs["n_choices"]), data=0, dtype=float
-        )
+        lagged_choice_probs = pd.Series(index=np.arange(0, 4), data=0, dtype=float)
         lagged_choice_probs.update(empirical_lagged_choice_probs)
         lagged_choice_edu = np.random.choice(
-            model_specs["n_choices"], size=n_agents_edu, p=lagged_choice_probs.values
+            4, size=n_agents_edu, p=lagged_choice_probs.values
         )
         lagged_choice[type_mask] = lagged_choice_edu
 
@@ -399,8 +394,12 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         caregiving_type_agents[type_mask] = caregiving_type_edu
 
     # Transform it to be between 0 and 1
-    exp_agents /= model_specs["max_exp_diffs_per_period"][0]
-
+    exp_agents_scaled = scale_experience_years(
+        experience_years=exp_agents,
+        period=jnp.zeros_like(exp_agents, dtype=jnp.uint8),
+        is_retired=jnp.zeros_like(exp_agents, dtype=jnp.uint8),
+        model_specs=model_specs,
+    )
     # Set lagged choice to 1(unemployment) if experience is 0
     exp_zero_mask = exp_agents == 0
     lagged_choice[exp_zero_mask] = 1
@@ -417,7 +416,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         "lagged_choice": jnp.array(lagged_choice, dtype=jnp.uint8),
         # "policy_state": jnp.array(drawn_sras, dtype=jnp.uint8),
         "already_retired": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
-        "experience": jnp.array(exp_agents, dtype=jnp.float64),
+        "experience": jnp.array(exp_agents_scaled, dtype=jnp.float64),
         "job_offer": jnp.array(job_offer_agents, dtype=jnp.uint8),
         "partner_state": jnp.array(partner_states, dtype=jnp.uint8),
         # "mother_health": jnp.array(mother_health_agents, dtype=jnp.uint8),
@@ -430,10 +429,24 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         #     NO_CARE_DEMAND_ALIVE,
         # ),
         "caregiving_type": jnp.array(caregiving_type_agents, dtype=jnp.uint8),
-        "lagged_caregiving": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
+        # "gets_inheritance": jnp.zeros_like(exp_agents, dtype=jnp.uint8),
         "assets_begin_of_period": wealth_agents,
     }
     # type_mask_low = (sex_agents == sex_var) & (education_agents == 0)
+    # import seaborn as sns
+    # import matplotlib.pyplot as plt
+
+    # df = pd.DataFrame(
+    #     {
+    #         "exp_empirical": start_period_data["experience"].values,
+    #     }
+    # )
+
+    # fig, ax = plt.subplots(1, 1, figsize=(8, 4))
+    # sns.histplot(data=df, x="exp_empirical", ax=ax, kde=True)
+    # ax.set_title("Experience (Empirical)")
+    # plt.tight_layout()
+    # plt.show()
     # breakpoint()
 
     with path_to_save_initial_states.open("wb") as f:
@@ -662,3 +675,15 @@ def draw_start_wealth_dist(start_period_data_edu, n_agents_edu, method="kde"):
     )
 
     return wealth_start_clipped
+
+
+# def scale_experience_years(experience_years, period, model_specs):
+#     """Scale experience between 0 and 1."""
+#     # If period is past the last working period, then we take the maximum experience
+#     scale_not_retired = jnp.take(
+#         model_specs["max_exps_period_working"], period, mode="clip"
+#     )
+#     # scale_retired = model_specs["max_pp_retirement"]
+#     # scale = is_retired * scale_retired + (1 - is_retired) * scale_not_retired
+
+#     return experience_years / scale_not_retired

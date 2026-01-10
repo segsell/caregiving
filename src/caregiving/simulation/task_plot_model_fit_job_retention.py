@@ -167,7 +167,7 @@
 #     )
 #     specs = model_full["options"]["model_params"]
 
-#     emp_moms = pd.read_csv(path_to_empirical_moments, index_col=[0]).squeeze("columns")
+#     emp_moms = pd.read_csv(path_to_empirical_moments, index_col=[0]).squeeze("columns")  # noqa: E501
 
 #     df_emp = pd.read_csv(path_to_empirical_data, index_col=[0])
 #     df_emp_wealth = df_emp[(df_emp["wealth"].notna()) & (df_emp["sex"] == 1)].copy()
@@ -227,7 +227,7 @@
 #     plot_average_savings_decision(df_sim, path_to_save_savings_plot)
 
 #     plot_choice_shares_by_education(
-#         df_emp, df_sim, specs, path_to_save_plot=path_to_save_labor_shares_by_educ_plot
+#         df_emp, df_sim, specs, path_to_save_plot=path_to_save_labor_shares_by_educ_plot  # noqa: E501
 #     )
 
 #     test_choice_shares_sum_to_one(df_emp, df_sim, specs)
@@ -286,13 +286,13 @@
 #     )
 
 #     df_sim["informal_care"] = df_sim["choice"].isin(np.asarray(INFORMAL_CARE))
-#     share_informal_care = df_sim.loc[df_sim["care_demand"] == 1, "informal_care"].mean()
+#     share_informal_care = df_sim.loc[df_sim["care_demand"] == 1, "informal_care"].mean()  # noqa: E501
 #     print(f"Share informal caregivers (cond. on care demand): {share_informal_care}")
 
 #     share_caregivers_high_edu = df_sim.loc[
 #         (df_sim["informal_care"] == 1), "education"
 #     ].mean()
-#     print(f"Share high education (cond. on informal care): {share_caregivers_high_edu}")
+#     print(f"Share high education (cond. on informal care): {share_caregivers_high_edu}")  # noqa: E501
 
 #     states_sim = {
 #         "not_working": NOT_WORKING,

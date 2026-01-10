@@ -28,7 +28,7 @@
 # # from caregiving.model.utility.bequest_utility import (
 # #     create_final_period_utility_functions,
 # # )
-# # from caregiving.model.utility.utility_functions_additive import create_utility_functions
+# # from caregiving.model.utility.utility_functions_additive import create_utility_functions  # noqa: E501
 # # from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 
 
@@ -41,7 +41,7 @@
 # #     / "model"
 # #     / "params"
 # #     / "estimated_params_model.yaml",
-# #     path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",
+# #     path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",  # noqa: E501
 # #     path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
 # #     path_to_empirical_moments: Path = BLD / "moments" / "moments_full.csv",
 # #     path_to_empirical_variance: Path = BLD / "moments" / "variances_full.csv",
@@ -75,11 +75,11 @@
 # #     emp_moments = pd.read_csv(path_to_empirical_moments, index_col=[0]).squeeze(
 # #         "columns"
 # #     )
-# #     emp_var = pd.read_csv(path_to_empirical_variance, index_col=[0]).squeeze("columns")
+# #     emp_var = pd.read_csv(path_to_empirical_variance, index_col=[0]).squeeze("columns")  # noqa: E501
 
 # #     # Load initial conditions
 # #     initial_states = pickle.load(path_to_discrete_states.open("rb"))
-# #     wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
+# #     wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())  # noqa: E501
 
 # #     solve_func = get_solve_func_for_model(model_for_solution)
 

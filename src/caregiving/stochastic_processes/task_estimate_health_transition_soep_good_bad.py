@@ -127,6 +127,7 @@ def task_estimate_health_transitions_nonparametric(
     health_transition_matrix.to_csv(path_to_save)
 
 
+@pytask.mark.health_transition
 def task_estimate_health_transitions_parametric(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_health_sample: Path = BLD
@@ -218,6 +219,197 @@ def task_estimate_health_transitions_parametric(
                 ] = (
                     1 - transition_probabilities
                 )
+
+    health_transition_matrix.to_csv(path_to_save)
+
+
+@pytask.mark.health_transition
+def task_estimate_health_transitions_parametric_with_caregiving(
+    path_to_specs: Path = SRC / "specs.yaml",
+    path_to_health_sample: Path = BLD
+    / "data"
+    / "health_transition_estimation_sample.pkl",
+    path_to_save: Annotated[Path, Product] = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "health_transition_matrix_with_caregiving.csv",
+):
+    """Estimate the health state transition with logit regression model."""
+
+    specs = read_and_derive_specs(path_to_specs)
+
+    transition_data = pd.read_pickle(path_to_health_sample)
+
+    # Filter data to only caregiving age range
+    # (caregiving is only possible in this window)
+    start_age_caregiving = specs["start_age_caregiving"]
+    end_age_caregiving = specs["end_age_caregiving"]
+    transition_data = transition_data[
+        (transition_data["age"] >= start_age_caregiving)
+        & (transition_data["age"] <= end_age_caregiving)
+    ].copy()
+
+    # Parameters - only create matrix for caregiving age range
+    ages_caregiving = np.arange(start_age_caregiving, end_age_caregiving + 1)
+    # Period indices for caregiving range (period 0 = start_age_caregiving)
+    periods_caregiving = np.arange(
+        len(ages_caregiving)
+    )  # 0, 1, 2, ..., n_caregiving_periods-1
+
+    alive_health_vars = specs["alive_health_vars"]
+    alive_health_labels = [specs["health_labels"][i] for i in alive_health_vars]
+
+    # Create index with caregiving dimension
+    # (0 = no lagged intensive care, 1 = lagged intensive care)
+    # Only for caregiving age range
+    caregiving_labels = ["no_lagged_intensive_care", "lagged_intensive_care"]
+    index = pd.MultiIndex.from_product(
+        [
+            specs["sex_labels"],
+            specs["education_labels"],
+            periods_caregiving,
+            alive_health_labels,
+            caregiving_labels,
+            alive_health_labels,
+        ],
+        names=[
+            "sex",
+            "education",
+            "period",
+            "health",
+            "lagged_intensive_care",
+            "lead_health",
+        ],
+    )
+
+    # Compute transition probabilities
+    health_transition_matrix = pd.DataFrame(
+        index=index, data=None, columns=["transition_prob"]
+    )
+    for sex_var, sex_label in enumerate(specs["sex_labels"]):
+        for edu_var, edu_label in enumerate(specs["education_labels"]):
+            for alive_health_var in alive_health_vars:
+                alive_health_label = specs["health_labels"][alive_health_var]
+
+                # Filter the data for this sex, education, and health combination
+                data = transition_data[
+                    (transition_data["sex"] == sex_var)
+                    & (transition_data["education"] == edu_var)
+                    & (transition_data["health"] == alive_health_var)
+                ].copy()
+
+                # Fill missing lagged_intensive_care with 0 (assume no care if missing)
+                if "lagged_intensive_care" in data.columns:
+                    data["lagged_intensive_care"] = data[
+                        "lagged_intensive_care"
+                    ].fillna(0)
+                else:
+                    # If column doesn't exist, create it with all zeros
+                    data["lagged_intensive_care"] = 0
+
+                # Also ensure lead_health has no missing values for the model
+                # Drop rows where lead_health is missing
+                # (these are the last period for each person)
+                data = data.dropna(
+                    subset=["lead_health", "age", "lagged_intensive_care"]
+                )
+
+                # Fit the logit model with age and lagged intensive care as covariates
+                y_var = "lead_health"
+                x_vars = ["age", "lagged_intensive_care"]
+                formula = y_var + " ~ " + " + ".join(x_vars)
+
+                try:
+                    model = smf.logit(formula=formula, data=data)
+                    result = model.fit()
+                    # Print model summary for debugging (first iteration only)
+                    if (
+                        sex_var == 0 == edu_var
+                        and alive_health_var == alive_health_vars[0]
+                    ):
+                        print(
+                            f"\nModel for {sex_label}, {edu_label}, "
+                            f"{alive_health_label}:"
+                        )
+                        print(f"Sample size: {len(data)}")
+                        print(
+                            f"lagged_intensive_care mean: "
+                            f"{data['lagged_intensive_care'].mean():.3f}"
+                        )
+                        print(
+                            f"lead_health mean (P(Good Health)): "
+                            f"{data['lead_health'].mean():.3f}"
+                        )
+                        print("lead_health mean by lagged_intensive_care:")
+                        print(
+                            data.groupby("lagged_intensive_care")["lead_health"].agg(
+                                ["mean", "count"]
+                            )
+                        )
+                        print(result.summary())
+                except Exception as e:
+                    # Fallback to age-only model if there's an issue
+                    print(
+                        f"Warning: Failed to fit model with lagged_intensive_care "
+                        f"for {sex_label}, {edu_label}, {alive_health_label}: {e}"
+                    )
+                    x_vars = ["age"]
+                    formula = y_var + " ~ " + " + ".join(x_vars)
+                    model = smf.logit(formula=formula, data=data)
+                    result = model.fit()
+
+                # Compute transition probabilities for each caregiving status
+                # Only for caregiving age range
+                for care_var, care_label in enumerate(caregiving_labels):
+                    # Create prediction data with age and lagged intensive care
+                    # Only predict for caregiving age range
+                    pred_data_caregiving = pd.DataFrame(
+                        {"age": ages_caregiving, "lagged_intensive_care": care_var}
+                    )
+
+                    # If model doesn't include lagged_intensive_care,
+                    # predict same for both
+                    if "lagged_intensive_care" not in x_vars:
+                        # Use the same predictions for both caregiving statuses
+                        transition_probabilities = result.predict(
+                            pd.DataFrame({"age": ages_caregiving})
+                        ).values
+                    else:
+                        transition_probabilities = result.predict(
+                            pred_data_caregiving
+                        ).values
+
+                    # For transition to good health
+                    good_label = specs["health_labels"][1]
+
+                    health_transition_matrix.loc[
+                        (
+                            sex_label,
+                            edu_label,
+                            slice(None),
+                            alive_health_label,
+                            care_label,
+                            good_label,
+                        ),
+                        "transition_prob",
+                    ] = transition_probabilities
+
+                    # For transition to bad health, we simply take the complement
+                    bad_label = specs["health_labels"][0]
+
+                    health_transition_matrix.loc[
+                        (
+                            sex_label,
+                            edu_label,
+                            slice(None),
+                            alive_health_label,
+                            care_label,
+                            bad_label,
+                        ),
+                        "transition_prob",
+                    ] = (
+                        1 - transition_probabilities
+                    )
 
     health_transition_matrix.to_csv(path_to_save)
 

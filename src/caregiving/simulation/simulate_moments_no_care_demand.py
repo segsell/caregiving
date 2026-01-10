@@ -1,32 +1,15 @@
 """Simulate moments for no care demand counterfactual."""
 
-import re
-from itertools import product
-from typing import Optional
-
-import jax.numpy as jnp
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from caregiving.data_management.share.task_create_parent_child_data_set import (
-    AGE_BINS_PARENTS,
-    AGE_LABELS_PARENTS,
-)
-from caregiving.model.shared import (
-    SEX,
-    WEALTH_MOMENTS_SCALE,
-)
 from caregiving.model.shared_no_care_demand import (
     FULL_TIME_NO_CARE_DEMAND,
-    NOT_WORKING_NO_CARE_DEMAND,
     PART_TIME_NO_CARE_DEMAND,
     RETIREMENT_NO_CARE_DEMAND,
     UNEMPLOYED_NO_CARE_DEMAND,
-    WORK_NO_CARE_DEMAND,
 )
 from caregiving.simulation.simulate_moments import (
-    compute_transition_moments_pandas_for_age_bins,
     create_mean_by_age,
 )
 
@@ -39,19 +22,18 @@ FILL_VALUE_MISSING_AGE = np.nan
 
 def simulate_moments_pandas_no_care_demand(
     df_full,
-    options,
+    model_specs,
 ) -> pd.DataFrame:
     """Simulate the model for given parametrization and model solution.
 
     Counterfactual without care demand.
     """
 
-    model_params = options["model_params"]
-    start_age = model_params["start_age"]
-    end_age = model_params["end_age_msm"]
+    start_age = model_specs["start_age"]
+    end_age = model_specs["end_age_msm"]
 
     age_range = range(start_age, end_age + 1)
-    age_range_wealth = range(start_age, model_params["end_age_wealth"] + 1)
+    age_range_wealth = range(start_age, model_specs["end_age_wealth"] + 1)
 
     df_low = df_full[df_full["education"] == 0].copy()
     df_high = df_full[df_full["education"] == 1].copy()
@@ -66,14 +48,14 @@ def simulate_moments_pandas_no_care_demand(
     moments = create_mean_by_age(
         df_low,
         moments,
-        variable="wealth_beginning_of_period",
+        variable="assets_begin_of_period",
         age_range=age_range_wealth,
         label="low_education",
     )
     moments = create_mean_by_age(
         df_high,
         moments,
-        variable="wealth_beginning_of_period",
+        variable="assets_begin_of_period",
         age_range=age_range_wealth,
         label="high_education",
     )

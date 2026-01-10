@@ -84,6 +84,130 @@ def read_in_health_transition_specs(health_trans_probs_df, death_prob_df, specs)
     return jnp.asarray(health_trans_mat)
 
 
+def read_in_health_transition_specs_with_caregiving(
+    health_trans_probs_df, death_prob_df, specs
+):
+    """Read in health and death transition specs with lagged intensive
+    caregiving dimension."""
+    alive_health_vars = specs["alive_health_vars"]
+    death_health_var = specs["death_health_var"]
+    n_lagged_intensive_care = (
+        2  # 0 = no_lagged_intensive_care, 1 = lagged_intensive_care
+    )
+
+    # Transition probabilities for health (with caregiving dimension)
+    health_trans_mat = np.zeros(
+        (
+            specs["n_sexes"],
+            specs["n_education_types"],
+            specs["n_periods"],
+            specs["n_health_states"],
+            n_lagged_intensive_care,
+            specs["n_health_states"],
+        ),
+        dtype=float,
+    )
+
+    # Map caregiving labels to indices
+    caregiving_label_to_idx = {
+        "no_lagged_intensive_care": 0,
+        "lagged_intensive_care": 1,
+    }
+
+    # Map periods: period 0 in CSV = start_age_caregiving,
+    # need to map to full matrix period
+    start_age_caregiving = specs["start_age_caregiving"]
+    end_age_caregiving = specs["end_age_caregiving"]
+    start_period_caregiving = start_age_caregiving - specs["start_age"]
+    end_period_caregiving = end_age_caregiving - specs["start_age"]
+
+    for sex_var, sex_label in enumerate(specs["sex_labels"]):
+        for edu_var, edu_label in enumerate(specs["education_labels"]):
+            # Only iterate over caregiving periods in the full matrix
+            for period_full in range(
+                start_period_caregiving, end_period_caregiving + 1
+            ):
+                # Period in CSV (0-indexed from start_age_caregiving)
+                period_csv = period_full - start_period_caregiving
+
+                for current_health_var in alive_health_vars:
+                    current_health_label = specs["health_labels"][current_health_var]
+
+                    # Read transition probabilities for each lagged
+                    # intensive care status
+                    for care_label, care_idx in caregiving_label_to_idx.items():
+                        for lead_health_var in alive_health_vars:
+                            next_health_label = specs["health_labels"][lead_health_var]
+                            trans_prob = health_trans_probs_df.loc[
+                                (health_trans_probs_df["sex"] == sex_label)
+                                & (health_trans_probs_df["education"] == edu_label)
+                                & (health_trans_probs_df["period"] == period_csv)
+                                & (
+                                    health_trans_probs_df["health"]
+                                    == current_health_label
+                                )
+                                & (
+                                    health_trans_probs_df["lagged_intensive_care"]
+                                    == care_label
+                                )
+                                & (
+                                    health_trans_probs_df["lead_health"]
+                                    == next_health_label
+                                ),
+                                "transition_prob",
+                            ].values[0]
+                            health_trans_mat[
+                                sex_var,
+                                edu_var,
+                                period_full,
+                                current_health_var,
+                                care_idx,
+                                lead_health_var,
+                            ] = trans_prob
+
+                    current_age = period_full + specs["start_age"]
+
+                    # Get death probability (same for both caregiving statuses)
+                    death_prob = death_prob_df.loc[
+                        (death_prob_df["age"] == current_age)
+                        & (death_prob_df["sex"] == sex_var)
+                        & (death_prob_df["health"] == current_health_var)
+                        & (death_prob_df["education"] == edu_var),
+                        "death_prob",
+                    ].values[0]
+
+                    # Death state. Condition health transitions on surviving and
+                    # then assign death probability to death state
+                    # Apply to both caregiving statuses
+                    for care_idx in range(n_lagged_intensive_care):
+                        health_trans_mat[
+                            sex_var,
+                            edu_var,
+                            period_full,
+                            current_health_var,
+                            care_idx,
+                            :,
+                        ] *= (
+                            1 - death_prob
+                        )
+                        health_trans_mat[
+                            sex_var,
+                            edu_var,
+                            period_full,
+                            current_health_var,
+                            care_idx,
+                            death_health_var,
+                        ] = death_prob
+
+    # Death as absorbing state. There are only zeros in the last row of the
+    # transition matrix and a 1 on the diagonal element
+    # Apply to both caregiving statuses
+    for care_idx in range(n_lagged_intensive_care):
+        health_trans_mat[:, :, :, death_health_var, care_idx, death_health_var] = 1
+
+    return jnp.asarray(health_trans_mat)
+
+
 def read_in_health_transition_specs_good_medium_bad(
     health_trans_probs_df, death_prob_df, specs
 ):

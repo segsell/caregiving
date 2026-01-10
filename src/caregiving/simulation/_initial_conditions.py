@@ -18,7 +18,7 @@
 #     """Draw initial resources and states for the simulation.
 
 #     mother_health = get_initial_share_three(     initial_conditions,
-#     ["mother_good_health", "mother_medium_health", "mother_bad_health"], ) father_health
+#     ["mother_good_health", "mother_medium_health", "mother_bad_health"], ) father_health  # noqa: E501
 #     = get_initial_share_three(     initial_conditions,     ["father_good_health",
 #     "father_medium_health", "father_bad_health"], )
 
@@ -109,7 +109,7 @@
 #         n_agents=n_agents,
 #     )
 
-#     initial_resources_out = initial_resources.at[initial_states["high_educ"] == 1].set(
+#     initial_resources_out = initial_resources.at[initial_states["high_educ"] == 1].set(  # noqa: E501
 #         initial_resources_high_educ[initial_states["high_educ"] == 1],
 #     )
 
@@ -171,5 +171,5 @@
 
 #     sample_standard_normal = jax.random.normal(key, (n_agents,))
 
-#     # Scaling and shifting to get the desired mean and standard deviation, then rounding
+#     # Scaling and shifting to get the desired mean and standard deviation, then rounding  # noqa: E501
 #     return jnp.round(mean + std_dev * sample_standard_normal).astype(jnp.int16)

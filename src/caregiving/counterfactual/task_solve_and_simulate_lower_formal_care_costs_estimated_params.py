@@ -61,7 +61,7 @@
 # #     50% (multiplied by 0.5), making formal care more affordable.
 
 # #     Args:
-# #         path_to_solution_model: Path to the lower formal care costs model for solution
+# #         path_to_solution_model: Path to the lower formal care costs model for solution  # noqa: E501
 # #         path_to_options: Path to the lower formal care costs model options
 # #         path_to_estimated_params: Path to the estimated parameters
 # #         path_to_discrete_states: Path to discrete initial states
@@ -116,7 +116,7 @@
 # #     sim_df.to_pickle(path_to_save_simulated_data)
 
 
-# # def load_and_setup_full_model_for_solution(options, path_to_model) -> Dict[str, Any]:
+# # def load_and_setup_full_model_for_solution(options, path_to_model) -> Dict[str, Any]:  # noqa: E501
 # #     """Load and setup full model for solution."""
 
 # #     model_full = load_and_setup_model(

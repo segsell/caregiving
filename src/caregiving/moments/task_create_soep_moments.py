@@ -4,7 +4,6 @@ from itertools import product
 from pathlib import Path
 from typing import Annotated
 
-import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -12,19 +11,12 @@ import pytask
 from pytask import Product
 
 from caregiving.config import BLD, SRC
-from caregiving.data_management.share.task_create_parent_child_data_set import (
-    AGE_BINS_PARENTS,
-    AGE_LABELS_PARENTS,
-    weighted_shares_and_counts,
-)
 from caregiving.model.shared import (
     BAD_HEALTH,
     DEAD,
     FULL_TIME_CHOICES,
     GOOD_HEALTH,
-    NOT_WORKING,
     NOT_WORKING_CHOICES,
-    PARENT_BAD_HEALTH,
     PARENT_WEIGHTS_SHARE,
     PART_TIME_CHOICES,
     RETIREMENT_CHOICES,
@@ -33,11 +25,9 @@ from caregiving.model.shared import (
     UNEMPLOYED_CHOICES,
     WEALTH_MOMENTS_SCALE,
     WEALTH_QUANTILE_CUTOFF,
-    WORK,
     WORK_CHOICES,
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
-from caregiving.utils import table
 
 DEGREES_OF_FREEDOM = 1
 
@@ -63,6 +53,7 @@ def task_create_soep_moments(  # noqa: PLR0915
     start_age = specs["start_age"]
     start_age_caregivers = specs["start_age_caregiving"]
     end_age = specs["end_age_msm"]
+    end_age_caregiving = specs["end_age_caregiving"]
     start_year = 2001
     end_year = 2019
 
@@ -243,7 +234,7 @@ def task_create_soep_moments(  # noqa: PLR0915
 
     # =================================================================================
     caregiver_shares = {
-        # "share_informal_care_age_bin_40_44": 0.02980982 + 0.010,
+        "share_informal_care_age_bin_40_44": 0.02980982 + 0.010,
         "share_informal_care_age_bin_45_49": 0.04036255 + 0.015,
         "share_informal_care_age_bin_50_54": 0.05350986 + 0.021,
         "share_informal_care_age_bin_55_59": 0.06193384 + 0.027,
@@ -286,17 +277,24 @@ def task_create_soep_moments(  # noqa: PLR0915
         ddof=DEGREES_OF_FREEDOM
     )
 
-    # Caregiving labor shares using 3-year age bins
-    start_age_caregivers = specs["start_age_caregiving"]
-    age_bins_caregivers_3year = (
-        list(
-            range(start_age_caregivers, end_age + 1, 3)
-        ),  # bin edges: [40, 43, 46, 49, 52, 55, 58, 61, 64, 67, 70]
-        [
-            f"{s}_{s+2}" for s in range(start_age_caregivers, end_age - 1, 3)
-        ],  # bin labels: ["40_42", "43_45", "46_48", "49_51", "52_54", "55_57",
-        # "58_60", "61_63", "64_66", "67_69"]
-    )
+    # =================================================================================
+    # Calculate how many full 3-year bins we can fit
+    # Start from start_age_caregivers and create bins of size 3
+    # Stop when the next full bin would start beyond end_age_caregiving
+    bin_edges_caregivers = []
+    current_edge = start_age_caregivers
+    while current_edge + 3 <= end_age_caregiving + 1:
+        bin_edges_caregivers.append(current_edge)
+        current_edge += 3
+
+    # Add the final edge for the last full bin (needed for pd.cut with right=False)
+    if bin_edges_caregivers:
+        bin_edges_caregivers.append(bin_edges_caregivers[-1] + 3)
+
+    # Generate labels from bin edges (one fewer label than edges)
+    bin_labels_caregivers = [f"{s}_{s+2}" for s in bin_edges_caregivers[:-1]]
+    age_bins_caregivers_3year = (bin_edges_caregivers, bin_labels_caregivers)
+    # =================================================================================
 
     moments, variances = compute_labor_shares_by_age_bin(
         df_caregivers,

@@ -39,7 +39,6 @@ from caregiving.counterfactual.task_plot_labor_supply_differences_no_care_demand
 from caregiving.model.shared import DEAD, INFORMAL_CARE
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_ret_age
 def task_plot_matched_differences_by_distance_higher_ret_age(  # noqa: PLR0915, E501
     path_to_higher_ret_age_data: Path = BLD
@@ -157,9 +156,9 @@ def task_plot_matched_differences_by_distance_higher_ret_age(  # noqa: PLR0915, 
     )
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_ret_age
-def task_plot_matched_differences_by_age_at_first_care_higher_ret_age_vs_baseline(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_at_first_care_higher_ret_age_vs_baseline(
+    # noqa: E501
     path_to_higher_ret_age_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_higher_ret_age_estimated_params.pkl",
@@ -196,7 +195,7 @@ def task_plot_matched_differences_by_age_at_first_care_higher_ret_age_vs_baselin
     / "higher_ret_age"
     / "vs_baseline"
     / "matched_differences_working_hours_by_age_at_first_care.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
     ages_at_first_care: list[int] | None = None,
@@ -218,13 +217,12 @@ def task_plot_matched_differences_by_age_at_first_care_higher_ret_age_vs_baselin
     baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
 
     # Working hours
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     hr_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_hr, model_params, choice_set_type="original"
+        df_hr, specs, choice_set_type="original"
     )
     baseline_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_baseline, model_params, choice_set_type="original"
+        df_baseline, specs, choice_set_type="original"
     )
 
     # Additional outcomes
@@ -381,9 +379,9 @@ def task_plot_matched_differences_by_age_at_first_care_higher_ret_age_vs_baselin
     )
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_ret_age
-def task_plot_matched_differences_by_age_bins_at_first_care_higher_ret_age_vs_baseline(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_bins_at_first_care_higher_ret_age_vs_baseline(
+    # noqa: E501
     path_to_higher_ret_age_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_higher_ret_age_estimated_params.pkl",
@@ -420,7 +418,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_higher_ret_age_vs_ba
     / "higher_ret_age"
     / "vs_baseline"
     / "matched_differences_working_hours_by_age_bins_at_first_care.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
     min_age: int = 50,
@@ -440,13 +438,12 @@ def task_plot_matched_differences_by_age_bins_at_first_care_higher_ret_age_vs_ba
     hr_outcomes = calculate_outcomes(df_hr, choice_set_type="original")
     baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
 
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     hr_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_hr, model_params, choice_set_type="original"
+        df_hr, specs, choice_set_type="original"
     )
     baseline_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_baseline, model_params, choice_set_type="original"
+        df_baseline, specs, choice_set_type="original"
     )
 
     hr_additional = calculate_additional_outcomes(df_hr)
@@ -622,7 +619,6 @@ def task_plot_matched_differences_by_age_bins_at_first_care_higher_ret_age_vs_ba
     )
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_ret_age
 def task_plot_matched_differences_by_age_at_first_care_demand_higher_ret_age_vs_baseline(  # noqa: PLR0915, E501
     path_to_higher_ret_age_data: Path = BLD
@@ -667,7 +663,7 @@ def task_plot_matched_differences_by_age_at_first_care_demand_higher_ret_age_vs_
     / "higher_ret_age"
     / "vs_baseline"
     / "matched_differences_care_by_age_at_first_care_demand.png",
-    path_to_options: Path = BLD / "model" / "options.pkl",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     ever_caregivers: bool = True,
     window: int = 20,
     ages_at_first_care_demand: list[int] | None = None,
@@ -687,13 +683,12 @@ def task_plot_matched_differences_by_age_at_first_care_demand_higher_ret_age_vs_
     hr_outcomes = calculate_outcomes(df_hr, choice_set_type="original")
     baseline_outcomes = calculate_outcomes(df_baseline, choice_set_type="original")
 
-    options = pickle.load(path_to_options.open("rb"))
-    model_params = options["model_params"]
+    specs = pickle.load(path_to_specs.open("rb"))
     hr_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_hr, model_params, choice_set_type="original"
+        df_hr, specs, choice_set_type="original"
     )
     baseline_outcomes["hours_weekly"] = calculate_working_hours_weekly(
-        df_baseline, model_params, choice_set_type="original"
+        df_baseline, specs, choice_set_type="original"
     )
 
     hr_additional = calculate_additional_outcomes(df_hr)
@@ -866,9 +861,9 @@ def task_plot_matched_differences_by_age_at_first_care_demand_higher_ret_age_vs_
     )
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_ret_age
-def task_plot_matched_differences_first_care_start_by_age_higher_ret_age(  # noqa: PLR0915, E501
+def task_plot_matched_differences_first_care_start_by_age_higher_ret_age(
+    # noqa: E501
     path_to_higher_ret_age_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_higher_ret_age_estimated_params.pkl",
@@ -996,9 +991,9 @@ def task_plot_matched_differences_first_care_start_by_age_higher_ret_age(  # noq
     plt.close()
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_ret_age
-def task_plot_matched_differences_first_care_demand_start_by_age_higher_ret_age(  # noqa: PLR0915, E501
+def task_plot_matched_differences_first_care_demand_start_by_age_higher_ret_age(  # noqa: PLR0915
+    # noqa: E501
     path_to_higher_ret_age_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_higher_ret_age_estimated_params.pkl",

@@ -54,7 +54,7 @@
 # #     / "solution_no_cash_benefits_higher_formal_care_costs_estimated_params.pkl",
 # #     path_to_save_simulated_data: Annotated[Path, Product] = BLD
 # #     / "solve_and_simulate"
-# #     / "simulated_data_no_cash_benefits_higher_formal_care_costs_estimated_params.pkl",
+# #     / "simulated_data_no_cash_benefits_higher_formal_care_costs_estimated_params.pkl",  # noqa: E501
 # # ) -> None:
 # #     """Solve and simulate the no-cash-benefits higher-formal-care-costs model."""
 

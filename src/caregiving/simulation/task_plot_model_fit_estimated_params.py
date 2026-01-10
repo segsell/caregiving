@@ -7,10 +7,8 @@ from typing import Annotated
 import numpy as np
 import pandas as pd
 import pytask
-import yaml
 from pytask import Product
 
-import dcegm
 from caregiving.config import BLD
 from caregiving.model.shared import (
     DEAD,
@@ -20,22 +18,12 @@ from caregiving.model.shared import (
     NO_INFORMAL_CARE,
     NOT_WORKING,
     NOT_WORKING_CHOICES,
-    PARENT_DEAD,
     RETIREMENT,
     SCALE_CAREGIVER_SHARE,
     SEX,
-    WEALTH_QUANTILE_CUTOFF,
     WORK,
     WORK_CHOICES,
 )
-from caregiving.model.state_space import create_state_space_functions
-from caregiving.model.task_specify_model import create_stochastic_states_transitions
-from caregiving.model.taste_shocks import shock_function_dict
-from caregiving.model.utility.bequest_utility import (
-    create_final_period_utility_functions,
-)
-from caregiving.model.utility.utility_functions_additive import create_utility_functions
-from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.moments.task_create_soep_moments import (
     create_df_caregivers,
     create_df_non_caregivers,
@@ -44,18 +32,11 @@ from caregiving.moments.task_create_soep_moments import (
 )
 from caregiving.simulation.plot_model_fit import (
     plot_average_savings_decision,
-    plot_average_wealth,
-    plot_caregiver_shares_by_age,
     plot_caregiver_shares_by_age_bins,
-    plot_choice_shares,
     plot_choice_shares_by_education,
     plot_choice_shares_by_education_age_bins,
-    plot_choice_shares_overall,
-    plot_choice_shares_overall_age_bins,
-    plot_choice_shares_single,
     plot_job_offer_share_by_age,
     plot_simulated_care_demand_by_age,
-    plot_states,
     plot_transition_counts_by_age,
     plot_transitions_by_age,
     plot_transitions_by_age_bins,
@@ -98,6 +79,12 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
     / "plots"
     / "model_fit_estimated_params"
     / "labor_shares_caregivers_by_age.png",
+    path_to_save_labor_shares_intensive_caregivers_by_age: Annotated[
+        Path, Product
+    ] = BLD
+    / "plots"
+    / "model_fit_estimated_params"
+    / "labor_shares_intensive_caregivers_by_age.png",
     # path_to_save_labor_shares_caregivers_by_age_bin: Annotated[Path, Product] = BLD
     # / "plots"
     # / "model_fit_estimated_params"
@@ -126,6 +113,12 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
     / "plots"
     / "model_fit_estimated_params"
     / "share_caregivers_by_age_bin.png",
+    path_to_save_caregiver_share_by_age_bin_presentation_plot: Annotated[
+        Path, Product
+    ] = BLD
+    / "plots"
+    / "model_fit_estimated_params"
+    / "share_caregivers_by_age_bin_presentation.png",
     path_to_save_care_demand_by_age_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "model_fit_estimated_params"
@@ -245,7 +238,9 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         bin_width=5,
         path_to_save_plot=path_to_save_wealth_age_bins_plot,
     )
-    # plot_average_savings_decision(df_sim, path_to_save_savings_plot)
+    plot_average_savings_decision(
+        df_sim, path_to_save_savings_plot, end_age=specs["end_age"]
+    )
 
     plot_choice_shares_by_education(
         df_emp,
@@ -267,7 +262,18 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         df_emp_caregivers,
         df_sim_caregivers,
         specs,
+        age_min=start_age_caregivers,
+        age_max=end_age,
         path_to_save_plot=path_to_save_labor_shares_caregivers_by_age,
+    )
+
+    plot_choice_shares_by_education(
+        df_emp_intensive_caregivers,
+        df_sim_intensive_caregivers,
+        specs,
+        age_min=start_age_caregivers,
+        age_max=end_age,
+        path_to_save_plot=path_to_save_labor_shares_intensive_caregivers_by_age,
     )
 
     # Define age range for caregivers (40-75) and use 3-year bins
@@ -313,6 +319,37 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         age_max=75,
         scale=SCALE_CAREGIVER_SHARE,
         path_to_save_plot=path_to_save_caregiver_share_by_age_bin_plot,
+    )
+
+    emp_moms_presentation = emp_moms.copy()
+    emp_moms_presentation["share_informal_care_age_bin_40_44"] = (
+        0.021 * SCALE_CAREGIVER_SHARE
+    )
+    emp_moms_presentation["share_informal_care_age_bin_45_49"] = (
+        0.03236255 * SCALE_CAREGIVER_SHARE
+    )
+    emp_moms_presentation["share_informal_care_age_bin_50_54"] = (
+        0.05290986 * SCALE_CAREGIVER_SHARE
+    )
+    emp_moms_presentation["share_informal_care_age_bin_55_59"] = (
+        0.07413384 * SCALE_CAREGIVER_SHARE
+    )
+    emp_moms_presentation["share_informal_care_age_bin_60_64"] = (
+        0.06994824 * SCALE_CAREGIVER_SHARE
+    )
+    emp_moms_presentation["share_informal_care_age_bin_65_69"] = (
+        0.03079298 * SCALE_CAREGIVER_SHARE
+    )
+
+    plot_caregiver_shares_by_age_bins(
+        emp_moms_presentation,
+        df_sim,
+        specs,
+        choice_set=INFORMAL_CARE,
+        age_min=40,
+        age_max=75,
+        scale=SCALE_CAREGIVER_SHARE,
+        path_to_save_plot=path_to_save_caregiver_share_by_age_bin_presentation_plot,
     )
 
     plot_simulated_care_demand_by_age(
@@ -425,6 +462,7 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
     # =================================================================================
     # Caregiving transitions
     # =================================================================================
+
     # Create temporary choice columns for empirical data (from any_care)
     df_emp_care = df_emp_with_caregivers.copy()
     if "any_care" in df_emp_care.columns and "lagged_any_care" in df_emp_care.columns:

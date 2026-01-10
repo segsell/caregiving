@@ -28,7 +28,7 @@
 # from caregiving.model.utility.bequest_utility import (
 #     create_final_period_utility_functions,
 # )
-# from caregiving.model.utility.utility_functions_additive import create_utility_functions
+# from caregiving.model.utility.utility_functions_additive import create_utility_functions  # noqa: E501
 # from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 # from caregiving.simulation.simulate import simulate_scenario
 
@@ -50,7 +50,7 @@
 #     / "solve_and_simulate"
 #     / "sim_df_counterfactual.csv",
 #     path_to_start_params: Path = BLD / "model" / "params" / "start_params_model.yaml",
-#     path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",
+#     path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",  # noqa: E501
 #     path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
 # ) -> None:
 #     """Simulate the model for given parametrization and model solution."""
@@ -63,9 +63,9 @@
 
 #     params = yaml.safe_load(path_to_start_params.open("rb"))
 
-#     # =================================================================================
+#     # =================================================================================  # noqa: E501
 #     # Baseline
-#     # =================================================================================
+#     # =================================================================================  # noqa: E501
 
 #     # model_for_solution = load_and_setup_full_model_for_solution(
 #     #     options, path_to_model=path_to_solution_model
@@ -82,7 +82,7 @@
 
 #     # 2) Simulate
 #     initial_states = pickle.load(path_to_discrete_states.open("rb"))
-#     wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
+#     wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())  # noqa: E501
 
 #     model_for_simulation_baseline = load_and_setup_model(
 #         options=options_baseline,
@@ -119,9 +119,9 @@
 
 #     del sim_df
 
-#     # =================================================================================
+#     # =================================================================================  # noqa: E501
 #     # Counterfactual
-#     # =================================================================================
+#     # =================================================================================  # noqa: E501
 
 #     # # Counterfactual simulation: No informal care
 
@@ -147,7 +147,7 @@
 
 #     # Compare to care demand ever! and no informal care counterfactual
 #     npv_no_informal_care = sim_df_counter.loc[
-#         (sim_df_counter["care_demand_ever"] == 1) & (sim_df_counter["age"] == AGE_MAX),
+#         (sim_df_counter["care_demand_ever"] == 1) & (sim_df_counter["age"] == AGE_MAX),  # noqa: E501
 #         "npv_income_30_80",
 #     ].mean()
 #     print(f"NPV No Informal Care: {npv_no_informal_care}")
@@ -158,7 +158,7 @@
 #     path_to_options: Path = BLD / "model" / "options.pkl",
 #     path_to_start_params: Path = BLD / "model" / "params" / "start_params_model.yaml",
 #     path_to_solution_model: Path = BLD / "model" / "model_for_solution.pkl",
-#     path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",
+#     path_to_discrete_states: Path = BLD / "model" / "initial_conditions" / "states.pkl",  # noqa: E501
 #     path_to_wealth: Path = BLD / "model" / "initial_conditions" / "wealth.csv",
 #     path_to_save_solution: Annotated[Path, Product] = BLD
 #     / "solve_and_simulate"
@@ -198,7 +198,7 @@
 
 #     # 2) Simulate
 #     initial_states = pickle.load(path_to_discrete_states.open("rb"))
-#     wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())
+#     wealth_agents = jnp.array(pd.read_csv(path_to_wealth, usecols=["wealth"]).squeeze())  # noqa: E501
 
 #     model_for_simulation_counterfactual = load_and_setup_model(
 #         options=options_counterfactual,

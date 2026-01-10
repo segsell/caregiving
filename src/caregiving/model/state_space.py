@@ -1,79 +1,44 @@
 """State space for the model with care demand and caregiving."""
 
-import jax
 import jax.numpy as jnp
 import numpy as np
 
+from caregiving.model.experience_baseline_model import get_next_period_experience
 from caregiving.model.shared import (
-    ALL,
-    ALL_CARE,
     ALL_INTENSIVE_INFORMAL_OR_FORMAL,
     ALL_LIGHT_INFORMAL_OR_FORMAL,
     ALL_NO_CARE,
     ALL_NO_CARE_OR_FORMAL,
-    ALL_NO_FORMAL_CARE,
-    ALL_NO_INFORMAL_CARE,
-    CARE_DEMAND_INTENSIVE,
     CARE_DEMAND_LIGHT,
-    FORMAL_CARE,
-    INTENSIVE_INFORMAL_CARE,
-    LIGHT_INFORMAL_CARE,
     NO_CARE_DEMAND,
-    NOT_WORKING,
-    NOT_WORKING_CARE,
     NOT_WORKING_INTENSIVE_INFORMAL_OR_FORMAL,
     NOT_WORKING_LIGHT_INFORMAL_OR_FORMAL,
     NOT_WORKING_NO_CARE,
     NOT_WORKING_NO_CARE_OR_FORMAL,
-    NOT_WORKING_NO_FORMAL_CARE,
-    NOT_WORKING_NO_INFORMAL_CARE,
-    PARENT_DEAD,
-    RETIREMENT,
-    RETIREMENT_CARE,
+    PARENT_LONGER_DEAD,
     RETIREMENT_INTENSIVE_INFORMAL_OR_FORMAL,
     RETIREMENT_LIGHT_INFORMAL_OR_FORMAL,
     RETIREMENT_NO_CARE,
     RETIREMENT_NO_CARE_OR_FORMAL,
-    RETIREMENT_NO_FORMAL_CARE,
-    RETIREMENT_NO_INFORMAL_CARE,
-    SEX,
-    UNEMPLOYED,
-    UNEMPLOYED_CARE,
     UNEMPLOYED_INTENSIVE_INFORMAL_OR_FORMAL,
     UNEMPLOYED_LIGHT_INFORMAL_OR_FORMAL,
     UNEMPLOYED_NO_CARE,
     UNEMPLOYED_NO_CARE_OR_FORMAL,
-    UNEMPLOYED_NO_FORMAL_CARE,
-    UNEMPLOYED_NO_INFORMAL_CARE,
-    WORK_AND_RETIREMENT,
-    WORK_AND_RETIREMENT_CARE,
     WORK_AND_RETIREMENT_INTENSIVE_INFORMAL_OR_FORMAL,
     WORK_AND_RETIREMENT_LIGHT_INFORMAL_OR_FORMAL,
     WORK_AND_RETIREMENT_NO_CARE,
     WORK_AND_RETIREMENT_NO_CARE_OR_FORMAL,
-    WORK_AND_RETIREMENT_NO_FORMAL_CARE,
-    WORK_AND_RETIREMENT_NO_INFORMAL_CARE,
-    WORK_AND_UNEMPLOYED,
-    WORK_AND_UNEMPLOYED_CARE,
     WORK_AND_UNEMPLOYED_INTENSIVE_INFORMAL_OR_FORMAL,
     WORK_AND_UNEMPLOYED_LIGHT_INFORMAL_OR_FORMAL,
     WORK_AND_UNEMPLOYED_NO_CARE,
     WORK_AND_UNEMPLOYED_NO_CARE_OR_FORMAL,
-    WORK_AND_UNEMPLOYED_NO_FORMAL_CARE,
-    WORK_AND_UNEMPLOYED_NO_INFORMAL_CARE,
     is_alive,
     is_dead,
     is_formal_care,
-    is_full_time,
     is_informal_care,
     is_no_care_demand,
-    is_part_time,
     is_retired,
     is_unemployed,
-)
-from caregiving.model.wealth_and_budget.pensions import (
-    calc_experience_for_total_pension_points,
-    calc_total_pension_points,
 )
 
 
@@ -161,6 +126,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
     care_demand,
     job_offer,
     caregiving_type,
+    # gets_inheritance,
     model_specs,
 ):
     start_age = model_specs["start_age"]
@@ -182,7 +148,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
         return False
     elif (age <= min_ret_age_state_space + 1) & (already_retired == 1):
         return False
-    # elif (age >= model_specs["min_SRA_baseline"] + 1) & (is_unemployed(lagged_choice)):
+    # elif (age >= model_specs["min_SRA_baseline"] + 1) & (is_unemployed(lagged_choice)):  # noqa: E501
     elif (age > SRA_pol_state) & (is_unemployed(lagged_choice)):
         return False
     elif (not is_retired(lagged_choice)) & (already_retired == 1):
@@ -245,13 +211,31 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "health": health,
                 "partner_state": partner_state,
                 "mother_adl": 0,
-                "mother_dead": 1,
+                "mother_dead": PARENT_LONGER_DEAD,
                 "care_demand": NO_CARE_DEMAND,
+                # "gets_inheritance": 0,
                 "job_offer": 0,
             }
             return state_proxy
-        elif mother_dead == 1:
-            # If mother is dead, no care demand and supply
+        # elif mother_dead == PARENT_RECENTLY_DEAD:
+        #     # If mother recently died, no care demand and supply
+        #     # Preserve mother_dead == 1 so inheritance can be calculated
+        #     state_proxy = {
+        #         "period": period,
+        #         "lagged_choice": lagged_choice,
+        #         "already_retired": already_retired,
+        #         "education": education,
+        #         "caregiving_type": caregiving_type,
+        #         "health": health,
+        #         "partner_state": partner_state,
+        #         "mother_adl": 0,
+        #         "mother_dead": PARENT_RECENTLY_DEAD,  # Preserve for inheritance calculation  # noqa: E501
+        #         "care_demand": NO_CARE_DEMAND,
+        #         "job_offer": job_offer,
+        #     }
+        #     return state_proxy
+        elif mother_dead == PARENT_LONGER_DEAD:
+            # If mother is longer dead, no care demand and supply
             state_proxy = {
                 "period": period,
                 "lagged_choice": lagged_choice,
@@ -261,12 +245,13 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "health": health,
                 "partner_state": partner_state,
                 "mother_adl": 0,
-                "mother_dead": 1,
+                "mother_dead": PARENT_LONGER_DEAD,
                 "care_demand": NO_CARE_DEMAND,
+                # "gets_inheritance": 0,
                 "job_offer": job_offer,
             }
             return state_proxy
-        # ================================================================================
+        # ================================================================================  # noqa: E501
         elif age > max_ret_age + 1:
             # If age is larger than max_ret_age + 1, the individual can only be
             # longer retired.
@@ -281,6 +266,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "mother_adl": mother_adl,
                 "mother_dead": mother_dead,
                 "care_demand": care_demand,  # Outside caregiving window, no care demand
+                # "gets_inheritance": gets_inheritance,
                 "job_offer": 0,
             }
             return state_proxy
@@ -298,6 +284,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "mother_adl": mother_adl,
                 "mother_dead": mother_dead,
                 "care_demand": care_demand,
+                # "gets_inheritance": gets_inheritance,
                 "job_offer": 0,
             }
             return state_proxy
@@ -344,6 +331,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "mother_adl": mother_adl,
                 "mother_dead": mother_dead,
                 "care_demand": NO_CARE_DEMAND,
+                # "gets_inheritance": gets_inheritance,
                 "job_offer": job_offer,
             }
             return state_proxy
@@ -360,6 +348,7 @@ def sparsity_condition(  # noqa: PLR0911, PLR0912
                 "mother_adl": mother_adl,
                 "mother_dead": mother_dead,
                 "care_demand": NO_CARE_DEMAND,
+                # "gets_inheritance": gets_inheritance,
                 "job_offer": job_offer,
             }
             return state_proxy
@@ -414,14 +403,14 @@ def apply_retirement_constraint_for_SRA(SRA, model_specs):
 
 
 # def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR0915
-#     period, lagged_choice, job_offer, health, caregiving_type, care_demand, model_specs
+#     period, lagged_choice, job_offer, health, caregiving_type, care_demand, model_specs  # noqa: E501
 # ):
 #     age = period + model_specs["start_age"]
 #     start_age_caregiving = model_specs["start_age_caregiving"]
 #     end_age_caregiving = model_specs["end_age_caregiving"]
 
-#     SRA_pol_state = model_specs["min_SRA"]  # + policy_state  # * model_specs["SRA_grid_size"]
-#     min_ret_age_pol_state = apply_retirement_constraint_for_SRA(SRA_pol_state, model_specs)
+#     SRA_pol_state = model_specs["min_SRA"]  # + policy_state  # * model_specs["SRA_grid_size"]  # noqa: E501
+#     min_ret_age_pol_state = apply_retirement_constraint_for_SRA(SRA_pol_state, model_specs)  # noqa: E501
 
 #     # Light care demand (care_demand == 1) with caregiving_type == 1
 #     # Agent can choose: LIGHT_INFORMAL_CARE or FORMAL_CARE
@@ -602,7 +591,7 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
     if caregiving_type == 1:
         if (
             is_no_care_demand(care_demand)
-            | (mother_dead == 1)
+            | (mother_dead > 0)  # mother_dead in [1, 2] means dead
             | (age < start_age_caregiving)
             | (age > end_age_caregiving)
         ):
@@ -683,7 +672,7 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
     elif caregiving_type == 0:
         if (
             is_no_care_demand(care_demand)
-            | (mother_dead == 1)
+            | (mother_dead > 0)  # mother_dead in [1, 2] means dead
             | (age < start_age_caregiving)
             | (age > end_age_caregiving)
         ):
@@ -768,8 +757,12 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
                     return ALL_NO_CARE
 
 
-# def get_next_period_experience(period, lagged_choice, experience, model_specs):
+# def get_next_period_experience(
+#     period, lagged_choice, already_retired, education, experience, model_specs
+# ):
 #     """Update experience based on lagged choice and period."""
+#     sex = SEX
+
 #     exp_years_last_period = construct_experience_years(
 #         experience=experience,
 #         period=period - 1,
@@ -777,93 +770,99 @@ def state_specific_choice_set_with_caregiving(  # noqa: PLR0911, PLR0912, PLR091
 #     )
 
 #     # Update if working part or full time
-#     exp_update = (
-#         is_full_time(lagged_choice)
-#         + is_part_time(lagged_choice) * model_specs["exp_increase_part_time"]
+#     # Full pension point (1.0) for part-time workers providing intensive informal care
+#     # Full-time workers are unaffected (always get 1.0)
+#     intensive_care = is_intensive_informal_care(lagged_choice)
+#     exp_update = is_full_time(lagged_choice) + is_part_time(lagged_choice) * (
+#         model_specs["exp_increase_part_time"] * (1 - intensive_care) + intensive_care
 #     )
 #     exp_new_period = exp_years_last_period + exp_update
 
-#     # # If retired, then we update experience according to the deduction function
-#     # fresh_retired = is_retired(lagged_choice)
+#     # If retired, then we update experience according to the deduction function
+#     fresh_retired = (already_retired == 0) & is_retired(lagged_choice)
 
-#     # # Calculate experience with early retirement penalty
-#     # experience_years_with_penalty = calc_experience_years_for_pension_adjustment(
-#     #     period=period,
-#     #     experience_years=exp_years_last_period,
-#     #     sex=sex,
-#     #     education=education,
-#     #     policy_state=policy_state,
-#     #     informed=informed,
-#     #     model_specs=model_specs,
-#     # )
-
-#     # # Update if fresh retired
-#     # exp_new_period = jax.lax.select(
-#     #     fresh_retired, experience_years_with_penalty, exp_new_period
-#     # )
-
-#     return (1 / (period + model_specs["max_exp_diffs_per_period"][period])) * exp_new_period
+#     # Calculate experience with early retirement penalty
+#     experience_years_with_penalty = calc_experience_years_for_pension_adjustment(
+#         period=period,
+#         experience_years=exp_years_last_period,
+#         sex=sex,
+#         education=education,
+#         model_specs=model_specs,
+#     )
+#     # Update if fresh retired
+#     exp_new_period = jax.lax.select(
+#         fresh_retired, experience_years_with_penalty, exp_new_period
+#     )
+#     return (
+#         1 / (period + model_specs["max_exp_diffs_per_period"][period])
+#     ) * exp_new_period
 
 
-def get_next_period_experience(
-    period, lagged_choice, already_retired, education, experience, model_specs
-):
-    """Update experience based on lagged choice and period."""
-    sex = SEX
+# # def calc_experience_years_for_pension_adjustment(
+# #     period, sex, experience_years, education, model_specs
+# # ):
+# #     """Calculate the reduced experience with early retirement penalty."""
+# #     # retirement age is last periods age
+# #     age = model_specs["start_age"] + period - 1
 
-    exp_years_last_period = construct_experience_years(
-        experience=experience,
-        period=period - 1,
-        max_exp_diffs_per_period=model_specs["max_exp_diffs_per_period"],
-    )
+# #     total_pension_points = calc_total_pension_points(
+# #         education=education,
+# #         experience_years=experience_years,
+# #         sex=sex,
+# #         model_specs=model_specs,
+# #     )
 
-    # Update if working part or full time
-    exp_update = (
-        is_full_time(lagged_choice)
-        + is_part_time(lagged_choice) * model_specs["exp_increase_part_time"]
-    )
-    exp_new_period = exp_years_last_period + exp_update
+# #     # Select penalty depending on age difference
+# #     pension_factor = (
+# #         1 - (age - model_specs["min_SRA"]) * model_specs["early_retirement_penalty"]
+# #     )
+# #     adjusted_pension_points = pension_factor * total_pension_points
 
-    # If retired, then we update experience according to the deduction function
-    fresh_retired = (already_retired == 0) & is_retired(lagged_choice)
-
-    # Calculate experience with early retirement penalty
-    experience_years_with_penalty = calc_experience_years_for_pension_adjustment(
-        period=period,
-        experience_years=exp_years_last_period,
-        sex=sex,
-        education=education,
-        model_specs=model_specs,
-    )
-    # Update if fresh retired
-    exp_new_period = jax.lax.select(
-        fresh_retired, experience_years_with_penalty, exp_new_period
-    )
-    return (
-        1 / (period + model_specs["max_exp_diffs_per_period"][period])
-    ) * exp_new_period
+# #     reduced_experience_years = calc_experience_for_total_pension_points(
+# #         total_pension_points=adjusted_pension_points,
+# #         sex=sex,
+# #         education=education,
+# #         model_specs=model_specs,
+# #     )
+# #     return reduced_experience_years
 
 
 # def calc_experience_years_for_pension_adjustment(
 #     period, sex, experience_years, education, model_specs
 # ):
 #     """Calculate the reduced experience with early retirement penalty."""
-#     # retirement age is last periods age
-#     age = model_specs["start_age"] + period - 1
-
 #     total_pension_points = calc_total_pension_points(
 #         education=education,
 #         experience_years=experience_years,
 #         sex=sex,
 #         model_specs=model_specs,
 #     )
+#     # retirement age is last periods age
+#     actual_retirement_age = model_specs["start_age"] + period - 1
+#     # SRA at retirement, difference to actual retirement age and boolean for early retirement  # noqa: E501
+#     # SRA_at_retirement = model_specs["min_SRA"]
+#     SRA_at_retirement = model_specs["min_SRA"]
+#     retirement_age_difference = jnp.abs(SRA_at_retirement - actual_retirement_age)
+#     early_retired_bool = actual_retirement_age < SRA_at_retirement
 
-#     # Select penalty depending on age difference
-#     pension_factor = (
-#         1 - (age - model_specs["min_SRA"]) * model_specs["early_retirement_penalty"]
+#     # deduction factor for early  retirement
+#     early_retirement_penalty_informed = model_specs["early_retirement_penalty"]
+#     early_retirement_penalty = (
+#         1 - early_retirement_penalty_informed * retirement_age_difference
 #     )
-#     adjusted_pension_points = pension_factor * total_pension_points
 
+#     # Total bonus for late retirement
+#     late_retirement_bonus = 1 + (
+#         model_specs["late_retirement_bonus"] * retirement_age_difference
+#     )
+
+#     # Select bonus or penalty depending on age difference
+#     pension_factor = jax.lax.select(
+#         early_retired_bool, early_retirement_penalty, late_retirement_bonus
+#     )
+#     # pension_factor = late_retirement_bonus
+
+#     adjusted_pension_points = pension_factor * total_pension_points
 #     reduced_experience_years = calc_experience_for_total_pension_points(
 #         total_pension_points=adjusted_pension_points,
 #         sex=sex,
@@ -873,51 +872,6 @@ def get_next_period_experience(
 #     return reduced_experience_years
 
 
-def calc_experience_years_for_pension_adjustment(
-    period, sex, experience_years, education, model_specs
-):
-    """Calculate the reduced experience with early retirement penalty."""
-    total_pension_points = calc_total_pension_points(
-        education=education,
-        experience_years=experience_years,
-        sex=sex,
-        model_specs=model_specs,
-    )
-    # retirement age is last periods age
-    actual_retirement_age = model_specs["start_age"] + period - 1
-    # SRA at retirement, difference to actual retirement age and boolean for early retirement
-    # SRA_at_retirement = model_specs["min_SRA"]
-    SRA_at_retirement = model_specs["min_SRA"]
-    retirement_age_difference = jnp.abs(SRA_at_retirement - actual_retirement_age)
-    early_retired_bool = actual_retirement_age < SRA_at_retirement
-
-    # deduction factor for early  retirement
-    early_retirement_penalty_informed = model_specs["early_retirement_penalty"]
-    early_retirement_penalty = (
-        1 - early_retirement_penalty_informed * retirement_age_difference
-    )
-
-    # Total bonus for late retirement
-    late_retirement_bonus = 1 + (
-        model_specs["late_retirement_bonus"] * retirement_age_difference
-    )
-
-    # Select bonus or penalty depending on age difference
-    pension_factor = jax.lax.select(
-        early_retired_bool, early_retirement_penalty, late_retirement_bonus
-    )
-    # pension_factor = late_retirement_bonus
-
-    adjusted_pension_points = pension_factor * total_pension_points
-    reduced_experience_years = calc_experience_for_total_pension_points(
-        total_pension_points=adjusted_pension_points,
-        sex=sex,
-        education=education,
-        model_specs=model_specs,
-    )
-    return reduced_experience_years
-
-
-def construct_experience_years(experience, period, max_exp_diffs_per_period):
-    """Experience and period can also be arrays."""
-    return experience * (period + max_exp_diffs_per_period[period])
+# def construct_experience_years(experience, period, max_exp_diffs_per_period):
+#     """Experience and period can also be arrays."""
+#     return experience * (period + max_exp_diffs_per_period[period])

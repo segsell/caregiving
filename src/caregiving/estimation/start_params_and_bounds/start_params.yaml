@@ -338,3 +338,7 @@ taste_shock_scale: 0.5
 # lambda_high: 0.5
 #taste_shock_scale_men: 0.29
 #taste_shock_scale_women: 0.29
+
+job_finding_logit_const_women: 0.7226
+job_finding_logit_age_women: -0.0586
+job_finding_logit_high_educ_women: 0.5729
