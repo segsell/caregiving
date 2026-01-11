@@ -24,7 +24,7 @@ from caregiving.model.stochastic_processes.job_transition import (
 
 
 def job_offer_process_transition_with_job_retention(
-    params, options, education, period, choice, job_before_caregiving
+    params, model_specs, education, period, choice, job_before_caregiving
 ):
     """Transition probability for next period job offer state with job retention policy.
 
@@ -55,8 +55,10 @@ def job_offer_process_transition_with_job_retention(
     caregiving_choice = is_informal_care(choice)
     employed_before_caregiving = had_job_before_caregiving(job_before_caregiving)
 
-    job_sep_prob = options["job_sep_probs"][SEX, education, period]
-    job_finding_prob = calc_job_finding_prob_women(period, education, params, options)
+    job_sep_prob = model_specs["job_sep_probs"][SEX, education, period]
+    job_finding_prob = calc_job_finding_prob_women(
+        period, education, params, model_specs
+    )
 
     # Job separation policy: if caregiving + had job before caregiving,
     # no job separation
@@ -98,7 +100,7 @@ def job_offer_process_transition_with_job_retention(
 
 
 def job_offer_process_transition_leave_with_job_retention(
-    params, options, education, period, choice, job_before_caregiving
+    params, model_specs, education, period, choice, job_before_caregiving
 ):
     """Transition probability for next period job offer state with job retention policy.
 
@@ -131,8 +133,10 @@ def job_offer_process_transition_leave_with_job_retention(
         job_before_caregiving
     ) | had_ft_job_before_caregiving(job_before_caregiving)
 
-    job_sep_prob = options["job_sep_probs"][SEX, education, period]
-    job_finding_prob = calc_job_finding_prob_women(period, education, params, options)
+    job_sep_prob = model_specs["job_sep_probs"][SEX, education, period]
+    job_finding_prob = calc_job_finding_prob_women(
+        period, education, params, model_specs
+    )
 
     # Job separation policy: if caregiving + had job before caregiving,
     # no job separation

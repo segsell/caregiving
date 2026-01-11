@@ -11,28 +11,22 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytask
-import statsmodels.api as sm
 import statsmodels.formula.api as smf
-import yaml
-from numpy.testing import assert_array_almost_equal as aaae
 from pytask import Product
 
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import (
-    ADL_0,
     ADL_1,
     ADL_2,
     ADL_3,
     END_YEAR_PARENT_GENERATION,
     FEMALE,
     MALE,
-    MIN_AGE_PARENTS,
-    PARENT_DEAD,
     PARENT_GOOD_HEALTH,
+    PARENT_HEALTH_DEAD,
     PARENT_MEDIUM_HEALTH,
 )
 from caregiving.specs.derive_specs import read_and_derive_specs
-from caregiving.utils import table
 
 
 @pytask.mark.dip
@@ -66,7 +60,7 @@ def task_estimate_adl_transitions_one_logit(  # noqa: PLR0912
     df_combined.to_csv(path_to_save_adl_probabilities, index=False)
 
     # 1. Setup the index ranges
-    ages = np.arange(specs["start_age_parents"], specs["end_age"] + 1)
+    ages = np.arange(specs["start_age_parents_mat"], specs["end_age"] + 1)
     health_indices = specs["alive_health_vars_three"]
     health_labels = [specs["health_labels_three"][h] for h in health_indices]
 
@@ -193,7 +187,7 @@ def task_estimate_adl_transitions_no_health_one_logit(  # noqa: PLR0912
     df_combined.to_csv(path_to_save_adl_probabilities, index=False)
 
     # 1. Setup the index ranges
-    ages = np.arange(specs["start_age_parents"], specs["end_age"] + 1)
+    ages = np.arange(specs["start_age_parents_mat"], specs["end_age"] + 1)
     adl_labels = specs["adl_labels"]  # ["No ADL", "ADL 1", "ADL 2", "ADL 3"]
     adl_indices = np.arange(len(adl_labels))  # 0, 1, 2, 3
 
@@ -918,7 +912,7 @@ def plot_adl_state_transitions_by_lagged_adl(  # noqa: PLR0912, PLR0915
         "ADL 3": "red",
     }
 
-    start_age = specs["start_age_parents"]
+    start_age_parents = specs["start_age_parents_mat"]
     end_age = specs["end_age"]
 
     fig, axes = plt.subplots(
@@ -984,13 +978,13 @@ def plot_adl_state_transitions_by_lagged_adl(  # noqa: PLR0912, PLR0915
             ax.set_title(f"{sex} - to {adl_next}")
 
             # Set limits with padding
-            age_range = end_age - start_age
+            age_range = end_age - start_age_parents
             y_range = 1.0 - 0.0
             padding_x = age_range * 0.05
             padding_y = y_range * 0.05
 
-            ax.set_xlim(start_age - padding_x, end_age + padding_x)
-            ax.set_xticks(np.arange(start_age, end_age + 1, 5))
+            ax.set_xlim(start_age_parents - padding_x, end_age + padding_x)
+            ax.set_xticks(np.arange(start_age_parents, end_age + 1, 5))
             ax.set_ylim(0 - padding_y, 1 + padding_y)
             ax.grid(True, alpha=0.3)
 
@@ -1059,6 +1053,7 @@ def task_plot_care_demand(
 ):
 
     specs = read_and_derive_specs(path_to_specs)
+    start_age_parents = specs["start_age_parents_mat"]
 
     health_trans_mat = pd.read_csv(path_to_health_transition_matrix)
     death_trans_mat = pd.read_csv(path_to_death_transition_matrix)
@@ -1081,16 +1076,15 @@ def task_plot_care_demand(
     # save hdeath_df to csv in the same folder as the other transition matrices
     hdeath_df.to_csv(path_to_health_death_transition_matrix_NEW, index=False)
 
-    start_age = 50
     plot_care_demand_from_hdeath_matrix(
         specs=specs,
         adl_transition_df=adl_transition_matrix,
         # health_death_df=hdeath_df,
         health_death_df=health_death_trans_mat,
         path_to_save_plot=path_to_save_weighted_adl_transitions_by_age_plot,
-        start_age=start_age,
-        initial_alive_share=survival_by_age.loc[start_age],
-        initial_health_shares_alive=health_prob_by_age.loc[start_age],
+        start_age=start_age_parents,
+        initial_alive_share=survival_by_age.loc[start_age_parents],
+        initial_health_shares_alive=health_prob_by_age.loc[start_age_parents],
         legend_labels={
             "ADL 1": "Care degree 2",
             "ADL 2": "Care degree 3",
@@ -1462,7 +1456,7 @@ def task_estimate_adl_transitions_via_separate_logits(
     df = pd.read_csv(path_to_parent_child_sample)
 
     # Define ranges for age and health for prediction purposes
-    ages = np.arange(specs["start_age_parents"], specs["end_age"] + 1)
+    ages = np.arange(specs["start_age_parents_mat"], specs["end_age"] + 1)
 
     alive_health_vars = specs["alive_health_vars_three"]
     alive_health_labels = [specs["health_labels_three"][i] for i in alive_health_vars]
@@ -1739,7 +1733,7 @@ def plot_adl_transitions(
 
     df = df.reset_index().copy()
 
-    start_age = specs["start_age_parents"]
+    start_age_parents = specs["start_age_parents_mat"]
     end_age = specs["end_age"]
 
     sex_labels = specs["sex_labels"]
@@ -1780,7 +1774,7 @@ def plot_adl_transitions(
             ax.set_title(f"{sex_label}, {prev_health}")
             ax.set_xlabel("Age")
             ax.set_ylabel("Transition Probability")
-            ax.set_xlim(start_age, end_age)
+            ax.set_xlim(start_age_parents, end_age)
             ax.set_ylim(0, 1)
 
             # Show legend only for the first column of each row (or however you prefer)
@@ -1812,7 +1806,7 @@ def plot_any_adl_transitions(
 
     df = df.reset_index().copy()
 
-    start_age = specs["start_age_parents"]
+    start_age_parents = specs["start_age_parents_mat"]
     end_age = specs["end_age"]
 
     sex_labels = specs["sex_labels"]
@@ -1875,7 +1869,7 @@ def plot_any_adl_transitions(
             ax.set_title(f"{sex_label}, {prev_health}")
             ax.set_xlabel("Age")
             ax.set_ylabel("Transition Probability")
-            ax.set_xlim(start_age, end_age)
+            ax.set_xlim(start_age_parents, end_age)
             ax.set_ylim(0, 1)
 
             # legend only once per row (first column)
@@ -2258,7 +2252,7 @@ def build_health_death_transition_matrix(
     if start_age is None:
         start_age = 66
     else:
-        start_age = specs["start_age_parents"]
+        start_age = specs["start_age_parents_mat"]
 
     # ── label maps ──────────────────────────────────────────────────────
     sex_map = {0: "Men", 1: "Women"}
@@ -2430,7 +2424,9 @@ def plot_adl_probabilities_by_health(
     # 2.  Empirical (observed) probabilities
     # ──────────────────────────────────────────────────────────────────────────
     df_obs = df_sample.copy()
-    df_obs = df_obs[df_obs["health"] != PARENT_DEAD]  # drop death rows if present
+    df_obs = df_obs[
+        df_obs["health"] != PARENT_HEALTH_DEAD
+    ]  # drop death rows if present
 
     df_obs["sex"] = df_obs["gender"].map(gender_map)
     df_obs["health_str"] = df_obs["health"].map(health_map_num_to_str)

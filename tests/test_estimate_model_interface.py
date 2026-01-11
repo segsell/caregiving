@@ -1,4 +1,4 @@
-"""Test estimate_model interface with least squares and scalar optimization."""
+"""Test estimate_model_with_unobserved_type_shares interface."""
 
 import pickle
 import signal
@@ -11,7 +11,9 @@ import yaml
 
 import dcegm
 from caregiving.config import BLD, SRC
-from caregiving.estimation.estimation_setup import estimate_model
+from caregiving.estimation.estimation_setup import (
+    estimate_model_with_unobserved_type_shares,
+)
 from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.task_specify_model import create_stochastic_states_transitions
 from caregiving.model.taste_shocks import shock_function_dict
@@ -20,7 +22,7 @@ from caregiving.model.utility.bequest_utility import (
 )
 from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
-from caregiving.simulation.simulate import simulate_scenario
+from caregiving.simulation.simulate import simulate_scenario_slim
 from caregiving.simulation.simulate_moments import simulate_moments_pandas
 
 
@@ -105,30 +107,6 @@ def load_real_parameters(test_param_keys=None):
     return start_params, lower_bounds, upper_bounds
 
 
-def create_simulate_scenario_wrapper():
-    """Create a simulate_scenario wrapper for the new dcegm interface."""
-
-    def simulate_scenario_wrapper(
-        model_solved,
-        initial_states,
-        params,
-        model_specs,
-        seed,
-    ):
-        """Wrapper that uses the new model_solved.simulate() interface.
-
-        model_solved is already provided from model_class.solve(params),
-        so we just need to call simulate() on it.
-        """
-        sim_df = model_solved.simulate(
-            states_initial=initial_states,
-            seed=seed,
-        )
-        return sim_df
-
-    return simulate_scenario_wrapper
-
-
 def test_estimate_model_least_squares_interface(temp_test_dir):
     """Test estimate_model interface with least squares optimization."""
 
@@ -179,23 +157,20 @@ def test_estimate_model_least_squares_interface(temp_test_dir):
 
     start_params, lower_bounds, upper_bounds = load_real_parameters()
 
-    # Create simulate_scenario wrapper
-    simulate_scenario_wrapper = create_simulate_scenario_wrapper()
-
     # Create temporary files in the test temp directory
     temp_result_file = temp_test_dir("temp_result_ls.pkl")
     temp_params_file = temp_test_dir("temp_params_ls.csv")
 
     with patch("optimagic.minimize", side_effect=mock_minimize):
-        result = estimate_model(
-            model=model_class,
-            start_params=start_params,
+        estimate_model_with_unobserved_type_shares(
+            model_class=model_class,
             model_specs=model_specs,
+            start_params=start_params,
             algo="tranquilo_ls",
             algo_options={"maxiter": 1, "ftol": 1e-3},
             lower_bounds=lower_bounds,
             upper_bounds=upper_bounds,
-            simulate_scenario_func=simulate_scenario_wrapper,
+            simulate_scenario_func=simulate_scenario_slim,
             simulate_moments_func=simulate_moments_pandas,
             least_squares=True,
             weighting_method="identity",
@@ -211,10 +186,18 @@ def test_estimate_model_least_squares_interface(temp_test_dir):
             path_to_save_estimation_params=temp_params_file,
         )
 
-    assert result is not None
-    assert hasattr(result, "params")
-    assert hasattr(result, "success")
-    print("✓ Least squares optimization interface test passed")
+    # Verify that result files were created
+    assert temp_result_file.exists(), "Result file should be created"
+    assert temp_params_file.exists(), "Params file should be created"
+
+    # Verify result was saved correctly
+    with open(temp_result_file, "rb") as f:
+        saved_result = pickle.load(f)
+
+    assert saved_result is not None
+    assert hasattr(saved_result, "params")
+    assert hasattr(saved_result, "success")
+    print("✓ estimate_model_with_unobserved_type_shares interface test passed")
 
 
 def test_estimate_model_scalar_interface(temp_test_dir):
@@ -267,23 +250,20 @@ def test_estimate_model_scalar_interface(temp_test_dir):
 
     start_params, lower_bounds, upper_bounds = load_real_parameters()
 
-    # Create simulate_scenario wrapper
-    simulate_scenario_wrapper = create_simulate_scenario_wrapper()
-
     # Create temporary files in the test temp directory
     temp_result_file = temp_test_dir("temp_result_scalar.pkl")
     temp_params_file = temp_test_dir("temp_params_scalar.csv")
 
     with patch("optimagic.minimize", side_effect=mock_minimize):
-        result = estimate_model(
-            model=model_class,
-            start_params=start_params,
+        estimate_model_with_unobserved_type_shares(
+            model_class=model_class,
             model_specs=model_specs,
+            start_params=start_params,
             algo="scipy_lbfgsb",
             algo_options={"maxiter": 1, "ftol": 1e-3},
             lower_bounds=lower_bounds,
             upper_bounds=upper_bounds,
-            simulate_scenario_func=simulate_scenario_wrapper,
+            simulate_scenario_func=simulate_scenario_slim,
             simulate_moments_func=simulate_moments_pandas,
             least_squares=False,
             weighting_method="identity",
@@ -299,10 +279,21 @@ def test_estimate_model_scalar_interface(temp_test_dir):
             path_to_save_estimation_params=temp_params_file,
         )
 
-    assert result is not None
-    assert hasattr(result, "params")
-    assert hasattr(result, "success")
-    print("✓ Scalar optimization interface test passed")
+    # Verify that result files were created
+    assert temp_result_file.exists(), "Result file should be created"
+    assert temp_params_file.exists(), "Params file should be created"
+
+    # Verify result was saved correctly
+    with open(temp_result_file, "rb") as f:
+        saved_result = pickle.load(f)
+
+    assert saved_result is not None
+    assert hasattr(saved_result, "params")
+    assert hasattr(saved_result, "success")
+    print(
+        "✓ estimate_model_with_unobserved_type_shares scalar optimization "
+        "interface test passed"
+    )
 
 
 def test_estimate_model_with_timeout(temp_test_dir):
@@ -365,19 +356,19 @@ def test_estimate_model_with_timeout(temp_test_dir):
             test_param_keys=["sigma", "beta"]
         )
 
-        # Create simulate_scenario wrapper
-        simulate_scenario_wrapper = create_simulate_scenario_wrapper()
+        temp_result_file = temp_test_dir("temp_result_timeout.pkl")
+        temp_params_file = temp_test_dir("temp_params_timeout.csv")
 
         with patch("optimagic.minimize", side_effect=mock_minimize):
-            result = estimate_model(
-                model=model_class,
-                start_params=start_params,
+            estimate_model_with_unobserved_type_shares(
+                model_class=model_class,
                 model_specs=model_specs,
+                start_params=start_params,
                 algo="scipy_lbfgsb",
                 algo_options={"maxiter": 1},
                 lower_bounds=lower_bounds,
                 upper_bounds=upper_bounds,
-                simulate_scenario_func=simulate_scenario_wrapper,
+                simulate_scenario_func=simulate_scenario_slim,
                 simulate_moments_func=simulate_moments_pandas,
                 least_squares=False,
                 path_to_initial_states=BLD
@@ -386,10 +377,14 @@ def test_estimate_model_with_timeout(temp_test_dir):
                 / "initial_states.pkl",
                 path_to_empirical_moments=BLD / "moments" / "moments_full.csv",
                 path_to_empirical_variance=BLD / "moments" / "variances_full.csv",
+                path_to_save_estimation_result=temp_result_file,
+                path_to_save_estimation_params=temp_params_file,
             )
 
-        assert result is not None
-        print("✓ Timeout test passed")
+        # Verify that result files were created
+        assert temp_result_file.exists(), "Result file should be created"
+        assert temp_params_file.exists(), "Params file should be created"
+        print("✓ estimate_model_with_unobserved_type_shares timeout test passed")
 
     except TimeoutError:
         print("⚠ Test timed out (this is expected for optimization)")

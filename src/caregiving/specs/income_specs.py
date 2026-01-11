@@ -1,8 +1,5 @@
 import numpy as np
-import pandas as pd
 from jax import numpy as jnp
-
-from caregiving.model.shared import FULL_TIME_CHOICES, PART_TIME
 
 
 def add_income_specs(
@@ -18,7 +15,7 @@ def add_income_specs(
     # wages
     (
         specs["gamma_0"],
-        specs["gamma_1"],
+        specs["gamma_ln_exp"],
         specs["income_shock_std"],
     ) = process_wage_params(specs, wage_params)
 
@@ -132,8 +129,8 @@ def calc_annual_pension_point_value(specs):
     """Generate average pension point value weighted by east and west pensions."""
 
     pension_point_value = (
-        0.75 * specs["monthly_pension_point_value_west_2010"]
-        + 0.25 * specs["monthly_pension_point_value_east_2010"]
+        specs["pop_share_west"] * specs["monthly_pension_point_value_west_2010"]
+        + specs["pop_share_east"] * specs["monthly_pension_point_value_east_2010"]
     )
     return pension_point_value * 12
 
@@ -143,7 +140,10 @@ def process_wage_params(specs, wage_params):
     wage_params.reset_index(inplace=True)
 
     gamma_0 = np.zeros((specs["n_sexes"], specs["n_education_types"]), dtype=float)
-    gamma_1 = np.zeros((specs["n_sexes"], specs["n_education_types"]), dtype=float)
+    gamma_ln_exp = np.zeros((specs["n_sexes"], specs["n_education_types"]), dtype=float)
+    # gamma_above_50 = np.zeros(
+    #     (specs["n_sexes"], specs["n_education_types"]), dtype=float
+    # )
 
     for edu_id, edu_label in enumerate(specs["education_labels"]):
         for sex_id, sex in enumerate(specs["sex_labels"]):
@@ -151,7 +151,7 @@ def process_wage_params(specs, wage_params):
             gamma_0[sex_id, edu_id] = wage_params.loc[
                 mask & (wage_params["parameter"] == "constant"), "value"
             ].values[0]
-            gamma_1[sex_id, edu_id] = wage_params.loc[
+            gamma_ln_exp[sex_id, edu_id] = wage_params.loc[
                 mask & (wage_params["parameter"] == "ln_exp"), "value"
             ].values[0]
 
@@ -162,7 +162,7 @@ def process_wage_params(specs, wage_params):
     )
     income_shock_std = wage_params.loc[mask, "value"].values[0]
 
-    return jnp.asarray(gamma_0), jnp.asarray(gamma_1), income_shock_std
+    return jnp.asarray(gamma_0), jnp.asarray(gamma_ln_exp), income_shock_std
 
 
 def calculate_partner_income(specs, partner_wage_params_men, partner_wage_params_women):

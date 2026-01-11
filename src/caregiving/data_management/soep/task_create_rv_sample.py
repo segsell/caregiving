@@ -5,11 +5,9 @@ from typing import Annotated
 
 import numpy as np
 import pandas as pd
-import pytask
 from pytask import Product
 
-from caregiving.config import BLD, SRC
-from caregiving.utils import table
+from caregiving.config import BLD
 
 MONTHS_WORK_THRESHOLD = 6
 MONTHS_CARE_THRESHOLD = 6

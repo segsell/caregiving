@@ -3,8 +3,6 @@
 import numpy as np
 import pandas as pd
 
-from caregiving.utils import table
-
 # from src.caregiving.model.shared import FULL_TIME, PART_TIME, UNEMPLOYED, RETIRED
 
 PGEMPLST_UNEMPLOYED = 5
@@ -156,25 +154,25 @@ def create_education_type(data, drop_missing=True):
 # =====================================================================================
 
 
-def create_experience_variable_with_cap(data, exp_cap):
-    """This function creates an experience variable as the sum of full-time and 0.5
-    weighted part-time experience.
+# def create_experience_variable_with_cap(data, exp_cap):
+#     """This function creates an experience variable as the sum of full-time and 0.5
+#     weighted part-time experience.
 
-    It also enforces an experience cap.
+#     It also enforces an experience cap.
 
-    """
-    # Create experience variable
-    data = create_experience_variable(data)
-    # Enforce experience cap
-    data.loc[data["experience"] > exp_cap, "experience"] = exp_cap
-    return data
+#     """
+#     # Create experience variable
+#     data = create_experience_variable(data)
+#     # Enforce experience cap
+#     data.loc[data["experience"] > exp_cap, "experience"] = exp_cap
+#     return data
 
 
-def create_experience_variable(data, drop_invalid=True):
-    """This function creates an experience variable as the sum of full-time and 0.5
-    weighted part-time experience and rounds the sum."""
-    data = sum_experience_variables(data, drop_invalid=drop_invalid)
-    return data
+# def create_experience_variable(data, drop_invalid=True):
+#     """This function creates an experience variable as the sum of full-time and 0.5
+#     weighted part-time experience and rounds the sum."""
+#     data = sum_experience_variables(data, drop_invalid=drop_invalid)
+#     return data
 
 
 def sum_experience_variables(data, drop_invalid=True):
@@ -661,3 +659,163 @@ def create_nursing_home(data):
     )
 
     return data
+
+
+def _deflate_inheritance_amount(df, cpi_data, specs):
+    """Deflate inheritance amount using consumer price index.
+
+    Args:
+        df: DataFrame with MultiIndex (pid, syear) containing inheritance_amount
+            and year_inheritance columns
+        cpi_data: DataFrame with CPI data (should have int_year and cpi columns)
+        specs: Dictionary with specs including reference_year
+
+    Returns:
+        DataFrame with deflated inheritance_amount
+    """
+    # Reset index temporarily to work with year_inheritance
+    df_reset = df.reset_index()
+
+    # Prepare CPI data (exactly like deflate_wealth)
+    cpi_data_copy = cpi_data.rename(columns={"int_year": "year_inheritance"})
+
+    _base_year = specs["reference_year"]
+    base_year_cpi = cpi_data_copy.loc[
+        cpi_data_copy["year_inheritance"] == _base_year, "cpi"
+    ].iloc[0]
+
+    cpi_data_copy["cpi_normalized"] = cpi_data_copy["cpi"] / base_year_cpi
+
+    # Merge CPI data on year_inheritance (like deflate_wealth merges on syear)
+    df_reset = df_reset.merge(cpi_data_copy, on="year_inheritance", how="left")
+
+    # # Deflate inheritance amount (only where both inheritance_amount and cpi_no
+    # rmalized are not NaN)
+    if "cpi_normalized" not in df_reset.columns:
+        raise ValueError(
+            "cpi_normalized column not found after merge. "
+            f"Columns after merge: {df_reset.columns.tolist()}"
+        )
+
+    mask = df_reset["inheritance_amount"].notna() & df_reset["cpi_normalized"].notna()
+    df_reset.loc[mask, "inheritance_amount"] = (
+        df_reset.loc[mask, "inheritance_amount"] / df_reset.loc[mask, "cpi_normalized"]
+    )
+
+    # Drop temporary CPI columns and restore index
+    df_reset = df_reset.drop(columns=["cpi", "cpi_normalized"])
+    df = df_reset.set_index(["pid", "syear"])
+
+    return df
+
+
+def create_inheritance(df, cpi_data, specs):
+    """Create inheritance variables.
+
+    Creates two variables:
+    1. inheritance_this_year: Binary indicator (1 if inheritance received in syear, 0
+       otherwise)
+    2. inheritance_amount: Amount of inheritance in Euros (NaN for negative values),
+       deflated to reference year
+
+    Variables used:
+    - plc0376_v1: Year inheritance from person 1
+    - plc0386_v1: Year inheritance from person 2
+    - plc0396_v1: Year inheritance from person 3
+    - plc0383_h: Inheritance/gift amount in Euros
+
+    Args:
+        df: DataFrame with MultiIndex (pid, syear)
+        cpi_data: DataFrame with CPI data (should have int_year and cpi columns)
+        specs: Dictionary with specs including reference_year
+
+    Note: Assumes pid and syear are always in MultiIndex.
+
+    """
+    # Get survey year from MultiIndex (always there)
+    syear = df.index.get_level_values("syear")
+
+    # List of inheritance year variables
+    inheritance_year_vars = ["plc0376_v1", "plc0386_v1", "plc0396_v1"]
+
+    # Filter to only existing variables
+    existing_vars = [var for var in inheritance_year_vars if var in df.columns]
+
+    # if not existing_vars:
+    #     # No inheritance variables found, return early with empty columns
+    #     df["inheritance_this_year"] = 0
+    #     df["year_inheritance"] = np.nan
+    #     df["inheritance_amount"] = np.nan
+    #     return df
+
+    # Print which years have non-missing inheritance data (before filling)
+    print("\n" + "=" * 70)
+    print("INHERITANCE YEAR VARIABLES: Survey years with data")
+    print("=" * 70)
+    years_with_data = (
+        df.loc[df[existing_vars].ge(0).any(axis=1)]
+        .index.get_level_values("syear")
+        .unique()
+    )
+    print(f"Years with data: {sorted(years_with_data)}")
+    print("=" * 70 + "\n")
+
+    # Vectorized: Convert negative values to NaN for all variables at once
+    df[existing_vars] = df[existing_vars].where(df[existing_vars] >= 0, np.nan)
+
+    # Vectorized: Create filled variables and apply filling strategy
+    # Strategy: Forward fill from 2001, then backward fill from 2019 (overriding)
+    filled_var_names = [var + "_filled" for var in existing_vars]
+
+    # Copy all at once
+    df[filled_var_names] = df[existing_vars].copy()
+
+    # Forward fill then backward fill for all variables at once
+    df[filled_var_names] = (
+        df.groupby(level="pid")[filled_var_names].ffill().groupby(level="pid").bfill()
+    )
+
+    # Vectorized: Check if any inheritance year matches syear
+    # Create boolean mask for each filled variable
+    inheritance_matches = df[filled_var_names].eq(syear.values[:, None])
+    df["inheritance_this_year"] = inheritance_matches.any(axis=1).astype(int)
+
+    # Vectorized: Get maximum year across all three filled variables
+    df["year_inheritance"] = df[filled_var_names].max(axis=1)
+
+    # Create inheritance amount variable (vectorized)
+    if "plc0383_h" in df.columns:
+        df["inheritance_amount"] = df["plc0383_h"].where(df["plc0383_h"] >= 0, np.nan)
+    else:
+        df["inheritance_amount"] = np.nan
+
+    # Deflate inheritance amount
+    # df = _deflate_inheritance_amount(df, cpi_data, specs)
+
+    # Print 20 largest inheritance amounts with year_inheritance
+    print("\n" + "=" * 70)
+    print("20 LARGEST INHERITANCE AMOUNTS")
+    print("=" * 70)
+    print(
+        df.nlargest(20, "inheritance_amount")[
+            ["inheritance_amount", "year_inheritance"]
+        ]
+    )
+
+    # Calculate and print 90th percentile threshold
+    p90_threshold = df["inheritance_amount"].quantile(0.90)
+    n_above_p90 = (df["inheritance_amount"] > p90_threshold).sum()
+    print(f"\n90th percentile threshold: €{p90_threshold:,.2f}")
+    print(f"Observations above 90th percentile: {n_above_p90}")
+    print("=" * 70 + "\n")
+
+    print("Number of unique individuals (pid) by year_inheritance (last 20 years):")
+    print(
+        df.reset_index()
+        .groupby("year_inheritance")["pid"]
+        .nunique()
+        .sort_index()
+        .tail(20)
+    )
+
+    return df

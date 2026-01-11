@@ -7,7 +7,6 @@ For each group, creates pie charts showing the distribution of labor supply stat
 at t=1, t=3, t=5, and t=10 (years after first care demand).
 """
 
-import pickle
 from pathlib import Path
 from typing import Annotated
 

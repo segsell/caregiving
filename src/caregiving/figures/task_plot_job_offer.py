@@ -7,10 +7,11 @@ from typing import Annotated, Dict
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pytask
 from pytask import Product
 
-from caregiving.config import BLD, JET_COLOR_MAP, SRC
-from caregiving.model.shared import SEX, UNEMPLOYED_CHOICES, WORK_CHOICES
+from caregiving.config import BLD, JET_COLOR_MAP
+from caregiving.model.shared import UNEMPLOYED_CHOICES, WORK_CHOICES
 
 
 def task_plot_job_transitions(
@@ -229,6 +230,7 @@ def _model_offer_prob(age, edu, params, sex_suffix):
     return _logistic(x)
 
 
+@pytask.mark.job_offer_probs
 def task_plot_job_offer_probs(
     path_to_full_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_struct_sample: Path = BLD

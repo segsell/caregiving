@@ -227,20 +227,33 @@ def plot_three_line_differences(
 
     # Calculate ylim from data if not provided
     if ylim is None:
-        y_min = min(
-            prof["diff_work"].min(),
-            prof["diff_ft"].min(),
-            prof["diff_pt"].min(),
-        )
-        y_max = max(
-            prof["diff_work"].max(),
-            prof["diff_ft"].max(),
-            prof["diff_pt"].max(),
-        )
-        # Add 10% padding on both sides
-        y_range = y_max - y_min
-        padding = max(y_range * 0.1, 0.01)  # At least 0.01 padding
-        ylim = (y_min - padding, y_max + padding)
+        # Filter out NaN and Inf values
+        work_vals = prof["diff_work"].replace([np.inf, -np.inf], np.nan).dropna()
+        ft_vals = prof["diff_ft"].replace([np.inf, -np.inf], np.nan).dropna()
+        pt_vals = prof["diff_pt"].replace([np.inf, -np.inf], np.nan).dropna()
+
+        if len(work_vals) == len(ft_vals) == len(pt_vals) == 0:
+            # No valid data, use default range
+            ylim = (-0.1, 0.1)
+        else:
+            y_min = min(
+                work_vals.min() if len(work_vals) > 0 else 0,
+                ft_vals.min() if len(ft_vals) > 0 else 0,
+                pt_vals.min() if len(pt_vals) > 0 else 0,
+            )
+            y_max = max(
+                work_vals.max() if len(work_vals) > 0 else 0,
+                ft_vals.max() if len(ft_vals) > 0 else 0,
+                pt_vals.max() if len(pt_vals) > 0 else 0,
+            )
+            # Add 10% padding on both sides
+            y_range = y_max - y_min
+            if y_range == 0:
+                # All values are the same, add small padding
+                ylim = (y_min - 0.01, y_max + 0.01)
+            else:
+                padding = max(y_range * 0.1, 0.01)  # At least 0.01 padding
+                ylim = (y_min - padding, y_max + padding)
 
     plt.ylim(ylim)
     plt.grid(True, alpha=0.3)

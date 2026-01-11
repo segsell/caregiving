@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Annotated
 
 import jax
-import jax.numpy as jnp
 import pandas as pd
 import pytest
 import yaml
@@ -13,15 +12,6 @@ from pytask import Product
 
 from caregiving.config import BLD, TESTS
 from caregiving.model.shared import DEAD
-from caregiving.model.state_space import (
-    create_state_space_functions,
-)
-from caregiving.model.utility.bequest_utility import (
-    create_final_period_utility_functions,
-)
-from caregiving.model.utility.utility_functions_additive import create_utility_functions
-from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
-from caregiving.simulation.simulate import simulate_scenario
 
 jax.config.update("jax_enable_x64", True)
 

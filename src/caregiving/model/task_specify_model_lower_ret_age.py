@@ -24,11 +24,11 @@
 # from caregiving.model.stochastic_processes.job_transition import (
 #     job_offer_process_transition,
 # )
-# from caregiving.model.stochastic_processes.partner_transition import partner_transition
+# from caregiving.model.stochastic_processes.partner_transition import partner_transition  # noqa: E501
 # from caregiving.model.utility.bequest_utility import (
 #     create_final_period_utility_functions,
 # )
-# from caregiving.model.utility.utility_functions_additive import create_utility_functions
+# from caregiving.model.utility.utility_functions_additive import create_utility_functions  # noqa: E501
 # from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 # from caregiving.model.wealth_and_budget.savings_grid import create_savings_grid
 
@@ -36,7 +36,7 @@
 # @pytask.mark.skip()
 # def task_specify_model_lower_ret_age(
 #     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
-#     path_to_start_params: Path = BLD / "model" / "params" / "start_params_updated.yaml",
+#     path_to_start_params: Path = BLD / "model" / "params" / "start_params_updated.yaml",  # noqa: E501
 #     path_to_save_options: Annotated[Path, Product] = BLD
 #     / "model"
 #     / "options_lower_ret_age.pkl",

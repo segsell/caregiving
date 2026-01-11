@@ -5,7 +5,6 @@ from typing import Any, Callable, Dict
 
 import jax.numpy as jnp
 import numpy as np
-import pandas as pd
 from optimagic.differentiation.derivatives import first_derivative
 
 from caregiving.estimation.estimation_setup import simulate_moments

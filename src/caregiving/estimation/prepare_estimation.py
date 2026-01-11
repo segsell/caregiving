@@ -12,7 +12,7 @@
 # from caregiving.model.utility.bequest_utility import (
 #     create_final_period_utility_functions,
 # )
-# from caregiving.model.utility.utility_functions_additive import create_utility_functions
+# from caregiving.model.utility.utility_functions_additive import create_utility_functions  # noqa: E501
 # from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 
 

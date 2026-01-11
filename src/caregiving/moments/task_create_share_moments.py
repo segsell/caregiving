@@ -1,12 +1,8 @@
 """Create SHARE moments and variances for MSM estimation."""
 
-from itertools import product
 from pathlib import Path
 from typing import Annotated
 
-import jax.numpy as jnp
-import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import pytask
 from pytask import Product
@@ -16,20 +12,8 @@ from caregiving.data_management.share.task_create_parent_child_data_set import (
     AGE_BINS_PARENTS,
     AGE_LABELS_PARENTS,
     CARE_COLS,
-    CHILD_CARE_COLS,
     weighted_shares_and_counts,
 )
-from caregiving.model.shared import (
-    FULL_TIME_CHOICES,
-    NOT_WORKING,
-    PARENT_WEIGHTS_SHARE,
-    PART_TIME,
-    RETIREMENT,
-    UNEMPLOYED,
-    WORK,
-)
-from caregiving.specs.task_write_specs import read_and_derive_specs
-from caregiving.utils import table
 
 DEGREES_OF_FREEDOM = 1
 

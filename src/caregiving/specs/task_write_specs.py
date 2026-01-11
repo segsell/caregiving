@@ -15,7 +15,6 @@ from caregiving.config import BLD, SRC
 from caregiving.specs.caregiving_specs import (
     read_in_adl_state_transition_specs,
     read_in_adl_state_transition_specs_light_intensive,
-    read_in_adl_transition_specs,
     read_in_adl_transition_specs_binary,
     read_in_care_supply_transition_specs,
     read_in_death_transition_specs,
@@ -24,7 +23,7 @@ from caregiving.specs.caregiving_specs import (
     weight_adl_transitions_by_survival,
 )
 from caregiving.specs.derive_specs import read_and_derive_specs
-from caregiving.specs.experience_specs import create_max_experience
+from caregiving.specs.experience_pp_specs import add_experience_and_pp_specs
 from caregiving.specs.family_specs import (
     predict_age_of_youngest_child_by_state,
     predict_children_by_state,
@@ -37,8 +36,16 @@ from caregiving.specs.health_specs import (
     read_in_health_transition_specs_df,
     read_in_health_transition_specs_good_medium_bad,
     read_in_health_transition_specs_good_medium_bad_df,
+    read_in_health_transition_specs_with_caregiving,
 )
 from caregiving.specs.income_specs import add_income_specs
+from caregiving.specs.inheritance_specs import (
+    read_in_inheritance_amount_specs,
+    read_in_inheritance_prob_specs,
+)
+
+# from caregiving.specs.experience_specs import create_max_experience
+
 
 jax.config.update("jax_enable_x64", True)
 
@@ -83,6 +90,10 @@ def task_write_specs(  # noqa: PLR0915
     / "estimation"
     / "stochastic_processes"
     / "health_transition_matrix.csv",
+    path_to_health_transition_mat_with_caregiving: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "health_transition_matrix_with_caregiving.csv",
     path_to_mortality_transition_mat: Path = BLD
     / "estimation"
     / "stochastic_processes"
@@ -107,6 +118,16 @@ def task_write_specs(  # noqa: PLR0915
     / "estimation"
     / "stochastic_processes"
     / "adl_state_transition_matrix.csv",
+    path_to_inheritance_prob_spec7_params: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "inheritance_specs"
+    / "spec7_any_care_this_year_filter_parent_this_year_params.csv",
+    path_to_inheritance_amount_spec12_params: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "inheritance_amount_specs_two_care"
+    / "spec12_care_recent_filter_parent_recent_params.csv",
     path_to_save_survival_by_age: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
@@ -119,9 +140,10 @@ def task_write_specs(  # noqa: PLR0915
     / "estimation"
     / "stochastic_processes"
     / "job_sep_probs.pkl",
-    path_to_struct_estimation_sample: Path = BLD
-    / "data"
-    / "soep_structural_estimation_sample.csv",
+    path_to_credited_periods_estimates: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "credited_periods_estimates.csv",
     path_to_save_health_death_transition_matrix_good_bad: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
@@ -140,10 +162,26 @@ def task_write_specs(  # noqa: PLR0915
     / "plots"
     / "stochastic_processes"
     / "health_death_transition_good_medium_bad.png",
-    path_to_save_max_exp_diff: Annotated[Path, Product] = BLD
+    # path_to_save_max_exp_diff: Annotated[Path, Product] = BLD
+    # / "model"
+    # / "specs"
+    # / "max_exp_diffs_per_period.txt",
+    path_to_save_max_pp_retirement: Annotated[Path, Product] = BLD
     / "model"
     / "specs"
-    / "max_exp_diffs_per_period.txt",
+    / "max_pp_retirement.txt",
+    path_to_save_max_exp_diff_period_working: Annotated[Path, Product] = BLD
+    / "model"
+    / "specs"
+    / "max_exp_diff_period_working.txt",
+    path_to_save_pp_for_exp_by_sex_edu: Annotated[Path, Product] = BLD
+    / "model"
+    / "specs"
+    / "pp_for_exp_by_sex_edu.pkl",
+    path_to_save_experience_threshold_very_long_insured: Annotated[Path, Product] = BLD
+    / "model"
+    / "specs"
+    / "experience_threshold_very_long_insured.txt",
     path_to_save_specs_dict: Annotated[Path, Product] = BLD
     / "model"
     / "specs"
@@ -162,11 +200,23 @@ def task_write_specs(  # noqa: PLR0915
     / "estimation"
     / "stochastic_processes"
     / "death_transition_mat.csv",
+    path_to_save_inheritance_prob_mat: Annotated[Path, Product] = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "inheritance_prob_matrix.csv",
+    path_to_save_inheritance_amount_mat: Annotated[Path, Product] = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "inheritance_amount_matrix.csv",
 ) -> Dict[str, Any]:
     """Read in specs and add specs from first-step estimation."""
 
     estimation_sample = pd.read_csv(path_to_sample, index_col=[0])
     specs = read_and_derive_specs(path_to_load_specs)
+
+    credited_periods_estimates = pd.read_csv(
+        path_to_credited_periods_estimates, index_col=0
+    )
 
     # Add income specs
     wage_params = pd.read_csv(path_to_wage_params, index_col=0)
@@ -192,10 +242,23 @@ def task_write_specs(  # noqa: PLR0915
     )
 
     # Matches Bruno's & Max's result
-    specs["children_by_state"] = predict_children_by_state(children_params, specs)
+    specs["children_by_state"], specs["max_children"] = predict_children_by_state(
+        children_params, specs
+    )
     specs["child_age_youngest_by_state"] = predict_age_of_youngest_child_by_state(
         age_youngest_child_params,
         specs,
+    )
+
+    # Add experience specs
+    specs = add_experience_and_pp_specs(
+        estimation_sample=estimation_sample,
+        specs=specs,
+        exp_factor_for_credited_periods=credited_periods_estimates,
+        path_to_save_experience_threshold_very_long_insured=path_to_save_experience_threshold_very_long_insured,  # noqa: E501
+        path_to_save_max_pp_retirement=path_to_save_max_pp_retirement,
+        path_to_save_max_exp_diff_period_working=path_to_save_max_exp_diff_period_working,  # noqa: E501
+        path_to_save_pp_for_exp_by_sex_edu=path_to_save_pp_for_exp_by_sex_edu,
     )
 
     # Read in family transitions
@@ -208,25 +271,38 @@ def task_write_specs(  # noqa: PLR0915
     ) = read_in_partner_transition_specs(partner_trans_prop, specs)
 
     # Read in health transition matrix including death probabilities
+    death_prob_df = pd.read_csv(path_to_mortality_transition_mat)
+
     health_trans_probs_df = pd.read_csv(
         path_to_health_transition_mat,
     )
-    death_prob_df = pd.read_csv(path_to_mortality_transition_mat)
     specs["health_trans_mat"] = read_in_health_transition_specs(
         health_trans_probs_df, death_prob_df, specs
     )
+    # Health transition matrix with lagged intensive caregiving
+    health_trans_probs_df_with_caregiving = pd.read_csv(
+        path_to_health_transition_mat_with_caregiving,
+    )
+    specs["health_trans_mat_with_caregiving"] = (
+        read_in_health_transition_specs_with_caregiving(
+            health_trans_probs_df_with_caregiving, death_prob_df, specs
+        )
+    )
 
-    health_death_trans_mat = read_in_health_transition_specs_df(
-        health_trans_probs_df=health_trans_probs_df,
-        death_prob_df=death_prob_df,
-        specs=specs,
-    )
-    health_death_trans_mat.to_csv(path_to_save_health_death_transition_matrix_good_bad)
-    plot_health_death_transitions_good_bad(
-        specs=specs,
-        df=health_death_trans_mat,
-        path_to_save_plot=path_to_save_health_death_transition_good_bad,
-    )
+    # health_death_trans_mat = read_in_health_transition_specs_df(
+    #     health_trans_probs_df=health_trans_probs_df,
+    #     death_prob_df=death_prob_df,
+    #     specs=specs,
+    # )
+    # health_death_trans_mat.to_csv(
+    #     path_to_save_health_death_transition_matrix_good_bad
+    # )
+
+    # plot_health_death_transitions_good_bad(
+    #     specs=specs,
+    #     df=health_death_trans_mat,
+    #     path_to_save_plot=path_to_save_health_death_transition_good_bad,
+    # )
 
     if "health_labels_three" in specs.keys():
         # Read in health transition matrix including death probabilities
@@ -323,14 +399,29 @@ def task_write_specs(  # noqa: PLR0915
         pkl.load(path_to_job_separation_probs.open("rb"))
     )
 
-    # Set initial experience
-    data_decision = pd.read_csv(path_to_struct_estimation_sample)
+    # specs["max_exp_diffs_per_period"] = create_max_experience(
+    #     data_decision, specs, path_to_save_txt=path_to_save_max_exp_diff
+    # )
 
-    specs["max_exp_diffs_per_period"] = create_max_experience(
-        data_decision, specs, path_to_save_txt=path_to_save_max_exp_diff
+    # Load inheritance parameters
+    inheritance_prob_spec7_params = pd.read_csv(
+        path_to_inheritance_prob_spec7_params, index_col=0
+    )
+    inheritance_amount_spec12_params = pd.read_csv(
+        path_to_inheritance_amount_spec12_params, index_col=0
+    )
+    specs["inheritance_prob_params"] = inheritance_prob_spec7_params
+    specs["inheritance_amount_params"] = inheritance_amount_spec12_params
+
+    # Precompute inheritance probability matrix by age, education, and care type
+    specs["inheritance_prob_mat"] = read_in_inheritance_prob_specs(
+        specs, path_to_save=path_to_save_inheritance_prob_mat
+    )
+    # Precompute inheritance amount matrix by age, education, and care type
+    specs["inheritance_amount_mat"] = read_in_inheritance_amount_specs(
+        specs, path_to_save=path_to_save_inheritance_amount_mat
     )
 
     with path_to_save_specs_dict.open("wb") as f:
         pkl.dump(specs, f)
-
     return specs

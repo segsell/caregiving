@@ -17,6 +17,9 @@ from caregiving.data_management.soep.auxiliary import (
     recode_sex,
     span_dataframe,
 )
+from caregiving.data_management.soep.task_create_event_study_sample import (
+    create_caregiving,
+)
 from caregiving.data_management.soep.variables import (
     clean_health_create_states,
     create_education_type,
@@ -25,10 +28,9 @@ from caregiving.data_management.soep.variables import (
     create_nursing_home,
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
-from caregiving.utils import table
 
-AGE_LOW = 65
-AGE_HIGH = 105
+NURSING_HOME_AGE_LOW = 65
+NURSING_HOME_AGE_HIGH = 105
 
 
 def task_create_health_transition_sample_good_bad(
@@ -44,6 +46,8 @@ def task_create_health_transition_sample_good_bad(
     specs["end_year"] = 2017
 
     df = pd.read_csv(path_to_raw_data, index_col=["pid", "syear"])
+
+    df = create_caregiving(df, filter_missing=False)
 
     # Pre-Filter estimation years
     df = filter_years(df, specs["start_year"] - 1, specs["end_year"] + 1)
@@ -62,7 +66,25 @@ def task_create_health_transition_sample_good_bad(
     df = span_dataframe(df, specs["start_year"] - 1, specs["end_year"] + 1)
     df = clean_health_create_states(df)
 
-    df = df[["age", "education", "health", "lead_health", "sex"]]
+    # Create lagged intensive caregiving variable
+    # Ensure we have pid in index or as a column for grouping
+    if "pid" not in df.index.names and "pid" not in df.columns:
+        raise ValueError("pid must be in index or columns for lagging")
+
+    # Sort by pid and syear to ensure proper lagging
+    if "pid" in df.index.names:
+        df = df.sort_index(level="pid")
+        if "syear" in df.index.names:
+            df = df.sort_index(level=["pid", "syear"])
+        df["lagged_intensive_care"] = df.groupby(level="pid")["intensive_care"].shift(1)
+    else:
+        df = df.sort_values(by=["pid", "syear"])
+        df["lagged_intensive_care"] = df.groupby("pid")["intensive_care"].shift(1)
+
+    # Keep lagged_intensive_care in the final dataset
+    df = df[
+        ["age", "education", "health", "lead_health", "sex", "lagged_intensive_care"]
+    ]
 
     print(
         str(len(df))
@@ -140,7 +162,9 @@ def task_create_nursing_home_sample(
 
     # First model: full sample (age 65–110)
     filtered_data = df[
-        (df["age"] >= AGE_LOW) & (df["age"] <= AGE_HIGH) & (df["sex"] == 1)
+        (df["age"] >= NURSING_HOME_AGE_LOW)
+        & (df["age"] <= NURSING_HOME_AGE_HIGH)
+        & (df["sex"] == 1)
     ].copy()
     filtered_data = filtered_data[["age", "nursing_home"]].dropna()
     filtered_data["age_squared"] = filtered_data["age"] ** 2
@@ -151,13 +175,15 @@ def task_create_nursing_home_sample(
     print(logit_model.summary())
 
     # Predict over age range
-    age_range = np.arange(AGE_LOW, filtered_data["age"].max() + 1)
+    age_range = np.arange(NURSING_HOME_AGE_LOW, filtered_data["age"].max() + 1)
     X_pred = pd.DataFrame({"const": 1, "age": age_range, "age_squared": age_range**2})
     predicted_probs_full = logit_model.predict(X_pred)
 
     # Second model: bad health only
     bad_health_data = df[
-        (df["age"] >= AGE_LOW) & (df["age"] <= AGE_HIGH + 5) & (df["health"] == 0)
+        (df["age"] >= NURSING_HOME_AGE_LOW)
+        & (df["age"] <= NURSING_HOME_AGE_HIGH + 5)
+        & (df["health"] == 0)
     ].copy()
     bad_health_data = bad_health_data[["age", "nursing_home"]].dropna()
     bad_health_data["age_squared"] = bad_health_data["age"] ** 2

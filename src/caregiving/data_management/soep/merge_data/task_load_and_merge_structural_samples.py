@@ -102,6 +102,13 @@ def task_load_and_merge_estimation_sample(
             "pld0032",  # number of brothers
             "plj0118_h",  # distance to mother
             "plj0119_h",  # distance to father
+            # inheritance
+            "plc0375_v1",  # Erbschaft (jemals)
+            "plc0375_v2",  # Erbschaft (letzte 15 Jahre)
+            "plc0383_h",  # Erbschaft/Schenkung Betrag (Euro)
+            "plc0376_v1",  # Jahr Erbschaft 1. Person
+            "plc0386_v1",  # Jahr Erbschaft 2. Person
+            "plc0396_v1",  # Jahr Erbschaft 3. Person
         ],
         chunksize=100000,
         convert_categoricals=False,
@@ -518,6 +525,7 @@ def task_load_and_merge_partner_wage_sample(
 def task_load_and_merge_health_sample(
     soep_c40_pgen: Path = SRC / "data" / "soep_c40" / "pgen.dta",
     soep_c40_ppathl: Path = SRC / "data" / "soep_c40" / "ppathl.dta",
+    soep_c40_pl: Path = SRC / "data" / "soep_c40" / "pl.dta",
     soep_c40_pequiv: Path = SRC / "data" / "soep_c40" / "pequiv.dta",
     soep_c40_hl: Path = SRC / "data" / "soep_c40" / "hl.dta",
     path_to_save: Annotated[Path, Product] = BLD / "data" / "soep_health_data_raw.csv",
@@ -542,6 +550,17 @@ def task_load_and_merge_health_sample(
         columns=["syear", "pid", "hid", "sex", "parid", "gebjahr"],
         convert_categoricals=False,
     )
+
+    pl_data_reader = pd.read_stata(
+        soep_c40_pl,
+        columns=["pid", "hid", "syear", "pli0046"],
+        chunksize=100000,
+        convert_categoricals=False,
+    )
+    pl_data = pd.DataFrame()
+    for itm in pl_data_reader:
+        pl_data = pd.concat([pl_data, itm])
+
     pequiv_data = pd.read_stata(
         # m11126: Self-Rated Health Status
         # m11124: Disability Status of Individual
@@ -559,12 +578,16 @@ def task_load_and_merge_health_sample(
             # "hlc0005_h",  # monthly net household income
             # "hlc0120_h",  # monthly amount of savings
             "hlf0155_h",  # Unterkunftsart (Wohn)heim
+            "hlf0291",  # person requiring help present in hh
         ],
         convert_categoricals=False,
     )
 
     merged_data = pd.merge(
         pgen_data, ppathl_data, on=["pid", "hid", "syear"], how="inner"
+    )
+    merged_data = pd.merge(
+        merged_data, pl_data, on=["pid", "hid", "syear"], how="inner"
     )
     merged_data = pd.merge(merged_data, pequiv_data, on=["pid", "syear"], how="inner")
     merged_data = pd.merge(merged_data, hl_data, on=["hid", "syear"], how="left")

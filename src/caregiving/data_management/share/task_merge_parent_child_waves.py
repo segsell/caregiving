@@ -8,7 +8,6 @@ import pandas as pd
 from pytask import Product
 
 from caregiving.config import BLD, SRC
-from caregiving.utils import table
 
 GERMANY = 12
 MISSING_VALUE = -9

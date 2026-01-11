@@ -31,7 +31,8 @@ def predict_children_by_state(params, specs):
                         0, predicted_nb_children
                     )
 
-    return jnp.asarray(children)
+    max_children = jnp.max(children, axis=-1)
+    return jnp.asarray(children), max_children
 
 
 def predict_age_of_youngest_child_by_state(params, specs):

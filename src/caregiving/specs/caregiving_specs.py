@@ -33,7 +33,7 @@ def read_in_adl_transition_specs(adl_trans_df, specs):
 
     """
     # unpack sizes straight from *specs*
-    start_age = specs["start_age_parents"]
+    start_age = specs["start_age_parents_mat"]
     end_age = specs["end_age"]
     n_periods = end_age - start_age + 1
     n_sexes = len(specs["sex_labels"])  # 2
@@ -86,7 +86,7 @@ def read_in_adl_transition_specs_binary(adl_trans_df, specs):
     # ──────────────────────────────────────────────────────────────────
     # sizes
     # ──────────────────────────────────────────────────────────────────
-    start_age = specs["start_age_parents"]
+    start_age = specs["start_age_parents_mat"]
     end_age = specs["end_age"]
     n_periods = end_age - start_age + 1
     n_sexes = len(specs["sex_labels"])
@@ -173,7 +173,7 @@ def read_in_adl_state_transition_specs(
         Array of shape (n_sexes, n_periods, n_adl_states, n_adl_states)
     """
     # unpack sizes straight from *specs*
-    start_age = specs["start_age_parents"]
+    start_age = specs["start_age_parents_mat"]
     end_age = specs["end_age"]
     n_periods = end_age - start_age + 1
     n_sexes = len(specs["sex_labels"])  # 2
@@ -213,7 +213,7 @@ def read_in_adl_state_transition_specs(
 
     # Save to CSV if path provided
     if path_to_save is not None:
-        start_age = specs["start_age_parents"]
+        start_age = specs["start_age_parents_mat"]
         end_age = specs["end_age"]
         ages = np.arange(start_age, end_age + 1)
         sex_labels = specs["sex_labels"]
@@ -285,7 +285,7 @@ def read_in_adl_state_transition_specs_light_intensive(
         - 2: ADL 2 or ADL 3 (intensive)
     """
     # unpack sizes straight from *specs*
-    start_age = specs["start_age_parents"]
+    start_age = specs["start_age_parents_mat"]
     end_age = specs["end_age"]
     n_periods = end_age - start_age + 1
     n_sexes = len(specs["sex_labels"])  # 2
@@ -360,7 +360,7 @@ def read_in_adl_state_transition_specs_light_intensive(
 
     # Save to CSV if path provided
     if path_to_save is not None:
-        start_age = specs["start_age_parents"]
+        start_age = specs["start_age_parents_mat"]
         end_age = specs["end_age"]
         ages = np.arange(start_age, end_age + 1)
         sex_labels = specs["sex_labels"]
@@ -581,7 +581,7 @@ def weight_adl_transitions_by_survival(specs):
         - adl_state_transition_mat: unweighted ADL state transition matrix
         - survival_by_age_mat: survival matrix of shape [sex, age_index]
         - survival_min_age: minimum age in survival matrix (age_index 0)
-        - start_age_parents, end_age: age range
+        - start_age_parents_mat, end_age: age range
 
     Returns
     -------
@@ -593,7 +593,7 @@ def weight_adl_transitions_by_survival(specs):
     adl_state_trans_mat = specs["adl_state_transition_mat"]
     survival_mat = specs["survival_by_age_mat"]
 
-    start_age = specs["start_age_parents"]
+    start_age = specs["start_age_parents_mat"]
     end_age = specs["end_age"]
 
     n_periods = end_age - start_age + 1

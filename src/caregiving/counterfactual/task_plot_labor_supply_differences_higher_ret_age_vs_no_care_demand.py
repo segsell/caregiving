@@ -38,12 +38,12 @@ from caregiving.counterfactual.task_plot_labor_supply_differences import (
 from caregiving.counterfactual.task_plot_labor_supply_differences_no_care_demand import (  # noqa: E501
     _add_distance_to_first_care_demand,
 )
-from caregiving.model.shared import DEAD, INFORMAL_CARE
+from caregiving.model.shared import INFORMAL_CARE
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_ret_age_vs_no_care_demand
-def task_plot_matched_differences_by_distance_higher_ret_age_vs_no_care_demand(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_distance_higher_ret_age_vs_no_care_demand(
+    # noqa: E501
     path_to_higher_ret_age_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_higher_ret_age_estimated_params.pkl",
@@ -164,9 +164,9 @@ def task_plot_matched_differences_by_distance_higher_ret_age_vs_no_care_demand( 
     )
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_ret_age_vs_no_care_demand
-def task_plot_matched_differences_by_age_at_first_care_higher_ret_age_vs_no_care_demand(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_at_first_care_higher_ret_age_vs_no_care_demand(
+    # noqa: E501
     path_to_higher_ret_age_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_higher_ret_age_estimated_params.pkl",
@@ -401,7 +401,6 @@ def task_plot_matched_differences_by_age_at_first_care_higher_ret_age_vs_no_care
     )
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_ret_age_vs_no_care_demand
 def task_plot_matched_differences_by_age_bins_at_first_care_higher_ret_age_vs_no_care_demand(  # noqa: PLR0915, E501
     path_to_higher_ret_age_data: Path = BLD
@@ -660,7 +659,6 @@ def task_plot_matched_differences_by_age_bins_at_first_care_higher_ret_age_vs_no
     )
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_ret_age_vs_no_care_demand
 def task_plot_matched_differences_by_distance_by_care_demand_higher_ret_age_vs_no_care_demand(  # noqa: PLR0915, E501
     path_to_higher_ret_age_data: Path = BLD
@@ -814,7 +812,6 @@ def task_plot_matched_differences_by_distance_by_care_demand_higher_ret_age_vs_n
     plt.close()
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_ret_age_vs_no_care_demand
 def task_plot_matched_differences_by_age_at_first_care_demand_higher_ret_age_vs_no_care_demand(  # noqa: PLR0915, E501
     path_to_higher_ret_age_data: Path = BLD
@@ -1082,7 +1079,6 @@ def task_plot_matched_differences_by_age_at_first_care_demand_higher_ret_age_vs_
     )
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_ret_age_vs_no_care_demand
 def task_plot_matched_differences_by_age_bins_at_first_care_demand_higher_ret_age_vs_no_care_demand(  # noqa: PLR0915, E501
     path_to_higher_ret_age_data: Path = BLD
@@ -1352,7 +1348,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_higher_ret_ag
             "path": (
                 path_to_plot_work.parent
                 / (
-                    "matched_differences_savings_rate_by_age_bins_at_first_care_demand.png"
+                    "matched_differences_savings_rate_by_age_bins_at_first_care_demand.png"  # noqa: E501
                 )
             ),
             "ylabel": "Savings Rate\nDeviation from Counterfactual",
@@ -1373,9 +1369,9 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_higher_ret_ag
     )
 
 
-@pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_higher_ret_age_vs_no_care_demand
-def task_plot_matched_differences_by_age_higher_ret_age_vs_no_care_demand(  # noqa: PLR0915, E501
+def task_plot_matched_differences_by_age_higher_ret_age_vs_no_care_demand(
+    # noqa: E501
     path_to_higher_ret_age_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_higher_ret_age_estimated_params.pkl",

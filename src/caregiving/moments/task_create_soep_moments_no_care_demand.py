@@ -3,37 +3,18 @@
 No care demand counterfactual.
 """
 
-from itertools import product
 from pathlib import Path
 from typing import Annotated
 
-import jax.numpy as jnp
-import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 from pytask import Product
 
 from caregiving.config import BLD, SRC
-from caregiving.data_management.share.task_create_parent_child_data_set import (
-    AGE_BINS_PARENTS,
-    AGE_LABELS_PARENTS,
-    weighted_shares_and_counts,
-)
 from caregiving.model.shared import (
     BAD_HEALTH,
     DEAD,
     GOOD_HEALTH,
     SEX,
-    WEALTH_MOMENTS_SCALE,
-    WEALTH_QUANTILE_CUTOFF,
-)
-from caregiving.model.shared_no_care_demand import (
-    FULL_TIME_NO_CARE_DEMAND,
-    NOT_WORKING_NO_CARE_DEMAND,
-    PART_TIME_NO_CARE_DEMAND,
-    RETIREMENT_NO_CARE_DEMAND,
-    UNEMPLOYED_NO_CARE_DEMAND,
-    WORK_NO_CARE_DEMAND,
 )
 from caregiving.moments.task_create_soep_moments import (
     adjust_and_trim_wealth_data,

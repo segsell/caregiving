@@ -39,7 +39,7 @@ def utility_func_additive_no_care_demand(
     health: int,
     partner_state: int,
     params: dict,
-    options: dict,
+    model_specs: dict,
 ) -> jnp.array:
     """Per-period utility using CRRA with additive disutility of labor.
 
@@ -54,7 +54,7 @@ def utility_func_additive_no_care_demand(
         period=period,
         choice=choice,
         params=params,
-        options=options,
+        model_specs=model_specs,
     )
     utility_death = utility_final_consume_all(
         wealth=consumption,
@@ -74,7 +74,7 @@ def utility_func_alive_additive_no_care_demand(
     period,
     choice,
     params,
-    options,
+    model_specs,
 ):
     """Alive-period utility with additive labor disutility (no care demand)."""
     rho = params["rho_low"] * (1 - education) + params["rho_high"] * education
@@ -86,13 +86,13 @@ def utility_func_alive_additive_no_care_demand(
         partner_state=partner_state,
         health=health,
         params=params,
-        options=options,
+        model_specs=model_specs,
     )
     cons_scale = consumption_scale(
         partner_state=partner_state,
         education=education,
         period=period,
-        options=options,
+        model_specs=model_specs,
     )
 
     scaled_consumption = consumption / cons_scale
@@ -106,14 +106,14 @@ def utility_func_alive_additive_no_care_demand(
 
 
 def marginal_utility_func_additive_alive_no_care_demand(
-    consumption, partner_state, education, health, period, choice, params, options
+    consumption, partner_state, education, health, period, choice, params, model_specs
 ):
     rho = params["rho_low"] * (1 - education) + params["rho_high"] * education
     cons_scale = consumption_scale(
         partner_state=partner_state,
         education=education,
         period=period,
-        options=options,
+        model_specs=model_specs,
     )
     marg_util_rho_not_one = (consumption / cons_scale) ** (-rho) / cons_scale
     marg_util = jax.lax.select(
@@ -132,14 +132,14 @@ def inverse_marginal_additive_no_care_demand(
     period,
     choice,
     params,
-    options,
+    model_specs,
 ):
     rho = params["rho_low"] * (1 - education) + params["rho_high"] * education
     cons_scale = consumption_scale(
         partner_state=partner_state,
         education=education,
         period=period,
-        options=options,
+        model_specs=model_specs,
     )
     consumption_rho_not_one = cons_scale * (marginal_utility * cons_scale) ** (-1 / rho)
     consumption = jax.lax.select(

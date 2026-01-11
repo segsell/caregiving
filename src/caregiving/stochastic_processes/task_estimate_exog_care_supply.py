@@ -6,13 +6,11 @@ from typing import Annotated
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import pytask
 import statsmodels.formula.api as smf
 from pytask import Product
 
 from caregiving.config import BLD, JET_COLOR_MAP, SRC
 from caregiving.specs.derive_specs import read_and_derive_specs
-from caregiving.utils import table
 
 
 def task_estimate_exogenous_informal_care_supply(

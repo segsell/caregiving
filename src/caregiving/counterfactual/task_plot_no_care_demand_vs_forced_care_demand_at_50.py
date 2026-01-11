@@ -26,7 +26,6 @@ from caregiving.model.shared import (
     DEAD,
     FULL_TIME,
     INFORMAL_CARE,
-    N_WEEKS_IN_YEAR,
     PART_TIME,
     WORK,
 )

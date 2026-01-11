@@ -1,9 +1,5 @@
 """Create wealth variable from SOEP."""
 
-import numpy as np
-import pandas as pd
-from linearmodels.panel.model import PanelOLS
-
 # def add_wealth_interpolate_and_deflate(data, path_dict, options):
 #     """Loads wealth data, interpolates linearly between first and last year of
 #     observation for each household, and deflates wealth using the consumer price

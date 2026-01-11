@@ -20,20 +20,10 @@ from caregiving.model.shared import (
     LIGHT_INFORMAL_CARE,
     NO_CARE,
     PARENT_BAD_HEALTH,
-    PARENT_DEAD,
     PARENT_GOOD_HEALTH,
     PARENT_MEDIUM_HEALTH,
     SEX,
-    has_care_demand,
 )
-from caregiving.model.state_space import create_state_space_functions
-from caregiving.model.task_specify_model import create_stochastic_states_transitions
-from caregiving.model.taste_shocks import shock_function_dict
-from caregiving.model.utility.bequest_utility import (
-    create_final_period_utility_functions,
-)
-from caregiving.model.utility.utility_functions_additive import create_utility_functions
-from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 
 CARE_MIX_TOLERANCE = 1e-10
 
@@ -207,6 +197,43 @@ def task_plot_care_demand_by_age_pooled_combined(
         specs=specs,
         age_min=40,
         age_max=75,
+        path_to_save_plot=path_to_save_plot,
+    )
+
+
+@pytask.mark.baseline_model
+@pytask.mark.post_estimation
+@pytask.mark.care_demand_post_estimation
+def task_plot_care_demand_by_age_by_education(
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_simulated_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params.pkl",
+    path_to_save_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "post_estimation"
+    / "care_demand_by_age_by_education.png",
+) -> None:
+    """Plot care demand by age in a 1x2 grid by education type (pooled across care demand and caregiving type)."""  # noqa: E501
+
+    specs = pickle.load(path_to_specs.open("rb"))
+
+    df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
+    df_sim["sex"] = SEX
+
+    # Create age variable from start_age + period
+    df_sim["age"] = df_sim["period"] + specs["start_age"]
+
+    # Test that care mix sums to care demand (only when mother is alive)
+    test_care_mix_sums_to_care_demand(
+        df_sim=df_sim, specs=specs, age_min=40, age_max=80
+    )
+
+    plot_simulated_care_demand_by_age_by_education(
+        df_sim=df_sim,
+        specs=specs,
+        age_min=40,
+        age_max=80,
         path_to_save_plot=path_to_save_plot,
     )
 
@@ -436,7 +463,7 @@ def plot_simulated_care_demand_by_age_2_by_2(  # noqa: PLR0915
                 bottom + no_care_series,
                 color=care_colors["no_care_choice"],
                 alpha=0.6,
-                label="No care",
+                label="Other sibling provides care",
             )
             bottom += no_care_series
             ax.fill_between(
@@ -620,7 +647,7 @@ def plot_simulated_care_demand_by_age_pooled(  # noqa: PLR0915
         bottom + no_care_series,
         color=care_colors["no_care_choice"],
         alpha=0.6,
-        label="No care",
+        label="Other sibling provides care",
     )
     bottom += no_care_series
     ax.fill_between(
@@ -684,7 +711,6 @@ def plot_simulated_care_demand_by_age_pooled(  # noqa: PLR0915
     final_handles = [handles[care_demand_idx]] + care_handles_reversed
     final_labels = [labels[care_demand_idx]] + care_labels_reversed
     ax.legend(final_handles, final_labels, loc="upper left", fontsize=12)
-    ax.grid(True, alpha=0.3)
 
     plt.tight_layout()
     if path_to_save_plot:
@@ -858,7 +884,7 @@ def plot_simulated_care_demand_by_age_pooled_light_intensive(  # noqa: PLR0915
             bottom + no_care_series,
             color=care_colors["no_care"],
             alpha=0.6,
-            label="No care",
+            label="Other sibling provides care",
         )
         bottom += no_care_series
 
@@ -905,7 +931,6 @@ def plot_simulated_care_demand_by_age_pooled_light_intensive(  # noqa: PLR0915
         ax.set_xlabel("Age", fontsize=14)
         ax.set_title(panel["title"], fontsize=16)
         ax.tick_params(axis="both", which="major", labelsize=12)
-        ax.grid(True, alpha=0.3)
 
         # Build legend: demand first, then stacked components (top-to-bottom order)
         handles, labels = ax.get_legend_handles_labels()
@@ -1087,7 +1112,7 @@ def plot_simulated_care_demand_by_age_2_by_2_combined(  # noqa: PLR0915
                 bottom + no_care_series,
                 color=care_colors["no_care_choice"],
                 alpha=0.6,
-                label="No care",
+                label="Other sibling provides care",
             )
             bottom += no_care_series
             ax.fill_between(
@@ -1248,7 +1273,7 @@ def plot_simulated_care_demand_by_age_pooled_combined(  # noqa: PLR0915
         bottom + no_care_series,
         color=care_colors["no_care_choice"],
         alpha=0.6,
-        label="No care",
+        label="Other sibling provides care",
     )
     bottom += no_care_series
     ax.fill_between(
@@ -1289,7 +1314,220 @@ def plot_simulated_care_demand_by_age_pooled_combined(  # noqa: PLR0915
     final_handles = [handles[care_demand_idx]] + care_handles_reversed
     final_labels = [labels[care_demand_idx]] + care_labels_reversed
     ax.legend(final_handles, final_labels, loc="upper left", fontsize=12)
-    ax.grid(True, alpha=0.3)
+
+    plt.tight_layout()
+    if path_to_save_plot:
+        plt.savefig(path_to_save_plot, dpi=300, transparent=False)
+    plt.close(fig)
+
+
+def plot_simulated_care_demand_by_age_by_education(  # noqa: PLR0915
+    df_sim, specs, age_min=None, age_max=None, path_to_save_plot=None
+):
+    """
+    Plot the yearly share with care_demand > 0 in a 1x2 grid by education type.
+
+    Left panel: Low education (education == 0)
+    Right panel: High education (education == 1)
+
+    Pooled across care demand type and caregiving type.
+
+    Shows care choices upon positive care demand
+    (care_demand in {CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE}):
+    1. No care:
+       has_care_demand(care_demand) AND agent chooses NO_CARE.
+    2. Light informal care:
+       has_care_demand(care_demand) AND agent chooses LIGHT_INFORMAL_CARE.
+    3. Intensive informal care:
+       has_care_demand(care_demand) AND agent chooses INTENSIVE_INFORMAL_CARE.
+    4. Formal care:
+       has_care_demand(care_demand) AND agent chooses FORMAL_CARE.
+
+    """
+    # ---- 1. Setup
+    if age_min is None:
+        age_min = specs["start_age"]
+    if age_max is None:
+        age_max = 100
+
+    ages = np.arange(age_min, age_max + 1)
+
+    df_sim = df_sim.loc[df_sim["health"] != DEAD].copy()
+    if "sex" in df_sim.columns:
+        df_sim = df_sim.loc[df_sim["sex"] == SEX].copy()
+
+    # ---- 2. Calculate care type indicators
+    # Convert JAX arrays to numpy arrays for pandas compatibility
+    light_informal_care_choices = np.asarray(LIGHT_INFORMAL_CARE)
+    intensive_informal_care_choices = np.asarray(INTENSIVE_INFORMAL_CARE)
+    formal_care_choices = np.asarray(FORMAL_CARE)
+    no_care_choices = np.asarray(NO_CARE)
+
+    # Four types of care choices upon "true" care demand:
+    # care_demand in {CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE} AND mother alive.
+    positive_demand = df_sim["care_demand"].isin(
+        [CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]
+    ) & (df_sim["mother_dead"] == 0)
+
+    # 1. No care
+    df_sim["no_care_choice"] = (
+        positive_demand & df_sim["choice"].isin(no_care_choices)
+    ).astype(int)
+
+    # 2. Light informal care
+    df_sim["light_informal_care"] = (
+        positive_demand & df_sim["choice"].isin(light_informal_care_choices)
+    ).astype(int)
+
+    # 3. Intensive informal care
+    df_sim["intensive_informal_care"] = (
+        positive_demand & df_sim["choice"].isin(intensive_informal_care_choices)
+    ).astype(int)
+
+    # 4. Formal care
+    df_sim["formal_care"] = (
+        positive_demand & df_sim["choice"].isin(formal_care_choices)
+    ).astype(int)
+
+    # Calculate shares for care demand (any positive care demand, mother alive)
+    def _true_care_demand_share(group):
+        mask = group["care_demand"].isin([CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]) & (
+            group["mother_dead"] == 0
+        )
+        return mask.mean()
+
+    care_demand_shares = (
+        df_sim.groupby(["age", "education"], observed=False)
+        .apply(_true_care_demand_share)
+        .reindex(
+            pd.MultiIndex.from_product([ages, [0, 1]], names=["age", "education"]),
+            fill_value=0,
+        )
+    )
+
+    # Calculate care mix shares for all four types
+    care_mix_shares = {}
+    for care_type in (
+        "no_care_choice",
+        "light_informal_care",
+        "intensive_informal_care",
+        "formal_care",
+    ):
+        shares = (
+            df_sim.groupby(["age", "education"], observed=False)[care_type]
+            .mean()
+            .reindex(
+                pd.MultiIndex.from_product([ages, [0, 1]], names=["age", "education"]),
+                fill_value=0,
+            )
+        )
+        care_mix_shares[care_type] = shares
+
+    # ---- 3. Create 1x2 subplot grid
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+    axes = axes.flatten()
+
+    # Labels for titles
+    edu_labels = {0: "Low education", 1: "High education"}
+
+    # Colors for care mix (stacked from bottom to top)
+    care_colors = {
+        "no_care_choice": "#D3D3D3",  # Light grey
+        "light_informal_care": "#2E86AB",  # Blue
+        "intensive_informal_care": "#F18F01",  # Orange
+        "formal_care": "#A23B72",  # Purple
+    }
+
+    # ---- 4. Plot each education level
+    for edu in (0, 1):
+        ax = axes[edu]
+
+        # Get care demand share
+        care_demand_series = care_demand_shares.xs(edu, level="education")
+
+        # Get care mix shares
+        no_care_series = care_mix_shares["no_care_choice"].xs(edu, level="education")
+        light_informal_series = care_mix_shares["light_informal_care"].xs(
+            edu, level="education"
+        )
+        intensive_informal_series = care_mix_shares["intensive_informal_care"].xs(
+            edu, level="education"
+        )
+        formal_series = care_mix_shares["formal_care"].xs(edu, level="education")
+
+        # Plot stacked area for care mix (below the curve)
+        # Stack from bottom to top:
+        #   no care, light informal, intensive informal, formal care
+        bottom = 0
+        ax.fill_between(
+            ages,
+            bottom,
+            bottom + no_care_series,
+            color=care_colors["no_care_choice"],
+            alpha=0.6,
+            label="Other sibling provides care",
+        )
+        bottom += no_care_series
+        ax.fill_between(
+            ages,
+            bottom,
+            bottom + light_informal_series,
+            color=care_colors["light_informal_care"],
+            alpha=0.6,
+            label="Light informal care",
+        )
+        bottom += light_informal_series
+        ax.fill_between(
+            ages,
+            bottom,
+            bottom + intensive_informal_series,
+            color=care_colors["intensive_informal_care"],
+            alpha=0.6,
+            label="Intensive informal care",
+        )
+        bottom += intensive_informal_series
+        ax.fill_between(
+            ages,
+            bottom,
+            bottom + formal_series,
+            color=care_colors["formal_care"],
+            alpha=0.6,
+            label="Formal care",
+        )
+
+        # Plot care demand curve (on top)
+        ax.plot(
+            ages,
+            care_demand_series,
+            color="black",
+            linewidth=2,
+            label="Care demand",
+        )
+
+        # Cosmetics
+        pad = 1
+        ax.set_xlabel("Age", fontsize=14)
+        if edu == 0:
+            ax.set_ylabel("Share", fontsize=14)
+        ax.set_xlim(age_min - pad, 75 + pad)  # Cut x-axis at 75
+        ax.set_ylim(0, None)  # Let y-axis adjust automatically
+        ax.set_title(edu_labels[edu], fontsize=16)
+        ax.tick_params(axis="both", which="major", labelsize=12)
+
+        # Get handles and labels, then reorder to show from bottom to top
+        # Legend order: Care demand at top, then care types from top to bottom
+        handles, labels = ax.get_legend_handles_labels()
+        # Separate care demand from care types
+        care_demand_idx = labels.index("Care demand")
+        care_handles = [h for i, h in enumerate(handles) if i != care_demand_idx]
+        care_labels = [label for i, label in enumerate(labels) if i != care_demand_idx]
+        # Reverse care types so legend shows from bottom to top
+        care_handles_reversed = care_handles[::-1]
+        care_labels_reversed = care_labels[::-1]
+        # Combine: care demand first, then reversed care types
+        final_handles = [handles[care_demand_idx]] + care_handles_reversed
+        final_labels = [labels[care_demand_idx]] + care_labels_reversed
+        ax.legend(final_handles, final_labels, loc="upper left", fontsize=10)
 
     plt.tight_layout()
     if path_to_save_plot:
@@ -1347,7 +1585,7 @@ def plot_mother_health_shares_by_age(
         df_plot["mother_health"] == PARENT_MEDIUM_HEALTH
     ).astype(int)
     df_plot["health_bad"] = (df_plot["mother_health"] == PARENT_BAD_HEALTH).astype(int)
-    df_plot["health_dead"] = (df_plot["mother_health"] == PARENT_DEAD).astype(int)
+    df_plot["health_dead"] = (df_plot["mother_health"] > 0).astype(int)
 
     # Calculate shares by mother age
     health_shares = {}
@@ -1398,7 +1636,6 @@ def plot_mother_health_shares_by_age(
     ax.set_ylim(0, 1)
     ax.set_title("Share of Mother Health States by Age")
     ax.legend(loc="upper left")
-    ax.grid(True, alpha=0.3)
 
     plt.tight_layout()
     if path_to_save_plot:

@@ -145,7 +145,7 @@
 #     start_year = 2001
 #     end_year = 2019
 
-#     emp_moms = pd.read_csv(path_to_empirical_moments, index_col=[0]).squeeze("columns")
+#     emp_moms = pd.read_csv(path_to_empirical_moments, index_col=[0]).squeeze("columns")  # noqa: E501
 
 #     # Load full datasets
 #     df_emp_full = pd.read_csv(path_to_empirical_data, index_col=[0])
@@ -218,7 +218,7 @@
 #     plot_average_savings_decision(df_sim, path_to_save_savings_plot)
 
 #     plot_choice_shares_by_education(
-#         df_emp, df_sim, specs, path_to_save_plot=path_to_save_labor_shares_by_educ_plot
+#         df_emp, df_sim, specs, path_to_save_plot=path_to_save_labor_shares_by_educ_plot  # noqa: E501
 #     )
 
 #     plot_job_offer_share_by_age(
@@ -326,9 +326,9 @@
 #         path_to_save_plot=path_to_save_work_transition_age_bin_plot,
 #     )
 
-#     # =================================================================================
+#     # =================================================================================  # noqa: E501
 #     # Caregiving transitions
-#     # =================================================================================
+#     # =================================================================================  # noqa: E501
 #     # Create temporary choice columns for empirical data (from any_care)
 #     df_emp_care = df_emp_with_caregivers.copy()
 #     if "any_care" in df_emp_care.columns and "lagged_any_care" in df_emp_care.columns:
@@ -337,7 +337,7 @@
 #     else:
 #         # If columns don't exist, create them (assuming they should be there)
 #         raise ValueError(
-#             "df_emp_with_caregivers must have 'any_care' and 'lagged_any_care' columns"
+#             "df_emp_with_caregivers must have 'any_care' and 'lagged_any_care' columns"  # noqa: E501
 #         )
 
 #     # Caregiving states: empirical uses binary (0/1), simulated uses choice codes

@@ -14,16 +14,15 @@ from pytask import Product
 from caregiving.config import BLD, JET_COLOR_MAP
 from caregiving.model.shared import (
     FULL_TIME,
-    FULL_TIME_CARE,
     PART_TIME,
     PART_TIME_CARE,
     UNEMPLOYED_CARE,
 )
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
-from caregiving.model.wealth_and_budget.budget_equation_caregiving_leave_with_job_retention import (  # noqa: E501
-    calc_caregiving_leave_top_up,
+from caregiving.model.wealth_and_budget.caregiving_leave_top_up import (  # noqa: E501
+    calc_full_caregiving_leave_top_up,
 )
-from caregiving.model.wealth_and_budget.pensions import (
+from caregiving.model.wealth_and_budget.pension_payments import (
     calc_gross_pension_income,
     calc_pensions_after_ssc,
 )
@@ -95,7 +94,7 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
 
         # Prior none (0), now unemployed caregiver
         topup_prior_none_unemp[i] = float(
-            calc_caregiving_leave_top_up(
+            calc_full_caregiving_leave_top_up(
                 lagged_choice=choice_unemp_care,
                 education=edu_var,
                 job_before_caregiving=0,
@@ -109,7 +108,7 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
 
         # Prior PT (1), now unemployed caregiver
         topup_prior_pt_unemp[i] = float(
-            calc_caregiving_leave_top_up(
+            calc_full_caregiving_leave_top_up(
                 lagged_choice=choice_unemp_care,
                 education=edu_var,
                 job_before_caregiving=1,
@@ -123,7 +122,7 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
 
         # Prior FT (2), now unemployed caregiver
         topup_prior_ft_unemp[i] = float(
-            calc_caregiving_leave_top_up(
+            calc_full_caregiving_leave_top_up(
                 lagged_choice=choice_unemp_care,
                 education=edu_var,
                 job_before_caregiving=2,
@@ -137,7 +136,7 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
 
         # Prior FT (2), now PT caregiver
         topup_prior_ft_pt[i] = float(
-            calc_caregiving_leave_top_up(
+            calc_full_caregiving_leave_top_up(
                 lagged_choice=choice_pt_care,
                 education=edu_var,
                 job_before_caregiving=2,
@@ -707,7 +706,7 @@ def task_plot_total_household_income(
                     else:
                         period = exp
                     exp_share = exp / (exp + specs["max_exp_diffs_per_period"][period])
-                    total_income[i] = budget_constraint(
+                    total_income[i], _budget_aux = budget_constraint(
                         period=period,
                         education=edu_val,
                         lagged_choice=choice,
@@ -715,6 +714,7 @@ def task_plot_total_household_income(
                         # sex=sex_var,
                         partner_state=np.array(married_val),
                         care_demand=0,
+                        mother_dead=0,
                         asset_end_of_previous_period=0,
                         income_shock_previous_period=0,
                         params=params,

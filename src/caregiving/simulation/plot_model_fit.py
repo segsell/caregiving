@@ -9,10 +9,9 @@ import numpy as np
 import pandas as pd
 from matplotlib import colors as mcolors
 
-from caregiving.config import BLD, JET_COLOR_MAP
+from caregiving.config import JET_COLOR_MAP
 from caregiving.model.shared import (
     DEAD,
-    FILL_VALUE,
     FULL_TIME,
     FULL_TIME_CHOICES,
     PART_TIME,
@@ -23,7 +22,6 @@ from caregiving.model.shared import (
     UNEMPLOYED,
     UNEMPLOYED_CHOICES,
 )
-from caregiving.utils import table
 
 # ====================================================================================
 # Wealth
@@ -2262,7 +2260,7 @@ def plot_states(data_emp, data_sim, discrete_state_names, specs):
         plt.show()
 
 
-def plot_average_savings_decision(data_sim, path_to_save_plot):
+def plot_average_savings_decision(data_sim, path_to_save_plot, end_age=100):
     """Plot average savings decision."""
     # import matplotlib.pyplot as plt
     #
@@ -2291,7 +2289,8 @@ def plot_average_savings_decision(data_sim, path_to_save_plot):
 
     fig, ax = plt.subplots()
     # plot average periodic savings by age and choice
-    data_sim.groupby("age", observed=False)["savings_dec"].mean().plot(
+    data_sim_filtered = data_sim[data_sim["age"] < end_age].copy()
+    data_sim_filtered.groupby("age", observed=False)["savings_dec"].mean().plot(
         ax=ax, label="Average savings"
     )
     ax.set_title("Average savings by age")
