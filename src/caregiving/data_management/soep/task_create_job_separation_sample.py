@@ -15,8 +15,8 @@ from caregiving.data_management.soep.auxiliary import (
 from caregiving.data_management.soep.variables import (
     create_choice_variable,
     create_education_type,
-    generate_job_separation_var,
     create_health_var_good_bad,
+    generate_job_separation_var,
 )
 from caregiving.model.shared import PART_TIME_CHOICES, WORK_CHOICES
 from caregiving.specs.derive_specs import read_and_derive_specs

@@ -3,16 +3,16 @@
 import pickle as pkl
 from pathlib import Path
 from typing import Annotated
-import pytask
 
 import numpy as np
 import pandas as pd
+import pytask
 import statsmodels.api as sm
 from pytask import Product
 
 from caregiving.config import BLD, SRC
-from caregiving.specs.derive_specs import read_and_derive_specs
 from caregiving.model.shared import GOOD_HEALTH
+from caregiving.specs.derive_specs import read_and_derive_specs
 
 
 @pytask.mark.job_separation
