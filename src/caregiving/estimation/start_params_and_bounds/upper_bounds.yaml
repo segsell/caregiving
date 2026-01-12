@@ -210,10 +210,14 @@ lambda: 2
 lambda_low: 2
 lambda_high: 2
 
-# Job finding
+# Job finding probability
 job_finding_logit_const_women: 5
 job_finding_logit_age_women: 0.5
 job_finding_logit_high_educ_women: 5
+# Job finding age dummies
+job_finding_logit_above_50_women: 5
+job_finding_logit_above_55_women: 5
+job_finding_logit_above_60_women: 5
 
 
 # Other

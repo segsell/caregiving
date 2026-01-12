@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-from dcegm.asset_correction import adjust_observed_assets
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
@@ -36,6 +35,11 @@ from caregiving.model.utility.bequest_utility import (
 )
 from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
+from caregiving.moments.task_create_soep_moments import (
+    create_df_non_caregivers,
+    create_df_wealth,
+)
+from dcegm.asset_correction import adjust_observed_assets
 
 
 @pytask.mark.initial_conditions
@@ -103,28 +107,32 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
 
     np.random.seed(seed)
 
-    # Define start data and adjust wealth
-    min_period = observed_data["period"].min()
-    start_period_data = observed_data[observed_data["period"].isin([min_period])].copy()
-    start_period_data = start_period_data[start_period_data["wealth"].notnull()].copy()
-
-    # # Use create_df_non_caregivers to match the moments calculation
-    # # (moments use non-caregivers only, so initial conditions should too)
-    # moments_data = create_df_non_caregivers(
-    #     df_full=observed_data,
-    #     specs=model_specs,
-    #     start_year=2001,
-    #     end_year=2019,
-    #     end_age=model_specs["end_age_msm"],
-    # )
-    # start_period_data = moments_data[
-    #     moments_data["age"] == model_specs["start_age"]
+    # # Define start data and adjust wealth
+    # min_period = observed_data["period"].min()
+    # start_period_data = observed_data[
+    #     observed_data["period"].isin([min_period])
+    # ].copy()
+    # start_period_data = start_period_data[
+    #     start_period_data["wealth"].notnull()
     # ].copy()
 
-    # observed_wealth = create_df_wealth(df_full=observed_data, specs=model_specs)
-    # start_age_wealth = observed_wealth[
-    #     observed_wealth["age"] == model_specs["start_age"]
-    # ].copy()
+    # Use create_df_non_caregivers to match the moments calculation
+    # (moments use non-caregivers only, so initial conditions should too)
+    moments_data = create_df_non_caregivers(
+        df_full=observed_data,
+        specs=model_specs,
+        start_year=2001,
+        end_year=2019,
+        end_age=model_specs["end_age_msm"],
+    )
+    start_period_data = moments_data[
+        moments_data["age"] == model_specs["start_age"]
+    ].copy()
+
+    observed_wealth = create_df_wealth(df_full=observed_data, specs=model_specs)
+    start_age_wealth = observed_wealth[
+        observed_wealth["age"] == model_specs["start_age"]
+    ].copy()
 
     # =================================================================================
     # Static state variables
@@ -157,14 +165,12 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         start_period_data["wealth"], dtype=np.uint8
     )
 
-    states_dict["assets_begin_of_period"] = (
-        start_period_data["wealth"].values / specs["wealth_unit"]
-    )
-    start_period_data.loc[:, "adjusted_wealth"] = adjust_observed_assets(
-        observed_states_dict=states_dict,
-        params=params,
-        model_class=model_class,
-    )
+    # states_dict["assets_begin_of_period"] = start_age_wealth["wealth"].values
+    # start_period_data.loc[:, "adjusted_wealth"] = adjust_observed_assets(
+    #     observed_states_dict=states_dict,
+    #     params=params,
+    #     model_class=model_class,
+    # )
 
     # breakpoint()
 
@@ -280,9 +286,9 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
             (start_period_data["sex"] == sex_var)
             & (start_period_data["education"] == edu)
         ]
-        # wealth_edu = start_age_wealth[
-        #     start_age_wealth["education"] == edu
-        # ].copy()  # already women only
+        wealth_edu = start_age_wealth[
+            start_age_wealth["education"] == edu
+        ].copy()  # already women only
 
         n_agents_edu = np.sum(type_mask)
 
@@ -319,8 +325,8 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         )
 
         # Wealth distribution
-        wealth_start_edu = draw_start_wealth_dist(start_period_data_edu, n_agents_edu)
-        # wealth_start_edu = draw_start_wealth_dist(wealth_edu, n_agents_edu)
+        # wealth_start_edu = draw_start_wealth_dist(start_period_data_edu, n_agents_edu)
+        wealth_start_edu = draw_start_wealth_dist(wealth_edu, n_agents_edu)
 
         wealth_agents[type_mask] = wealth_start_edu
 
@@ -447,7 +453,6 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     # ax.set_title("Experience (Empirical)")
     # plt.tight_layout()
     # plt.show()
-    # breakpoint()
 
     with path_to_save_initial_states.open("wb") as f:
         pickle.dump(states, f)
