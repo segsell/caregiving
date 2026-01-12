@@ -58,6 +58,7 @@ def task_create_main_estimation_sample(
 
     specs = read_and_derive_specs(path_to_specs)
     cpi = pd.read_csv(path_to_cpi, index_col=0)
+    wealth = pd.read_csv(path_to_wealth, index_col=[0])
 
     specs["start_year"] = 2001
     specs["end_year"] = 2019
@@ -73,6 +74,8 @@ def task_create_main_estimation_sample(
 
     df = create_choice_variable(df)
     df = create_caregiving(df, filter_missing=False)
+
+    df = add_wealth_data(df, wealth, drop_missing=False)
 
     # filter data. Leave additional years in for lagging and leading.
     df = filter_data(df, specs)
@@ -102,9 +105,6 @@ def task_create_main_estimation_sample(
 
     # df.drop(columns=["retire_flag"], inplace=True)
     # df.set_index(["pid", "syear"], inplace=True)
-
-    wealth = pd.read_csv(path_to_wealth, index_col=[0])
-    df = add_wealth_data(df, wealth, drop_missing=False)
 
     df["period"] = df["age"] - specs["start_age"]
 
@@ -157,6 +157,7 @@ def task_create_main_estimation_sample(
         "job_offer": "int8",
         "experience": "int8",
         "wealth": "float32",
+        "lagged_wealth": "float32",
         "education": "int8",
         "health": "float16",
         "nursing_home": "float16",
@@ -359,6 +360,10 @@ def add_wealth_data(data, wealth, drop_missing=False):
     data = data.merge(wealth, on=["hid", "syear"], how="left")
 
     data.set_index(["pid", "syear"], inplace=True)
+
+    # Create lagged wealth variable
+    # pid is in the index (level 0)
+    data["lagged_wealth"] = data.groupby(level=0)["wealth"].shift(1)
 
     if drop_missing:
         data = data[(data["wealth"].notna())]

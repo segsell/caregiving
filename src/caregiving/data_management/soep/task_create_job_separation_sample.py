@@ -16,6 +16,7 @@ from caregiving.data_management.soep.variables import (
     create_choice_variable,
     create_education_type,
     generate_job_separation_var,
+    create_health_var_good_bad,
 )
 from caregiving.model.shared import PART_TIME_CHOICES, WORK_CHOICES
 from caregiving.specs.derive_specs import read_and_derive_specs
@@ -40,8 +41,14 @@ def task_create_job_separation_sample(
 
     # create choice and lagged choice variable
     df = create_choice_variable(df)
+
+    # Create lagged health variable
     # lagged choice
     df = create_lagged_and_lead_variables(df, specs)
+
+    # We create the health variable and correct it
+    df = create_health_var_good_bad(df, drop_missing=False)
+    df = correct_health_state(df)
 
     # Job separation
     df = generate_job_separation_var(df)
@@ -69,6 +76,7 @@ def task_create_job_separation_sample(
         "age_fired": np.int32,
         "education": np.uint8,
         "sex": np.uint8,
+        "lagged_health": np.float32,
         "job_sep": np.uint8,
     }
 
@@ -85,3 +93,45 @@ def task_create_job_separation_sample(
 
     # Save data
     df_sub.to_csv(path_to_save)
+
+
+def correct_health_state(data, filter_missings=False):
+    """This function creates a lagged health state variable in the soep-PEQUIV dataset.
+
+    The function replaces the health variable with 1 if both the previous and next
+    health are 1.
+
+    """
+
+    # replace health with 1 if both previous and next health are 1
+    data["lagged_health"] = data.groupby(["pid"])["health"].shift(1)
+    data["lead_health"] = data.groupby(["pid"])["health"].shift(-1)
+
+    # one year bad health in between two years of good health is still considered good health
+    data.loc[
+        (data["lagged_health"] == 0) & (data["lead_health"] == 0),
+        "health",
+    ] = 0
+
+    # update lead_health
+    data["lead_health"] = data.groupby(["pid"])["health"].shift(-1)
+    # update lag_health
+    data["lagged_health"] = data.groupby(["pid"])["health"].shift(1)
+
+    if filter_missings:
+        data = data[data["health"].notna()]
+        print(
+            str(len(data))
+            + " observations left after dropping people with missing health data."
+        )
+
+    # drop people with missing lead health data
+    # print(str(len(data)) + " observations after spanning the dataframe before dropping people with missing health data.")
+    # data = data[data["lead_health"].notna()] # need to do this here because spanning the dataframe creates new missing values
+    # print(str(len(data)) + " observations left after dropping people with missing lead health data.")
+    # data = data[data["lag_health"].notna()] # need to do this here because spanning the dataframe creates new missing values
+    # print(str(len(data)) + " observations left after dropping people with missing lagged health data.")
+    # data = data[data["health"].notna()] # need to do this again here because spanning the dataframe creates new missing values
+    # print(str(len(data)) + " observations left after dropping people with missing health data.")
+
+    return data

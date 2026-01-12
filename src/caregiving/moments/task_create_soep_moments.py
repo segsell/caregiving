@@ -922,9 +922,10 @@ def compute_shares_by_age_bin(
 def adjust_and_trim_wealth_data(
     df: pd.DataFrame,
     specs: dict,
+    wealth_var: str = "wealth",
 ):
 
-    df["adjusted_wealth"] = df["wealth"] / specs["wealth_unit"]
+    df["adjusted_wealth"] = df[wealth_var] / specs["wealth_unit"]
     df = df[df["sex"] == SEX].copy()
 
     # if adjust_wealth:
@@ -1998,6 +1999,7 @@ def create_df_caregivers(
 def create_df_wealth(
     df_full: pd.DataFrame,
     specs: dict,
+    wealth_var: str = "wealth",
 ) -> pd.DataFrame:
     """
     Create and adjust wealth dataframe.
@@ -2014,6 +2016,9 @@ def create_df_wealth(
     pd.DataFrame
         Adjusted wealth dataframe (filtered for non-null wealth and sex == SEX)
     """
-    df_wealth = df_full[(df_full["wealth"].notna()) & (df_full["sex"] == SEX)].copy()
-    df_wealth = adjust_and_trim_wealth_data(df=df_wealth, specs=specs)
+    df_wealth = df_full[(df_full[wealth_var].notna()) & (df_full["sex"] == SEX)].copy()
+    df_wealth = adjust_and_trim_wealth_data(
+        df=df_wealth, specs=specs, wealth_var=wealth_var
+    )
+
     return df_wealth

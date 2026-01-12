@@ -415,6 +415,7 @@ def task_load_and_merge_job_separation_sample(
     soep_c40_pgen: Path = SRC / "data" / "soep_c40" / "pgen.dta",
     soep_c40_ppathl: Path = SRC / "data" / "soep_c40" / "ppathl.dta",
     soep_c40_pl: Path = SRC / "data" / "soep_c40" / "pl.dta",
+    soep_c40_pequiv: Path = SRC / "data" / "soep_c40" / "pequiv.dta",
     path_to_save: Annotated[Path, Product] = BLD
     / "data"
     / "soep_job_separation_data_raw.csv",
@@ -450,6 +451,14 @@ def task_load_and_merge_job_separation_sample(
     for itm in pl_data_reader:
         pl_data = pd.concat([pl_data, itm])
 
+    pequiv_data = pd.read_stata(
+        # m11126: Self-Rated Health Status
+        # m11124: Disability Status of Individual
+        soep_c40_pequiv,
+        columns=["pid", "syear", "m11126", "m11124"],
+        convert_categoricals=False,
+    )
+
     # Merge pgen data with pathl data and hl data
     merged_data = pd.merge(
         pgen_data, pathl_data, on=["pid", "hid", "syear"], how="inner"
@@ -458,6 +467,7 @@ def task_load_and_merge_job_separation_sample(
     merged_data = pd.merge(
         merged_data, pl_data, on=["pid", "hid", "syear"], how="inner"
     )
+    merged_data = pd.merge(merged_data, pequiv_data, on=["pid", "syear"], how="inner")
 
     merged_data["age"] = merged_data["syear"] - merged_data["gebjahr"]
     del pgen_data, pathl_data
