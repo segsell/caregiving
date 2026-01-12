@@ -6,6 +6,7 @@ from typing import Annotated
 
 import numpy as np
 import pandas as pd
+import pytask
 from pytask import Product
 
 from caregiving.config import BLD
@@ -99,6 +100,7 @@ def table(df_col):
     return pd.crosstab(df_col, columns="Count")["Count"]
 
 
+@pytask.mark.share_estimation_data
 def task_create_estimation_data(
     path_to_raw_data: Path = BLD / "data" / "share_data_merged.csv",
     path_to_main: Annotated[Path, Product] = BLD / "data" / "share_estimation_data.csv",
@@ -1316,6 +1318,19 @@ def _create_intensive_care_parents_versus_other(dat):
     # NaN = no intensive care
     dat["intensive_care_parents_versus_other"] = np.select(
         [intensive_parent, intensive_any],
+        [1, 0],
+        default=np.nan,
+    )
+
+    # Combine masks
+    intensive_any_extra_hh = daily_any
+    intensive_parent_extra_hh = daily_parent
+
+    # 1 = intensive care to mother/father
+    # 0 = intensive care, but not to mother/father
+    # NaN = no intensive care
+    dat["intensive_care_parents_versus_other_extra_hh"] = np.select(
+        [intensive_parent_extra_hh, intensive_any_extra_hh],
         [1, 0],
         default=np.nan,
     )
