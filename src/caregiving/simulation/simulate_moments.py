@@ -241,7 +241,7 @@ def simulate_moments_pandas(  # noqa: PLR0915
     # }
     # moments = compute_transition_moments_pandas(df, moments, age_range, states=states)
 
-    # # ==================================================================================
+    # # ========================================================================
     # states_work_no_work = {
     #     "not_working": NOT_WORKING,
     #     "working": WORK,
@@ -282,7 +282,7 @@ def simulate_moments_pandas(  # noqa: PLR0915
     #     states=states_caregiving,
     #     label="all_education",
     # )
-    # # ==================================================================================
+    # # ========================================================================
 
     # states_light_informal = {
     #     "no_light_informal_care": NO_LIGHT_INFORMAL_CARE,

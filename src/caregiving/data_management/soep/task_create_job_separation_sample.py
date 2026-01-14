@@ -107,7 +107,8 @@ def correct_health_state(data, filter_missings=False):
     data["lagged_health"] = data.groupby(["pid"])["health"].shift(1)
     data["lead_health"] = data.groupby(["pid"])["health"].shift(-1)
 
-    # one year bad health in between two years of good health is still considered good health
+    # one year of bad health between two years of good health
+    # is still considered good health
     data.loc[
         (data["lagged_health"] == 0) & (data["lead_health"] == 0),
         "health",
@@ -126,12 +127,28 @@ def correct_health_state(data, filter_missings=False):
         )
 
     # drop people with missing lead health data
-    # print(str(len(data)) + " observations after spanning the dataframe before dropping people with missing health data.")
-    # data = data[data["lead_health"].notna()] # need to do this here because spanning the dataframe creates new missing values
-    # print(str(len(data)) + " observations left after dropping people with missing lead health data.")
-    # data = data[data["lag_health"].notna()] # need to do this here because spanning the dataframe creates new missing values
-    # print(str(len(data)) + " observations left after dropping people with missing lagged health data.")
-    # data = data[data["health"].notna()] # need to do this again here because spanning the dataframe creates new missing values
-    # print(str(len(data)) + " observations left after dropping people with missing health data.")
+    # print(
+    #     str(len(data))
+    #     + " observations after spanning the dataframe before dropping "
+    #     + "people with missing health data."
+    # )
+    # data = data[data["lead_health"].notna()]
+    # print(
+    #     str(len(data))
+    #     + " observations left after dropping people with missing "
+    #     + "lead health data."
+    # )
+    # data = data[data["lag_health"].notna()]
+    # print(
+    #     str(len(data))
+    #     + " observations left after dropping people with missing "
+    #     + "lagged health data."
+    # )
+    # data = data[data["health"].notna()]
+    # print(
+    #     str(len(data))
+    #     + " observations left after dropping people with missing "
+    #     + "health data."
+    # )
 
     return data

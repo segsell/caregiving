@@ -372,7 +372,7 @@ def task_plot_job_separation_by_age(
             ax.plot(
                 working_ages,
                 job_sep_probs[sex_var, edu_var, :n_working_periods],
-                label=f"{edu_label}",
+                label=str(edu_label),
                 color=JET_COLOR_MAP[edu_var],
             )
 

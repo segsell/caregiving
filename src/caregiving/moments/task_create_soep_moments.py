@@ -76,7 +76,7 @@ def task_create_soep_moments(  # noqa: PLR0915
         end_year=end_year,
         end_age=end_age,
     )
-    df_with_caregivers = create_df_with_caregivers(
+    _df_with_caregivers = create_df_with_caregivers(
         df_full=df_full,
         specs=specs,
         start_year=start_year,
@@ -115,12 +115,12 @@ def task_create_soep_moments(  # noqa: PLR0915
 
     df_low = df[df["education"] == 0].copy()
     df_high = df[df["education"] == 1].copy()
-    df_with_caregivers_low = df_with_caregivers[
-        df_with_caregivers["education"] == 0
-    ].copy()
-    df_with_caregivers_high = df_with_caregivers[
-        df_with_caregivers["education"] == 1
-    ].copy()
+    # df_with_caregivers_low = df_with_caregivers[
+    #     df_with_caregivers["education"] == 0
+    # ].copy()
+    # df_with_caregivers_high = df_with_caregivers[
+    #     df_with_caregivers["education"] == 1
+    # ].copy()
 
     df_caregivers_low = df_caregivers[df_caregivers["education"] == 0].copy()
     df_caregivers_high = df_caregivers[df_caregivers["education"] == 1].copy()
@@ -386,7 +386,7 @@ def task_create_soep_moments(  # noqa: PLR0915
     # )
     # =================================================================================
 
-    # # =================================================================================
+    # =================================================================================
     # # E) Year-to-year labor supply transitions
     # states_work_no_work = {
     #     "not_working": NOT_WORKING_CHOICES,
@@ -415,7 +415,7 @@ def task_create_soep_moments(  # noqa: PLR0915
     # )
     # moments.update(transition_moments)
     # variances.update(transition_variances)
-    # # =================================================================================
+    # =================================================================================
 
     # states = {
     #     "not_working": NOT_WORKING,
@@ -435,9 +435,9 @@ def task_create_soep_moments(  # noqa: PLR0915
     # variances.update(trans_variances)
 
     # Compute caregiving to caregiving transition probability by age bin
-    states_caregiving = {
-        "caregiving": 1,
-    }
+    # states_caregiving = {
+    #     "caregiving": 1,
+    # }
     # transition_moments, transition_variances = (
     #     compute_transition_moments_and_variances_for_age_bins(
     #         df_with_caregivers_low,
@@ -466,7 +466,7 @@ def task_create_soep_moments(  # noqa: PLR0915
     # moments.update(transition_moments)
     # variances.update(transition_variances)
 
-    # # =================================================================================
+    # # ========================================================================
     # # Use start_age_caregivers for caregiving transitions (not start_age)
     # transition_moments, transition_variances = (
     #     compute_transition_moments_and_variances_for_age_bins(
@@ -481,7 +481,7 @@ def task_create_soep_moments(  # noqa: PLR0915
     # )
     # moments.update(transition_moments)
     # variances.update(transition_variances)
-    # # =================================================================================
+    # # ========================================================================
 
     # F) Wealth moments by age and education (NEW)
     # wealth_moments_edu_low, wealth_variances_edu_low = (

@@ -11,7 +11,12 @@ import statsmodels.api as sm
 from pytask import Product
 
 from caregiving.config import BLD, SRC
-from caregiving.model.shared import GOOD_HEALTH
+from caregiving.model.shared import (
+    AGE_50,
+    AGE_55,
+    AGE_60,
+    GOOD_HEALTH,
+)
 from caregiving.specs.derive_specs import read_and_derive_specs
 
 
@@ -143,9 +148,9 @@ def est_job_for_sample_age_dummies(df_job, specs):
 
     df_job = df_job[df_job["age"] <= specs["max_est_age_labor"]].copy()
     df_job["good_health"] = df_job["lagged_health"] == GOOD_HEALTH
-    df_job["above_50"] = df_job["age"] >= 50
-    df_job["above_55"] = df_job["age"] >= 55
-    df_job["above_60"] = df_job["age"] >= 60
+    df_job["above_50"] = df_job["age"] >= AGE_50
+    df_job["above_55"] = df_job["age"] >= AGE_55
+    df_job["above_60"] = df_job["age"] >= AGE_60
     df_job["high_educ"] = df_job["education"] == 1
     df_job = sm.add_constant(df_job)
 
@@ -187,14 +192,14 @@ def est_job_for_sample_age_dummies(df_job, specs):
         (specs["n_sexes"], specs["n_education_types"], 2, len(all_ages)), dtype=float
     )
     predicted_ages = np.arange(specs["start_age"], specs["max_ret_age"] + 1)
-    above_50 = predicted_ages >= 50
-    above_55 = predicted_ages >= 55
-    above_60 = predicted_ages >= 60
+    above_50 = predicted_ages >= AGE_50
+    above_55 = predicted_ages >= AGE_55
+    above_60 = predicted_ages >= AGE_60
 
     for sex_var, sex_label in enumerate(specs["sex_labels"]):
         params = job_sep_params.loc[sex_label, logit_cols]
         for edu_var in range(specs["n_education_types"]):
-            for good_health in [0, 1]:
+            for good_health in (0, 1):
                 exp_factor = (
                     params.loc["const"]
                     + params.loc["high_educ"] * edu_var
