@@ -29,9 +29,9 @@ disutil_unemployed_high_women: 0.2
 disutil_unemployed_high_women_informal_care: 0.1
 disutil_unemployed_low_women: 0.2
 disutil_unemployed_low_women_informal_care: 0.1
-job_finding_logit_age_above_50_women: -0.3399
-job_finding_logit_age_above_55_women: -0.0784
-job_finding_logit_age_above_60_women: -0.4856
+job_finding_logit_above_50_women: -0.3399
+job_finding_logit_above_55_women: -0.0784
+job_finding_logit_above_60_women: -0.4856
 job_finding_logit_const_women: -1.4881
 job_finding_logit_high_educ_women: 0.8371
 rho_bequest_high: 1.5

@@ -56,7 +56,10 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     path_to_parent_child_sample: Path = BLD / "data" / "share_parent_child_data.csv",
     path_to_model_config: Path = BLD / "model" / "model_config.pkl",
     path_to_model: Path = BLD / "model" / "model.pkl",
-    path_to_start_params: Path = BLD / "model" / "params" / "start_params_model.yaml",
+    path_to_start_params: Path = BLD
+    / "model"
+    / "params"
+    / "estimated_params_model.yaml",
     path_to_save_health_by_age: Annotated[Path, Product] = BLD
     / "model"
     / "initial_conditions"
