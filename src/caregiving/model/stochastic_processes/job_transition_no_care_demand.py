@@ -9,7 +9,7 @@ from caregiving.model.shared_no_care_demand import (
     is_working,
 )
 from caregiving.model.stochastic_processes.job_transition import (
-    calc_job_finding_prob_women_linear,
+    calc_job_finding_prob_women_age_dummies,
 )
 
 
@@ -28,7 +28,7 @@ def job_offer_process_transition(params, model_specs, education, period, choice)
 
     job_sep_prob = model_specs["job_sep_probs"][SEX, education, period]
 
-    job_finding_prob = calc_job_finding_prob_women_linear(
+    job_finding_prob = calc_job_finding_prob_women_age_dummies(
         period, education, params, model_specs
     )
 

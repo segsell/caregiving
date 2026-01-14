@@ -3,6 +3,9 @@
 import jax.numpy as jnp
 
 from caregiving.model.shared import (
+    AGE_50,
+    AGE_55,
+    AGE_60,
     SEX,
     UNEMPLOYED_CHOICES,
     WORK_CHOICES,
@@ -10,10 +13,6 @@ from caregiving.model.shared import (
     is_unemployed,
     is_working,
 )
-
-AGE_THRESHOLD_50 = 50
-AGE_THRESHOLD_55 = 55
-AGE_THRESHOLD_60 = 60
 
 
 def job_offer_process_transition(params, model_specs, education, period, choice):
@@ -77,9 +76,9 @@ def calc_job_finding_prob_women_age_dummies(period, education, params, model_spe
     age = period + model_specs["start_age"]
     high_edu = education == 1
 
-    above_55 = age >= AGE_THRESHOLD_55
-    above_50 = age >= AGE_THRESHOLD_50
-    above_60 = age >= AGE_THRESHOLD_60
+    above_55 = age >= AGE_55
+    above_50 = age >= AGE_50
+    above_60 = age >= AGE_60
 
     exp_factor = (
         params["job_finding_logit_const_women"]
