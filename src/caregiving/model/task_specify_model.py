@@ -53,7 +53,6 @@ def task_specify_model(
         path_to_save_model_config=path_to_save_model_config,
         path_to_save_model=path_to_save_model,
     )
-
     return model
 
 

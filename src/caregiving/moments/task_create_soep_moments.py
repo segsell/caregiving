@@ -386,34 +386,36 @@ def task_create_soep_moments(  # noqa: PLR0915
     # )
     # =================================================================================
 
-    # E) Year-to-year labor supply transitions
-    states_work_no_work = {
-        "not_working": NOT_WORKING_CHOICES,
-        "working": WORK_CHOICES,
-    }
-    transition_moments, transition_variances = (
-        compute_transition_moments_and_variances_for_age_bins(
-            df_with_caregivers_low,
-            min_age=start_age,
-            max_age=end_age,
-            states=states_work_no_work,
-            label="low_education",
-        )
-    )
-    moments.update(transition_moments)
-    variances.update(transition_variances)
+    # # =================================================================================
+    # # E) Year-to-year labor supply transitions
+    # states_work_no_work = {
+    #     "not_working": NOT_WORKING_CHOICES,
+    #     "working": WORK_CHOICES,
+    # }
+    # transition_moments, transition_variances = (
+    #     compute_transition_moments_and_variances_for_age_bins(
+    #         df_with_caregivers_low,
+    #         min_age=start_age,
+    #         max_age=end_age,
+    #         states=states_work_no_work,
+    #         label="low_education",
+    #     )
+    # )
+    # moments.update(transition_moments)
+    # variances.update(transition_variances)
 
-    transition_moments, transition_variances = (
-        compute_transition_moments_and_variances_for_age_bins(
-            df_with_caregivers_high,
-            min_age=start_age,
-            max_age=end_age,
-            states=states_work_no_work,
-            label="high_education",
-        )
-    )
-    moments.update(transition_moments)
-    variances.update(transition_variances)
+    # transition_moments, transition_variances = (
+    #     compute_transition_moments_and_variances_for_age_bins(
+    #         df_with_caregivers_high,
+    #         min_age=start_age,
+    #         max_age=end_age,
+    #         states=states_work_no_work,
+    #         label="high_education",
+    #     )
+    # )
+    # moments.update(transition_moments)
+    # variances.update(transition_variances)
+    # # =================================================================================
 
     # states = {
     #     "not_working": NOT_WORKING,
@@ -463,20 +465,23 @@ def task_create_soep_moments(  # noqa: PLR0915
     # )
     # moments.update(transition_moments)
     # variances.update(transition_variances)
-    # Use start_age_caregivers for caregiving transitions (not start_age)
-    transition_moments, transition_variances = (
-        compute_transition_moments_and_variances_for_age_bins(
-            df_with_caregivers,
-            min_age=start_age_caregivers,
-            max_age=end_age,
-            states=states_caregiving,
-            choice="any_care",
-            lagged_choice="lagged_any_care",
-            label="all_education",
-        )
-    )
-    moments.update(transition_moments)
-    variances.update(transition_variances)
+
+    # # =================================================================================
+    # # Use start_age_caregivers for caregiving transitions (not start_age)
+    # transition_moments, transition_variances = (
+    #     compute_transition_moments_and_variances_for_age_bins(
+    #         df_with_caregivers,
+    #         min_age=start_age_caregivers,
+    #         max_age=end_age,
+    #         states=states_caregiving,
+    #         choice="any_care",
+    #         lagged_choice="lagged_any_care",
+    #         label="all_education",
+    #     )
+    # )
+    # moments.update(transition_moments)
+    # variances.update(transition_variances)
+    # # =================================================================================
 
     # F) Wealth moments by age and education (NEW)
     # wealth_moments_edu_low, wealth_variances_edu_low = (

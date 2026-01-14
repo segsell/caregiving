@@ -62,8 +62,8 @@ for scenario, scenario_params in SCENARIOS.items():
     ) -> None:
         """Load start parameters and update them with job offer probabilities."""
         start_params_all = yaml.safe_load(path_to_start_params.open("rb"))
-        job_offer_params = pd.read_csv(path_to_job_offer_params, index_col=0)
-        start_params_all.update(job_offer_params["value"].to_dict())
+        # job_offer_params = pd.read_csv(path_to_job_offer_params, index_col=0)
+        # start_params_all.update(job_offer_params["value"].to_dict())
 
         with path_to_save_updated_start_params.open("w") as f:
             yaml.dump(start_params_all, f, default_flow_style=False)

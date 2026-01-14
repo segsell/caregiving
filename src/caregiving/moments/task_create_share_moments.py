@@ -18,7 +18,7 @@ from caregiving.data_management.share.task_create_parent_child_data_set import (
 DEGREES_OF_FREEDOM = 1
 
 
-@pytask.mark.cip
+@pytask.mark.moments
 def task_add_share_moments(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_share_parent_child_sample: Path = BLD

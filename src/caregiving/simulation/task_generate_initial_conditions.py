@@ -173,7 +173,6 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     #     params=params,
     #     model_class=model_class,
     # )
-
     # breakpoint()
 
     # # Generate container
