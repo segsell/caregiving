@@ -343,8 +343,8 @@ taste_shock_scale: 0.5
 # job_finding_logit_const_women: 0.7226
 # job_finding_logit_age_women: -0.0586
 # job_finding_logit_high_educ_women: 0.5729
-job_finding_logit_const_women: -1.4881
-job_finding_logit_high_educ_women: 0.8371
-job_finding_logit_age_above_50_women: -0.3399
-job_finding_logit_age_above_55_women: -0.0784
-job_finding_logit_age_above_60_women: -0.4856
+# job_finding_logit_const_women: -1.4881
+# job_finding_logit_high_educ_women: 0.8371
+# job_finding_logit_age_above_50_women: -0.3399
+# job_finding_logit_age_above_55_women: -0.0784
+# job_finding_logit_age_above_60_women: -0.4856

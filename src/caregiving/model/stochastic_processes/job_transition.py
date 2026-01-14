@@ -31,7 +31,7 @@ def job_offer_process_transition(params, model_specs, education, period, choice)
 
     job_sep_prob = model_specs["job_sep_probs"][SEX, education, period]
 
-    job_finding_prob = calc_job_finding_prob_women_age_dummies(
+    job_finding_prob = calc_job_finding_prob_women_linear(
         period, education, params, model_specs
     )
 
@@ -61,7 +61,7 @@ def job_offer_process_transition_initial_conditions(
 
     job_sep_prob = model_specs["job_sep_probs"][SEX, education, period]
 
-    job_finding_prob = calc_job_finding_prob_women_age_dummies(
+    job_finding_prob = calc_job_finding_prob_women_linear(
         period, education, params, model_specs
     )
 
@@ -71,20 +71,6 @@ def job_offer_process_transition_initial_conditions(
     )
 
     return jnp.array([prob_no_job, 1 - prob_no_job])
-
-
-def _calc_job_finding_prob_women(period, education, params, model_specs):
-    high_edu = education == 1
-    age = period + model_specs["start_age"]
-
-    exp_factor = (
-        params["job_finding_logit_const_women"]
-        + params["job_finding_logit_age_women"] * age
-        + params["job_finding_logit_high_educ_women"] * high_edu
-    )
-    prob = logit_formula(exp_factor)
-
-    return prob
 
 
 def calc_job_finding_prob_women_age_dummies(period, education, params, model_specs):
@@ -101,6 +87,39 @@ def calc_job_finding_prob_women_age_dummies(period, education, params, model_spe
         + params["job_finding_logit_above_50_women"] * above_50
         + params["job_finding_logit_above_55_women"] * above_55
         + params["job_finding_logit_above_60_women"] * above_60
+    )
+    prob = logit_formula(exp_factor)
+
+    return prob
+
+
+def calc_job_finding_prob_women(period, education, params, model_specs):
+    high_edu = education == 1
+    age = period + model_specs["start_age"]
+    # above_49 = age > 49
+
+    exp_factor = (
+        params["job_finding_logit_const_women"]
+        + params["job_finding_logit_age_women"] * age
+        + params["job_finding_logit_age_squared_women"] * age**2
+        + params["job_finding_logit_age_cubed_women"] * age**3
+        + params["job_finding_logit_high_educ_women"] * high_edu
+    )
+
+    # return exp_factor / (1 + exp_factor)
+    prob = logit_formula(exp_factor)
+
+    return prob
+
+
+def calc_job_finding_prob_women_linear(period, education, params, model_specs):
+    high_edu = education == 1
+    age = period + model_specs["start_age"]
+
+    exp_factor = (
+        params["job_finding_logit_const_women"]
+        + params["job_finding_logit_age_women"] * age
+        + params["job_finding_logit_high_educ_women"] * high_edu
     )
     prob = logit_formula(exp_factor)
 
