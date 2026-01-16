@@ -236,6 +236,7 @@ share_unobserved_type_high_educ: 1.0e-12
 lambda: 1.0e-12
 lambda_low: 1.0e-12
 lambda_high: 1.0e-12
+taste_shock_scale: 1.0e-12
 
 # Job finding probability
 job_finding_logit_const_women: -5

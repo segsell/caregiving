@@ -32,6 +32,7 @@ from caregiving.specs.task_write_specs import read_and_derive_specs
 DEGREES_OF_FREEDOM = 1
 
 
+@pytask.mark.moments
 @pytask.mark.soep_moments
 def task_create_soep_moments(  # noqa: PLR0915
     path_to_specs: Path = SRC / "specs.yaml",

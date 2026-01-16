@@ -168,33 +168,33 @@ def disutility_work(
         * working_full_time
     )
 
-    # # Level shifts for labor and care intensity by education type
-    # disutility_work_and_light_informal_care = (
-    #     params["disutil_unemployed_light_informal_care_high"] * education * unemployed
-    #     + params["disutil_ft_work_light_informal_care_high"]
-    #     * education
-    #     * working_full_time
-    #     + params["disutil_unemployed_light_informal_care_low"]
-    #     * (1 - education)
-    #     * unemployed
-    #     + params["disutil_ft_work_light_informal_care_low"]
-    #     * (1 - education)
-    #     * working_full_time
-    # )
-    # disutility_work_and_intensive_informal_care = (
-    #     params["disutil_unemployed_intensive_informal_care_high"]
-    #     * education
-    #     * unemployed
-    #     + params["disutil_ft_work_intensive_informal_care_high"]
-    #     * education
-    #     * working_full_time
-    #     + params["disutil_unemployed_intensive_informal_care_low"]
-    #     * (1 - education)
-    #     * unemployed
-    #     + params["disutil_ft_work_intensive_informal_care_low"]
-    #     * (1 - education)
-    #     * working_full_time
-    # )
+    # Level shifts for labor and care intensity by education type
+    level_shift_work_and_light_informal_care = (
+        params["disutil_unemployed_light_informal_care_high"] * education * unemployed
+        + params["disutil_ft_work_light_informal_care_high"]
+        * education
+        * working_full_time
+        + params["disutil_unemployed_light_informal_care_low"]
+        * (1 - education)
+        * unemployed
+        + params["disutil_ft_work_light_informal_care_low"]
+        * (1 - education)
+        * working_full_time
+    )
+    level_shift_work_and_intensive_informal_care = (
+        params["disutil_unemployed_intensive_informal_care_high"]
+        * education
+        * unemployed
+        + params["disutil_ft_work_intensive_informal_care_high"]
+        * education
+        * working_full_time
+        + params["disutil_unemployed_intensive_informal_care_low"]
+        * (1 - education)
+        * unemployed
+        + params["disutil_ft_work_intensive_informal_care_low"]
+        * (1 - education)
+        * working_full_time
+    )
 
     # =================================================================================
     # Care utility (based on agent's own health)
@@ -243,8 +243,8 @@ def disutility_work(
     disutility = (
         -disutility_work_and_no_informal_care * (1 - informal_care)
         - disutility_work_and_informal_care * informal_care
-        # - disutility_work_and_intensive_informal_care * intensive_informal_care
-        # - disutility_work_and_light_informal_care * light_informal_care
+        + level_shift_work_and_intensive_informal_care * intensive_informal_care
+        + level_shift_work_and_light_informal_care * light_informal_care
         - partner_retired * retired * params["disutil_partner_retired"]
         + utility_from_care * (care_demand >= CARE_DEMAND_LIGHT)
     )
