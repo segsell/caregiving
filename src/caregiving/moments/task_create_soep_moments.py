@@ -77,7 +77,7 @@ def task_create_soep_moments(  # noqa: PLR0915
         end_year=end_year,
         end_age=end_age,
     )
-    _df_with_caregivers = create_df_with_caregivers(
+    df_with_caregivers = create_df_with_caregivers(
         df_full=df_full,
         specs=specs,
         start_year=start_year,
@@ -116,12 +116,12 @@ def task_create_soep_moments(  # noqa: PLR0915
 
     df_low = df[df["education"] == 0].copy()
     df_high = df[df["education"] == 1].copy()
-    # df_with_caregivers_low = df_with_caregivers[
-    #     df_with_caregivers["education"] == 0
-    # ].copy()
-    # df_with_caregivers_high = df_with_caregivers[
-    #     df_with_caregivers["education"] == 1
-    # ].copy()
+    df_with_caregivers_low = df_with_caregivers[
+        df_with_caregivers["education"] == 0
+    ].copy()
+    df_with_caregivers_high = df_with_caregivers[
+        df_with_caregivers["education"] == 1
+    ].copy()
 
     df_caregivers_low = df_caregivers[df_caregivers["education"] == 0].copy()
     df_caregivers_high = df_caregivers[df_caregivers["education"] == 1].copy()
@@ -388,34 +388,34 @@ def task_create_soep_moments(  # noqa: PLR0915
     # =================================================================================
 
     # =================================================================================
-    # # E) Year-to-year labor supply transitions
-    # states_work_no_work = {
-    #     "not_working": NOT_WORKING_CHOICES,
-    #     "working": WORK_CHOICES,
-    # }
-    # transition_moments, transition_variances = (
-    #     compute_transition_moments_and_variances_for_age_bins(
-    #         df_with_caregivers_low,
-    #         min_age=start_age,
-    #         max_age=end_age,
-    #         states=states_work_no_work,
-    #         label="low_education",
-    #     )
-    # )
-    # moments.update(transition_moments)
-    # variances.update(transition_variances)
+    # E) Year-to-year labor supply transitions
+    states_work_no_work = {
+        "not_working": NOT_WORKING_CHOICES,
+        "working": WORK_CHOICES,
+    }
+    transition_moments, transition_variances = (
+        compute_transition_moments_and_variances_for_age_bins(
+            df_with_caregivers_low,
+            min_age=start_age,
+            max_age=end_age,
+            states=states_work_no_work,
+            label="low_education",
+        )
+    )
+    moments.update(transition_moments)
+    variances.update(transition_variances)
 
-    # transition_moments, transition_variances = (
-    #     compute_transition_moments_and_variances_for_age_bins(
-    #         df_with_caregivers_high,
-    #         min_age=start_age,
-    #         max_age=end_age,
-    #         states=states_work_no_work,
-    #         label="high_education",
-    #     )
-    # )
-    # moments.update(transition_moments)
-    # variances.update(transition_variances)
+    transition_moments, transition_variances = (
+        compute_transition_moments_and_variances_for_age_bins(
+            df_with_caregivers_high,
+            min_age=start_age,
+            max_age=end_age,
+            states=states_work_no_work,
+            label="high_education",
+        )
+    )
+    moments.update(transition_moments)
+    variances.update(transition_variances)
     # =================================================================================
 
     # states = {
