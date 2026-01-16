@@ -29,6 +29,7 @@ from caregiving.data_management.soep.variables import (  # create_experience_var
     create_choice_variable,
     create_education_type,
     create_health_var_good_bad,
+    create_hh_has_moved,
     create_inheritance,
     create_kidage_youngest,
     create_nursing_home,
@@ -269,6 +270,7 @@ def task_create_caregivers_sample(
     df = create_education_type(df)
     df = create_health_var_good_bad(df, drop_missing=False)
     df = create_nursing_home(df)
+    df = create_hh_has_moved(df)
 
     df = enforce_model_choice_restriction(df, specs)
 
@@ -292,6 +294,7 @@ def task_create_caregivers_sample(
 
     # Keep relevant columns (i.e. state variables) and set their minimal datatype
     type_dict = {
+        "pid": "int32",
         "syear": "int16",
         "gebjahr": "int16",
         "age": "int8",
@@ -322,6 +325,8 @@ def task_create_caregivers_sample(
         "father_age_diff": "float32",
         "mother_alive": "float32",
         "father_alive": "float32",
+        "hh_has_moved_a": "float32",  # can be NA
+        "hh_has_moved_b": "float32",  # can be NA
     }
 
     # #
@@ -342,15 +347,23 @@ def task_create_caregivers_sample(
     # _mean_first_care_age = df.drop_duplicates("pid")["age_at_first_care"].mean()
     # #
 
-    df = df.reset_index(level="syear")
+    # df = df.reset_index(level="syear")
+    # df = df[list(type_dict.keys())]
+    # df = df.astype(type_dict)
+
+    # # print_data_description(df)
+
+    # # Anonymize and save data
+    # df.reset_index(drop=True, inplace=True)
+    # df.to_csv(path_to_save)
+
+    # Reset both levels of the index to make pid and syear regular columns
+    df = df.reset_index()
     df = df[list(type_dict.keys())]
     df = df.astype(type_dict)
 
-    # print_data_description(df)
-
-    # Anonymize and save data
-    df.reset_index(drop=True, inplace=True)
-    df.to_csv(path_to_save)
+    # Save without index (pid and syear are now columns)
+    df.to_csv(path_to_save, index=True)
 
 
 def add_wealth_data(data, wealth, drop_missing=False):
