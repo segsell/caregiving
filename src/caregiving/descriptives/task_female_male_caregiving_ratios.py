@@ -1,17 +1,30 @@
 """Create female-male ratios for caregiving by age groups."""
 
+from contextlib import suppress
 from pathlib import Path
 from typing import Annotated
 
+import numpy as np
 import pandas as pd
 import pytask
 from pytask import Product
+from statsmodels.stats.proportion import proportions_ztest
 
 from caregiving.config import BLD
+from caregiving.model.shared import AGE_40, AGE_50, AGE_60, AGE_70, FEMALE, MALE
+
+# Significance level constants
+P_VALUE_HIGHLY_SIGNIFICANT = 0.001
+P_VALUE_VERY_SIGNIFICANT = 0.01
+P_VALUE_SIGNIFICANT = 0.05
+P_VALUE_MARGINALLY_SIGNIFICANT = 0.1
+
+# Tuple length for exclusive age ranges
+EXCLUSIVE_AGE_RANGE_LENGTH = 3
 
 
 @pytask.mark.descriptives
-def task_female_male_caregiving_ratios(
+def task_female_male_caregiving_ratios(  # noqa: PLR0915
     path_to_caregivers_sample: Path = BLD
     / "data"
     / "soep_structural_caregivers_sample.csv",
@@ -82,7 +95,10 @@ def task_female_male_caregiving_ratios(
     for care_name, care_info in care_types.items():
         for age_label, age_range_tuple in age_ranges.items():
             # Handle age ranges with exclusive upper bounds
-            if len(age_range_tuple) == 3 and age_range_tuple[2]:
+            if (
+                len(age_range_tuple) == EXCLUSIVE_AGE_RANGE_LENGTH
+                and age_range_tuple[EXCLUSIVE_AGE_RANGE_LENGTH - 1]
+            ):
                 age_min, age_max, exclusive = age_range_tuple
                 # Filter by age range (exclusive upper bound: < age_max)
                 df_age = df[(df["age"] >= age_min) & (df["age"] < age_max)].copy()
@@ -93,13 +109,12 @@ def task_female_male_caregiving_ratios(
 
             # Apply caregiving condition (exclude NaN values)
             # Check that the care variable is not NaN before applying condition
-            care_var = None
-            if care_name == "Intensive care":
-                care_var = "intensive_care"
-            elif care_name == "Light care":
-                care_var = "light_care"
-            elif care_name == "Overall care":
-                care_var = "any_care"
+            care_var_map = {
+                "Intensive care": "intensive_care",
+                "Light care": "light_care",
+                "Overall care": "any_care",
+            }
+            care_var = care_var_map.get(care_name)
 
             # Filter to non-missing care variable and sex
             df_filtered = df_age[
@@ -198,7 +213,7 @@ def task_female_male_caregiving_ratios(
     path_to_save_table.parent.mkdir(parents=True, exist_ok=True)
 
     # Save LaTeX table
-    with open(path_to_save_table, "w", encoding="utf-8") as f:
+    with path_to_save_table.open("w", encoding="utf-8") as f:
         f.write(latex_table)
 
 
@@ -338,8 +353,8 @@ def task_explore_sample_attrition(
         "",
         "### Method 5: Transition Probabilities to Missing State",
         "",
-        "**Description**: Analyze transitions from observed states (caregiver/non-caregiver)",
-        "to missing state.",
+        "**Description**: Analyze transitions from observed states "
+        "(caregiver/non-caregiver) to missing state.",
         "",
         "**Implementation approach**:",
         "- Create transition matrix:",
@@ -397,8 +412,14 @@ def task_explore_sample_attrition(
         [
             "",
             "### Panel Structure:",
-            f"- Unique persons (pid): {df['pid'].nunique() if 'pid' in df.columns else 'N/A'}",
-            f"- Unique survey years: {df['syear'].nunique() if 'syear' in df.columns else 'N/A'}",
+            (
+                f"- Unique persons (pid): "
+                f"{df['pid'].nunique() if 'pid' in df.columns else 'N/A'}"
+            ),
+            (
+                f"- Unique survey years: "
+                f"{df['syear'].nunique() if 'syear' in df.columns else 'N/A'}"
+            ),
             "",
             "## 4. Next Steps",
             "",
@@ -415,12 +436,12 @@ def task_explore_sample_attrition(
     path_to_save_report.parent.mkdir(parents=True, exist_ok=True)
 
     # Save report
-    with open(path_to_save_report, "w", encoding="utf-8") as f:
+    with path_to_save_report.open("w", encoding="utf-8") as f:
         f.write("\n".join(report_lines))
 
 
 @pytask.mark.descriptives
-def task_panel_retention_rates_by_care_status(
+def task_panel_retention_rates_by_care_status(  # noqa: PLR0915
     path_to_estimation_sample: Path = BLD
     / "data"
     / "soep_structural_estimation_sample.csv",
@@ -529,6 +550,67 @@ def task_panel_retention_rates_by_care_status(
         retention_by_current_care["Retention Rate"] * 100
     )
 
+    # Function to calculate significance test for difference between
+    # caregivers and non-caregivers
+    def calculate_significance_test(retention_df, df_transitions, care_status_col):
+        """Calculate two-proportion z-test comparing caregivers vs non-caregivers."""
+        # Get caregivers and non-caregivers data
+        caregivers = retention_df[retention_df[care_status_col] == "Caregiver"]
+        non_caregivers = retention_df[retention_df[care_status_col] == "Non-caregiver"]
+
+        if 0 in (len(caregivers), len(non_caregivers)):  # noqa: PLR1714
+            return None, None, None
+
+        # Extract counts
+        n1 = int(caregivers["N Observations"].iloc[0])
+        x1 = int(caregivers["N Retained"].iloc[0])
+        n2 = int(non_caregivers["N Observations"].iloc[0])
+        x2 = int(non_caregivers["N Retained"].iloc[0])
+
+        # Calculate proportions
+        p1 = x1 / n1 if n1 > 0 else 0
+        p2 = x2 / n2 if n2 > 0 else 0
+
+        # Two-proportion z-test
+        # H0: p1 = p2, H1: p1 != p2
+        z_stat, p_value = proportions_ztest([x1, x2], [n1, n2], alternative="two-sided")
+
+        # Calculate difference
+        diff = (p1 - p2) * 100  # Convert to percentage points
+
+        return diff, p_value, z_stat
+
+    # Calculate significance for lagged care status
+    diff_lagged, pval_lagged, zstat_lagged = calculate_significance_test(
+        retention_by_care, df_transitions, "Lagged Care Status"
+    )
+
+    # Calculate significance for current care status
+    diff_current, pval_current, zstat_current = calculate_significance_test(
+        retention_by_current_care, df_transitions, "Current Care Status"
+    )
+
+    # Format significance results
+    def format_significance(diff, pval):
+        """Format significance test results."""
+        if diff is None or pval is None:
+            return "N/A", "N/A"
+        # Determine significance level
+        if pval < P_VALUE_HIGHLY_SIGNIFICANT:
+            sig_level = "***"
+        elif pval < P_VALUE_VERY_SIGNIFICANT:
+            sig_level = "**"
+        elif pval < P_VALUE_SIGNIFICANT:
+            sig_level = "*"
+        elif pval < P_VALUE_MARGINALLY_SIGNIFICANT:
+            sig_level = "."
+        else:
+            sig_level = ""
+        return f"{diff:.2f} pp{sig_level}", f"{pval:.4f}"
+
+    diff_lagged_str, pval_lagged_str = format_significance(diff_lagged, pval_lagged)
+    diff_current_str, pval_current_str = format_significance(diff_current, pval_current)
+
     # Combine results
     results = pd.DataFrame(
         {
@@ -545,6 +627,30 @@ def task_panel_retention_rates_by_care_status(
         }
     )
 
+    # Add significance columns (initialize as N/A)
+    results["Difference vs Non-Caregiver (pp)"] = "N/A"
+    results["P-value"] = "N/A"
+
+    # Add significance for lagged care status (only for caregiver row)
+    if diff_lagged is not None:
+        mask_lagged_caregiver = (results["Analysis Type"] == "Lagged Care Status") & (
+            results["Care Status"] == "Caregiver"
+        )
+        results.loc[mask_lagged_caregiver, "Difference vs Non-Caregiver (pp)"] = (
+            diff_lagged_str
+        )
+        results.loc[mask_lagged_caregiver, "P-value"] = pval_lagged_str
+
+    # Add significance for current care status (only for caregiver row)
+    if diff_current is not None:
+        mask_current_caregiver = (results["Analysis Type"] == "Current Care Status") & (
+            results["Care Status"] == "Caregiver"
+        )
+        results.loc[mask_current_caregiver, "Difference vs Non-Caregiver (pp)"] = (
+            diff_current_str
+        )
+        results.loc[mask_current_caregiver, "P-value"] = pval_current_str
+
     # Ensure directory exists
     path_to_save_retention.parent.mkdir(parents=True, exist_ok=True)
 
@@ -553,7 +659,7 @@ def task_panel_retention_rates_by_care_status(
 
 
 @pytask.mark.descriptives
-def task_wave_to_wave_retention_analysis(
+def task_wave_to_wave_retention_analysis(  # noqa: PLR0912,PLR0915
     path_to_estimation_sample: Path = BLD
     / "data"
     / "soep_structural_estimation_sample.csv",
@@ -637,13 +743,13 @@ def task_wave_to_wave_retention_analysis(
     def categorize_age(age):
         if pd.isna(age):
             return "Missing"
-        if age < 40:
+        if age < AGE_40:
             return "30-39"
-        if age < 50:
+        if age < AGE_50:
             return "40-49"
-        if age < 60:
+        if age < AGE_60:
             return "50-59"
-        if age < 70:
+        if age < AGE_70:
             return "60-69"
         return "70+"
 
@@ -705,7 +811,7 @@ def task_wave_to_wave_retention_analysis(
     for _, row in retention_care_age.iterrows():
         results_list.append(
             {
-                "Grouping": "Lagged Care Status × Age",
+                "Grouping": "Lagged Care Status x Age",
                 "Category": row["lagged_care_status"],
                 "Subcategory": row["age_group"],
                 "Retention Rate (%)": row["mean"] * 100,
@@ -723,7 +829,7 @@ def task_wave_to_wave_retention_analysis(
     for _, row in retention_care_edu.iterrows():
         results_list.append(
             {
-                "Grouping": "Lagged Care Status × Education",
+                "Grouping": "Lagged Care Status x Education",
                 "Category": row["lagged_care_status"],
                 "Subcategory": row["education_group"],
                 "Retention Rate (%)": row["mean"] * 100,
@@ -741,7 +847,7 @@ def task_wave_to_wave_retention_analysis(
     for _, row in retention_care_sex.iterrows():
         results_list.append(
             {
-                "Grouping": "Lagged Care Status × Sex",
+                "Grouping": "Lagged Care Status x Sex",
                 "Category": row["lagged_care_status"],
                 "Subcategory": row["sex_group"],
                 "Retention Rate (%)": row["mean"] * 100,
@@ -768,8 +874,205 @@ def task_wave_to_wave_retention_analysis(
             }
         )
 
+    # 6. By lagged care status and sex (separate analyses for male and female)
+    retention_care_sex = (
+        df_transitions.groupby(["lagged_care_status", "sex_group"])["retained"]
+        .agg(["mean", "count", "sum"])
+        .reset_index()
+    )
+    for _, row in retention_care_sex.iterrows():
+        results_list.append(
+            {
+                "Grouping": f"Lagged Care Status x Sex ({row['sex_group']})",
+                "Category": row["lagged_care_status"],
+                "Subcategory": "All",
+                "Retention Rate (%)": row["mean"] * 100,
+                "N Observations": int(row["count"]),
+                "N Retained": int(row["sum"]),
+            }
+        )
+
+    # 7. By lagged care status, age group, and sex
+    # (separate analyses for male and female)
+    retention_care_age_sex = (
+        df_transitions.groupby(["lagged_care_status", "age_group", "sex_group"])[
+            "retained"
+        ]
+        .agg(["mean", "count", "sum"])
+        .reset_index()
+    )
+    for _, row in retention_care_age_sex.iterrows():
+        results_list.append(
+            {
+                "Grouping": f"Lagged Care Status x Age x Sex ({row['sex_group']})",
+                "Category": row["lagged_care_status"],
+                "Subcategory": row["age_group"],
+                "Retention Rate (%)": row["mean"] * 100,
+                "N Observations": int(row["count"]),
+                "N Retained": int(row["sum"]),
+            }
+        )
+
+    # 8. By lagged care status, education, and sex
+    # (separate analyses for male and female)
+    retention_care_edu_sex = (
+        df_transitions.groupby(["lagged_care_status", "education_group", "sex_group"])[
+            "retained"
+        ]
+        .agg(["mean", "count", "sum"])
+        .reset_index()
+    )
+    for _, row in retention_care_edu_sex.iterrows():
+        results_list.append(
+            {
+                "Grouping": (
+                    f"Lagged Care Status x Education x Sex ({row['sex_group']})"
+                ),
+                "Category": row["lagged_care_status"],
+                "Subcategory": row["education_group"],
+                "Retention Rate (%)": row["mean"] * 100,
+                "N Observations": int(row["count"]),
+                "N Retained": int(row["sum"]),
+            }
+        )
+
     # Create results DataFrame
     results = pd.DataFrame(results_list)
+
+    # Reorder results: group by gender (Female first, then Male) within each grouping
+    def extract_sex_from_grouping(grouping_str):
+        """Extract sex from grouping string like 'Lagged Care Status x Sex (Female)'."""
+        if "(Female)" in grouping_str:
+            return "Female"
+        if "(Male)" in grouping_str:
+            return "Male"
+        return "All"
+
+    # Add a temporary column for sorting
+    results["_sex_sort"] = results["Grouping"].apply(extract_sex_from_grouping)
+
+    # Define sort order: Female = 0, Male = 1, All = 2
+    sex_sort_order = {"Female": 0, "Male": 1, "All": 2}
+    results["_sex_sort_num"] = results["_sex_sort"].map(sex_sort_order)
+
+    # Define subcategory sort order for age groups
+    age_order = {
+        "30-39": 0,
+        "40-49": 1,
+        "50-59": 2,
+        "60-69": 3,
+        "70+": 4,
+        "All": 5,
+        "Missing": 6,
+    }
+    education_order = {"Low": 0, "High": 1, "All": 2, "Missing": 3}
+
+    def get_subcategory_sort_num(row):
+        """Get sort order for subcategory based on grouping type."""
+        grouping = row["Grouping"]
+        subcat = row["Subcategory"]
+
+        if "Age" in grouping:
+            return age_order.get(subcat, 99)
+        if "Education" in grouping:
+            return education_order.get(subcat, 99)
+        return 0
+
+    results["_subcat_sort_num"] = results.apply(get_subcategory_sort_num, axis=1)
+
+    # Define category sort order: Caregiver = 0, Non-caregiver = 1
+    category_order = {"Caregiver": 0, "Non-caregiver": 1, "Missing": 2}
+    results["_cat_sort_num"] = results["Category"].map(category_order)
+
+    # Sort: first by Grouping, then by sex (Female first),
+    # then by subcategory, then by category
+    results = results.sort_values(
+        ["Grouping", "_sex_sort_num", "_subcat_sort_num", "_cat_sort_num"],
+        ascending=[True, True, True, True],
+    ).reset_index(drop=True)
+
+    # Drop temporary sorting columns
+    results = results.drop(
+        columns=["_sex_sort", "_sex_sort_num", "_subcat_sort_num", "_cat_sort_num"]
+    )
+
+    # Add significance tests for each grouping that has caregivers and non-caregivers
+    def add_significance_to_results(results_df, df_transitions):
+        """Add significance test columns comparing caregivers vs non-caregivers."""
+        # Initialize columns
+        results_df["Difference vs Non-Caregiver (pp)"] = "N/A"
+        results_df["P-value"] = "N/A"
+
+        # For each grouping, test if there are both caregivers and non-caregivers
+        for grouping in results_df["Grouping"].unique():
+            grouping_data = results_df[results_df["Grouping"] == grouping]
+
+            # Check if this grouping has both caregivers and non-caregivers
+            has_caregivers = (grouping_data["Category"] == "Caregiver").any()
+            has_non_caregivers = (grouping_data["Category"] == "Non-caregiver").any()
+
+            if not (has_caregivers and has_non_caregivers):  # noqa: PLR1714
+                continue
+
+            # For each subcategory (or "All"), test the difference
+            for subcat in grouping_data["Subcategory"].unique():
+                subcat_data = grouping_data[grouping_data["Subcategory"] == subcat]
+
+                caregivers_row = subcat_data[subcat_data["Category"] == "Caregiver"]
+                non_caregivers_row = subcat_data[
+                    subcat_data["Category"] == "Non-caregiver"
+                ]
+
+                if 0 in (len(caregivers_row), len(non_caregivers_row)):
+                    continue
+
+                # Extract counts
+                n1 = int(caregivers_row["N Observations"].iloc[0])
+                x1 = int(caregivers_row["N Retained"].iloc[0])
+                n2 = int(non_caregivers_row["N Observations"].iloc[0])
+                x2 = int(non_caregivers_row["N Retained"].iloc[0])
+
+                # Calculate proportions
+                p1 = x1 / n1 if n1 > 0 else 0
+                p2 = x2 / n2 if n2 > 0 else 0
+
+                # Two-proportion z-test
+                with suppress(Exception):
+                    z_stat, p_value = proportions_ztest(
+                        [x1, x2], [n1, n2], alternative="two-sided"
+                    )
+
+                    # Calculate difference
+                    diff = (p1 - p2) * 100  # Convert to percentage points
+
+                    # Format significance
+                    if p_value < P_VALUE_HIGHLY_SIGNIFICANT:
+                        sig_level = "***"
+                    elif p_value < P_VALUE_VERY_SIGNIFICANT:
+                        sig_level = "**"
+                    elif p_value < P_VALUE_SIGNIFICANT:
+                        sig_level = "*"
+                    elif p_value < P_VALUE_MARGINALLY_SIGNIFICANT:
+                        sig_level = "."
+                    else:
+                        sig_level = ""
+
+                    diff_str = f"{diff:.2f} pp{sig_level}"
+                    pval_str = f"{p_value:.4f}"
+
+                    # Update results for caregivers row
+                    mask = (
+                        (results_df["Grouping"] == grouping)
+                        & (results_df["Subcategory"] == subcat)
+                        & (results_df["Category"] == "Caregiver")
+                    )
+                    results_df.loc[mask, "Difference vs Non-Caregiver (pp)"] = diff_str
+                    results_df.loc[mask, "P-value"] = pval_str
+
+        return results_df
+
+    # Add significance tests
+    results = add_significance_to_results(results, df_transitions)
 
     # Ensure directory exists
     path_to_save_retention.parent.mkdir(parents=True, exist_ok=True)
