@@ -226,6 +226,9 @@ def task_create_estimation_data(
     # number of children
     dat = create_number_of_children(dat)
 
+    # age of youngest child
+    dat = create_age_youngest_child(dat)
+
     # current job situation
 
     dat = create_married(dat)
@@ -1633,6 +1636,18 @@ def create_number_of_children(dat):
     """Create number of children variable."""
     dat = dat.rename(columns={"ch001_": "nchild"})
     dat["nchild"] = np.where(dat["nchild"] >= 0, dat["nchild"], np.nan)
+    return dat
+
+
+def create_age_youngest_child(dat):
+    """Create age of youngest child variable."""
+    dat["age_youngest_child"] = dat["int_year"] - dat["ch_yrbirth_youngest_child_1"]
+    dat["age_youngest_child"] = np.where(
+        (dat["ch_yrbirth_youngest_child_1"] < 0)
+        | (dat["ch_yrbirth_youngest_child_1"].isna()),
+        np.nan,
+        dat["age_youngest_child"],
+    )
     return dat
 
 
