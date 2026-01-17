@@ -88,10 +88,12 @@ def estimate_model(
         # Use robust diagonal weights to avoid numerical issues
         empirical_variances_reg = empirical_variances.copy()
         close_to_zero = empirical_variances_reg < MACHINE_ZERO
+        close_to_zero = np.isnan(empirical_variances_reg) | close_to_zero
         # Replace zero variances with a small positive value to avoid division by zero
-        empirical_variances_reg[close_to_zero] = 1e-6
         weight_elements = 1 / empirical_variances_reg
-        weight_elements = np.sqrt(weight_elements)
+        weight_elements[close_to_zero] = 0.0
+        weights_sum = np.sum(weight_elements)
+        weight_elements = np.sqrt(weight_elements / weights_sum)
         weights = np.diag(weight_elements)
     else:
         raise ValueError(f"Unknown weighting method: {weighting_method}")
@@ -300,13 +302,23 @@ def estimate_model_with_unobserved_type_shares(
     if weighting_method == "identity":
         weights = np.identity(empirical_moments.shape[0])
     elif weighting_method == "diagonal":
+        # # Use robust diagonal weights to avoid numerical issues
+        # empirical_variances_reg = empirical_variances.copy()
+        # close_to_zero = empirical_variances_reg < MACHINE_ZERO
+        # # Replace zero variances with a small positive value to avoid division by zero
+        # empirical_variances_reg[close_to_zero] = 1e-6
+        # weight_elements = 1 / empirical_variances_reg
+        # weight_elements = np.sqrt(weight_elements)
+        # weights = np.diag(weight_elements)
         # Use robust diagonal weights to avoid numerical issues
         empirical_variances_reg = empirical_variances.copy()
         close_to_zero = empirical_variances_reg < MACHINE_ZERO
+        close_to_zero = np.isnan(empirical_variances_reg) | close_to_zero
         # Replace zero variances with a small positive value to avoid division by zero
-        empirical_variances_reg[close_to_zero] = 1e-6
         weight_elements = 1 / empirical_variances_reg
-        weight_elements = np.sqrt(weight_elements)
+        weight_elements[close_to_zero] = 0.0
+        weights_sum = np.sum(weight_elements)
+        weight_elements = np.sqrt(weight_elements / weights_sum)
         weights = np.diag(weight_elements)
     else:
         raise ValueError(f"Unknown weighting method: {weighting_method}")

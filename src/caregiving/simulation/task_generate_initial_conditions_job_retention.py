@@ -37,6 +37,7 @@ def task_generate_start_states_for_solution_job_retention(
     Args:
         path_to_baseline_states: Path to baseline initial states pickle file
         path_to_save_discrete_states: Path to save job retention initial states
+
     """
     # Load baseline states
     with path_to_baseline_states.open("rb") as f:

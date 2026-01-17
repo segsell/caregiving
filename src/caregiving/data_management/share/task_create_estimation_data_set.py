@@ -6,6 +6,7 @@ from typing import Annotated
 
 import numpy as np
 import pandas as pd
+import pytask
 from pytask import Product
 
 from caregiving.config import BLD
@@ -99,6 +100,7 @@ def table(df_col):
     return pd.crosstab(df_col, columns="Count")["Count"]
 
 
+@pytask.mark.share_estimation_data
 def task_create_estimation_data(
     path_to_raw_data: Path = BLD / "data" / "share_data_merged.csv",
     path_to_main: Annotated[Path, Product] = BLD / "data" / "share_estimation_data.csv",
@@ -223,6 +225,9 @@ def task_create_estimation_data(
 
     # number of children
     dat = create_number_of_children(dat)
+
+    # age of youngest child
+    dat = create_age_youngest_child(dat)
 
     # current job situation
 
@@ -1320,6 +1325,19 @@ def _create_intensive_care_parents_versus_other(dat):
         default=np.nan,
     )
 
+    # Combine masks
+    intensive_any_extra_hh = daily_any
+    intensive_parent_extra_hh = daily_parent
+
+    # 1 = intensive care to mother/father
+    # 0 = intensive care, but not to mother/father
+    # NaN = no intensive care
+    dat["intensive_care_parents_versus_other_extra_hh"] = np.select(
+        [intensive_parent_extra_hh, intensive_any_extra_hh],
+        [1, 0],
+        default=np.nan,
+    )
+
     return dat
 
 
@@ -1618,6 +1636,18 @@ def create_number_of_children(dat):
     """Create number of children variable."""
     dat = dat.rename(columns={"ch001_": "nchild"})
     dat["nchild"] = np.where(dat["nchild"] >= 0, dat["nchild"], np.nan)
+    return dat
+
+
+def create_age_youngest_child(dat):
+    """Create age of youngest child variable."""
+    dat["age_youngest_child"] = dat["int_year"] - dat["ch_yrbirth_youngest_child_1"]
+    dat["age_youngest_child"] = np.where(
+        (dat["ch_yrbirth_youngest_child_1"] < 0)
+        | (dat["ch_yrbirth_youngest_child_1"].isna()),
+        np.nan,
+        dat["age_youngest_child"],
+    )
     return dat
 
 

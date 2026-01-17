@@ -552,6 +552,12 @@ GV_VARS = [
     "otrf",  # Owner, tenant or rent free: HO0021 2 4 5 6 7 (R) 8
 ]
 
+# ch_yrbirth_youngest_child_ exists with suffixes (_1, _2, etc.)
+# We'll use _1 which represents the first (youngest) child
+GV_CHILDREN_VARS = [
+    "ch_yrbirth_youngest_child_1",
+]
+
 # =============================================================================
 
 
@@ -694,6 +700,39 @@ def task_merge_waves_and_modules(  # noqa: PLR0915
 
     # Merge 'data' and 'stacked_gv_data' on 'mergeid' and 'wave' with a left join
     data_merged = data.merge(stacked_gv_data, on=["mergeid", "wave"], how="left")
+
+    # GV_CHILDREN (available from wave 4 onwards)
+    gv_children_wave4 = process_gv_children(wave=4, args=GV_CHILDREN_VARS)
+    gv_children_wave5 = process_gv_children(wave=5, args=GV_CHILDREN_VARS)
+    gv_children_wave6 = process_gv_children(wave=6, args=GV_CHILDREN_VARS)
+    gv_children_wave7 = process_gv_children(wave=7, args=GV_CHILDREN_VARS)
+    gv_children_wave8 = process_gv_children(wave=8, args=GV_CHILDREN_VARS)
+    gv_children_wave9 = process_gv_children(wave=9, args=GV_CHILDREN_VARS)
+
+    gv_children_wave_list = [
+        gv_children_wave4,
+        gv_children_wave5,
+        gv_children_wave6,
+        gv_children_wave7,
+        gv_children_wave8,
+        gv_children_wave9,
+    ]
+
+    # Concatenate the DataFrames vertically
+    stacked_gv_children_data = pd.concat(
+        gv_children_wave_list, axis=0, ignore_index=True
+    )
+
+    # Sort the DataFrame by 'mergeid' and 'wave'
+    stacked_gv_children_data = stacked_gv_children_data.sort_values(
+        by=["mergeid", "wave"]
+    )
+    stacked_gv_children_data = stacked_gv_children_data.reset_index(drop=True)
+
+    # Merge gv_children data into the main data
+    data_merged = data_merged.merge(
+        stacked_gv_children_data, on=["mergeid", "wave"], how="left"
+    )
 
     # Drop per-wave weights
     columns_to_drop = [
@@ -889,6 +928,54 @@ def process_gv_imputations(wave, args):
 
     # if "age_p" in args:
     #    # note that single people also have partner_alive = 0
+
+    aggregated_data["wave"] = wave
+
+    return aggregated_data
+
+
+def process_gv_children(wave, args):
+    """Process single wave of the gv_children module."""
+    module = "gv_children"
+    module_file = SRC / (
+        f"data/sharew{wave}_rel9-0-0_ALL_datasets_stata/"
+        f"sharew{wave}_rel9-0-0_{module}.dta"
+    )
+
+    data = pd.read_stata(module_file, convert_categoricals=False)
+
+    # Filter the data based on the "country" column
+    data = data[data["country"] == GERMANY]
+
+    # Select columns 'mergeid' and the specified args (create missing columns with NaN)
+    selected_columns = ["mergeid"] + [col for col in args if col in data.columns]
+    columns = ["mergeid", *args]
+
+    # Create missing columns and fill with NaN
+    data = data.copy()
+    for col in args:
+        if col not in selected_columns:
+            data[col] = np.nan
+
+    data = data[columns]
+
+    # Group the data by 'mergeid'
+    grouped_data = data.groupby("mergeid")
+
+    # Create a dictionary to store the aggregation method for each column
+    aggregation_methods = {}
+    for column in args:
+        dtype = data[column].dtype
+        if pd.api.types.is_integer_dtype(dtype):
+            aggregation_methods[column] = "median"
+        elif pd.api.types.is_float_dtype(dtype):
+            aggregation_methods[column] = "mean"
+
+    # Replace negative values with NaN using NumPy
+    data[args] = np.where(data[args] >= 0, data[args], np.nan)
+
+    # Apply aggregation methods and store the results in a new DataFrame
+    aggregated_data = grouped_data.agg(aggregation_methods).reset_index()
 
     aggregated_data["wave"] = wave
 

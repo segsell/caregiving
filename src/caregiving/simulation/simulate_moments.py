@@ -241,6 +241,7 @@ def simulate_moments_pandas(  # noqa: PLR0915
     # }
     # moments = compute_transition_moments_pandas(df, moments, age_range, states=states)
 
+    # ========================================================================
     states_work_no_work = {
         "not_working": NOT_WORKING,
         "working": WORK,
@@ -266,21 +267,23 @@ def simulate_moments_pandas(  # noqa: PLR0915
         label="high_education",
     )
 
-    # Caregiving transitions (informal care to informal care)
-    # Use age_range_caregivers (starts at start_age_caregivers) instead of age_range
-    # Pool across education levels (all_education) to match empirical moment creation
-    # Note: Only compute "caregiving to caregiving" transitions to match empirical
-    # (which uses states_caregiving = {"caregiving": 1})
-    states_caregiving = {
-        "caregiving": INFORMAL_CARE,
-    }
-    moments = compute_transition_moments_pandas_for_age_bins(
-        df_with_caregivers,  # Pooled across all education levels
-        moments,
-        age_range_caregivers,
-        states=states_caregiving,
-        label="all_education",
-    )
+    # # Caregiving transitions (informal care to informal care)
+    # # Use age_range_caregivers (starts at start_age_caregivers) instead of age_range
+    # # Pool across education levels (all_education) to match empirical moment creation
+    # # Note: Only compute "caregiving to caregiving" transitions to match empirical
+    # # (which uses states_caregiving = {"caregiving": 1})
+    # states_caregiving = {
+    #     "caregiving": INFORMAL_CARE,
+    # }
+    # moments = compute_transition_moments_pandas_for_age_bins(
+    #     df_with_caregivers,  # Pooled across all education levels
+    #     moments,
+    #     age_range_caregivers,
+    #     states=states_caregiving,
+    #     label="all_education",
+    # )
+    # # ========================================================================
+
     # states_light_informal = {
     #     "no_light_informal_care": NO_LIGHT_INFORMAL_CARE,
     #     "light_informal_care": LIGHT_INFORMAL_CARE
@@ -479,6 +482,9 @@ def create_labor_share_moments_pandas(df, moments, age_range, label=None):
         for age in age_range:
             if choice_var in shares_by_age.columns:
                 value = shares_by_age.loc[age, choice_var]
+                # Handle NaN values for missing age-choice combinations
+                if pd.isna(value):
+                    value = 0.0
             else:
                 value = 0.0
             moment_data.append((f"share_{choice_label}{label}_age_{age}", value))
@@ -592,6 +598,9 @@ def create_labor_share_moments_by_age_bin_pandas(
         The same *moments* dict, for convenience.
     """
 
+    # Populate the moments dictionary for age bin-specific shares
+    choice_labels = ["retired", "unemployed", "part_time", "full_time"]
+
     # ---------- 1.  Pre-processing ------------------------------------------------
     label = f"_{label}" if label else ""
 
@@ -603,6 +612,13 @@ def create_labor_share_moments_by_age_bin_pandas(
 
     # Work on a copy that contains only the relevant ages
     df = df[df["age"].between(bin_edges[0], bin_edges[-1] - 1)].copy()
+
+    # Handle empty dataframe case: set all labor shares to zero
+    if len(df) == 0:
+        for choice_label in choice_labels:
+            for age_bin in bin_labels:
+                moments[f"share_{choice_label}{label}_age_bin_{age_bin}"] = 0.0
+        return moments
 
     df["age_bin"] = pd.cut(
         df["age"],
@@ -641,13 +657,13 @@ def create_labor_share_moments_by_age_bin_pandas(
     # Reindex to ensure all bins are included
     shares_by_bin = shares_by_bin.reindex(bin_labels, fill_value=0)
 
-    # Populate the moments dictionary for age bin-specific shares
-    choice_labels = ["retired", "unemployed", "part_time", "full_time"]
-
     for choice_var, choice_label in enumerate(choice_labels):
         for age_bin in bin_labels:
             if choice_var in shares_by_bin.columns:
                 value = shares_by_bin.loc[age_bin, choice_var]
+                # Handle NaN values for missing bin-choice combinations
+                if pd.isna(value):
+                    value = 0.0
             else:
                 value = 0.0
             moments[f"share_{choice_label}{label}_age_bin_{age_bin}"] = value
@@ -1779,10 +1795,10 @@ def create_moments_jax(sim_df, min_age, max_age, model_specs):  # noqa: PLR0915
         + work_to_work_low_educ_by_age_bin
         + no_work_to_no_work_high_educ_by_age_bin
         + work_to_work_high_educ_by_age_bin
-        # Caregiving transitions (pooled across education,
-        # starting at min_age_caregivers)
-        # Note: Only "caregiving to caregiving" to match empirical
-        + informal_to_informal_all_educ_by_age_bin
+        # # Caregiving transitions (pooled across education,
+        # # starting at min_age_caregivers)
+        # # Note: Only "caregiving to caregiving" to match empirical
+        # + informal_to_informal_all_educ_by_age_bin
         # #
         # # work to work transitions
         # + no_work_to_no_work_low_educ_by_age

@@ -661,6 +661,47 @@ def create_nursing_home(data):
     return data
 
 
+def create_hh_has_moved(data):
+    """Create hh_has_moved variables based on hlf0523_v1.
+
+    https://paneldata.org/soep-core/datasets/hl/hlf0523_v1
+
+    Creates two versions:
+    - hh_has_moved_a: 3,4 -> 1; -2,1,2 -> 0; <0 -> NA; else -> NA
+    - hh_has_moved_b: 3,4 -> 1; 1,2 -> 0; <0 (including -2) -> NA; else -> NA
+
+    """
+    # hh_has_moved_a: hlf0523_v1 %in% c(3, 4) ~ 1,
+    #                 hlf0523_v1 %in% c(-2, 1, 2) ~ 0,
+    #                 hlf0523_v1 < 0 ~ NA_real_,
+    #                 TRUE ~ NA_real_
+    data["hh_has_moved_a"] = np.select(
+        [
+            data["hlf0523_v1"].isin([3, 4]),
+            data["hlf0523_v1"].isin([-2, 1, 2]),
+            data["hlf0523_v1"] < 0,
+        ],
+        [1, 0, np.nan],
+        default=np.nan,
+    )
+
+    # hh_has_moved_b: hlf0523_v1 %in% c(3, 4) ~ 1,
+    #                 hlf0523_v1 %in% c(1, 2) ~ 0,
+    #                 hlf0523_v1 < 0 ~ NA_real_ (including -2),
+    #                 TRUE ~ NA_real_
+    data["hh_has_moved_b"] = np.select(
+        [
+            data["hlf0523_v1"].isin([3, 4]),
+            data["hlf0523_v1"].isin([1, 2]),
+            data["hlf0523_v1"] < 0,  # All negative values including -2 -> NA
+        ],
+        [1, 0, np.nan],
+        default=np.nan,
+    )
+
+    return data
+
+
 def _deflate_inheritance_amount(df, cpi_data, specs):
     """Deflate inheritance amount using consumer price index.
 

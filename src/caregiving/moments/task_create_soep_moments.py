@@ -32,6 +32,7 @@ from caregiving.specs.task_write_specs import read_and_derive_specs
 DEGREES_OF_FREEDOM = 1
 
 
+@pytask.mark.moments
 @pytask.mark.soep_moments
 def task_create_soep_moments(  # noqa: PLR0915
     path_to_specs: Path = SRC / "specs.yaml",
@@ -386,6 +387,7 @@ def task_create_soep_moments(  # noqa: PLR0915
     # )
     # =================================================================================
 
+    # =================================================================================
     # E) Year-to-year labor supply transitions
     states_work_no_work = {
         "not_working": NOT_WORKING_CHOICES,
@@ -414,6 +416,7 @@ def task_create_soep_moments(  # noqa: PLR0915
     )
     moments.update(transition_moments)
     variances.update(transition_variances)
+    # =================================================================================
 
     # states = {
     #     "not_working": NOT_WORKING,
@@ -433,9 +436,9 @@ def task_create_soep_moments(  # noqa: PLR0915
     # variances.update(trans_variances)
 
     # Compute caregiving to caregiving transition probability by age bin
-    states_caregiving = {
-        "caregiving": 1,
-    }
+    # states_caregiving = {
+    #     "caregiving": 1,
+    # }
     # transition_moments, transition_variances = (
     #     compute_transition_moments_and_variances_for_age_bins(
     #         df_with_caregivers_low,
@@ -463,20 +466,23 @@ def task_create_soep_moments(  # noqa: PLR0915
     # )
     # moments.update(transition_moments)
     # variances.update(transition_variances)
-    # Use start_age_caregivers for caregiving transitions (not start_age)
-    transition_moments, transition_variances = (
-        compute_transition_moments_and_variances_for_age_bins(
-            df_with_caregivers,
-            min_age=start_age_caregivers,
-            max_age=end_age,
-            states=states_caregiving,
-            choice="any_care",
-            lagged_choice="lagged_any_care",
-            label="all_education",
-        )
-    )
-    moments.update(transition_moments)
-    variances.update(transition_variances)
+
+    # # ========================================================================
+    # # Use start_age_caregivers for caregiving transitions (not start_age)
+    # transition_moments, transition_variances = (
+    #     compute_transition_moments_and_variances_for_age_bins(
+    #         df_with_caregivers,
+    #         min_age=start_age_caregivers,
+    #         max_age=end_age,
+    #         states=states_caregiving,
+    #         choice="any_care",
+    #         lagged_choice="lagged_any_care",
+    #         label="all_education",
+    #     )
+    # )
+    # moments.update(transition_moments)
+    # variances.update(transition_variances)
+    # # ========================================================================
 
     # F) Wealth moments by age and education (NEW)
     # wealth_moments_edu_low, wealth_variances_edu_low = (
@@ -922,9 +928,10 @@ def compute_shares_by_age_bin(
 def adjust_and_trim_wealth_data(
     df: pd.DataFrame,
     specs: dict,
+    wealth_var: str = "wealth",
 ):
 
-    df["adjusted_wealth"] = df["wealth"] / specs["wealth_unit"]
+    df["adjusted_wealth"] = df[wealth_var] / specs["wealth_unit"]
     df = df[df["sex"] == SEX].copy()
 
     # if adjust_wealth:
@@ -1998,6 +2005,7 @@ def create_df_caregivers(
 def create_df_wealth(
     df_full: pd.DataFrame,
     specs: dict,
+    wealth_var: str = "wealth",
 ) -> pd.DataFrame:
     """
     Create and adjust wealth dataframe.
@@ -2014,6 +2022,9 @@ def create_df_wealth(
     pd.DataFrame
         Adjusted wealth dataframe (filtered for non-null wealth and sex == SEX)
     """
-    df_wealth = df_full[(df_full["wealth"].notna()) & (df_full["sex"] == SEX)].copy()
-    df_wealth = adjust_and_trim_wealth_data(df=df_wealth, specs=specs)
+    df_wealth = df_full[(df_full[wealth_var].notna()) & (df_full["sex"] == SEX)].copy()
+    df_wealth = adjust_and_trim_wealth_data(
+        df=df_wealth, specs=specs, wealth_var=wealth_var
+    )
+
     return df_wealth
