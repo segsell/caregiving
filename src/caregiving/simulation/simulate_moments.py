@@ -482,6 +482,9 @@ def create_labor_share_moments_pandas(df, moments, age_range, label=None):
         for age in age_range:
             if choice_var in shares_by_age.columns:
                 value = shares_by_age.loc[age, choice_var]
+                # Handle NaN values for missing age-choice combinations
+                if pd.isna(value):
+                    value = 0.0
             else:
                 value = 0.0
             moment_data.append((f"share_{choice_label}{label}_age_{age}", value))
