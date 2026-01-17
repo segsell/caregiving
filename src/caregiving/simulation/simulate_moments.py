@@ -241,31 +241,31 @@ def simulate_moments_pandas(  # noqa: PLR0915
     # }
     # moments = compute_transition_moments_pandas(df, moments, age_range, states=states)
 
-    # # ========================================================================
-    # states_work_no_work = {
-    #     "not_working": NOT_WORKING,
-    #     "working": WORK,
-    # }
-    # # Use df_with_caregivers to match empirical data (task_create_soep_moments.py)
-    # # Create df_with_caregivers equivalent (all observations, not just non-caregivers)
-    # df_with_caregivers = df_full.copy()  # Pooled across all education levels
-    # df_with_caregivers_low = df_full[df_full["education"] == 0]
-    # df_with_caregivers_high = df_full[df_full["education"] == 1]
+    # ========================================================================
+    states_work_no_work = {
+        "not_working": NOT_WORKING,
+        "working": WORK,
+    }
+    # Use df_with_caregivers to match empirical data (task_create_soep_moments.py)
+    # Create df_with_caregivers equivalent (all observations, not just non-caregivers)
+    df_with_caregivers = df_full.copy()  # Pooled across all education levels
+    df_with_caregivers_low = df_full[df_full["education"] == 0]
+    df_with_caregivers_high = df_full[df_full["education"] == 1]
 
-    # moments = compute_transition_moments_pandas_for_age_bins(
-    #     df_with_caregivers_low,
-    #     moments,
-    #     age_range,
-    #     states=states_work_no_work,
-    #     label="low_education",
-    # )
-    # moments = compute_transition_moments_pandas_for_age_bins(
-    #     df_with_caregivers_high,
-    #     moments,
-    #     age_range,
-    #     states=states_work_no_work,
-    #     label="high_education",
-    # )
+    moments = compute_transition_moments_pandas_for_age_bins(
+        df_with_caregivers_low,
+        moments,
+        age_range,
+        states=states_work_no_work,
+        label="low_education",
+    )
+    moments = compute_transition_moments_pandas_for_age_bins(
+        df_with_caregivers_high,
+        moments,
+        age_range,
+        states=states_work_no_work,
+        label="high_education",
+    )
 
     # # Caregiving transitions (informal care to informal care)
     # # Use age_range_caregivers (starts at start_age_caregivers) instead of age_range
@@ -1776,12 +1776,12 @@ def create_moments_jax(sim_df, min_age, max_age, model_specs):  # noqa: PLR0915
         + share_working_full_time_by_age_bin_intensive_caregivers_high_educ
         #
         # #
-        # # # transitions
-        # # Work transitions (by education)
-        # + no_work_to_no_work_low_educ_by_age_bin
-        # + work_to_work_low_educ_by_age_bin
-        # + no_work_to_no_work_high_educ_by_age_bin
-        # + work_to_work_high_educ_by_age_bin
+        # # transitions
+        # Work transitions (by education)
+        + no_work_to_no_work_low_educ_by_age_bin
+        + work_to_work_low_educ_by_age_bin
+        + no_work_to_no_work_high_educ_by_age_bin
+        + work_to_work_high_educ_by_age_bin
         # # Caregiving transitions (pooled across education,
         # # starting at min_age_caregivers)
         # # Note: Only "caregiving to caregiving" to match empirical
