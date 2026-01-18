@@ -47,7 +47,7 @@ min_long_insured_age: 63
 # Retirement parameters
 ret_years_before_SRA: 4
 min_ret_age: 63
-max_ret_age: 72 # 67 # 72
+max_ret_age: 70 # 67 # 72
 # Maximum age to estimate labor market
 max_est_age_labor: 65
 # Assume that part time gives half a year of experience
