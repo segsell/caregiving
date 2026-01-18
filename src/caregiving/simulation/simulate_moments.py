@@ -165,14 +165,22 @@ def simulate_moments_pandas(  # noqa: PLR0915
         label="informal_care",
         scale=SCALE_CAREGIVER_SHARE,
     )
-    # =================================================================================
-
-    # moments = create_choice_shares_by_age_bin_pandas(
-    #     df, moments, choice_set=LIGHT_INFORMAL_CARE, age_bins=age_bins_75
-    # )
-    # moments = create_choice_shares_by_age_bin_pandas(
-    #     df, moments, choice_set=INTENSIVE_INFORMAL_CARE, age_bins=age_bins_75
-    # )
+    moments = create_choice_shares_by_age_bin_pandas(
+        df_full,
+        moments,
+        choice_set=LIGHT_INFORMAL_CARE,
+        age_bins_and_labels=age_bins_caregivers_5year,
+        label="informal_care_light",
+        scale=SCALE_CAREGIVER_SHARE,
+    )
+    moments = create_choice_shares_by_age_bin_pandas(
+        df_full,
+        moments,
+        choice_set=INTENSIVE_INFORMAL_CARE,
+        age_bins_and_labels=age_bins_caregivers_5year,
+        label="informal_care_intensive",
+        scale=SCALE_CAREGIVER_SHARE,
+    )
 
     # ================================================================================
     moments["share_informal_care_high_educ"] = df_caregivers["education"].mean()
@@ -267,21 +275,39 @@ def simulate_moments_pandas(  # noqa: PLR0915
         label="high_education",
     )
 
-    # # Caregiving transitions (informal care to informal care)
-    # # Use age_range_caregivers (starts at start_age_caregivers) instead of age_range
-    # # Pool across education levels (all_education) to match empirical moment creation
-    # # Note: Only compute "caregiving to caregiving" transitions to match empirical
-    # # (which uses states_caregiving = {"caregiving": 1})
-    # states_caregiving = {
-    #     "caregiving": INFORMAL_CARE,
-    # }
+    # Caregiving transitions (informal care to informal care)
+    # Custom age bin 40-70: one large age bin only
+    # Note: Only compute "caregiving to caregiving" transitions to match empirical
+    # (which uses states_caregiving = {"caregiving": 1})
+    states_caregiving = {
+        "caregiving": INFORMAL_CARE,
+    }
+
     # moments = compute_transition_moments_pandas_for_age_bins(
     #     df_with_caregivers,  # Pooled across all education levels
     #     moments,
-    #     age_range_caregivers,
+    #     range(40, 71),  # Custom age bin 40-70
     #     states=states_caregiving,
     #     label="all_education",
+    #     bin_width=31,  # Creates single bin from 40-70
     # )
+    moments = compute_transition_moments_pandas_for_age_bins(
+        df_with_caregivers_low,
+        moments,
+        range(40, 71),  # Custom age bin 40-70
+        states=states_caregiving,
+        label="low_education",
+        bin_width=31,  # Creates single bin from 40-70
+    )
+    moments = compute_transition_moments_pandas_for_age_bins(
+        df_with_caregivers_high,
+        moments,
+        range(40, 71),  # Custom age bin 40-70
+        states=states_caregiving,
+        label="high_education",
+        bin_width=31,  # Creates single bin from 40-70
+    )
+
     # # ========================================================================
 
     # states_light_informal = {
@@ -1256,12 +1282,20 @@ def create_moments_jax(sim_df, min_age, max_age, model_specs):  # noqa: PLR0915
         bins=age_bins,
         scale=SCALE_CAREGIVER_SHARE,
     )
-    # share_caregivers_by_age_bin = get_share_by_age_bin(
-    #     arr, ind=idx, choice=LIGHT_INFORMAL_CARE, bins=age_bins_75
-    # )
-    # share_caregivers_by_age_bin = get_share_by_age_bin(
-    #     arr, ind=idx, choice=INFORMAL_CARE, bins=age_bins_75
-    # )
+    share_light_caregivers_by_age_bin = get_share_by_age_bin(
+        arr_all,
+        ind=idx,
+        choice=LIGHT_INFORMAL_CARE,
+        bins=age_bins,
+        scale=SCALE_CAREGIVER_SHARE,
+    )
+    share_intensive_caregivers_by_age_bin = get_share_by_age_bin(
+        arr_all,
+        ind=idx,
+        choice=INTENSIVE_INFORMAL_CARE,
+        bins=age_bins,
+        scale=SCALE_CAREGIVER_SHARE,
+    )
 
     # ================================================================================
     education_mask = arr_all[:, idx["education"]] == 1
@@ -1604,7 +1638,7 @@ def create_moments_jax(sim_df, min_age, max_age, model_specs):  # noqa: PLR0915
     # )
 
     # Caregiving transitions by age bin
-    # Pool across education levels (use arr_all) and start at min_age_caregivers
+    # Custom age bin 40-70: one large age bin only
     # Note: Only compute "caregiving to caregiving" transitions to match empirical
     # (which uses states_caregiving = {"caregiving": 1})
     informal_to_informal_all_educ_by_age_bin = get_transition_for_age_bins(
@@ -1612,8 +1646,27 @@ def create_moments_jax(sim_df, min_age, max_age, model_specs):  # noqa: PLR0915
         ind=idx,
         lagged_choice=INFORMAL_CARE,
         current_choice=INFORMAL_CARE,
-        min_age=min_age_caregivers,
-        max_age=max_age,
+        min_age=40,
+        max_age=70,
+        bin_width=31,  # Creates single bin from 40-70
+    )
+    informal_to_informal_low_educ_by_age_bin = get_transition_for_age_bins(
+        arr_all_low_educ,
+        ind=idx,
+        lagged_choice=INFORMAL_CARE,
+        current_choice=INFORMAL_CARE,
+        min_age=40,
+        max_age=70,
+        bin_width=31,  # Creates single bin from 40-70
+    )
+    informal_to_informal_high_educ_by_age_bin = get_transition_for_age_bins(
+        arr_all_high_educ,
+        ind=idx,
+        lagged_choice=INFORMAL_CARE,
+        current_choice=INFORMAL_CARE,
+        min_age=40,
+        max_age=70,
+        bin_width=31,  # Creates single bin from 40-70
     )
 
     # # ==============================================================================
@@ -1747,6 +1800,8 @@ def create_moments_jax(sim_df, min_age, max_age, model_specs):  # noqa: PLR0915
         + share_working_full_time_by_age_high_educ
         # caregivers
         + share_caregivers_by_age_bin
+        + share_light_caregivers_by_age_bin
+        + share_intensive_caregivers_by_age_bin
         + [share_caregivers_high_educ]
         + share_retired_by_age_bin_caregivers
         + share_unemployed_by_age_bin_caregivers
@@ -1799,6 +1854,8 @@ def create_moments_jax(sim_df, min_age, max_age, model_specs):  # noqa: PLR0915
         # # starting at min_age_caregivers)
         # # Note: Only "caregiving to caregiving" to match empirical
         # + informal_to_informal_all_educ_by_age_bin
+        + informal_to_informal_low_educ_by_age_bin
+        + informal_to_informal_high_educ_by_age_bin
         # #
         # # work to work transitions
         # + no_work_to_no_work_low_educ_by_age

@@ -28,7 +28,6 @@ jax.config.update("jax_enable_x64", True)
 
 
 # @pytask.mark.solve_and_simulate
-# @pytask.mark.baseline_model
 # def task_solve_and_simulate_estimated_params(
 #     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
 #     path_to_model: Path = BLD / "model" / "model.pkl",

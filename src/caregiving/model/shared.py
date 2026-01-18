@@ -366,15 +366,12 @@ WORK_AND_RETIREMENT_INTENSIVE_INFORMAL_OR_FORMAL = jnp.concatenate(
     ]
 )
 
-# Legacy: For backward compatibility (when care_demand was binary)
-RETIREMENT_INFORMAL_OR_FORMAL = RETIREMENT_LIGHT_INFORMAL_OR_FORMAL
-UNEMPLOYED_INFORMAL_OR_FORMAL = UNEMPLOYED_LIGHT_INFORMAL_OR_FORMAL
-PART_TIME_INFORMAL_OR_FORMAL = PART_TIME_LIGHT_INFORMAL_OR_FORMAL
-FULL_TIME_INFORMAL_OR_FORMAL = FULL_TIME_LIGHT_INFORMAL_OR_FORMAL
-ALL_INFORMAL_OR_FORMAL = ALL_LIGHT_INFORMAL_OR_FORMAL
-NOT_WORKING_INFORMAL_OR_FORMAL = NOT_WORKING_LIGHT_INFORMAL_OR_FORMAL
-WORK_AND_UNEMPLOYED_INFORMAL_OR_FORMAL = WORK_AND_UNEMPLOYED_LIGHT_INFORMAL_OR_FORMAL
-WORK_AND_RETIREMENT_INFORMAL_OR_FORMAL = WORK_AND_RETIREMENT_LIGHT_INFORMAL_OR_FORMAL
+# Choice sets for caregiving_type == 1 with intensive care demand (care_demand == 2)
+# Agent can choose: LIGHT_INFORMAL_CARE, INTENSIVE_INFORMAL_CARE, or FORMAL_CARE
+# This allows flexibility when care demand is intensive - agent can still choose
+# light informal care or formal care instead of being forced to intensive informal
+# Note: These are identical to RETIREMENT_CARE etc. (which include all care types).
+# We use the _CARE constants directly instead of creating aliases.
 
 NOT_WORKING = jnp.concatenate([UNEMPLOYED, RETIREMENT])
 WORK = jnp.concatenate([PART_TIME, FULL_TIME])

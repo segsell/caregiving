@@ -104,15 +104,25 @@ def simulate_moments_pandas_alternative(
     # =================================================================================
     # All non-caregivers
     shares_all = calc_labor_supply_choice_alternative(df_non_caregivers, model_specs)
-    moments.update(_convert_shares_series_to_dict(shares_all, label="", start_age=start_age))
+    moments.update(
+        _convert_shares_series_to_dict(shares_all, label="", start_age=start_age)
+    )
 
     # Low education
     shares_low = calc_labor_supply_choice_alternative(df_low, model_specs)
-    moments.update(_convert_shares_series_to_dict(shares_low, label="low_education", start_age=start_age))
+    moments.update(
+        _convert_shares_series_to_dict(
+            shares_low, label="low_education", start_age=start_age
+        )
+    )
 
     # High education
     shares_high = calc_labor_supply_choice_alternative(df_high, model_specs)
-    moments.update(_convert_shares_series_to_dict(shares_high, label="high_education", start_age=start_age))
+    moments.update(
+        _convert_shares_series_to_dict(
+            shares_high, label="high_education", start_age=start_age
+        )
+    )
 
     # =================================================================================
     # Labor moments by age bin (caregivers)
@@ -121,14 +131,18 @@ def simulate_moments_pandas_alternative(
     shares_caregivers = calc_labor_supply_choice_by_age_bin_alternative(
         df_caregivers, model_specs, *age_bins_caregivers_3year
     )
-    moments.update(_convert_shares_series_to_dict(shares_caregivers, label="caregivers"))
+    moments.update(
+        _convert_shares_series_to_dict(shares_caregivers, label="caregivers")
+    )
 
     # Caregivers low education
     shares_caregivers_low = calc_labor_supply_choice_by_age_bin_alternative(
         df_caregivers_low, model_specs, *age_bins_caregivers_3year
     )
     moments.update(
-        _convert_shares_series_to_dict(shares_caregivers_low, label="caregivers_low_education")
+        _convert_shares_series_to_dict(
+            shares_caregivers_low, label="caregivers_low_education"
+        )
     )
 
     # Caregivers high education
@@ -136,21 +150,27 @@ def simulate_moments_pandas_alternative(
         df_caregivers_high, model_specs, *age_bins_caregivers_3year
     )
     moments.update(
-        _convert_shares_series_to_dict(shares_caregivers_high, label="caregivers_high_education")
+        _convert_shares_series_to_dict(
+            shares_caregivers_high, label="caregivers_high_education"
+        )
     )
 
     # Light caregivers
     shares_light = calc_labor_supply_choice_by_age_bin_alternative(
         df_light_caregivers, model_specs, *age_bins_caregivers_3year
     )
-    moments.update(_convert_shares_series_to_dict(shares_light, label="light_caregivers"))
+    moments.update(
+        _convert_shares_series_to_dict(shares_light, label="light_caregivers")
+    )
 
     # Light caregivers low education
     shares_light_low = calc_labor_supply_choice_by_age_bin_alternative(
         df_light_caregivers_low, model_specs, *age_bins_caregivers_3year
     )
     moments.update(
-        _convert_shares_series_to_dict(shares_light_low, label="light_caregivers_low_education")
+        _convert_shares_series_to_dict(
+            shares_light_low, label="light_caregivers_low_education"
+        )
     )
 
     # Light caregivers high education
@@ -158,7 +178,9 @@ def simulate_moments_pandas_alternative(
         df_light_caregivers_high, model_specs, *age_bins_caregivers_3year
     )
     moments.update(
-        _convert_shares_series_to_dict(shares_light_high, label="light_caregivers_high_education")
+        _convert_shares_series_to_dict(
+            shares_light_high, label="light_caregivers_high_education"
+        )
     )
 
     # Intensive caregivers
@@ -174,7 +196,9 @@ def simulate_moments_pandas_alternative(
         df_intensive_caregivers_low, model_specs, *age_bins_caregivers_3year
     )
     moments.update(
-        _convert_shares_series_to_dict(shares_intensive_low, label="intensive_caregivers_low_education")
+        _convert_shares_series_to_dict(
+            shares_intensive_low, label="intensive_caregivers_low_education"
+        )
     )
 
     # Intensive caregivers high education
@@ -182,11 +206,12 @@ def simulate_moments_pandas_alternative(
         df_intensive_caregivers_high, model_specs, *age_bins_caregivers_3year
     )
     moments.update(
-        _convert_shares_series_to_dict(shares_intensive_high, label="intensive_caregivers_high_education")
+        _convert_shares_series_to_dict(
+            shares_intensive_high, label="intensive_caregivers_high_education"
+        )
     )
 
     return pd.Series(moments)
-
 
 
 def calc_labor_supply_choice_alternative(
@@ -257,10 +282,9 @@ def calc_labor_supply_choice_alternative(
     )
 
     # Group by sex, education, period and compute normalized choice shares
-    choice_shares = (
-        df_copy.groupby(["sex", "education", "period"], observed=False)["choice_group"]
-        .value_counts(normalize=True)
-    )
+    choice_shares = df_copy.groupby(["sex", "education", "period"], observed=False)[
+        "choice_group"
+    ].value_counts(normalize=True)
 
     # Reindex to fill missing combinations with 0.0
     choice_shares_full = choice_shares.reindex(index, fill_value=0.0).fillna(0.0)
@@ -319,9 +343,7 @@ def calc_labor_supply_choice_by_age_bin_alternative(
             choice_group_map[code] = agg_code
 
     # Filter to relevant ages and create age_bin column
-    df_copy = df[
-        df["age"].between(bin_edges[0], bin_edges[-1] - 1)
-    ].copy()
+    df_copy = df[df["age"].between(bin_edges[0], bin_edges[-1] - 1)].copy()
 
     # Handle empty dataframe case
     if len(df_copy) == 0:
@@ -360,17 +382,14 @@ def calc_labor_supply_choice_by_age_bin_alternative(
     )
 
     # Group by sex, education, age_bin and compute normalized choice shares
-    choice_shares = (
-        df_copy.groupby(["sex", "education", "age_bin"], observed=False)["choice_group"]
-        .value_counts(normalize=True)
-    )
+    choice_shares = df_copy.groupby(["sex", "education", "age_bin"], observed=False)[
+        "choice_group"
+    ].value_counts(normalize=True)
 
     # Reindex to fill missing combinations with 0.0
     choice_shares_full = choice_shares.reindex(index, fill_value=0.0).fillna(0.0)
 
     return choice_shares_full
-
-
 
 
 def _convert_shares_series_to_dict(

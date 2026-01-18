@@ -32,7 +32,7 @@ def task_summary_statistics_intensive_care_by_age_bin(
 
     This task loads the SHARE estimation data and calculates summary statistics
     (mean, standard deviation, and sample size) for the variable
-    `intensive_care_parents_versus_other` by 5-year age bins from [40, 45)
+    `intensive_care_parents_versus_other` by age bins from [40, 50)
     to [70, 75).
 
     Parameters
@@ -45,10 +45,9 @@ def task_summary_statistics_intensive_care_by_age_bin(
     # Load the estimation data
     df = pd.read_csv(path_to_estimation_data)
 
-    # Define age bins: [40, 45), [45, 50), ..., [70, 75)
+    # Define age bins: [40, 50), [50, 55), ..., [70, 75)
     bin_edges = [
         AGE_40,
-        AGE_45,
         AGE_50,
         AGE_55,
         AGE_60,
@@ -105,8 +104,8 @@ def task_summary_statistics_intensive_care_extra_hh_by_age_bin(
 
     This task loads the SHARE estimation data and calculates summary statistics
     (mean, standard deviation, and sample size) for the variable
-    `intensive_care_parents_versus_other_extra_hh` by 5-year age bins from
-    [40, 45) to [70, 75).
+    `intensive_care_parents_versus_other_extra_hh` by age bins from
+    [40, 50) to [70, 75).
 
     Parameters
     ----------
@@ -118,10 +117,9 @@ def task_summary_statistics_intensive_care_extra_hh_by_age_bin(
     # Load the estimation data
     df = pd.read_csv(path_to_estimation_data)
 
-    # Define age bins: [40, 45), [45, 50), ..., [70, 75)
+    # Define age bins: [40, 50), [50, 55), ..., [70, 75)
     bin_edges = [
         AGE_40,
-        AGE_45,
         AGE_50,
         AGE_55,
         AGE_60,
