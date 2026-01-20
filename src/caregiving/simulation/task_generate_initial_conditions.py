@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-from dcegm.asset_correction import adjust_observed_assets
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
@@ -40,6 +39,7 @@ from caregiving.moments.task_create_soep_moments import (
     create_df_non_caregivers,
     create_df_wealth,
 )
+from dcegm.asset_correction import adjust_observed_assets
 
 
 @pytask.mark.initial_conditions
@@ -135,8 +135,16 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     observed_wealth = create_df_wealth(
         df_full=observed_data, specs=model_specs, wealth_var="lagged_wealth"
     )
-    start_age_wealth = observed_wealth[
+    _start_age_wealth = observed_wealth[
         observed_wealth["age"] == model_specs["start_age"]
+    ].copy()
+
+    min_period = observed_data["period"].min()
+    start_period_data_wealth = observed_data[
+        observed_data["period"].isin([min_period])
+    ].copy()
+    start_age_wealth = start_period_data_wealth[
+        start_period_data_wealth["wealth"].notnull()
     ].copy()
 
     # =================================================================================
@@ -149,7 +157,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     # =================================================================================
 
     states_dict = {
-        name: start_period_data[name].values
+        name: start_age_wealth[name].values
         for name in model_structure["discrete_states_names"]
         if name
         not in (
@@ -162,21 +170,22 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         )
     }
 
-    states_dict["care_demand"] = np.zeros_like(start_period_data["wealth"])
-    states_dict["experience"] = start_period_data["experience"].values
+    states_dict["care_demand"] = np.zeros_like(start_age_wealth["wealth"])
+    states_dict["experience"] = start_age_wealth["experience"].values
     # Initialize mother_dead to 0 (alive) for all agents at initial period
     # (will be drawn later based on mother health)
     states_dict["mother_dead"] = np.zeros_like(
-        start_period_data["wealth"], dtype=np.uint8
+        start_age_wealth["wealth"], dtype=np.uint8
     )
 
-    # states_dict["assets_begin_of_period"] = start_age_wealth["wealth"].values
-    # start_period_data.loc[:, "adjusted_wealth"] = adjust_observed_assets(
-    #     observed_states_dict=states_dict,
-    #     params=params,
-    #     model_class=model_class,
-    # )
-    # breakpoint()
+    states_dict["assets_begin_of_period"] = (
+        start_age_wealth["wealth"].values / specs["wealth_unit"]
+    )
+    start_age_wealth.loc[:, "adjusted_wealth"] = adjust_observed_assets(
+        observed_states_dict=states_dict,
+        params=params,
+        model_class=model_class,
+    )
 
     # # Generate container
     # sex_agents = np.array([], np.uint8)

@@ -7,8 +7,10 @@ from typing import Annotated
 import numpy as np
 import pandas as pd
 import pytask
+import yaml
 from pytask import Product
 
+import dcegm
 from caregiving.config import BLD
 from caregiving.model.shared import (
     DEAD,
@@ -24,6 +26,17 @@ from caregiving.model.shared import (
     WORK,
     WORK_CHOICES,
 )
+from caregiving.model.state_space import create_state_space_functions
+from caregiving.model.stochastic_processes.job_transition import (
+    job_offer_process_transition_initial_conditions,
+)
+from caregiving.model.task_specify_model import create_stochastic_states_transitions
+from caregiving.model.taste_shocks import shock_function_dict
+from caregiving.model.utility.bequest_utility import (
+    create_final_period_utility_functions,
+)
+from caregiving.model.utility.utility_functions_additive import create_utility_functions
+from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.moments.task_create_soep_moments import (
     create_df_caregivers,
     create_df_non_caregivers,
@@ -49,6 +62,9 @@ from caregiving.simulation.plot_model_fit import (
 @pytask.mark.model_fit_estimated_params
 def task_plot_model_fit_estimated_params(  # noqa: PLR0915
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_params: Path = BLD / "model" / "params" / "estimated_params_model.yaml",
+    path_to_model_config: Path = BLD / "model" / "model_config.pkl",
+    path_to_model: Path = BLD / "model" / "model.pkl",
     path_to_simulated_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
@@ -151,6 +167,23 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
     """Plot model fit using estimated parameters."""
 
     specs = pickle.load(path_to_specs.open("rb"))
+    params = yaml.safe_load(path_to_params.open("rb"))
+    model_config = pickle.load(path_to_model_config.open("rb"))
+
+    model_class = dcegm.setup_model(
+        model_specs=specs,
+        model_config=model_config,
+        state_space_functions=create_state_space_functions(),
+        utility_functions=create_utility_functions(),
+        utility_functions_final_period=create_final_period_utility_functions(),
+        budget_constraint=budget_constraint,
+        shock_functions=shock_function_dict(),
+        stochastic_states_transitions=create_stochastic_states_transitions(),
+        model_load_path=path_to_model,
+        # alternative_sim_specifications=alternative_sim_specifications,
+        # debug_info=debug_info,
+        # use_stochastic_sparsity=True,
+    )
 
     start_age_caregivers = specs["start_age_caregiving"]
     end_age = specs["end_age_msm"]
@@ -185,7 +218,15 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         end_year=end_year,
         end_age=end_age,
     )
-    df_emp_wealth = create_df_wealth(df_full=df_emp_full, specs=specs)
+
+    df_emp_wealth = create_df_wealth(
+        df_full=df_emp_full,
+        specs=specs,
+        params=params,
+        model_class=model_class,
+        adjust_wealth=False,
+        trim_quantile=True,
+    )
 
     # =================================================================================
     # Simulated data

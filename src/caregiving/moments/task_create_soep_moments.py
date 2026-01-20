@@ -1,15 +1,18 @@
 """Create SOEP moments and variances for MSM estimation."""
 
+import pickle
 from itertools import product
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytask
+import yaml
 from pytask import Product
 
+import dcegm
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import (
     BAD_HEALTH,
@@ -26,7 +29,18 @@ from caregiving.model.shared import (
     WEALTH_QUANTILE_CUTOFF,
     WORK_CHOICES,
 )
-from caregiving.specs.task_write_specs import read_and_derive_specs
+from caregiving.model.state_space import create_state_space_functions
+from caregiving.model.stochastic_processes.job_transition import (
+    job_offer_process_transition_initial_conditions,
+)
+from caregiving.model.task_specify_model import create_stochastic_states_transitions
+from caregiving.model.taste_shocks import shock_function_dict
+from caregiving.model.utility.bequest_utility import (
+    create_final_period_utility_functions,
+)
+from caregiving.model.utility.utility_functions_additive import create_utility_functions
+from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
+from dcegm.asset_correction import adjust_observed_assets
 
 DEGREES_OF_FREEDOM = 1
 
@@ -34,7 +48,11 @@ DEGREES_OF_FREEDOM = 1
 @pytask.mark.moments
 @pytask.mark.soep_moments
 def task_create_soep_moments(  # noqa: PLR0915
-    path_to_specs: Path = SRC / "specs.yaml",
+    # path_to_specs: Path = SRC / "specs.yaml",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_model_config: Path = BLD / "model" / "model_config.pkl",
+    path_to_model: Path = BLD / "model" / "model.pkl",
+    path_to_params: Path = BLD / "model" / "params" / "estimated_params_model.yaml",
     path_to_main_sample: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
     path_to_caregivers_sample: Path = BLD
     / "data"
@@ -51,7 +69,24 @@ def task_create_soep_moments(  # noqa: PLR0915
 ) -> None:
     """Create moments for MSM estimation."""
 
-    specs = read_and_derive_specs(path_to_specs)
+    specs = pickle.load(path_to_specs.open("rb"))
+    params = yaml.safe_load(path_to_params.open("rb"))
+    model_config = pickle.load(path_to_model_config.open("rb"))
+
+    model_class = dcegm.setup_model(
+        model_specs=specs,
+        model_config=model_config,
+        state_space_functions=create_state_space_functions(),
+        utility_functions=create_utility_functions(),
+        utility_functions_final_period=create_final_period_utility_functions(),
+        budget_constraint=budget_constraint,
+        shock_functions=shock_function_dict(),
+        stochastic_states_transitions=create_stochastic_states_transitions(),
+        model_load_path=path_to_model,
+        # alternative_sim_specifications=alternative_sim_specifications,
+        # debug_info=debug_info,
+        # use_stochastic_sparsity=True,
+    )
 
     parents_weights_share = _process_parents_weights_share(path_to_parents_weights_csv)
 
@@ -95,7 +130,14 @@ def task_create_soep_moments(  # noqa: PLR0915
         end_year=end_year,
         end_age=end_age,
     )
-    df_wealth = create_df_wealth(df_full=df_full, specs=specs)
+    df_wealth = create_df_wealth(
+        df_full=df_full,
+        specs=specs,
+        params=params,
+        model_class=model_class,
+        adjust_wealth=False,
+        trim_quantile=True,
+    )
 
     _df_alive = df[df["health"] != DEAD].copy()
     _df_good_health = df[df["health"] == GOOD_HEALTH].copy()
@@ -935,30 +977,6 @@ def compute_shares_by_age_bin(
 # =====================================================================================
 # Wealth
 # =====================================================================================
-
-
-def adjust_and_trim_wealth_data(
-    df: pd.DataFrame,
-    specs: dict,
-    wealth_var: str = "wealth",
-):
-
-    df["adjusted_wealth"] = df[wealth_var] / specs["wealth_unit"]
-    df = df[df["sex"] == SEX].copy()
-
-    # if adjust_wealth:
-    #     df["adjusted_wealth"] = adjust_observed_wealth(
-    #         observed_states_dict=states_dict,
-    #         params=params,
-    #         model=model,
-    #     )
-
-    wealth_mask = df["adjusted_wealth"] < df["adjusted_wealth"].quantile(
-        WEALTH_QUANTILE_CUTOFF
-    )
-    trimmed = df.loc[wealth_mask, ["age", "sex", "adjusted_wealth", "education"]].copy()
-
-    return trimmed
 
 
 def compute_mean_wealth_by_age(
@@ -2017,6 +2035,10 @@ def create_df_caregivers(
 def create_df_wealth(
     df_full: pd.DataFrame,
     specs: dict,
+    params: dict,
+    model_class: Any,
+    adjust_wealth: bool = False,
+    trim_quantile: bool = False,
     wealth_var: str = "wealth",
 ) -> pd.DataFrame:
     """
@@ -2034,12 +2056,73 @@ def create_df_wealth(
     pd.DataFrame
         Adjusted wealth dataframe (filtered for non-null wealth and sex == SEX)
     """
+    df_full = df_full[df_full["sex"] == SEX].copy()
     df_wealth = df_full[(df_full[wealth_var].notna()) & (df_full["sex"] == SEX)].copy()
+
+    model_structure = model_class.model_structure
+
+    states_dict = {
+        name: df_wealth[name].values
+        for name in model_structure["discrete_states_names"]
+        if name
+        not in (
+            "mother_health",
+            "mother_adl",
+            "mother_dead",
+            "care_demand",
+            "care_supply",
+            "caregiving_type",
+        )
+    }
+    states_dict["experience"] = df_wealth["experience"].values
+    states_dict["care_demand"] = np.zeros_like(df_wealth["wealth"])
+    states_dict["mother_dead"] = np.zeros_like(df_wealth["wealth"], dtype=np.uint8)
+
     df_wealth = adjust_and_trim_wealth_data(
-        df=df_wealth, specs=specs, wealth_var=wealth_var
+        df=df_wealth,
+        specs=specs,
+        params=params,
+        states_dict=states_dict,
+        model_class=model_class,
+        adjust_wealth=adjust_wealth,
+        trim_quantile=trim_quantile,
+        wealth_var=wealth_var,
     )
 
     return df_wealth
+
+
+def adjust_and_trim_wealth_data(
+    df: pd.DataFrame,
+    specs: dict,
+    params: dict,
+    states_dict: dict,
+    model_class: Any,
+    wealth_var: str = "wealth",
+    adjust_wealth: bool = False,
+    trim_quantile: bool = False,
+):
+
+    df = df[df["sex"] == SEX].copy()
+    df["assets_begin_of_period"] = df[wealth_var].values / specs["wealth_unit"]
+
+    if adjust_wealth:
+        states_dict["assets_begin_of_period"] = df["assets_begin_of_period"].values
+        df["adjusted_wealth"] = adjust_observed_assets(
+            observed_states_dict=states_dict,
+            params=params,
+            model_class=model_class,
+        )
+    else:
+        df["adjusted_wealth"] = df["assets_begin_of_period"].values
+
+    if trim_quantile:
+        wealth_mask = df["adjusted_wealth"] < df["adjusted_wealth"].quantile(
+            WEALTH_QUANTILE_CUTOFF
+        )
+        df = df.loc[wealth_mask, ["age", "sex", "adjusted_wealth", "education"]].copy()
+
+    return df
 
 
 def _process_parents_weights_share(
