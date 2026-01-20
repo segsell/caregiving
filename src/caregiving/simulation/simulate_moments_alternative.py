@@ -16,7 +16,7 @@ from caregiving.model.shared import (
 )
 
 
-def simulate_moments_pandas_alternative(
+def simulate_moments_pandas_alternative(  # noqa: PLR0915
     df_full: pd.DataFrame,
     model_specs: dict,
 ) -> pd.DataFrame:
@@ -38,20 +38,10 @@ def simulate_moments_pandas_alternative(
         Series with moment names as index and moment values as values.
     """
     start_age = model_specs["start_age"]
-    end_age = model_specs["end_age_msm"]
     start_age_caregivers = model_specs["start_age_caregiving"]
     end_age_caregiving = model_specs["end_age_caregiving"]
 
-    age_range = range(start_age, end_age + 1)
-    age_range_caregivers = range(start_age_caregivers, end_age_caregiving + 1)
-
-    # Define age bins for caregivers (5-year bins)
-    age_bins_caregivers_5year = (
-        list(range(40, 75, 5)),  # [40, 45, 50, 55, 60, 65, 70]
-        [f"{s}_{s+4}" for s in range(40, 70, 5)],  # ["40_44", "45_49", ..., "65_69"]
-    )
-
-    # Define age bins for caregivers (3-year bins)
+    # Define age bins for caregivers (3-year bins; flexible in start/end age)
     bin_edges_caregivers = []
     current_edge = start_age_caregivers
     while current_edge + 3 <= end_age_caregiving + 1:
@@ -226,13 +216,16 @@ def calc_labor_supply_choice_alternative(
     Parameters
     ----------
     df : pd.DataFrame
-        Simulation DataFrame. Must contain columns: 'sex', 'education', 'period', 'choice'.
+        Simulation DataFrame. Must contain columns:
+        'sex', 'education', 'period', 'choice'.
     specs : dict
         Model specifications. Must contain 'start_age' and 'end_age_msm'.
     sex_values : list[int] | None
-        List of sex values to include. If None, uses all unique values from df['sex'].
+        List of sex values to include. If None, uses all unique values
+        from df['sex'].
     education_values : list[int] | None
-        List of education values to include. If None, uses all unique values from df['education'].
+        List of education values to include. If None, uses all unique
+        values from df['education'].
 
     Returns
     -------
@@ -314,9 +307,11 @@ def calc_labor_supply_choice_by_age_bin_alternative(
     bin_labels : list[str]
         Age bin labels (e.g., ['40_44', '45_49', '50_54', ...]).
     sex_values : list[int] | None
-        List of sex values to include. If None, uses all unique values from df['sex'].
+        List of sex values to include. If None, uses all unique values
+        from df['sex'].
     education_values : list[int] | None
-        List of education values to include. If None, uses all unique values from df['education'].
+        List of education values to include. If None, uses all unique
+        values from df['education'].
 
     Returns
     -------

@@ -213,7 +213,9 @@ def disutility_work(
     #     + params["util_intensive_informal_care_low_good"]
     #     * good_health
     #     * (1 - education)
-    #     + params["util_intensive_informal_care_low_bad"] * bad_health * (1 - education)
+    #     + params["util_intensive_informal_care_low_bad"]
+    #     * bad_health
+    #     * (1 - education)
     # )
     util_informal_care = (
         params["util_informal_care_high_good"] * good_health * education
