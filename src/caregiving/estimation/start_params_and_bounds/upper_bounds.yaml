@@ -88,10 +88,13 @@ util_informal_care_high_good: 5
 util_informal_care_high_bad: 5
 util_informal_care_low_good: 5
 util_informal_care_low_bad: 5
-util_joint_informal_care_good: 5
-util_joint_informal_care_bad: 5
+
 util_formal_care_good: 5
 util_formal_care_bad: 5
+util_formal_care_high_good: 5
+util_formal_care_high_bad: 5
+util_formal_care_low_good: 5
+util_formal_care_low_bad: 5
 
 
 # # # Caregiving

@@ -127,13 +127,27 @@ disutil_children_ft_work_high_informal_care: 0.1
 
 #############################################
 
-util_informal_care_high_good: 0
-util_informal_care_high_bad: 0
-util_informal_care_low_good: 0
-util_informal_care_low_bad: 0
+# Utility from light informal care (varies by education and health)
+util_light_informal_care_high_good: 0.0
+util_light_informal_care_high_bad: 0.0
+util_light_informal_care_low_good: 0.0
+util_light_informal_care_low_bad: 0.0
 
-util_formal_care_good: 0
-util_formal_care_bad: 0
+# Utility from intensive informal care (varies by education and health)
+util_intensive_informal_care_high_good: 0.0
+util_intensive_informal_care_high_bad: 0.0
+util_intensive_informal_care_low_good: 0.0
+util_intensive_informal_care_low_bad: 0.0
+
+# util_informal_care_high_good: 0
+# util_informal_care_high_bad: 0
+# util_informal_care_low_good: 0
+# util_informal_care_low_bad: 0
+
+util_formal_care_high_good: 0
+util_formal_care_high_bad: 0
+util_formal_care_low_good: 0
+util_formal_care_low_bad: 0
 
 #############################################
 # Caregiving
@@ -148,17 +162,6 @@ disutil_unemployed_intensive_informal_care_high: 0.0
 disutil_ft_work_intensive_informal_care_low: 0.0
 disutil_ft_work_intensive_informal_care_high: 0.0
 
-# # Utility from light informal care (varies by education and health)
-# util_light_informal_care_high_good: 0.0
-# util_light_informal_care_high_bad: 0.0
-# util_light_informal_care_low_good: 0.0
-# util_light_informal_care_low_bad: 0.0
-
-# # Utility from intensive informal care (varies by education and health)
-# util_intensive_informal_care_high_good: 0.0
-# util_intensive_informal_care_high_bad: 0.0
-# util_intensive_informal_care_low_good: 0.0
-# util_intensive_informal_care_low_bad: 0.0
 
 #############################################
 

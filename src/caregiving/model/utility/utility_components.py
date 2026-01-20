@@ -200,41 +200,41 @@ def disutility_work(
     # Care utility (based on agent's own health)
     # =================================================================================
 
-    # # Compute utility from solo informal care (varies by agent's health and education)
-    # util_light_informal_care = (
-    #     params["util_light_informal_care_high_good"] * good_health * education
-    #     + params["util_light_informal_care_high_bad"] * bad_health * education
-    #     + params["util_light_informal_care_low_good"] * good_health * (1 - education)
-    #     + params["util_light_informal_care_low_bad"] * bad_health * (1 - education)
-    # )
-    # util_intensive_informal_care = (
-    #     params["util_intensive_informal_care_high_good"] * good_health * education
-    #     + params["util_intensive_informal_care_high_bad"] * bad_health * education
-    #     + params["util_intensive_informal_care_low_good"]
-    #     * good_health
-    #     * (1 - education)
-    #     + params["util_intensive_informal_care_low_bad"]
-    #     * bad_health
-    #     * (1 - education)
-    # )
-    util_informal_care = (
-        params["util_informal_care_high_good"] * good_health * education
-        + params["util_informal_care_high_bad"] * bad_health * education
-        + params["util_informal_care_low_good"] * good_health * (1 - education)
-        + params["util_informal_care_low_bad"] * bad_health * (1 - education)
+    # Compute utility from solo informal care (varies by agent's health and education)
+    util_light_informal_care = (
+        params["util_light_informal_care_high_good"] * good_health * education
+        + params["util_light_informal_care_high_bad"] * bad_health * education
+        + params["util_light_informal_care_low_good"] * good_health * (1 - education)
+        + params["util_light_informal_care_low_bad"] * bad_health * (1 - education)
     )
+    util_intensive_informal_care = (
+        params["util_intensive_informal_care_high_good"] * good_health * education
+        + params["util_intensive_informal_care_high_bad"] * bad_health * education
+        + params["util_intensive_informal_care_low_good"]
+        * good_health
+        * (1 - education)
+        + params["util_intensive_informal_care_low_bad"] * bad_health * (1 - education)
+    )
+    # util_informal_care = (
+    #     params["util_informal_care_high_good"] * good_health * education
+    #     + params["util_informal_care_high_bad"] * bad_health * education
+    #     + params["util_informal_care_low_good"] * good_health * (1 - education)
+    #     + params["util_informal_care_low_bad"] * bad_health * (1 - education)
+    # )
 
-    # Compute utility from formal care (varies by agent's health)
+    # Compute utility from formal care (varies by agent's health and education)
     util_formal_care = (
-        params["util_formal_care_good"] * good_health
-        + params["util_formal_care_bad"] * bad_health
+        params["util_formal_care_high_good"] * good_health * education
+        + params["util_formal_care_high_bad"] * bad_health * education
+        + params["util_formal_care_low_good"] * good_health * (1 - education)
+        + params["util_formal_care_low_bad"] * bad_health * (1 - education)
     )
 
     # Someone else provides informal care --> reference category.
     utility_from_care = (
-        # light_informal_care * util_light_informal_care
-        # + intensive_informal_care * util_intensive_informal_care
-        informal_care * util_informal_care
+        light_informal_care * util_light_informal_care
+        + intensive_informal_care * util_intensive_informal_care
+        # informal_care * util_informal_care
         + formal_care * util_formal_care
     )
 

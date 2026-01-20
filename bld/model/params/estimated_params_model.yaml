@@ -218,10 +218,18 @@ rho_bequest_high: 2.414346882835183
 rho_bequest_low: 3.022870346976081
 rho_high: 3.988496770595214
 rho_low: 2.696527196049831
-util_informal_care_high_good: 0.4497328638222296
-util_informal_care_high_bad: -0.005247943418271838
-util_informal_care_low_good: 0.4071438633399354
-util_informal_care_low_bad: 0.08971930509003657
+# util_informal_care_high_good: 0.4497328638222296
+# util_informal_care_high_bad: -0.005247943418271838
+# util_informal_care_low_good: 0.4071438633399354
+# util_informal_care_low_bad: 0.08971930509003657
+util_light_informal_care_high_good: 0.4497328638222296
+util_light_informal_care_high_bad: -0.005247943418271838
+util_light_informal_care_low_good: 0.4071438633399354
+util_light_informal_care_low_bad: 0.08971930509003657
+util_intensive_informal_care_high_good: 0.4497328638222296
+util_intensive_informal_care_high_bad: -0.005247943418271838
+util_intensive_informal_care_low_good: 0.4071438633399354
+util_intensive_informal_care_low_bad: 0.08971930509003657
 util_formal_care_good: -0.18538010402635177
 util_formal_care_bad: 0.04182972293415799
 share_unobserved_type_low_educ: 0.8501400152029441
