@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-from dcegm.asset_correction import adjust_observed_assets
 from pytask import Product
 
 import dcegm
@@ -41,6 +40,7 @@ from caregiving.model.utility.bequest_utility import (
 )
 from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
+from dcegm.asset_correction import adjust_observed_assets
 
 DEGREES_OF_FREEDOM = 1
 
@@ -61,7 +61,12 @@ def task_create_soep_moments(  # noqa: PLR0915
     / "moments"
     / "soep_moments_new.csv",
     path_to_parents_weights_csv=(
-        BLD / "descriptives" / "intensive_care_parents_versus_other_by_age_bin.csv"
+        BLD / "descriptives" / "daily_care_parents_versus_other_by_age_bin.csv"
+    ),
+    path_to_parents_weights_educ_csv=(
+        BLD
+        / "descriptives"
+        / "daily_care_parents_versus_other_by_age_bin_and_education.csv"
     ),
     path_to_save_variances: Annotated[Path, Product] = BLD
     / "moments"
@@ -89,6 +94,12 @@ def task_create_soep_moments(  # noqa: PLR0915
     )
 
     parents_weights_share = _process_parents_weights_share(path_to_parents_weights_csv)
+    parents_weights_share_low_educ = _process_parents_weights_share(
+        path_to_parents_weights_educ_csv, educ_var="high_isced", educ_type="low"
+    )
+    parents_weights_share_high_educ = _process_parents_weights_share(
+        path_to_parents_weights_educ_csv, educ_var="high_isced", educ_type="high"
+    )
 
     start_age = specs["start_age"]
     start_age_caregivers = specs["start_age_caregiving"]
@@ -228,56 +239,6 @@ def task_create_soep_moments(  # noqa: PLR0915
         age_range=age_range,
         label="high_education",
     )
-    # =================================================================================
-
-    # # B) Health
-    # # moments, variances = compute_shares_by_age_bin(
-    # #     df_alive,
-    # #     moments,
-    # #     variances,
-    # #     age_bins=age_bins_75,
-    # #     variable="health",
-    # #     label="good_health",
-    # # )
-    # moments, variances = compute_labor_shares_by_age(
-    #     df_good_health,
-    #     moments=moments,
-    #     variances=variances,
-    #     age_range=age_range,
-    #     label="good_health",
-    # )
-    # moments, variances = compute_labor_shares_by_age(
-    #     df_bad_health,
-    #     moments=moments,
-    #     variances=variances,
-    #     age_range=age_range,
-    #     label="bad_health",
-    # )
-
-    # B2) Moments by age bin conditional on caregiving
-    # moments, variances = compute_share_informal_care_by_age(
-    #     df,
-    #     moments=moments,
-    #     variances=variances,
-    #     age_range=age_range,
-    # )
-
-    # t, variances = compute_share_informal_care_by_age_bin(
-    #     df_year_good_health,
-    #     moments=t,
-    #     variances=variances,
-    #     weights=PARENT_WEIGHTS_SHARE,
-    #     scale=SCALE_CAREGIVER_SHARE,
-    #     label="good_health",
-    # )
-    # t, variances = compute_share_informal_care_by_age_bin(
-    #     df_year_bad_health,
-    #     moments=t,
-    #     variances=variances,
-    #     weights=PARENT_WEIGHTS_SHARE,
-    #     scale=SCALE_CAREGIVER_SHARE,
-    #     label="bad_health",
-    # )
 
     # =================================================================================
     # caregiver_shares = {
@@ -293,13 +254,14 @@ def task_create_soep_moments(  # noqa: PLR0915
     #     k: v * SCALE_CAREGIVER_SHARE for k, v in caregiver_shares.items()
     # }
     # moments.update(scaled_caregiver_shares)
-
     # =================================================================================
+
     moments, variances = compute_share_informal_care_by_age_bin(
         df_with_caregivers,
         moments=moments,
         variances=variances,
         care_var="any_care",
+        label="any",
         weights=parents_weights_share,
         scale=SCALE_CAREGIVER_SHARE,
     )
@@ -322,7 +284,66 @@ def task_create_soep_moments(  # noqa: PLR0915
         scale=SCALE_CAREGIVER_SHARE,
     )
 
-    # @pytask.mark.baseline_model
+    # Education-specific moments for any care
+    moments, variances = compute_share_informal_care_by_age_bin(
+        df_with_caregivers_low,
+        moments=moments,
+        variances=variances,
+        care_var="any_care",
+        label="any_low_educ",
+        weights=parents_weights_share_low_educ,
+        scale=SCALE_CAREGIVER_SHARE,
+    )
+    moments, variances = compute_share_informal_care_by_age_bin(
+        df_with_caregivers_high,
+        moments=moments,
+        variances=variances,
+        care_var="any_care",
+        label="any_high_educ",
+        weights=parents_weights_share_high_educ,
+        scale=SCALE_CAREGIVER_SHARE,
+    )
+
+    # Education-specific moments for light care
+    moments, variances = compute_share_informal_care_by_age_bin(
+        df_with_caregivers_low,
+        moments=moments,
+        variances=variances,
+        care_var="light_care",
+        label="light_low_educ",
+        weights=parents_weights_share_low_educ,
+        scale=SCALE_CAREGIVER_SHARE,
+    )
+    moments, variances = compute_share_informal_care_by_age_bin(
+        df_with_caregivers_high,
+        moments=moments,
+        variances=variances,
+        care_var="light_care",
+        label="light_high_educ",
+        weights=parents_weights_share_high_educ,
+        scale=SCALE_CAREGIVER_SHARE,
+    )
+
+    # Education-specific moments for intensive care
+    moments, variances = compute_share_informal_care_by_age_bin(
+        df_with_caregivers_low,
+        moments=moments,
+        variances=variances,
+        care_var="intensive_care",
+        label="intensive_low_educ",
+        weights=parents_weights_share_low_educ,
+        scale=SCALE_CAREGIVER_SHARE,
+    )
+    moments, variances = compute_share_informal_care_by_age_bin(
+        df_with_caregivers_high,
+        moments=moments,
+        variances=variances,
+        care_var="intensive_care",
+        label="intensive_high_educ",
+        weights=parents_weights_share_high_educ,
+        scale=SCALE_CAREGIVER_SHARE,
+    )
+
     # =================================================================================
 
     # moments, variances = compute_shares_by_age_bin(
@@ -716,11 +737,21 @@ def compute_share_informal_care_by_age_bin(
     weights: dict | None = None,
     label: str | None = None,
     scale: float = 1.0,
+    correct_upward: bool = False,
 ):
     """
-    Update *moments* in=place with the share of agents whose “choice”
+    Update *moments* in=place with the share of agents whose "choice"
     lies in INFORMAL_CARE, computed separately for every age in
     *age_range*.
+
+    Parameters
+    ----------
+    correct_upward : bool, default=False
+        If True, correct shares upward to account for non-parental caregivers
+        being dropped from the sample. Only applies when weights is not None.
+        The correction formula is:
+        corrected_share = (share_by_age * parent_weights) /
+                          (1 - share_by_age * (1 - parent_weights))
 
     """
 
@@ -768,10 +799,37 @@ def compute_share_informal_care_by_age_bin(
         )
         adjusted_share_by_age = share_by_age * parent_weights
 
+        # Apply upward correction if requested
+        if correct_upward:
+            # Compute share of non-parental caregivers
+            share_non_parental = share_by_age * (1 - parent_weights)
+            # Denominator: 1 - share_non_parental
+            # (remaining population after dropping non-parental)
+            denominator = 1 - share_non_parental
+
+            # Apply correction: adjusted_share / denominator
+            # Handle edge cases:
+            # - If share_by_age is 0, corrected should be 0
+            #   (already 0, so no change needed)
+            # - If denominator is 0 or negative, keep original value
+            #   (shouldn't happen in practice)
+            # - If denominator is NaN, keep original value
+            mask = (share_by_age != 0) & (denominator > 0) & denominator.notna()
+            # Compute corrected values
+            corrected_values = adjusted_share_by_age / denominator
+            # Apply correction only where mask is True, otherwise keep original value
+            # .where(~mask, other=...) keeps original where mask is False,
+            # uses corrected where True
+            adjusted_share_by_age = adjusted_share_by_age.where(
+                ~mask, other=corrected_values
+            )
+
     for age in bin_labels:
         moments[f"share_informal_care{label}_age_bin_{age}"] = (
             adjusted_share_by_age.loc[age] * scale
         )
+        # Note: Variance is not adjusted when correct_upward=True
+        # It remains computed on the original sample
         variances[f"variance_informal_care{label}_age_bin_{age}"] = variance_by_age.loc[
             age
         ]
@@ -2127,6 +2185,8 @@ def adjust_and_trim_wealth_data(
 
 def _process_parents_weights_share(
     path_to_csv: Path,
+    educ_var: str | None = None,
+    educ_type: str | None = None,
 ) -> dict[str, float]:
     """Process CSV file with age bin statistics into parents_weights_share dictionary.
 
@@ -2141,7 +2201,17 @@ def _process_parents_weights_share(
     ----------
     path_to_csv : Path
         Path to the CSV file containing age bin statistics.
-        Expected columns: age_bin (format: "[40, 50)"), mean, std, n_observations
+        Expected columns for general file: age_bin (format: "[40, 50)"),
+        mean, std, n_observations
+        Expected columns for education file: age_bin, education, mean, std,
+        n_observations, educ_variable
+    educ_var : str | None, optional
+        Education variable to filter by (e.g., "high_isced", "high_educ",
+        "high_educ_isced").
+        If None, assumes the CSV does not have education differentiation.
+    educ_type : str | None, optional
+        Education type to filter by ("low" or "high").
+        If None, assumes the CSV does not have education differentiation.
 
     Returns
     -------
@@ -2158,6 +2228,18 @@ def _process_parents_weights_share(
 
     """
     df = pd.read_csv(path_to_csv)
+
+    # Filter by education variable and type if provided
+    if educ_var is not None and educ_type is not None:
+        if "educ_variable" in df.columns and "education" in df.columns:
+            df = df[
+                (df["educ_variable"] == educ_var) & (df["education"] == educ_type)
+            ].copy()
+        else:
+            raise ValueError(
+                f"CSV file does not contain education columns, but educ_var={educ_var} "
+                f"and educ_type={educ_type} were provided."
+            )
 
     parents_weights_share = {}
 
