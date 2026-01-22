@@ -13,6 +13,7 @@ paths = ["./src/caregiving"]
 wip = "Work in progress tasks"
 check = "Check tasks"
 soep_moments = "SOEP moments tasks"
+soep_is = "SOEP Innovation Sample tasks"
 moments = "Combined/share moments tasks"
 cip = "CIP tasks"
 dip = "DIP tasks"

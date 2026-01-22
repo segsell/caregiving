@@ -10,7 +10,10 @@ import numpy as np
 import pandas as pd
 
 from caregiving.model.shared import (  # NURSING_HOME_CARE,
+    CARE_DEMAND_INTENSIVE,
+    CARE_DEMAND_LIGHT,
     DEAD,
+    FORMAL_CARE,
     FULL_TIME,
     INFORMAL_CARE,
     INTENSIVE_INFORMAL_CARE,
@@ -45,7 +48,7 @@ def simulate_moments_pandas(  # noqa: PLR0915
     end_age_caregiving = model_specs["end_age_caregiving"]
 
     age_range = range(start_age, end_age + 1)
-    age_range_caregivers = range(start_age_caregivers, end_age_caregiving + 1)
+    # age_range_caregivers = range(start_age_caregivers, end_age_caregiving + 1)
     age_range_wealth = range(start_age, model_specs["end_age_wealth"] + 1)
 
     age_bins_caregivers_5year = (
@@ -244,6 +247,11 @@ def simulate_moments_pandas(  # noqa: PLR0915
 
     # ================================================================================
     moments["share_informal_care_high_educ"] = df_caregivers["education"].mean()
+    # ================================================================================
+
+    # Pure formal care moments (by education and care intensity)
+    moments = create_pure_formal_care_moments_pandas(df_full, moments)
+
     # ================================================================================
 
     moments = create_labor_share_moments_by_age_bin_pandas(
@@ -577,6 +585,64 @@ def create_labor_share_moments_pandas(df, moments, age_range, label=None):
 
     # OPTIMIZATION 6: Bulk dictionary update
     moments.update(dict(moment_data))
+
+    return moments
+
+
+def create_pure_formal_care_moments_pandas(df, moments):
+    """Create pure formal care moments by education and care intensity.
+
+    Computes the share of people choosing FORMAL_CARE for each combination of:
+    - Education level (low/high)
+    - Care demand intensity (light/intensive)
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Full simulation DataFrame. Must contain columns: education, care_demand, choice
+    moments : dict
+        Dictionary of moments to update in-place.
+
+    Returns
+    -------
+    dict
+        Updated moments dictionary with pure formal care moments.
+
+    """
+    # Filter by education and care_demand, compute share choosing FORMAL_CARE
+    education_levels = [0, 1]  # 0 = low, 1 = high
+    care_demand_levels = [CARE_DEMAND_LIGHT, CARE_DEMAND_INTENSIVE]
+    educ_labels = ["low", "high"]
+    care_demand_labels = ["light", "intensive"]
+
+    for educ, educ_label in zip(education_levels, educ_labels, strict=True):
+        for care_demand, care_demand_label in zip(
+            care_demand_levels, care_demand_labels, strict=True
+        ):
+            # Filter to this combination
+            subset = df[
+                (df["education"] == educ) & (df["care_demand"] == care_demand)
+            ].copy()
+
+            if len(subset) == 0:
+                # If no observations, set moment to 0
+                moment_name = (
+                    f"pure_formal_care_{educ_label}_education_"
+                    f"{care_demand_label}_care_demand"
+                )
+                moments[moment_name] = 0.0
+                continue
+
+            # Compute share choosing FORMAL_CARE
+            formal_care_choices = np.asarray(FORMAL_CARE).tolist()
+            share_pure_formal = subset["choice"].isin(formal_care_choices).mean()
+
+            # Create moment name
+            moment_name = (
+                f"pure_formal_care_{educ_label}_education_"
+                f"{care_demand_label}_care_demand"
+            )
+            moments[moment_name] = share_pure_formal
 
     return moments
 
@@ -1166,6 +1232,99 @@ def compute_transition_moments_pandas(df, moments, age_range, states, label=None
 
 
 # =====================================================================================
+# JAX numpy helper functions
+# =====================================================================================
+
+
+def create_pure_formal_care_moments_jax(arr_all, idx):
+    """Create pure formal care moments by education and care intensity.
+
+    Computes the share of agents choosing FORMAL_CARE for each combination of:
+    - Education level (low=0/high=1)
+    - Care demand intensity (light=1/intensive=2)
+
+    Parameters
+    ----------
+    arr_all : jnp.ndarray
+        Full JAX array with all simulation data.
+    idx : dict
+        Dictionary mapping column names to indices in arr_all.
+
+    Returns
+    -------
+    tuple
+        Four JAX scalars:
+        - share_pure_formal_low_educ_light
+        - share_pure_formal_low_educ_intensive
+        - share_pure_formal_high_educ_light
+        - share_pure_formal_high_educ_intensive
+
+    """
+    # education: 0 = low, 1 = high
+
+    # Low education, light care demand
+    mask_low_educ_light = (arr_all[:, idx["education"]] == 0) & (
+        arr_all[:, idx["care_demand"]] == CARE_DEMAND_LIGHT
+    )
+    formal_care_mask_low_light = jnp.isin(arr_all[:, idx["choice"]], FORMAL_CARE)
+    n_low_educ_light = jnp.sum(mask_low_educ_light)
+    n_formal_low_educ_light = jnp.sum(mask_low_educ_light & formal_care_mask_low_light)
+    share_pure_formal_low_educ_light = jnp.where(
+        n_low_educ_light > 0, n_formal_low_educ_light / n_low_educ_light, 0.0
+    )
+
+    # Low education, intensive care demand
+    mask_low_educ_intensive = (arr_all[:, idx["education"]] == 0) & (
+        arr_all[:, idx["care_demand"]] == CARE_DEMAND_INTENSIVE
+    )
+    formal_care_mask_low_intensive = jnp.isin(arr_all[:, idx["choice"]], FORMAL_CARE)
+    n_low_educ_intensive = jnp.sum(mask_low_educ_intensive)
+    n_formal_low_educ_intensive = jnp.sum(
+        mask_low_educ_intensive & formal_care_mask_low_intensive
+    )
+    share_pure_formal_low_educ_intensive = jnp.where(
+        n_low_educ_intensive > 0,
+        n_formal_low_educ_intensive / n_low_educ_intensive,
+        0.0,
+    )
+
+    # High education, light care demand
+    mask_high_educ_light = (arr_all[:, idx["education"]] == 1) & (
+        arr_all[:, idx["care_demand"]] == CARE_DEMAND_LIGHT
+    )
+    formal_care_mask_high_light = jnp.isin(arr_all[:, idx["choice"]], FORMAL_CARE)
+    n_high_educ_light = jnp.sum(mask_high_educ_light)
+    n_formal_high_educ_light = jnp.sum(
+        mask_high_educ_light & formal_care_mask_high_light
+    )
+    share_pure_formal_high_educ_light = jnp.where(
+        n_high_educ_light > 0, n_formal_high_educ_light / n_high_educ_light, 0.0
+    )
+
+    # High education, intensive care demand
+    mask_high_educ_intensive = (arr_all[:, idx["education"]] == 1) & (
+        arr_all[:, idx["care_demand"]] == CARE_DEMAND_INTENSIVE
+    )
+    formal_care_mask_high_intensive = jnp.isin(arr_all[:, idx["choice"]], FORMAL_CARE)
+    n_high_educ_intensive = jnp.sum(mask_high_educ_intensive)
+    n_formal_high_educ_intensive = jnp.sum(
+        mask_high_educ_intensive & formal_care_mask_high_intensive
+    )
+    share_pure_formal_high_educ_intensive = jnp.where(
+        n_high_educ_intensive > 0,
+        n_formal_high_educ_intensive / n_high_educ_intensive,
+        0.0,
+    )
+
+    return (
+        share_pure_formal_low_educ_light,
+        share_pure_formal_low_educ_intensive,
+        share_pure_formal_high_educ_light,
+        share_pure_formal_high_educ_intensive,
+    )
+
+
+# =====================================================================================
 # JAX numpy
 # =====================================================================================
 
@@ -1198,6 +1357,7 @@ def create_moments_jax(sim_df, min_age, max_age, model_specs):  # noqa: PLR0915
         "choice",
         "lagged_choice",
         "assets_begin_of_period",
+        "care_demand",
     ]
 
     # Only keep columns that exist in the DataFrame
@@ -1445,6 +1605,16 @@ def create_moments_jax(sim_df, min_age, max_age, model_specs):  # noqa: PLR0915
     share_caregivers_high_educ = jnp.sum(education_mask & care_type_mask) / jnp.sum(
         care_type_mask
     )
+    # ================================================================================
+
+    # Pure formal care moments (by education and care intensity)
+    (
+        share_pure_formal_low_educ_light,
+        share_pure_formal_low_educ_intensive,
+        share_pure_formal_high_educ_light,
+        share_pure_formal_high_educ_intensive,
+    ) = create_pure_formal_care_moments_jax(arr_all, idx)
+
     # ================================================================================
 
     # All informal caregivers - using 3-year age bins for labor shares
@@ -1951,6 +2121,13 @@ def create_moments_jax(sim_df, min_age, max_age, model_specs):  # noqa: PLR0915
         + share_intensive_caregivers_by_age_bin_low_educ
         + share_intensive_caregivers_by_age_bin_high_educ
         + [share_caregivers_high_educ]
+        # pure formal care moments
+        + [
+            share_pure_formal_low_educ_light,
+            share_pure_formal_low_educ_intensive,
+            share_pure_formal_high_educ_light,
+            share_pure_formal_high_educ_intensive,
+        ]
         # caregivers by education
         + share_retired_by_age_bin_caregivers
         + share_unemployed_by_age_bin_caregivers

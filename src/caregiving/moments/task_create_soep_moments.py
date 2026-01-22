@@ -68,6 +68,9 @@ def task_create_soep_moments(  # noqa: PLR0915
         / "descriptives"
         / "daily_care_parents_versus_other_by_age_bin_and_education.csv"
     ),
+    path_to_pure_formal_care_csv=(
+        BLD / "descriptives" / "pure_formal_care_by_age_educ_intensity.csv"
+    ),
     path_to_save_variances: Annotated[Path, Product] = BLD
     / "moments"
     / "soep_variances_new.csv",
@@ -344,6 +347,13 @@ def task_create_soep_moments(  # noqa: PLR0915
         scale=SCALE_CAREGIVER_SHARE,
     )
 
+    # =================================================================================
+    # Add pure formal care moments from SOEP-IS data
+    moments, variances = add_pure_formal_care_moments(
+        path_to_pure_formal_care_csv=path_to_pure_formal_care_csv,
+        moments=moments,
+        variances=variances,
+    )
     # =================================================================================
 
     # moments, variances = compute_shares_by_age_bin(
@@ -2181,6 +2191,74 @@ def adjust_and_trim_wealth_data(
         df = df.loc[wealth_mask, ["age", "sex", "adjusted_wealth", "education"]].copy()
 
     return df
+
+
+def add_pure_formal_care_moments(
+    path_to_pure_formal_care_csv: Path,
+    moments: dict,
+    variances: dict,
+) -> tuple[dict, dict]:
+    """Add pure formal care moments from SOEP-IS data.
+
+    Loads the CSV file with pure formal care statistics and extracts the means
+    and variances for the large age bin 40-70, differentiated by education level
+    and care intensity (2x2 combinations).
+
+    Parameters
+    ----------
+    path_to_pure_formal_care_csv : Path
+        Path to the CSV file with pure formal care statistics.
+        Expected columns: age_bin, education, care_intensity, mean, std, n_observations
+    moments : dict
+        Dictionary of moments to update in-place.
+    variances : dict
+        Dictionary of variances to update in-place.
+
+    Returns
+    -------
+    tuple[dict, dict]
+        Updated moments and variances dictionaries.
+
+    """
+    df = pd.read_csv(path_to_pure_formal_care_csv)
+
+    # Filter to the large age bin 40-70
+    df_40_70 = df[df["age_bin"] == "40-70"].copy()
+
+    if len(df_40_70) == 0:
+        return moments, variances
+
+    # Extract the 2x2 combinations (education × care_intensity)
+    education_levels = ["low", "high"]
+    care_intensity_levels = ["light", "intensive"]
+
+    for educ in education_levels:
+        for intensity in care_intensity_levels:
+            # Filter to this combination
+            subset = df_40_70[
+                (df_40_70["education"] == educ)
+                & (df_40_70["care_intensity"] == intensity)
+            ]
+
+            if len(subset) == 0:
+                continue
+
+            row = subset.iloc[0]
+            mean_value = row["mean"]
+            std_value = row["std"]
+
+            # Create moment name
+            moment_name = f"pure_formal_care_{educ}_education_{intensity}_care_demand"
+
+            # Add to moments
+            moments[moment_name] = mean_value
+
+            # Convert standard deviation to variance and add to variances
+            variance_value = std_value**2
+            variance_name = f"variance_{moment_name}"
+            variances[variance_name] = variance_value
+
+    return moments, variances
 
 
 def _process_parents_weights_share(
