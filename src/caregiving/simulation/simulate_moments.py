@@ -324,7 +324,7 @@ def simulate_moments_pandas(  # noqa: PLR0915
     }
     # Use df_with_caregivers to match empirical data (task_create_soep_moments.py)
     # Create df_with_caregivers equivalent (all observations, not just non-caregivers)
-    df_with_caregivers = df_full.copy()  # Pooled across all education levels
+    # df_with_caregivers = df_full.copy()  # Pooled across all education levels
     df_with_caregivers_low = df_full[df_full["education"] == 0]
     df_with_caregivers_high = df_full[df_full["education"] == 1]
 

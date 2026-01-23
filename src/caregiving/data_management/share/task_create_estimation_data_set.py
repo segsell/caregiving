@@ -1868,7 +1868,50 @@ def create_high_educ(dat: pd.DataFrame) -> pd.DataFrame:
 
 
 def check_share_informal_care_to_mother_father(dat):
-    """Compute the shares of informal care to mother and father, respectively."""
+    """Compute the shares of informal care to mother and father, respectively.
+
+    Creates variables distinguishing co-residential (within household) vs
+    non-residential (outside household) caregiving.
+    """
+    # Co-residential care (within same household)
+    care_to_mother_within = [
+        # personal care in hh to mother
+        (dat["sp018_"] == 1)
+        & (dat["sp019d2"] == 1),
+    ]
+    care_to_father_within = [
+        # personal care in hh to father
+        (dat["sp018_"] == 1)
+        & (dat["sp019d3"] == 1),
+    ]
+
+    # Non-residential care (outside household)
+    care_to_mother_outside = [
+        # care outside hh to mother
+        (dat["sp008_"] == 1)
+        & (
+            (dat["sp009_1"] == MOTHER)
+            | (dat["sp009_2"] == MOTHER)
+            | (dat["sp009_3"] == MOTHER)
+        ),
+    ]
+    care_to_father_outside = [
+        # care outside hh to father
+        (dat["sp008_"] == 1)
+        & (
+            (dat["sp009_1"] == FATHER)
+            | (dat["sp009_2"] == FATHER)
+            | (dat["sp009_3"] == FATHER)
+        ),
+    ]
+
+    # Create separate variables for within/outside household
+    dat["care_to_mother_within"] = np.select(care_to_mother_within, [1], default=0)
+    dat["care_to_father_within"] = np.select(care_to_father_within, [1], default=0)
+    dat["care_to_mother_outside"] = np.select(care_to_mother_outside, [1], default=0)
+    dat["care_to_father_outside"] = np.select(care_to_father_outside, [1], default=0)
+
+    # Combined variables (any care, within or outside)
     care_to_mother = [
         # personal care in hh
         (dat["sp018_"] == 1) & (dat["sp019d2"] == 1),
@@ -1922,7 +1965,61 @@ def check_share_informal_care_to_mother_father(dat):
     dat["care_to_mother_in_law"] = np.select(care_to_mother, [1, 1], default=0)
     dat["care_to_father_in_law"] = np.select(care_to_father, [1, 1], default=0)
 
-    # intensive caregiving
+    # intensive caregiving - co-residential (within household)
+    care_to_mother_intensive_within = [
+        # personal care in hh to mother (always intensive)
+        (dat["sp018_"] == 1)
+        & (dat["sp019d2"] == 1),
+    ]
+    care_to_father_intensive_within = [
+        # personal care in hh to father (always intensive)
+        (dat["sp018_"] == 1)
+        & (dat["sp019d3"] == 1),
+    ]
+
+    # intensive caregiving - non-residential (outside household, daily)
+    care_to_mother_intensive_outside = [
+        # care outside hh to mother (daily)
+        (dat["sp008_"] == 1)
+        & (
+            ((dat["sp011_1"] == GIVEN_HELP_DAILY) & (dat["sp009_1"].isin([MOTHER])))
+            | ((dat["sp011_2"] == GIVEN_HELP_DAILY) & (dat["sp009_2"].isin([MOTHER])))
+            | ((dat["sp011_3"] == GIVEN_HELP_DAILY) & (dat["sp009_3"].isin([MOTHER])))
+        ),
+    ]
+    care_to_father_intensive_outside = [
+        # care outside hh to father (daily)
+        (dat["sp008_"] == 1)
+        & (
+            ((dat["sp011_1"] == GIVEN_HELP_DAILY) & (dat["sp009_1"].isin([FATHER])))
+            | ((dat["sp011_2"] == GIVEN_HELP_DAILY) & (dat["sp009_2"].isin([FATHER])))
+            | ((dat["sp011_3"] == GIVEN_HELP_DAILY) & (dat["sp009_3"].isin([FATHER])))
+        ),
+    ]
+
+    # Create separate variables for intensive care within/outside
+    dat["care_to_mother_intensive_within"] = np.select(
+        care_to_mother_intensive_within,
+        [1],
+        default=0,
+    )
+    dat["care_to_father_intensive_within"] = np.select(
+        care_to_father_intensive_within,
+        [1],
+        default=0,
+    )
+    dat["care_to_mother_intensive_outside"] = np.select(
+        care_to_mother_intensive_outside,
+        [1],
+        default=0,
+    )
+    dat["care_to_father_intensive_outside"] = np.select(
+        care_to_father_intensive_outside,
+        [1],
+        default=0,
+    )
+
+    # Combined intensive care variables (any intensive care, within or outside)
     care_to_mother_intensive = [
         # personal care in hh
         (dat["sp018_"] == 1) & (dat["sp019d2"] == 1),

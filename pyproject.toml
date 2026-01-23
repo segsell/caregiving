@@ -54,6 +54,7 @@ generate_initial_conditions_10k = "Generate initial conditions with 10k agents"
 plot_initial_conditions = "Initial-conditions plotting tasks"
 job_separation = "Job separation estimation and plotting tasks"
 descriptives = "Descriptive statistics / summary table tasks"
+within_outside_intensive_care = "Intensive care within vs outside household statistics tasks"
 formal_care_costs = "Formal care costs estimation tasks"
 # Solving
 solve_no_care_demand = "Solve no care demand counterfactual"
