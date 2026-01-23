@@ -620,6 +620,7 @@ def task_load_and_merge_formal_care_costs_sample(
     soep_c40_ppathl: Path = SRC / "data" / "soep_c40" / "ppathl.dta",
     soep_c40_pl: Path = SRC / "data" / "soep_c40" / "pl.dta",
     soep_c40_pequiv: Path = SRC / "data" / "soep_c40" / "pequiv.dta",
+    soep_c40_bioparen: Path = SRC / "data" / "soep_c40" / "bioparen.dta",
     soep_c40_hl: Path = SRC / "data" / "soep_c40" / "hl.dta",
     path_to_save: Annotated[Path, Product] = BLD
     / "data"
@@ -663,6 +664,20 @@ def task_load_and_merge_formal_care_costs_sample(
         columns=["pid", "syear", "m11126", "m11124"],
         convert_categoricals=False,
     )
+    # Parent information
+    biparen = pd.read_stata(
+        soep_c40_bioparen,
+        columns=[
+            "pid",
+            "mybirth",
+            "fybirth",
+            "mydeath",
+            "fydeath",
+            "locchild1",  #  lives now in same area where grew up
+        ],
+        convert_categoricals=False,
+    )
+
     # get household level data
     hl_data = pd.read_stata(
         soep_c40_hl,
@@ -687,6 +702,7 @@ def task_load_and_merge_formal_care_costs_sample(
     )
     merged_data = pd.merge(merged_data, pequiv_data, on=["pid", "syear"], how="inner")
     merged_data = pd.merge(merged_data, hl_data, on=["hid", "syear"], how="left")
+    merged_data = pd.merge(merged_data, biparen, on="pid", how="left")
 
     merged_data["age"] = merged_data["syear"] - merged_data["gebjahr"]
     merged_data.set_index(["pid", "syear"], inplace=True)

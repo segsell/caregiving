@@ -14,12 +14,57 @@ from caregiving.specs.derive_specs import read_and_derive_specs
 
 # Minimum sample size for regression estimation
 MIN_SAMPLE_SIZE = 50
+INHERITANCE_QUANTILE_THRESHOLD = 0.90
+
+
+def deflate_inheritance_amount_for_estimation(df, cpi_data, specs):
+    """Deflate inheritance amount using consumer price index.
+
+    Similar to _deflate_inheritance_amount but works with DataFrame
+    that may not have MultiIndex (pid, syear).
+
+    Args:
+        df: DataFrame containing inheritance_amount and year_inheritance columns
+        cpi_data: DataFrame with CPI data (should have int_year and cpi columns)
+        specs: Dictionary with specs including reference_year
+
+    Returns:
+        DataFrame with deflated inheritance_amount
+    """
+    # Prepare CPI data
+    cpi_data_copy = cpi_data.rename(columns={"int_year": "year_inheritance"})
+
+    _base_year = specs["reference_year"]
+    base_year_cpi = cpi_data_copy.loc[
+        cpi_data_copy["year_inheritance"] == _base_year, "cpi"
+    ].iloc[0]
+
+    cpi_data_copy["cpi_normalized"] = cpi_data_copy["cpi"] / base_year_cpi
+
+    # Merge CPI data on year_inheritance
+    df = df.merge(
+        cpi_data_copy[["year_inheritance", "cpi_normalized"]],
+        on="year_inheritance",
+        how="left",
+    )
+
+    # Deflate inheritance amount (only where both are not NaN)
+    mask = df["inheritance_amount"].notna() & df["cpi_normalized"].notna()
+    df.loc[mask, "inheritance_amount"] = (
+        df.loc[mask, "inheritance_amount"] / df.loc[mask, "cpi_normalized"]
+    )
+
+    # Drop temporary CPI column
+    df = df.drop(columns=["cpi_normalized"])
+
+    return df
 
 
 @pytask.mark.inheritance
 def task_estimate_inheritance_specifications(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_data: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
+    path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
     path_to_save_summary: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
@@ -28,13 +73,19 @@ def task_estimate_inheritance_specifications(
 ) -> None:
     """Estimate 12 different specifications for inheritance probability.
 
+    CPI deflation is applied to inheritance_amount before estimation.
+
     Tests different combinations of care and parent death timing variables.
     """
     specs = read_and_derive_specs(path_to_specs)
     df = pd.read_csv(path_to_data, index_col=0)
 
+    # Load CPI data and deflate inheritance_amount
+    cpi_data = pd.read_csv(path_to_cpi, index_col=0)
+    df = deflate_inheritance_amount_for_estimation(df, cpi_data, specs)
+
     # Set values above 90th percentile to NaN
-    p90_threshold = df["inheritance_amount"].quantile(0.90)
+    p90_threshold = df["inheritance_amount"].quantile(INHERITANCE_QUANTILE_THRESHOLD)
     df.loc[df["inheritance_amount"] > p90_threshold, "inheritance_amount"] = np.nan
 
     # Prepare data
@@ -166,6 +217,7 @@ def task_estimate_inheritance_specifications(
 def task_estimate_inheritance(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_data: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
+    path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
     path_to_save_logit_params: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
@@ -179,6 +231,8 @@ def task_estimate_inheritance(
 
     Regressions condition on parental death in t or t-1.
 
+    CPI deflation is applied to inheritance_amount before estimation.
+
     Logit regression:
         P(inheritance_this_year=1) ~ age + age^2 + lagged_light_care +
                                      lagged_intensive_care + education
@@ -191,8 +245,12 @@ def task_estimate_inheritance(
     specs = read_and_derive_specs(path_to_specs)
     df = pd.read_csv(path_to_data, index_col=0)
 
+    # Load CPI data and deflate inheritance_amount
+    cpi_data = pd.read_csv(path_to_cpi, index_col=0)
+    df = deflate_inheritance_amount_for_estimation(df, cpi_data, specs)
+
     # Set values above 90th percentile to NaN
-    p90_threshold = df["inheritance_amount"].quantile(0.90)
+    p90_threshold = df["inheritance_amount"].quantile(INHERITANCE_QUANTILE_THRESHOLD)
     df.loc[df["inheritance_amount"] > p90_threshold, "inheritance_amount"] = np.nan
 
     # # Drop observations above 90th percentile
@@ -974,6 +1032,7 @@ def estimate_ols_specification_two_care(  # noqa: PLR0915
 def task_estimate_inheritance_amount_specifications(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_data: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
+    path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
     path_to_save_summary: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
@@ -985,12 +1044,18 @@ def task_estimate_inheritance_amount_specifications(
     Tests different combinations of care and parent death timing variables.
     Same specifications as the logit model, but for amount conditional on
     positive inheritance.
+
+    CPI deflation is applied to inheritance_amount before estimation.
     """
     specs = read_and_derive_specs(path_to_specs)
     df = pd.read_csv(path_to_data, index_col=0)
 
+    # Load CPI data and deflate inheritance_amount
+    cpi_data = pd.read_csv(path_to_cpi, index_col=0)
+    df = deflate_inheritance_amount_for_estimation(df, cpi_data, specs)
+
     # Set values above 90th percentile to NaN
-    p90_threshold = df["inheritance_amount"].quantile(0.90)
+    p90_threshold = df["inheritance_amount"].quantile(INHERITANCE_QUANTILE_THRESHOLD)
     df.loc[df["inheritance_amount"] > p90_threshold, "inheritance_amount"] = np.nan
 
     # Prepare data
@@ -1121,6 +1186,7 @@ def task_estimate_inheritance_amount_specifications(
 def task_estimate_inheritance_prob_two_care_specifications(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_data: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
+    path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
     path_to_save_summary: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
@@ -1130,12 +1196,18 @@ def task_estimate_inheritance_prob_two_care_specifications(
     """Estimate 12 specifications with separate light/intensive care variables.
 
     For inheritance probability (logit).
+
+    CPI deflation is applied to inheritance_amount before estimation.
     """
     specs = read_and_derive_specs(path_to_specs)
     df = pd.read_csv(path_to_data, index_col=0)
 
+    # Load CPI data and deflate inheritance_amount
+    cpi_data = pd.read_csv(path_to_cpi, index_col=0)
+    df = deflate_inheritance_amount_for_estimation(df, cpi_data, specs)
+
     # Set values above 90th percentile to NaN
-    p90_threshold = df["inheritance_amount"].quantile(0.90)
+    p90_threshold = df["inheritance_amount"].quantile(INHERITANCE_QUANTILE_THRESHOLD)
     df.loc[df["inheritance_amount"] > p90_threshold, "inheritance_amount"] = np.nan
 
     # Prepare data
@@ -1280,6 +1352,7 @@ def task_estimate_inheritance_prob_two_care_specifications(
 def task_estimate_inheritance_amount_two_care_specifications(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_data: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
+    path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
     path_to_save_summary: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
@@ -1289,12 +1362,18 @@ def task_estimate_inheritance_amount_two_care_specifications(
     """Estimate 12 specifications with separate light/intensive care variables.
 
     For ln(inheritance_amount) (OLS).
+
+    CPI deflation is applied to inheritance_amount before estimation.
     """
     specs = read_and_derive_specs(path_to_specs)
     df = pd.read_csv(path_to_data, index_col=0)
 
+    # Load CPI data and deflate inheritance_amount
+    cpi_data = pd.read_csv(path_to_cpi, index_col=0)
+    df = deflate_inheritance_amount_for_estimation(df, cpi_data, specs)
+
     # Set values above 90th percentile to NaN
-    p90_threshold = df["inheritance_amount"].quantile(0.90)
+    p90_threshold = df["inheritance_amount"].quantile(INHERITANCE_QUANTILE_THRESHOLD)
     df.loc[df["inheritance_amount"] > p90_threshold, "inheritance_amount"] = np.nan
 
     # Prepare data
