@@ -347,7 +347,7 @@ def prepare_inheritance_data(df):
     df["light_care_last_year"] = (df["lagged_light_care"] > 0).astype(int)
     df["intensive_care_last_year"] = (df["lagged_intensive_care"] > 0).astype(int)
     df["formal_care_costs_dummy_last_year"] = (
-        (df["lagged_formal_care_costs_dummy"] > 0)
+        df["lagged_formal_care_costs_dummy"] > 0
     ).astype(int)
 
     # Recent period (t or t-1)
