@@ -4,11 +4,11 @@ This test reproduces the inheritance plots using the precomputed matrices
 stored in the specs dictionary, similar to the task_plot_inheritance_* modules.
 """
 
+import pickle
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pickle
 
 from caregiving.config import BLD, JET_COLOR_MAP
 
