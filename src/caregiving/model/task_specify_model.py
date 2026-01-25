@@ -38,7 +38,6 @@ from caregiving.model.utility.utility_functions_additive import (
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.model.wealth_and_budget.savings_grid import create_end_of_period_assets
 
-
 # @pytask.mark.baseline_model
 # def task_specify_model(
 #     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
