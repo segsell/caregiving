@@ -363,7 +363,7 @@ def prepare_inheritance_data(df):
 
     # Previous period (last year) - lagged
     df["formal_care_costs_dummy_last_year"] = (
-        (df["lagged_formal_care_costs_dummy"] > 0)
+        df["lagged_formal_care_costs_dummy"] > 0
     ).astype(int)
 
     # Recent period (t or t-1)

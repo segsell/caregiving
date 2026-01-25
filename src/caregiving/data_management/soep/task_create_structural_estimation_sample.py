@@ -25,6 +25,7 @@ from caregiving.data_management.soep.task_create_event_study_sample import (
     create_parent_info,
     create_sibling_info,
 )
+from caregiving.data_management.soep.task_create_wealth_sample import deflate_wealth
 from caregiving.data_management.soep.variables import (  # create_experience_variable,
     create_choice_variable,
     create_education_type,
@@ -35,11 +36,10 @@ from caregiving.data_management.soep.variables import (  # create_experience_var
     create_nursing_home,
     create_partner_state,
     create_policy_state,
+    deflate_formal_care_costs,
     determine_observed_job_offers,
     generate_job_separation_var,
-    deflate_formal_care_costs,
 )
-from caregiving.data_management.soep.task_create_wealth_sample import deflate_wealth
 from caregiving.model.shared import (
     PART_TIME_CHOICES,
     RETIREMENT_CHOICES,

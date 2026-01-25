@@ -12,7 +12,6 @@ from pytask import Product
 from caregiving.config import BLD, JET_COLOR_MAP, SRC
 from caregiving.specs.derive_specs import read_and_derive_specs
 
-
 # Specification definitions matching two-care estimation tasks
 SPECIFICATIONS_TWO_CARE = [
     {
