@@ -37,7 +37,9 @@ from caregiving.data_management.soep.variables import (  # create_experience_var
     create_policy_state,
     determine_observed_job_offers,
     generate_job_separation_var,
+    deflate_formal_care_costs,
 )
+from caregiving.data_management.soep.task_create_wealth_sample import deflate_wealth
 from caregiving.model.shared import (
     PART_TIME_CHOICES,
     RETIREMENT_CHOICES,
@@ -76,10 +78,22 @@ def task_create_main_estimation_sample(
     df = create_choice_variable(df)
     df = create_caregiving(df, filter_missing=False)
 
-    df = add_wealth_data(df, wealth, drop_missing=False)
+    df = add_wealth_data(df, wealth, cpi=cpi, specs=specs, drop_missing=False)
 
     # filter data. Leave additional years in for lagging and leading.
     df = filter_data(df, specs)
+
+    # Create dummy variable: > 0 -> 1, == -2 -> 0, else -> NaN
+    df["formal_care_costs_dummy"] = np.select(
+        [df["hle0016"] > 0, df["hle0016"] == -2],
+        [1, 0],
+        default=np.nan,
+    )
+    df["formal_care_costs_raw"] = df["hle0016"].copy()
+    # df["any_formal_care_costs"] = (df["formal_care_costs_raw"] > 0).astype(int)
+    # df = deflate_formal_care_costs(
+    #     df, cpi_data=cpi, specs=specs, var_name="formal_care_costs_raw"
+    # )
 
     # df = generate_job_separation_var(df)
     # df = create_lagged_and_lead_variables(
@@ -179,7 +193,10 @@ def task_create_main_estimation_sample(
         "mother_died_this_year": "float32",
         "father_died_this_year": "float32",
         "inheritance_this_year": "float32",
+        "year_inheritance": "float32",
         "inheritance_amount": "float32",
+        "formal_care_costs_dummy": "float32",
+        "formal_care_costs_raw": "float32",
     }
     # df = df.reset_index(level="syear")
     # Reset both levels of the index to make pid and syear regular columns
@@ -258,7 +275,7 @@ def task_create_caregivers_sample(
     # df.set_index(["pid", "syear"], inplace=True)
 
     wealth = pd.read_csv(path_to_wealth, index_col=[0])
-    df = add_wealth_data(df, wealth, drop_missing=False)
+    df = add_wealth_data(df, wealth, cpi=cpi, specs=specs, drop_missing=False)
 
     df["period"] = df["age"] - specs["start_age"]
 
@@ -366,13 +383,15 @@ def task_create_caregivers_sample(
     df.to_csv(path_to_save, index=True)
 
 
-def add_wealth_data(data, wealth, drop_missing=False):
+def add_wealth_data(data, wealth, cpi, specs, drop_missing=False):
     """Add wealth data to the estimation sample."""
 
     data = data.reset_index()
     data = data.merge(wealth, on=["hid", "syear"], how="left")
 
-    data.set_index(["pid", "syear"], inplace=True)
+    data = deflate_wealth(data, cpi_data=cpi, specs=specs, var_name="wealth")
+
+    data = data.set_index(["pid", "syear"])
 
     # Create lagged wealth variable
     # pid is in the index (level 0)

@@ -702,6 +702,45 @@ def create_hh_has_moved(data):
     return data
 
 
+def deflate_formal_care_costs(df, cpi_data, specs, var_name="formal_care_costs_raw"):
+    """Deflate formal care costs using consumer price index.
+
+    Args:
+        df: DataFrame with MultiIndex (pid, syear) containing formal_care_costs_raw
+            column
+        path_to_cpi: Path to CSV file with CPI data (should have int_year and cpi
+            columns)
+        specs: Dictionary with specs including reference_year
+
+    Returns:
+        DataFrame with deflated formal_care_costs column added
+    """
+    # Reset index temporarily to merge on syear
+    df_reset = df.reset_index()
+
+    # Copy cpi_data to avoid modifying the original
+    cpi_data = cpi_data.copy()
+    cpi_data = cpi_data.rename(columns={"int_year": "syear"})
+
+    _base_year = specs["reference_year"]
+    base_year_cpi = cpi_data.loc[cpi_data["syear"] == _base_year, "cpi"].iloc[0]
+
+    cpi_data["cpi_normalized"] = cpi_data["cpi"] / base_year_cpi
+
+    # Merge CPI data on syear
+    df_reset = df_reset.merge(
+        cpi_data[["syear", "cpi_normalized"]], on="syear", how="left"
+    )
+    # Deflate formal_care_costs
+    df_reset[var_name] = df_reset[var_name] / df_reset["cpi_normalized"]
+
+    # Drop temporary CPI column and restore index
+    df_reset = df_reset.drop(columns=["cpi_normalized"])
+    df = df_reset.set_index(["pid", "syear"])
+
+    return df
+
+
 def _deflate_inheritance_amount(df, cpi_data, specs):
     """Deflate inheritance amount using consumer price index.
 

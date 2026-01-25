@@ -132,6 +132,7 @@ def task_load_and_merge_estimation_sample(
             "hlf0155_h",  # Unterkunftsart (Wohn)heim
             "hlf0291",  # Person requiring help present in hh
             "hlf0523_v1",  # Change in residential situation
+            "hle0016",  # formal care costs for person outside hh
         ],
         convert_categoricals=False,
     )

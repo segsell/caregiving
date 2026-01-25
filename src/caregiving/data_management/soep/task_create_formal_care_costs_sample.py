@@ -24,6 +24,7 @@ from caregiving.data_management.soep.task_create_event_study_sample import (
 from caregiving.data_management.soep.variables import (
     clean_health_create_states,
     create_education_type,
+    deflate_formal_care_costs,
     create_health_var_good_bad,
     create_health_var_good_medium_bad,
     create_nursing_home,
@@ -49,6 +50,7 @@ def task_create_formal_care_costs_sample(
 
     specs = read_and_derive_specs(path_to_specs)
     df = pd.read_csv(path_to_raw_data, index_col=["pid", "syear"])
+    cpi_data = pd.read_csv(path_to_cpi, index_col=0)
 
     # Pre-Filter age and sex
     df = filter_below_age(df, specs["start_age"] - specs["health_smoothing_bandwidth"])
@@ -64,30 +66,14 @@ def task_create_formal_care_costs_sample(
     # df = span_dataframe(df, 2001, 2023)
     # df = clean_health_create_states(df)
 
-    # Drop rows where hle0016 < 0 and create new variable formal_care_costs
+    # Drop rows where hle0016 < 0 and create new variable formal_care_costs_raw
     df = df[df["hle0016"] >= 0].copy()
     df["formal_care_costs_raw"] = df["hle0016"]
 
-    # CPI adjustment: reset index to get pid and syear as columns
-    df = df.reset_index()
-
-    # Load CPI data and deflate formal_care_costs
-    cpi_data = pd.read_csv(path_to_cpi, index_col=0)
-    cpi_data = cpi_data.rename(columns={"int_year": "syear"})
-
-    _base_year = specs["reference_year"]
-    base_year_cpi = cpi_data.loc[cpi_data["syear"] == _base_year, "cpi"].iloc[0]
-
-    cpi_data["cpi_normalized"] = cpi_data["cpi"] / base_year_cpi
-
-    # Merge CPI data on syear
-    df = df.merge(cpi_data[["syear", "cpi_normalized"]], on="syear", how="left")
-
-    # Deflate formal_care_costs
-    df["formal_care_costs"] = df["formal_care_costs_raw"] / df["cpi_normalized"]
-
-    # Drop temporary CPI column and restore index
-    df = df.drop(columns=["cpi_normalized"])
+    # CPI adjustment: deflate formal_care_costs
+    df = deflate_formal_care_costs(
+        df, cpi_data=cpi_data, specs=specs, var_name="formal_care_costs_raw"
+    )
 
     df = df[
         (df["formal_care_costs"] >= MIN_FORMAL_CARE_COSTS)

@@ -76,17 +76,27 @@ def interpolate_and_extrapolate_wealth(wealth_data, options):
     return wealth_data_full.reset_index()
 
 
-def deflate_wealth(df, cpi_data, specs):
+def deflate_wealth(df, cpi_data, specs, var_name="wealth"):
     """Deflate wealth using consumer price index."""
+    # Copy cpi_data to avoid modifying the original
+    cpi_data = cpi_data.copy()
     cpi_data = cpi_data.rename(columns={"int_year": "syear"})
+
+    df = df.copy()
+    df[f"{var_name}_raw"] = df[var_name].copy()
 
     _base_year = specs["reference_year"]
     base_year_cpi = cpi_data.loc[cpi_data["syear"] == _base_year, "cpi"].iloc[0]
 
     cpi_data["cpi_normalized"] = cpi_data["cpi"] / base_year_cpi
 
-    data_merged = df.merge(cpi_data, on="syear", how="left")
-    data_merged["wealth"] = data_merged["wealth"] / data_merged["cpi_normalized"]
+    # Only merge the columns we need
+    data_merged = df.merge(
+        cpi_data[["syear", "cpi_normalized"]], on="syear", how="left"
+    )
+    data_merged[var_name] = data_merged[var_name] / data_merged["cpi_normalized"]
+
+    data_merged = data_merged.drop(columns=["cpi_normalized"])
 
     return data_merged
 

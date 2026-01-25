@@ -12,12 +12,14 @@ from pytask import Product
 from caregiving.config import BLD, JET_COLOR_MAP, SRC
 from caregiving.specs.derive_specs import read_and_derive_specs
 
+
 # Specification definitions matching two-care estimation tasks
 SPECIFICATIONS_TWO_CARE = [
     {
         "name": "spec1_care_parent_this_year",
         "light_var": "light_care",
         "intensive_var": "intensive_care",
+        "formal_care_var": "formal_care_costs_dummy",
         "parent_var": "parent_died_this_year",
         "filter": None,
         "title": "Light + Intensive Care This Year + Parent Died This Year",
@@ -26,6 +28,7 @@ SPECIFICATIONS_TWO_CARE = [
         "name": "spec2_care_recent_parent_recent",
         "light_var": "light_care_recent",
         "intensive_var": "intensive_care_recent",
+        "formal_care_var": "formal_care_costs_dummy_recent",
         "parent_var": "parent_died_recent",
         "filter": None,
         "title": "Light + Intensive Care Recent + Parent Died Recent",
@@ -34,6 +37,7 @@ SPECIFICATIONS_TWO_CARE = [
         "name": "spec3_care_last_year_parent_last_year",
         "light_var": "light_care_last_year",
         "intensive_var": "intensive_care_last_year",
+        "formal_care_var": "formal_care_costs_dummy_last_year",
         "parent_var": "parent_died_last_year",
         "filter": None,
         "title": "Light + Intensive Care Last Year + Parent Died Last Year",
@@ -42,6 +46,7 @@ SPECIFICATIONS_TWO_CARE = [
         "name": "spec4_care_last_year_filter_parent_this_year",
         "light_var": "light_care_last_year",
         "intensive_var": "intensive_care_last_year",
+        "formal_care_var": "formal_care_costs_dummy_last_year",
         "parent_var": None,
         "filter": "parent_died_this_year == 1",
         "title": "Light + Intensive Care Last Year (Filter: Parent Died This Year)",
@@ -50,6 +55,7 @@ SPECIFICATIONS_TWO_CARE = [
         "name": "spec7_care_this_year_filter_parent_this_year",
         "light_var": "light_care",
         "intensive_var": "intensive_care",
+        "formal_care_var": "formal_care_costs_dummy",
         "parent_var": None,
         "filter": "parent_died_this_year == 1",
         "title": "Light + Intensive Care This Year (Filter: Parent Died This Year)",
@@ -58,6 +64,7 @@ SPECIFICATIONS_TWO_CARE = [
         "name": "spec10_care_recent_filter_parent_this_year",
         "light_var": "light_care_recent",
         "intensive_var": "intensive_care_recent",
+        "formal_care_var": "formal_care_costs_dummy_recent",
         "parent_var": None,
         "filter": "parent_died_this_year == 1",
         "title": "Light + Intensive Care Recent (Filter: Parent Died This Year)",
@@ -66,6 +73,7 @@ SPECIFICATIONS_TWO_CARE = [
         "name": "spec5_care_last_year_filter_parent_last_year",
         "light_var": "light_care_last_year",
         "intensive_var": "intensive_care_last_year",
+        "formal_care_var": "formal_care_costs_dummy_last_year",
         "parent_var": None,
         "filter": "parent_died_last_year == 1",
         "title": "Light + Intensive Care Last Year (Filter: Parent Died Last Year)",
@@ -74,6 +82,7 @@ SPECIFICATIONS_TWO_CARE = [
         "name": "spec8_care_this_year_filter_parent_last_year",
         "light_var": "light_care",
         "intensive_var": "intensive_care",
+        "formal_care_var": "formal_care_costs_dummy",
         "parent_var": None,
         "filter": "parent_died_last_year == 1",
         "title": "Light + Intensive Care This Year (Filter: Parent Died Last Year)",
@@ -82,6 +91,7 @@ SPECIFICATIONS_TWO_CARE = [
         "name": "spec11_care_recent_filter_parent_last_year",
         "light_var": "light_care_recent",
         "intensive_var": "intensive_care_recent",
+        "formal_care_var": "formal_care_costs_dummy_recent",
         "parent_var": None,
         "filter": "parent_died_last_year == 1",
         "title": "Light + Intensive Care Recent (Filter: Parent Died Last Year)",
@@ -90,6 +100,7 @@ SPECIFICATIONS_TWO_CARE = [
         "name": "spec6_care_last_year_filter_parent_recent",
         "light_var": "light_care_last_year",
         "intensive_var": "intensive_care_last_year",
+        "formal_care_var": "formal_care_costs_dummy_last_year",
         "parent_var": None,
         "filter": "parent_died_recent == 1",
         "title": "Light + Intensive Care Last Year (Filter: Parent Died Recent)",
@@ -98,6 +109,7 @@ SPECIFICATIONS_TWO_CARE = [
         "name": "spec9_care_this_year_filter_parent_recent",
         "light_var": "light_care",
         "intensive_var": "intensive_care",
+        "formal_care_var": "formal_care_costs_dummy",
         "parent_var": None,
         "filter": "parent_died_recent == 1",
         "title": "Light + Intensive Care This Year (Filter: Parent Died Recent)",
@@ -106,6 +118,7 @@ SPECIFICATIONS_TWO_CARE = [
         "name": "spec12_care_recent_filter_parent_recent",
         "light_var": "light_care_recent",
         "intensive_var": "intensive_care_recent",
+        "formal_care_var": "formal_care_costs_dummy_recent",
         "parent_var": None,
         "filter": "parent_died_recent == 1",
         "title": "Light + Intensive Care Recent (Filter: Parent Died Recent)",
@@ -169,6 +182,7 @@ for spec in SPECIFICATIONS_TWO_CARE:
                         + params["age_sq"] * age_sq
                         + params[spec_info["light_var"]] * 0
                         + params[spec_info["intensive_var"]] * 1
+                        + params[spec_info["formal_care_var"]] * 0
                         + params["education"] * edu_var
                     )
                     if spec_info["parent_var"] is not None:
@@ -192,6 +206,7 @@ for spec in SPECIFICATIONS_TWO_CARE:
                         + params["age_sq"] * age_sq
                         + params[spec_info["light_var"]] * 1
                         + params[spec_info["intensive_var"]] * 0
+                        + params[spec_info["formal_care_var"]] * 0
                         + params["education"] * edu_var
                     )
                     if spec_info["parent_var"] is not None:
@@ -215,6 +230,7 @@ for spec in SPECIFICATIONS_TWO_CARE:
                         + params["age_sq"] * age_sq
                         + params[spec_info["light_var"]] * 0
                         + params[spec_info["intensive_var"]] * 0
+                        + params[spec_info["formal_care_var"]] * 0
                         + params["education"] * edu_var
                     )
                     if spec_info["parent_var"] is not None:
@@ -229,6 +245,30 @@ for spec in SPECIFICATIONS_TWO_CARE:
                         color=JET_COLOR_MAP[edu_var],
                         linestyle="--",
                         label=f"{edu_label}, no care",
+                    )
+
+                    # Scenario 4: Formal care (dash-dot)
+                    linear_pred_formal = (
+                        params["const"]
+                        + params["age"] * ages
+                        + params["age_sq"] * age_sq
+                        + params[spec_info["light_var"]] * 0
+                        + params[spec_info["intensive_var"]] * 0
+                        + params[spec_info["formal_care_var"]] * 1
+                        + params["education"] * edu_var
+                    )
+                    if spec_info["parent_var"] is not None:
+                        linear_pred_formal += params[spec_info["parent_var"]] * 1
+
+                    prob_formal = 1 / (1 + np.exp(-linear_pred_formal))
+
+                    ax.plot(
+                        ages,
+                        prob_formal,
+                        linewidth=2.5,
+                        color=JET_COLOR_MAP[edu_var],
+                        linestyle=(0, (3, 1, 1, 1)),
+                        label=f"{edu_label}, formal care",
                     )
 
                 except (KeyError, TypeError):
@@ -279,7 +319,12 @@ for spec in SPECIFICATIONS_TWO_CARE:
         / "inheritance_amount_specs_two_care"
         / f"{spec['name']}.png",
     ):
-        """Plot inheritance amount for two-care specification."""
+        """Plot inheritance amount for two-care specification.
+
+        With formal care costs dummy included.
+
+        """
+
         specs_dict = read_and_derive_specs(path_to_specs)
 
         # Load parameters
@@ -311,6 +356,7 @@ for spec in SPECIFICATIONS_TWO_CARE:
                         + params["age_sq"] * age_sq
                         + params[spec_info["light_var"]] * 0
                         + params[spec_info["intensive_var"]] * 1
+                        + params[spec_info["formal_care_var"]] * 0
                         + params["education"] * edu_var
                     )
                     if spec_info["parent_var"] is not None:
@@ -335,6 +381,7 @@ for spec in SPECIFICATIONS_TWO_CARE:
                         + params["age_sq"] * age_sq
                         + params[spec_info["light_var"]] * 1
                         + params[spec_info["intensive_var"]] * 0
+                        + params[spec_info["formal_care_var"]] * 0
                         + params["education"] * edu_var
                     )
                     if spec_info["parent_var"] is not None:
@@ -358,6 +405,7 @@ for spec in SPECIFICATIONS_TWO_CARE:
                         + params["age_sq"] * age_sq
                         + params[spec_info["light_var"]] * 0
                         + params[spec_info["intensive_var"]] * 0
+                        + params[spec_info["formal_care_var"]] * 0
                         + params["education"] * edu_var
                     )
                     if spec_info["parent_var"] is not None:
@@ -372,6 +420,30 @@ for spec in SPECIFICATIONS_TWO_CARE:
                         color=JET_COLOR_MAP[edu_var],
                         linestyle="--",
                         label=f"{edu_label}, no care",
+                    )
+
+                    # Scenario 4: Formal care (dash-dot)
+                    ln_amount_formal = (
+                        params["const"]
+                        + params["age"] * ages
+                        + params["age_sq"] * age_sq
+                        + params[spec_info["light_var"]] * 0
+                        + params[spec_info["intensive_var"]] * 0
+                        + params[spec_info["formal_care_var"]] * 1
+                        + params["education"] * edu_var
+                    )
+                    if spec_info["parent_var"] is not None:
+                        ln_amount_formal += params[spec_info["parent_var"]] * 1
+
+                    amount_formal = np.exp(ln_amount_formal)
+
+                    ax.plot(
+                        ages,
+                        amount_formal,
+                        linewidth=2.5,
+                        color=JET_COLOR_MAP[edu_var],
+                        linestyle=(0, (3, 1, 1, 1)),
+                        label=f"{edu_label}, formal care",
                     )
 
                 except (KeyError, TypeError):
