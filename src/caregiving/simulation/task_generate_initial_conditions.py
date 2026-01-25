@@ -133,7 +133,13 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     ].copy()
 
     observed_wealth = create_df_wealth(
-        df_full=observed_data, specs=model_specs, wealth_var="lagged_wealth"
+        df_full=observed_data,
+        specs=model_specs,
+        params=params,
+        model_class=model_class,
+        adjust_wealth=False,
+        trim_quantile=False,
+        wealth_var="lagged_wealth",
     )
     _start_age_wealth = observed_wealth[
         observed_wealth["age"] == model_specs["start_age"]

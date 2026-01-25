@@ -69,7 +69,17 @@ def task_create_soep_moments_no_care_demand(  # noqa: PLR0915
     _df_bad_health = df[df["health"] == BAD_HEALTH].copy()
 
     df_wealth = df_full[df_full["sex"] == SEX].copy()
-    df_wealth = adjust_and_trim_wealth_data(df=df_wealth, specs=specs)
+    # adjust_and_trim_wealth_data requires params, states_dict, and model_class
+    # but we don't adjust or trim, so pass None/empty values
+    df_wealth = adjust_and_trim_wealth_data(
+        df=df_wealth,
+        specs=specs,
+        params={},
+        states_dict={},
+        model_class=None,
+        adjust_wealth=False,
+        trim_quantile=False,
+    )
 
     df_wealth_low = df_wealth[df_wealth["education"] == 0].copy()
     df_wealth_high = df_wealth[df_wealth["education"] == 1].copy()

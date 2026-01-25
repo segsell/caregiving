@@ -219,6 +219,7 @@ def task_create_caregivers_sample(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_raw: Path = BLD / "data" / "soep_estimation_data_raw.csv",
     path_to_wealth: Path = BLD / "data" / "soep_wealth_data.csv",
+    path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
     path_to_save: Annotated[Path, Product] = BLD
     / "data"
     / "soep_structural_caregivers_sample.csv",
@@ -227,6 +228,9 @@ def task_create_caregivers_sample(
     specs = read_and_derive_specs(path_to_specs)
     specs["start_year"] = 2001
     specs["end_year"] = 2019
+
+    # Load CPI data
+    cpi = pd.read_csv(path_to_cpi, index_col=0)
 
     # merged_data = pd.read_csv(path_to_raw, index_col=[0, 1])
     df = pd.read_csv(path_to_raw, index_col=[0, 1])
