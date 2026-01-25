@@ -18,6 +18,62 @@ INHERITANCE_QUANTILE_THRESHOLD_LOWER = 0.0
 INHERITANCE_QUANTILE_THRESHOLD_UPPER = 0.90
 
 
+def save_params_with_standard_errors(params_df, se_df, rsquared_df, output_path):
+    """Save parameters DataFrame with standard errors and R-squared as additional rows.
+
+    Standard errors are added as new rows with suffix "_se" in the index.
+    R-squared/pseudo R-squared are added as new rows with suffix "_rsq" in the index.
+    The "N" column will have empty values for standard error and R-squared rows.
+
+    Args:
+        params_df: DataFrame with parameters (index: sex labels, columns: param names + N)
+        se_df: DataFrame with standard errors (same structure as params_df, but without N)
+        rsquared_df: Series or DataFrame with R-squared/pseudo R-squared values (index: sex labels)
+        output_path: Path to save CSV file
+    """
+    # Create combined DataFrame
+    combined_df = params_df.copy()
+
+    # Add standard error rows for each sex
+    for sex_label in params_df.index:
+        se_row_name = f"{sex_label}_se"
+        se_row = pd.Series(index=params_df.columns, dtype=float)
+
+        # Copy standard errors from se_df (excluding N)
+        # Only if the row exists in se_df (estimation may have failed)
+        if sex_label in se_df.index:
+            for col in params_df.columns:
+                if col != "N" and col in se_df.columns:
+                    se_row[col] = se_df.loc[sex_label, col]
+        # N column remains NaN/empty for all SE rows
+
+        combined_df.loc[se_row_name] = se_row
+
+        # Add R-squared row
+        rsq_row_name = f"{sex_label}_rsq"
+        rsq_row = pd.Series(index=params_df.columns, dtype=float)
+
+        # Add R-squared value in the first parameter column (or const if available)
+        if sex_label in rsquared_df.index:
+            rsq_value = rsquared_df.loc[sex_label]
+            # Put R-squared in the first non-N column
+            first_col = [col for col in params_df.columns if col != "N"][0]
+            rsq_row[first_col] = rsq_value
+        # All other columns (including N) remain NaN/empty
+
+        combined_df.loc[rsq_row_name] = rsq_row
+
+    # Reorder to have params, SEs, and R-squared together
+    new_index = []
+    for sex_label in params_df.index:
+        new_index.append(sex_label)
+        new_index.append(f"{sex_label}_se")
+        new_index.append(f"{sex_label}_rsq")
+
+    combined_df = combined_df.reindex(new_index)
+    combined_df.to_csv(output_path)
+
+
 def deflate_inheritance_amount_for_estimation(df, cpi_data, specs, year_var="syear"):
     """Deflate inheritance amount using consumer price index.
 
@@ -199,7 +255,7 @@ def task_estimate_inheritance_specifications(
     # Run all specifications
     results = {}
     for spec in specifications:
-        params = estimate_logit_specification(
+        params, se_df, rsquared = estimate_logit_specification(
             df=df,
             specs=specs,
             care_var=spec["care_var"],
@@ -209,9 +265,9 @@ def task_estimate_inheritance_specifications(
             spec_name=spec["name"],
         )
 
-        # Save results
+        # Save results with standard errors and R-squared
         output_path = path_to_save_dir / f"{spec['name']}_params.csv"
-        params.to_csv(output_path)
+        save_params_with_standard_errors(params, se_df, rsquared, output_path)
         results[spec["name"]] = params
 
     # Save summary
@@ -290,14 +346,22 @@ def task_estimate_inheritance(
     df = deflate_inheritance_amount_for_estimation(df, cpi_data, specs)
 
     # Estimate logit for probability of positive inheritance
-    logit_params = estimate_inheritance_logit_by_sex(df, specs)
+    logit_params, logit_se, logit_prsquared = estimate_inheritance_logit_by_sex(
+        df, specs
+    )
 
     # Estimate OLS for ln(inheritance_amount) conditional on positive inheritance
-    amount_params = estimate_inheritance_amount_by_sex(df, specs)
+    amount_params, amount_se, amount_rsquared = estimate_inheritance_amount_by_sex(
+        df, specs
+    )
 
-    # Save results
-    logit_params.to_csv(path_to_save_logit_params)
-    amount_params.to_csv(path_to_save_amount_params)
+    # Save results with standard errors and R-squared
+    save_params_with_standard_errors(
+        logit_params, logit_se, logit_prsquared, path_to_save_logit_params
+    )
+    save_params_with_standard_errors(
+        amount_params, amount_se, amount_rsquared, path_to_save_amount_params
+    )
 
     # Print summary
     print("\n" + "=" * 70)
@@ -347,7 +411,7 @@ def prepare_inheritance_data(df):
     df["light_care_last_year"] = (df["lagged_light_care"] > 0).astype(int)
     df["intensive_care_last_year"] = (df["lagged_intensive_care"] > 0).astype(int)
     df["formal_care_costs_dummy_last_year"] = (
-        (df["lagged_formal_care_costs_dummy"] > 0)
+        df["lagged_formal_care_costs_dummy"] > 0
     ).astype(int)
 
     # Recent period (t or t-1)
@@ -454,6 +518,11 @@ def estimate_inheritance_logit_by_sex(df, specs):
         "N",
     ]
     logit_params = pd.DataFrame(index=index, columns=columns)
+    # Standard errors DataFrame (without N column)
+    se_columns = [col for col in columns if col != "N"]
+    logit_se = pd.DataFrame(index=index, columns=se_columns)
+    # Pseudo R-squared Series
+    logit_prsquared = pd.Series(index=index, dtype=float)
 
     # Use all observations (no filtering)
     df_filtered = df.copy()
@@ -513,6 +582,14 @@ def estimate_inheritance_logit_by_sex(df, specs):
             # Save sample size
             logit_params.loc[sex_label, "N"] = len(df_sex)
 
+            # Save standard errors
+            logit_se.loc[sex_label, "const"] = results.bse["const"]
+            for var in exog_vars:
+                logit_se.loc[sex_label, var] = results.bse[var]
+
+            # Save pseudo R-squared
+            logit_prsquared.loc[sex_label] = results.prsquared
+
             # Print summary
             print(f"  Model converged: {results.mle_retvals['converged']}")
             print(f"  Pseudo R-squared: {results.prsquared:.4f}")
@@ -523,7 +600,7 @@ def estimate_inheritance_logit_by_sex(df, specs):
         except Exception as e:
             print(f"  ERROR: Model estimation failed: {e}")
 
-    return logit_params
+    return logit_params, logit_se, logit_prsquared
 
 
 def estimate_inheritance_amount_by_sex(df, specs):
@@ -543,6 +620,11 @@ def estimate_inheritance_amount_by_sex(df, specs):
         "N",
     ]
     amount_params = pd.DataFrame(index=index, columns=columns)
+    # Standard errors DataFrame (without N column)
+    se_columns = [col for col in columns if col != "N"]
+    amount_se = pd.DataFrame(index=index, columns=se_columns)
+    # R-squared Series
+    amount_rsquared = pd.Series(index=index, dtype=float)
 
     # Filter to observations where parent died in t or t-1 AND positive inheritance
     df_filtered = df[
@@ -612,6 +694,14 @@ def estimate_inheritance_amount_by_sex(df, specs):
             # Save sample size
             amount_params.loc[sex_label, "N"] = len(df_sex)
 
+            # Save standard errors
+            amount_se.loc[sex_label, "const"] = results.bse["const"]
+            for var in exog_vars:
+                amount_se.loc[sex_label, var] = results.bse[var]
+
+            # Save R-squared
+            amount_rsquared.loc[sex_label] = results.rsquared
+
             # Print summary
             print(f"  R-squared: {results.rsquared:.4f}")
             print("  Parameters:")
@@ -621,7 +711,7 @@ def estimate_inheritance_amount_by_sex(df, specs):
         except Exception as e:
             print(f"  ERROR: Model estimation failed: {e}")
 
-    return amount_params
+    return amount_params, amount_se, amount_rsquared
 
 
 def estimate_logit_specification(
@@ -687,6 +777,11 @@ def estimate_logit_specification(
         ]
 
     params = pd.DataFrame(index=index, columns=columns)
+    # Standard errors DataFrame (without N column)
+    se_columns = [col for col in columns if col != "N"]
+    se_df = pd.DataFrame(index=index, columns=se_columns)
+    # Pseudo R-squared Series
+    prsquared_series = pd.Series(index=index, dtype=float)
 
     # Apply filter if specified
     if filter_condition is not None:
@@ -743,6 +838,14 @@ def estimate_logit_specification(
             # Save sample size
             params.loc[sex_label, "N"] = len(df_sex)
 
+            # Save standard errors
+            se_df.loc[sex_label, "const"] = results.bse["const"]
+            for var in exog_vars_base:
+                se_df.loc[sex_label, var] = results.bse[var]
+
+            # Save pseudo R-squared
+            prsquared_series.loc[sex_label] = results.prsquared
+
             # Print summary
             print(f"  Model converged: {results.mle_retvals['converged']}")
             print(f"  Pseudo R-squared: {results.prsquared:.4f}")
@@ -754,7 +857,7 @@ def estimate_logit_specification(
         except Exception as e:
             print(f"  ERROR: Model estimation failed: {e}")
 
-    return params
+    return params, se_df, prsquared_series
 
 
 def estimate_ols_specification(
@@ -820,6 +923,11 @@ def estimate_ols_specification(
         ]
 
     params = pd.DataFrame(index=index, columns=columns)
+    # Standard errors DataFrame (without N column)
+    se_columns = [col for col in columns if col != "N"]
+    se_df = pd.DataFrame(index=index, columns=se_columns)
+    # R-squared Series
+    rsquared_series = pd.Series(index=index, dtype=float)
 
     # Apply filter if specified
     if filter_condition is not None:
@@ -882,6 +990,14 @@ def estimate_ols_specification(
             # Save sample size
             params.loc[sex_label, "N"] = len(df_sex)
 
+            # Save standard errors
+            se_df.loc[sex_label, "const"] = results.bse["const"]
+            for var in exog_vars_base:
+                se_df.loc[sex_label, var] = results.bse[var]
+
+            # Save R-squared
+            rsquared_series.loc[sex_label] = results.rsquared
+
             # Print summary
             print(f"  R-squared: {results.rsquared:.4f}")
             print("  Key parameters:")
@@ -892,7 +1008,7 @@ def estimate_ols_specification(
         except Exception as e:
             print(f"  ERROR: Model estimation failed: {e}")
 
-    return params
+    return params, se_df, rsquared_series
 
 
 def estimate_logit_specification_no_care(
@@ -949,6 +1065,11 @@ def estimate_logit_specification_no_care(
         ]
 
     params = pd.DataFrame(index=index, columns=columns)
+    # Standard errors DataFrame (without N column)
+    se_columns = [col for col in columns if col != "N"]
+    se_df = pd.DataFrame(index=index, columns=se_columns)
+    # Pseudo R-squared Series
+    prsquared_series = pd.Series(index=index, dtype=float)
 
     # Apply filter if specified
     if filter_condition is not None:
@@ -1002,6 +1123,14 @@ def estimate_logit_specification_no_care(
             # Save sample size
             params.loc[sex_label, "N"] = len(df_sex)
 
+            # Save standard errors
+            se_df.loc[sex_label, "const"] = results.bse["const"]
+            for var in exog_vars_base:
+                se_df.loc[sex_label, var] = results.bse[var]
+
+            # Save pseudo R-squared
+            prsquared_series.loc[sex_label] = results.prsquared
+
             # Print summary
             print(f"  Model converged: {results.mle_retvals['converged']}")
             print(f"  Pseudo R-squared: {results.prsquared:.4f}")
@@ -1012,7 +1141,7 @@ def estimate_logit_specification_no_care(
         except Exception as e:
             print(f"  ERROR: Model estimation failed: {e}")
 
-    return params
+    return params, se_df, prsquared_series
 
 
 def estimate_logit_specification_two_care(  # noqa: PLR0915
@@ -1084,6 +1213,11 @@ def estimate_logit_specification_two_care(  # noqa: PLR0915
         ]
 
     params = pd.DataFrame(index=index, columns=columns)
+    # Standard errors DataFrame (without N column)
+    se_columns = [col for col in columns if col != "N"]
+    se_df = pd.DataFrame(index=index, columns=se_columns)
+    # Pseudo R-squared Series
+    prsquared_series = pd.Series(index=index, dtype=float)
 
     # Apply filter
     if filter_condition is not None:
@@ -1142,6 +1276,14 @@ def estimate_logit_specification_two_care(  # noqa: PLR0915
             # Save sample size
             params.loc[sex_label, "N"] = len(df_sex)
 
+            # Save standard errors
+            se_df.loc[sex_label, "const"] = results.bse["const"]
+            for var in exog_vars_base:
+                se_df.loc[sex_label, var] = results.bse[var]
+
+            # Save pseudo R-squared
+            prsquared_series.loc[sex_label] = results.prsquared
+
             # Print summary
             print(f"  Model converged: {results.mle_retvals['converged']}")
             print(f"  Pseudo R-squared: {results.prsquared:.4f}")
@@ -1157,7 +1299,7 @@ def estimate_logit_specification_two_care(  # noqa: PLR0915
         except Exception as e:
             print(f"  ERROR: Model estimation failed: {e}")
 
-    return params
+    return params, se_df, prsquared_series
 
 
 def estimate_ols_specification_two_care(  # noqa: PLR0915
@@ -1229,6 +1371,11 @@ def estimate_ols_specification_two_care(  # noqa: PLR0915
         ]
 
     params = pd.DataFrame(index=index, columns=columns)
+    # Standard errors DataFrame (without N column)
+    se_columns = [col for col in columns if col != "N"]
+    se_df = pd.DataFrame(index=index, columns=se_columns)
+    # R-squared Series
+    rsquared_series = pd.Series(index=index, dtype=float)
 
     # Apply filter
     if filter_condition is not None:
@@ -1293,6 +1440,14 @@ def estimate_ols_specification_two_care(  # noqa: PLR0915
             # Save sample size
             params.loc[sex_label, "N"] = len(df_sex)
 
+            # Save standard errors
+            se_df.loc[sex_label, "const"] = results.bse["const"]
+            for var in exog_vars_base:
+                se_df.loc[sex_label, var] = results.bse[var]
+
+            # Save R-squared
+            rsquared_series.loc[sex_label] = results.rsquared
+
             # Print summary
             print(f"  R-squared: {results.rsquared:.4f}")
             print("  Key parameters:")
@@ -1307,7 +1462,7 @@ def estimate_ols_specification_two_care(  # noqa: PLR0915
         except Exception as e:
             print(f"  ERROR: Model estimation failed: {e}")
 
-    return params
+    return params, se_df, rsquared_series
 
 
 @pytask.mark.inheritance
@@ -1451,7 +1606,7 @@ def task_estimate_inheritance_amount_specifications(
     # Run all specifications
     results = {}
     for spec in specifications:
-        params = estimate_ols_specification(
+        params, se_df, rsquared = estimate_ols_specification(
             df=df,
             specs=specs,
             care_var=spec["care_var"],
@@ -1461,9 +1616,9 @@ def task_estimate_inheritance_amount_specifications(
             spec_name=spec["name"],
         )
 
-        # Save results
+        # Save results with standard errors and R-squared
         output_path = path_to_save_dir / f"{spec['name']}_params.csv"
-        params.to_csv(output_path)
+        save_params_with_standard_errors(params, se_df, rsquared, output_path)
         results[spec["name"]] = params
 
     # Save summary
@@ -1637,7 +1792,7 @@ def task_estimate_inheritance_prob_two_care_specifications(
     # Run all specifications
     results = {}
     for spec in specifications:
-        params = estimate_logit_specification_two_care(
+        params, se_df, rsquared = estimate_logit_specification_two_care(
             df=df,
             specs=specs,
             light_care_var=spec["light_var"],
@@ -1648,9 +1803,9 @@ def task_estimate_inheritance_prob_two_care_specifications(
             spec_name=spec["name"],
         )
 
-        # Save results
+        # Save results with standard errors and R-squared
         output_path = path_to_save_dir / f"{spec['name']}_params.csv"
-        params.to_csv(output_path)
+        save_params_with_standard_errors(params, se_df, rsquared, output_path)
         results[spec["name"]] = params
 
     # Save summary
@@ -1825,7 +1980,7 @@ def task_estimate_inheritance_amount_two_care_specifications(
     # Run all specifications
     results = {}
     for spec in specifications:
-        params = estimate_ols_specification_two_care(
+        params, se_df, rsquared = estimate_ols_specification_two_care(
             df=df,
             specs=specs,
             light_care_var=spec["light_var"],
@@ -1836,9 +1991,9 @@ def task_estimate_inheritance_amount_two_care_specifications(
             spec_name=spec["name"],
         )
 
-        # Save results
+        # Save results with standard errors and R-squared
         output_path = path_to_save_dir / f"{spec['name']}_params.csv"
-        params.to_csv(output_path)
+        save_params_with_standard_errors(params, se_df, rsquared, output_path)
         results[spec["name"]] = params
 
     # Save summary
@@ -1946,7 +2101,7 @@ def task_estimate_inheritance_specifications_no_care(
     # Run all specifications
     results = {}
     for spec in specifications:
-        params = estimate_logit_specification_no_care(
+        params, se_df, rsquared = estimate_logit_specification_no_care(
             df=df,
             specs=specs,
             parent_var=spec["parent_var"],
@@ -1954,9 +2109,9 @@ def task_estimate_inheritance_specifications_no_care(
             spec_name=spec["name"],
         )
 
-        # Save results
+        # Save results with standard errors and R-squared
         output_path = path_to_save_dir / f"{spec['name']}_params.csv"
-        params.to_csv(output_path)
+        save_params_with_standard_errors(params, se_df, rsquared, output_path)
         results[spec["name"]] = params
 
     # Save summary
