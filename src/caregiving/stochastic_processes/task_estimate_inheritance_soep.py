@@ -315,18 +315,40 @@ def prepare_inheritance_data(df):
     # Create squared age term
     df["age_sq"] = df["age"] ** 2
 
+    # Create formal care costs dummy variables
+    # Ensure formal_care_costs_dummy exists (fill NaN with 0 if needed)
+    if "formal_care_costs_dummy" not in df.columns:
+        df["formal_care_costs_dummy"] = 0
+
+    # Enforce mutual exclusivity between informal and formal care (base variables)
+    # (informal and formal care are mutually exclusive)
+    # Informal care is dominant: if both are present, set formal care to 0
+    informal_care_mask = (
+        (df["light_care"] > 0) | (df["intensive_care"] > 0) | (df["any_care"] > 0)
+    )
+    df.loc[
+        informal_care_mask & (df["formal_care_costs_dummy"] == 1),
+        "formal_care_costs_dummy",
+    ] = 0
+
     # Create lagged care variables
     # Note: pid is now a column, not an index
     df = df.sort_values(["pid", "syear"])
     df["lagged_light_care"] = df.groupby("pid")["light_care"].shift(1)
     df["lagged_intensive_care"] = df.groupby("pid")["intensive_care"].shift(1)
+    df["lagged_any_care"] = df.groupby("pid")["any_care"].shift(1)
+    df["lagged_formal_care_costs_dummy"] = df.groupby("pid")[
+        "formal_care_costs_dummy"
+    ].shift(1)
 
     # Create caregiving indicators for different time periods
     # Previous period (last year) - lagged
-    df["lagged_any_care"] = df.groupby("pid")["any_care"].shift(1)
     df["any_care_last_year"] = (df["lagged_any_care"] > 0).astype(int)
     df["light_care_last_year"] = (df["lagged_light_care"] > 0).astype(int)
     df["intensive_care_last_year"] = (df["lagged_intensive_care"] > 0).astype(int)
+    df["formal_care_costs_dummy_last_year"] = (
+        (df["lagged_formal_care_costs_dummy"] > 0)
+    ).astype(int)
 
     # Recent period (t or t-1)
     df["light_care_recent"] = (
@@ -341,35 +363,22 @@ def prepare_inheritance_data(df):
         int
     )
 
-    # Create formal care costs dummy variables for different time periods
-    # Ensure formal_care_costs_dummy exists (fill NaN with 0 if needed)
-    if "formal_care_costs_dummy" not in df.columns:
-        df["formal_care_costs_dummy"] = 0
-
-    # Set formal_care_costs_dummy to 0 where it conflicts with informal care
-    # (informal and formal care are mutually exclusive)
-    informal_care_mask = (
-        (df["light_care"] > 0) | (df["intensive_care"] > 0) | (df["any_care"] > 0)
-    )
-    df.loc[
-        informal_care_mask & (df["formal_care_costs_dummy"] == 1),
-        "formal_care_costs_dummy",
-    ] = 0
-
-    # Create lagged formal care costs dummy
-    df["lagged_formal_care_costs_dummy"] = df.groupby("pid")[
-        "formal_care_costs_dummy"
-    ].shift(1)
-
-    # Previous period (last year) - lagged
-    df["formal_care_costs_dummy_last_year"] = (
-        (df["lagged_formal_care_costs_dummy"] > 0)
-    ).astype(int)
-
-    # Recent period (t or t-1)
     df["formal_care_costs_dummy_recent"] = (
         (df["formal_care_costs_dummy"] > 0) | (df["lagged_formal_care_costs_dummy"] > 0)
     ).astype(int)
+
+    # Enforce mutual exclusivity for recent versions
+    # (needed because recent combines current and lagged across periods)
+    # Informal care is dominant: if both are present, set formal care to 0
+    informal_care_recent_mask = (
+        (df["light_care_recent"] > 0)
+        | (df["intensive_care_recent"] > 0)
+        | (df["any_care_recent"] > 0)
+    )
+    df.loc[
+        informal_care_recent_mask & (df["formal_care_costs_dummy_recent"] == 1),
+        "formal_care_costs_dummy_recent",
+    ] = 0
 
     # Create parent death indicators for different time periods
     df["lagged_mother_died"] = df.groupby("pid")["mother_died_this_year"].shift(1)
