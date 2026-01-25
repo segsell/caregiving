@@ -424,4 +424,5 @@ def task_write_specs(  # noqa: PLR0915
 
     with path_to_save_specs_dict.open("wb") as f:
         pkl.dump(specs, f)
+
     return specs
