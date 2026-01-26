@@ -169,7 +169,8 @@ def task_plot_inheritance_by_age(  # noqa: PLR0912, PLR0915
     df_sim["lagged_choice"] = df_sim.groupby("agent", observed=False)["choice"].shift(1)
 
     # Create care category based on lagged choice
-    # Order matches shared.py: NO_CARE, FORMAL_CARE, LIGHT_INFORMAL_CARE, INTENSIVE_INFORMAL_CARE
+    # Order matches shared.py: NO_CARE, FORMAL_CARE, LIGHT_INFORMAL_CARE,
+    # INTENSIVE_INFORMAL_CARE
     light_care_values = LIGHT_INFORMAL_CARE.ravel().tolist()
     intensive_care_values = INTENSIVE_INFORMAL_CARE.ravel().tolist()
     formal_care_values = FORMAL_CARE.ravel().tolist()
@@ -227,7 +228,8 @@ def task_plot_inheritance_by_age(  # noqa: PLR0912, PLR0915
     edu_colors = [plt.cm.tab10(i) for i in range(len(specs["education_labels"]))]
 
     # Line styles for care types - match test plotting functions
-    # no_care: dotted, formal_care: dotted-dashed mix, light_care: dashed, intensive_care: solid
+    # no_care: dotted, formal_care: dotted-dashed mix, light_care: dashed,
+    # intensive_care: solid
     care_linestyles = [
         ":",  # Index 0: no_care - dotted
         (0, (3, 1, 1, 1, 1, 1)),  # Index 1: formal_care - dotted and dashed mix

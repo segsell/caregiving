@@ -18,109 +18,10 @@ INHERITANCE_QUANTILE_THRESHOLD_LOWER = 0.0
 INHERITANCE_QUANTILE_THRESHOLD_UPPER = 0.90
 
 
-def save_params_with_standard_errors(params_df, se_df, rsquared_df, output_path):
-    """Save parameters DataFrame with standard errors and R-squared as additional rows.
-
-    Standard errors are added as new rows with suffix "_se" in the index.
-    R-squared/pseudo R-squared are added as new rows with suffix "_rsq" in the index.
-    The "N" column will have empty values for standard error and R-squared rows.
-
-    Args:
-        params_df: DataFrame with parameters (index: sex labels, columns: param names + N)
-        se_df: DataFrame with standard errors (same structure as params_df, but without N)
-        rsquared_df: Series or DataFrame with R-squared/pseudo R-squared values (index: sex labels)
-        output_path: Path to save CSV file
-    """
-    # Create combined DataFrame
-    combined_df = params_df.copy()
-
-    # Add standard error rows for each sex
-    for sex_label in params_df.index:
-        se_row_name = f"{sex_label}_se"
-        se_row = pd.Series(index=params_df.columns, dtype=float)
-
-        # Copy standard errors from se_df (excluding N)
-        # Only if the row exists in se_df (estimation may have failed)
-        if sex_label in se_df.index:
-            for col in params_df.columns:
-                if col != "N" and col in se_df.columns:
-                    se_row[col] = se_df.loc[sex_label, col]
-        # N column remains NaN/empty for all SE rows
-
-        combined_df.loc[se_row_name] = se_row
-
-        # Add R-squared row
-        rsq_row_name = f"{sex_label}_rsq"
-        rsq_row = pd.Series(index=params_df.columns, dtype=float)
-
-        # Add R-squared value in the first parameter column (or const if available)
-        if sex_label in rsquared_df.index:
-            rsq_value = rsquared_df.loc[sex_label]
-            # Put R-squared in the first non-N column
-            first_col = [col for col in params_df.columns if col != "N"][0]
-            rsq_row[first_col] = rsq_value
-        # All other columns (including N) remain NaN/empty
-
-        combined_df.loc[rsq_row_name] = rsq_row
-
-    # Reorder to have params, SEs, and R-squared together
-    new_index = []
-    for sex_label in params_df.index:
-        new_index.append(sex_label)
-        new_index.append(f"{sex_label}_se")
-        new_index.append(f"{sex_label}_rsq")
-
-    combined_df = combined_df.reindex(new_index)
-    combined_df.to_csv(output_path)
-
-
-def deflate_inheritance_amount_for_estimation(df, cpi_data, specs, year_var="syear"):
-    """Deflate inheritance amount using consumer price index.
-
-    Similar to _deflate_inheritance_amount but works with DataFrame
-    that may not have MultiIndex (pid, syear).
-
-    Args:
-        df: DataFrame containing inheritance_amount and year_inheritance columns
-        cpi_data: DataFrame with CPI data (should have int_year and cpi columns)
-        specs: Dictionary with specs including reference_year
-
-    Returns:
-        DataFrame with deflated inheritance_amount
-    """
-    # Prepare CPI data
-    cpi_data_copy = cpi_data.rename(columns={"int_year": year_var})
-
-    _base_year = specs["reference_year"]
-    base_year_cpi = cpi_data_copy.loc[
-        cpi_data_copy[year_var] == _base_year, "cpi"
-    ].iloc[0]
-
-    cpi_data_copy["cpi_normalized"] = cpi_data_copy["cpi"] / base_year_cpi
-
-    # Merge CPI data on year_var
-    df = df.merge(
-        cpi_data_copy[[year_var, "cpi_normalized"]],
-        on=year_var,
-        how="left",
-    )
-
-    # Deflate inheritance amount (only where both are not NaN)
-    mask = df["inheritance_amount"].notna() & df["cpi_normalized"].notna()
-    df.loc[mask, "inheritance_amount"] = (
-        df.loc[mask, "inheritance_amount"] / df.loc[mask, "cpi_normalized"]
-    )
-
-    # Drop temporary CPI column
-    df = df.drop(columns=["cpi_normalized"])
-
-    return df
-
-
 @pytask.mark.inheritance
 def task_estimate_inheritance_specifications(
     path_to_specs: Path = SRC / "specs.yaml",
-    path_to_data: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
+    path_to_data: Path = BLD / "data" / "soep_inheritance_sample.csv",
     path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
     path_to_save_summary: Annotated[Path, Product] = BLD
     / "estimation"
@@ -133,7 +34,9 @@ def task_estimate_inheritance_specifications(
     CPI deflation is applied to inheritance_amount before estimation.
 
     Tests different combinations of care and parent death timing variables.
+
     """
+
     specs = read_and_derive_specs(path_to_specs)
     df = pd.read_csv(path_to_data, index_col=0)
     cpi_data = pd.read_csv(path_to_cpi, index_col=0)
@@ -293,7 +196,7 @@ def task_estimate_inheritance_specifications(
 @pytask.mark.inheritance
 def task_estimate_inheritance(
     path_to_specs: Path = SRC / "specs.yaml",
-    path_to_data: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
+    path_to_data: Path = BLD / "data" / "soep_inheritance_sample.csv",
     path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
     path_to_save_logit_params: Annotated[Path, Product] = BLD
     / "estimation"
@@ -714,7 +617,7 @@ def estimate_inheritance_amount_by_sex(df, specs):
     return amount_params, amount_se, amount_rsquared
 
 
-def estimate_logit_specification(
+def estimate_logit_specification(  # noqa: PLR0915
     df,
     specs,
     care_var,
@@ -860,7 +763,7 @@ def estimate_logit_specification(
     return params, se_df, prsquared_series
 
 
-def estimate_ols_specification(
+def estimate_ols_specification(  # noqa: PLR0915
     df,
     specs,
     care_var,
@@ -1011,7 +914,7 @@ def estimate_ols_specification(
     return params, se_df, rsquared_series
 
 
-def estimate_logit_specification_no_care(
+def estimate_logit_specification_no_care(  # noqa: PLR0915
     df,
     specs,
     parent_var=None,
@@ -1468,7 +1371,7 @@ def estimate_ols_specification_two_care(  # noqa: PLR0915
 @pytask.mark.inheritance
 def task_estimate_inheritance_amount_specifications(
     path_to_specs: Path = SRC / "specs.yaml",
-    path_to_data: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
+    path_to_data: Path = BLD / "data" / "soep_inheritance_sample.csv",
     path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
     path_to_save_summary: Annotated[Path, Product] = BLD
     / "estimation"
@@ -1644,7 +1547,7 @@ def task_estimate_inheritance_amount_specifications(
 @pytask.mark.inheritance
 def task_estimate_inheritance_prob_two_care_specifications(
     path_to_specs: Path = SRC / "specs.yaml",
-    path_to_data: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
+    path_to_data: Path = BLD / "data" / "soep_inheritance_sample.csv",
     path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
     path_to_save_summary: Annotated[Path, Product] = BLD
     / "estimation"
@@ -1832,7 +1735,7 @@ def task_estimate_inheritance_prob_two_care_specifications(
 @pytask.mark.inheritance
 def task_estimate_inheritance_amount_two_care_specifications(
     path_to_specs: Path = SRC / "specs.yaml",
-    path_to_data: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
+    path_to_data: Path = BLD / "data" / "soep_inheritance_sample.csv",
     path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
     path_to_save_summary: Annotated[Path, Product] = BLD
     / "estimation"
@@ -2020,7 +1923,7 @@ def task_estimate_inheritance_amount_two_care_specifications(
 @pytask.mark.inheritance
 def task_estimate_inheritance_specifications_no_care(
     path_to_specs: Path = SRC / "specs.yaml",
-    path_to_data: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
+    path_to_data: Path = BLD / "data" / "soep_inheritance_sample.csv",
     path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
     path_to_save_summary: Annotated[Path, Product] = BLD
     / "estimation"
@@ -2131,3 +2034,110 @@ def task_estimate_inheritance_specifications_no_care(
             f.write(f"  - {spec['name']}\n")
             f.write(f"    Parent: {spec['parent_var']}\n")
             f.write(f"    Filter: {spec['filter']}\n\n")
+
+
+# ======================================================================================
+# Helper functions
+# ======================================================================================
+
+
+def save_params_with_standard_errors(params_df, se_df, rsquared_df, output_path):
+    """Save parameters DataFrame with standard errors and R-squared as additional rows.
+
+    Standard errors are added as new rows with suffix "_se" in the index.
+    R-squared/pseudo R-squared are added as new rows with suffix "_rsq" in the index.
+    The "N" column will have empty values for standard error and R-squared rows.
+
+    Args:
+        params_df: DataFrame with parameters
+            (index: sex labels, columns: param names + N)
+        se_df: DataFrame with standard errors
+            (same structure as params_df, but without N)
+        rsquared_df: Series or DataFrame with R-squared/pseudo R-squared values
+            (index: sex labels)
+        output_path: Path to save CSV file
+    """
+    # Create combined DataFrame
+    combined_df = params_df.copy()
+
+    # Add standard error rows for each sex
+    for sex_label in params_df.index:
+        se_row_name = f"{sex_label}_se"
+        se_row = pd.Series(index=params_df.columns, dtype=float)
+
+        # Copy standard errors from se_df (excluding N)
+        # Only if the row exists in se_df (estimation may have failed)
+        if sex_label in se_df.index:
+            for col in params_df.columns:
+                if col != "N" and col in se_df.columns:
+                    se_row[col] = se_df.loc[sex_label, col]
+        # N column remains NaN/empty for all SE rows
+
+        combined_df.loc[se_row_name] = se_row
+
+        # Add R-squared row
+        rsq_row_name = f"{sex_label}_rsq"
+        rsq_row = pd.Series(index=params_df.columns, dtype=float)
+
+        # Add R-squared value in the first parameter column (or const if available)
+        if sex_label in rsquared_df.index:
+            rsq_value = rsquared_df.loc[sex_label]
+            # Put R-squared in the first non-N column
+            first_col = [col for col in params_df.columns if col != "N"][0]
+            rsq_row[first_col] = rsq_value
+        # All other columns (including N) remain NaN/empty
+
+        combined_df.loc[rsq_row_name] = rsq_row
+
+    # Reorder to have params, SEs, and R-squared together
+    new_index = []
+    for sex_label in params_df.index:
+        new_index.append(sex_label)
+        new_index.append(f"{sex_label}_se")
+        new_index.append(f"{sex_label}_rsq")
+
+    combined_df = combined_df.reindex(new_index)
+    combined_df.to_csv(output_path)
+
+
+def deflate_inheritance_amount_for_estimation(df, cpi_data, specs, year_var="syear"):
+    """Deflate inheritance amount using consumer price index.
+
+    Similar to _deflate_inheritance_amount but works with DataFrame
+    that may not have MultiIndex (pid, syear).
+
+    Args:
+        df: DataFrame containing inheritance_amount and year_inheritance columns
+        cpi_data: DataFrame with CPI data (should have int_year and cpi columns)
+        specs: Dictionary with specs including reference_year
+
+    Returns:
+        DataFrame with deflated inheritance_amount
+    """
+    # Prepare CPI data
+    cpi_data_copy = cpi_data.rename(columns={"int_year": year_var})
+
+    _base_year = specs["reference_year"]
+    base_year_cpi = cpi_data_copy.loc[
+        cpi_data_copy[year_var] == _base_year, "cpi"
+    ].iloc[0]
+
+    cpi_data_copy["cpi_normalized"] = cpi_data_copy["cpi"] / base_year_cpi
+
+    # Merge CPI data on year_var
+    df = df.merge(
+        cpi_data_copy[[year_var, "cpi_normalized"]],
+        on=year_var,
+        how="left",
+    )
+
+    # Deflate inheritance amount (only where both are not NaN)
+    mask = df["inheritance_amount"].notna() & df["cpi_normalized"].notna()
+    df.loc[mask, "inheritance_amount"] = (
+        df.loc[mask, "inheritance_amount"] / df.loc[mask, "cpi_normalized"]
+    )
+
+    # Drop temporary CPI column
+    df = df.drop(columns=["cpi_normalized"])
+
+    return df

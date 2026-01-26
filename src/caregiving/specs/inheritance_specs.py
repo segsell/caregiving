@@ -8,10 +8,13 @@ import numpy as np
 import pandas as pd
 
 
-def read_in_inheritance_prob_specs(specs, path_to_save: Optional[Path] = None):
+def read_in_inheritance_prob_specs(  # noqa: PLR0912
+    specs, path_to_save: Optional[Path] = None
+):
     """Precompute inheritance probability matrix by age, education, and care type.
 
-    Builds a matrix with columns for no care, light care, intensive care, and formal care.
+    Builds a matrix with columns for no care, light care, intensive care,
+    and formal care.
     Since the probability model uses any_care (binary), light and intensive care
     will have the same probability value (any_care = 1).
 
@@ -65,7 +68,8 @@ def read_in_inheritance_prob_specs(specs, path_to_save: Optional[Path] = None):
                 # Get parameters for this sex
                 params = inheritance_prob_params.loc[sex_label]
 
-                # Get formal care coefficient (default to 0 if not present for backward compatibility)
+                # Get formal care coefficient (default to 0 if not present
+                # for backward compatibility)
                 if "formal_care_costs_dummy" in params.index:
                     formal_care_coef = params["formal_care_costs_dummy"]
                 elif "formal_care_costs_dummy_recent" in params.index:
@@ -93,7 +97,8 @@ def read_in_inheritance_prob_specs(specs, path_to_save: Optional[Path] = None):
                 )
                 prob_no_care = 1.0 / (1.0 + np.exp(-logit_linear_no_care))
 
-                # Compute logit linear predictor for care (any_care = 1, formal_care = 0)
+                # Compute logit linear predictor for care
+                # (any_care = 1, formal_care = 0)
                 # Note: light and intensive care use the same value since
                 # the model uses any_care (binary), not separate light/intensive
                 logit_linear_care = (
@@ -106,7 +111,8 @@ def read_in_inheritance_prob_specs(specs, path_to_save: Optional[Path] = None):
                 )
                 prob_care = 1.0 / (1.0 + np.exp(-logit_linear_care))
 
-                # Compute logit linear predictor for formal care (any_care = 0, formal_care = 1)
+                # Compute logit linear predictor for formal care
+                # (any_care = 0, formal_care = 1)
                 logit_linear_formal_care = (
                     params["age"] * age
                     + params["age_sq"] * age_sq
@@ -118,7 +124,8 @@ def read_in_inheritance_prob_specs(specs, path_to_save: Optional[Path] = None):
                 prob_formal_care = 1.0 / (1.0 + np.exp(-logit_linear_formal_care))
 
                 # Store probabilities
-                # Index 0: no_care, Index 1: formal_care, Index 2: light_care, Index 3: intensive_care
+                # Index 0: no_care, Index 1: formal_care, Index 2: light_care,
+                # Index 3: intensive_care
                 inheritance_prob_mat[sex_idx, period, edu_idx, 0] = prob_no_care
                 inheritance_prob_mat[sex_idx, period, edu_idx, 1] = prob_formal_care
                 inheritance_prob_mat[sex_idx, period, edu_idx, 2] = prob_care  # light
@@ -155,10 +162,13 @@ def read_in_inheritance_prob_specs(specs, path_to_save: Optional[Path] = None):
     return jnp.asarray(inheritance_prob_mat)
 
 
-def read_in_inheritance_amount_specs(specs, path_to_save: Optional[Path] = None):
+def read_in_inheritance_amount_specs(  # noqa: PLR0912, PLR0915
+    specs, path_to_save: Optional[Path] = None
+):
     """Precompute inheritance amount matrix by age, education, and care type.
 
-    Builds a matrix with columns for no care, light care, intensive care, and formal care.
+    Builds a matrix with columns for no care, light care, intensive care,
+    and formal care.
     The amount model distinguishes between light_care_recent and intensive_care_recent,
     so the care types will have different values.
 
@@ -212,7 +222,8 @@ def read_in_inheritance_amount_specs(specs, path_to_save: Optional[Path] = None)
                 # Get parameters for this sex
                 params = inheritance_amount_params.loc[sex_label]
 
-                # Get formal care coefficient (default to 0 if not present for backward compatibility)
+                # Get formal care coefficient (default to 0 if not present
+                # for backward compatibility)
                 if "formal_care_costs_dummy" in params.index:
                     formal_care_coef = params["formal_care_costs_dummy"]
                 elif "formal_care_costs_dummy_recent" in params.index:
@@ -220,7 +231,8 @@ def read_in_inheritance_amount_specs(specs, path_to_save: Optional[Path] = None)
                 else:
                     formal_care_coef = 0
 
-                # Get care coefficients (could be light_care_recent/intensive_care_recent or variants)
+                # Get care coefficients (could be light_care_recent/
+                # intensive_care_recent or variants)
                 if "light_care_recent" in params.index:
                     light_care_coef = params["light_care_recent"]
                 elif "light_care" in params.index:
@@ -288,7 +300,8 @@ def read_in_inheritance_amount_specs(specs, path_to_save: Optional[Path] = None)
                 amount_formal_care = np.exp(ln_inheritance_amount_formal_care)
 
                 # Store amounts
-                # Index 0: no_care, Index 1: formal_care, Index 2: light_care, Index 3: intensive_care
+                # Index 0: no_care, Index 1: formal_care, Index 2: light_care,
+                # Index 3: intensive_care
                 inheritance_amount_mat[sex_idx, period, edu_idx, 0] = amount_no_care
                 inheritance_amount_mat[sex_idx, period, edu_idx, 1] = amount_formal_care
                 inheritance_amount_mat[sex_idx, period, edu_idx, 2] = amount_light

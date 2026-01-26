@@ -182,8 +182,8 @@ def calc_inheritance_amount(
     is_formal = is_formal_care(lagged_choice)
 
     # Select care type index: 0=no_care, 1=formal_care, 2=light_care, 3=intensive_care
-    # Care types are mutually exclusive, so use arithmetic instead of nested conditionals
-    # This is faster on GPU: is_formal*1 + is_light*2 + is_intensive*3
+    # Care types are mutually exclusive, so use arithmetic instead of nested
+    # conditionals. This is faster on GPU: is_formal*1 + is_light*2 + is_intensive*3
     care_type_idx = (
         is_formal.astype(int) * 1
         + is_light.astype(int) * 2
@@ -245,8 +245,8 @@ def draw_inheritance_outcome(
     is_formal = is_formal_care(lagged_choice)
 
     # Select care type index: 0=no_care, 1=formal_care, 2=light_care, 3=intensive_care
-    # Care types are mutually exclusive, so use arithmetic instead of nested conditionals
-    # This is faster on GPU: is_formal*1 + is_light*2 + is_intensive*3
+    # Care types are mutually exclusive, so use arithmetic instead of nested
+    # conditionals. This is faster on GPU: is_formal*1 + is_light*2 + is_intensive*3
     care_type_idx = (
         is_formal.astype(int) * 1
         + is_light.astype(int) * 2

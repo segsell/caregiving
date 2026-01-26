@@ -43,6 +43,7 @@ from caregiving.data_management.soep.variables import (  # create_experience_var
 from caregiving.model.shared import (
     PART_TIME_CHOICES,
     RETIREMENT_CHOICES,
+    SOEP_DOES_NOT_APPLY,
     WORK_CHOICES,
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
@@ -83,9 +84,9 @@ def task_create_main_estimation_sample(
     # filter data. Leave additional years in for lagging and leading.
     df = filter_data(df, specs)
 
-    # Create dummy variable: > 0 -> 1, == -2 -> 0, else -> NaN
+    # Create dummy variable: > 0 -> 1, == SOEP_DOES_NOT_APPLY -> 0, else -> NaN
     df["formal_care_costs_dummy"] = np.select(
-        [df["hle0016"] > 0, df["hle0016"] == -2],
+        [df["hle0016"] > 0, df["hle0016"] == SOEP_DOES_NOT_APPLY],
         [1, 0],
         default=np.nan,
     )

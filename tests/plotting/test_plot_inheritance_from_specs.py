@@ -37,7 +37,8 @@ def test_plot_inheritance_probability_from_specs():
     inheritance_prob_mat = specs["inheritance_prob_mat"]
 
     # Care type labels matching the order in shared.py
-    # Index 0: no_care, Index 1: formal_care, Index 2: light_care, Index 3: intensive_care
+    # Index 0: no_care, Index 1: formal_care, Index 2: light_care,
+    # Index 3: intensive_care
     care_type_labels = ["no care", "formal care", "light care", "intensive care"]
     care_type_indices = [0, 1, 2, 3]
 
@@ -64,7 +65,9 @@ def test_plot_inheritance_probability_from_specs():
             color = JET_COLOR_MAP[edu_var]
 
             # Plot for each care type
-            for care_idx, care_label in zip(care_type_indices, care_type_labels):
+            for care_idx, care_label in zip(
+                care_type_indices, care_type_labels, strict=True
+            ):
                 # Extract probabilities for this sex, education, and care type
                 # Shape: (n_sexes, n_periods, n_education, n_care_types)
                 probs = inheritance_prob_mat[sex_var, :, edu_var, care_idx]
@@ -126,7 +129,8 @@ def test_plot_inheritance_amount_from_specs():
     inheritance_amount_mat = specs["inheritance_amount_mat"]
 
     # Care type labels matching the order in shared.py
-    # Index 0: no_care, Index 1: formal_care, Index 2: light_care, Index 3: intensive_care
+    # Index 0: no_care, Index 1: formal_care, Index 2: light_care,
+    # Index 3: intensive_care
     care_type_labels = ["no care", "formal care", "light care", "intensive care"]
     care_type_indices = [0, 1, 2, 3]
 
@@ -153,7 +157,9 @@ def test_plot_inheritance_amount_from_specs():
             color = JET_COLOR_MAP[edu_var]
 
             # Plot for each care type
-            for care_idx, care_label in zip(care_type_indices, care_type_labels):
+            for care_idx, care_label in zip(
+                care_type_indices, care_type_labels, strict=True
+            ):
                 # Extract amounts for this sex, education, and care type
                 # Shape: (n_sexes, n_periods, n_education, n_care_types)
                 amounts = inheritance_amount_mat[sex_var, :, edu_var, care_idx]
