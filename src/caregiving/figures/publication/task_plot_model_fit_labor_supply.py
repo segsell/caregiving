@@ -13,7 +13,6 @@ from pytask import Product
 from caregiving.config import BLD
 from caregiving.figures.publication.plotting_functions import (
     plot_choice_shares_by_education_bw,
-    plot_choice_shares_combined_education_bw,
 )
 from caregiving.model.shared import (
     DEAD,
@@ -134,13 +133,13 @@ def task_plot_model_fit_labor_supply(
         path_to_save_plot=path_to_save_all_plot,
     )
 
-    # Plot 1b: All individuals (combined education levels in one plot)
-    plot_choice_shares_combined_education_bw(
-        data_emp=df_emp_all,
-        data_sim=df_sim,
-        specs=specs,
-        path_to_save_plot=path_to_save_all_combined_plot,
-    )
+    # # Plot 1b: All individuals (combined education levels in one plot)
+    # plot_choice_shares_combined_education_bw(
+    #     data_emp=df_emp_all,
+    #     data_sim=df_sim,
+    #     specs=specs,
+    #     path_to_save_plot=path_to_save_all_combined_plot,
+    # )
 
     # # Plot 2: Non-caregivers
     # plot_choice_shares_by_education_bw(
