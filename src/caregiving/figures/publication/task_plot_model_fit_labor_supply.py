@@ -51,10 +51,10 @@ def task_plot_model_fit_labor_supply(
     / "figures"
     / "publication"
     / "labor_supply_fit_all.png",
-    path_to_save_all_combined_plot: Annotated[Path, Product] = BLD
-    / "figures"
-    / "publication"
-    / "labor_supply_fit_all_combined.png",
+    # path_to_save_all_combined_plot: Annotated[Path, Product] = BLD
+    # / "figures"
+    # / "publication"
+    # / "labor_supply_fit_all_combined.png",
     # path_to_save_non_caregivers_plot: Annotated[Path, Product] = BLD
     # / "figures"
     # / "publication"

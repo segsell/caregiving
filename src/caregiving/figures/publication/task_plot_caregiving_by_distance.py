@@ -1,8 +1,8 @@
-"""Plot overall employment rate by distance to first caregiving spell.
+"""Plot overall caregiving rate by distance to first caregiving spell.
 
 This module creates event study plots comparing baseline vs no-care-demand
-employment rates, aligned by distance to first caregiving spell (t=0).
-No age bins or age differentiation - overall comparison only.
+caregiving rates (light or intensive informal care), aligned by distance to
+first caregiving spell or first care demand (t=0).
 """
 
 from pathlib import Path
@@ -17,7 +17,6 @@ from pytask import Product
 from caregiving.config import BLD
 from caregiving.counterfactual.plotting_helpers import (
     _ensure_agent_period,
-    calculate_simple_outcomes,
     get_age_at_first_event,
     prepare_dataframes_simple,
 )
@@ -25,7 +24,6 @@ from caregiving.counterfactual.task_plot_labor_supply_differences import (
     _add_distance_to_first_care,
 )
 from caregiving.model.shared import (
-    ALL_CARE,
     INFORMAL_CARE,
 )
 
@@ -61,9 +59,13 @@ def _identify_agents_by_duration(
     """Identify agents by duration of care demand or caregiving.
 
     For care_demand: Identifies agents who experience care_demand > 0 for
-    1, 2, 3, or 4 years (includes all agents, not just informal caregivers).
+    at least 1, 2, 3, or 4 years (includes all agents, not just informal caregivers).
     For caregiving: Identifies agents who provide informal care for
-    1, 2, 3, or 4 years (only type_1 agents can provide informal care).
+    at least 1, 2, 3, or 4 years (only type_1 agents can provide informal care).
+
+    Note: For caregiving plots, uses "at least" logic (no requirement for off year).
+    Groups are mutually exclusive (4-year includes only those with >=4 years,
+    3-year includes those with exactly 3 years, etc.).
 
     Args:
         merged: DataFrame with agent, distance, and relevant columns
@@ -100,100 +102,12 @@ def _identify_agents_by_duration(
         aggfunc="first",
     )
 
-    # Identify 1-year: care at t=0 only, then stop
-    agents_1_year = []
-    for agent in agent_care_matrix.index:
-        care_at_0 = (
-            agent_care_matrix.loc[agent, 0] == 1
-            if 0 in agent_care_matrix.columns
-            and pd.notna(agent_care_matrix.loc[agent, 0])
-            else False
-        )
-        care_at_1 = (
-            agent_care_matrix.loc[agent, 1] == 0
-            if 1 in agent_care_matrix.columns
-            and pd.notna(agent_care_matrix.loc[agent, 1])
-            else True
-        )
-        care_at_2 = (
-            agent_care_matrix.loc[agent, 2] == 0
-            if 2 in agent_care_matrix.columns  # noqa: PLR2004
-            and pd.notna(agent_care_matrix.loc[agent, 2])
-            else True
-        )
+    # Identify agents with at least N years of care (for caregiving plots)
+    # All groups use "at least" logic with no stopping requirement
+    # Overlap between groups is allowed (e.g., 4-year agents also appear in
+    # 3-year, 2-year, 1-year)
 
-        if care_at_0 and care_at_1 and care_at_2:
-            agents_1_year.append(agent)
-
-    # Identify 2-year: care at t=0 and t=1, then stop
-    agents_2_year = []
-    for agent in agent_care_matrix.index:
-        care_at_0 = (
-            agent_care_matrix.loc[agent, 0] == 1
-            if 0 in agent_care_matrix.columns
-            and pd.notna(agent_care_matrix.loc[agent, 0])
-            else False
-        )
-        care_at_1 = (
-            agent_care_matrix.loc[agent, 1] == 1
-            if 1 in agent_care_matrix.columns
-            and pd.notna(agent_care_matrix.loc[agent, 1])
-            else False
-        )
-        care_at_2 = (
-            agent_care_matrix.loc[agent, 2] == 0
-            if 2 in agent_care_matrix.columns  # noqa: PLR2004
-            and pd.notna(agent_care_matrix.loc[agent, 2])
-            else True
-        )
-        care_at_3 = (
-            agent_care_matrix.loc[agent, 3] == 0
-            if 3 in agent_care_matrix.columns  # noqa: PLR2004
-            and pd.notna(agent_care_matrix.loc[agent, 3])
-            else True
-        )
-
-        if care_at_0 and care_at_1 and care_at_2 and care_at_3:
-            agents_2_year.append(agent)
-
-    # Identify 3-year: care at t=0, t=1, t=2, then stop
-    agents_3_year = []
-    for agent in agent_care_matrix.index:
-        care_at_0 = (
-            agent_care_matrix.loc[agent, 0] == 1
-            if 0 in agent_care_matrix.columns
-            and pd.notna(agent_care_matrix.loc[agent, 0])
-            else False
-        )
-        care_at_1 = (
-            agent_care_matrix.loc[agent, 1] == 1
-            if 1 in agent_care_matrix.columns
-            and pd.notna(agent_care_matrix.loc[agent, 1])
-            else False
-        )
-        care_at_2 = (
-            agent_care_matrix.loc[agent, 2] == 1
-            if 2 in agent_care_matrix.columns  # noqa: PLR2004
-            and pd.notna(agent_care_matrix.loc[agent, 2])
-            else False
-        )
-        care_at_3 = (
-            agent_care_matrix.loc[agent, 3] == 0
-            if 3 in agent_care_matrix.columns  # noqa: PLR2004
-            and pd.notna(agent_care_matrix.loc[agent, 3])
-            else True
-        )
-        care_at_4 = (
-            agent_care_matrix.loc[agent, 4] == 0
-            if 4 in agent_care_matrix.columns  # noqa: PLR2004
-            and pd.notna(agent_care_matrix.loc[agent, 4])
-            else True
-        )
-
-        if care_at_0 and care_at_1 and care_at_2 and care_at_3 and care_at_4:
-            agents_3_year.append(agent)
-
-    # Identify 4-year: care at t=0, t=1, t=2, t=3, then stop
+    # Identify 4-year: at least 4 years (care at t=0, t=1, t=2, t=3)
     agents_4_year = []
     for agent in agent_care_matrix.index:
         care_at_0 = (
@@ -220,28 +134,66 @@ def _identify_agents_by_duration(
             and pd.notna(agent_care_matrix.loc[agent, 3])
             else False
         )
-        care_at_4 = (
-            agent_care_matrix.loc[agent, 4] == 0
-            if 4 in agent_care_matrix.columns  # noqa: PLR2004
-            and pd.notna(agent_care_matrix.loc[agent, 4])
-            else True
+
+        if care_at_0 and care_at_1 and care_at_2 and care_at_3:
+            agents_4_year.append(agent)
+
+    # Identify 3-year: at least 3 years (care at t=0, t=1, t=2)
+    agents_3_year = []
+    for agent in agent_care_matrix.index:
+        care_at_0 = (
+            agent_care_matrix.loc[agent, 0] == 1
+            if 0 in agent_care_matrix.columns
+            and pd.notna(agent_care_matrix.loc[agent, 0])
+            else False
         )
-        care_at_5 = (
-            agent_care_matrix.loc[agent, 5] == 0
-            if 5 in agent_care_matrix.columns  # noqa: PLR2004
-            and pd.notna(agent_care_matrix.loc[agent, 5])
-            else True
+        care_at_1 = (
+            agent_care_matrix.loc[agent, 1] == 1
+            if 1 in agent_care_matrix.columns
+            and pd.notna(agent_care_matrix.loc[agent, 1])
+            else False
+        )
+        care_at_2 = (
+            agent_care_matrix.loc[agent, 2] == 1
+            if 2 in agent_care_matrix.columns  # noqa: PLR2004
+            and pd.notna(agent_care_matrix.loc[agent, 2])
+            else False
         )
 
-        if (
-            care_at_0
-            and care_at_1
-            and care_at_2
-            and care_at_3
-            and care_at_4
-            and care_at_5
-        ):
-            agents_4_year.append(agent)
+        if care_at_0 and care_at_1 and care_at_2:
+            agents_3_year.append(agent)
+
+    # Identify 2-year: at least 2 years (care at t=0, t=1)
+    agents_2_year = []
+    for agent in agent_care_matrix.index:
+        care_at_0 = (
+            agent_care_matrix.loc[agent, 0] == 1
+            if 0 in agent_care_matrix.columns
+            and pd.notna(agent_care_matrix.loc[agent, 0])
+            else False
+        )
+        care_at_1 = (
+            agent_care_matrix.loc[agent, 1] == 1
+            if 1 in agent_care_matrix.columns
+            and pd.notna(agent_care_matrix.loc[agent, 1])
+            else False
+        )
+
+        if care_at_0 and care_at_1:
+            agents_2_year.append(agent)
+
+    # Identify 1-year: at least 1 year (care at t=0)
+    agents_1_year = []
+    for agent in agent_care_matrix.index:
+        care_at_0 = (
+            agent_care_matrix.loc[agent, 0] == 1
+            if 0 in agent_care_matrix.columns
+            and pd.notna(agent_care_matrix.loc[agent, 0])
+            else False
+        )
+
+        if care_at_0:
+            agents_1_year.append(agent)
 
     return (
         np.array(agents_1_year),
@@ -249,6 +201,33 @@ def _identify_agents_by_duration(
         np.array(agents_3_year),
         np.array(agents_4_year),
     )
+
+
+def calculate_caregiving_outcomes(
+    df: pd.DataFrame, choice_set_type: str
+) -> tuple[pd.Series, pd.Series]:
+    """Calculate caregiving indicators from choice column.
+
+    Args:
+        df: DataFrame with 'choice' column
+        choice_set_type: 'original' or 'no_care_demand'
+
+    Returns:
+        Tuple of (caregiving_o, caregiving_c) Series
+        - caregiving_o: 1 if choice in INFORMAL_CARE, 0 otherwise
+        - caregiving_c: 0 for no_care_demand (no care possible),
+          same as caregiving_o for original
+    """
+    care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
+    caregiving_o = df["choice"].isin(care_codes).astype(int)
+
+    if choice_set_type == "no_care_demand":
+        # No care demand = no caregiving possible
+        caregiving_c = pd.Series(0, index=df.index, dtype=int)
+    else:
+        caregiving_c = caregiving_o.copy()
+
+    return caregiving_o, caregiving_c
 
 
 # Sanity check: Plot for caregiving_type == 0 (agents who cannot provide informal care)
@@ -259,10 +238,10 @@ for age_min_val, age_max_val, age_label_val in (
     (60, 70, "ages_60_70"),
 ):
 
-    @pytask.mark.publication_employment
+    @pytask.mark.publication_caregiving_rate
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_care_demand_type_0")
-    def task_plot_employment_rate_by_distance_to_first_care_demand_type_0(  # noqa: PLR0912, PLR0915
+    def task_plot_caregiving_rate_by_distance_to_first_care_demand_type_0(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -275,20 +254,20 @@ for age_min_val, age_max_val, age_label_val in (
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
-        / "employment"
+        / "caregiving"
         / (
-            f"employment_rate_by_distance_to_first_care_demand_type_0_"
+            f"caregiving_rate_by_distance_to_first_care_demand_type_0_"
             f"{age_label_val}.pdf"
         ),
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
         window: int = 20,
     ) -> None:
-        """Plot employment rate by distance to first care demand spell.
+        """Plot caregiving rates by distance to first care demand spell.
 
         Type 0 sanity check.
 
-        Creates an event study plot comparing baseline vs no-care-demand employment
+        Creates an event study plot comparing baseline vs no-care-demand caregiving
         rates, where t=0 is the start of the first care demand (light or intensive).
         Restricted to caregiving_type == 0 (agents who cannot provide informal care).
         This is a sanity check - type 0 agents cannot provide informal care, so
@@ -298,11 +277,11 @@ for age_min_val, age_max_val, age_label_val in (
         Steps:
           1) Restrict to alive and caregiving_type == 0.
           2) Ensure agent/period columns.
-          3) Calculate employment outcomes (work indicator) for both scenarios.
+          3) Calculate caregiving outcomes (caregiving indicator) for both scenarios.
           4) Merge on (agent, period) to ensure matched comparison.
           5) Compute distance_to_first_care_demand from baseline, attach to merged.
           6) Filter by age at first care demand period (if age_min/age_max specified).
-          7) Aggregate employment rates by distance (baseline and
+          7) Aggregate caregiving rates by distance (baseline and
           counterfactual separately).
           8) Plot both series on same graph.
 
@@ -338,13 +317,13 @@ for age_min_val, age_max_val, age_label_val in (
         df_o = df_o[df_o["agent"].isin(type_0_agents)].copy()
         df_c = df_c[df_c["agent"].isin(type_0_agents)].copy()
 
-        # Calculate employment outcomes
-        o_work, _, _ = calculate_simple_outcomes(df_o, "original")
-        c_work, _, _ = calculate_simple_outcomes(df_c, "no_care_demand")
+        # Calculate caregiving outcomes
+        o_caregiving, _ = calculate_caregiving_outcomes(df_o, "original")
+        _, c_caregiving = calculate_caregiving_outcomes(df_c, "no_care_demand")
 
         # Create outcome columns
         o_cols = df_o[["agent", "period", "choice"]].copy()
-        o_cols["work_o"] = o_work
+        o_cols["caregiving_o"] = o_caregiving
         # Add current caregiving indicator (1 if currently providing informal
         # care, 0 otherwise)
         # Note: For type 0 agents, this will always be 0 since they cannot
@@ -355,7 +334,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
         c_cols = df_c[["agent", "period"]].copy()
-        c_cols["work_c"] = c_work
+        c_cols["caregiving_c"] = c_caregiving
 
         # Merge on (agent, period) to ensure matched comparison
         merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
@@ -401,10 +380,10 @@ for age_min_val, age_max_val, age_label_val in (
         if age_max is not None:
             merged = merged[merged["age_at_first_care_demand"] <= age_max].copy()
 
-        # Aggregate employment rates by distance
+        # Aggregate caregiving rates by distance
         prof = (
             merged.groupby("distance_to_first_care_demand", observed=False)[
-                ["work_o", "work_c"]
+                ["caregiving_o", "caregiving_c"]
             ]
             .mean()
             .reset_index()
@@ -429,7 +408,7 @@ for age_min_val, age_max_val, age_label_val in (
         merged_1_year = merged[merged["agent"].isin(agents_1_year)].copy()
         prof_1_year = (
             merged_1_year.groupby("distance_to_first_care_demand", observed=False)[
-                ["work_o"]
+                ["caregiving_o"]
             ]
             .mean()
             .reset_index()
@@ -443,7 +422,7 @@ for age_min_val, age_max_val, age_label_val in (
         merged_2_year = merged[merged["agent"].isin(agents_2_year)].copy()
         prof_2_year = (
             merged_2_year.groupby("distance_to_first_care_demand", observed=False)[
-                ["work_o"]
+                ["caregiving_o"]
             ]
             .mean()
             .reset_index()
@@ -457,7 +436,7 @@ for age_min_val, age_max_val, age_label_val in (
         merged_3_year = merged[merged["agent"].isin(agents_3_year)].copy()
         prof_3_year = (
             merged_3_year.groupby("distance_to_first_care_demand", observed=False)[
-                ["work_o"]
+                ["caregiving_o"]
             ]
             .mean()
             .reset_index()
@@ -471,7 +450,7 @@ for age_min_val, age_max_val, age_label_val in (
         merged_4_year = merged[merged["agent"].isin(agents_4_year)].copy()
         prof_4_year = (
             merged_4_year.groupby("distance_to_first_care_demand", observed=False)[
-                ["work_o"]
+                ["caregiving_o"]
             ]
             .mean()
             .reset_index()
@@ -482,7 +461,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
         # Call plotting function
-        plot_employment_rate_by_distance(
+        plot_caregiving_rate_by_distance(
             prof=prof,
             prof_1_year=prof_1_year,
             prof_2_year=prof_2_year,
@@ -501,10 +480,10 @@ for age_min_val, age_max_val, age_label_val in (
     (60, 70, "ages_60_70"),
 ):
 
-    @pytask.mark.publication_employment
+    @pytask.mark.publication_caregiving_rate
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_care_demand_all")
-    def task_plot_employment_rate_by_distance_to_first_care_demand_all(  # noqa: PLR0912, PLR0915
+    def task_plot_caregiving_rate_by_distance_to_first_care_demand_all(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -517,15 +496,15 @@ for age_min_val, age_max_val, age_label_val in (
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
-        / "employment"
-        / f"employment_rate_by_distance_to_first_care_demand_all_{age_label_val}.pdf",
+        / "caregiving"
+        / f"caregiving_rate_by_distance_to_first_care_demand_all_{age_label_val}.pdf",
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
         window: int = 20,
     ) -> None:
-        """Plot employment rate by distance to first care demand spell (all agents).
+        """Plot caregiving rates by distance to first care demand spell (all agents).
 
-        Creates an event study plot comparing baseline vs no-care-demand employment
+        Creates an event study plot comparing baseline vs no-care-demand caregiving
         rates, where t=0 is the start of the first care demand (light or intensive).
         Includes all agents (not restricted to caregiving_type == 1).
         Can be filtered by age at first care demand period.
@@ -533,11 +512,11 @@ for age_min_val, age_max_val, age_label_val in (
         Steps:
           1) Restrict to alive agents.
           2) Ensure agent/period columns.
-          3) Calculate employment outcomes (work indicator) for both scenarios.
+          3) Calculate caregiving outcomes (caregiving indicator) for both scenarios.
           4) Merge on (agent, period) to ensure matched comparison.
           5) Compute distance_to_first_care_demand from baseline, attach to merged.
           6) Filter by age at first care demand period (if age_min/age_max specified).
-          7) Aggregate employment rates by distance (baseline and
+          7) Aggregate caregiving rates by distance (baseline and
           counterfactual separately).
           8) Plot both series on same graph.
 
@@ -563,13 +542,13 @@ for age_min_val, age_max_val, age_label_val in (
             ever_care_demand,
         )
 
-        # Calculate employment outcomes
-        o_work, _, _ = calculate_simple_outcomes(df_o, "original")
-        c_work, _, _ = calculate_simple_outcomes(df_c, "no_care_demand")
+        # Calculate caregiving outcomes
+        o_caregiving, _ = calculate_caregiving_outcomes(df_o, "original")
+        _, c_caregiving = calculate_caregiving_outcomes(df_c, "no_care_demand")
 
         # Create outcome columns
         o_cols = df_o[["agent", "period", "choice"]].copy()
-        o_cols["work_o"] = o_work
+        o_cols["caregiving_o"] = o_caregiving
         # Add current caregiving indicator (1 if currently providing informal care
         # - light or intensive, 0 otherwise)
         # Note: "caregiving" refers to informal care, not formal care
@@ -579,7 +558,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
         c_cols = df_c[["agent", "period"]].copy()
-        c_cols["work_c"] = c_work
+        c_cols["caregiving_c"] = c_caregiving
 
         # Merge on (agent, period) to ensure matched comparison
         merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
@@ -625,10 +604,10 @@ for age_min_val, age_max_val, age_label_val in (
         if age_max is not None:
             merged = merged[merged["age_at_first_care_demand"] <= age_max].copy()
 
-        # Aggregate employment rates by distance
+        # Aggregate caregiving rates by distance
         prof = (
             merged.groupby("distance_to_first_care_demand", observed=False)[
-                ["work_o", "work_c"]
+                ["caregiving_o", "caregiving_c"]
             ]
             .mean()
             .reset_index()
@@ -653,7 +632,7 @@ for age_min_val, age_max_val, age_label_val in (
         merged_1_year = merged[merged["agent"].isin(agents_1_year)].copy()
         prof_1_year = (
             merged_1_year.groupby("distance_to_first_care_demand", observed=False)[
-                ["work_o"]
+                ["caregiving_o"]
             ]
             .mean()
             .reset_index()
@@ -667,7 +646,7 @@ for age_min_val, age_max_val, age_label_val in (
         merged_2_year = merged[merged["agent"].isin(agents_2_year)].copy()
         prof_2_year = (
             merged_2_year.groupby("distance_to_first_care_demand", observed=False)[
-                ["work_o"]
+                ["caregiving_o"]
             ]
             .mean()
             .reset_index()
@@ -681,7 +660,7 @@ for age_min_val, age_max_val, age_label_val in (
         merged_3_year = merged[merged["agent"].isin(agents_3_year)].copy()
         prof_3_year = (
             merged_3_year.groupby("distance_to_first_care_demand", observed=False)[
-                ["work_o"]
+                ["caregiving_o"]
             ]
             .mean()
             .reset_index()
@@ -695,7 +674,7 @@ for age_min_val, age_max_val, age_label_val in (
         merged_4_year = merged[merged["agent"].isin(agents_4_year)].copy()
         prof_4_year = (
             merged_4_year.groupby("distance_to_first_care_demand", observed=False)[
-                ["work_o"]
+                ["caregiving_o"]
             ]
             .mean()
             .reset_index()
@@ -706,7 +685,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
         # Call plotting function
-        plot_employment_rate_by_distance(
+        plot_caregiving_rate_by_distance(
             prof=prof,
             prof_1_year=prof_1_year,
             prof_2_year=prof_2_year,
@@ -725,10 +704,10 @@ for age_min_val, age_max_val, age_label_val in (
     (60, 70, "ages_60_70"),
 ):
 
-    @pytask.mark.publication_employment
+    @pytask.mark.publication_caregiving_rate
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_care_demand_type_1_caregiving_duration")
-    def task_plot_employment_rate_by_distance_to_first_care_demand_type_1_cg(  # noqa: PLR0912, PLR0915
+    def task_plot_caregiving_rate_by_distance_to_first_care_demand_type_1_cg(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -741,20 +720,20 @@ for age_min_val, age_max_val, age_label_val in (
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
-        / "employment"
+        / "caregiving"
         / (
-            f"employment_rate_by_distance_to_first_care_demand_type_1_"
+            f"caregiving_rate_by_distance_to_first_care_demand_type_1_"
             f"caregiving_duration_{age_label_val}.pdf"
         ),
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
         window: int = 20,
     ) -> None:
-        """Plot employment rate by distance to first care demand spell.
+        """Plot caregiving rates by distance to first care demand spell.
 
         Caregiving duration version.
 
-        Creates an event study plot comparing baseline vs no-care-demand employment
+        Creates an event study plot comparing baseline vs no-care-demand caregiving
         rates, where t=0 is the start of the first care demand (light or intensive).
         Restricted to caregiving_type == 1 (agents who can provide informal
         care). Duration lines (1-year, 2-year, 3-year, 4-year) are based on
@@ -764,11 +743,11 @@ for age_min_val, age_max_val, age_label_val in (
         Steps:
           1) Restrict to alive and caregiving_type == 1.
           2) Ensure agent/period columns.
-          3) Calculate employment outcomes (work indicator) for both scenarios.
+          3) Calculate caregiving outcomes (caregiving indicator) for both scenarios.
           4) Merge on (agent, period) to ensure matched comparison.
           5) Compute distance_to_first_care_demand from baseline, attach to merged.
           6) Filter by age at first care demand period (if age_min/age_max specified).
-          7) Aggregate employment rates by distance (baseline and
+          7) Aggregate caregiving rates by distance (baseline and
           counterfactual separately).
           8) Plot both series on same graph.
 
@@ -804,13 +783,13 @@ for age_min_val, age_max_val, age_label_val in (
         df_o = df_o[df_o["agent"].isin(type_1_agents)].copy()
         df_c = df_c[df_c["agent"].isin(type_1_agents)].copy()
 
-        # Calculate employment outcomes
-        o_work, _, _ = calculate_simple_outcomes(df_o, "original")
-        c_work, _, _ = calculate_simple_outcomes(df_c, "no_care_demand")
+        # Calculate caregiving outcomes
+        o_caregiving, _ = calculate_caregiving_outcomes(df_o, "original")
+        _, c_caregiving = calculate_caregiving_outcomes(df_c, "no_care_demand")
 
         # Create outcome columns
         o_cols = df_o[["agent", "period", "choice"]].copy()
-        o_cols["work_o"] = o_work
+        o_cols["caregiving_o"] = o_caregiving
         # Add current caregiving indicator (1 if currently providing care, 0 otherwise)
         care_codes_for_indicator = np.asarray(INFORMAL_CARE).ravel().tolist()
         o_cols["current_caregiving"] = (
@@ -818,7 +797,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
         c_cols = df_c[["agent", "period"]].copy()
-        c_cols["work_c"] = c_work
+        c_cols["caregiving_c"] = c_caregiving
 
         # Merge on (agent, period) to ensure matched comparison
         merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
@@ -864,10 +843,10 @@ for age_min_val, age_max_val, age_label_val in (
         if age_max is not None:
             merged = merged[merged["age_at_first_care_demand"] <= age_max].copy()
 
-        # Aggregate employment rates by distance
+        # Aggregate caregiving rates by distance
         prof = (
             merged.groupby("distance_to_first_care_demand", observed=False)[
-                ["work_o", "work_c"]
+                ["caregiving_o", "caregiving_c"]
             ]
             .mean()
             .reset_index()
@@ -892,7 +871,7 @@ for age_min_val, age_max_val, age_label_val in (
         merged_1_year = merged[merged["agent"].isin(agents_1_year)].copy()
         prof_1_year = (
             merged_1_year.groupby("distance_to_first_care_demand", observed=False)[
-                ["work_o"]
+                ["caregiving_o"]
             ]
             .mean()
             .reset_index()
@@ -906,7 +885,7 @@ for age_min_val, age_max_val, age_label_val in (
         merged_2_year = merged[merged["agent"].isin(agents_2_year)].copy()
         prof_2_year = (
             merged_2_year.groupby("distance_to_first_care_demand", observed=False)[
-                ["work_o"]
+                ["caregiving_o"]
             ]
             .mean()
             .reset_index()
@@ -920,7 +899,7 @@ for age_min_val, age_max_val, age_label_val in (
         merged_3_year = merged[merged["agent"].isin(agents_3_year)].copy()
         prof_3_year = (
             merged_3_year.groupby("distance_to_first_care_demand", observed=False)[
-                ["work_o"]
+                ["caregiving_o"]
             ]
             .mean()
             .reset_index()
@@ -934,7 +913,7 @@ for age_min_val, age_max_val, age_label_val in (
         merged_4_year = merged[merged["agent"].isin(agents_4_year)].copy()
         prof_4_year = (
             merged_4_year.groupby("distance_to_first_care_demand", observed=False)[
-                ["work_o"]
+                ["caregiving_o"]
             ]
             .mean()
             .reset_index()
@@ -945,7 +924,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
         # Call plotting function
-        plot_employment_rate_by_distance(
+        plot_caregiving_rate_by_distance(
             prof=prof,
             prof_1_year=prof_1_year,
             prof_2_year=prof_2_year,
@@ -964,10 +943,10 @@ for age_min_val, age_max_val, age_label_val in (
     (60, 70, "ages_60_70"),
 ):
 
-    @pytask.mark.publication_employment
+    @pytask.mark.publication_caregiving_rate
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_care_demand_type_1_care_demand_duration")
-    def task_plot_employment_rate_by_distance_to_first_care_demand_type_1_cd(  # noqa: PLR0912, PLR0915
+    def task_plot_caregiving_rate_by_distance_to_first_care_demand_type_1_cd(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -980,20 +959,20 @@ for age_min_val, age_max_val, age_label_val in (
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
-        / "employment"
+        / "caregiving"
         / (
-            f"employment_rate_by_distance_to_first_care_demand_type_1_"
+            f"caregiving_rate_by_distance_to_first_care_demand_type_1_"
             f"care_demand_duration_{age_label_val}.pdf"
         ),
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
         window: int = 20,
     ) -> None:
-        """Plot employment rate by distance to first care demand spell.
+        """Plot caregiving rates by distance to first care demand spell.
 
         Care demand duration version.
 
-        Creates an event study plot comparing baseline vs no-care-demand employment
+        Creates an event study plot comparing baseline vs no-care-demand caregiving
         rates, where t=0 is the start of the first care demand (light or intensive).
         Restricted to caregiving_type == 1 (agents who can provide informal
         care). Duration lines (1-year, 2-year, 3-year, 4-year) are based on
@@ -1003,11 +982,11 @@ for age_min_val, age_max_val, age_label_val in (
         Steps:
           1) Restrict to alive and caregiving_type == 1.
           2) Ensure agent/period columns.
-          3) Calculate employment outcomes (work indicator) for both scenarios.
+          3) Calculate caregiving outcomes (caregiving indicator) for both scenarios.
           4) Merge on (agent, period) to ensure matched comparison.
           5) Compute distance_to_first_care_demand from baseline, attach to merged.
           6) Filter by age at first care demand period (if age_min/age_max specified).
-          7) Aggregate employment rates by distance (baseline and
+          7) Aggregate caregiving rates by distance (baseline and
           counterfactual separately).
           8) Plot both series on same graph.
 
@@ -1043,13 +1022,13 @@ for age_min_val, age_max_val, age_label_val in (
         df_o = df_o[df_o["agent"].isin(type_1_agents)].copy()
         df_c = df_c[df_c["agent"].isin(type_1_agents)].copy()
 
-        # Calculate employment outcomes
-        o_work, _, _ = calculate_simple_outcomes(df_o, "original")
-        c_work, _, _ = calculate_simple_outcomes(df_c, "no_care_demand")
+        # Calculate caregiving outcomes
+        o_caregiving, _ = calculate_caregiving_outcomes(df_o, "original")
+        _, c_caregiving = calculate_caregiving_outcomes(df_c, "no_care_demand")
 
         # Create outcome columns
         o_cols = df_o[["agent", "period", "choice"]].copy()
-        o_cols["work_o"] = o_work
+        o_cols["caregiving_o"] = o_caregiving
         # Add current caregiving indicator (1 if currently providing care, 0 otherwise)
         care_codes_for_indicator = np.asarray(INFORMAL_CARE).ravel().tolist()
         o_cols["current_caregiving"] = (
@@ -1057,7 +1036,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
         c_cols = df_c[["agent", "period"]].copy()
-        c_cols["work_c"] = c_work
+        c_cols["caregiving_c"] = c_caregiving
 
         # Merge on (agent, period) to ensure matched comparison
         merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
@@ -1103,10 +1082,10 @@ for age_min_val, age_max_val, age_label_val in (
         if age_max is not None:
             merged = merged[merged["age_at_first_care_demand"] <= age_max].copy()
 
-        # Aggregate employment rates by distance
+        # Aggregate caregiving rates by distance
         prof = (
             merged.groupby("distance_to_first_care_demand", observed=False)[
-                ["work_o", "work_c"]
+                ["caregiving_o", "caregiving_c"]
             ]
             .mean()
             .reset_index()
@@ -1131,7 +1110,7 @@ for age_min_val, age_max_val, age_label_val in (
         merged_1_year = merged[merged["agent"].isin(agents_1_year)].copy()
         prof_1_year = (
             merged_1_year.groupby("distance_to_first_care_demand", observed=False)[
-                ["work_o"]
+                ["caregiving_o"]
             ]
             .mean()
             .reset_index()
@@ -1145,7 +1124,7 @@ for age_min_val, age_max_val, age_label_val in (
         merged_2_year = merged[merged["agent"].isin(agents_2_year)].copy()
         prof_2_year = (
             merged_2_year.groupby("distance_to_first_care_demand", observed=False)[
-                ["work_o"]
+                ["caregiving_o"]
             ]
             .mean()
             .reset_index()
@@ -1159,7 +1138,7 @@ for age_min_val, age_max_val, age_label_val in (
         merged_3_year = merged[merged["agent"].isin(agents_3_year)].copy()
         prof_3_year = (
             merged_3_year.groupby("distance_to_first_care_demand", observed=False)[
-                ["work_o"]
+                ["caregiving_o"]
             ]
             .mean()
             .reset_index()
@@ -1173,7 +1152,7 @@ for age_min_val, age_max_val, age_label_val in (
         merged_4_year = merged[merged["agent"].isin(agents_4_year)].copy()
         prof_4_year = (
             merged_4_year.groupby("distance_to_first_care_demand", observed=False)[
-                ["work_o"]
+                ["caregiving_o"]
             ]
             .mean()
             .reset_index()
@@ -1184,7 +1163,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
         # Call plotting function
-        plot_employment_rate_by_distance(
+        plot_caregiving_rate_by_distance(
             prof=prof,
             prof_1_year=prof_1_year,
             prof_2_year=prof_2_year,
@@ -1203,10 +1182,10 @@ for age_min_val, age_max_val, age_label_val in (
     (60, 70, "ages_60_70"),
 ):
 
-    # @pytask.mark.publication_employment
-    # @pytask.mark.publication
+    @pytask.mark.publication_caregiving_rate
+    @pytask.mark.publication
     @pytask.task(id=age_label_val)
-    def task_plot_employment_rate_by_distance_to_first_care(  # noqa: PLR0912, PLR0915
+    def task_plot_caregiving_rate_by_distance_to_first_care(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -1219,13 +1198,13 @@ for age_min_val, age_max_val, age_label_val in (
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
-        / "employment"
-        / f"employment_rate_by_distance_to_first_care_{age_label_val}.pdf",
+        / "caregiving"
+        / f"caregiving_rate_by_distance_to_first_care_{age_label_val}.pdf",
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
         window: int = 20,
     ) -> None:
-        """Plot overall employment rate by distance to first caregiving spell.
+        """Plot overall caregiving rates by distance to first caregiving spell.
 
         Creates an event study plot comparing baseline vs no-care-demand employment
         rates, where t=0 is the start of the first caregiving spell. Can be filtered
@@ -1234,11 +1213,11 @@ for age_min_val, age_max_val, age_label_val in (
         Steps:
           1) Restrict to alive and (optionally) ever-caregivers/ever-care-demand.
           2) Ensure agent/period columns.
-          3) Calculate employment outcomes (work indicator) for both scenarios.
+          3) Calculate caregiving outcomes (caregiving indicator) for both scenarios.
           4) Merge on (agent, period) to ensure matched comparison.
           5) Compute distance_to_first_care from baseline, attach to merged.
           6) Filter by age at first care period (if age_min/age_max specified).
-          7) Aggregate employment rates by distance (baseline and
+          7) Aggregate caregiving rates by distance (baseline and
           counterfactual separately).
           8) Plot both series on same graph.
 
@@ -1264,13 +1243,13 @@ for age_min_val, age_max_val, age_label_val in (
             ever_care_demand,
         )
 
-        # Calculate employment outcomes
-        o_work, _, _ = calculate_simple_outcomes(df_o, "original")
-        c_work, _, _ = calculate_simple_outcomes(df_c, "no_care_demand")
+        # Calculate caregiving outcomes
+        o_caregiving, _ = calculate_caregiving_outcomes(df_o, "original")
+        _, c_caregiving = calculate_caregiving_outcomes(df_c, "no_care_demand")
 
         # Create outcome columns
         o_cols = df_o[["agent", "period", "choice"]].copy()
-        o_cols["work_o"] = o_work
+        o_cols["caregiving_o"] = o_caregiving
         # Add current caregiving indicator (1 if currently providing care, 0 otherwise)
         care_codes_for_indicator = np.asarray(INFORMAL_CARE).ravel().tolist()
         o_cols["current_caregiving"] = (
@@ -1278,7 +1257,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
         c_cols = df_c[["agent", "period"]].copy()
-        c_cols["work_c"] = c_work
+        c_cols["caregiving_c"] = c_caregiving
 
         # Merge on (agent, period) to ensure matched comparison
         merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
@@ -1317,8 +1296,8 @@ for age_min_val, age_max_val, age_label_val in (
         if age_max is not None:
             merged = merged[merged["age_at_first_care"] <= age_max].copy()
 
-        # Aggregate employment rates by distance
-        # Group by distance and compute mean employment rate for each scenario
+        # Aggregate caregiving rates by distance
+        # Group by distance and compute mean caregiving rates for each scenario
         #
         # BASELINE LINE COMPOSITION:
         # The baseline line includes ALL agents who:
@@ -1326,7 +1305,7 @@ for age_min_val, age_max_val, age_label_val in (
         #   2. Are within the window around their first care period
         #   3. Are matched on (agent, period) with the counterfactual
         #
-        # At each distance, the baseline line is the average employment rate across:
+        # At each distance, the baseline line is the average caregiving rates across:
         #   - People who are currently providing care at that distance
         #   - People who are not currently providing care at that distance
         #   - People who provided care for 1 year, 2 years, 3 years, 4 years, or longer
@@ -1334,7 +1313,7 @@ for age_min_val, age_max_val, age_label_val in (
         #   - People who never stopped providing care
         #   - People who stopped after different durations
         #
-        # This is the MOST INCLUSIVE group - it represents the average employment rate
+        # This is the MOST INCLUSIVE group - it represents the average caregiving rates
         # # across ALL caregivers at each distance from their first care period, rega
         # rdless of:
         #   - Current caregiving status
@@ -1355,7 +1334,7 @@ for age_min_val, age_max_val, age_label_val in (
         # at each distance.
         prof = (
             merged.groupby("distance_to_first_care", observed=False)[
-                ["work_o", "work_c"]
+                ["caregiving_o", "caregiving_c"]
             ]
             .mean()
             .reset_index()
@@ -1363,20 +1342,24 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
         # Create conditional baseline series:
-        # 1. Baseline employment rate, conditioned on current_caregiving == 1, after t=0
+        # 1. Baseline caregiving rates, conditioned on current_caregiving == 1,
+        #    after t=0
         # COMMENTED OUT - not currently used in plotting
         # merged_care = merged[
         #     (merged["current_caregiving"] == 1)
         #     & (merged["distance_to_first_care"] >= 0)
         # ].copy()
         # prof_care = (
-        #     merged_care.groupby("distance_to_first_care", observed=False)[["work_o"]]
+        #     merged_care.groupby(
+        #         "distance_to_first_care", observed=False
+        #     )[["caregiving_o"]]
         #     .mean()
         #     .reset_index()
         #     .sort_values("distance_to_first_care")
         # )
 
-        # 2. Baseline employment rate, conditioned on current_caregiving == 0, after t=1
+        # 2. Baseline caregiving rates, conditioned on current_caregiving == 0,
+        #    after t=1
         #
         # HETEROGENEOUS GROUP LOGIC:
         # # This group includes ALL people who are NOT currently providing care at ea
@@ -1408,7 +1391,7 @@ for age_min_val, age_max_val, age_label_val in (
         # prof_no_care = (
         #     merged_no_care.groupby(
         #         "distance_to_first_care", observed=False
-        #     )[["work_o"]]
+        #     )[["caregiving_o"]]
         #     .mean()
         #     .reset_index()
         #     .sort_values("distance_to_first_care")
@@ -1427,7 +1410,9 @@ for age_min_val, age_max_val, age_label_val in (
         # Create conditional series for 1-year caregivers
         merged_1_year = merged[merged["agent"].isin(agents_1_year)].copy()
         prof_1_year = (
-            merged_1_year.groupby("distance_to_first_care", observed=False)[["work_o"]]
+            merged_1_year.groupby("distance_to_first_care", observed=False)[
+                ["caregiving_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
@@ -1436,7 +1421,9 @@ for age_min_val, age_max_val, age_label_val in (
         # Create conditional series for 2-year caregivers
         merged_2_year = merged[merged["agent"].isin(agents_2_year)].copy()
         prof_2_year = (
-            merged_2_year.groupby("distance_to_first_care", observed=False)[["work_o"]]
+            merged_2_year.groupby("distance_to_first_care", observed=False)[
+                ["caregiving_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
@@ -1445,7 +1432,9 @@ for age_min_val, age_max_val, age_label_val in (
         # Create conditional series for 3-year caregivers
         merged_3_year = merged[merged["agent"].isin(agents_3_year)].copy()
         prof_3_year = (
-            merged_3_year.groupby("distance_to_first_care", observed=False)[["work_o"]]
+            merged_3_year.groupby("distance_to_first_care", observed=False)[
+                ["caregiving_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
@@ -1454,14 +1443,16 @@ for age_min_val, age_max_val, age_label_val in (
         # Create conditional series for 4-year caregivers
         merged_4_year = merged[merged["agent"].isin(agents_4_year)].copy()
         prof_4_year = (
-            merged_4_year.groupby("distance_to_first_care", observed=False)[["work_o"]]
+            merged_4_year.groupby("distance_to_first_care", observed=False)[
+                ["caregiving_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
 
         # Call plotting function
-        plot_employment_rate_by_distance(
+        plot_caregiving_rate_by_distance(
             prof=prof,
             prof_1_year=prof_1_year,
             prof_2_year=prof_2_year,
@@ -1472,7 +1463,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
 
-def plot_employment_rate_by_distance(  # noqa: PLR0913
+def plot_caregiving_rate_by_distance(  # noqa: PLR0913
     prof,
     prof_1_year,
     prof_2_year,
@@ -1482,13 +1473,14 @@ def plot_employment_rate_by_distance(  # noqa: PLR0913
     path_to_plot: Optional[Path] = None,
     xlabel: str = "Year relative to start of first care spell",
 ) -> None:
-    """Plot employment rate by distance to first caregiving spell.
+    """Plot caregiving rates by distance to first caregiving spell.
 
-    Creates an event study plot comparing baseline vs no-care-demand employment
+    Creates an event study plot comparing baseline vs no-care-demand caregiving
     rates, with separate lines for different caregiving durations.
 
     Args:
-        prof: DataFrame with columns 'distance_to_first_care', 'work_o', 'work_c'
+        prof: DataFrame with columns 'distance_to_first_care', 'caregiving_o',
+            'caregiving_c'
         prof_1_year: DataFrame for 1-year caregivers
         prof_2_year: DataFrame for 2-year caregivers
         prof_3_year: DataFrame for 3-year caregivers
@@ -1501,10 +1493,10 @@ def plot_employment_rate_by_distance(  # noqa: PLR0913
     # Increased figure size to maintain visual balance with thinner lines/text
     plt.figure(figsize=(14, 8))
 
-    # Plot overall baseline employment rate (entire baseline sample) - dashed black line
+    # Plot overall baseline caregiving rate (entire baseline sample) - dashed black line
     plt.plot(
         prof["distance_to_first_care"],
-        prof["work_o"],
+        prof["caregiving_o"],
         label="Baseline",
         color="black",
         linewidth=2.0,
@@ -1512,10 +1504,10 @@ def plot_employment_rate_by_distance(  # noqa: PLR0913
         marker=None,
     )
 
-    # Plot no-care-demand employment rate
+    # Plot no-care-demand caregiving rate
     plt.plot(
         prof["distance_to_first_care"],
-        prof["work_c"],
+        prof["caregiving_c"],
         label="No Care Demand",
         color="black",
         linewidth=2.0,
@@ -1523,11 +1515,11 @@ def plot_employment_rate_by_distance(  # noqa: PLR0913
         marker=None,
     )
 
-    # Plot baseline employment rate for 1-year caregivers (care at t=0 only, then stop)
+    # Plot baseline caregiving rates for 1-year caregivers (care at t=0 only, then stop)
     if len(prof_1_year) > 0:
         plt.plot(
             prof_1_year["distance_to_first_care"],
-            prof_1_year["work_o"],
+            prof_1_year["caregiving_o"],
             label="Baseline (1-Year Caregivers: t=0)",
             color="0.8",
             linewidth=2.0,
@@ -1539,12 +1531,12 @@ def plot_employment_rate_by_distance(  # noqa: PLR0913
             markeredgewidth=1.5,
         )
 
-    # # Plot baseline employment rate for 2-year caregivers (care at t=0 and t=1,
+    # # Plot baseline caregiving rates for 2-year caregivers (care at t=0 and t=1,
     #  then stop)
     if len(prof_2_year) > 0:
         plt.plot(
             prof_2_year["distance_to_first_care"],
-            prof_2_year["work_o"],
+            prof_2_year["caregiving_o"],
             label="Baseline (2-Year Caregivers: t=0, t=1)",
             color="0.6",
             linewidth=2.0,
@@ -1556,12 +1548,12 @@ def plot_employment_rate_by_distance(  # noqa: PLR0913
             markeredgewidth=1.5,
         )
 
-    # # Plot baseline employment rate for 3-year caregivers (care at t=0, t=1, t=
+    # # Plot baseline caregiving rates for 3-year caregivers (care at t=0, t=1, t=
     # 2, then stop)
     if len(prof_3_year) > 0:
         plt.plot(
             prof_3_year["distance_to_first_care"],
-            prof_3_year["work_o"],
+            prof_3_year["caregiving_o"],
             label="Baseline (3-Year Caregivers: t=0, t=1, t=2)",
             color="0.4",
             linewidth=2.0,
@@ -1573,12 +1565,12 @@ def plot_employment_rate_by_distance(  # noqa: PLR0913
             markeredgewidth=1.5,
         )
 
-    # # Plot baseline employment rate for 4-year caregivers (care at t=0, t=1, t=
+    # # Plot baseline caregiving rates for 4-year caregivers (care at t=0, t=1, t=
     # 2, t=3, then stop)
     if len(prof_4_year) > 0:
         plt.plot(
             prof_4_year["distance_to_first_care"],
-            prof_4_year["work_o"],
+            prof_4_year["caregiving_o"],
             label="Baseline (4-Year Caregivers: t=0, t=1, t=2, t=3)",
             color="0.2",
             linewidth=2.0,
@@ -1604,10 +1596,10 @@ def plot_employment_rate_by_distance(  # noqa: PLR0913
 
     # Formatting
     plt.xlabel(xlabel, fontsize=14)
-    plt.ylabel("Employment Rate", fontsize=14)
+    plt.ylabel("Caregiving Rate", fontsize=14)
     # Add padding: x-axis extends beyond -window and window, y-axis extends below 0
     plt.xlim(-window - 0.5, window + 0.5)
-    plt.ylim(-0.025, 1.0)  # Employment rate is between 0 and 1, with padding below
+    plt.ylim(-0.025, 1.0)  # Caregiving rate is between 0 and 1, with padding below
     plt.grid(True, axis="y", alpha=0.3, linewidth=0.8)  # Only horizontal grid lines
     # Set ticks to original range (no ticks in padding area)
     plt.xticks(range(-window, window + 1, 5), fontsize=12)
