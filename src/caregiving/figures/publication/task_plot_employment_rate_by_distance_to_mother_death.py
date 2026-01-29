@@ -17,225 +17,19 @@ from pytask import Product
 
 from caregiving.config import BLD
 from caregiving.counterfactual.plotting_helpers import (
-    _ensure_agent_period,
     calculate_simple_outcomes,
+    ensure_agent_period,
     prepare_dataframes_simple,
+)
+from caregiving.figures.publication.plotting_helpers_mother_death import (
+    add_distance_to_mother_death,
+    identify_agents_by_caregiving_before_death,
+    identify_agents_by_caregiving_before_death_at_least,
 )
 from caregiving.model.shared import (
     INFORMAL_CARE,
     PARENT_RECENTLY_DEAD,
 )
-
-
-def _add_distance_to_mother_death(df_original: pd.DataFrame) -> pd.DataFrame:
-    """Add distance_to_mother_death column.
-
-    Sets 0 as first time mother_dead == PARENT_RECENTLY_DEAD (mother dies).
-    """
-    # Flatten any existing index to avoid column/index name ambiguity
-    df = df_original.reset_index(drop=True)
-    df = _ensure_agent_period(df)
-    # Find first period where mother_dead == PARENT_RECENTLY_DEAD
-    death_mask = df["mother_dead"] == PARENT_RECENTLY_DEAD
-    first_death = (
-        df.loc[death_mask, ["agent", "period"]]
-        .sort_values(["agent", "period"])
-        .drop_duplicates("agent")
-        .rename(columns={"period": "first_death_period"})
-    )
-    out = df.merge(first_death, on="agent", how="left")
-    out["distance_to_mother_death"] = out["period"] - out["first_death_period"]
-    return out
-
-
-def _identify_agents_by_caregiving_before_death(
-    merged: pd.DataFrame,
-    distance_col: str,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Identify agents by caregiving duration BEFORE mother's death.
-
-    Identifies agents who provide informal care for 1, 2, 3, or 4 years
-    BEFORE mother's death (at t=-1, t=-2, t=-3, t=-4).
-
-    Groups are mutually exclusive:
-    - 1-year: care at t=-1, but NOT at t=-2
-    - 2-year: care at t=-1 and t=-2, but NOT at t=-3
-    - 3-year: care at t=-1, t=-2, t=-3, but NOT at t=-4
-    - 4-year: care at t=-1, t=-2, t=-3, t=-4
-
-    Args:
-        merged: DataFrame with agent, distance, and current_caregiving columns
-        distance_col: Name of distance column (e.g., "distance_to_mother_death")
-
-    Returns:
-        Tuple of (agents_1_year, agents_2_year, agents_3_year, agents_4_year)
-        as numpy arrays of agent IDs
-    """
-    # Ensure current_caregiving column exists
-    if "current_caregiving" not in merged.columns:
-        raise ValueError(
-            "current_caregiving column not found. "
-            "Cannot identify caregiving duration before death."
-        )
-
-    # Create pivot table of caregiving status by distance (only negative distances)
-    agent_care_matrix = merged[merged[distance_col] < 0].pivot_table(
-        index="agent",
-        columns=distance_col,
-        values="current_caregiving",
-        aggfunc="first",
-    )
-
-    # Identify agents with caregiving at specific distances before death
-    agents_1_year = []
-    agents_2_year = []
-    agents_3_year = []
-    agents_4_year = []
-
-    for agent in agent_care_matrix.index:
-        # Check caregiving at t=-1, t=-2, t=-3, t=-4
-        care_at_minus_1 = (
-            agent_care_matrix.loc[agent, -1] == 1
-            if -1 in agent_care_matrix.columns
-            and pd.notna(agent_care_matrix.loc[agent, -1])
-            else False
-        )
-        care_at_minus_2 = (
-            agent_care_matrix.loc[agent, -2] == 1
-            if -2 in agent_care_matrix.columns  # noqa: PLR2004
-            and pd.notna(agent_care_matrix.loc[agent, -2])
-            else False
-        )
-        care_at_minus_3 = (
-            agent_care_matrix.loc[agent, -3] == 1
-            if -3 in agent_care_matrix.columns  # noqa: PLR2004
-            and pd.notna(agent_care_matrix.loc[agent, -3])
-            else False
-        )
-        care_at_minus_4 = (
-            agent_care_matrix.loc[agent, -4] == 1
-            if -4 in agent_care_matrix.columns  # noqa: PLR2004
-            and pd.notna(agent_care_matrix.loc[agent, -4])
-            else False
-        )
-
-        # 4-year: care at t=-1, t=-2, t=-3, t=-4
-        if care_at_minus_1 and care_at_minus_2 and care_at_minus_3 and care_at_minus_4:
-            agents_4_year.append(agent)
-        # 3-year: care at t=-1, t=-2, t=-3, but NOT at t=-4
-        elif (
-            care_at_minus_1
-            and care_at_minus_2
-            and care_at_minus_3
-            and not care_at_minus_4
-        ):
-            agents_3_year.append(agent)
-        # 2-year: care at t=-1, t=-2, but NOT at t=-3
-        elif care_at_minus_1 and care_at_minus_2 and not care_at_minus_3:
-            agents_2_year.append(agent)
-        # 1-year: care at t=-1, but NOT at t=-2
-        elif care_at_minus_1 and not care_at_minus_2:
-            agents_1_year.append(agent)
-
-    return (
-        np.array(agents_1_year),
-        np.array(agents_2_year),
-        np.array(agents_3_year),
-        np.array(agents_4_year),
-    )
-
-
-def _identify_agents_by_caregiving_before_death_at_least(
-    merged: pd.DataFrame,
-    distance_col: str,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Identify agents by caregiving duration BEFORE mother's death (at least N years).
-
-    Identifies agents who provide informal care for AT LEAST 1, 2, 3, or 4 years
-    BEFORE mother's death (at t=-1, t=-2, t=-3, t=-4).
-
-    Groups use "at least" logic with overlap allowed:
-    - At least 1-year: care at t=-1
-    - At least 2-year: care at t=-1 and t=-2
-    - At least 3-year: care at t=-1, t=-2, t=-3
-    - At least 4-year: care at t=-1, t=-2, t=-3, t=-4
-
-    Args:
-        merged: DataFrame with agent, distance, and current_caregiving columns
-        distance_col: Name of distance column (e.g., "distance_to_mother_death")
-
-    Returns:
-        Tuple of (agents_1_year, agents_2_year, agents_3_year, agents_4_year)
-        as numpy arrays of agent IDs
-    """
-    # Ensure current_caregiving column exists
-    if "current_caregiving" not in merged.columns:
-        raise ValueError(
-            "current_caregiving column not found. "
-            "Cannot identify caregiving duration before death."
-        )
-
-    # Create pivot table of caregiving status by distance (only negative distances)
-    agent_care_matrix = merged[merged[distance_col] < 0].pivot_table(
-        index="agent",
-        columns=distance_col,
-        values="current_caregiving",
-        aggfunc="first",
-    )
-
-    # Identify agents with at least N years of caregiving before death
-    agents_1_year = []
-    agents_2_year = []
-    agents_3_year = []
-    agents_4_year = []
-
-    for agent in agent_care_matrix.index:
-        # Check caregiving at t=-1, t=-2, t=-3, t=-4
-        care_at_minus_1 = (
-            agent_care_matrix.loc[agent, -1] == 1
-            if -1 in agent_care_matrix.columns
-            and pd.notna(agent_care_matrix.loc[agent, -1])
-            else False
-        )
-        care_at_minus_2 = (
-            agent_care_matrix.loc[agent, -2] == 1
-            if -2 in agent_care_matrix.columns  # noqa: PLR2004
-            and pd.notna(agent_care_matrix.loc[agent, -2])
-            else False
-        )
-        care_at_minus_3 = (
-            agent_care_matrix.loc[agent, -3] == 1
-            if -3 in agent_care_matrix.columns  # noqa: PLR2004
-            and pd.notna(agent_care_matrix.loc[agent, -3])
-            else False
-        )
-        care_at_minus_4 = (
-            agent_care_matrix.loc[agent, -4] == 1
-            if -4 in agent_care_matrix.columns  # noqa: PLR2004
-            and pd.notna(agent_care_matrix.loc[agent, -4])
-            else False
-        )
-
-        # At least 1-year: care at t=-1
-        if care_at_minus_1:
-            agents_1_year.append(agent)
-        # At least 2-year: care at t=-1 and t=-2
-        if care_at_minus_1 and care_at_minus_2:
-            agents_2_year.append(agent)
-        # At least 3-year: care at t=-1, t=-2, t=-3
-        if care_at_minus_1 and care_at_minus_2 and care_at_minus_3:
-            agents_3_year.append(agent)
-        # At least 4-year: care at t=-1, t=-2, t=-3, t=-4
-        if care_at_minus_1 and care_at_minus_2 and care_at_minus_3 and care_at_minus_4:
-            agents_4_year.append(agent)
-
-    return (
-        np.array(agents_1_year),
-        np.array(agents_2_year),
-        np.array(agents_3_year),
-        np.array(agents_4_year),
-    )
-
 
 for age_min_val, age_max_val, age_label_val in (
     (None, None, "all_ages"),
@@ -342,7 +136,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
         # Compute distance to mother's death in baseline and attach
-        df_o_dist = _add_distance_to_mother_death(df_o)
+        df_o_dist = add_distance_to_mother_death(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_death_period"]
             .first()
@@ -394,10 +188,12 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
         # Identify agents by caregiving duration BEFORE death
-        agents_1_year, agents_2_year, agents_3_year, agents_4_year = (
-            _identify_agents_by_caregiving_before_death(
+        agents_1_year, agents_2_year, agents_3_year, agents_4_year, _ = (
+            identify_agents_by_caregiving_before_death(
                 merged,
                 distance_col="distance_to_mother_death",
+                add_five_year=False,
+                last_group_at_least=True,  # Default: last group "at least" N years
             )
         )
 
@@ -579,7 +375,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
         # Compute distance to mother's death in baseline and attach
-        df_o_dist = _add_distance_to_mother_death(df_o)
+        df_o_dist = add_distance_to_mother_death(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_death_period"]
             .first()
@@ -631,10 +427,11 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
         # Identify agents by AT LEAST N years of caregiving BEFORE death
-        agents_1_year, agents_2_year, agents_3_year, agents_4_year = (
-            _identify_agents_by_caregiving_before_death_at_least(
+        agents_1_year, agents_2_year, agents_3_year, agents_4_year, _ = (
+            identify_agents_by_caregiving_before_death_at_least(
                 merged,
                 distance_col="distance_to_mother_death",
+                add_five_year=False,
             )
         )
 

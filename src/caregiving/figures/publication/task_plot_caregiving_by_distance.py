@@ -16,7 +16,7 @@ from pytask import Product
 
 from caregiving.config import BLD
 from caregiving.counterfactual.plotting_helpers import (
-    _ensure_agent_period,
+    ensure_agent_period,
     get_age_at_first_event,
     prepare_dataframes_simple,
 )
@@ -35,7 +35,7 @@ def _add_distance_to_first_care_demand(df_original: pd.DataFrame) -> pd.DataFram
     """
     # Flatten any existing index to avoid column/index name ambiguity
     df = df_original.reset_index(drop=True)
-    df = _ensure_agent_period(df)
+    df = ensure_agent_period(df)
     # Find first period where care_demand > 0
     care_demand_mask = df["care_demand"] > 0
     first_care_demand = (

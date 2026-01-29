@@ -25,11 +25,11 @@ from caregiving.counterfactual.plotting_helpers import (
     plot_three_line_differences,
 )
 from caregiving.counterfactual.plotting_utils import (
-    _ensure_agent_period,
     calculate_additional_outcomes,
     calculate_outcomes,
     calculate_working_hours_weekly,
     create_outcome_columns,
+    ensure_agent_period,
     prepare_dataframes_for_comparison,
 )
 from caregiving.counterfactual.task_plot_labor_supply_differences import (
@@ -4241,8 +4241,8 @@ def task_plot_matched_differences_first_care_start_by_age_full_cg_leave(  # noqa
     df_baseline = df_baseline[df_baseline["health"] != DEAD].copy()
 
     # Ensure agent/period
-    df_full_cg = _ensure_agent_period(df_full_cg)
-    df_baseline = _ensure_agent_period(df_baseline)
+    df_full_cg = ensure_agent_period(df_full_cg)
+    df_baseline = ensure_agent_period(df_baseline)
 
     # Fully flatten any residual index levels
     for df in (df_full_cg, df_baseline):
@@ -4439,8 +4439,8 @@ def task_plot_matched_differences_first_care_demand_start_by_age_full_cg_leave( 
     df_baseline = df_baseline[df_baseline["health"] != DEAD].copy()
 
     # Ensure agent/period
-    df_full_cg = _ensure_agent_period(df_full_cg)
-    df_baseline = _ensure_agent_period(df_baseline)
+    df_full_cg = ensure_agent_period(df_full_cg)
+    df_baseline = ensure_agent_period(df_baseline)
 
     # Fully flatten any residual index levels
     for df in (df_full_cg, df_baseline):

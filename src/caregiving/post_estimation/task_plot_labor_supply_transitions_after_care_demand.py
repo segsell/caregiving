@@ -17,7 +17,7 @@ import pytask
 from pytask import Product
 
 from caregiving.config import BLD, JET_COLOR_MAP
-from caregiving.counterfactual.plotting_utils import _ensure_agent_period
+from caregiving.counterfactual.plotting_utils import ensure_agent_period
 from caregiving.model.shared import (
     DEAD,
     FULL_TIME,
@@ -35,7 +35,7 @@ def _add_distance_to_first_care_demand(df: pd.DataFrame) -> pd.DataFrame:
     """
     # Flatten any existing index to avoid column/index name ambiguity
     df = df.reset_index(drop=True)
-    df = _ensure_agent_period(df)
+    df = ensure_agent_period(df)
     # Find first period where care_demand > 0
     care_demand_mask = df["care_demand"] > 0
     first_care_demand = (
@@ -58,7 +58,7 @@ def _add_distance_to_first_care(df: pd.DataFrame) -> pd.DataFrame:
     """
     # Flatten any existing index to avoid column/index name ambiguity
     df = df.reset_index(drop=True)
-    df = _ensure_agent_period(df)
+    df = ensure_agent_period(df)
     # Find first period where choice is in INFORMAL_CARE
     care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
     caregiving_mask = df["choice"].isin(care_codes)
@@ -140,7 +140,7 @@ def task_plot_labor_supply_transitions_after_care_demand(
     df = df[df["health"] != DEAD].copy()
 
     # Ensure agent/period columns
-    df = _ensure_agent_period(df)
+    df = ensure_agent_period(df)
 
     # Add distance to first care demand
     df = _add_distance_to_first_care_demand(df)
@@ -318,7 +318,7 @@ def task_plot_labor_supply_transitions_after_caregiving_t_minus_5(
     df = df[df["health"] != DEAD].copy()
 
     # Ensure agent/period columns
-    df = _ensure_agent_period(df)
+    df = ensure_agent_period(df)
 
     # Add distance to first caregiving
     df = _add_distance_to_first_care(df)
@@ -496,7 +496,7 @@ def task_plot_labor_supply_transitions_after_caregiving_t_minus_1(
     df = df[df["health"] != DEAD].copy()
 
     # Ensure agent/period columns
-    df = _ensure_agent_period(df)
+    df = ensure_agent_period(df)
 
     # Add distance to first caregiving
     df = _add_distance_to_first_care(df)
@@ -666,7 +666,7 @@ def task_plot_labor_supply_transitions_after_care_demand_t_minus_1(
     df = df[df["health"] != DEAD].copy()
 
     # Ensure agent/period columns
-    df = _ensure_agent_period(df)
+    df = ensure_agent_period(df)
 
     # Add distance to first care demand
     df = _add_distance_to_first_care_demand(df)

@@ -21,11 +21,11 @@ from caregiving.counterfactual.plotting_helpers import (
     plot_three_line_differences,
 )
 from caregiving.counterfactual.plotting_utils import (
-    _ensure_agent_period,
     calculate_additional_outcomes,
     calculate_outcomes,
     calculate_working_hours_weekly,
     create_outcome_columns,
+    ensure_agent_period,
     merge_and_compute_differences,
     prepare_dataframes_for_comparison,
 )
@@ -2386,7 +2386,7 @@ def task_plot_first_care_start_by_age(
     df_o = df_o[df_o["health"] != DEAD].copy()
 
     # Ensure agent/period
-    df_o = _ensure_agent_period(df_o)
+    df_o = ensure_agent_period(df_o)
 
     # Fully flatten any residual index levels
     if isinstance(df_o.index, pd.MultiIndex):
@@ -2459,7 +2459,7 @@ def _add_distance_to_first_care_demand(df_original: pd.DataFrame) -> pd.DataFram
     """
     # Flatten any existing index to avoid column/index name ambiguity
     df = df_original.reset_index(drop=True)
-    df = _ensure_agent_period(df)
+    df = ensure_agent_period(df)
     # Find first period where care_demand > 0
     care_demand_mask = df["care_demand"] > 0
     first_care_demand = (
@@ -4161,7 +4161,7 @@ def task_plot_first_care_demand_start_by_age(
     df_o = df_o[df_o["health"] != DEAD].copy()
 
     # Ensure agent/period
-    df_o = _ensure_agent_period(df_o)
+    df_o = ensure_agent_period(df_o)
 
     # Fully flatten any residual index levels
     if isinstance(df_o.index, pd.MultiIndex):
