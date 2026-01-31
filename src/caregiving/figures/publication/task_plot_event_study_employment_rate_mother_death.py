@@ -304,14 +304,13 @@ for age_min_val, age_max_val, age_label_val in (
         between baseline and no-care-demand counterfactual, where t=0 is when mother
         dies (mother_dead == PARENT_RECENTLY_DEAD).
 
-        Homogeneous groups are based on CONSECUTIVE N years of caregiving BEFORE death:
-        - 1-year consecutive: care at t=-1, then NOT at t=-2
-          (at least 1 year off before)
-        - 2-year consecutive: care at t=-1 and t=-2, then NOT at t=-3
-          (at least 1 year off before)
-        - 3-year consecutive: care at t=-1, t=-2, t=-3, then NOT at t=-4
-          (at least 1 year off before)
-        - 4-year consecutive: care at t=-1, t=-2, t=-3, t=-4
+        Homogeneous groups are based on EXACT caregiving duration BEFORE death:
+        - 1-year: care at t=-1, but NOT at t=-2
+        - 2-year: care at t=-1 and t=-2, but NOT at t=-3
+        - 3-year: care at t=-1, t=-2, t=-3, but NOT at t=-4
+        - 4-year: care at t=-1, t=-2, t=-3, t=-4, but NOT at t=-5
+        - 5-year: care at t=-1, t=-2, t=-3, t=-4, t=-5, but NOT at t=-6
+          (exactly 5 years)
 
         Groups are mutually exclusive (no overlap).
 
@@ -429,13 +428,14 @@ for age_min_val, age_max_val, age_label_val in (
             columns={"distance_to_mother_death": "distance_to_first_care"}
         )
 
-        # Identify agents by CONSECUTIVE N years of caregiving BEFORE death
-        agents_1_year, agents_2_year, agents_3_year, agents_4_year, _ = (
+        # Identify agents by EXACT caregiving duration BEFORE death
+        # (1, 2, 3, 4, 5 years exactly)
+        agents_1_year, agents_2_year, agents_3_year, agents_4_year, agents_5_year = (
             identify_agents_by_caregiving_before_death(
                 merged,
                 distance_col="distance_to_mother_death",
-                add_five_year=False,
-                last_group_at_least=True,  # Default: last group "at least" N years
+                add_five_year=True,
+                last_group_at_least=False,  # 5-year is "exactly 5 years"
             )
         )
 
@@ -487,13 +487,26 @@ for age_min_val, age_max_val, age_label_val in (
             columns={"distance_to_mother_death": "distance_to_first_care"}
         )
 
-        # Call plotting function with consecutive labels
+        # Create conditional series for 5-year consecutive caregivers (before death)
+        merged_5_year = merged[merged["agent"].isin(agents_5_year)].copy()
+        prof_5_year_diff = (
+            merged_5_year.groupby("distance_to_mother_death", observed=False)["diff"]
+            .mean()
+            .reset_index()
+            .sort_values("distance_to_mother_death")
+        )
+        prof_5_year_diff = prof_5_year_diff.rename(
+            columns={"distance_to_mother_death": "distance_to_first_care"}
+        )
+
+        # Call plotting function with consecutive labels (5 groups)
         plot_employment_rate_difference_by_distance_to_mother_death_consecutive(
             prof_diff=prof_diff,
             prof_1_year_diff=prof_1_year_diff,
             prof_2_year_diff=prof_2_year_diff,
             prof_3_year_diff=prof_3_year_diff,
             prof_4_year_diff=prof_4_year_diff,
+            prof_5_year_diff=prof_5_year_diff,
             window=window,
             path_to_plot=path_to_plot,
         )
@@ -546,7 +559,8 @@ for age_min_val, age_max_val, age_label_val in (
         - 2-year: care demand at t=-1 and t=-2, but NOT at t=-3
         - 3-year: care demand at t=-1, t=-2, t=-3, but NOT at t=-4
         - 4-year: care demand at t=-1, t=-2, t=-3, t=-4, but NOT at t=-5
-        - 5-year: care demand at t=-1, t=-2, t=-3, t=-4, t=-5 (at least 5 years)
+        - 5-year: care demand at t=-1, t=-2, t=-3, t=-4, t=-5, but NOT at t=-6
+          (exactly 5 years)
 
         Groups are mutually exclusive (no overlap).
 
@@ -670,13 +684,13 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
         # Identify agents by EXACT care demand duration BEFORE death
-        # (1, 2, 3, 4 years exactly, 5+ years)
+        # (1, 2, 3, 4, 5 years exactly)
         agents_1_year, agents_2_year, agents_3_year, agents_4_year, agents_5_year = (
             identify_agents_by_care_demand_before_death(
                 merged,
                 distance_col="distance_to_mother_death",
                 add_five_year=True,
-                last_group_at_least=True,  # 5-year is "at least 5 years"
+                last_group_at_least=False,  # 5-year is "exactly 5 years"
             )
         )
 
@@ -1168,29 +1182,31 @@ def plot_employment_rate_difference_by_distance_to_mother_death(  # noqa: PLR091
     plt.close()
 
 
-def plot_employment_rate_difference_by_distance_to_mother_death_consecutive(  # noqa: PLR0913
+def plot_employment_rate_difference_by_distance_to_mother_death_consecutive(  # noqa: PLR0912, PLR0913
     prof_diff,
     prof_1_year_diff,
     prof_2_year_diff,
     prof_3_year_diff,
     prof_4_year_diff,
+    prof_5_year_diff=None,
     window: int = 20,
     path_to_plot: Optional[Path] = None,
     xlabel: str = "Year relative to mother's death",
 ) -> None:
-    """Plot employment rate difference by distance (consecutive N years before death).
+    """Plot employment rate difference by distance (exact N years before death).
 
     Creates an event study plot showing the difference in employment rates
     between baseline and no-care-demand counterfactual, with separate lines
-    for different consecutive caregiving durations before death (N consecutive years).
+    for different exact caregiving durations before death (N consecutive years).
 
     Args:
         prof_diff: DataFrame with columns 'distance_to_first_care', 'diff'
             (raw difference in employment rate)
-        prof_1_year_diff: DataFrame for 1-year consecutive caregivers
-        prof_2_year_diff: DataFrame for 2-year consecutive caregivers
-        prof_3_year_diff: DataFrame for 3-year consecutive caregivers
-        prof_4_year_diff: DataFrame for 4-year consecutive caregivers
+        prof_1_year_diff: DataFrame for 1-year caregivers
+        prof_2_year_diff: DataFrame for 2-year caregivers
+        prof_3_year_diff: DataFrame for 3-year caregivers
+        prof_4_year_diff: DataFrame for 4-year caregivers
+        prof_5_year_diff: Optional DataFrame for 5-year caregivers
         window: Window size around event (e.g., 20 = -20 to +20 periods)
         path_to_plot: Optional path to save the plot. If None, plot is not saved.
         xlabel: Label for x-axis (default: "Year relative to mother's death")
@@ -1213,12 +1229,12 @@ def plot_employment_rate_difference_by_distance_to_mother_death_consecutive(  # 
     # Plot horizontal line at y=0 for reference
     plt.axhline(y=0, color="k", linestyle="-", linewidth=0.8, alpha=0.5)
 
-    # Plot difference for 1-year consecutive caregivers
+    # Plot difference for 1-year caregivers
     if len(prof_1_year_diff) > 0:
         plt.plot(
             prof_1_year_diff["distance_to_first_care"],
             prof_1_year_diff["diff"],
-            label="1-Year Consecutive Caregivers",
+            label="1-Year Caregivers",
             color="0.8",
             linewidth=2.0,
             linestyle="-",
@@ -1229,12 +1245,12 @@ def plot_employment_rate_difference_by_distance_to_mother_death_consecutive(  # 
             markeredgewidth=1.5,
         )
 
-    # Plot difference for 2-year consecutive caregivers
+    # Plot difference for 2-year caregivers
     if len(prof_2_year_diff) > 0:
         plt.plot(
             prof_2_year_diff["distance_to_first_care"],
             prof_2_year_diff["diff"],
-            label="2-Year Consecutive Caregivers",
+            label="2-Year Caregivers",
             color="0.6",
             linewidth=2.0,
             linestyle="-",
@@ -1245,12 +1261,12 @@ def plot_employment_rate_difference_by_distance_to_mother_death_consecutive(  # 
             markeredgewidth=1.5,
         )
 
-    # Plot difference for 3-year consecutive caregivers
+    # Plot difference for 3-year caregivers
     if len(prof_3_year_diff) > 0:
         plt.plot(
             prof_3_year_diff["distance_to_first_care"],
             prof_3_year_diff["diff"],
-            label="3-Year Consecutive Caregivers",
+            label="3-Year Caregivers",
             color="0.4",
             linewidth=2.0,
             linestyle="-",
@@ -1266,12 +1282,28 @@ def plot_employment_rate_difference_by_distance_to_mother_death_consecutive(  # 
         plt.plot(
             prof_4_year_diff["distance_to_first_care"],
             prof_4_year_diff["diff"],
-            label="4-Year Consecutive Caregivers",
+            label="4-Year Caregivers",
             color="0.2",
             linewidth=2.0,
             linestyle="-",
             marker="s",  # Hollow square
             markersize=5,
+            markevery=1,
+            markerfacecolor="none",
+            markeredgewidth=1.5,
+        )
+
+    # Plot difference for 5-year consecutive caregivers
+    if prof_5_year_diff is not None and len(prof_5_year_diff) > 0:
+        plt.plot(
+            prof_5_year_diff["distance_to_first_care"],
+            prof_5_year_diff["diff"],
+            label="5-Year Caregivers",
+            color="black",
+            linewidth=2.0,
+            linestyle="-",
+            marker="*",  # Star
+            markersize=6,
             markevery=1,
             markerfacecolor="none",
             markeredgewidth=1.5,
@@ -1308,6 +1340,8 @@ def plot_employment_rate_difference_by_distance_to_mother_death_consecutive(  # 
         all_diffs.extend(prof_3_year_diff["diff"].tolist())
     if len(prof_4_year_diff) > 0:
         all_diffs.extend(prof_4_year_diff["diff"].tolist())
+    if prof_5_year_diff is not None and len(prof_5_year_diff) > 0:
+        all_diffs.extend(prof_5_year_diff["diff"].tolist())
 
     if all_diffs:
         y_max = max(abs(min(all_diffs)), abs(max(all_diffs)))

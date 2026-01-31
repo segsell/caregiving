@@ -4,11 +4,17 @@ import re
 from pathlib import Path
 from typing import Annotated, Optional
 
+import pickle
+from typing import Any
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pytask
+import yaml
 from pytask import Product
 
+import dcegm
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import (
     BAD_HEALTH,
@@ -20,28 +26,47 @@ from caregiving.model.shared import (
     UNEMPLOYED_CHOICES,
     WEALTH_MOMENTS_SCALE,
 )
+from caregiving.model.state_space import create_state_space_functions
+from caregiving.model.stochastic_processes.job_transition import (
+    job_offer_process_transition_initial_conditions,
+)
+from caregiving.model.task_specify_model import create_stochastic_states_transitions
+from caregiving.model.taste_shocks import shock_function_dict
+from caregiving.model.utility.bequest_utility import (
+    create_final_period_utility_functions,
+)
+from caregiving.model.utility.utility_functions_additive import create_utility_functions
+from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.moments.task_create_soep_moments import (
     create_df_caregivers,
     create_df_non_caregivers,
-    create_df_wealth,
     create_df_with_caregivers,
 )
-from caregiving.specs.task_write_specs import read_and_derive_specs
+from caregiving.moments.transform_data import load_and_scale_correct_data
 
 DEGREES_OF_FREEDOM = 1
 
 
+@pytask.mark.empirical_moments
 def task_plot_empirical_soep_moments(
-    path_to_specs: Path = SRC / "specs.yaml",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_model_config: Path = BLD / "model" / "model_config.pkl",
+    path_to_model: Path = BLD / "model" / "model.pkl",
+    path_to_params: Path = BLD / "model" / "params" / "estimated_params_model.yaml",
     path_to_soep_moments: Path = BLD / "moments" / "soep_moments_new.csv",
     path_to_main_sample: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
     path_to_caregivers_sample: Path = BLD
     / "data"
     / "soep_structural_caregivers_sample.csv",
+    path_to_wealth_data: Path = BLD / "data" / "soep_wealth_data_full.csv",
     path_to_save_wealth: Annotated[Path, Product] = BLD
     / "plots"
     / "raw_moments"
     / "wealth_by_age_and_education.png",
+    path_to_save_wealth_by_age_bins: Annotated[Path, Product] = BLD
+    / "plots"
+    / "raw_moments"
+    / "wealth_by_age_bins_and_education.png",
     path_to_save_wealth_from_moments: Annotated[Path, Product] = BLD
     / "plots"
     / "raw_moments"
@@ -103,7 +128,22 @@ def task_plot_empirical_soep_moments(
 ) -> None:
     """Create moments for MSM estimation."""
 
-    specs = read_and_derive_specs(path_to_specs)
+    specs = pickle.load(path_to_specs.open("rb"))
+    params = yaml.safe_load(path_to_params.open("rb"))
+    model_config = pickle.load(path_to_model_config.open("rb"))
+
+    model_class = dcegm.setup_model(
+        model_specs=specs,
+        model_config=model_config,
+        state_space_functions=create_state_space_functions(),
+        utility_functions=create_utility_functions(),
+        utility_functions_final_period=create_final_period_utility_functions(),
+        budget_constraint=budget_constraint,
+        shock_functions=shock_function_dict(),
+        stochastic_states_transitions=create_stochastic_states_transitions(),
+        model_load_path=path_to_model,
+    )
+
     start_year = 2001
     end_year = 2019
     start_age = specs["start_age"]
@@ -115,6 +155,10 @@ def task_plot_empirical_soep_moments(
     # Load full datasets
     df_full = pd.read_csv(path_to_main_sample, index_col=[0])
     df_caregivers_full = pd.read_csv(path_to_caregivers_sample, index_col=[0])
+
+    # Load wealth data
+    df_wealth = pd.read_csv(path_to_wealth_data, index_col=[0])
+    df_wealth = df_wealth.reset_index()
 
     # Create standardized subsamples using shared functions
     df_non_caregivers = create_df_non_caregivers(
@@ -138,7 +182,20 @@ def task_plot_empirical_soep_moments(
         end_year=end_year,
         end_age=end_age,
     )
-    trimmed = create_df_wealth(df_full=df_full, specs=specs)
+
+    # Process wealth data using load_and_scale_correct_data
+    trimmed = load_and_scale_correct_data(
+        # data_decision=df_wealth,
+        data_decision=df_full,
+        model_class=model_class,
+    )
+    # trimmed = trimmed[trimmed["sex"] == SEX].copy()
+    # # Filter by year range
+    # trimmed = trimmed[
+    #     (trimmed["syear"] >= start_year) & (trimmed["syear"] <= end_year)
+    # ].copy()
+    # Rename assets_begin_of_period to adjusted_wealth for compatibility with plotting code
+    trimmed["adjusted_wealth"] = trimmed["assets_begin_of_period"]
 
     df_good_health = df_with_caregivers[
         df_with_caregivers["health"] == GOOD_HEALTH
@@ -163,16 +220,26 @@ def task_plot_empirical_soep_moments(
         # data_emp=df_wealth,
         specs=specs,
         wealth_var_emp="adjusted_wealth",
-        median=False,
+        median=True,
         age_min=30,
-        age_max=100,
+        age_max=90,
         path_to_save_plot=path_to_save_wealth,
+    )
+    plot_wealth_emp_by_age_bins(
+        data_emp=trimmed,
+        specs=specs,
+        wealth_var_emp="adjusted_wealth",
+        median=True,
+        age_bin_width=5,
+        age_min=30,
+        age_max=90,
+        path_to_save_plot=path_to_save_wealth_by_age_bins,
     )
     plot_wealth_from_moments(
         soep_moments,
         specs=specs,
         age_min=30,
-        age_max=100,
+        age_max=90,
         path_to_save_plot=path_to_save_wealth_from_moments,
     )
     plot_wealth_emp_vs_moments(
@@ -180,9 +247,9 @@ def task_plot_empirical_soep_moments(
         moments=soep_moments / WEALTH_MOMENTS_SCALE,
         specs=specs,
         wealth_var_emp="adjusted_wealth",
-        median=False,
+        median=True,
         age_min=30,
-        age_max=100,
+        age_max=90,
         path_to_save_plot=path_to_save_wealth_empirical_vs_moments,
     )
 
@@ -353,6 +420,133 @@ def plot_wealth_emp(
         if edu_idx == 0:
             ax.set_ylabel(f"{stat_name} wealth")
             # ax.legend()
+        else:
+            ax.tick_params(labelleft=False)
+
+    # ---------- 2. Common y-limits ----------
+    if all_values:
+        ymin, ymax = np.nanmin(all_values), np.nanmax(all_values)
+        pad = 0.05 * (ymax - ymin)
+        for ax in axs:
+            ax.set_ylim(ymin - pad, ymax + pad)
+
+    # ---------- 3. Add left y-axis to right panel too ----------
+    axs[-1].yaxis.set_ticks_position("left")
+    axs[-1].yaxis.set_label_position("left")
+    axs[-1].set_ylabel(f"{stat_name} wealth")
+
+    plt.tight_layout()
+
+    if path_to_save_plot:
+        plt.savefig(path_to_save_plot, dpi=300, transparent=False)
+
+
+def plot_wealth_emp_by_age_bins(
+    data_emp: pd.DataFrame,
+    specs: dict,
+    *,
+    wealth_var_emp: str,
+    median: bool = True,
+    age_bin_width: int = 5,
+    age_min: int | None = None,
+    age_max: int | None = None,
+    path_to_save_plot: str | None = None,
+):
+    """
+    Plot empirical median/mean wealth by age bins and education.
+
+    Parameters
+    ----------
+    data_emp : DataFrame
+        Must include columns: 'age', 'education', and the wealth variable.
+    specs : dict
+        Expects:
+          - 'start_age', 'end_age_msm'
+          - 'education_labels' : list[str]
+    wealth_var_emp : str
+        Column name of wealth in the empirical dataset.
+    median : bool, default True
+        If True, plot median; else plot mean.
+    age_bin_width : int, default 5
+        Width of age bins in years.
+    age_min, age_max : int | None
+        Plot range. Defaults to [specs['start_age'], specs['end_age_msm']].
+    path_to_save_plot : str | None
+        If provided, saves the figure.
+    """
+    # ---------- 0. Setup ----------
+    if age_min is None:
+        age_min = specs["start_age"]
+    if age_max is None:
+        age_max = specs["end_age_msm"]
+
+    stat_name = "Median" if median else "Average"
+
+    # Create age bins
+    # With right=False, bins are [left, right), e.g. [30, 35), [35, 40), etc.
+    # To ensure last bin is [85, 90) when age_max=90, create bins up to age_max
+    age_bins = np.arange(age_min, age_max + 1, age_bin_width)
+    data_emp = data_emp.copy()
+    data_emp["age_bin"] = pd.cut(
+        data_emp["age"], bins=age_bins, right=False, include_lowest=True
+    )
+    # Filter out data beyond age_max
+    data_emp = data_emp[data_emp["age"] < age_max].copy()
+    # Get bin centers for plotting
+    age_bin_centers = {
+        interval: (interval.left + interval.right) / 2
+        for interval in data_emp["age_bin"].cat.categories
+    }
+
+    n_edu = len(specs["education_labels"])
+    fig, axs = plt.subplots(1, n_edu, figsize=(5 * n_edu, 4), sharex=True, sharey=True)
+    if n_edu == 1:
+        axs = np.array([axs])
+
+    agg = (
+        (lambda s: s.median(skipna=True)) if median else (lambda s: s.mean(skipna=True))
+    )
+
+    # ---------- 1. Loop over education groups ----------
+    all_values = []
+    for edu_idx, edu_label in enumerate(specs["education_labels"]):
+        ax = axs[edu_idx]
+
+        emp_edu = data_emp[data_emp["education"] == edu_idx]
+        emp_series = emp_edu.groupby("age_bin", observed=False)[wealth_var_emp].apply(
+            agg
+        )
+
+        # Map to bin centers for plotting, filtering out NaN values
+        valid_mask = ~pd.isna(emp_series.values)
+        bin_centers_used = [
+            age_bin_centers[bin_interval]
+            for bin_interval, is_valid in zip(emp_series.index, valid_mask)
+            if is_valid
+        ]
+        emp_values_clean = emp_series.values[valid_mask]
+
+        all_values.extend(emp_values_clean)
+
+        ax.plot(
+            bin_centers_used,
+            emp_values_clean,
+            color="black",
+            ls="-",
+            label="Observed",
+        )
+
+        # Add internal x padding (5% of the range)
+        xrange = age_max - age_min
+        pad = int(0.05 * xrange)
+        ax.set_xlim(age_min - pad, age_max + pad)
+
+        ax.set_xlabel("Age")
+        ax.set_title(edu_label)
+        ax.grid(True, alpha=0.2)
+
+        if edu_idx == 0:
+            ax.set_ylabel(f"{stat_name} wealth")
         else:
             ax.tick_params(labelleft=False)
 

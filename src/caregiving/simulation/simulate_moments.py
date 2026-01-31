@@ -134,14 +134,14 @@ def simulate_moments_pandas(  # noqa: PLR0915
 
     # =================================================================================
     # Wealth moments
-    moments = create_mean_by_age(
+    moments = create_median_by_age(
         df_full_low,
         moments,
         variable="assets_begin_of_period",
         age_range=age_range_wealth,
         label="low_education",
     )
-    moments = create_mean_by_age(
+    moments = create_median_by_age(
         df_full_high,
         moments,
         variable="assets_begin_of_period",
@@ -1059,6 +1059,107 @@ def create_mean_by_age(
         moments[f"mean_{variable}{label}_age_{age}"] = (
             mean_by_age.loc[age] * WEALTH_MOMENTS_SCALE
         )
+
+    return moments
+
+
+def create_median_by_age(
+    df: pd.DataFrame,
+    moments: dict,
+    *,
+    variable: str,
+    age_range: list[int] | np.ndarray,
+    label: str | None = None,
+    age_var: str = "age",
+):
+    """
+    Compute medians by single-year age for a numeric variable and
+    store them in `moments` with keys:
+        median_<variable>_<label>_age_<age>
+
+    Parameters
+    ----------
+    df : DataFrame
+        Must contain columns `age_var` and `variable`.
+    moments : dict
+        Updated in place.
+    variable : str
+        Column to compute median for (e.g., "assets_begin_of_period").
+    age_range : sequence of int
+        Ages to include (e.g., range(40, 71)).
+    label : str | None
+        Optional suffix inserted in the key (prefixed with "_").
+    age_var : str, default "age"
+        Name of the age column.
+    """
+    # 1) Label prefix
+    label = f"_{label}" if label else ""
+    ages = pd.Index(list(age_range), name=age_var)
+
+    # 2) Restrict to requested ages
+    df_sub = df[df[age_var].isin(ages)]
+
+    # 3) Group by age and compute medians
+    median_by_age = (
+        df_sub.groupby(df_sub[age_var], observed=False)[variable]
+        .median()
+        .reindex(ages, fill_value=np.nan)
+    )
+
+    # 4) Write to moments
+    for age in ages:
+        moments[f"median_{variable}{label}_age_{age}"] = (
+            median_by_age.loc[age] * WEALTH_MOMENTS_SCALE
+        )
+
+    return moments
+
+
+def create_median_by_age_bin(
+    df: pd.DataFrame,
+    moments: dict,
+    *,
+    variable: str,
+    age_bins_and_labels: tuple[list[int], list[str]] | None = None,
+    label: str | None = None,
+    age_var: str = "age",
+):
+    """
+    Compute medians by age-bin for a numeric variable.
+
+    """
+    # 1) Label prefix
+    label = f"_{label}" if label else ""
+
+    # 2) Default 5-year bins (40–44, ..., 70–74)
+    if age_bins_and_labels is None:
+        bin_edges = list(range(40, 75, 5))  # [40,45,...,70]
+        bin_labels = [f"{s}_{s+4}" for s in bin_edges[:-1]]
+    else:
+        bin_edges, bin_labels = age_bins_and_labels
+
+    # Work on a copy limited to the covered age range
+    df = df[df[age_var].between(bin_edges[0], bin_edges[-1] - 1)].copy()
+
+    df["age_bin"] = pd.cut(
+        df[age_var],
+        bins=bin_edges,
+        labels=bin_labels,
+        right=False,  # [40,45) ⇒ 40–44, etc.
+    )
+
+    age_groups = df.groupby("age_bin", observed=False)
+
+    median_by_bin = (
+        age_groups[variable]
+        .median()
+        .reindex(bin_labels, fill_value=np.nan)  # keep bins even if empty
+    )
+
+    for age_bin in bin_labels:
+        moments[f"median_{variable}{label}_age_bin_{age_bin}"] = median_by_bin.loc[
+            age_bin
+        ]
 
     return moments
 

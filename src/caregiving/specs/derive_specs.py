@@ -65,4 +65,11 @@ def read_and_derive_specs(spec_path):
         specs["SRA_grid_size"],
     )
 
+    specs["life_exp"] = np.array(specs["life_exp"])
+
+    specs["income_tax_brackets"] = np.array(specs["income_tax_brackets"])
+    specs["linear_income_tax_rates"] = np.array(specs["linear_income_tax_rates"])
+    specs["quadratic_income_tax_rates"] = np.array(specs["quadratic_income_tax_rates"])
+    specs["intercepts_income_tax"] = np.array(specs["intercepts_income_tax"])
+
     return specs

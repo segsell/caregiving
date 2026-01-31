@@ -4,9 +4,22 @@ from pathlib import Path
 from typing import Annotated
 
 import pandas as pd
+import pytask
 from pytask import Product
 
 from caregiving.config import BLD, SRC
+from caregiving.data_management.soep.auxiliary import (
+    create_lagged_and_lead_variables,
+    enforce_model_choice_restriction,
+)
+from caregiving.data_management.soep.soep_variables.experience import (
+    create_experience_variable_with_cap,
+)
+from caregiving.data_management.soep.variables import (
+    create_choice_variable,
+    create_education_type,
+    create_policy_state,
+)
 from caregiving.specs.task_write_specs import read_and_derive_specs
 
 
@@ -14,22 +27,65 @@ def table(df_col):
     return pd.crosstab(df_col, columns="Count")["Count"]
 
 
+@pytask.mark.wealth_sample
+def task_create_soep_wealth_data(
+    path_to_specs: Path = SRC / "specs.yaml",
+    path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
+    soep_c40_hwealth: Path = SRC / "data" / "soep" / "hwealth.dta",
+    path_to_save: Annotated[Path, Product] = BLD / "data" / "soep_wealth_data.csv",
+) -> None:
+    """Create simple wealth data with trim, rename, and deflate only.
+
+    No interpolation, extrapolation, or merging with individual data.
+    """
+    specs = read_and_derive_specs(path_to_specs)
+    cpi = pd.read_csv(path_to_cpi, index_col=0)
+
+    # Load household wealth data
+    wealth_data = pd.read_stata(
+        soep_c40_hwealth,
+        columns=["hid", "syear", "w011ha"],
+        convert_categoricals=False,
+    )
+    wealth_data["hid"] = wealth_data["hid"].astype(int)
+
+    # Trim and rename
+    wealth_data = trim_and_rename(wealth_data)
+
+    # Deflate wealth
+    wealth_data = deflate_wealth(wealth_data, cpi_data=cpi, specs=specs)
+
+    # Ensure non-negative wealth
+    wealth_data.loc[wealth_data["wealth"] < 0, "wealth"] = 0
+
+    print(str(len(wealth_data)) + " observations in simple wealth data.")
+
+    wealth_data.to_csv(path_to_save, index=False)
+
+
+@pytask.mark.wealth_sample
 def task_create_household_wealth_sample(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
-    soep_c38_hwealth: Path = SRC / "data" / "soep" / "hwealth.dta",
-    path_to_save: Annotated[Path, Product] = BLD / "data" / "soep_wealth_data.csv",
+    path_to_raw: Path = BLD / "data" / "soep_estimation_data_raw.csv",
+    soep_c40_hwealth: Path = SRC / "data" / "soep" / "hwealth.dta",
+    path_to_save: Annotated[Path, Product] = BLD / "data" / "soep_wealth_data_full.csv",
 ) -> None:
-    """Create sample for wealth estimation."""
+    """Create sample for wealth estimation with individual-level information."""
 
     specs = read_and_derive_specs(path_to_specs)
-    specs["start_year"] = 2010
-    specs["end_year"] = 2017
+    specs["start_year"] = 2001
+    specs["end_year"] = 2023
 
     cpi = pd.read_csv(path_to_cpi, index_col=0)
 
+    # Load individual-level data
+    df_raw = pd.read_csv(path_to_raw, index_col=[0, 1])
+    # Keep index as MultiIndex (pid, syear) for create_lagged_and_lead_variables
+
+    # Load household wealth data
     wealth_data = pd.read_stata(
-        soep_c38_hwealth,
+        soep_c40_hwealth,
         columns=["hid", "syear", "w011ha"],
         convert_categoricals=False,
     )
@@ -37,17 +93,51 @@ def task_create_household_wealth_sample(
 
     wealth_data = trim_and_rename(wealth_data)
     wealth_data_full = interpolate_and_extrapolate_wealth(wealth_data, specs)
+    wealth_data_full = deflate_wealth(wealth_data_full, cpi_data=cpi, specs=specs)
+    wealth_data_full.loc[wealth_data_full["wealth"] < 0, "wealth"] = 0
 
-    # data = data.merge(wealth_data_full, on=["hid", "syear"], how="left")
-    data = deflate_wealth(wealth_data_full, cpi_data=cpi, specs=specs)
+    # Create necessary variables
+    df_raw = create_choice_variable(df_raw)
+    df_raw = create_lagged_and_lead_variables(
+        df_raw, specs, lead_job_sep=False, drop_missing_lagged_choice=False
+    )
+    # Reset index to move pid and syear back to columns for merging
+    df_raw = df_raw.reset_index()
+    df_raw["period"] = df_raw["age"] - specs["start_age"]
+    df_raw = create_policy_state(df_raw, specs)
+    df_raw = create_experience_variable_with_cap(
+        df_raw, exp_cap=specs["start_age"] - 14
+    )
+    df_raw = create_education_type(df_raw)
 
-    data.loc[data["wealth"] < 0, "wealth"] = 0
-    # data.set_index(["pid", "syear"], inplace=True)
-    # data = data[(data["wealth"].notna())]
+    df_raw = enforce_model_choice_restriction(df_raw, specs)
 
-    print(str(len(data)) + " left after dropping people with missing wealth.")
+    # Merge wealth data with individual data on hid and syear
+    df = df_raw.merge(wealth_data_full, on=["hid", "syear"], how="inner")
 
-    data.to_csv(path_to_save)
+    # Keep only required columns
+    type_dict = {
+        "pid": "int32",
+        "hid": "int32",
+        "syear": "int16",
+        "sex": "int8",
+        "gebjahr": "int16",
+        "age": "int8",
+        "education": "int8",
+        "lagged_choice": "float32",  # can be NA
+        "policy_state": "int8",
+        "policy_state_value": "int8",
+        "experience": "int8",
+        "wealth": "float32",
+    }
+
+    # Select and type columns
+    df = df[list(type_dict.keys())]
+    df = df.astype(type_dict)
+
+    print(str(len(df)) + " observations after merging wealth with individual data.")
+
+    df.to_csv(path_to_save, index=True)
 
 
 def trim_and_rename(wealth_data):
