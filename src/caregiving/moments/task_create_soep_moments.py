@@ -2281,10 +2281,10 @@ def _adjust_wealth_with_lagged_choice(
     # When someone enters retirement, their experience is still normalized by working scale,
     # but budget_constraint will rescale it using retirement scale, causing inflated pension points.
     # We need to adjust the experience value to account for this.
-    from caregiving.model.shared import RETIREMENT
     from caregiving.model.pension_system.experience_stock import (
         calc_pension_points_for_experience,
     )
+    from caregiving.model.shared import RETIREMENT
 
     retirement_values = np.asarray(RETIREMENT).ravel().tolist()
     # Current period: if lagged_choice is retirement, they are retired now

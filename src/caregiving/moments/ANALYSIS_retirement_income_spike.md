@@ -90,7 +90,7 @@ When someone enters retirement:
 
 ### Issue 2: Pension Points Calculation
 
-The pension income calculation (`calc_pensions_after_ssc`) expects `pension_points` as input, but it receives `experience_years` which is the rescaled value. 
+The pension income calculation (`calc_pensions_after_ssc`) expects `pension_points` as input, but it receives `experience_years` which is the rescaled value.
 
 Looking at `calc_pension_points_form_experience` (in `src/caregiving/model/pension_system/experience_stock.py`, lines 74-97), it expects **working experience years** (not rescaled retirement experience years) to calculate pension points. The function uses a lookup table `pp_for_exp_by_sex_edu` that maps working experience years to pension points.
 
@@ -328,13 +328,13 @@ However, this would require significant changes to how `adjust_observed_assets` 
    ```python
    # Current normalized experience
    float_experience_current = experience  # from states_dict
-   
+
    # Working experience years (what it should be)
    working_exp_years = float_experience_current * max_exps_period_working[period]
-   
+
    # What normalized experience would give us working_exp_years when scaled by max_pp_retirement?
    adjusted_float_experience = working_exp_years / max_pp_retirement
-   
+
    # Use this adjusted value in states_dict
    states_dict["experience"][is_fresh_retiree] = adjusted_float_experience
    ```
@@ -364,13 +364,13 @@ is_fresh_retiree = is_retired_now & (~is_retired_before.fillna(False))
 if is_fresh_retiree.any():
     period_values = df_sorted["period"].values  # Need to calculate period from age
     experience_current = states_dict_sorted["experience"]
-    
+
     # Calculate working experience years
     max_exps_working = np.array([
         model_specs["max_exps_period_working"][p] for p in period_values
     ])
     working_exp_years = experience_current * max_exps_working
-    
+
     # Calculate adjusted normalized experience
     max_pp_ret = model_specs["max_pp_retirement"]
     adjusted_experience = np.where(
@@ -378,7 +378,7 @@ if is_fresh_retiree.any():
         working_exp_years / max_pp_ret,
         experience_current
     )
-    
+
     states_dict_sorted["experience"] = adjusted_experience
 ```
 

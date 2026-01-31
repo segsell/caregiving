@@ -40,7 +40,7 @@ def construct_experience_years(float_experience, period, is_retired, model_specs
     return float_experience * scale
 ```
 
-**Key Finding**: 
+**Key Finding**:
 - When `is_retired=False`: Uses `max_exps_period_working[period]` as scale
 - When `is_retired=True`: Uses `max_pp_retirement` as scale
 
@@ -96,7 +96,7 @@ own_income_after_ssc = (
 )
 ```
 
-**Key Finding**: 
+**Key Finding**:
 - Both labor and pension income use the **same** `experience_years` value
 - The selection (`was_worker` vs `was_retired`) determines which income is used
 - For retired people, `experience_years` is rescaled by `max_pp_retirement`
@@ -113,7 +113,7 @@ own_income_after_ssc = (
 
 **For someone entering retirement**:
 1. `fresh_retired = (already_retired == 0) & retired_this_period`
-2. `exp_years_last_period = construct_experience_years(..., is_retired=already_retired)` 
+2. `exp_years_last_period = construct_experience_years(..., is_retired=already_retired)`
    - Since `already_retired=0`, this uses **working scale**
 3. `pension_points = calc_pension_points_for_experience(experience_years=exp_years_last_period, ...)`
    - Uses **working experience years** to calculate pension points ✓
@@ -191,15 +191,15 @@ if df_sorted["is_fresh_retiree"].any():
     print(f"Fresh retirees: {len(fresh_retirees)}")
     print(f"Experience range: {fresh_retirees['experience'].min()} to {fresh_retirees['experience'].max()}")
     print(f"Age range: {fresh_retirees['age'].min()} to {fresh_retirees['age'].max()}")
-    
+
     # Calculate what experience_years would be
     period_values = fresh_retirees["age"].values - specs["start_age"]
     max_exps_working = np.array([specs["max_exps_period_working"][p] for p in period_values])
     max_pp_ret = specs["max_pp_retirement"]
-    
+
     working_exp_years = fresh_retirees["experience"].values * max_exps_working
     retirement_exp_years = fresh_retirees["experience"].values * max_pp_ret
-    
+
     print(f"Working exp years (if still on working scale): {working_exp_years}")
     print(f"Retirement exp years (if rescaled): {retirement_exp_years}")
     print(f"Difference: {retirement_exp_years - working_exp_years}")

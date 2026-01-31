@@ -1,11 +1,9 @@
 """Plot raw SOEP data."""
 
+import pickle
 import re
 from pathlib import Path
-from typing import Annotated, Optional
-
-import pickle
-from typing import Any
+from typing import Annotated, Any, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
