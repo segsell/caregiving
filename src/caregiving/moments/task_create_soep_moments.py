@@ -41,6 +41,7 @@ from caregiving.model.utility.bequest_utility import (
 )
 from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
+from caregiving.moments.transform_data import load_and_scale_correct_data
 
 DEGREES_OF_FREEDOM = 1
 
@@ -112,7 +113,7 @@ def task_create_soep_moments(  # noqa: PLR0915
     end_year = 2019
 
     age_range = range(start_age, end_age + 1)
-    age_range_wealth = range(start_age, specs["end_age_wealth"] + 1)
+    age_range_wealth = range(start_age, specs["end_age_wealth"] + 10)
 
     _age_bins_75 = (
         list(range(40, 80, 5)),  # [40, 45, … , 70]
@@ -144,14 +145,22 @@ def task_create_soep_moments(  # noqa: PLR0915
         end_year=end_year,
         end_age=end_age,
     )
-    df_wealth = create_df_wealth(
-        df_full=df_full,
-        specs=specs,
-        params=params,
+    # df_wealth = create_df_wealth(
+    #     df_full=df_full,
+    #     specs=specs,
+    #     params=params,
+    #     model_class=model_class,
+    #     adjust_wealth=False,
+    #     trim_quantile=True,
+    # )
+    df_wealth_corrected = load_and_scale_correct_data(
+        data_decision=df_full,
         model_class=model_class,
-        adjust_wealth=False,
-        trim_quantile=True,
     )
+    df_wealth = df_wealth_corrected[
+        (df_wealth_corrected["syear"] >= 2010) & (df_wealth_corrected["syear"] <= 2020)
+    ].copy()
+    df_wealth["adjusted_wealth"] = df_wealth["assets_begin_of_period"]
 
     _df_alive = df[df["health"] != DEAD].copy()
     _df_good_health = df[df["health"] == GOOD_HEALTH].copy()
@@ -202,7 +211,7 @@ def task_create_soep_moments(  # noqa: PLR0915
     # =================================================================================
 
     # 0) Wealth by education and age bin
-    moments, variances = compute_mean_wealth_by_age(
+    moments, variances = compute_median_by_age_bin(
         df_wealth_low,
         moments,
         variances,
@@ -210,7 +219,7 @@ def task_create_soep_moments(  # noqa: PLR0915
         age_range=age_range_wealth,
         label="wealth_low_education",
     )
-    moments, variances = compute_mean_wealth_by_age(
+    moments, variances = compute_median_by_age_bin(
         df_wealth_high,
         moments,
         variances,
@@ -1085,15 +1094,19 @@ def compute_mean_wealth_by_age(
     label = f"_{label}" if label else ""
     age_index = pd.Index(age_range, name="age")
 
-    # 2) Group by age: raw mean and variance
+    # 2) Scale wealth variable first, then compute mean and variance on scaled variable
+    df_scaled = df.copy()
+    df_scaled[wealth_var] = df_scaled[wealth_var] * WEALTH_MOMENTS_SCALE
+
+    # Group by age: mean and variance on scaled wealth
     base_mean = (
-        df.groupby("age", observed=False)[wealth_var]
+        df_scaled.groupby("age", observed=False)[wealth_var]
         .mean()
         .reindex(age_index, fill_value=np.nan)
         .sort_index()
     )
     base_var = (
-        df.groupby("age", observed=False)[wealth_var]
+        df_scaled.groupby("age", observed=False)[wealth_var]
         .var(ddof=DEGREES_OF_FREEDOM)
         .reindex(age_index, fill_value=np.nan)
         .sort_index()
@@ -1118,9 +1131,7 @@ def compute_mean_wealth_by_age(
 
     # 4) Write out moments/variances with per-age keys
     for age in age_index:
-        moments[f"mean{label}_wealth_age_{age}"] = (
-            smoothed_mean.loc[age] * WEALTH_MOMENTS_SCALE
-        )
+        moments[f"mean{label}_wealth_age_{age}"] = smoothed_mean.loc[age]
         variances[f"var{label}_wealth_age_{age}"] = base_var.loc[age]
 
     return moments, variances
@@ -1169,11 +1180,18 @@ def compute_mean_by_age_bin(
     # # 3) Ensure numeric dtype (robust to bool/object)
     # x = pd.to_numeric(df[variable], errors="coerce")
 
-    # 4) Assign bins (left-closed, right-open ⇒ 40–44, 45–49, …)
-    df["age_bin"] = pd.cut(df["age"], bins=bin_edges, labels=bin_labels, right=False)
+    # 3) Scale variable if it's a wealth variable
+    df_scaled = df.copy()
+    if "wealth" in variable.lower():
+        df_scaled[variable] = df_scaled[variable] * WEALTH_MOMENTS_SCALE
 
-    # 5) Group, compute mean & variance
-    grouped = df.groupby("age_bin", observed=False)[variable]
+    # 4) Assign bins (left-closed, right-open ⇒ 40–44, 45–49, …)
+    df_scaled["age_bin"] = pd.cut(
+        df_scaled["age"], bins=bin_edges, labels=bin_labels, right=False
+    )
+
+    # 5) Group, compute mean & variance on scaled variable
+    grouped = df_scaled.groupby("age_bin", observed=False)[variable]
     means = grouped.mean().reindex(bin_labels, fill_value=np.nan)
     vars = grouped.var(ddof=DEGREES_OF_FREEDOM).reindex(bin_labels, fill_value=np.nan)
 
@@ -1182,6 +1200,139 @@ def compute_mean_by_age_bin(
     for bin in bin_labels:
         moments[f"mean{key_label}_{variable}_age_bin_{bin}"] = means.loc[bin]
         variances[f"var{key_label}_{variable}_age_bin_{bin}"] = vars.loc[bin]
+
+    return moments, variances
+
+
+def compute_median_wealth_by_age(
+    df: pd.DataFrame,
+    moments: dict,
+    variances: dict,
+    age_range: list[int] | np.ndarray,
+    *,
+    wealth_var: str = "adjusted_wealth",
+    label: str | None = None,
+):
+    """
+    Compute empirical median + variance of wealth by AGE (not bins) and
+    store them into `moments` and `variances` with keys:
+        median_<label>_wealth_age_<age>
+        var_<label>_wealth_age_<age>
+    Note: No rolling smoothing is applied to the median.
+
+    Parameters
+    ----------
+    df : DataFrame
+        Must contain columns: 'age' and `wealth_var`.
+        Assumes only one sex and one education present.
+    moments, variances : dict
+        Updated in-place with new entries.
+    age_range : sequence of int
+        Ages to include (used for reindexing & key creation).
+    wealth_var : str, default "adjusted_wealth"
+        Wealth column name.
+    label : str | None
+        Optional suffix in keys (prefixed with '_').
+    """
+    label = f"_{label}" if label else ""
+    age_index = pd.Index(age_range, name="age")
+
+    # Scale wealth variable first, then compute median and variance on scaled variable
+    df_scaled = df.copy()
+    df_scaled[wealth_var] = df_scaled[wealth_var] * WEALTH_MOMENTS_SCALE
+
+    # Group by age: median and variance on scaled wealth
+    base_median = (
+        df_scaled.groupby("age", observed=False)[wealth_var]
+        .median()
+        .reindex(age_index, fill_value=np.nan)
+        .sort_index()
+    )
+    base_var = (
+        df_scaled.groupby("age", observed=False)[wealth_var]
+        .var(ddof=DEGREES_OF_FREEDOM)
+        .reindex(age_index, fill_value=np.nan)
+        .sort_index()
+    )
+
+    # Write out moments/variances with per-age keys (no smoothing for median)
+    # Note: median and variance are already computed on scaled wealth
+    for age in age_index:
+        moments[f"median{label}_wealth_age_{age}"] = base_median.loc[age]
+        variances[f"var{label}_wealth_age_{age}"] = base_var.loc[age]
+
+    return moments, variances
+
+
+def compute_median_by_age_bin(
+    df: pd.DataFrame,
+    moments: dict,
+    variances: dict,
+    wealth_var: str,
+    age_range: list[int] | np.ndarray,
+    age_bins: tuple[list[int], list[str]] | None = None,
+    label: str | None = None,
+):
+    """
+    Compute medians and sample variances by age-bin for a wealth variable.
+
+    Parameters
+    ----------
+    df : DataFrame
+        Must contain columns 'age' (int) and the wealth column given by *wealth_var*.
+    moments, variances : dict
+        Dictionaries updated **in-place** with results.
+    wealth_var : str
+        Name of the wealth column in `df` (e.g., 'adjusted_wealth').
+    age_range : list[int] | np.ndarray
+        Age range to use for creating bins (min and max will be used).
+    age_bins : tuple[list[int], list[str]] | None
+        Optional (bin_edges, bin_labels). If None, defaults to 5-year bins based on age_range:
+          edges:  [age_min, age_min+5, ..., age_max+1]
+          labels: ['age_min_age_min+4', 'age_min+5_age_min+9', ...]
+        Note: edges must include both the first left edge and the final right edge.
+    label : str | None
+        Optional extra label inserted in every key (prefixed with '_' if given).
+
+    Returns
+    -------
+    moments, variances : dict
+        The same objects passed in, updated with new values.
+    """
+    # 1) Label prefix
+    key_label = f"_{label}" if label else ""
+
+    # 2) Create age bins from age_range if not provided
+    if age_bins is None:
+        age_min = int(np.min(age_range))
+        age_max = int(np.max(age_range))
+        # Create 5-year bins
+        bin_edges = list(
+            range(age_min, age_max + 6, 5)
+        )  # +6 to include the last bin edge
+        bin_labels = [f"{s}_{s+4}" for s in bin_edges[:-1]]
+    else:
+        bin_edges, bin_labels = age_bins
+
+    # 3) Scale wealth variable
+    df_scaled = df.copy()
+    df_scaled[wealth_var] = df_scaled[wealth_var] * WEALTH_MOMENTS_SCALE
+
+    # 4) Assign bins (left-closed, right-open ⇒ 40–44, 45–49, …)
+    df_scaled["age_bin"] = pd.cut(
+        df_scaled["age"], bins=bin_edges, labels=bin_labels, right=False
+    )
+
+    # 5) Group, compute median & variance on scaled variable
+    grouped = df_scaled.groupby("age_bin", observed=False)[wealth_var]
+    medians = grouped.median().reindex(bin_labels, fill_value=np.nan)
+    vars = grouped.var(ddof=DEGREES_OF_FREEDOM).reindex(bin_labels, fill_value=np.nan)
+
+    # 6) Store results with consistent keys
+    # Keys: median_<label>_wealth_age_bin_<bin>, var_<label>_wealth_age_bin_<bin>
+    for bin in bin_labels:
+        moments[f"median{key_label}_wealth_age_bin_{bin}"] = medians.loc[bin]
+        variances[f"var{key_label}_wealth_age_bin_{bin}"] = vars.loc[bin]
 
     return moments, variances
 

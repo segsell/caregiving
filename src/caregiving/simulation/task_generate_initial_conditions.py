@@ -40,6 +40,7 @@ from caregiving.moments.task_create_soep_moments import (
     create_df_non_caregivers,
     create_df_wealth,
 )
+from caregiving.moments.transform_data import load_and_scale_correct_data
 
 
 @pytask.mark.initial_conditions
@@ -80,6 +81,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     sex_var = SEX
 
     observed_data = pd.read_csv(path_to_sample, index_col=[0])
+
     lifetable = pd.read_csv(path_to_lifetable)
     health_sample = pd.read_pickle(path_to_health_sample)
     parent_child_data = pd.read_csv(path_to_parent_child_sample)
@@ -132,22 +134,32 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         moments_data["age"] == model_specs["start_age"]
     ].copy()
 
-    observed_wealth = create_df_wealth(
-        df_full=observed_data,
-        specs=model_specs,
-        params=params,
+    # observed_wealth = create_df_wealth(
+    #     df_full=observed_data,
+    #     specs=model_specs,
+    #     params=params,
+    #     model_class=model_class,
+    #     adjust_wealth=False,
+    #     trim_quantile=False,
+    #     wealth_var="lagged_wealth",
+    # )
+    observed_wealth_corrected = load_and_scale_correct_data(
+        data_decision=observed_data,
         model_class=model_class,
-        adjust_wealth=False,
-        trim_quantile=False,
-        wealth_var="lagged_wealth",
     )
-    _start_age_wealth = observed_wealth[
-        observed_wealth["age"] == model_specs["start_age"]
+    observed_wealth = observed_wealth_corrected[
+        (observed_wealth_corrected["syear"] >= 2010)
+        & (observed_wealth_corrected["syear"] <= 2019)
     ].copy()
+    observed_wealth["adjusted_wealth"] = observed_wealth["assets_begin_of_period"]
+
+    # start_age_wealth = observed_wealth[
+    #     observed_wealth["age"] == model_specs["start_age"]
+    # ].copy()
 
     min_period = observed_data["period"].min()
-    start_period_data_wealth = observed_data[
-        observed_data["period"].isin([min_period])
+    start_period_data_wealth = observed_wealth[
+        observed_wealth["period"].isin([min_period])
     ].copy()
     start_age_wealth = start_period_data_wealth[
         start_period_data_wealth["wealth"].notnull()
@@ -184,14 +196,14 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         start_age_wealth["wealth"], dtype=np.uint8
     )
 
-    states_dict["assets_begin_of_period"] = (
-        start_age_wealth["wealth"].values / specs["wealth_unit"]
-    )
-    start_age_wealth.loc[:, "adjusted_wealth"] = adjust_observed_assets(
-        observed_states_dict=states_dict,
-        params=params,
-        model_class=model_class,
-    )
+    # states_dict["assets_begin_of_period"] = (
+    #     start_age_wealth["wealth"].values / specs["wealth_unit"]
+    # )
+    # start_age_wealth.loc[:, "adjusted_wealth"] = adjust_observed_assets(
+    #     observed_states_dict=states_dict,
+    #     params=params,
+    #     model_class=model_class,
+    # )
 
     # # Generate container
     # sex_agents = np.array([], np.uint8)

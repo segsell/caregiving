@@ -195,7 +195,7 @@ def task_plot_empirical_soep_moments(
 
     # trimmed = trimmed[trimmed["sex"] == SEX].copy()
     # # Filter by year range
-    trimmed = trimmed[(trimmed["syear"] >= 2013) & (trimmed["syear"] <= 2020)].copy()
+    trimmed = trimmed[(trimmed["syear"] >= 2010) & (trimmed["syear"] <= 2020)].copy()
     # Rename assets_begin_of_period to adjusted_wealth for compatibility with plotting code
     trimmed["adjusted_wealth"] = trimmed["assets_begin_of_period"]
 
@@ -732,7 +732,7 @@ def plot_wealth_emp_vs_moments(  # noqa: PLR0912, PLR0915
     if age_max is None:
         age_max = specs["end_age_msm"]
     ages = range(age_min, age_max + 1)
-    stat_name = "Median" if median else "Average"
+    stat_name = "Median" if median else "Mean"
 
     # Make sure the moments have the moment keys as index and a 'value' column
     if moments.index.name is None or (
@@ -758,18 +758,65 @@ def plot_wealth_emp_vs_moments(  # noqa: PLR0912, PLR0915
         (lambda s: s.median(skipna=True)) if median else (lambda s: s.mean(skipna=True))
     )
 
+    # Helper: detect if moments use age bins and extract bin edges
+    def detect_age_bins(tag: str) -> tuple[bool, list[int] | None]:
+        """Detect if moments use age bins and return bin edges if so."""
+        bin_pattern = re.compile(
+            rf"^{stat_name.lower()}_wealth_{tag}_education_wealth_age_bin_(\d+)_(\d+)$"
+        )
+        extracted_bins = moments.index.to_series().str.extract(bin_pattern)
+        has_bins = extracted_bins[0].notna().any()
+
+        if has_bins:
+            mask = extracted_bins[0].notna()
+            bin_starts = extracted_bins[0][mask].astype(int)
+            bin_ends = extracted_bins[1][mask].astype(int)
+            # Get unique bin edges (sorted)
+            all_edges = sorted(set(bin_starts.tolist() + (bin_ends + 1).tolist()))
+            return True, all_edges
+        return False, None
+
     # Helper: parse a Series (index=int age) from moments for a given education tag
-    def extract_moment_series(tag: str) -> pd.Series:
-        pattern = re.compile(rf"^mean_wealth_{tag}_education_wealth_age_(\d+)$")
-        extracted = moments.index.to_series().str.extract(pattern)
-        ages_str = extracted[0]
-        mask = ages_str.notna()
-        s = moments.loc[mask, "value"].copy()
-        s.index = ages_str[mask].astype(int)
-        return s.sort_index()
+    # Handles both age-by-age moments and age-bin moments
+    def extract_moment_series(
+        tag: str, use_bins: bool, bin_edges: list[int] | None
+    ) -> pd.Series:
+        if use_bins and bin_edges is not None:
+            # Extract bin labels and values
+            bin_pattern = re.compile(
+                rf"^{stat_name.lower()}_wealth_{tag}_education_wealth_age_bin_(\d+)_(\d+)$"
+            )
+            extracted_bins = moments.index.to_series().str.extract(bin_pattern)
+            mask = extracted_bins[0].notna()
+            bin_starts = extracted_bins[0][mask].astype(int)
+            bin_ends = extracted_bins[1][mask].astype(int)
+            values = moments.loc[mask, "value"].copy()
+
+            # Create bin labels and map to bin centers for plotting
+            bin_labels = [f"{start}_{end}" for start, end in zip(bin_starts, bin_ends)]
+            bin_centers = ((bin_starts + bin_ends) / 2).astype(int)
+
+            # Create series with bin centers as index
+            s = pd.Series(values.values, index=bin_centers.values)
+            return s.sort_index()
+        else:
+            # Fall back to age-by-age moments (e.g., mean_wealth_low_education_wealth_age_30)
+            age_pattern = re.compile(
+                rf"^{stat_name.lower()}_wealth_{tag}_education_wealth_age_(\d+)$"
+            )
+            extracted = moments.index.to_series().str.extract(age_pattern)
+            ages_str = extracted[0]
+            mask = ages_str.notna()
+            s = moments.loc[mask, "value"].copy()
+            s.index = ages_str[mask].astype(int)
+            return s.sort_index()
 
     # Map panel index → tag used in moment keys
     tag_map = {0: "low", 1: "high"}
+
+    # Detect if we're using age bins (check first education group)
+    first_tag = tag_map.get(0, "low")
+    use_age_bins, bin_edges = detect_age_bins(first_tag)
 
     # ---------- 1) Plot per education ----------
     all_values = []
@@ -778,11 +825,47 @@ def plot_wealth_emp_vs_moments(  # noqa: PLR0912, PLR0915
 
         # Empirical series
         emp_edu = data_emp[data_emp["education"] == edu_idx]
-        emp_series = (
-            emp_edu.groupby("age", observed=False)[wealth_var_emp]
-            .apply(agg)
-            .reindex(ages, fill_value=np.nan)
-        )
+
+        if use_age_bins and bin_edges is not None:
+            # Aggregate empirical data by age bins
+            emp_edu_copy = emp_edu.copy()
+            emp_edu_copy["age_bin"] = pd.cut(
+                emp_edu_copy["age"],
+                bins=bin_edges,
+                labels=[
+                    f"{bin_edges[i]}_{bin_edges[i+1]-1}"
+                    for i in range(len(bin_edges) - 1)
+                ],
+                right=False,
+            )
+            # Compute bin centers for x-axis
+            bin_centers = [
+                (bin_edges[i] + bin_edges[i + 1] - 1) / 2
+                for i in range(len(bin_edges) - 1)
+            ]
+            bin_centers_series = pd.Series(
+                bin_centers,
+                index=[
+                    f"{bin_edges[i]}_{bin_edges[i+1]-1}"
+                    for i in range(len(bin_edges) - 1)
+                ],
+            )
+
+            # Aggregate by bins
+            emp_by_bin = emp_edu_copy.groupby("age_bin", observed=False)[
+                wealth_var_emp
+            ].apply(agg)
+            # Map to bin centers for plotting
+            emp_series = pd.Series(
+                emp_by_bin.values, index=bin_centers_series.loc[emp_by_bin.index].values
+            ).sort_index()
+        else:
+            # Age-by-age aggregation
+            emp_series = (
+                emp_edu.groupby("age", observed=False)[wealth_var_emp]
+                .apply(agg)
+                .reindex(ages, fill_value=np.nan)
+            )
 
         # Moments series
         tag = tag_map.get(edu_idx)
@@ -790,15 +873,43 @@ def plot_wealth_emp_vs_moments(  # noqa: PLR0912, PLR0915
             # If more than two education groups exist, hide extra panels gracefully
             ax.set_visible(False)
             continue
-        mom_series = extract_moment_series(tag).reindex(ages, fill_value=np.nan)
+        mom_series = extract_moment_series(tag, use_age_bins, bin_edges)
+
+        if use_age_bins:
+            # For bins, plot at bin centers
+            x_emp = emp_series.index.values
+            y_emp = emp_series.values
+            x_mom = mom_series.index.values
+            y_mom = mom_series.values
+        else:
+            # For age-by-age, use full age range
+            mom_series = mom_series.reindex(ages, fill_value=np.nan)
+            x_emp = list(ages)
+            y_emp = emp_series.reindex(ages, fill_value=np.nan).values
+            x_mom = list(ages)
+            y_mom = mom_series.values
 
         # Collect for common y-limits
-        all_values.extend(emp_series.dropna().tolist())
-        all_values.extend(mom_series.dropna().tolist())
+        all_values.extend([v for v in y_emp if not np.isnan(v)])
+        all_values.extend([v for v in y_mom if not np.isnan(v)])
 
         # Lines (match style spirit: black empirical; dashed moments)
-        ax.plot(ages, emp_series.values, color="black", ls="-", label="Observed")
-        ax.plot(ages, mom_series.values, color="C1", ls="--", label="Moments")
+        ax.plot(
+            x_emp,
+            y_emp,
+            color="black",
+            ls="-",
+            label="Observed",
+            marker="o" if use_age_bins else None,
+        )
+        ax.plot(
+            x_mom,
+            y_mom,
+            color="C1",
+            ls="--",
+            label="Moments",
+            marker="s" if use_age_bins else None,
+        )
 
         # Ax cosmetics
         xrange = age_max - age_min

@@ -199,3 +199,91 @@ def task_plot_initial_states_average_wealth(
     # Save plot
     plt.savefig(path_to_save_plot, dpi=300, transparent=False)
     plt.close(fig)
+
+
+@pytask.mark.initial_conditions
+@pytask.mark.plot_initial_conditions
+def task_plot_initial_states_median_wealth(
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_initial_states: Path = BLD
+    / "model"
+    / "initial_conditions"
+    / "initial_states.pkl",
+    path_to_save_plot: Annotated[Path, Product] = BLD
+    / "plots"
+    / "initial_conditions"
+    / "median_wealth_age_29.png",
+) -> None:
+    """Plot median wealth by education at age 29.
+
+    This task plots the median wealth of agents differentiated by education type
+    for the first period (age 29), using the assets_begin_of_period variable
+    from the initial states object.
+
+    Parameters
+    ----------
+    path_to_specs : Path
+        Path to model specifications pickle file.
+    path_to_initial_states : Path
+        Path to initial states pickle file.
+    path_to_save_plot : Path
+        Path to save the generated plot.
+    """
+    # Load specs and initial states
+    with path_to_specs.open("rb") as f:
+        specs = pickle.load(f)
+
+    with path_to_initial_states.open("rb") as f:
+        states = pickle.load(f)
+
+    # Extract assets_begin_of_period and education arrays
+    wealth = np.array(states["assets_begin_of_period"])
+    education = np.array(states["education"])
+
+    # Get education labels from specs
+    education_labels = specs["education_labels"]
+
+    # Calculate median wealth by education
+    n_edu = len(education_labels)
+    median_wealth = np.zeros(n_edu)
+
+    for edu_idx in range(n_edu):
+        edu_mask = education == edu_idx
+        if np.sum(edu_mask) > 0:
+            median_wealth[edu_idx] = np.median(wealth[edu_mask])
+
+    # Create bar plot
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    # Create bars
+    x = np.arange(len(education_labels))
+    ax.bar(x, median_wealth, width=0.6, alpha=0.7, edgecolor="black", linewidth=1.2)
+
+    # Customize plot
+    ax.set_xlabel("Education", fontsize=12)
+    ax.set_ylabel("Median Wealth", fontsize=12)
+    ax.set_title("Median Wealth by Education at Age 29 (Initial Period)", fontsize=14)
+    ax.set_xticks(x)
+    ax.set_xticklabels(education_labels)
+    ax.grid(axis="y", alpha=0.3, linestyle="--")
+
+    # Add value labels on bars
+    for i, med_wealth in enumerate(median_wealth):
+        ax.text(
+            i,
+            med_wealth,
+            f"{med_wealth:.2f}",
+            ha="center",
+            va="bottom",
+            fontsize=10,
+            fontweight="bold",
+        )
+
+    plt.tight_layout()
+
+    # Ensure directory exists
+    path_to_save_plot.parent.mkdir(parents=True, exist_ok=True)
+
+    # Save plot
+    plt.savefig(path_to_save_plot, dpi=300, transparent=False)
+    plt.close(fig)
