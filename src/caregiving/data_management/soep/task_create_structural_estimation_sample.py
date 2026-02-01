@@ -25,7 +25,10 @@ from caregiving.data_management.soep.task_create_event_study_sample import (
     create_parent_info,
     create_sibling_info,
 )
-from caregiving.data_management.soep.task_create_wealth_sample import deflate_wealth
+from caregiving.data_management.soep.task_create_wealth_sample import (
+    deflate_wealth,
+    print_filter,
+)
 from caregiving.data_management.soep.variables import (  # create_experience_variable,
     create_choice_variable,
     create_education_type,
@@ -47,7 +50,6 @@ from caregiving.model.shared import (
     WORK_CHOICES,
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
-from caregiving.data_management.soep.task_create_wealth_sample import print_filter
 
 
 @pytask.mark.estimation_sample
