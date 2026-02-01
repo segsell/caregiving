@@ -82,12 +82,12 @@ The function handles multiple agents through **vectorization**:
    - Keys are state variable names (e.g., "age", "education", "experience", "lagged_choice")
    - Values are numpy arrays of shape `(n_observations,)` where each element corresponds to one person-period observation
 
-2. **Vectorized Processing**: 
+2. **Vectorized Processing**:
    - All arrays in `observed_states_dict` must have the same length (n_observations)
    - `vmap` processes all observations in parallel
    - Each observation can represent a different person, a different age for the same person, or both
 
-3. **Output**: 
+3. **Output**:
    - Returns a numpy array of shape `(n_observations,)` with adjusted assets for each observation
 
 ### Example Structure
@@ -163,7 +163,7 @@ compute_assets_begin_of_period(
 
 To correctly adjust wealth by age and person:
 
-1. **Include `lagged_choice` in `states_dict`**: 
+1. **Include `lagged_choice` in `states_dict`**:
    - For each person at each age, we need their `lagged_choice` from the previous period
    - This must be extracted from the data and aligned with the current period's observations
 
@@ -253,7 +253,7 @@ def adjust_wealth_by_age_and_person(
 ) -> pd.DataFrame:
     """
     Adjust wealth for each person at each age, accounting for lagged choices.
-    
+
     Parameters
     ----------
     df : pd.DataFrame
@@ -276,7 +276,7 @@ def adjust_wealth_by_age_and_person(
         Column name for wealth variable
     default_lagged_choice : int
         Default value for lagged choice when not available (first obs per person)
-    
+
     Returns
     -------
     pd.DataFrame
