@@ -58,7 +58,8 @@ def task_plot_empirical_soep_moments(
     path_to_caregivers_sample: Path = BLD
     / "data"
     / "soep_structural_caregivers_sample.csv",
-    path_to_wealth_data: Path = BLD / "data" / "soep_wealth_data_full.csv",
+    path_to_wealth_data: Path = BLD / "data" / "soep_wealth_data.csv",
+    path_to_wealth_data_full: Path = BLD / "data" / "soep_wealth_data_full.csv",
     path_to_save_wealth: Annotated[Path, Product] = BLD
     / "plots"
     / "raw_moments"
@@ -159,6 +160,8 @@ def task_plot_empirical_soep_moments(
     # Load wealth data
     df_wealth = pd.read_csv(path_to_wealth_data, index_col=[0])
     df_wealth = df_wealth.reset_index()
+    df_wealth_full = pd.read_csv(path_to_wealth_data_full, index_col=[0])
+    # df_wealth_full = df_wealth_full.reset_index()
 
     # Create standardized subsamples using shared functions
     df_non_caregivers = create_df_non_caregivers(
@@ -185,15 +188,16 @@ def task_plot_empirical_soep_moments(
 
     # Process wealth data using load_and_scale_correct_data
     trimmed = load_and_scale_correct_data(
-        # data_decision=df_wealth,
+        # data_decision=df_wealth_full,
         data_decision=df_full,
         model_class=model_class,
     )
+    # trimmed = df_full.copy()
+    # trimmed["assets_begin_of_period"] = trimmed["wealth"]
+
     # trimmed = trimmed[trimmed["sex"] == SEX].copy()
     # # Filter by year range
-    # trimmed = trimmed[
-    #     (trimmed["syear"] >= start_year) & (trimmed["syear"] <= end_year)
-    # ].copy()
+    trimmed = trimmed[(trimmed["syear"] >= 2013) & (trimmed["syear"] <= 2020)].copy()
     # Rename assets_begin_of_period to adjusted_wealth for compatibility with plotting code
     trimmed["adjusted_wealth"] = trimmed["assets_begin_of_period"]
 

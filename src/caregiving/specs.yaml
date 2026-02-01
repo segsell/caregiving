@@ -152,8 +152,8 @@ reference_year_event_study: 2015
 ###############################################################################
 income_shock_mean: 0.0
 # income_shock_std: 0.16471062648214
-discount_factor: 0.97 # 0.98
-interest_rate: 0.03 # 0.03
+discount_factor: 0.98 # 0.97
+interest_rate: 0.0225 # 0.03
 # discount_factor: 0.97
 
 

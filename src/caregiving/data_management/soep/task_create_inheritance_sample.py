@@ -26,7 +26,7 @@ from caregiving.data_management.soep.task_create_event_study_sample import (
     create_sibling_info,
 )
 from caregiving.data_management.soep.task_create_structural_estimation_sample import (
-    add_wealth_data,
+    add_wealth_data_and_deflate,
     create_alreay_retired_variable,
 )
 from caregiving.data_management.soep.task_create_wealth_sample import deflate_wealth
