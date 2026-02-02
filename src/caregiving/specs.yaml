@@ -47,25 +47,28 @@ min_long_insured_age: 63
 # Retirement parameters
 ret_years_before_SRA: 4
 min_ret_age: 63
-max_ret_age: 67 # 72
+max_ret_age: 70 # 67 # 72
 # Maximum age to estimate labor market
 max_est_age_labor: 65
+max_age_partner_working: 75
+
 # Assume that part time gives half a year of experience
 exp_increase_part_time: 0.5
 
-# Parameters of the policy environment:
+# Parameters of the policy environment (2010):
 # Start with unemployment benefits
-monthly_unemployment_benefits: 350
+monthly_unemployment_benefits: 359 # 350
+monthly_child_unemployment_benefits: 255 # 250
 monthly_unemployment_benefits_housing: 300
-monthly_child_unemployment_benefits: 250
 # Wealth threshold (for unemployment benefits)
 unemployment_wealth_thresh: 10_500
 # Now additional parameters for working and retirement
 monthly_child_benefits: 184
-monthly_min_wage: 1360
+monthly_min_wage: 1470 #1360
 
-informal_care_cash_benefits: 444 # 0.4239 * 316 + 0.2793 * 545 + 728 *0.1405 + 901 * 0.0617
-formal_care_costs: 600
+# informal_care_cash_benefits: 444 # 0.4239 * 316 + 0.2793 * 545 + 728 *0.1405 + 901 * 0.0617
+informal_care_cash_benefits_light: 235 # Pflegestufe 1 (2010)
+informal_care_cash_benefits_intensive: 570 # Pflegestufe 2 (2010): 440, Pflegestufe 3 (2010): 700
 
 # Retirement parameters
 early_retirement_penalty: 0.036
@@ -112,6 +115,8 @@ intercepts_income_tax: [0.0, 0.0, 1038.00, -8172.00, -15694.00]
 start_year: 2010 # start year of estimation sample
 end_year: 2017 # end year of estimation sample
 reference_year: 2010  # reference year for monetary values, taxes, etc.
+start_year_wealth: 2010
+end_year_wealth: 2020
 ###############################################
 # Wage process estimation (uses same start and end year)
 wage_trunc_low_perc: 0.01  # lower truncation of wage distribution
@@ -152,8 +157,8 @@ reference_year_event_study: 2015
 ###############################################################################
 income_shock_mean: 0.0
 # income_shock_std: 0.16471062648214
-discount_factor: 0.97 # 0.98
-interest_rate: 0.03 # 0.03
+discount_factor: 0.98 # 0.97
+interest_rate: 0.0225 # 0.03
 # discount_factor: 0.97
 
 
@@ -163,3 +168,9 @@ interest_rate: 0.03 # 0.03
 ###############################################################################
 n_agents: 100_000
 seed: 123
+
+###############################################################################
+# Life expectancy parameters from simulation
+life_exp:
+  - [79.49, 83.39]
+  - [84.49, 85.16]

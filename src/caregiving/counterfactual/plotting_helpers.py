@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 from caregiving.config import JET_COLOR_MAP
-from caregiving.counterfactual.plotting_utils import _ensure_agent_period
+from caregiving.counterfactual.plotting_utils import ensure_agent_period
 from caregiving.model.shared import (
     DEAD,
     FULL_TIME,
@@ -92,8 +92,8 @@ def prepare_dataframes_simple(
     df_c = df_c[df_c["health"] != DEAD].copy()
 
     # Ensure agent/period
-    df_o = _ensure_agent_period(df_o)
-    df_c = _ensure_agent_period(df_c)
+    df_o = ensure_agent_period(df_o)
+    df_c = ensure_agent_period(df_c)
 
     # Fully flatten any residual index levels named 'agent' or 'period'
     if isinstance(df_o.index, pd.MultiIndex):

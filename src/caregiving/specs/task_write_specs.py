@@ -12,6 +12,7 @@ import pytask
 from pytask import Product
 
 from caregiving.config import BLD, SRC
+from caregiving.specs.care_costs_specs import read_in_formal_care_costs_by_age
 from caregiving.specs.caregiving_specs import (
     read_in_adl_state_transition_specs,
     read_in_adl_state_transition_specs_light_intensive,
@@ -208,6 +209,10 @@ def task_write_specs(  # noqa: PLR0915
     / "estimation"
     / "stochastic_processes"
     / "inheritance_amount_matrix.csv",
+    path_to_formal_care_costs_params_pooled: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "formal_care_costs_params_pooled.csv",
 ) -> Dict[str, Any]:
     """Read in specs and add specs from first-step estimation."""
 
@@ -422,6 +427,12 @@ def task_write_specs(  # noqa: PLR0915
         specs, path_to_save=path_to_save_inheritance_amount_mat
     )
 
+    # Read in formal care costs by age (period)
+    specs["formal_care_costs"] = read_in_formal_care_costs_by_age(
+        path_to_formal_care_costs_params_pooled, specs
+    )
+
     with path_to_save_specs_dict.open("wb") as f:
         pkl.dump(specs, f)
+
     return specs

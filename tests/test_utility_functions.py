@@ -85,10 +85,15 @@ def create_test_params(disutil_work, disutil_unemployed, rho):
         "disutil_unemployed_low_women": disutil_unemployed,
         "disutil_unemployed_high_women": disutil_unemployed,
         "disutil_partner_retired": 0,
-        "disutil_children_pt_work_low": 0,
-        "disutil_children_pt_work_high": 0,
-        "disutil_children_ft_work_low": 0.1,
-        "disutil_children_ft_work_high": 0.2,
+        # Age-based disutility from children (age < 40 vs age >= 40)
+        "disutil_children_pt_work_low_below_40": 0,
+        "disutil_children_pt_work_low_above_40": 0,
+        "disutil_children_pt_work_high_below_40": 0,
+        "disutil_children_pt_work_high_above_40": 0,
+        "disutil_children_ft_work_low_below_40": 0.1,
+        "disutil_children_ft_work_low_above_40": 0.1,
+        "disutil_children_ft_work_high_below_40": 0.2,
+        "disutil_children_ft_work_high_above_40": 0.2,
         # labor and caregiving
         "disutil_pt_work_high_good_informal_care": disutil_work,
         "disutil_pt_work_high_bad_informal_care": disutil_work + 1,
@@ -100,15 +105,39 @@ def create_test_params(disutil_work, disutil_unemployed, rho):
         "disutil_ft_work_low_bad_informal_care": disutil_work + 1,
         "disutil_unemployed_low_women_informal_care": disutil_unemployed,
         "disutil_unemployed_high_women_informal_care": disutil_unemployed,
+        # No age differentiation for informal care
         "disutil_children_pt_work_low_informal_care": 0,
         "disutil_children_pt_work_high_informal_care": 0,
         "disutil_children_ft_work_low_informal_care": 0.1,
         "disutil_children_ft_work_high_informal_care": 0.2,
+        # level-shift disutilities for light informal care (education × labor state)
+        "disutil_unemployed_light_informal_care_high": 0,
+        "disutil_unemployed_light_informal_care_low": 0,
+        "disutil_ft_work_light_informal_care_high": 0,
+        "disutil_ft_work_light_informal_care_low": 0,
+        # level-shift disutilities for intensive informal care (education × labor state)
+        "disutil_unemployed_intensive_informal_care_high": 0,
+        "disutil_unemployed_intensive_informal_care_low": 0,
+        "disutil_ft_work_intensive_informal_care_high": 0,
+        "disutil_ft_work_intensive_informal_care_low": 0,
         # type of care (varies by health and education)
-        "util_informal_care_high_good": 0,
-        "util_informal_care_high_bad": 0,
-        "util_informal_care_low_good": 0,
-        "util_informal_care_low_bad": 0,
+        # new light informal care utilities (education × health)
+        "util_light_informal_care_high_good": 0,
+        "util_light_informal_care_high_bad": 0,
+        "util_light_informal_care_low_good": 0,
+        "util_light_informal_care_low_bad": 0,
+        # new intensive informal care utilities (education × health)
+        "util_intensive_informal_care_high_good": 0,
+        "util_intensive_informal_care_high_bad": 0,
+        "util_intensive_informal_care_low_good": 0,
+        "util_intensive_informal_care_low_bad": 0,
+        # new formal-care utilities (education × health)
+        "util_formal_care_high_good": 0,
+        "util_formal_care_high_bad": 0,
+        "util_formal_care_low_good": 0,
+        "util_formal_care_low_bad": 0,
+        # legacy formal/joint informal care utilities (no longer used in active code,
+        # but kept so older interfaces remain valid)
         "util_formal_care_good": 0,
         "util_formal_care_bad": 0,
         "util_joint_informal_care_good": 0,
@@ -242,12 +271,22 @@ def test_utility_func(
     nb_children = model_specs["children_by_state"][
         sex, education, has_partner_int, period
     ]
-    exp_factor_ft_work += (
-        params["disutil_children_ft_work_high"] * nb_children * education
-    )
-    exp_factor_ft_work += (
-        params["disutil_children_ft_work_low"] * nb_children * (1 - education)
-    )
+    # Calculate age for age-based parameters
+    age = period + model_specs["start_age"]
+    age_below_40 = int(age < 40)
+    age_above_40 = int(age >= 40)
+
+    # Age-based disutility from children for full-time work
+    if education == 1:  # high education
+        exp_factor_ft_work += (
+            params["disutil_children_ft_work_high_below_40"] * age_below_40
+            + params["disutil_children_ft_work_high_above_40"] * age_above_40
+        ) * nb_children
+    else:  # low education
+        exp_factor_ft_work += (
+            params["disutil_children_ft_work_low_below_40"] * age_below_40
+            + params["disutil_children_ft_work_low_above_40"] * age_above_40
+        ) * nb_children
 
     disutil_pt_work = -exp_factor_pt_work
     disutil_ft_work = -exp_factor_ft_work

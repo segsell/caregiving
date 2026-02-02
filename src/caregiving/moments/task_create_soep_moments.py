@@ -1,15 +1,19 @@
 """Create SOEP moments and variances for MSM estimation."""
 
+import pickle
 from itertools import product
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytask
+import yaml
+from dcegm.asset_correction import adjust_observed_assets
 from pytask import Product
 
+import dcegm
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import (
     BAD_HEALTH,
@@ -17,7 +21,6 @@ from caregiving.model.shared import (
     FULL_TIME_CHOICES,
     GOOD_HEALTH,
     NOT_WORKING_CHOICES,
-    PARENT_WEIGHTS_SHARE,
     PART_TIME_CHOICES,
     RETIREMENT_CHOICES,
     SCALE_CAREGIVER_SHARE,
@@ -27,14 +30,30 @@ from caregiving.model.shared import (
     WEALTH_QUANTILE_CUTOFF,
     WORK_CHOICES,
 )
-from caregiving.specs.task_write_specs import read_and_derive_specs
+from caregiving.model.state_space import create_state_space_functions
+from caregiving.model.stochastic_processes.job_transition import (
+    job_offer_process_transition_initial_conditions,
+)
+from caregiving.model.task_specify_model import create_stochastic_states_transitions
+from caregiving.model.taste_shocks import shock_function_dict
+from caregiving.model.utility.bequest_utility import (
+    create_final_period_utility_functions,
+)
+from caregiving.model.utility.utility_functions_additive import create_utility_functions
+from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
+from caregiving.moments.transform_data import load_and_scale_correct_data
 
 DEGREES_OF_FREEDOM = 1
 
 
+@pytask.mark.moments
 @pytask.mark.soep_moments
 def task_create_soep_moments(  # noqa: PLR0915
-    path_to_specs: Path = SRC / "specs.yaml",
+    # path_to_specs: Path = SRC / "specs.yaml",
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_model_config: Path = BLD / "model" / "model_config.pkl",
+    path_to_model: Path = BLD / "model" / "model.pkl",
+    path_to_params: Path = BLD / "model" / "params" / "estimated_params_model.yaml",
     path_to_main_sample: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
     path_to_caregivers_sample: Path = BLD
     / "data"
@@ -42,23 +61,59 @@ def task_create_soep_moments(  # noqa: PLR0915
     path_to_save_moments: Annotated[Path, Product] = BLD
     / "moments"
     / "soep_moments_new.csv",
+    path_to_parents_weights_csv=(
+        BLD / "descriptives" / "daily_care_parents_versus_other_by_age_bin.csv"
+    ),
+    path_to_parents_weights_educ_csv=(
+        BLD
+        / "descriptives"
+        / "daily_care_parents_versus_other_by_age_bin_and_education.csv"
+    ),
+    path_to_pure_formal_care_csv=(
+        BLD / "descriptives" / "pure_formal_care_by_age_educ_intensity.csv"
+    ),
     path_to_save_variances: Annotated[Path, Product] = BLD
     / "moments"
     / "soep_variances_new.csv",
 ) -> None:
     """Create moments for MSM estimation."""
 
-    specs = read_and_derive_specs(path_to_specs)
+    specs = pickle.load(path_to_specs.open("rb"))
+    model_config = pickle.load(path_to_model_config.open("rb"))
+
+    model_class = dcegm.setup_model(
+        model_specs=specs,
+        model_config=model_config,
+        state_space_functions=create_state_space_functions(),
+        utility_functions=create_utility_functions(),
+        utility_functions_final_period=create_final_period_utility_functions(),
+        budget_constraint=budget_constraint,
+        shock_functions=shock_function_dict(),
+        stochastic_states_transitions=create_stochastic_states_transitions(),
+        model_load_path=path_to_model,
+        # alternative_sim_specifications=alternative_sim_specifications,
+        # debug_info=debug_info,
+        # use_stochastic_sparsity=True,
+    )
+
+    parents_weights_share = _process_parents_weights_share(path_to_parents_weights_csv)
+    parents_weights_share_low_educ = _process_parents_weights_share(
+        path_to_parents_weights_educ_csv, educ_var="high_isced", educ_type="low"
+    )
+    parents_weights_share_high_educ = _process_parents_weights_share(
+        path_to_parents_weights_educ_csv, educ_var="high_isced", educ_type="high"
+    )
 
     start_age = specs["start_age"]
     start_age_caregivers = specs["start_age_caregiving"]
     end_age = specs["end_age_msm"]
     end_age_caregiving = specs["end_age_caregiving"]
+
     start_year = 2001
     end_year = 2019
 
     age_range = range(start_age, end_age + 1)
-    age_range_wealth = range(start_age, specs["end_age_wealth"] + 1)
+    age_range_wealth = range(start_age, specs["end_age_wealth"] + 10)
 
     _age_bins_75 = (
         list(range(40, 80, 5)),  # [40, 45, … , 70]
@@ -90,7 +145,12 @@ def task_create_soep_moments(  # noqa: PLR0915
         end_year=end_year,
         end_age=end_age,
     )
-    df_wealth = create_df_wealth(df_full=df_full, specs=specs)
+
+    df_wealth = create_df_wealth(
+        df_full=df_full,
+        specs=specs,
+        model_class=model_class,
+    )
 
     _df_alive = df[df["health"] != DEAD].copy()
     _df_good_health = df[df["health"] == GOOD_HEALTH].copy()
@@ -141,7 +201,7 @@ def task_create_soep_moments(  # noqa: PLR0915
     # =================================================================================
 
     # 0) Wealth by education and age bin
-    moments, variances = compute_mean_wealth_by_age(
+    moments, variances = compute_median_by_age_bin(
         df_wealth_low,
         moments,
         variances,
@@ -149,7 +209,7 @@ def task_create_soep_moments(  # noqa: PLR0915
         age_range=age_range_wealth,
         label="wealth_low_education",
     )
-    moments, variances = compute_mean_wealth_by_age(
+    moments, variances = compute_median_by_age_bin(
         df_wealth_high,
         moments,
         variances,
@@ -181,79 +241,117 @@ def task_create_soep_moments(  # noqa: PLR0915
         age_range=age_range,
         label="high_education",
     )
-    # =================================================================================
-
-    # # B) Health
-    # # moments, variances = compute_shares_by_age_bin(
-    # #     df_alive,
-    # #     moments,
-    # #     variances,
-    # #     age_bins=age_bins_75,
-    # #     variable="health",
-    # #     label="good_health",
-    # # )
-    # moments, variances = compute_labor_shares_by_age(
-    #     df_good_health,
-    #     moments=moments,
-    #     variances=variances,
-    #     age_range=age_range,
-    #     label="good_health",
-    # )
-    # moments, variances = compute_labor_shares_by_age(
-    #     df_bad_health,
-    #     moments=moments,
-    #     variances=variances,
-    #     age_range=age_range,
-    #     label="bad_health",
-    # )
-
-    # B2) Moments by age bin conditional on caregiving
-    # moments, variances = compute_share_informal_care_by_age(
-    #     df,
-    #     moments=moments,
-    #     variances=variances,
-    #     age_range=age_range,
-    # )
-
-    # t, variances = compute_share_informal_care_by_age_bin(
-    #     df_year_good_health,
-    #     moments=t,
-    #     variances=variances,
-    #     weights=PARENT_WEIGHTS_SHARE,
-    #     scale=SCALE_CAREGIVER_SHARE,
-    #     label="good_health",
-    # )
-    # t, variances = compute_share_informal_care_by_age_bin(
-    #     df_year_bad_health,
-    #     moments=t,
-    #     variances=variances,
-    #     weights=PARENT_WEIGHTS_SHARE,
-    #     scale=SCALE_CAREGIVER_SHARE,
-    #     label="bad_health",
-    # )
 
     # =================================================================================
-    caregiver_shares = {
-        "share_informal_care_age_bin_40_44": 0.02980982 + 0.010,
-        "share_informal_care_age_bin_45_49": 0.04036255 + 0.015,
-        "share_informal_care_age_bin_50_54": 0.05350986 + 0.021,
-        "share_informal_care_age_bin_55_59": 0.06193384 + 0.027,
-        "share_informal_care_age_bin_60_64": 0.05304824 + 0.025,
-        "share_informal_care_age_bin_65_69": 0.03079298 + 0.007,
-        # "share_informal_care_age_bin_70_74": 0.00155229,
-    }
-    scaled_caregiver_shares = {
-        k: v * SCALE_CAREGIVER_SHARE for k, v in caregiver_shares.items()
-    }
-    moments.update(scaled_caregiver_shares)
-
+    # caregiver_shares = {
+    #     "share_informal_care_age_bin_40_44": 0.02980982 + 0.010,
+    #     "share_informal_care_age_bin_45_49": 0.04036255 + 0.015,
+    #     "share_informal_care_age_bin_50_54": 0.05350986 + 0.021,
+    #     "share_informal_care_age_bin_55_59": 0.06193384 + 0.027,
+    #     "share_informal_care_age_bin_60_64": 0.05304824 + 0.025,
+    #     "share_informal_care_age_bin_65_69": 0.03079298 + 0.007,
+    #     # "share_informal_care_age_bin_70_74": 0.00155229,
+    # }
+    # scaled_caregiver_shares = {
+    #     k: v * SCALE_CAREGIVER_SHARE for k, v in caregiver_shares.items()
+    # }
+    # moments.update(scaled_caregiver_shares)
     # =================================================================================
-    _, variances = compute_share_informal_care_by_age_bin(
-        df_year,
-        moments=moments.copy(),
+
+    moments, variances = compute_share_informal_care_by_age_bin(
+        df_with_caregivers,
+        moments=moments,
         variances=variances,
-        weights=PARENT_WEIGHTS_SHARE,
+        care_var="any_care",
+        label="any",
+        weights=parents_weights_share,
         scale=SCALE_CAREGIVER_SHARE,
+    )
+    moments, variances = compute_share_informal_care_by_age_bin(
+        df_with_caregivers,
+        moments=moments,
+        variances=variances,
+        care_var="light_care",
+        label="light",
+        weights=parents_weights_share,
+        scale=SCALE_CAREGIVER_SHARE,
+    )
+    moments, variances = compute_share_informal_care_by_age_bin(
+        df_with_caregivers,
+        moments=moments,
+        variances=variances,
+        care_var="intensive_care",
+        label="intensive",
+        weights=parents_weights_share,
+        scale=SCALE_CAREGIVER_SHARE,
+    )
+
+    # Education-specific moments for any care
+    moments, variances = compute_share_informal_care_by_age_bin(
+        df_with_caregivers_low,
+        moments=moments,
+        variances=variances,
+        care_var="any_care",
+        label="any_low_educ",
+        weights=parents_weights_share_low_educ,
+        scale=SCALE_CAREGIVER_SHARE,
+    )
+    moments, variances = compute_share_informal_care_by_age_bin(
+        df_with_caregivers_high,
+        moments=moments,
+        variances=variances,
+        care_var="any_care",
+        label="any_high_educ",
+        weights=parents_weights_share_high_educ,
+        scale=SCALE_CAREGIVER_SHARE,
+    )
+
+    # Education-specific moments for light care
+    moments, variances = compute_share_informal_care_by_age_bin(
+        df_with_caregivers_low,
+        moments=moments,
+        variances=variances,
+        care_var="light_care",
+        label="light_low_educ",
+        weights=parents_weights_share_low_educ,
+        scale=SCALE_CAREGIVER_SHARE,
+    )
+    moments, variances = compute_share_informal_care_by_age_bin(
+        df_with_caregivers_high,
+        moments=moments,
+        variances=variances,
+        care_var="light_care",
+        label="light_high_educ",
+        weights=parents_weights_share_high_educ,
+        scale=SCALE_CAREGIVER_SHARE,
+    )
+
+    # Education-specific moments for intensive care
+    moments, variances = compute_share_informal_care_by_age_bin(
+        df_with_caregivers_low,
+        moments=moments,
+        variances=variances,
+        care_var="intensive_care",
+        label="intensive_low_educ",
+        weights=parents_weights_share_low_educ,
+        scale=SCALE_CAREGIVER_SHARE,
+    )
+    moments, variances = compute_share_informal_care_by_age_bin(
+        df_with_caregivers_high,
+        moments=moments,
+        variances=variances,
+        care_var="intensive_care",
+        label="intensive_high_educ",
+        weights=parents_weights_share_high_educ,
+        scale=SCALE_CAREGIVER_SHARE,
+    )
+
+    # =================================================================================
+    # Add pure formal care moments from SOEP-IS data
+    moments, variances = add_pure_formal_care_moments(
+        path_to_pure_formal_care_csv=path_to_pure_formal_care_csv,
+        moments=moments,
+        variances=variances,
     )
     # =================================================================================
 
@@ -386,6 +484,7 @@ def task_create_soep_moments(  # noqa: PLR0915
     # )
     # =================================================================================
 
+    # =================================================================================
     # E) Year-to-year labor supply transitions
     states_work_no_work = {
         "not_working": NOT_WORKING_CHOICES,
@@ -414,69 +513,61 @@ def task_create_soep_moments(  # noqa: PLR0915
     )
     moments.update(transition_moments)
     variances.update(transition_variances)
-
-    # states = {
-    #     "not_working": NOT_WORKING,
-    #     "part_time": PART_TIME,
-    #     "full_time": FULL_TIME_CHOICES,
-    # }
-    # trans_moments, trans_variances = compute_transition_moments_and_variances(
-    #     df,
-    #     min_age=start_age + 1,
-    #     max_age=end_age + 1,
-    #     states=states,
-    #     full_time=FULL_TIME_CHOICES,
-    #     part_time=PART_TIME,
-    #     not_working=NOT_WORKING,
-    # )
-    # moments.update(trans_moments)
-    # variances.update(trans_variances)
+    # =================================================================================
 
     # Compute caregiving to caregiving transition probability by age bin
     states_caregiving = {
         "caregiving": 1,
     }
+    # Custom age bin 40-70: one large age bin only
+    transition_moments, transition_variances = (
+        compute_transition_moments_and_variances_for_age_bins(
+            df_with_caregivers_low,
+            min_age=40,
+            max_age=70,
+            states=states_caregiving,
+            choice="any_care",
+            lagged_choice="lagged_any_care",
+            label="low_education",
+            bin_width=31,  # Creates single bin from 40-70
+        )
+    )
+    moments.update(transition_moments)
+    variances.update(transition_variances)
+
+    # Custom age bin 40-70: one large age bin only
+    transition_moments, transition_variances = (
+        compute_transition_moments_and_variances_for_age_bins(
+            df_with_caregivers_high,
+            min_age=40,
+            max_age=70,
+            states=states_caregiving,
+            choice="any_care",
+            lagged_choice="lagged_any_care",
+            label="high_education",
+            bin_width=31,  # Creates single bin from 40-70
+        )
+    )
+    moments.update(transition_moments)
+    variances.update(transition_variances)
+
+    # # Custom age bin 40-70: one large age bin only
     # transition_moments, transition_variances = (
     #     compute_transition_moments_and_variances_for_age_bins(
-    #         df_with_caregivers_low,
-    #         min_age=start_age,
-    #         max_age=end_age,
+    #         df_with_caregivers,
+    #         min_age=40,
+    #         max_age=70,
     #         states=states_caregiving,
     #         choice="any_care",
     #         lagged_choice="lagged_any_care",
-    #         label="low_education",
+    #         label="all_education",
+    #         bin_width=31,  # Creates single bin from 40-70
     #     )
     # )
     # moments.update(transition_moments)
     # variances.update(transition_variances)
 
-    # transition_moments, transition_variances = (
-    #     compute_transition_moments_and_variances_for_age_bins(
-    #         df_with_caregivers_high,
-    #         min_age=start_age,
-    #         max_age=end_age,
-    #         states=states_caregiving,
-    #         choice="any_care",
-    #         lagged_choice="lagged_any_care",
-    #         label="high_education",
-    #     )
-    # )
-    # moments.update(transition_moments)
-    # variances.update(transition_variances)
-    # Use start_age_caregivers for caregiving transitions (not start_age)
-    transition_moments, transition_variances = (
-        compute_transition_moments_and_variances_for_age_bins(
-            df_with_caregivers,
-            min_age=start_age_caregivers,
-            max_age=end_age,
-            states=states_caregiving,
-            choice="any_care",
-            lagged_choice="lagged_any_care",
-            label="all_education",
-        )
-    )
-    moments.update(transition_moments)
-    variances.update(transition_variances)
+    # ========================================================================
 
     # F) Wealth moments by age and education (NEW)
     # wealth_moments_edu_low, wealth_variances_edu_low = (
@@ -650,15 +741,26 @@ def compute_share_informal_care_by_age_bin(
     df: pd.DataFrame,
     moments: dict,
     variances: dict,
+    care_var: str = "any_care",
     age_bins: tuple | None = None,
     weights: dict | None = None,
     label: str | None = None,
     scale: float = 1.0,
+    correct_upward: bool = False,
 ):
     """
-    Update *moments* in=place with the share of agents whose “choice”
+    Update *moments* in=place with the share of agents whose "choice"
     lies in INFORMAL_CARE, computed separately for every age in
     *age_range*.
+
+    Parameters
+    ----------
+    correct_upward : bool, default=False
+        If True, correct shares upward to account for non-parental caregivers
+        being dropped from the sample. Only applies when weights is not None.
+        The correction formula is:
+        corrected_share = (share_by_age * parent_weights) /
+                          (1 - share_by_age * (1 - parent_weights))
 
     """
 
@@ -667,7 +769,7 @@ def compute_share_informal_care_by_age_bin(
 
     if age_bins is None:
         # bin edges: 45,50,55,60,65,70  (right edge 70 is *exclusive*)
-        bin_edges = list(range(45, 75, 5))  # [45,50,55,60,65,70]
+        bin_edges = list(range(40, 75, 5))  # [45,50,55,60,65,70]
         bin_labels = [f"{s}_{s+4}" for s in bin_edges[:-1]]
     else:
         bin_edges, bin_labels = age_bins
@@ -690,10 +792,8 @@ def compute_share_informal_care_by_age_bin(
     # 3. Group by the new bins and compute shares & variances
     age_groups = df.groupby("age_bin", observed=False)
 
-    share_by_age = age_groups["any_care"].apply(
-        lambda s: s.eq(1).sum() / s.notna().sum()
-    )
-    variance_by_age = age_groups["any_care"].apply(
+    share_by_age = age_groups[care_var].apply(lambda s: s.eq(1).sum() / s.notna().sum())
+    variance_by_age = age_groups[care_var].apply(
         lambda s: s.eq(1).astype(int).var(ddof=DEGREES_OF_FREEDOM)
     )
     # variance_by_age = age_groups["any_care"].apply(
@@ -708,10 +808,37 @@ def compute_share_informal_care_by_age_bin(
         )
         adjusted_share_by_age = share_by_age * parent_weights
 
+        # Apply upward correction if requested
+        if correct_upward:
+            # Compute share of non-parental caregivers
+            share_non_parental = share_by_age * (1 - parent_weights)
+            # Denominator: 1 - share_non_parental
+            # (remaining population after dropping non-parental)
+            denominator = 1 - share_non_parental
+
+            # Apply correction: adjusted_share / denominator
+            # Handle edge cases:
+            # - If share_by_age is 0, corrected should be 0
+            #   (already 0, so no change needed)
+            # - If denominator is 0 or negative, keep original value
+            #   (shouldn't happen in practice)
+            # - If denominator is NaN, keep original value
+            mask = (share_by_age != 0) & (denominator > 0) & denominator.notna()
+            # Compute corrected values
+            corrected_values = adjusted_share_by_age / denominator
+            # Apply correction only where mask is True, otherwise keep original value
+            # .where(~mask, other=...) keeps original where mask is False,
+            # uses corrected where True
+            adjusted_share_by_age = adjusted_share_by_age.where(
+                ~mask, other=corrected_values
+            )
+
     for age in bin_labels:
         moments[f"share_informal_care{label}_age_bin_{age}"] = (
             adjusted_share_by_age.loc[age] * scale
         )
+        # Note: Variance is not adjusted when correct_upward=True
+        # It remains computed on the original sample
         variances[f"variance_informal_care{label}_age_bin_{age}"] = variance_by_age.loc[
             age
         ]
@@ -919,29 +1046,6 @@ def compute_shares_by_age_bin(
 # =====================================================================================
 
 
-def adjust_and_trim_wealth_data(
-    df: pd.DataFrame,
-    specs: dict,
-):
-
-    df["adjusted_wealth"] = df["wealth"] / specs["wealth_unit"]
-    df = df[df["sex"] == SEX].copy()
-
-    # if adjust_wealth:
-    #     df["adjusted_wealth"] = adjust_observed_wealth(
-    #         observed_states_dict=states_dict,
-    #         params=params,
-    #         model=model,
-    #     )
-
-    wealth_mask = df["adjusted_wealth"] < df["adjusted_wealth"].quantile(
-        WEALTH_QUANTILE_CUTOFF
-    )
-    trimmed = df.loc[wealth_mask, ["age", "sex", "adjusted_wealth", "education"]].copy()
-
-    return trimmed
-
-
 def compute_mean_wealth_by_age(
     df: pd.DataFrame,
     moments: dict,
@@ -980,15 +1084,19 @@ def compute_mean_wealth_by_age(
     label = f"_{label}" if label else ""
     age_index = pd.Index(age_range, name="age")
 
-    # 2) Group by age: raw mean and variance
+    # 2) Scale wealth variable first, then compute mean and variance on scaled variable
+    df_scaled = df.copy()
+    df_scaled[wealth_var] = df_scaled[wealth_var] * WEALTH_MOMENTS_SCALE
+
+    # Group by age: mean and variance on scaled wealth
     base_mean = (
-        df.groupby("age", observed=False)[wealth_var]
+        df_scaled.groupby("age", observed=False)[wealth_var]
         .mean()
         .reindex(age_index, fill_value=np.nan)
         .sort_index()
     )
     base_var = (
-        df.groupby("age", observed=False)[wealth_var]
+        df_scaled.groupby("age", observed=False)[wealth_var]
         .var(ddof=DEGREES_OF_FREEDOM)
         .reindex(age_index, fill_value=np.nan)
         .sort_index()
@@ -1013,9 +1121,7 @@ def compute_mean_wealth_by_age(
 
     # 4) Write out moments/variances with per-age keys
     for age in age_index:
-        moments[f"mean{label}_wealth_age_{age}"] = (
-            smoothed_mean.loc[age] * WEALTH_MOMENTS_SCALE
-        )
+        moments[f"mean{label}_wealth_age_{age}"] = smoothed_mean.loc[age]
         variances[f"var{label}_wealth_age_{age}"] = base_var.loc[age]
 
     return moments, variances
@@ -1064,11 +1170,18 @@ def compute_mean_by_age_bin(
     # # 3) Ensure numeric dtype (robust to bool/object)
     # x = pd.to_numeric(df[variable], errors="coerce")
 
-    # 4) Assign bins (left-closed, right-open ⇒ 40–44, 45–49, …)
-    df["age_bin"] = pd.cut(df["age"], bins=bin_edges, labels=bin_labels, right=False)
+    # 3) Scale variable if it's a wealth variable
+    df_scaled = df.copy()
+    if "wealth" in variable.lower():
+        df_scaled[variable] = df_scaled[variable] * WEALTH_MOMENTS_SCALE
 
-    # 5) Group, compute mean & variance
-    grouped = df.groupby("age_bin", observed=False)[variable]
+    # 4) Assign bins (left-closed, right-open ⇒ 40–44, 45–49, …)
+    df_scaled["age_bin"] = pd.cut(
+        df_scaled["age"], bins=bin_edges, labels=bin_labels, right=False
+    )
+
+    # 5) Group, compute mean & variance on scaled variable
+    grouped = df_scaled.groupby("age_bin", observed=False)[variable]
     means = grouped.mean().reindex(bin_labels, fill_value=np.nan)
     vars = grouped.var(ddof=DEGREES_OF_FREEDOM).reindex(bin_labels, fill_value=np.nan)
 
@@ -1077,6 +1190,140 @@ def compute_mean_by_age_bin(
     for bin in bin_labels:
         moments[f"mean{key_label}_{variable}_age_bin_{bin}"] = means.loc[bin]
         variances[f"var{key_label}_{variable}_age_bin_{bin}"] = vars.loc[bin]
+
+    return moments, variances
+
+
+def compute_median_wealth_by_age(
+    df: pd.DataFrame,
+    moments: dict,
+    variances: dict,
+    age_range: list[int] | np.ndarray,
+    *,
+    wealth_var: str = "adjusted_wealth",
+    label: str | None = None,
+):
+    """
+    Compute empirical median + variance of wealth by AGE (not bins) and
+    store them into `moments` and `variances` with keys:
+        median_<label>_wealth_age_<age>
+        var_<label>_wealth_age_<age>
+    Note: No rolling smoothing is applied to the median.
+
+    Parameters
+    ----------
+    df : DataFrame
+        Must contain columns: 'age' and `wealth_var`.
+        Assumes only one sex and one education present.
+    moments, variances : dict
+        Updated in-place with new entries.
+    age_range : sequence of int
+        Ages to include (used for reindexing & key creation).
+    wealth_var : str, default "adjusted_wealth"
+        Wealth column name.
+    label : str | None
+        Optional suffix in keys (prefixed with '_').
+    """
+    label = f"_{label}" if label else ""
+    age_index = pd.Index(age_range, name="age")
+
+    # Scale wealth variable first, then compute median and variance on scaled variable
+    df_scaled = df.copy()
+    df_scaled[wealth_var] = df_scaled[wealth_var] * WEALTH_MOMENTS_SCALE
+
+    # Group by age: median and variance on scaled wealth
+    base_median = (
+        df_scaled.groupby("age", observed=False)[wealth_var]
+        .median()
+        .reindex(age_index, fill_value=np.nan)
+        .sort_index()
+    )
+    base_var = (
+        df_scaled.groupby("age", observed=False)[wealth_var]
+        .var(ddof=DEGREES_OF_FREEDOM)
+        .reindex(age_index, fill_value=np.nan)
+        .sort_index()
+    )
+
+    # Write out moments/variances with per-age keys (no smoothing for median)
+    # Note: median and variance are already computed on scaled wealth
+    for age in age_index:
+        moments[f"median{label}_wealth_age_{age}"] = base_median.loc[age]
+        variances[f"var{label}_wealth_age_{age}"] = base_var.loc[age]
+
+    return moments, variances
+
+
+def compute_median_by_age_bin(
+    df: pd.DataFrame,
+    moments: dict,
+    variances: dict,
+    wealth_var: str,
+    age_range: list[int] | np.ndarray,
+    age_bins: tuple[list[int], list[str]] | None = None,
+    label: str | None = None,
+):
+    """
+    Compute medians and sample variances by age-bin for a wealth variable.
+
+    Parameters
+    ----------
+    df : DataFrame
+        Must contain columns 'age' (int) and the wealth column given by *wealth_var*.
+    moments, variances : dict
+        Dictionaries updated **in-place** with results.
+    wealth_var : str
+        Name of the wealth column in `df` (e.g., 'adjusted_wealth').
+    age_range : list[int] | np.ndarray
+        Age range to use for creating bins (min and max will be used).
+    age_bins : tuple[list[int], list[str]] | None
+        Optional (bin_edges, bin_labels). If None, defaults to 5-year bins
+        based on age_range:
+          edges:  [age_min, age_min+5, ..., age_max+1]
+          labels: ['age_min_age_min+4', 'age_min+5_age_min+9', ...]
+        Note: edges must include both the first left edge and the final right edge.
+    label : str | None
+        Optional extra label inserted in every key (prefixed with '_' if given).
+
+    Returns
+    -------
+    moments, variances : dict
+        The same objects passed in, updated with new values.
+    """
+    # 1) Label prefix
+    key_label = f"_{label}" if label else ""
+
+    # 2) Create age bins from age_range if not provided
+    if age_bins is None:
+        age_min = int(np.min(age_range))
+        age_max = int(np.max(age_range))
+        # Create 5-year bins
+        bin_edges = list(
+            range(age_min, age_max + 6, 5)
+        )  # +6 to include the last bin edge
+        bin_labels = [f"{s}_{s+4}" for s in bin_edges[:-1]]
+    else:
+        bin_edges, bin_labels = age_bins
+
+    # 3) Scale wealth variable
+    df_scaled = df.copy()
+    df_scaled[wealth_var] = df_scaled[wealth_var] * WEALTH_MOMENTS_SCALE
+
+    # 4) Assign bins (left-closed, right-open ⇒ 40–44, 45–49, …)
+    df_scaled["age_bin"] = pd.cut(
+        df_scaled["age"], bins=bin_edges, labels=bin_labels, right=False
+    )
+
+    # 5) Group, compute median & variance on scaled variable
+    grouped = df_scaled.groupby("age_bin", observed=False)[wealth_var]
+    medians = grouped.median().reindex(bin_labels, fill_value=np.nan)
+    vars = grouped.var(ddof=DEGREES_OF_FREEDOM).reindex(bin_labels, fill_value=np.nan)
+
+    # 6) Store results with consistent keys
+    # Keys: median_<label>_wealth_age_bin_<bin>, var_<label>_wealth_age_bin_<bin>
+    for bin in bin_labels:
+        moments[f"median{key_label}_wealth_age_bin_{bin}"] = medians.loc[bin]
+        variances[f"var{key_label}_wealth_age_bin_{bin}"] = vars.loc[bin]
 
     return moments, variances
 
@@ -1914,7 +2161,7 @@ def create_df_non_caregivers(
         & (df_full["gebjahr"] <= specs["max_birth_year"])
         & (df_full["syear"] >= start_year)
         & (df_full["syear"] <= end_year)
-        & (df_full["sex"] == 1)
+        & (df_full["sex"] == SEX)
         & (df_full["age"] <= end_age + 10)
         & (df_full["any_care"] == 0)
     ].copy()
@@ -1953,7 +2200,7 @@ def create_df_with_caregivers(
         & (df_full["gebjahr"] <= specs["max_birth_year"])
         & (df_full["syear"] >= start_year)
         & (df_full["syear"] <= end_year)
-        & (df_full["sex"] == 1)
+        & (df_full["sex"] == SEX)
         & (df_full["age"] <= end_age + 10)
     ].copy()
 
@@ -1990,17 +2237,175 @@ def create_df_caregivers(
         (df_caregivers_full["any_care"] == 1)
         & (df_caregivers_full["syear"] >= start_year)
         & (df_caregivers_full["syear"] <= end_year)
-        & (df_caregivers_full["sex"] == 1)
+        & (df_caregivers_full["sex"] == SEX)
         & (df_caregivers_full["age"] <= end_age + 10)
     ].copy()
+
+
+def add_pure_formal_care_moments(
+    path_to_pure_formal_care_csv: Path,
+    moments: dict,
+    variances: dict,
+) -> tuple[dict, dict]:
+    """Add pure formal care moments from SOEP-IS data.
+
+    Loads the CSV file with pure formal care statistics and extracts the means
+    and variances for the large age bin 40-70, differentiated by education level
+    and care intensity (2x2 combinations).
+
+    Parameters
+    ----------
+    path_to_pure_formal_care_csv : Path
+        Path to the CSV file with pure formal care statistics.
+        Expected columns: age_bin, education, care_intensity, mean, std, n_observations
+    moments : dict
+        Dictionary of moments to update in-place.
+    variances : dict
+        Dictionary of variances to update in-place.
+
+    Returns
+    -------
+    tuple[dict, dict]
+        Updated moments and variances dictionaries.
+
+    """
+    df = pd.read_csv(path_to_pure_formal_care_csv)
+
+    # Filter to the large age bin 40-70
+    df_40_70 = df[df["age_bin"] == "40-70"].copy()
+
+    if len(df_40_70) == 0:
+        return moments, variances
+
+    # Extract the 2x2 combinations (education × care_intensity)
+    education_levels = ["low", "high"]
+    care_intensity_levels = ["light", "intensive"]
+
+    for educ in education_levels:
+        for intensity in care_intensity_levels:
+            # Filter to this combination
+            subset = df_40_70[
+                (df_40_70["education"] == educ)
+                & (df_40_70["care_intensity"] == intensity)
+            ]
+
+            if len(subset) == 0:
+                continue
+
+            row = subset.iloc[0]
+            mean_value = row["mean"]
+            std_value = row["std"]
+
+            # Create moment name
+            moment_name = f"pure_formal_care_{educ}_education_{intensity}_care_demand"
+
+            # Add to moments
+            moments[moment_name] = mean_value
+
+            # Convert standard deviation to variance and add to variances
+            variance_value = std_value**2
+            variance_name = f"variance_{moment_name}"
+            variances[variance_name] = variance_value
+
+    return moments, variances
+
+
+def _process_parents_weights_share(
+    path_to_csv: Path,
+    educ_var: str | None = None,
+    educ_type: str | None = None,
+) -> dict[str, float]:
+    """Process CSV file with age bin statistics into parents_weights_share dictionary.
+
+    This function loads a CSV file containing summary statistics by age bin and
+    converts it into a dictionary mapping 5-year age bin labels to share values.
+
+    Special handling: The age bin [40, 50) is split into two 5-year bins:
+    - 40_44: uses the value from [40, 50)
+    - 45_49: uses the value from [40, 50)
+
+    Parameters
+    ----------
+    path_to_csv : Path
+        Path to the CSV file containing age bin statistics.
+        Expected columns for general file: age_bin (format: "[40, 50)"),
+        mean, std, n_observations
+        Expected columns for education file: age_bin, education, mean, std,
+        n_observations, educ_variable
+    educ_var : str | None, optional
+        Education variable to filter by (e.g., "high_isced", "high_educ",
+        "high_educ_isced").
+        If None, assumes the CSV does not have education differentiation.
+    educ_type : str | None, optional
+        Education type to filter by ("low" or "high").
+        If None, assumes the CSV does not have education differentiation.
+
+    Returns
+    -------
+    dict[str, float]
+        Dictionary mapping age bin labels (e.g., "40_44", "45_49") to share values.
+
+    Examples
+    --------
+    result = _process_parents_weights_share(Path("data.csv"))
+    result["40_44"]
+        0.41935483870967744
+    result["45_49"]
+        0.41935483870967744
+
+    """
+    df = pd.read_csv(path_to_csv)
+
+    # Filter by education variable and type if provided
+    if educ_var is not None and educ_type is not None:
+        if "educ_variable" in df.columns and "education" in df.columns:
+            df = df[
+                (df["educ_variable"] == educ_var) & (df["education"] == educ_type)
+            ].copy()
+        else:
+            raise ValueError(
+                f"CSV file does not contain education columns, but educ_var={educ_var} "
+                f"and educ_type={educ_type} were provided."
+            )
+
+    parents_weights_share = {}
+
+    # Map from CSV age_bin format to 5-year bin labels
+    # Special case: [40, 50) splits into 40_44 and 45_49
+    age_bin_mapping = {
+        "[40, 50)": ["40_44", "45_49"],  # Special: duplicate to both 5-year bins
+        "[50, 55)": ["50_54"],
+        "[55, 60)": ["55_59"],
+        "[60, 65)": ["60_64"],
+        "[65, 70)": ["65_69"],
+        "[70, 75)": ["70_74"],
+    }
+
+    for _, row in df.iterrows():
+        age_bin = row["age_bin"]
+        mean_value = row["mean"]
+
+        # Get corresponding 5-year bin labels
+        bin_labels = age_bin_mapping.get(age_bin, [])
+
+        # Assign the mean value to each corresponding bin label
+        for label in bin_labels:
+            parents_weights_share[label] = mean_value
+
+    return parents_weights_share
 
 
 def create_df_wealth(
     df_full: pd.DataFrame,
     specs: dict,
+    model_class: Any,
 ) -> pd.DataFrame:
-    """
-    Create and adjust wealth dataframe.
+    """Create and process wealth dataframe using new approach.
+
+    This function:
+    1. Uses load_and_scale_correct_data to process the data
+    2. Filters by year range using "start_year_wealth" and "end_year_wealth"
+    3. Sets adjusted_wealth from assets_begin_of_period
 
     Parameters
     ----------
@@ -2008,12 +2413,21 @@ def create_df_wealth(
         Full dataset loaded from CSV
     specs : dict
         Specifications dictionary
+    model_class : Any
+        Model class instance
 
     Returns
     -------
     pd.DataFrame
-        Adjusted wealth dataframe (filtered for non-null wealth and sex == SEX)
+        Processed wealth dataframe with adjusted_wealth column
     """
-    df_wealth = df_full[(df_full["wealth"].notna()) & (df_full["sex"] == SEX)].copy()
-    df_wealth = adjust_and_trim_wealth_data(df=df_wealth, specs=specs)
+    df_wealth_corrected = load_and_scale_correct_data(
+        data_decision=df_full,
+        model_class=model_class,
+    )
+    df_wealth = df_wealth_corrected[
+        (df_wealth_corrected["syear"] >= specs["start_year_wealth"])
+        & (df_wealth_corrected["syear"] <= specs["end_year_wealth"])
+    ].copy()
+    df_wealth["adjusted_wealth"] = df_wealth["assets_begin_of_period"]
     return df_wealth

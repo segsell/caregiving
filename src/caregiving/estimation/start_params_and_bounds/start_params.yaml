@@ -77,10 +77,14 @@ disutil_unemployed_high_women: 0.2
 
 # disutil_children_unemployed_low: 0.0
 # disutil_children_unemployed_high: 0.0
-disutil_children_pt_work_low: 0.1
-disutil_children_pt_work_high: 0.1
-disutil_children_ft_work_low: 0.1
-disutil_children_ft_work_high: 0.1
+disutil_children_pt_work_low_below_40: 0.1
+disutil_children_pt_work_low_above_40: 0.1
+disutil_children_pt_work_high_below_40: 0.1
+disutil_children_pt_work_high_above_40: 0.1
+disutil_children_ft_work_low_below_40: 0.1
+disutil_children_ft_work_low_above_40: 0.1
+disutil_children_ft_work_high_below_40: 0.1
+disutil_children_ft_work_high_above_40: 0.1
 
 disutil_ft_work_high_good_informal_care: 1.3
 disutil_ft_work_high_bad_informal_care: 1.3
@@ -127,12 +131,43 @@ disutil_children_ft_work_high_informal_care: 0.1
 
 #############################################
 
-util_informal_care_high_good: 0
-util_informal_care_high_bad: 0
-util_informal_care_low_good: 0
-util_informal_care_low_bad: 0
-util_formal_care_good: 0
-util_formal_care_bad: 0
+# Utility from light informal care (varies by education and health)
+util_light_informal_care_high_good: 0.0
+util_light_informal_care_high_bad: 0.0
+util_light_informal_care_low_good: 0.0
+util_light_informal_care_low_bad: 0.0
+
+# Utility from intensive informal care (varies by education and health)
+util_intensive_informal_care_high_good: 0.0
+util_intensive_informal_care_high_bad: 0.0
+util_intensive_informal_care_low_good: 0.0
+util_intensive_informal_care_low_bad: 0.0
+
+# util_informal_care_high_good: 0
+# util_informal_care_high_bad: 0
+# util_informal_care_low_good: 0
+# util_informal_care_low_bad: 0
+
+util_formal_care_high_good: 0
+util_formal_care_high_bad: 0
+util_formal_care_low_good: 0
+util_formal_care_low_bad: 0
+
+#############################################
+# Caregiving
+
+# Level shifts for light and intensive informal care (additive adjustments)
+disutil_unemployed_light_informal_care_low: 0.0
+disutil_unemployed_light_informal_care_high: 0.0
+disutil_ft_work_light_informal_care_low: 0.0
+disutil_ft_work_light_informal_care_high: 0.0
+disutil_unemployed_intensive_informal_care_low: 0.0
+disutil_unemployed_intensive_informal_care_high: 0.0
+disutil_ft_work_intensive_informal_care_low: 0.0
+disutil_ft_work_intensive_informal_care_high: 0.0
+
+
+#############################################
 
 # disutil_pt_work_low_age: 0.1
 # disutil_pt_work_low_age_squared: 0.01
@@ -339,6 +374,13 @@ taste_shock_scale: 0.5
 #taste_shock_scale_men: 0.29
 #taste_shock_scale_women: 0.29
 
+# Job offer / job-finding parameters for women (Table 5)
 job_finding_logit_const_women: 0.7226
-job_finding_logit_age_women: -0.0586
+job_finding_logit_age_women: -0.586 #-0.0586
 job_finding_logit_high_educ_women: 0.5729
+#
+# job_finding_logit_const_women: -1.4881
+# job_finding_logit_high_educ_women: 0.8371
+# job_finding_logit_above_50_women: -0.3399
+# job_finding_logit_above_55_women: -0.0784
+# job_finding_logit_above_60_women: -0.4856

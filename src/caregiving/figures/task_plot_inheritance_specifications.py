@@ -17,6 +17,7 @@ SPECIFICATIONS = [
     {
         "name": "spec1_any_care_parent_this_year",
         "care_var": "any_care",
+        "formal_care_var": "formal_care_costs_dummy",
         "parent_var": "parent_died_this_year",
         "filter": None,
         "title": "Any Care This Year + Parent Died This Year",
@@ -25,6 +26,7 @@ SPECIFICATIONS = [
     {
         "name": "spec2_any_care_recent_parent_recent",
         "care_var": "any_care_recent",
+        "formal_care_var": "formal_care_costs_dummy_recent",
         "parent_var": "parent_died_recent",
         "filter": None,
         "title": "Any Care Recent + Parent Died Recent",
@@ -33,6 +35,7 @@ SPECIFICATIONS = [
     {
         "name": "spec3_any_care_last_year_parent_last_year",
         "care_var": "any_care_last_year",
+        "formal_care_var": "formal_care_costs_dummy_last_year",
         "parent_var": "parent_died_last_year",
         "filter": None,
         "title": "Any Care Last Year + Parent Died Last Year",
@@ -41,6 +44,7 @@ SPECIFICATIONS = [
     {
         "name": "spec4_any_care_last_year_filter_parent_this_year",
         "care_var": "any_care_last_year",
+        "formal_care_var": "formal_care_costs_dummy_last_year",
         "parent_var": None,
         "filter": "parent_died_this_year == 1",
         "title": "Any Care Last Year (Filter: Parent Died This Year)",
@@ -49,6 +53,7 @@ SPECIFICATIONS = [
     {
         "name": "spec7_any_care_this_year_filter_parent_this_year",
         "care_var": "any_care",
+        "formal_care_var": "formal_care_costs_dummy",
         "parent_var": None,
         "filter": "parent_died_this_year == 1",
         "title": "Any Care This Year (Filter: Parent Died This Year)",
@@ -57,6 +62,7 @@ SPECIFICATIONS = [
     {
         "name": "spec10_any_care_recent_filter_parent_this_year",
         "care_var": "any_care_recent",
+        "formal_care_var": "formal_care_costs_dummy_recent",
         "parent_var": None,
         "filter": "parent_died_this_year == 1",
         "title": "Any Care Recent (Filter: Parent Died This Year)",
@@ -65,6 +71,7 @@ SPECIFICATIONS = [
     {
         "name": "spec5_any_care_last_year_filter_parent_last_year",
         "care_var": "any_care_last_year",
+        "formal_care_var": "formal_care_costs_dummy_last_year",
         "parent_var": None,
         "filter": "parent_died_last_year == 1",
         "title": "Any Care Last Year (Filter: Parent Died Last Year)",
@@ -73,6 +80,7 @@ SPECIFICATIONS = [
     {
         "name": "spec8_any_care_this_year_filter_parent_last_year",
         "care_var": "any_care",
+        "formal_care_var": "formal_care_costs_dummy",
         "parent_var": None,
         "filter": "parent_died_last_year == 1",
         "title": "Any Care This Year (Filter: Parent Died Last Year)",
@@ -81,6 +89,7 @@ SPECIFICATIONS = [
     {
         "name": "spec11_any_care_recent_filter_parent_last_year",
         "care_var": "any_care_recent",
+        "formal_care_var": "formal_care_costs_dummy_recent",
         "parent_var": None,
         "filter": "parent_died_last_year == 1",
         "title": "Any Care Recent (Filter: Parent Died Last Year)",
@@ -89,6 +98,7 @@ SPECIFICATIONS = [
     {
         "name": "spec6_any_care_last_year_filter_parent_recent",
         "care_var": "any_care_last_year",
+        "formal_care_var": "formal_care_costs_dummy_last_year",
         "parent_var": None,
         "filter": "parent_died_recent == 1",
         "title": "Any Care Last Year (Filter: Parent Died Recent)",
@@ -97,6 +107,7 @@ SPECIFICATIONS = [
     {
         "name": "spec9_any_care_this_year_filter_parent_recent",
         "care_var": "any_care",
+        "formal_care_var": "formal_care_costs_dummy",
         "parent_var": None,
         "filter": "parent_died_recent == 1",
         "title": "Any Care This Year (Filter: Parent Died Recent)",
@@ -105,6 +116,7 @@ SPECIFICATIONS = [
     {
         "name": "spec12_any_care_recent_filter_parent_recent",
         "care_var": "any_care_recent",
+        "formal_care_var": "formal_care_costs_dummy_recent",
         "parent_var": None,
         "filter": "parent_died_recent == 1",
         "title": "Any Care Recent (Filter: Parent Died Recent)",
@@ -212,6 +224,7 @@ for spec in SPECIFICATIONS:
                         + params["age"] * ages
                         + params["age_sq"] * age_sq
                         + params[spec_info["care_var"]] * 1
+                        + params[spec_info["formal_care_var"]] * 0
                         + params["education"] * edu_var
                     )
                     if spec_info["parent_var"] is not None:
@@ -234,6 +247,7 @@ for spec in SPECIFICATIONS:
                         + params["age"] * ages
                         + params["age_sq"] * age_sq
                         + params[spec_info["care_var"]] * 0
+                        + params[spec_info["formal_care_var"]] * 0
                         + params["education"] * edu_var
                     )
                     if spec_info["parent_var"] is not None:
@@ -248,6 +262,29 @@ for spec in SPECIFICATIONS:
                         color=JET_COLOR_MAP[edu_var],
                         linestyle="--",
                         label=f"{edu_label}, no care",
+                    )
+
+                    # Scenario 3: Formal care (dash-dot)
+                    linear_pred_formal = (
+                        params["const"]
+                        + params["age"] * ages
+                        + params["age_sq"] * age_sq
+                        + params[spec_info["care_var"]] * 0
+                        + params[spec_info["formal_care_var"]] * 1
+                        + params["education"] * edu_var
+                    )
+                    if spec_info["parent_var"] is not None:
+                        linear_pred_formal += params[spec_info["parent_var"]] * 1
+
+                    prob_formal = 1 / (1 + np.exp(-linear_pred_formal))
+
+                    ax.plot(
+                        ages,
+                        prob_formal,
+                        linewidth=2.5,
+                        color=JET_COLOR_MAP[edu_var],
+                        linestyle=(0, (3, 1, 1, 1)),
+                        label=f"{edu_label}, formal care",
                     )
 
                 except (KeyError, TypeError):
@@ -329,6 +366,7 @@ for spec in SPECIFICATIONS:
                         + params["age"] * ages
                         + params["age_sq"] * age_sq
                         + params[spec_info["care_var"]] * 1
+                        + params[spec_info["formal_care_var"]] * 0
                         + params["education"] * edu_var
                     )
                     if spec_info["parent_var"] is not None:
@@ -352,6 +390,7 @@ for spec in SPECIFICATIONS:
                         + params["age"] * ages
                         + params["age_sq"] * age_sq
                         + params[spec_info["care_var"]] * 0
+                        + params[spec_info["formal_care_var"]] * 0
                         + params["education"] * edu_var
                     )
                     if spec_info["parent_var"] is not None:
@@ -367,6 +406,30 @@ for spec in SPECIFICATIONS:
                         color=JET_COLOR_MAP[edu_var],
                         linestyle="--",
                         label=f"{edu_label}, no care",
+                    )
+
+                    # Scenario 3: Formal care (dash-dot)
+                    ln_amount_formal = (
+                        params["const"]
+                        + params["age"] * ages
+                        + params["age_sq"] * age_sq
+                        + params[spec_info["care_var"]] * 0
+                        + params[spec_info["formal_care_var"]] * 1
+                        + params["education"] * edu_var
+                    )
+                    if spec_info["parent_var"] is not None:
+                        ln_amount_formal += params[spec_info["parent_var"]] * 1
+
+                    # Exponentiate to get actual amount
+                    amount_formal = np.exp(ln_amount_formal)
+
+                    ax.plot(
+                        ages,
+                        amount_formal,
+                        linewidth=2.5,
+                        color=JET_COLOR_MAP[edu_var],
+                        linestyle=(0, (3, 1, 1, 1)),
+                        label=f"{edu_label}, formal care",
                     )
 
                 except (KeyError, TypeError):

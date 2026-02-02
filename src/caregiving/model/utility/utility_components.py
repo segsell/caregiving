@@ -3,6 +3,7 @@
 import jax.numpy as jnp
 
 from caregiving.model.shared import (  # is_nursing_home_care,
+    AGE_40,
     CARE_DEMAND_LIGHT,
     PARTNER_RETIRED,
     SEX,
@@ -11,6 +12,8 @@ from caregiving.model.shared import (  # is_nursing_home_care,
     is_full_time,
     is_good_health,
     is_informal_care,
+    is_intensive_informal_care,
+    is_light_informal_care,
     is_part_time,
     is_retired,
     is_unemployed,
@@ -39,12 +42,19 @@ def disutility_work(
     # FORMAL_CARE (choices 8, 9, 10, 11):
     #   Formal care is organized.
     informal_care = is_informal_care(choice)  # Agent provides informal care
+    light_informal_care = is_light_informal_care(choice)
+    intensive_informal_care = is_intensive_informal_care(choice)
     formal_care = is_formal_care(choice)  # Formal care
 
     has_partner_int = (partner_state > 0).astype(int)
     nb_children = model_specs["children_by_state"][
         SEX, education, has_partner_int, period
     ]
+
+    # Calculate age for age-based parameters
+    age = period + model_specs["start_age"]
+    age_below_40 = (age < AGE_40).astype(int)
+    age_above_40 = (age >= AGE_40).astype(int)
 
     # =================================================================================
     # No caregiving
@@ -73,19 +83,25 @@ def disutility_work(
         # + params["disutil_unemployed_low_good_women"] * good_health * (1 - education)
     )
 
-    # disutil_children_ue_low = params["disutil_children_unemployed_low"]*nb_children
-    # disutil_children_ue_high = params["disutil_children_unemployed_high"]*nb_children
+    # Age-based disutility from children (age < 40 vs age >= 40)
+    disutil_children_pt_low = (
+        params["disutil_children_pt_work_low_below_40"] * age_below_40
+        + params["disutil_children_pt_work_low_above_40"] * age_above_40
+    ) * nb_children
+    disutil_children_pt_high = (
+        params["disutil_children_pt_work_high_below_40"] * age_below_40
+        + params["disutil_children_pt_work_high_above_40"] * age_above_40
+    ) * nb_children
 
-    disutil_children_pt_low = params["disutil_children_pt_work_low"] * nb_children
-    disutil_children_pt_high = params["disutil_children_pt_work_high"] * nb_children
+    disutil_children_ft_low = (
+        params["disutil_children_ft_work_low_below_40"] * age_below_40
+        + params["disutil_children_ft_work_low_above_40"] * age_above_40
+    ) * nb_children
+    disutil_children_ft_high = (
+        params["disutil_children_ft_work_high_below_40"] * age_below_40
+        + params["disutil_children_ft_work_high_above_40"] * age_above_40
+    ) * nb_children
 
-    disutil_children_ft_low = params["disutil_children_ft_work_low"] * nb_children
-    disutil_children_ft_high = params["disutil_children_ft_work_high"] * nb_children
-
-    # disutil_children_ue = (
-    #     disutil_children_ue_low * (1 - education)
-    # + disutil_children_ue_high * education
-    # )
     disutil_children_pt = (
         disutil_children_pt_low * (1 - education) + disutil_children_pt_high * education
     )
@@ -164,60 +180,85 @@ def disutility_work(
         * working_full_time
     )
 
+    # Level shifts for labor and care intensity by education type
+    level_shift_work_and_light_informal_care = (
+        params["disutil_unemployed_light_informal_care_high"] * education * unemployed
+        + params["disutil_ft_work_light_informal_care_high"]
+        * education
+        * working_full_time
+        + params["disutil_unemployed_light_informal_care_low"]
+        * (1 - education)
+        * unemployed
+        + params["disutil_ft_work_light_informal_care_low"]
+        * (1 - education)
+        * working_full_time
+    )
+    level_shift_work_and_intensive_informal_care = (
+        params["disutil_unemployed_intensive_informal_care_high"]
+        * education
+        * unemployed
+        + params["disutil_ft_work_intensive_informal_care_high"]
+        * education
+        * working_full_time
+        + params["disutil_unemployed_intensive_informal_care_low"]
+        * (1 - education)
+        * unemployed
+        + params["disutil_ft_work_intensive_informal_care_low"]
+        * (1 - education)
+        * working_full_time
+    )
+
     # =================================================================================
     # Care utility (based on agent's own health)
     # =================================================================================
-    #
-    # Four care demand scenarios:
-    # 1. care_demand == CARE_DEMAND_AND_OTHER_SUPPLY (1):
-    #    - If agent chooses informal care → joint informal care
-    #      (util_joint_informal_care_good/bad)
-    #    - If agent chooses no informal care → only other family member
-    #      provides care (utility = 0)
-    # 2. care_demand == CARE_DEMAND_AND_NO_OTHER_SUPPLY (2):
-    #    - If agent chooses informal care → solo informal care
-    #      (util_informal_care_good/bad)
-    #    - If agent chooses no care → formal care (util_formal_care_good/bad)
 
     # Compute utility from solo informal care (varies by agent's health and education)
-    util_informal_care = (
-        params["util_informal_care_high_good"] * good_health * education
-        + params["util_informal_care_high_bad"] * bad_health * education
-        + params["util_informal_care_low_good"] * good_health * (1 - education)
-        + params["util_informal_care_low_bad"] * bad_health * (1 - education)
+    util_light_informal_care = (
+        params["util_light_informal_care_high_good"] * good_health * education
+        + params["util_light_informal_care_high_bad"] * bad_health * education
+        + params["util_light_informal_care_low_good"] * good_health * (1 - education)
+        + params["util_light_informal_care_low_bad"] * bad_health * (1 - education)
     )
+    util_intensive_informal_care = (
+        params["util_intensive_informal_care_high_good"] * good_health * education
+        + params["util_intensive_informal_care_high_bad"] * bad_health * education
+        + params["util_intensive_informal_care_low_good"]
+        * good_health
+        * (1 - education)
+        + params["util_intensive_informal_care_low_bad"] * bad_health * (1 - education)
+    )
+    # util_informal_care = (
+    #     params["util_informal_care_high_good"] * good_health * education
+    #     + params["util_informal_care_high_bad"] * bad_health * education
+    #     + params["util_informal_care_low_good"] * good_health * (1 - education)
+    #     + params["util_informal_care_low_bad"] * bad_health * (1 - education)
+    # )
 
-    # Compute utility from formal care (varies by agent's health)
+    # Compute utility from formal care (varies by agent's health and education)
     util_formal_care = (
-        params["util_formal_care_good"] * good_health
-        + params["util_formal_care_bad"] * bad_health
+        params["util_formal_care_high_good"] * good_health * education
+        + params["util_formal_care_high_bad"] * bad_health * education
+        + params["util_formal_care_low_good"] * good_health * (1 - education)
+        + params["util_formal_care_low_bad"] * bad_health * (1 - education)
     )
 
-    # Utility from care arrangements.
-    # When care_demand == 1:
-    #   - FORMAL_CARE (choices 8, 9, 10, 11):
-    #     Formal care is organized --> util_formal_care.
-    #   - INFORMAL_CARE (choices 4, 5, 6, 7):
-    #     Agent provides informal care --> util_informal_care.
-    #   - NO_CARE (choices 0, 1, 2, 3):
-    #     Someone else provides informal care --> reference category.
+    # Someone else provides informal care --> reference category.
     utility_from_care = (
-        informal_care * util_informal_care + formal_care * util_formal_care
+        # informal_care * util_informal_care
+        light_informal_care * util_light_informal_care
+        + intensive_informal_care * util_intensive_informal_care
+        + formal_care * util_formal_care
     )
 
     # =================================================================================
     # Compute total disutility
     # =================================================================================
-    # - NO_CARE (choices 0, 1, 2, 3):
-    #   Someone else provides care → disutility_no_caregiving.
-    # - INFORMAL_CARE (choices 4, 5, 6, 7):
-    #   Agent provides care → disutility_informal_care.
-    # - FORMAL_CARE (choices 8, 9, 10, 11):
-    #   Formal care → disutility_no_caregiving.
 
     disutility = (
         -disutility_work_and_no_informal_care * (1 - informal_care)
         - disutility_work_and_informal_care * informal_care
+        + level_shift_work_and_intensive_informal_care * intensive_informal_care
+        + level_shift_work_and_light_informal_care * light_informal_care
         - partner_retired * retired * params["disutil_partner_retired"]
         + utility_from_care * (care_demand >= CARE_DEMAND_LIGHT)
     )

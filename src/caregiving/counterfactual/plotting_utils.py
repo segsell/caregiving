@@ -25,7 +25,7 @@ from caregiving.model.shared_no_care_demand import (
 )
 
 
-def _ensure_agent_period(df: pd.DataFrame) -> pd.DataFrame:
+def ensure_agent_period(df: pd.DataFrame) -> pd.DataFrame:
     """Ensure agent and period are columns, not index levels."""
     if isinstance(df.index, pd.MultiIndex):
         if "agent" in df.index.names or "period" in df.index.names:
@@ -56,7 +56,7 @@ def prepare_single_dataframe(
     df = df[df["health"] != DEAD].copy()
 
     # Ensure agent/period
-    df = _ensure_agent_period(df)
+    df = ensure_agent_period(df)
 
     # Fully flatten any residual index levels named 'agent' or 'period'
     if isinstance(df.index, pd.MultiIndex):
@@ -105,8 +105,8 @@ def prepare_dataframes_for_comparison(
     df_c = df_c[df_c["health"] != DEAD].copy()
 
     # Ensure agent/period
-    df_o = _ensure_agent_period(df_o)
-    df_c = _ensure_agent_period(df_c)
+    df_o = ensure_agent_period(df_o)
+    df_c = ensure_agent_period(df_c)
 
     # Fully flatten any residual index levels named 'agent' or 'period'
     if isinstance(df_o.index, pd.MultiIndex):

@@ -1,7 +1,7 @@
 """Plot inheritance by age from simulated baseline model data.
 
-Creates plots showing inheritance patterns with 6 lines per plot:
-- 2 education levels (Low, High) × 3 care types (Intensive, Light, No care)
+Creates plots showing inheritance patterns with 8 lines per plot:
+- 2 education levels (Low, High) × 4 care types (No care, Formal care, Light, Intensive)
 """
 
 import pickle
@@ -16,6 +16,7 @@ from pytask import Product
 
 from caregiving.config import BLD
 from caregiving.model.shared import (
+    FORMAL_CARE,
     INTENSIVE_INFORMAL_CARE,
     LIGHT_INFORMAL_CARE,
     NO_CARE,
@@ -70,7 +71,7 @@ def task_plot_inheritance_by_age(  # noqa: PLR0912, PLR0915
 ):
     """Plot inheritance share and amount by age from baseline simulated data.
 
-    Creates nine plots with 6 lines each (2 education × 3 care types) for  # noqa: E501
+    Creates nine plots with 8 lines each (2 education × 4 care types) for  # noqa: E501
     plots 1-2, 4, 6-7, 9:
     1. Share of people with positive inheritance (gets_inheritance == 1)
        conditional on mother_dead == RECENTLY_DEAD, by age, education, and care type.
@@ -168,10 +169,16 @@ def task_plot_inheritance_by_age(  # noqa: PLR0912, PLR0915
     df_sim["lagged_choice"] = df_sim.groupby("agent", observed=False)["choice"].shift(1)
 
     # Create care category based on lagged choice
+    # Order matches shared.py: NO_CARE, FORMAL_CARE, LIGHT_INFORMAL_CARE,
+    # INTENSIVE_INFORMAL_CARE
     light_care_values = LIGHT_INFORMAL_CARE.ravel().tolist()
     intensive_care_values = INTENSIVE_INFORMAL_CARE.ravel().tolist()
+    formal_care_values = FORMAL_CARE.ravel().tolist()
 
     df_sim["care_category"] = "no_care"
+    df_sim.loc[df_sim["lagged_choice"].isin(formal_care_values), "care_category"] = (
+        "formal_care"
+    )
     df_sim.loc[df_sim["lagged_choice"].isin(light_care_values), "care_category"] = (
         "light_care"
     )
@@ -208,21 +215,28 @@ def task_plot_inheritance_by_age(  # noqa: PLR0912, PLR0915
             f"Available columns: {df_recently_dead.columns.tolist()}"
         )
 
-    # Care type order for plots - match style from task_plot_inheritance_by_age.py
-    # Order: intensive, light, no care
+    # Care type order for plots - match order in shared.py
+    # Order: no_care, formal_care, light_care, intensive_care
     care_type_order = [
-        ("intensive_care", "Intensive informal care"),
+        ("no_care", "No care"),
+        ("formal_care", "Formal care"),
         ("light_care", "Light informal care"),
-        ("no_care", "No informal care"),
+        ("intensive_care", "Intensive informal care"),
     ]
 
     # Colors for education levels
     edu_colors = [plt.cm.tab10(i) for i in range(len(specs["education_labels"]))]
 
-    # Line styles for care types - match task_plot_inheritance_by_age.py
-    # Intensive: solid, Light: dotted, No care: dashed
-    care_linestyles = ["-", ":", "--"]  # Index 0: Intensive, 1: Light, 2: No care
-    care_linewidths = [2.5, 2, 2]  # Thicker for intensive
+    # Line styles for care types - match test plotting functions
+    # no_care: dotted, formal_care: dotted-dashed mix, light_care: dashed,
+    # intensive_care: solid
+    care_linestyles = [
+        ":",  # Index 0: no_care - dotted
+        (0, (3, 1, 1, 1, 1, 1)),  # Index 1: formal_care - dotted and dashed mix
+        "--",  # Index 2: light_care - dashed
+        "-",  # Index 3: intensive_care - solid
+    ]
+    care_linewidths = [2, 2, 2, 2.5]  # Thicker for intensive
 
     # Calculate share with positive inheritance (gets_inheritance == 1) by age, educ
     # ation, and care category

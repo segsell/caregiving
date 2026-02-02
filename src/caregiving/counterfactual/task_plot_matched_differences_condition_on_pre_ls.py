@@ -16,11 +16,11 @@ import pytask
 from caregiving.config import BLD, JET_COLOR_MAP
 from caregiving.counterfactual.plotting_helpers import get_age_at_first_event
 from caregiving.counterfactual.plotting_utils import (
-    _ensure_agent_period,
     calculate_additional_outcomes,
     calculate_outcomes,
     calculate_working_hours_weekly,
     create_outcome_columns,
+    ensure_agent_period,
     merge_and_compute_differences,
     prepare_dataframes_for_comparison,
 )
@@ -113,7 +113,7 @@ def _add_distance_to_first_care(df_original: pd.DataFrame) -> pd.DataFrame:
     """Add distance_to_first_care column to original data where 0 is first care."""
     # Flatten any existing index to avoid column/index name ambiguity
     df = df_original.reset_index(drop=True)
-    df = _ensure_agent_period(df)
+    df = ensure_agent_period(df)
     care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
     caregiving_mask = df["choice"].isin(care_codes)
     first_care = (
@@ -134,7 +134,7 @@ def _add_distance_to_first_care_demand(df_original: pd.DataFrame) -> pd.DataFram
     """
     # Flatten any existing index to avoid column/index name ambiguity
     df = df_original.reset_index(drop=True)
-    df = _ensure_agent_period(df)
+    df = ensure_agent_period(df)
     # Find first period where care_demand > 0
     care_demand_mask = df["care_demand"] > 0
     first_care_demand = (
@@ -203,9 +203,9 @@ def filter_by_labor_supply_at_t_minus_5_both_scenarios(
     """
     # Ensure both DataFrames have agent/period columns
     df_baseline = df_baseline.copy()
-    df_baseline = _ensure_agent_period(df_baseline)
+    df_baseline = ensure_agent_period(df_baseline)
     df_counterfactual = df_counterfactual.copy()
-    df_counterfactual = _ensure_agent_period(df_counterfactual)
+    df_counterfactual = ensure_agent_period(df_counterfactual)
 
     # Get labor supply state for each period in both scenarios
     df_baseline["labor_supply_state"] = df_baseline["choice"].apply(

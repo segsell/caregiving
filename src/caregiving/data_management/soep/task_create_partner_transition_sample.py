@@ -50,6 +50,7 @@ def task_create_partner_transition_sample(
         [
             "age",
             "sex",
+            "gebjahr",
             "education",
             "partner_state",
             "lead_partner_state",

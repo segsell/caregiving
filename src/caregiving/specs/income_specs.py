@@ -174,9 +174,11 @@ def calculate_partner_income(specs, partner_wage_params_men, partner_wage_params
     # sample until then.
     # For the predictions after max retirement age we use the last max retirement period
     not_predicted_periods = np.where(
-        periods > specs["max_ret_age"] - specs["start_age"]
+        periods > (specs["max_age_partner_working"] - specs["start_age"])
     )[0]
-    periods[not_predicted_periods] = specs["max_ret_age"] - specs["start_age"]
+    periods[not_predicted_periods] = (
+        specs["max_age_partner_working"] - specs["start_age"]
+    )
 
     partner_monthly_income = np.zeros(
         (specs["n_sexes"], specs["n_education_types"], specs["n_periods"]), dtype=float
@@ -195,6 +197,13 @@ def calculate_partner_income(specs, partner_wage_params_men, partner_wage_params
                 + params.loc[mask, "period"].values[0] * periods
                 + params.loc[mask, "period_sq"].values[0] * periods**2
             )
+
+            # Additional cubic term
+            if sex_label == "men":
+                partner_monthly_income[sex_var, edu_var, :] += (
+                    params.loc[mask, "period_cub"].values[0] * periods**3
+                )
+
     annual_partner_income = partner_monthly_income * 12
 
     # Quasi wealth hack

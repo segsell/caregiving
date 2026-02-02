@@ -661,6 +661,92 @@ def create_nursing_home(data):
     return data
 
 
+def create_hh_has_moved(data):
+    """Create hh_has_moved variables based on hlf0523_v1.
+
+    https://paneldata.org/soep-core/datasets/hl/hlf0523_v1
+
+    Creates two versions:
+    - hh_has_moved_a: 3,4 -> 1; -2,1,2 -> 0; <0 -> NA; else -> NA
+    - hh_has_moved_b: 3,4 -> 1; 1,2 -> 0; <0 (including -2) -> NA; else -> NA
+
+    """
+    # hh_has_moved_a: hlf0523_v1 %in% c(3, 4) ~ 1,
+    #                 hlf0523_v1 %in% c(-2, 1, 2) ~ 0,
+    #                 hlf0523_v1 < 0 ~ NA_real_,
+    #                 TRUE ~ NA_real_
+    data["hh_has_moved_a"] = np.select(
+        [
+            data["hlf0523_v1"].isin([3, 4]),
+            data["hlf0523_v1"].isin([-2, 1, 2]),
+            data["hlf0523_v1"] < 0,
+        ],
+        [1, 0, np.nan],
+        default=np.nan,
+    )
+
+    # hh_has_moved_b: hlf0523_v1 %in% c(3, 4) ~ 1,
+    #                 hlf0523_v1 %in% c(1, 2) ~ 0,
+    #                 hlf0523_v1 < 0 ~ NA_real_ (including -2),
+    #                 TRUE ~ NA_real_
+    data["hh_has_moved_b"] = np.select(
+        [
+            data["hlf0523_v1"].isin([3, 4]),
+            data["hlf0523_v1"].isin([1, 2]),
+            data["hlf0523_v1"] < 0,  # All negative values including -2 -> NA
+        ],
+        [1, 0, np.nan],
+        default=np.nan,
+    )
+
+    return data
+
+
+def deflate_formal_care_costs(
+    df,
+    cpi_data,
+    specs,
+    var_name_in="formal_care_costs_raw",
+    var_name_out="formal_care_costs",
+):
+    """Deflate formal care costs using consumer price index.
+
+    Args:
+        df: DataFrame with MultiIndex (pid, syear) containing formal_care_costs_raw
+            column
+        path_to_cpi: Path to CSV file with CPI data (should have int_year and cpi
+            columns)
+        specs: Dictionary with specs including reference_year
+
+    Returns:
+        DataFrame with deflated formal_care_costs column added
+    """
+    # Reset index temporarily to merge on syear
+    df_reset = df.reset_index()
+
+    # Copy cpi_data to avoid modifying the original
+    cpi_data = cpi_data.copy()
+    cpi_data = cpi_data.rename(columns={"int_year": "syear"})
+
+    _base_year = specs["reference_year"]
+    base_year_cpi = cpi_data.loc[cpi_data["syear"] == _base_year, "cpi"].iloc[0]
+
+    cpi_data["cpi_normalized"] = cpi_data["cpi"] / base_year_cpi
+
+    # Merge CPI data on syear
+    df_reset = df_reset.merge(
+        cpi_data[["syear", "cpi_normalized"]], on="syear", how="left"
+    )
+    # Deflate formal_care_costs
+    df_reset[var_name_out] = df_reset[var_name_in] / df_reset["cpi_normalized"]
+
+    # Drop temporary CPI column and restore index
+    df_reset = df_reset.drop(columns=["cpi_normalized"])
+    df = df_reset.set_index(["pid", "syear"])
+
+    return df
+
+
 def _deflate_inheritance_amount(df, cpi_data, specs):
     """Deflate inheritance amount using consumer price index.
 

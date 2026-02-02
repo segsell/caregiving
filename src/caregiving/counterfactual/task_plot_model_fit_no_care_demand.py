@@ -8,6 +8,7 @@ import pandas as pd
 import pytask
 from pytask import Product
 
+import dcegm
 from caregiving.config import BLD
 from caregiving.model.shared import NOT_WORKING_CHOICES, SEX, WORK_CHOICES
 from caregiving.model.shared_no_care_demand import (
@@ -18,7 +19,17 @@ from caregiving.model.shared_no_care_demand import (
     UNEMPLOYED_NO_CARE_DEMAND,
     WORK_NO_CARE_DEMAND,
 )
-from caregiving.moments.task_create_soep_moments import adjust_and_trim_wealth_data
+from caregiving.model.state_space import create_state_space_functions
+from caregiving.model.task_specify_model import create_stochastic_states_transitions
+from caregiving.model.taste_shocks import shock_function_dict
+from caregiving.model.utility.bequest_utility import (
+    create_final_period_utility_functions,
+)
+from caregiving.model.utility.utility_functions_additive import (
+    create_utility_functions,
+)
+from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
+from caregiving.moments.task_create_soep_moments import create_df_wealth
 from caregiving.simulation.plot_model_fit import (
     plot_average_savings_decision,
     plot_choice_shares_by_education,
@@ -69,9 +80,24 @@ def task_plot_model_fit_no_care_demand(
     / "model_fit"
     / "counterfactual"
     / "work_transitions_by_edu_and_age_bin_no_care_demand.png",
+    path_to_model_config: Path = BLD / "model" / "model_config.pkl",
+    path_to_model: Path = BLD / "model" / "model.pkl",
 ) -> None:
 
     specs = pickle.load(path_to_specs.open("rb"))
+    model_config = pickle.load(path_to_model_config.open("rb"))
+
+    model_class = dcegm.setup_model(
+        model_specs=specs,
+        model_config=model_config,
+        state_space_functions=create_state_space_functions(),
+        utility_functions=create_utility_functions(),
+        utility_functions_final_period=create_final_period_utility_functions(),
+        budget_constraint=budget_constraint,
+        shock_functions=shock_function_dict(),
+        stochastic_states_transitions=create_stochastic_states_transitions(),
+        model_load_path=path_to_model,
+    )
 
     df_emp = pd.read_csv(path_to_empirical_data)
     # df_emp_wealth = df_emp[["sex", "education", "age", "wealth"]].copy()
@@ -80,7 +106,9 @@ def task_plot_model_fit_no_care_demand(
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
     df_sim["sex"] = SEX
 
-    df_emp_wealth = adjust_and_trim_wealth_data(df=df_emp_wealth, specs=specs)
+    df_emp_wealth = create_df_wealth(
+        df_full=df_emp_wealth, specs=specs, model_class=model_class
+    )
 
     # Wealth fit
     plot_wealth_by_age_and_education(

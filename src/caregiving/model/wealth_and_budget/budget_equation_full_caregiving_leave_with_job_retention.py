@@ -151,7 +151,7 @@ def budget_constraint(
     # ve top-up replaces them)
     formal_care = is_formal_care(lagged_choice)
     annual_formal_care_costs = (
-        -model_specs["formal_care_costs"] * formal_care * 12 * 0.5
+        -model_specs["formal_care_costs"][period] * formal_care * 12
     )
 
     total_income = jnp.maximum(
