@@ -32,10 +32,14 @@ disutil_unemployed_low_good_women: 1.0e-12
 
 disutil_children_unemployed_low: -5
 disutil_children_unemployed_high: -5
-disutil_children_pt_work_low: -5
-disutil_children_pt_work_high: -5
-disutil_children_ft_work_low: -5
-disutil_children_ft_work_high: -5
+disutil_children_pt_work_low_below_40: -5
+disutil_children_pt_work_low_above_40: -5
+disutil_children_pt_work_high_below_40: -5
+disutil_children_pt_work_high_above_40: -5
+disutil_children_ft_work_low_below_40: -5
+disutil_children_ft_work_low_above_40: -5
+disutil_children_ft_work_high_below_40: -5
+disutil_children_ft_work_high_above_40: -5
 #
 
 disutil_ft_work_high_good_informal_care: 1.0e-12
