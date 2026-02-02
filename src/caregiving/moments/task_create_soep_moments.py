@@ -2347,11 +2347,11 @@ def _process_parents_weights_share(
 
     Examples
     --------
-    >>> result = _process_parents_weights_share(Path("data.csv"))
-    >>> result["40_44"]
-    0.41935483870967744
-    >>> result["45_49"]
-    0.41935483870967744
+    result = _process_parents_weights_share(Path("data.csv"))
+    result["40_44"]
+        0.41935483870967744
+    result["45_49"]
+        0.41935483870967744
 
     """
     df = pd.read_csv(path_to_csv)

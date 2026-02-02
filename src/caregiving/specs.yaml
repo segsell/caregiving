@@ -48,7 +48,6 @@ min_long_insured_age: 63
 ret_years_before_SRA: 4
 min_ret_age: 63
 max_ret_age: 70 # 67 # 72
-max_ret_age_empirical: 67
 # Maximum age to estimate labor market
 max_est_age_labor: 65
 max_age_partner_working: 75

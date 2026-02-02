@@ -68,6 +68,7 @@ def task_create_main_estimation_sample(
     wealth = pd.read_csv(path_to_wealth, index_col=[0])
 
     specs["start_year"] = 2001
+
     specs["end_year"] = 2023
 
     # merged_data = pd.read_csv(path_to_raw, index_col=[0, 1])

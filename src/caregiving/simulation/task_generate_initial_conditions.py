@@ -163,6 +163,7 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     ].copy()
     start_age_wealth = start_period_data_wealth[
         start_period_data_wealth["wealth"].notnull()
+        & start_period_data_wealth["adjusted_wealth"].notnull()
     ].copy()
 
     # =================================================================================

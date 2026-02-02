@@ -181,9 +181,8 @@ def test_budget_unemployed(
 
     # Calculate care benefits and costs
     care_benefits_and_costs = calc_care_benefits_and_costs(
+        period=period,
         lagged_choice=lagged_choice_val,
-        education=education,
-        care_demand=care_demand,
         model_specs=specs_internal,
     )
 
@@ -384,9 +383,8 @@ def test_budget_worker(
 
     # Calculate care benefits and costs
     care_benefits_and_costs = calc_care_benefits_and_costs(
+        period=period,
         lagged_choice=working_choice,
-        education=education,
-        care_demand=care_demand,
         model_specs=specs_internal,
     )
 
@@ -550,9 +548,8 @@ def test_retiree(
 
     # Calculate care benefits and costs
     care_benefits_and_costs = calc_care_benefits_and_costs(
+        period=period,
         lagged_choice=lagged_choice_val,
-        education=education,
-        care_demand=care_demand,
         model_specs=specs_internal,
     )
 
@@ -717,9 +714,8 @@ def test_fresh_retiree(
 
     # Calculate care benefits and costs
     care_benefits_and_costs = calc_care_benefits_and_costs(
+        period=period,
         lagged_choice=lagged_choice_val,
-        education=education,
-        care_demand=care_demand,
         model_specs=specs_internal,
     )
 
@@ -879,9 +875,8 @@ def test_government_budget_components(
         model_specs=specs_internal,
     )
     care_benefits_and_costs = calc_care_benefits_and_costs(
+        period=period,
         lagged_choice=working_choice,
-        education=education,
-        care_demand=care_demand,
         model_specs=specs_internal,
     )
     household_unemployment_benefits, _ = calc_unemployment_benefits(

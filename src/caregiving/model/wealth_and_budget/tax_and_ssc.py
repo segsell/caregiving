@@ -175,7 +175,7 @@ def calc_after_ssc_income_pensioneer(gross_pesnion):
     return gross_pesnion - ssc
 
 
-def calc_pension_unempl_contr_2020(gross_income):
+def calc_pension_unempl_contr(gross_income):
     """Calc pension and unemployment social security contribution.
     Both from GETTSIM (2020)"""
     # Threshold weighted with population share west and east
@@ -187,7 +187,7 @@ def calc_pension_unempl_contr_2020(gross_income):
     return pension_contr
 
 
-def calc_pension_unempl_contr(gross_income):
+def calc_pension_unempl_contr_2010(gross_income):
     """
     Pension + unemployment insurance contributions (employee side), Germany 2010.
 
@@ -209,7 +209,7 @@ def calc_pension_unempl_contr(gross_income):
     return pension_unempl_contr
 
 
-def calc_health_ltc_contr_2020(gross_income):
+def calc_health_ltc_contr(gross_income):
     """Calc health and ltc social security contribution. Both from GETTSIM (2020)."""
     contribution_threshold = 4687.5 * 12
     # Sum of health (7 percent), additional health (1.1 percent),
@@ -220,7 +220,7 @@ def calc_health_ltc_contr_2020(gross_income):
     return health_contr
 
 
-def calc_health_ltc_contr(gross_income):
+def calc_health_ltc_contr_2010(gross_income):
     """
     Health + long-term care insurance contributions (employee side), Germany 2010.
 
