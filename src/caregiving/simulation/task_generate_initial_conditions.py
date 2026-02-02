@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-from dcegm.asset_correction import adjust_observed_assets
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
@@ -41,6 +40,7 @@ from caregiving.moments.task_create_soep_moments import (
     create_df_wealth,
 )
 from caregiving.moments.transform_data import load_and_scale_correct_data
+from dcegm.asset_correction import adjust_observed_assets
 
 
 @pytask.mark.initial_conditions
@@ -148,8 +148,8 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
         model_class=model_class,
     )
     observed_wealth = observed_wealth_corrected[
-        (observed_wealth_corrected["syear"] >= 2010)
-        & (observed_wealth_corrected["syear"] <= 2019)
+        (observed_wealth_corrected["syear"] >= specs["start_year_wealth"])
+        & (observed_wealth_corrected["syear"] <= specs["end_year_wealth"] - 1)  # 2019
     ].copy()
     observed_wealth["adjusted_wealth"] = observed_wealth["assets_begin_of_period"]
 

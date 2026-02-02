@@ -112,6 +112,8 @@ intercepts_income_tax: [0.0, 0.0, 1038.00, -8172.00, -15694.00]
 start_year: 2010 # start year of estimation sample
 end_year: 2017 # end year of estimation sample
 reference_year: 2010  # reference year for monetary values, taxes, etc.
+start_year_wealth: 2010
+end_year_wealth: 2020
 ###############################################
 # Wage process estimation (uses same start and end year)
 wage_trunc_low_perc: 0.01  # lower truncation of wage distribution

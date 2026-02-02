@@ -214,8 +214,8 @@ disutil_ft_work_intensive_informal_care_high: 0.0
 taste_shock_scale: 0.38629128041487326
 bequest_scale_high: 0.5299969947125845
 bequest_scale_low: 0.018731890731982902
-rho_bequest_high: 2.414346882835183
-rho_bequest_low: 3.022870346976081
+rho_bequest_high: 0.7 #2.414346882835183
+rho_bequest_low: 0.7 #3.022870346976081
 rho_high: 3.988496770595214
 rho_low: 2.696527196049831
 # util_informal_care_high_good: 0.4497328638222296

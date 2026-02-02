@@ -67,12 +67,8 @@ def plot_wealth_by_age_and_education(
     for edu_idx, edu_label in enumerate(specs["education_labels"]):
         ax = axs[edu_idx]
 
-        emp_edu = data_emp[
-            (data_emp["education"] == edu_idx) & (data_emp["sex"] == SEX)
-        ]
-        sim_edu = data_sim[
-            (data_sim["education"] == edu_idx) & (data_sim["sex"] == SEX)
-        ]
+        emp_edu = data_emp[data_emp["education"] == edu_idx]
+        sim_edu = data_sim[data_sim["education"] == edu_idx]
 
         emp_series = (
             emp_edu.groupby("age", observed=False)[wealth_var_emp]
@@ -182,12 +178,8 @@ def plot_wealth_by_age_bins_and_education(  # noqa: PLR0912, PLR0915
     for edu_idx, edu_label in enumerate(specs["education_labels"]):
         ax = axs[edu_idx]
 
-        emp_edu = data_emp[
-            (data_emp["education"] == edu_idx) & (data_emp["sex"] == SEX)
-        ]
-        sim_edu = data_sim[
-            (data_sim["education"] == edu_idx) & (data_sim["sex"] == SEX)
-        ]
+        emp_edu = data_emp[data_emp["education"] == edu_idx]
+        sim_edu = data_sim[data_sim["education"] == edu_idx]
 
         emp_rates = []
         sim_rates = []

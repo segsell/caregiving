@@ -3,12 +3,15 @@
 No care demand counterfactual.
 """
 
+import pickle
 from pathlib import Path
 from typing import Annotated
 
 import pandas as pd
+import pytask
 from pytask import Product
 
+import dcegm
 from caregiving.config import BLD, SRC
 from caregiving.model.shared import (
     BAD_HEALTH,
@@ -16,10 +19,18 @@ from caregiving.model.shared import (
     GOOD_HEALTH,
     SEX,
 )
+from caregiving.model.state_space import create_state_space_functions
+from caregiving.model.task_specify_model import create_stochastic_states_transitions
+from caregiving.model.taste_shocks import shock_function_dict
+from caregiving.model.utility.bequest_utility import (
+    create_final_period_utility_functions,
+)
+from caregiving.model.utility.utility_functions_additive import create_utility_functions
+from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.moments.task_create_soep_moments import (
-    adjust_and_trim_wealth_data,
     compute_labor_shares_by_age,
     compute_mean_wealth_by_age,
+    create_df_wealth,
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
 
@@ -28,6 +39,8 @@ DEGREES_OF_FREEDOM = 1
 
 def task_create_soep_moments_no_care_demand(  # noqa: PLR0915
     path_to_specs: Path = SRC / "specs.yaml",
+    path_to_model_config: Path = BLD / "model" / "model_config.pkl",
+    path_to_model: Path = BLD / "model" / "model.pkl",
     path_to_main_sample: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
     path_to_save_moments: Annotated[Path, Product] = BLD
     / "moments"
@@ -39,6 +52,19 @@ def task_create_soep_moments_no_care_demand(  # noqa: PLR0915
     """Create moments for MSM estimation - no care demand counterfactual."""
 
     specs = read_and_derive_specs(path_to_specs)
+    model_config = pickle.load(path_to_model_config.open("rb"))
+
+    model_class = dcegm.setup_model(
+        model_specs=specs,
+        model_config=model_config,
+        state_space_functions=create_state_space_functions(),
+        utility_functions=create_utility_functions(),
+        utility_functions_final_period=create_final_period_utility_functions(),
+        budget_constraint=budget_constraint,
+        shock_functions=shock_function_dict(),
+        stochastic_states_transitions=create_stochastic_states_transitions(),
+        model_load_path=path_to_model,
+    )
 
     start_age = specs["start_age"]
     end_age = specs["end_age_msm"]
@@ -68,17 +94,10 @@ def task_create_soep_moments_no_care_demand(  # noqa: PLR0915
     _df_good_health = df[df["health"] == GOOD_HEALTH].copy()
     _df_bad_health = df[df["health"] == BAD_HEALTH].copy()
 
-    df_wealth = df_full[df_full["sex"] == SEX].copy()
-    # adjust_and_trim_wealth_data requires params, states_dict, and model_class
-    # but we don't adjust or trim, so pass None/empty values
-    df_wealth = adjust_and_trim_wealth_data(
-        df=df_wealth,
+    df_wealth = create_df_wealth(
+        df_full=df_full,
         specs=specs,
-        params={},
-        states_dict={},
-        model_class=None,
-        adjust_wealth=False,
-        trim_quantile=False,
+        model_class=model_class,
     )
 
     df_wealth_low = df_wealth[df_wealth["education"] == 0].copy()

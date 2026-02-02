@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-from dcegm.asset_correction import adjust_observed_assets
 from pytask import Product
 
 import dcegm
@@ -42,6 +41,7 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.moments.transform_data import load_and_scale_correct_data
+from dcegm.asset_correction import adjust_observed_assets
 
 DEGREES_OF_FREEDOM = 1
 
@@ -79,7 +79,6 @@ def task_create_soep_moments(  # noqa: PLR0915
     """Create moments for MSM estimation."""
 
     specs = pickle.load(path_to_specs.open("rb"))
-    params = yaml.safe_load(path_to_params.open("rb"))
     model_config = pickle.load(path_to_model_config.open("rb"))
 
     model_class = dcegm.setup_model(
@@ -145,22 +144,12 @@ def task_create_soep_moments(  # noqa: PLR0915
         end_year=end_year,
         end_age=end_age,
     )
-    # df_wealth = create_df_wealth(
-    #     df_full=df_full,
-    #     specs=specs,
-    #     params=params,
-    #     model_class=model_class,
-    #     adjust_wealth=False,
-    #     trim_quantile=True,
-    # )
-    df_wealth_corrected = load_and_scale_correct_data(
-        data_decision=df_full,
+
+    df_wealth = create_df_wealth(
+        df_full=df_full,
+        specs=specs,
         model_class=model_class,
     )
-    df_wealth = df_wealth_corrected[
-        (df_wealth_corrected["syear"] >= 2010) & (df_wealth_corrected["syear"] <= 2020)
-    ].copy()
-    df_wealth["adjusted_wealth"] = df_wealth["assets_begin_of_period"]
 
     _df_alive = df[df["health"] != DEAD].copy()
     _df_good_health = df[df["health"] == GOOD_HEALTH].copy()
@@ -1287,7 +1276,8 @@ def compute_median_by_age_bin(
     age_range : list[int] | np.ndarray
         Age range to use for creating bins (min and max will be used).
     age_bins : tuple[list[int], list[str]] | None
-        Optional (bin_edges, bin_labels). If None, defaults to 5-year bins based on age_range:
+        Optional (bin_edges, bin_labels). If None, defaults to 5-year bins
+        based on age_range:
           edges:  [age_min, age_min+5, ..., age_max+1]
           labels: ['age_min_age_min+4', 'age_min+5_age_min+9', ...]
         Note: edges must include both the first left edge and the final right edge.
@@ -2251,408 +2241,6 @@ def create_df_caregivers(
     ].copy()
 
 
-def create_df_wealth(
-    df_full: pd.DataFrame,
-    specs: dict,
-    params: dict,
-    model_class: Any,
-    adjust_wealth: bool = False,
-    trim_quantile: bool = False,
-    wealth_var: str = "wealth",
-) -> pd.DataFrame:
-    """
-    Create and adjust wealth dataframe.
-
-    Parameters
-    ----------
-    df_full : pd.DataFrame
-        Full dataset loaded from CSV
-    specs : dict
-        Specifications dictionary
-
-    Returns
-    -------
-    pd.DataFrame
-        Adjusted wealth dataframe (filtered for non-null wealth and sex == SEX)
-    """
-    df_full = df_full[df_full["sex"] == SEX].copy()
-    df_wealth = df_full[(df_full[wealth_var].notna()) & (df_full["sex"] == SEX)].copy()
-
-    model_structure = model_class.model_structure
-
-    states_dict = {
-        name: df_wealth[name].values
-        for name in model_structure["discrete_states_names"]
-        if name
-        not in (
-            "mother_health",
-            "mother_adl",
-            "mother_dead",
-            "care_demand",
-            "care_supply",
-            "caregiving_type",
-        )
-    }
-    states_dict["experience"] = df_wealth["experience"].values
-    states_dict["care_demand"] = np.zeros_like(df_wealth["wealth"])
-    states_dict["mother_dead"] = np.zeros_like(df_wealth["wealth"], dtype=np.uint8)
-
-    df_wealth = adjust_and_trim_wealth_data(
-        df=df_wealth,
-        specs=specs,
-        params=params,
-        states_dict=states_dict,
-        model_class=model_class,
-        adjust_wealth=adjust_wealth,
-        trim_quantile=trim_quantile,
-        wealth_var=wealth_var,
-    )
-
-    return df_wealth
-
-
-def _adjust_wealth_with_lagged_choice(
-    df: pd.DataFrame,
-    states_dict: dict,
-    params: dict,
-    model_class: Any,
-    person_id_col: str | None = None,
-    age_col: str = "age",
-    choice_col: str = "choice",
-    lagged_choice_col: str = "lagged_choice",
-    default_lagged_choice: int = 0,
-) -> np.ndarray:
-    """Adjust wealth accounting for lagged choices by person and age.
-
-    This function ensures that lagged_choice is properly included in states_dict
-    for each person at each age before calling adjust_observed_assets.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        DataFrame with person observations, must have 'age' and 'choice' columns.
-        If person_id_col is None, uses DataFrame index as person identifier.
-    states_dict : dict
-        Dictionary of state variables (will be updated with lagged_choice)
-    params : dict
-        Model parameters
-    model_class : Any
-        Model class instance
-    person_id_col : str | None, optional
-        Column name for person identifier. If None, uses DataFrame index.
-    age_col : str, default "age"
-        Column name for age
-    choice_col : str, default "choice"
-        Column name for current period choice
-    lagged_choice_col : str, default "lagged_choice"
-        Column name for lagged choice (will be created if missing)
-    default_lagged_choice : int, default 0
-        Default value for lagged choice when not available (first obs per person)
-
-    Returns
-    -------
-    np.ndarray
-        Array of adjusted wealth values, shape (n_observations,)
-    """
-    df = df.copy()
-
-    # Identify person identifier
-    if person_id_col is None:
-        # Use index as person identifier
-        df["_person_id"] = df.index
-        person_id_col = "_person_id"
-    elif person_id_col not in df.columns:
-        raise ValueError(
-            f"person_id_col '{person_id_col}' not found in DataFrame columns. "
-            f"Available columns: {list(df.columns)}"
-        )
-
-    # Ensure we have choice column
-    if choice_col not in df.columns:
-        raise ValueError(
-            f"choice_col '{choice_col}' not found in DataFrame columns. "
-            f"Available columns: {list(df.columns)}"
-        )
-
-    # Reset index to ensure we have positional indices (0, 1, 2, ...)
-    # This is important because states_dict arrays are indexed by position
-    df = df.reset_index(drop=True)
-
-    # Store original order to restore it later
-    df["_original_order"] = np.arange(len(df))
-
-    # Sort by person and age to ensure proper ordering for lagged_choice creation
-    # Get sort order as positional indices
-    sort_order = df.sort_values([person_id_col, age_col]).index.values
-    df_sorted = df.loc[sort_order].reset_index(drop=True)
-
-    # Sort all arrays in states_dict using the same sort order (positional indices)
-    states_dict_sorted = {}
-    for key, value in states_dict.items():
-        states_dict_sorted[key] = value[sort_order]
-
-    # Create lagged_choice if it doesn't exist or has missing values
-    if (
-        lagged_choice_col not in df_sorted.columns
-        or df_sorted[lagged_choice_col].isna().any()
-    ):
-        # Create lagged choice within each person
-        df_sorted[lagged_choice_col] = df_sorted.groupby(person_id_col)[
-            choice_col
-        ].shift(1)
-
-        # Fill missing values (first observation per person) with default
-        df_sorted[lagged_choice_col] = df_sorted[lagged_choice_col].fillna(
-            default_lagged_choice
-        )
-
-        # Convert to integer type
-        df_sorted[lagged_choice_col] = df_sorted[lagged_choice_col].astype(int)
-
-    # Ensure lagged_choice is in states_dict and aligned with other state variables
-    states_dict_sorted["lagged_choice"] = df_sorted[lagged_choice_col].values
-
-    # Ensure assets_begin_of_period is in states_dict
-    if "assets_begin_of_period" not in states_dict_sorted:
-        raise ValueError(
-            "assets_begin_of_period must be in states_dict before calling "
-            "_adjust_wealth_with_lagged_choice"
-        )
-
-    # Verify all arrays in states_dict have the same length
-    n_obs = len(df_sorted)
-    for key, value in states_dict_sorted.items():
-        if len(value) != n_obs:
-            raise ValueError(
-                f"Length mismatch in states_dict: '{key}' has length {len(value)}, "
-                f"but DataFrame has {n_obs} observations"
-            )
-
-    # Fix experience scaling for fresh retirees
-    # When someone enters retirement, their experience is still normalized by working scale,
-    # but budget_constraint will rescale it using retirement scale, causing inflated pension points.
-    # We need to adjust the experience value to account for this.
-    from caregiving.model.pension_system.experience_stock import (
-        calc_pension_points_for_experience,
-    )
-    from caregiving.model.shared import RETIREMENT
-
-    retirement_values = np.asarray(RETIREMENT).ravel().tolist()
-    # Current period: if lagged_choice is retirement, they are retired now
-    # (lagged_choice is the choice from previous period, which determines current income)
-    is_retired_now = np.isin(df_sorted[lagged_choice_col].values, retirement_values)
-
-    # Previous period: check what their lagged_choice was in the previous row
-    # lagged_choice at period t = choice at period t-1
-    # lagged_choice at period t-1 = choice at period t-2
-    # So to check if they were retired at t-1, we check lagged_choice at t-1
-    # which is the same as choice at t-2
-    # We can get this by shifting lagged_choice by 1, or shifting choice by 2
-    # Using lagged_choice.shift(1) is simpler and more direct
-    prev_lagged_choice = df_sorted.groupby(person_id_col)[lagged_choice_col].shift(1)
-    is_retired_prev = np.isin(prev_lagged_choice.fillna(0).values, retirement_values)
-
-    # Fresh retirees: retired now (lagged_choice is retirement) but not in previous period
-    # (lagged_choice at t-1 was not retirement, meaning they were working before)
-    is_fresh_retiree = is_retired_now & (~is_retired_prev)
-
-    if is_fresh_retiree.any():
-        # Adjust experience for fresh retirees
-        # The issue: For fresh retirees, experience is normalized by working scale,
-        # but budget_constraint will use is_retired=True, which rescales by retirement scale.
-        # This causes experience_years to be inflated, which is then used as pension_points.
-        experience_adjusted = states_dict_sorted["experience"].copy()
-        age_values = df_sorted[age_col].values
-        period_values = age_values - model_class.model_specs["start_age"]
-
-        # Get partner_state and education arrays for vectorized operations
-        partner_state_arr = (
-            df_sorted["partner_state"].values
-            if "partner_state" in df_sorted.columns
-            else np.zeros(n_obs)
-        )
-        education_arr = (
-            df_sorted["education"].values
-            if "education" in df_sorted.columns
-            else np.zeros(n_obs)
-        )
-
-        n_fresh_retirees = 0
-        total_inflation_before = 0.0
-        total_inflation_after = 0.0
-
-        for i in range(n_obs):
-            if is_fresh_retiree[i]:
-                n_fresh_retirees += 1
-                period = period_values[i]
-                experience_norm = states_dict_sorted["experience"][i]
-
-                # For fresh retirees, the experience value in the data is from the
-                # beginning of the current period, which was accumulated while working.
-                # So it's normalized by the working scale from the previous period.
-                prev_period = max(0, period - 1)
-                max_exp_working = model_class.model_specs["max_exps_period_working"][
-                    prev_period
-                ]
-                max_pp_retirement = model_class.model_specs["max_pp_retirement"]
-
-                # Step 1: Convert normalized experience back to working experience years
-                # The experience value is normalized by working scale (from when they were working)
-                working_exp_years = experience_norm * max_exp_working
-
-                # Step 2: Convert working experience years to pension points
-                # This is the correct way to calculate pension points for fresh retirees
-                partner_state = np.array(partner_state_arr[i])
-                education = np.array(education_arr[i])
-
-                pension_points = calc_pension_points_for_experience(
-                    period=period,
-                    experience_years=working_exp_years,
-                    sex=SEX,
-                    partner_state=partner_state,
-                    education=education,
-                    model_specs=model_class.model_specs,
-                )
-
-                # Calculate what would happen WITHOUT the fix (for debugging)
-                # This is what budget_constraint would incorrectly use
-                incorrect_pension_points = experience_norm * max_pp_retirement
-                inflation_ratio = (
-                    incorrect_pension_points / pension_points
-                    if pension_points > 0
-                    else 1.0
-                )
-                total_inflation_before += inflation_ratio
-
-                # Step 3: Rescale pension points back to 0-1 using retirement scale
-                # This way, when budget_constraint calls construct_experience_years
-                # with is_retired=True, it will correctly get:
-                #   experience_adjusted * max_pp_retirement = pension_points
-                # which is then passed to calc_pensions_after_ssc as pension_points
-                experience_adjusted[i] = pension_points / max_pp_retirement
-
-                # Verify the fix: after adjustment, construct_experience_years should give correct pension_points
-                corrected_pension_points = experience_adjusted[i] * max_pp_retirement
-                correction_ratio = (
-                    corrected_pension_points / pension_points
-                    if pension_points > 0
-                    else 1.0
-                )
-                total_inflation_after += correction_ratio
-
-        # Debug: Print summary if fresh retirees were found
-        if n_fresh_retirees > 0:
-            avg_inflation_before = total_inflation_before / n_fresh_retirees
-            avg_inflation_after = total_inflation_after / n_fresh_retirees
-            print(
-                f"DEBUG: Adjusted experience for {n_fresh_retirees} fresh retirees "
-                f"out of {n_obs} total observations"
-            )
-            print(
-                f"DEBUG: Average pension points inflation BEFORE fix: {avg_inflation_before:.2f}x"
-            )
-            print(
-                f"DEBUG: Average pension points correction AFTER fix: {avg_inflation_after:.2f}x "
-                f"(should be ~1.0)"
-            )
-
-        # Update states_dict with adjusted experience
-        states_dict_sorted["experience"] = experience_adjusted
-
-    # Call adjust_observed_assets with complete states_dict (sorted)
-    adjusted_wealth_sorted = adjust_observed_assets(
-        observed_states_dict=states_dict_sorted,
-        params=params,
-        model_class=model_class,
-    )
-
-    # Restore original order: create mapping from sorted index back to original
-    # df_sorted has _original_order column that tells us original position
-    original_order_map = df_sorted["_original_order"].values
-    adjusted_wealth = adjusted_wealth_sorted[np.argsort(original_order_map)]
-
-    return adjusted_wealth
-
-
-def adjust_and_trim_wealth_data(
-    df: pd.DataFrame,
-    specs: dict,
-    params: dict,
-    states_dict: dict,
-    model_class: Any,
-    wealth_var: str = "wealth",
-    adjust_wealth: bool = False,
-    trim_quantile: bool = False,
-    person_id_col: str | None = None,
-    choice_col: str = "choice",
-    lagged_choice_col: str = "lagged_choice",
-    default_lagged_choice: int = 0,
-):
-    """Adjust and trim wealth data.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        DataFrame with wealth and state variables
-    specs : dict
-        Model specifications
-    params : dict
-        Model parameters
-    states_dict : dict
-        Dictionary of state variables
-    model_class : Any
-        Model class instance
-    wealth_var : str, default "wealth"
-        Column name for wealth variable
-    adjust_wealth : bool, default False
-        Whether to adjust wealth using adjust_observed_assets
-    trim_quantile : bool, default False
-        Whether to trim wealth by quantile
-    person_id_col : str | None, optional
-        Column name for person identifier. If None, uses DataFrame index.
-    choice_col : str, default "choice"
-        Column name for current period choice
-    lagged_choice_col : str, default "lagged_choice"
-        Column name for lagged choice
-    default_lagged_choice : int, default 0
-        Default value for lagged choice when not available
-
-    Returns
-    -------
-    pd.DataFrame
-        DataFrame with adjusted wealth
-    """
-    df = df[df["sex"] == SEX].copy()
-    df["assets_begin_of_period"] = df[wealth_var].values / specs["wealth_unit"]
-
-    if adjust_wealth:
-        # Add assets_begin_of_period to states_dict
-        states_dict["assets_begin_of_period"] = df["assets_begin_of_period"].values
-
-        # Adjust wealth accounting for lagged choices by person and age
-        df["adjusted_wealth"] = _adjust_wealth_with_lagged_choice(
-            df=df,
-            states_dict=states_dict,
-            params=params,
-            model_class=model_class,
-            person_id_col=person_id_col,
-            age_col="age",
-            choice_col=choice_col,
-            lagged_choice_col=lagged_choice_col,
-            default_lagged_choice=default_lagged_choice,
-        )
-    else:
-        df["adjusted_wealth"] = df["assets_begin_of_period"].values
-
-    if trim_quantile:
-        wealth_mask = df["adjusted_wealth"] < df["adjusted_wealth"].quantile(
-            WEALTH_QUANTILE_CUTOFF
-        )
-        df = df.loc[wealth_mask, ["age", "sex", "adjusted_wealth", "education"]].copy()
-
-    return df
-
-
 def add_pure_formal_care_moments(
     path_to_pure_formal_care_csv: Path,
     moments: dict,
@@ -2804,3 +2392,41 @@ def _process_parents_weights_share(
             parents_weights_share[label] = mean_value
 
     return parents_weights_share
+
+
+def create_df_wealth(
+    df_full: pd.DataFrame,
+    specs: dict,
+    model_class: Any,
+) -> pd.DataFrame:
+    """Create and process wealth dataframe using new approach.
+
+    This function:
+    1. Uses load_and_scale_correct_data to process the data
+    2. Filters by year range using "start_year_wealth" and "end_year_wealth"
+    3. Sets adjusted_wealth from assets_begin_of_period
+
+    Parameters
+    ----------
+    df_full : pd.DataFrame
+        Full dataset loaded from CSV
+    specs : dict
+        Specifications dictionary
+    model_class : Any
+        Model class instance
+
+    Returns
+    -------
+    pd.DataFrame
+        Processed wealth dataframe with adjusted_wealth column
+    """
+    df_wealth_corrected = load_and_scale_correct_data(
+        data_decision=df_full,
+        model_class=model_class,
+    )
+    df_wealth = df_wealth_corrected[
+        (df_wealth_corrected["syear"] >= specs["start_year_wealth"])
+        & (df_wealth_corrected["syear"] <= specs["end_year_wealth"])
+    ].copy()
+    df_wealth["adjusted_wealth"] = df_wealth["assets_begin_of_period"]
+    return df_wealth
