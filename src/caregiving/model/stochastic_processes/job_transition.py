@@ -3,7 +3,6 @@
 import jax.numpy as jnp
 
 from caregiving.model.shared import (
-    AGE_50,
     AGE_55,
     AGE_60,
     SEX,
@@ -115,9 +114,14 @@ def calc_job_finding_prob_women_linear(period, education, params, model_specs):
     high_edu = education == 1
     age = period + model_specs["start_age"]
 
+    # Divide by 10 to prevent numerical issues with squared/cubed terms on GPU
+    age_scaled = age / 10.0
+
     exp_factor = (
         params["job_finding_logit_const_women"]
-        + params["job_finding_logit_age_women"] * age
+        + params["job_finding_logit_age_women"] * age_scaled
+        + params["job_finding_logit_age_squared_women"] * age_scaled**2
+        + params["job_finding_logit_age_cubed_women"] * age_scaled**3
         + params["job_finding_logit_high_educ_women"] * high_edu
     )
     prob = logit_formula(exp_factor)

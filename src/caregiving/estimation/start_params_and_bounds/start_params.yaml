@@ -372,7 +372,7 @@ taste_shock_scale: 0.5
 
 # Job offer / job-finding parameters for women (Table 5)
 job_finding_logit_const_women: 0.7226
-job_finding_logit_age_women: -0.0586
+job_finding_logit_age_women: -0.586 #-0.0586
 job_finding_logit_high_educ_women: 0.5729
 #
 # job_finding_logit_const_women: -1.4881

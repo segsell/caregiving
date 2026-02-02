@@ -79,18 +79,16 @@ def estimate_logit_job_offer_params(df, specs):
     # Filter for relevant columns
     logit_df = df_unemployed[["sex", "period", "education", "work_start"]].copy()
     logit_df["age"] = logit_df["period"] + specs["start_age"]
-    logit_df["age_squared"] = logit_df["age"] ** 2
-    logit_df["age_cubed"] = logit_df["age"] ** 3
+    # Divide by 10 to prevent numerical issues with squared/cubed terms on GPU
+    logit_df["age_scaled"] = logit_df["age"] / 10.0
 
     logit_df = logit_df[logit_df["age"] < specs["min_SRA"] + 5]  # 65
     logit_df["intercept"] = 1
 
     logit_vars = [
         "intercept",
-        "age",
+        "age_scaled",
         "education",
-        "age_squared",
-        "age_cubed",
     ]
 
     # sex_append = ["men", "women"]
@@ -107,9 +105,9 @@ def estimate_logit_job_offer_params(df, specs):
 
     gender_params = {
         f"job_finding_logit_const_{suffix}": params["intercept"],
-        f"job_finding_logit_age_{suffix}": params["age"],
-        f"job_finding_logit_age_squared_{suffix}": params["age_squared"],
-        f"job_finding_logit_age_cubed_{suffix}": params["age_cubed"],
+        f"job_finding_logit_age_{suffix}": params["age_scaled"],
+        f"job_finding_logit_age_squared_{suffix}": 0.0,
+        f"job_finding_logit_age_cubed_{suffix}": 0.0,
         # f"job_finding_logit_below_49_{suffix}": params["below_49"],
         # f"job_finding_logit_above_49_{suffix}": params["above_49"],
         f"job_finding_logit_high_educ_{suffix}": params["education"],
