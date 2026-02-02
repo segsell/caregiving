@@ -19,6 +19,7 @@ from typing import Annotated
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pytask
 import statsmodels.api as sm
 from pytask import Product
 
@@ -26,6 +27,7 @@ from caregiving.config import BLD, JET_COLOR_MAP, SRC
 from caregiving.specs.derive_specs import read_and_derive_specs
 
 
+@pytask.mark.partner_wage
 def task_estimate_partner_wage_parameters(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_data: Path = BLD / "data" / "soep_partner_wage_data.csv",
@@ -54,13 +56,19 @@ def task_estimate_partner_wage_parameters(
     specs = read_and_derive_specs(path_to_specs)
 
     edu_labels = specs["education_labels"]
-    model_params = ["constant", "period", "period_sq"]
+    # model_params = ["constant", "period", "period_sq"]
 
     wage_data = pd.read_csv(path_to_data, index_col=0)
 
     for sex_var, sex_label in enumerate(specs["sex_labels"]):
 
         wage_data_sex = prepare_estimation_data(wage_data, specs, sex_var=sex_var)
+
+        # Use cubic term for partner of men because of lfc labor supply pattern of women
+        if sex_var == 0:
+            model_params = ["constant", "period", "period_sq", "period_cub"]
+        else:
+            model_params = ["constant", "period", "period_sq"]
 
         # Initialize empty container for coefficients
         wage_parameters = pd.DataFrame(
@@ -73,18 +81,27 @@ def task_estimate_partner_wage_parameters(
 
             # Filter df
             wage_data_edu = wage_data_sex[wage_data_sex["education"] == edu_val].copy()
-            wage_data_edu = sm.add_constant(wage_data_edu)
+
+            # Drop missing values explicitly before fitting to ensure
+            # predictions align with DataFrame
+            required_vars = ["wage_p", "period", "period_sq"]
+            if sex_var == 0:  # men - also need period_cub
+                required_vars.append("period_cub")
+            wage_data_edu = wage_data_edu.dropna(subset=required_vars)
+
+            # Prepare exog variables
+            exog_vars = ["period", "period_sq"]
+            if sex_var == 0:  # men - add cubic term
+                exog_vars.append("period_cub")
+            exog = sm.add_constant(wage_data_edu[exog_vars])
 
             model = sm.OLS(
                 endog=wage_data_edu["wage_p"],
-                exog=sm.add_constant(
-                    wage_data_edu[["constant", "period", "period_sq"]]
-                ),
-                missing="drop",
+                exog=exog,
             )
             fitted_model = model.fit()
 
-            # Assign prediction
+            # Assign prediction (now aligned with wage_data_edu after dropna)
             wage_data_edu["wage_pred"] = fitted_model.predict()
 
             # Plot wage and prediction
@@ -130,9 +147,12 @@ def prepare_estimation_data(wage_data, specs, sex_var):
     """Prepare the data for the wage estimation."""
     wage_data = wage_data[wage_data["sex"] == sex_var].copy()
 
+    wage_data = wage_data[wage_data["age"] < specs["max_age_partner_working"]]
+
     # Add period
     wage_data["period"] = wage_data["age"] - specs["start_age"]
     wage_data["period_sq"] = wage_data["period"] ** 2
+    wage_data["period_cub"] = wage_data["period"] ** 3
 
     # We only want to look at working age people
     wage_data = wage_data[wage_data["age"] < specs["max_ret_age"]]

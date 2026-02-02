@@ -51,19 +51,21 @@ max_ret_age: 70 # 67 # 72
 max_ret_age_empirical: 67
 # Maximum age to estimate labor market
 max_est_age_labor: 65
+max_age_partner_working: 75
+
 # Assume that part time gives half a year of experience
 exp_increase_part_time: 0.5
 
-# Parameters of the policy environment:
+# Parameters of the policy environment (2010):
 # Start with unemployment benefits
-monthly_unemployment_benefits: 350
+monthly_unemployment_benefits: 359 # 350
+monthly_child_unemployment_benefits: 255 # 250
 monthly_unemployment_benefits_housing: 300
-monthly_child_unemployment_benefits: 250
 # Wealth threshold (for unemployment benefits)
 unemployment_wealth_thresh: 10_500
 # Now additional parameters for working and retirement
 monthly_child_benefits: 184
-monthly_min_wage: 1360
+monthly_min_wage: 1470 #1360
 
 # informal_care_cash_benefits: 444 # 0.4239 * 316 + 0.2793 * 545 + 728 *0.1405 + 901 * 0.0617
 informal_care_cash_benefits_light: 235 # Pflegestufe 1 (2010)
