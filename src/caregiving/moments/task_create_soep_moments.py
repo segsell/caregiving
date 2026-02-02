@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-from dcegm.asset_correction import adjust_observed_assets
 from pytask import Product
 
 import dcegm
@@ -42,6 +41,7 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.moments.transform_data import load_and_scale_correct_data
+from dcegm.asset_correction import adjust_observed_assets
 
 DEGREES_OF_FREEDOM = 1
 
@@ -108,6 +108,7 @@ def task_create_soep_moments(  # noqa: PLR0915
     start_age_caregivers = specs["start_age_caregiving"]
     end_age = specs["end_age_msm"]
     end_age_caregiving = specs["end_age_caregiving"]
+
     start_year = 2001
     end_year = 2019
 
@@ -2160,7 +2161,7 @@ def create_df_non_caregivers(
         & (df_full["gebjahr"] <= specs["max_birth_year"])
         & (df_full["syear"] >= start_year)
         & (df_full["syear"] <= end_year)
-        & (df_full["sex"] == 1)
+        & (df_full["sex"] == SEX)
         & (df_full["age"] <= end_age + 10)
         & (df_full["any_care"] == 0)
     ].copy()
@@ -2199,7 +2200,7 @@ def create_df_with_caregivers(
         & (df_full["gebjahr"] <= specs["max_birth_year"])
         & (df_full["syear"] >= start_year)
         & (df_full["syear"] <= end_year)
-        & (df_full["sex"] == 1)
+        & (df_full["sex"] == SEX)
         & (df_full["age"] <= end_age + 10)
     ].copy()
 
@@ -2236,7 +2237,7 @@ def create_df_caregivers(
         (df_caregivers_full["any_care"] == 1)
         & (df_caregivers_full["syear"] >= start_year)
         & (df_caregivers_full["syear"] <= end_year)
-        & (df_caregivers_full["sex"] == 1)
+        & (df_caregivers_full["sex"] == SEX)
         & (df_caregivers_full["age"] <= end_age + 10)
     ].copy()
 

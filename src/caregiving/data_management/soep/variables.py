@@ -702,7 +702,13 @@ def create_hh_has_moved(data):
     return data
 
 
-def deflate_formal_care_costs(df, cpi_data, specs, var_name="formal_care_costs_raw"):
+def deflate_formal_care_costs(
+    df,
+    cpi_data,
+    specs,
+    var_name_in="formal_care_costs_raw",
+    var_name_out="formal_care_costs",
+):
     """Deflate formal care costs using consumer price index.
 
     Args:
@@ -732,7 +738,7 @@ def deflate_formal_care_costs(df, cpi_data, specs, var_name="formal_care_costs_r
         cpi_data[["syear", "cpi_normalized"]], on="syear", how="left"
     )
     # Deflate formal_care_costs
-    df_reset[var_name] = df_reset[var_name] / df_reset["cpi_normalized"]
+    df_reset[var_name_out] = df_reset[var_name_in] / df_reset["cpi_normalized"]
 
     # Drop temporary CPI column and restore index
     df_reset = df_reset.drop(columns=["cpi_normalized"])

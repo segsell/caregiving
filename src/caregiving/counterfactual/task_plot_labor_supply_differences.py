@@ -679,7 +679,6 @@ def _compute_total_income_like_sim_with_specs(
         if "lagged_choice" in df.columns
         else np.asarray(df["choice"])
     )
-    care_demand_array = np.asarray(df.get("care_demand", np.zeros(len(df), dtype=int)))
 
     # unemployment benefits
     v_unemp = jax.vmap(
@@ -708,13 +707,11 @@ def _compute_total_income_like_sim_with_specs(
 
     # care benefits and costs
     v_care = jax.vmap(
-        lambda lc, edu, cd: calc_care_benefits_and_costs(
-            lagged_choice=lc, education=edu, care_demand=cd, model_specs=mp
+        lambda p, lc: calc_care_benefits_and_costs(
+            period=p, lagged_choice=lc, model_specs=mp
         )
     )
-    df["care_benefits_and_costs_calc"] = v_care(
-        lagged_choice_array, education_array, care_demand_array
-    )
+    df["care_benefits_and_costs_calc"] = v_care(periods_array, lagged_choice_array)
 
     # total net income
     # (no pension term here to mirror builder usage in career costs task)

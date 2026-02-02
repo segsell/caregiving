@@ -143,7 +143,8 @@ def task_plot_empirical_soep_moments(
     )
 
     start_year = 2001
-    end_year = 2019
+    end_year = 2023  # 2019
+
     start_age = specs["start_age"]
     end_age = specs["end_age_msm"]
     start_age_caregivers = specs["start_age_caregiving"]
