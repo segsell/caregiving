@@ -153,6 +153,7 @@ def task_create_soep_moments(  # noqa: PLR0915
     #     adjust_wealth=False,
     #     trim_quantile=True,
     # )
+
     df_wealth_corrected = load_and_scale_correct_data(
         data_decision=df_full,
         model_class=model_class,
