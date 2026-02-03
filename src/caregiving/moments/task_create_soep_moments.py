@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytask
-import yaml
 from pytask import Product
 
 import dcegm
@@ -39,7 +38,6 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.moments.transform_data import load_and_scale_correct_data
-from dcegm.asset_correction import adjust_observed_assets
 
 DEGREES_OF_FREEDOM = 1
 

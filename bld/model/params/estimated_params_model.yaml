@@ -187,7 +187,9 @@ disutil_unemployed_low_women_informal_care: 0.06634311841895305
 # job_finding_logit_const_women: -2.0557573813205483
 # job_finding_logit_high_educ_women: 0.7036649116866923
 job_finding_logit_const_women: 0.7226
-job_finding_logit_age_women: -0.0586
+job_finding_logit_age_women: -0.586
+job_finding_logit_age_squared_women: 0.0
+job_finding_logit_age_cubed_women: 0.0
 job_finding_logit_high_educ_women: 0.5729
 #
 # job_finding_logit_age_cubed_women: -3.162982266453729e-05
