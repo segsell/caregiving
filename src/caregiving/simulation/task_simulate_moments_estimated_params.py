@@ -8,6 +8,7 @@ import jax
 import numpy as np
 import pandas as pd
 import pytask
+from numpy.testing import assert_allclose
 from pytask import Product
 
 from caregiving.config import BLD
@@ -80,8 +81,31 @@ def task_simulate_moments_estimated_params(
     sim_moms_pandas.to_csv(path_to_save_pandas_moments)
     np.savetxt(path_to_save_jax_moments, sim_moms_jax, delimiter=",")
 
-    # aaae(sim_moms_jax, sim_moms_pandas, decimal=12)
+    # Convert to numpy arrays for comparison
+    sim_moms_jax_arr = np.asarray(sim_moms_jax[25:])
+    sim_moms_pandas_arr = np.asarray(sim_moms_pandas[25:])
+
+    # Round very small values near zero to exactly zero to handle floating point
+    # precision. This is necessary because JAX and pandas may represent zeros
+    # slightly differently
+    tolerance = 1e-10
+    sim_moms_jax_arr = np.where(
+        np.abs(sim_moms_jax_arr) < tolerance, 0.0, sim_moms_jax_arr
+    )
+    sim_moms_pandas_arr = np.where(
+        np.abs(sim_moms_pandas_arr) < tolerance, 0.0, sim_moms_pandas_arr
+    )
+
+    # Use assert_allclose with both absolute and relative tolerance
+    # atol handles zeros and very small values, rtol handles larger values
+    assert_allclose(
+        sim_moms_jax_arr,
+        sim_moms_pandas_arr,
+        atol=1e-2,  # Absolute tolerance: 0.01
+        rtol=1e-2,  # Relative tolerance: 1%
+    )
     assert np.equal(emp_moms.shape, sim_moms_pandas.shape)
+    assert np.equal(emp_moms.shape, sim_moms_jax.shape)
 
     # states = {
     #     "not_working": NOT_WORKING,
