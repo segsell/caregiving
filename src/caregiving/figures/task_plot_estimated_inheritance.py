@@ -68,6 +68,7 @@ def task_plot_estimated_inheritance_probability(
                     + params["age"] * ages
                     + params["age_sq"] * age_sq
                     + params["any_care_recent"] * 1
+                    + params["formal_care_costs_dummy_recent"] * 0
                     + params["parent_died_recent"] * 1
                     + params["education"] * edu_var
                 )
@@ -88,6 +89,7 @@ def task_plot_estimated_inheritance_probability(
                     + params["age"] * ages
                     + params["age_sq"] * age_sq
                     + params["any_care_recent"] * 0
+                    + params["formal_care_costs_dummy_recent"] * 0
                     + params["parent_died_recent"] * 1
                     + params["education"] * edu_var
                 )
@@ -100,6 +102,27 @@ def task_plot_estimated_inheritance_probability(
                     color=color,
                     linestyle="--",
                     label=f"{edu_label}, no care",
+                )
+
+                # Scenario 3: Formal care, parent died recently (dash-dot line)
+                linear_pred_formal = (
+                    params["const"]
+                    + params["age"] * ages
+                    + params["age_sq"] * age_sq
+                    + params["any_care_recent"] * 0
+                    + params["formal_care_costs_dummy_recent"] * 1
+                    + params["parent_died_recent"] * 1
+                    + params["education"] * edu_var
+                )
+                prob_formal = 1 / (1 + np.exp(-linear_pred_formal))
+
+                ax.plot(
+                    ages,
+                    prob_formal,
+                    linewidth=2.5,
+                    color=color,
+                    linestyle=(0, (3, 1, 1, 1)),
+                    label=f"{edu_label}, formal care",
                 )
 
         except (KeyError, TypeError):
@@ -182,6 +205,7 @@ def task_plot_estimated_inheritance_amount(
                     + params["age_sq"] * age_sq
                     + params["light_care_recent"] * 0
                     + params["intensive_care_recent"] * 1
+                    + params["formal_care_costs_dummy_recent"] * 0
                     + params["education"] * edu_var
                 )
                 amount_care = np.exp(ln_amount_care)
@@ -202,6 +226,7 @@ def task_plot_estimated_inheritance_amount(
                     + params["age_sq"] * age_sq
                     + params["light_care_recent"] * 0
                     + params["intensive_care_recent"] * 0
+                    + params["formal_care_costs_dummy_recent"] * 0
                     + params["education"] * edu_var
                 )
                 amount_nocare = np.exp(ln_amount_nocare)
@@ -213,6 +238,27 @@ def task_plot_estimated_inheritance_amount(
                     color=color,
                     linestyle="--",
                     label=f"{edu_label}, no care",
+                )
+
+                # Scenario 3: Formal care (dash-dot line)
+                ln_amount_formal = (
+                    params["const"]
+                    + params["age"] * ages
+                    + params["age_sq"] * age_sq
+                    + params["light_care_recent"] * 0
+                    + params["intensive_care_recent"] * 0
+                    + params["formal_care_costs_dummy_recent"] * 1
+                    + params["education"] * edu_var
+                )
+                amount_formal = np.exp(ln_amount_formal)
+
+                ax.plot(
+                    ages,
+                    amount_formal,
+                    linewidth=2.5,
+                    color=color,
+                    linestyle=(0, (3, 1, 1, 1)),
+                    label=f"{edu_label}, formal care",
                 )
 
         except (KeyError, TypeError):
@@ -293,6 +339,7 @@ def task_plot_estimated_inheritance_amount_three_scenarios(
                     + params["age_sq"] * age_sq
                     + params["light_care_recent"] * 0
                     + params["intensive_care_recent"] * 1
+                    + params["formal_care_costs_dummy_recent"] * 0
                     + params["education"] * edu_var
                 )
                 amount_intensive = np.exp(ln_amount_intensive)
@@ -313,6 +360,7 @@ def task_plot_estimated_inheritance_amount_three_scenarios(
                     + params["age_sq"] * age_sq
                     + params["light_care_recent"] * 1
                     + params["intensive_care_recent"] * 0
+                    + params["formal_care_costs_dummy_recent"] * 0
                     + params["education"] * edu_var
                 )
                 amount_light = np.exp(ln_amount_light)
@@ -333,6 +381,7 @@ def task_plot_estimated_inheritance_amount_three_scenarios(
                     + params["age_sq"] * age_sq
                     + params["light_care_recent"] * 0
                     + params["intensive_care_recent"] * 0
+                    + params["formal_care_costs_dummy_recent"] * 0
                     + params["education"] * edu_var
                 )
                 amount_nocare = np.exp(ln_amount_nocare)
@@ -344,6 +393,27 @@ def task_plot_estimated_inheritance_amount_three_scenarios(
                     color=color,
                     linestyle="--",
                     label=f"{edu_label}, no care",
+                )
+
+                # Scenario 4: Formal care (dash-dot line)
+                ln_amount_formal = (
+                    params["const"]
+                    + params["age"] * ages
+                    + params["age_sq"] * age_sq
+                    + params["light_care_recent"] * 0
+                    + params["intensive_care_recent"] * 0
+                    + params["formal_care_costs_dummy_recent"] * 1
+                    + params["education"] * edu_var
+                )
+                amount_formal = np.exp(ln_amount_formal)
+
+                ax.plot(
+                    ages,
+                    amount_formal,
+                    linewidth=2.5,
+                    color=color,
+                    linestyle=(0, (3, 1, 1, 1)),
+                    label=f"{edu_label}, formal care",
                 )
 
         except (KeyError, TypeError):

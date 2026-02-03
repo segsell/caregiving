@@ -88,10 +88,13 @@ util_informal_care_high_good: 5
 util_informal_care_high_bad: 5
 util_informal_care_low_good: 5
 util_informal_care_low_bad: 5
-util_joint_informal_care_good: 5
-util_joint_informal_care_bad: 5
+
 util_formal_care_good: 5
 util_formal_care_bad: 5
+util_formal_care_high_good: 5
+util_formal_care_high_bad: 5
+util_formal_care_low_good: 5
+util_formal_care_low_bad: 5
 
 
 # # # Caregiving
@@ -179,6 +182,28 @@ disutil_children_pt_work_informal_care_high: 5
 disutil_children_ft_work_informal_care_low: 5
 disutil_children_ft_work_informal_care_high: 5
 
+# Level shifts for light and intensive informal care (additive adjustments)
+disutil_unemployed_light_informal_care_low: 5
+disutil_unemployed_light_informal_care_high: 5
+disutil_ft_work_light_informal_care_low: 5
+disutil_ft_work_light_informal_care_high: 5
+disutil_unemployed_intensive_informal_care_low: 5
+disutil_unemployed_intensive_informal_care_high: 5
+disutil_ft_work_intensive_informal_care_low: 5
+disutil_ft_work_intensive_informal_care_high: 5
+
+# Utility from light informal care (varies by education and health)
+util_light_informal_care_high_good: 5
+util_light_informal_care_high_bad: 5
+util_light_informal_care_low_good: 5
+util_light_informal_care_low_bad: 5
+
+# Utility from intensive informal care (varies by education and health)
+util_intensive_informal_care_high_good: 5
+util_intensive_informal_care_high_bad: 5
+util_intensive_informal_care_low_good: 5
+util_intensive_informal_care_low_bad: 5
+
 
 # util_cons_unemployed_low_educ: -1e-12
 # util_cons_unemployed_high_educ: -1e-12
@@ -209,11 +234,16 @@ share_unobserved_type_high_educ: 0.999999999999
 lambda: 2
 lambda_low: 2
 lambda_high: 2
+taste_shock_scale: 2
 
-# Job finding
+# Job finding probability
 job_finding_logit_const_women: 5
 job_finding_logit_age_women: 0.5
 job_finding_logit_high_educ_women: 5
+# Job finding age dummies
+job_finding_logit_above_50_women: 5
+job_finding_logit_above_55_women: 5
+job_finding_logit_above_60_women: 5
 
 
 # Other

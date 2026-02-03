@@ -104,11 +104,34 @@ def create_test_params(disutil_work, disutil_unemployed, rho):
         "disutil_children_pt_work_high_informal_care": 0,
         "disutil_children_ft_work_low_informal_care": 0.1,
         "disutil_children_ft_work_high_informal_care": 0.2,
+        # level-shift disutilities for light informal care (education × labor state)
+        "disutil_unemployed_light_informal_care_high": 0,
+        "disutil_unemployed_light_informal_care_low": 0,
+        "disutil_ft_work_light_informal_care_high": 0,
+        "disutil_ft_work_light_informal_care_low": 0,
+        # level-shift disutilities for intensive informal care (education × labor state)
+        "disutil_unemployed_intensive_informal_care_high": 0,
+        "disutil_unemployed_intensive_informal_care_low": 0,
+        "disutil_ft_work_intensive_informal_care_high": 0,
+        "disutil_ft_work_intensive_informal_care_low": 0,
         # type of care (varies by health and education)
-        "util_informal_care_high_good": 0,
-        "util_informal_care_high_bad": 0,
-        "util_informal_care_low_good": 0,
-        "util_informal_care_low_bad": 0,
+        # new light informal care utilities (education × health)
+        "util_light_informal_care_high_good": 0,
+        "util_light_informal_care_high_bad": 0,
+        "util_light_informal_care_low_good": 0,
+        "util_light_informal_care_low_bad": 0,
+        # new intensive informal care utilities (education × health)
+        "util_intensive_informal_care_high_good": 0,
+        "util_intensive_informal_care_high_bad": 0,
+        "util_intensive_informal_care_low_good": 0,
+        "util_intensive_informal_care_low_bad": 0,
+        # new formal-care utilities (education × health)
+        "util_formal_care_high_good": 0,
+        "util_formal_care_high_bad": 0,
+        "util_formal_care_low_good": 0,
+        "util_formal_care_low_bad": 0,
+        # legacy formal/joint informal care utilities (no longer used in active code,
+        # but kept so older interfaces remain valid)
         "util_formal_care_good": 0,
         "util_formal_care_bad": 0,
         "util_joint_informal_care_good": 0,

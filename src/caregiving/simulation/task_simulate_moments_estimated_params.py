@@ -63,6 +63,7 @@ def task_simulate_moments_estimated_params(
 
     # Keep only columns needed for simulate_moments_pandas
     required_cols = [
+        "care_demand",
         "health",
         "age",
         "education",

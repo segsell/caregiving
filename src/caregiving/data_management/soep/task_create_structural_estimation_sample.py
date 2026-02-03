@@ -25,21 +25,28 @@ from caregiving.data_management.soep.task_create_event_study_sample import (
     create_parent_info,
     create_sibling_info,
 )
+from caregiving.data_management.soep.task_create_wealth_sample import (
+    deflate_wealth,
+    print_filter,
+)
 from caregiving.data_management.soep.variables import (  # create_experience_variable,
     create_choice_variable,
     create_education_type,
     create_health_var_good_bad,
+    create_hh_has_moved,
     create_inheritance,
     create_kidage_youngest,
     create_nursing_home,
     create_partner_state,
     create_policy_state,
+    deflate_formal_care_costs,
     determine_observed_job_offers,
     generate_job_separation_var,
 )
 from caregiving.model.shared import (
     PART_TIME_CHOICES,
     RETIREMENT_CHOICES,
+    SOEP_DOES_NOT_APPLY,
     WORK_CHOICES,
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
@@ -49,7 +56,7 @@ from caregiving.specs.task_write_specs import read_and_derive_specs
 def task_create_main_estimation_sample(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_raw: Path = BLD / "data" / "soep_estimation_data_raw.csv",
-    path_to_wealth: Path = BLD / "data" / "soep_wealth_data.csv",
+    path_to_wealth: Path = BLD / "data" / "soep_wealth_data_full.csv",
     path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
     path_to_save: Annotated[Path, Product] = BLD
     / "data"
@@ -58,9 +65,10 @@ def task_create_main_estimation_sample(
 
     specs = read_and_derive_specs(path_to_specs)
     cpi = pd.read_csv(path_to_cpi, index_col=0)
+    wealth = pd.read_csv(path_to_wealth, index_col=[0])
 
     specs["start_year"] = 2001
-    specs["end_year"] = 2019
+    specs["end_year"] = 2020
 
     # merged_data = pd.read_csv(path_to_raw, index_col=[0, 1])
     df = pd.read_csv(path_to_raw, index_col=[0, 1])
@@ -76,6 +84,18 @@ def task_create_main_estimation_sample(
 
     # filter data. Leave additional years in for lagging and leading.
     df = filter_data(df, specs)
+
+    # Create dummy variable: > 0 -> 1, == SOEP_DOES_NOT_APPLY -> 0, else -> NaN
+    df["formal_care_costs_dummy"] = np.select(
+        [df["hle0016"] > 0, df["hle0016"] == SOEP_DOES_NOT_APPLY],
+        [1, 0],
+        default=np.nan,
+    )
+    df["formal_care_costs_raw"] = df["hle0016"].copy()
+    # df["any_formal_care_costs"] = (df["formal_care_costs_raw"] > 0).astype(int)
+    # df = deflate_formal_care_costs(
+    #     df, cpi_data=cpi, specs=specs, var_name="formal_care_costs_raw"
+    # )
 
     # df = generate_job_separation_var(df)
     # df = create_lagged_and_lead_variables(
@@ -103,15 +123,18 @@ def task_create_main_estimation_sample(
     # df.drop(columns=["retire_flag"], inplace=True)
     # df.set_index(["pid", "syear"], inplace=True)
 
-    wealth = pd.read_csv(path_to_wealth, index_col=[0])
-    df = add_wealth_data(df, wealth, drop_missing=False)
-
-    df["period"] = df["age"] - specs["start_age"]
+    # df = filter_below_age(df, specs["start_age"])
 
     df = create_policy_state(df, specs)
+    df["period"] = df["age"] - specs["start_age"]
+
+    # df = filter_above_age(df, specs["end_age"])
 
     df = create_experience_variable_with_cap(df, exp_cap=specs["start_age"] - 14)
-    # df = create_experience_and_working_years(df, filter_missings=True)
+    df = add_wealth_data(df, wealth, drop_missing=True)
+    # Create lagged wealth variable
+    # pid is in the index (level 0)
+    df["lagged_wealth"] = df.groupby(level=0)["wealth"].shift(1)
 
     df = create_education_type(df)
     df = create_inheritance(df, cpi_data=cpi, specs=specs)
@@ -177,7 +200,10 @@ def task_create_main_estimation_sample(
         "mother_died_this_year": "float32",
         "father_died_this_year": "float32",
         "inheritance_this_year": "float32",
+        "year_inheritance": "float32",
         "inheritance_amount": "float32",
+        "formal_care_costs_dummy": "float32",
+        "formal_care_costs_raw": "float32",
     }
     # df = df.reset_index(level="syear")
     # Reset both levels of the index to make pid and syear regular columns
@@ -199,7 +225,8 @@ def task_create_main_estimation_sample(
 def task_create_caregivers_sample(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_raw: Path = BLD / "data" / "soep_estimation_data_raw.csv",
-    path_to_wealth: Path = BLD / "data" / "soep_wealth_data.csv",
+    path_to_wealth: Path = BLD / "data" / "soep_wealth_data_full.csv",
+    path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
     path_to_save: Annotated[Path, Product] = BLD
     / "data"
     / "soep_structural_caregivers_sample.csv",
@@ -207,10 +234,11 @@ def task_create_caregivers_sample(
 
     specs = read_and_derive_specs(path_to_specs)
     specs["start_year"] = 2001
-    specs["end_year"] = 2019
+    specs["end_year"] = 2020
 
     # merged_data = pd.read_csv(path_to_raw, index_col=[0, 1])
     df = pd.read_csv(path_to_raw, index_col=[0, 1])
+    wealth = pd.read_csv(path_to_wealth, index_col=[0])
 
     df = create_partner_state(df, filter_missing=True)
     df = create_kidage_youngest(df)
@@ -255,19 +283,17 @@ def task_create_caregivers_sample(
     # df.drop(columns=["retire_flag"], inplace=True)
     # df.set_index(["pid", "syear"], inplace=True)
 
-    wealth = pd.read_csv(path_to_wealth, index_col=[0])
-    df = add_wealth_data(df, wealth, drop_missing=False)
-
     df["period"] = df["age"] - specs["start_age"]
 
     df = create_policy_state(df, specs)
 
     df = create_experience_variable_with_cap(df, exp_cap=specs["start_age"] - 14)
-    # df = create_experience_and_working_years(df, filter_missings=True)
+    df = add_wealth_data(df, wealth, drop_missing=False)
 
     df = create_education_type(df)
     df = create_health_var_good_bad(df, drop_missing=False)
     df = create_nursing_home(df)
+    df = create_hh_has_moved(df)
 
     df = enforce_model_choice_restriction(df, specs)
 
@@ -291,6 +317,7 @@ def task_create_caregivers_sample(
 
     # Keep relevant columns (i.e. state variables) and set their minimal datatype
     type_dict = {
+        "pid": "int32",
         "syear": "int16",
         "gebjahr": "int16",
         "age": "int8",
@@ -321,6 +348,8 @@ def task_create_caregivers_sample(
         "father_age_diff": "float32",
         "mother_alive": "float32",
         "father_alive": "float32",
+        "hh_has_moved_a": "float32",  # can be NA
+        "hh_has_moved_b": "float32",  # can be NA
     }
 
     # #
@@ -341,24 +370,56 @@ def task_create_caregivers_sample(
     # _mean_first_care_age = df.drop_duplicates("pid")["age_at_first_care"].mean()
     # #
 
-    df = df.reset_index(level="syear")
+    # df = df.reset_index(level="syear")
+    # df = df[list(type_dict.keys())]
+    # df = df.astype(type_dict)
+
+    # # print_data_description(df)
+
+    # # Anonymize and save data
+    # df.reset_index(drop=True, inplace=True)
+    # df.to_csv(path_to_save)
+
+    # Reset both levels of the index to make pid and syear regular columns
+    df = df.reset_index()
     df = df[list(type_dict.keys())]
     df = df.astype(type_dict)
 
-    # print_data_description(df)
-
-    # Anonymize and save data
-    df.reset_index(drop=True, inplace=True)
-    df.to_csv(path_to_save)
+    # Save without index (pid and syear are now columns)
+    df.to_csv(path_to_save, index=True)
 
 
-def add_wealth_data(data, wealth, drop_missing=False):
+def add_wealth_data(data, wealth, drop_missing=True):
     """Add wealth data to the estimation sample."""
 
     data = data.reset_index()
     data = data.merge(wealth, on=["hid", "syear"], how="left")
 
-    data.set_index(["pid", "syear"], inplace=True)
+    data = data.set_index(["pid", "syear"])
+
+    if drop_missing:
+        before = len(data)
+        data = data[data["wealth"].notna()]
+        print_filter(
+            before, len(data), "left after dropping people with missing wealth"
+        )
+
+    return data
+
+
+def add_wealth_data_and_deflate(data, wealth, cpi, specs, drop_missing=False):
+    """Add wealth data to the estimation sample."""
+
+    data = data.reset_index()
+    data = data.merge(wealth, on=["hid", "syear"], how="left")
+
+    data = deflate_wealth(data, cpi_data=cpi, specs=specs, var_name="wealth")
+
+    data = data.set_index(["pid", "syear"])
+
+    # Create lagged wealth variable
+    # pid is in the index (level 0)
+    data["lagged_wealth"] = data.groupby(level=0)["wealth"].shift(1)
 
     if drop_missing:
         data = data[(data["wealth"].notna())]

@@ -14,6 +14,7 @@ from caregiving.config import BLD, JET_COLOR_MAP
 from caregiving.model.shared import UNEMPLOYED_CHOICES, WORK_CHOICES
 
 
+@pytask.mark.job_separation
 def task_plot_job_transitions(
     path_to_full_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_data: Path = BLD / "data" / "soep_job_separation_data.csv",
@@ -41,7 +42,6 @@ def task_plot_job_transitions(
     # job_offer_probs = np.zeros(
     #     (n_sexes, n_education_types, n_working_periods), dtype=float
     # )
-
     # for sex in range(n_sexes):
     #     for edu in range(n_education_types):
     #         for period in range(n_working_periods):
@@ -326,5 +326,145 @@ def task_plot_job_offer_probs(
 
     axs[0].legend(loc="upper left")
     fig.tight_layout()
+    fig.savefig(path_to_save, dpi=300)
+    plt.close(fig)
+
+
+@pytask.mark.job_separation
+def task_plot_job_separation_by_age(
+    path_to_full_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_job_sep_probs: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "job_sep_probs.pkl",
+    path_to_save: Annotated[Path, Product] = BLD
+    / "plots"
+    / "stochastic_processes"
+    / "job_separation_by_age.png",
+    male: bool = False,
+) -> None:
+    """Plot job separation probabilities by age from job_sep_probs.pkl."""
+
+    with path_to_full_specs.open("rb") as file:
+        specs = pkl.load(file)
+
+    with path_to_job_sep_probs.open("rb") as file:
+        job_sep_probs = pkl.load(file)
+
+    n_working_periods = specs["max_ret_age"] - specs["start_age"] + 1
+    working_ages = np.arange(n_working_periods) + specs["start_age"]
+
+    sexes_to_plot = [1] if not male else [0, 1]
+    ncols = len(sexes_to_plot)
+
+    fig, axs = plt.subplots(
+        ncols=ncols,
+        figsize=(6 * ncols, 5),
+        squeeze=False,
+    )
+    axs = axs[0]  # flatten
+
+    for col_idx, sex_var in enumerate(sexes_to_plot):
+        ax = axs[col_idx]
+        sex_label = specs["sex_labels"][sex_var]
+
+        for edu_var, edu_label in enumerate(specs["education_labels"]):
+            ax.plot(
+                working_ages,
+                job_sep_probs[sex_var, edu_var, :n_working_periods],
+                label=str(edu_label),
+                color=JET_COLOR_MAP[edu_var],
+            )
+
+        if male:
+            ax.set_title(str(sex_label))
+        ax.set_xlabel("Age")
+        ax.set_ylabel("Job Separation Probability")
+        ax.set_ylim([0, 0.1])
+        ax.set_xlim(specs["start_age"] - 0.5, specs["max_ret_age"] + 0.5)
+
+    axs[0].legend(loc="upper left")
+    fig.tight_layout()
+    path_to_save.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(path_to_save, dpi=300)
+    plt.close(fig)
+
+
+@pytask.mark.job_separation
+def task_plot_job_separation_by_age_dummies(
+    path_to_full_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_job_sep_probs: Path = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "job_sep_probs_age_dummies.pkl",
+    path_to_save: Annotated[Path, Product] = BLD
+    / "plots"
+    / "stochastic_processes"
+    / "job_separation_by_age_dummies.png",
+    male: bool = False,
+) -> None:
+    """Plot job separation probabilities by age from job_sep_probs_age_dummies.pkl.
+
+    This version includes health status as a dimension.
+    """
+
+    with path_to_full_specs.open("rb") as file:
+        specs = pkl.load(file)
+
+    with path_to_job_sep_probs.open("rb") as file:
+        job_sep_probs = pkl.load(file)
+
+    # job_sep_probs has shape (n_sexes, n_education_types, 2, len(all_ages))
+    # where all_ages = np.arange(0, max_ret_age + 1)
+    # Third dimension: 0 = bad health, 1 = good health
+    all_ages = np.arange(0, specs["max_ret_age"] + 1)
+    working_ages = all_ages[
+        (all_ages >= specs["start_age"]) & (all_ages <= specs["max_ret_age"])
+    ]
+
+    sexes_to_plot = [1] if not male else [0, 1]
+    ncols = len(sexes_to_plot)
+
+    fig, axs = plt.subplots(
+        ncols=ncols,
+        figsize=(6 * ncols, 5),
+        squeeze=False,
+    )
+    axs = axs[0]  # flatten
+
+    health_labels = ["Bad Health", "Good Health"]
+
+    for col_idx, sex_var in enumerate(sexes_to_plot):
+        ax = axs[col_idx]
+        sex_label = specs["sex_labels"][sex_var]
+
+        for edu_var, edu_label in enumerate(specs["education_labels"]):
+            for health_var, health_label in enumerate(health_labels):
+                # Extract probabilities for this sex, edu, health combination
+                probs = job_sep_probs[sex_var, edu_var, health_var, working_ages]
+
+                linestyle = "-" if health_var == 1 else "--"
+                alpha = 1.0 if health_var == 1 else 0.7
+                label = f"{edu_label}, {health_label}"
+
+                ax.plot(
+                    working_ages,
+                    probs,
+                    label=label,
+                    color=JET_COLOR_MAP[edu_var],
+                    linestyle=linestyle,
+                    alpha=alpha,
+                )
+
+        if male:
+            ax.set_title(str(sex_label))
+        ax.set_xlabel("Age")
+        ax.set_ylabel("Job Separation Probability")
+        ax.set_ylim([0, 0.1])
+        ax.set_xlim(specs["start_age"] - 0.5, specs["max_ret_age"] + 0.5)
+
+    axs[0].legend(loc="upper left")
+    fig.tight_layout()
+    path_to_save.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path_to_save, dpi=300)
     plt.close(fig)

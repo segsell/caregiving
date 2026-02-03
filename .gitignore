@@ -162,6 +162,7 @@ bld/event_study/
 bld/moments/
 bld/output/
 bld/plots/
+bld/figures/
 bld/solve_and_simulate/
 bld/_old_model/
 

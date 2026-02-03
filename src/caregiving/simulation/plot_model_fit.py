@@ -970,6 +970,7 @@ def plot_caregiver_shares_by_age_bins(
     age_max: int | None = None,
     bin_width: int = 5,
     scale: float = 1.0,
+    moment_prefix: str = "share_informal_care_age_bin_",
     path_to_save_plot: str | Path | None = None,
 ):
     """
@@ -984,9 +985,14 @@ def plot_caregiver_shares_by_age_bins(
     specs : dict
         Needs 'start_age' and 'end_age_msm'.
     choice_set : iterable
-        Codes in df_sim["choice"] that count as informal care.
+        Codes in df_sim["choice"] that count as (informal) care for the
+        simulated data.
     bin_width : int, default 5
         Width of the age bins.
+    moment_prefix : str, default \"share_informal_care_age_bin_\"
+        Prefix used for looking up empirical moments in ``emp_moments``.
+        The full key is constructed as
+        ``f\"{moment_prefix}{start}_{end-1}\"``.
     path_to_save_plot : str | pathlib.Path | None
         If given, the figure is stored as PNG (300 dpi).
     """
@@ -1095,7 +1101,7 @@ def plot_caregiver_shares_by_age_bins(
     emp_rates, sim_rates = [], []
 
     for start, end in zip(edges[:-1], edges[1:], strict=False):
-        key = f"share_informal_care_age_bin_{start}_{end-1}"
+        key = f"{moment_prefix}{start}_{end-1}"
         emp_rates.append(emp_lookup.get(key, np.nan) / scale)
 
         sim_bin = df_sim[(df_sim["age"] >= start) & (df_sim["age"] < end)]

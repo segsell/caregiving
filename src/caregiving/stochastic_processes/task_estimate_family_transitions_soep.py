@@ -14,6 +14,7 @@ from typing import Annotated
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pytask
 import statsmodels.api as sm
 from pytask import Product
 
@@ -22,6 +23,7 @@ from caregiving.model.shared import MINIMUM_CHILDBEARING_AGE, MISSING_VALUE
 from caregiving.specs.derive_specs import read_and_derive_specs
 
 
+@pytask.mark.family_transition
 def task_estimate_partner_transitions(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_data: Path = BLD / "data" / "soep_partner_transition_data.csv",
@@ -82,6 +84,7 @@ def task_estimate_partner_transitions(
     df.to_csv(path_to_save)
 
 
+@pytask.mark.family_transition
 def task_estimate_number_of_children_in_household(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_data: Path = BLD / "data" / "soep_partner_transition_data.csv",

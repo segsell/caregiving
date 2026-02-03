@@ -6,6 +6,7 @@ from typing import Annotated
 
 import numpy as np
 import pandas as pd
+import pytask
 from pytask import Product
 
 from caregiving.config import BLD
@@ -99,6 +100,7 @@ def table(df_col):
     return pd.crosstab(df_col, columns="Count")["Count"]
 
 
+@pytask.mark.share_estimation_data
 def task_create_estimation_data(
     path_to_raw_data: Path = BLD / "data" / "share_data_merged.csv",
     path_to_main: Annotated[Path, Product] = BLD / "data" / "share_estimation_data.csv",
@@ -223,6 +225,9 @@ def task_create_estimation_data(
 
     # number of children
     dat = create_number_of_children(dat)
+
+    # age of youngest child
+    dat = create_age_youngest_child(dat)
 
     # current job situation
 
@@ -1320,6 +1325,19 @@ def _create_intensive_care_parents_versus_other(dat):
         default=np.nan,
     )
 
+    # Combine masks
+    intensive_any_extra_hh = daily_any
+    intensive_parent_extra_hh = daily_parent
+
+    # 1 = intensive care to mother/father
+    # 0 = intensive care, but not to mother/father
+    # NaN = no intensive care
+    dat["intensive_care_parents_versus_other_extra_hh"] = np.select(
+        [intensive_parent_extra_hh, intensive_any_extra_hh],
+        [1, 0],
+        default=np.nan,
+    )
+
     return dat
 
 
@@ -1621,6 +1639,18 @@ def create_number_of_children(dat):
     return dat
 
 
+def create_age_youngest_child(dat):
+    """Create age of youngest child variable."""
+    dat["age_youngest_child"] = dat["int_year"] - dat["ch_yrbirth_youngest_child_1"]
+    dat["age_youngest_child"] = np.where(
+        (dat["ch_yrbirth_youngest_child_1"] < 0)
+        | (dat["ch_yrbirth_youngest_child_1"].isna()),
+        np.nan,
+        dat["age_youngest_child"],
+    )
+    return dat
+
+
 def create_working(dat):
     """Create full and part time work."""
     # Current job situation
@@ -1838,7 +1868,50 @@ def create_high_educ(dat: pd.DataFrame) -> pd.DataFrame:
 
 
 def check_share_informal_care_to_mother_father(dat):
-    """Compute the shares of informal care to mother and father, respectively."""
+    """Compute the shares of informal care to mother and father, respectively.
+
+    Creates variables distinguishing co-residential (within household) vs
+    non-residential (outside household) caregiving.
+    """
+    # Co-residential care (within same household)
+    care_to_mother_within = [
+        # personal care in hh to mother
+        (dat["sp018_"] == 1)
+        & (dat["sp019d2"] == 1),
+    ]
+    care_to_father_within = [
+        # personal care in hh to father
+        (dat["sp018_"] == 1)
+        & (dat["sp019d3"] == 1),
+    ]
+
+    # Non-residential care (outside household)
+    care_to_mother_outside = [
+        # care outside hh to mother
+        (dat["sp008_"] == 1)
+        & (
+            (dat["sp009_1"] == MOTHER)
+            | (dat["sp009_2"] == MOTHER)
+            | (dat["sp009_3"] == MOTHER)
+        ),
+    ]
+    care_to_father_outside = [
+        # care outside hh to father
+        (dat["sp008_"] == 1)
+        & (
+            (dat["sp009_1"] == FATHER)
+            | (dat["sp009_2"] == FATHER)
+            | (dat["sp009_3"] == FATHER)
+        ),
+    ]
+
+    # Create separate variables for within/outside household
+    dat["care_to_mother_within"] = np.select(care_to_mother_within, [1], default=0)
+    dat["care_to_father_within"] = np.select(care_to_father_within, [1], default=0)
+    dat["care_to_mother_outside"] = np.select(care_to_mother_outside, [1], default=0)
+    dat["care_to_father_outside"] = np.select(care_to_father_outside, [1], default=0)
+
+    # Combined variables (any care, within or outside)
     care_to_mother = [
         # personal care in hh
         (dat["sp018_"] == 1) & (dat["sp019d2"] == 1),
@@ -1892,7 +1965,61 @@ def check_share_informal_care_to_mother_father(dat):
     dat["care_to_mother_in_law"] = np.select(care_to_mother, [1, 1], default=0)
     dat["care_to_father_in_law"] = np.select(care_to_father, [1, 1], default=0)
 
-    # intensive caregiving
+    # intensive caregiving - co-residential (within household)
+    care_to_mother_intensive_within = [
+        # personal care in hh to mother (always intensive)
+        (dat["sp018_"] == 1)
+        & (dat["sp019d2"] == 1),
+    ]
+    care_to_father_intensive_within = [
+        # personal care in hh to father (always intensive)
+        (dat["sp018_"] == 1)
+        & (dat["sp019d3"] == 1),
+    ]
+
+    # intensive caregiving - non-residential (outside household, daily)
+    care_to_mother_intensive_outside = [
+        # care outside hh to mother (daily)
+        (dat["sp008_"] == 1)
+        & (
+            ((dat["sp011_1"] == GIVEN_HELP_DAILY) & (dat["sp009_1"].isin([MOTHER])))
+            | ((dat["sp011_2"] == GIVEN_HELP_DAILY) & (dat["sp009_2"].isin([MOTHER])))
+            | ((dat["sp011_3"] == GIVEN_HELP_DAILY) & (dat["sp009_3"].isin([MOTHER])))
+        ),
+    ]
+    care_to_father_intensive_outside = [
+        # care outside hh to father (daily)
+        (dat["sp008_"] == 1)
+        & (
+            ((dat["sp011_1"] == GIVEN_HELP_DAILY) & (dat["sp009_1"].isin([FATHER])))
+            | ((dat["sp011_2"] == GIVEN_HELP_DAILY) & (dat["sp009_2"].isin([FATHER])))
+            | ((dat["sp011_3"] == GIVEN_HELP_DAILY) & (dat["sp009_3"].isin([FATHER])))
+        ),
+    ]
+
+    # Create separate variables for intensive care within/outside
+    dat["care_to_mother_intensive_within"] = np.select(
+        care_to_mother_intensive_within,
+        [1],
+        default=0,
+    )
+    dat["care_to_father_intensive_within"] = np.select(
+        care_to_father_intensive_within,
+        [1],
+        default=0,
+    )
+    dat["care_to_mother_intensive_outside"] = np.select(
+        care_to_mother_intensive_outside,
+        [1],
+        default=0,
+    )
+    dat["care_to_father_intensive_outside"] = np.select(
+        care_to_father_intensive_outside,
+        [1],
+        default=0,
+    )
+
+    # Combined intensive care variables (any intensive care, within or outside)
     care_to_mother_intensive = [
         # personal care in hh
         (dat["sp018_"] == 1) & (dat["sp019d2"] == 1),

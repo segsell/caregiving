@@ -130,7 +130,9 @@ def task_load_and_merge_estimation_sample(
             # "hlc0005_h",  # monthly net household income
             # "hlc0120_h",  # monthly amount of savings
             "hlf0155_h",  # Unterkunftsart (Wohn)heim
-            "hlf0291",
+            "hlf0291",  # Person requiring help present in hh
+            "hlf0523_v1",  # Change in residential situation
+            "hle0016",  # formal care costs for person outside hh
         ],
         convert_categoricals=False,
     )
@@ -415,6 +417,7 @@ def task_load_and_merge_job_separation_sample(
     soep_c40_pgen: Path = SRC / "data" / "soep_c40" / "pgen.dta",
     soep_c40_ppathl: Path = SRC / "data" / "soep_c40" / "ppathl.dta",
     soep_c40_pl: Path = SRC / "data" / "soep_c40" / "pl.dta",
+    soep_c40_pequiv: Path = SRC / "data" / "soep_c40" / "pequiv.dta",
     path_to_save: Annotated[Path, Product] = BLD
     / "data"
     / "soep_job_separation_data_raw.csv",
@@ -450,6 +453,14 @@ def task_load_and_merge_job_separation_sample(
     for itm in pl_data_reader:
         pl_data = pd.concat([pl_data, itm])
 
+    pequiv_data = pd.read_stata(
+        # m11126: Self-Rated Health Status
+        # m11124: Disability Status of Individual
+        soep_c40_pequiv,
+        columns=["pid", "syear", "m11126", "m11124"],
+        convert_categoricals=False,
+    )
+
     # Merge pgen data with pathl data and hl data
     merged_data = pd.merge(
         pgen_data, pathl_data, on=["pid", "hid", "syear"], how="inner"
@@ -458,6 +469,7 @@ def task_load_and_merge_job_separation_sample(
     merged_data = pd.merge(
         merged_data, pl_data, on=["pid", "hid", "syear"], how="inner"
     )
+    merged_data = pd.merge(merged_data, pequiv_data, on=["pid", "syear"], how="inner")
 
     merged_data["age"] = merged_data["syear"] - merged_data["gebjahr"]
     del pgen_data, pathl_data
@@ -591,6 +603,107 @@ def task_load_and_merge_health_sample(
     )
     merged_data = pd.merge(merged_data, pequiv_data, on=["pid", "syear"], how="inner")
     merged_data = pd.merge(merged_data, hl_data, on=["hid", "syear"], how="left")
+
+    merged_data["age"] = merged_data["syear"] - merged_data["gebjahr"]
+    merged_data.set_index(["pid", "syear"], inplace=True)
+    print(str(len(merged_data)) + " observations in SOEP C40 core.")
+
+    merged_data.to_csv(path_to_save)
+
+
+# =====================================================================================
+# Formal care costs sample
+# =====================================================================================
+
+
+def task_load_and_merge_formal_care_costs_sample(
+    soep_c40_pgen: Path = SRC / "data" / "soep_c40" / "pgen.dta",
+    soep_c40_ppathl: Path = SRC / "data" / "soep_c40" / "ppathl.dta",
+    soep_c40_pl: Path = SRC / "data" / "soep_c40" / "pl.dta",
+    soep_c40_pequiv: Path = SRC / "data" / "soep_c40" / "pequiv.dta",
+    soep_c40_bioparen: Path = SRC / "data" / "soep_c40" / "bioparen.dta",
+    soep_c40_hl: Path = SRC / "data" / "soep_c40" / "hl.dta",
+    path_to_save: Annotated[Path, Product] = BLD
+    / "data"
+    / "soep_formal_care_costs_data_raw.csv",
+):
+    """Merge formal care costs sample."""
+
+    # Load SOEP core data
+    pgen_data = pd.read_stata(
+        soep_c40_pgen,
+        columns=[
+            "syear",
+            "pid",
+            "hid",
+            "pgemplst",
+            "pgpsbil",
+            "pgstib",
+        ],
+        convert_categoricals=False,
+    )
+    ppathl_data = pd.read_stata(
+        soep_c40_ppathl,
+        columns=["syear", "pid", "hid", "sex", "parid", "gebjahr"],
+        convert_categoricals=False,
+    )
+
+    pl_data_reader = pd.read_stata(
+        soep_c40_pl,
+        columns=["pid", "hid", "syear", "pli0046"],
+        chunksize=100000,
+        convert_categoricals=False,
+    )
+    pl_data = pd.DataFrame()
+    for itm in pl_data_reader:
+        pl_data = pd.concat([pl_data, itm])
+
+    pequiv_data = pd.read_stata(
+        # m11126: Self-Rated Health Status
+        # m11124: Disability Status of Individual
+        soep_c40_pequiv,
+        columns=["pid", "syear", "m11126", "m11124"],
+        convert_categoricals=False,
+    )
+    # Parent information
+    biparen = pd.read_stata(
+        soep_c40_bioparen,
+        columns=[
+            "pid",
+            "mybirth",
+            "fybirth",
+            "mydeath",
+            "fydeath",
+            "locchild1",  #  lives now in same area where grew up
+        ],
+        convert_categoricals=False,
+    )
+
+    # get household level data
+    hl_data = pd.read_stata(
+        soep_c40_hl,
+        columns=[
+            "hid",
+            "syear",
+            "hlc0043",  # Kindergeld für wie viele Kinder
+            # "hlc0005_h",  # monthly net household income
+            # "hlc0120_h",  # monthly amount of savings
+            "hlf0155_h",  # Unterkunftsart (Wohn)heim
+            "hlf0291",  # person requiring help present in hh
+            "hle0016",  # formal care costs for person outside hh
+        ],
+        convert_categoricals=False,
+    )
+
+    merged_data = pd.merge(
+        pgen_data, ppathl_data, on=["pid", "hid", "syear"], how="inner"
+    )
+    merged_data = pd.merge(
+        merged_data, pl_data, on=["pid", "hid", "syear"], how="inner"
+    )
+    merged_data = pd.merge(merged_data, pequiv_data, on=["pid", "syear"], how="inner")
+    merged_data = pd.merge(merged_data, hl_data, on=["hid", "syear"], how="left")
+    merged_data = pd.merge(merged_data, biparen, on="pid", how="left")
 
     merged_data["age"] = merged_data["syear"] - merged_data["gebjahr"]
     merged_data.set_index(["pid", "syear"], inplace=True)

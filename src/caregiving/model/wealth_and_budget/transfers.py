@@ -135,6 +135,11 @@ def calc_care_benefits_and_costs(lagged_choice, education, care_demand, model_sp
     return annual_care_benefits_weighted - annual_care_costs_weighted
 
 
+# =====================================================================================
+# Inheritance
+# =====================================================================================
+
+
 def calc_inheritance_amount(
     period,
     lagged_choice,
@@ -145,10 +150,10 @@ def calc_inheritance_amount(
 
     Uses precomputed inheritance amount matrix from specs.
     Determines care type from lagged_choice to select appropriate column:
-    - no_care (index 0): if lagged_choice is not in LIGHT_INFORMAL_CARE or  # noqa: E501
-    INTENSIVE_INFORMAL_CARE
-    - light_care (index 1): if lagged_choice is in LIGHT_INFORMAL_CARE
-    - intensive_care (index 2): if lagged_choice is in INTENSIVE_INFORMAL_CARE
+    - no_care (index 0): if lagged_choice is not in any care type
+    - formal_care (index 1): if lagged_choice is in FORMAL_CARE
+    - light_care (index 2): if lagged_choice is in LIGHT_INFORMAL_CARE
+    - intensive_care (index 3): if lagged_choice is in INTENSIVE_INFORMAL_CARE
 
     Args:
         period: Current period
@@ -156,8 +161,8 @@ def calc_inheritance_amount(
         education: Education level
         model_specs: Model specifications dictionary containing:
             - inheritance_amount_mat: Precomputed amount matrix of shape
-              (n_sexes, n_periods, n_education, 3) where last dim is [no_care,
-                  light_care, intensive_care]
+              (n_sexes, n_periods, n_education, 4) where last dim is [no_care,
+                  formal_care, light_care, intensive_care]
 
     Returns:
         Expected inheritance amount (conditional on positive inheritance).
@@ -166,24 +171,23 @@ def calc_inheritance_amount(
     sex_var = SEX
 
     # Get precomputed inheritance amount matrix
-    # Shape: (n_sexes, n_periods, n_education, 3)
-    # Last dimension: [no_care, light_care, intensive_care]
+    # Shape: (n_sexes, n_periods, n_education, 4)
+    # Last dimension: [no_care, formal_care, light_care, intensive_care]
     inheritance_amount_mat = model_specs["inheritance_amount_mat"]
 
     # Determine care type index from lagged_choice
+    # Care types are mutually exclusive
     is_light = is_light_informal_care(lagged_choice)
     is_intensive = is_intensive_informal_care(lagged_choice)
+    is_formal = is_formal_care(lagged_choice)
 
-    # Select care type index: 0=no_care, 1=light_care, 2=intensive_care
-    # Use jnp.where to select the appropriate index
-    care_type_idx = jnp.where(
-        is_intensive,
-        2,  # intensive_care
-        jnp.where(
-            is_light,
-            1,  # light_care
-            0,  # no_care
-        ),
+    # Select care type index: 0=no_care, 1=formal_care, 2=light_care, 3=intensive_care
+    # Care types are mutually exclusive, so use arithmetic instead of nested
+    # conditionals. This is faster on GPU: is_formal*1 + is_light*2 + is_intensive*3
+    care_type_idx = (
+        is_formal.astype(int) * 1
+        + is_light.astype(int) * 2
+        + is_intensive.astype(int) * 3
     )
 
     # Look up amount at (sex, period, education, care_type_idx)
@@ -216,8 +220,8 @@ def draw_inheritance_outcome(
         (for seed variation)
         model_specs: Model specifications dictionary containing:
             - inheritance_prob_mat: Precomputed probability matrix of shape
-              (n_sexes, n_periods, n_education, 3) where last dim is [no_care,
-                  light_care, intensive_care]
+              (n_sexes, n_periods, n_education, 4) where last dim is [no_care,
+                  formal_care, light_care, intensive_care]
             - seed: Base random seed
 
     Returns:
@@ -226,16 +230,28 @@ def draw_inheritance_outcome(
     sex_var = SEX
 
     # Get probability of receiving inheritance from precomputed matrix
-    # Shape: (n_sexes, n_periods, n_education, 3)
-    # Last dimension: [no_care, light_care, intensive_care]
+    # Shape: (n_sexes, n_periods, n_education, 4)
+    # Last dimension: [no_care, formal_care, light_care, intensive_care]
     inheritance_prob_mat = model_specs["inheritance_prob_mat"]
 
     # Determine care type index from lagged_choice
-    # The probability model uses any_care (binary), so:
-    # - Index 0: no_care (any_care = 0)
-    # - Index 1: light_care or intensive_care (any_care = 1)
-    is_any_informal_care = is_informal_care(lagged_choice)
-    care_type_idx = is_any_informal_care.astype(int)
+    # Care types are mutually exclusive:
+    # - Index 0: no_care (no informal care, no formal care)
+    # - Index 1: formal_care (formal care only)
+    # - Index 2: light_care (light informal care only)
+    # - Index 3: intensive_care (intensive informal care only)
+    is_light = is_light_informal_care(lagged_choice)
+    is_intensive = is_intensive_informal_care(lagged_choice)
+    is_formal = is_formal_care(lagged_choice)
+
+    # Select care type index: 0=no_care, 1=formal_care, 2=light_care, 3=intensive_care
+    # Care types are mutually exclusive, so use arithmetic instead of nested
+    # conditionals. This is faster on GPU: is_formal*1 + is_light*2 + is_intensive*3
+    care_type_idx = (
+        is_formal.astype(int) * 1
+        + is_light.astype(int) * 2
+        + is_intensive.astype(int) * 3
+    )
 
     prob_inheritance = inheritance_prob_mat[sex_var, period, education, care_type_idx]
 

@@ -569,7 +569,7 @@ def task_plot_labor_supply_age_profiles(
 # ===================================================================================
 
 
-def _ensure_agent_period(df: pd.DataFrame) -> pd.DataFrame:
+def ensure_agent_period(df: pd.DataFrame) -> pd.DataFrame:
     """Ensure that 'agent' and 'period' are columns (not index levels)."""
     if "agent" not in df.columns:
         if isinstance(df.index, pd.MultiIndex) and ("agent" in df.index.names):
@@ -594,7 +594,7 @@ def _add_distance_to_first_care(df_original: pd.DataFrame) -> pd.DataFrame:
     """Add distance_to_first_care column to original data where 0 is first care."""
     # Flatten any existing index to avoid column/index name ambiguity
     df = df_original.reset_index(drop=True)
-    df = _ensure_agent_period(df)
+    df = ensure_agent_period(df)
     care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
     caregiving_mask = df["choice"].isin(care_codes)
     first_care = (
@@ -841,8 +841,8 @@ def _matched_diff_profile_by_distance(
     df_c = df_c[df_c["health"] != DEAD].copy()
 
     # Ensure agent/period
-    df_o = _ensure_agent_period(df_o)
-    df_c = _ensure_agent_period(df_c)
+    df_o = ensure_agent_period(df_o)
+    df_c = ensure_agent_period(df_c)
 
     # Flatten any residual index
     df_o = df_o.reset_index(drop=True)
@@ -1073,8 +1073,8 @@ def task_plot_outcomes_by_distance_to_first_care(
     df_no_care_demand = df_no_care_demand[df_no_care_demand["health"] != DEAD].copy()
 
     # Ensure agent/period exist
-    df_original = _ensure_agent_period(df_original)
-    df_no_care_demand = _ensure_agent_period(df_no_care_demand)
+    df_original = ensure_agent_period(df_original)
+    df_no_care_demand = ensure_agent_period(df_no_care_demand)
 
     # Optional restriction to ever-caregivers
     if ever_caregivers:
@@ -1156,8 +1156,8 @@ def task_plot_matched_differences_by_distance(  # noqa: PLR0915
     df_c = df_c[df_c["health"] != DEAD].copy()
 
     # Ensure agent/period
-    df_o = _ensure_agent_period(df_o)
-    df_c = _ensure_agent_period(df_c)
+    df_o = ensure_agent_period(df_o)
+    df_c = ensure_agent_period(df_c)
 
     # Fully flatten any residual index levels named 'agent' or 'period'
     if isinstance(df_o.index, pd.MultiIndex):
@@ -1736,7 +1736,7 @@ def task_plot_pre_care_to_at_care_transitions(
     df = pd.read_pickle(path_to_original_data)
 
     # Ensure agent/period columns and compute distance to first care
-    df = _ensure_agent_period(df)
+    df = ensure_agent_period(df)
     df = _add_distance_to_first_care(df)
 
     # Keep only first-care rows (caregivers at t=0)
@@ -1832,7 +1832,7 @@ def task_plot_raw_shares_by_distance_for_future_caregivers(
 
     # Restrict to alive and ensure agent/period
     df = df[df["health"] != DEAD].copy()
-    df = _ensure_agent_period(df)
+    df = ensure_agent_period(df)
 
     # Compute event-time (distance to first care) in baseline
     df = _add_distance_to_first_care(df)

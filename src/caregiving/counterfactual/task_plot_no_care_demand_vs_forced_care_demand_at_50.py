@@ -16,9 +16,9 @@ from pytask import Product
 
 from caregiving.config import BLD, JET_COLOR_MAP
 from caregiving.counterfactual.plotting_utils import (
-    _ensure_agent_period,
     calculate_outcomes,
     calculate_working_hours_weekly,
+    ensure_agent_period,
     prepare_dataframes_for_comparison,
     prepare_single_dataframe,
 )
@@ -232,7 +232,7 @@ def task_plot_full_time_differences_by_forced_age(
     # Load no care demand data
     df_no_care = pd.read_pickle(path_to_no_care_demand_data)
     df_no_care = df_no_care[df_no_care["health"] != DEAD].copy()
-    df_no_care = _ensure_agent_period(df_no_care)
+    df_no_care = ensure_agent_period(df_no_care)
     if isinstance(df_no_care.index, pd.MultiIndex):
         df_no_care = df_no_care.reset_index()
     df_no_care = df_no_care.reset_index(drop=True)
@@ -266,7 +266,7 @@ def task_plot_full_time_differences_by_forced_age(
         # Load forced care demand data
         df_forced = pd.read_pickle(forced_path)
         df_forced = df_forced[df_forced["health"] != DEAD].copy()
-        df_forced = _ensure_agent_period(df_forced)
+        df_forced = ensure_agent_period(df_forced)
         if isinstance(df_forced.index, pd.MultiIndex):
             df_forced = df_forced.reset_index()
         df_forced = df_forced.reset_index(drop=True)
@@ -389,7 +389,7 @@ def task_plot_employment_rate_differences_by_forced_age(
     # Load no care demand data
     df_no_care = pd.read_pickle(path_to_no_care_demand_data)
     df_no_care = df_no_care[df_no_care["health"] != DEAD].copy()
-    df_no_care = _ensure_agent_period(df_no_care)
+    df_no_care = ensure_agent_period(df_no_care)
     if isinstance(df_no_care.index, pd.MultiIndex):
         df_no_care = df_no_care.reset_index()
     df_no_care = df_no_care.reset_index(drop=True)
@@ -423,7 +423,7 @@ def task_plot_employment_rate_differences_by_forced_age(
         # Load forced care demand data
         df_forced = pd.read_pickle(forced_path)
         df_forced = df_forced[df_forced["health"] != DEAD].copy()
-        df_forced = _ensure_agent_period(df_forced)
+        df_forced = ensure_agent_period(df_forced)
         if isinstance(df_forced.index, pd.MultiIndex):
             df_forced = df_forced.reset_index()
         df_forced = df_forced.reset_index(drop=True)
@@ -544,7 +544,7 @@ def task_plot_part_time_differences_by_forced_age(
     # Load no care demand data
     df_no_care = pd.read_pickle(path_to_no_care_demand_data)
     df_no_care = df_no_care[df_no_care["health"] != DEAD].copy()
-    df_no_care = _ensure_agent_period(df_no_care)
+    df_no_care = ensure_agent_period(df_no_care)
     if isinstance(df_no_care.index, pd.MultiIndex):
         df_no_care = df_no_care.reset_index()
     df_no_care = df_no_care.reset_index(drop=True)
@@ -578,7 +578,7 @@ def task_plot_part_time_differences_by_forced_age(
         # Load forced care demand data
         df_forced = pd.read_pickle(forced_path)
         df_forced = df_forced[df_forced["health"] != DEAD].copy()
-        df_forced = _ensure_agent_period(df_forced)
+        df_forced = ensure_agent_period(df_forced)
         if isinstance(df_forced.index, pd.MultiIndex):
             df_forced = df_forced.reset_index()
         df_forced = df_forced.reset_index(drop=True)
@@ -701,7 +701,7 @@ def task_plot_informal_care_differences_by_forced_age(
     # Load no care demand data
     df_no_care = pd.read_pickle(path_to_no_care_demand_data)
     df_no_care = df_no_care[df_no_care["health"] != DEAD].copy()
-    df_no_care = _ensure_agent_period(df_no_care)
+    df_no_care = ensure_agent_period(df_no_care)
     if isinstance(df_no_care.index, pd.MultiIndex):
         df_no_care = df_no_care.reset_index()
     df_no_care = df_no_care.reset_index(drop=True)
@@ -731,7 +731,7 @@ def task_plot_informal_care_differences_by_forced_age(
         # Load forced care demand data
         df_forced = pd.read_pickle(forced_path)
         df_forced = df_forced[df_forced["health"] != DEAD].copy()
-        df_forced = _ensure_agent_period(df_forced)
+        df_forced = ensure_agent_period(df_forced)
         if isinstance(df_forced.index, pd.MultiIndex):
             df_forced = df_forced.reset_index()
         df_forced = df_forced.reset_index(drop=True)
@@ -857,7 +857,7 @@ def task_plot_job_offer_probability_differences_by_forced_age(
     # Load no care demand data
     df_no_care = pd.read_pickle(path_to_no_care_demand_data)
     df_no_care = df_no_care[df_no_care["health"] != DEAD].copy()
-    df_no_care = _ensure_agent_period(df_no_care)
+    df_no_care = ensure_agent_period(df_no_care)
     if isinstance(df_no_care.index, pd.MultiIndex):
         df_no_care = df_no_care.reset_index()
     df_no_care = df_no_care.reset_index(drop=True)
@@ -887,7 +887,7 @@ def task_plot_job_offer_probability_differences_by_forced_age(
         # Load forced care demand data
         df_forced = pd.read_pickle(forced_path)
         df_forced = df_forced[df_forced["health"] != DEAD].copy()
-        df_forced = _ensure_agent_period(df_forced)
+        df_forced = ensure_agent_period(df_forced)
         if isinstance(df_forced.index, pd.MultiIndex):
             df_forced = df_forced.reset_index()
         df_forced = df_forced.reset_index(drop=True)

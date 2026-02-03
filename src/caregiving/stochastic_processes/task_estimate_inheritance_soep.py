@@ -14,12 +14,15 @@ from caregiving.specs.derive_specs import read_and_derive_specs
 
 # Minimum sample size for regression estimation
 MIN_SAMPLE_SIZE = 50
+INHERITANCE_QUANTILE_THRESHOLD_LOWER = 0.0
+INHERITANCE_QUANTILE_THRESHOLD_UPPER = 0.90
 
 
 @pytask.mark.inheritance
 def task_estimate_inheritance_specifications(
     path_to_specs: Path = SRC / "specs.yaml",
-    path_to_data: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
+    path_to_data: Path = BLD / "data" / "soep_inheritance_sample.csv",
+    path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
     path_to_save_summary: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
@@ -28,17 +31,32 @@ def task_estimate_inheritance_specifications(
 ) -> None:
     """Estimate 12 different specifications for inheritance probability.
 
+    CPI deflation is applied to inheritance_amount before estimation.
+
     Tests different combinations of care and parent death timing variables.
+
     """
+
     specs = read_and_derive_specs(path_to_specs)
     df = pd.read_csv(path_to_data, index_col=0)
+    cpi_data = pd.read_csv(path_to_cpi, index_col=0)
 
-    # Set values above 90th percentile to NaN
-    p90_threshold = df["inheritance_amount"].quantile(0.90)
-    df.loc[df["inheritance_amount"] > p90_threshold, "inheritance_amount"] = np.nan
+    # Set values outside 10th-90th percentile range to NaN
+    p10_threshold = df["inheritance_amount"].quantile(
+        INHERITANCE_QUANTILE_THRESHOLD_LOWER
+    )
+    p90_threshold = df["inheritance_amount"].quantile(
+        INHERITANCE_QUANTILE_THRESHOLD_UPPER
+    )
+    df.loc[
+        (df["inheritance_amount"] < p10_threshold)
+        | (df["inheritance_amount"] > p90_threshold),
+        "inheritance_amount",
+    ] = np.nan
 
     # Prepare data
     df = prepare_inheritance_data(df)
+    df = deflate_inheritance_amount_for_estimation(df, cpi_data, specs)
 
     # Create output directory
     path_to_save_dir = path_to_save_summary.parent
@@ -50,18 +68,21 @@ def task_estimate_inheritance_specifications(
         {
             "name": "spec1_any_care_parent_this_year",
             "care_var": "any_care",
+            "formal_care_var": "formal_care_costs_dummy",
             "parent_var": "parent_died_this_year",
             "filter": None,
         },
         {
             "name": "spec2_any_care_recent_parent_recent",
             "care_var": "any_care_recent",
+            "formal_care_var": "formal_care_costs_dummy_recent",
             "parent_var": "parent_died_recent",
             "filter": None,
         },
         {
             "name": "spec3_any_care_last_year_parent_last_year",
             "care_var": "any_care_last_year",
+            "formal_care_var": "formal_care_costs_dummy_last_year",
             "parent_var": "parent_died_last_year",
             "filter": None,
         },
@@ -69,6 +90,7 @@ def task_estimate_inheritance_specifications(
         {
             "name": "spec4_any_care_last_year_filter_parent_this_year",
             "care_var": "any_care_last_year",
+            "formal_care_var": "formal_care_costs_dummy_last_year",
             "parent_var": None,  # Not included as variable, only as filter
             "filter": "parent_died_this_year == 1",
         },
@@ -76,12 +98,14 @@ def task_estimate_inheritance_specifications(
         {
             "name": "spec7_any_care_this_year_filter_parent_this_year",
             "care_var": "any_care",
+            "formal_care_var": "formal_care_costs_dummy",
             "parent_var": None,
             "filter": "parent_died_this_year == 1",
         },
         {
             "name": "spec10_any_care_recent_filter_parent_this_year",
             "care_var": "any_care_recent",
+            "formal_care_var": "formal_care_costs_dummy_recent",
             "parent_var": None,
             "filter": "parent_died_this_year == 1",
         },
@@ -89,18 +113,21 @@ def task_estimate_inheritance_specifications(
         {
             "name": "spec5_any_care_last_year_filter_parent_last_year",
             "care_var": "any_care_last_year",
+            "formal_care_var": "formal_care_costs_dummy_last_year",
             "parent_var": None,
             "filter": "parent_died_last_year == 1",
         },
         {
             "name": "spec8_any_care_this_year_filter_parent_last_year",
             "care_var": "any_care",
+            "formal_care_var": "formal_care_costs_dummy",
             "parent_var": None,
             "filter": "parent_died_last_year == 1",
         },
         {
             "name": "spec11_any_care_recent_filter_parent_last_year",
             "care_var": "any_care_recent",
+            "formal_care_var": "formal_care_costs_dummy_recent",
             "parent_var": None,
             "filter": "parent_died_last_year == 1",
         },
@@ -108,18 +135,21 @@ def task_estimate_inheritance_specifications(
         {
             "name": "spec6_any_care_last_year_filter_parent_recent",
             "care_var": "any_care_last_year",
+            "formal_care_var": "formal_care_costs_dummy_last_year",
             "parent_var": None,
             "filter": "parent_died_recent == 1",
         },
         {
             "name": "spec9_any_care_this_year_filter_parent_recent",
             "care_var": "any_care",
+            "formal_care_var": "formal_care_costs_dummy",
             "parent_var": None,
             "filter": "parent_died_recent == 1",
         },
         {
             "name": "spec12_any_care_recent_filter_parent_recent",
             "care_var": "any_care_recent",
+            "formal_care_var": "formal_care_costs_dummy_recent",
             "parent_var": None,
             "filter": "parent_died_recent == 1",
         },
@@ -128,18 +158,19 @@ def task_estimate_inheritance_specifications(
     # Run all specifications
     results = {}
     for spec in specifications:
-        params = estimate_logit_specification(
+        params, se_df, rsquared = estimate_logit_specification(
             df=df,
             specs=specs,
             care_var=spec["care_var"],
+            formal_care_var=spec["formal_care_var"],
             parent_var=spec["parent_var"],
             filter_condition=spec["filter"],
             spec_name=spec["name"],
         )
 
-        # Save results
+        # Save results with standard errors and R-squared
         output_path = path_to_save_dir / f"{spec['name']}_params.csv"
-        params.to_csv(output_path)
+        save_params_with_standard_errors(params, se_df, rsquared, output_path)
         results[spec["name"]] = params
 
     # Save summary
@@ -165,7 +196,8 @@ def task_estimate_inheritance_specifications(
 @pytask.mark.inheritance
 def task_estimate_inheritance(
     path_to_specs: Path = SRC / "specs.yaml",
-    path_to_data: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
+    path_to_data: Path = BLD / "data" / "soep_inheritance_sample.csv",
+    path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
     path_to_save_logit_params: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
@@ -179,6 +211,8 @@ def task_estimate_inheritance(
 
     Regressions condition on parental death in t or t-1.
 
+    CPI deflation is applied to inheritance_amount before estimation.
+
     Logit regression:
         P(inheritance_this_year=1) ~ age + age^2 + lagged_light_care +
                                      lagged_intensive_care + education
@@ -191,25 +225,46 @@ def task_estimate_inheritance(
     specs = read_and_derive_specs(path_to_specs)
     df = pd.read_csv(path_to_data, index_col=0)
 
-    # Set values above 90th percentile to NaN
-    p90_threshold = df["inheritance_amount"].quantile(0.90)
-    df.loc[df["inheritance_amount"] > p90_threshold, "inheritance_amount"] = np.nan
+    # Load CPI data and deflate inheritance_amount
+    cpi_data = pd.read_csv(path_to_cpi, index_col=0)
+
+    # Set values outside 10th-90th percentile range to NaN
+    p10_threshold = df["inheritance_amount"].quantile(
+        INHERITANCE_QUANTILE_THRESHOLD_LOWER
+    )
+    p90_threshold = df["inheritance_amount"].quantile(
+        INHERITANCE_QUANTILE_THRESHOLD_UPPER
+    )
+    df.loc[
+        (df["inheritance_amount"] < p10_threshold)
+        | (df["inheritance_amount"] > p90_threshold),
+        "inheritance_amount",
+    ] = np.nan
 
     # # Drop observations above 90th percentile
     # df = df[df["inheritance_amount"] <= p90_threshold]
 
     # Prepare data
     df = prepare_inheritance_data(df)
+    df = deflate_inheritance_amount_for_estimation(df, cpi_data, specs)
 
     # Estimate logit for probability of positive inheritance
-    logit_params = estimate_inheritance_logit_by_sex(df, specs)
+    logit_params, logit_se, logit_prsquared = estimate_inheritance_logit_by_sex(
+        df, specs
+    )
 
     # Estimate OLS for ln(inheritance_amount) conditional on positive inheritance
-    amount_params = estimate_inheritance_amount_by_sex(df, specs)
+    amount_params, amount_se, amount_rsquared = estimate_inheritance_amount_by_sex(
+        df, specs
+    )
 
-    # Save results
-    logit_params.to_csv(path_to_save_logit_params)
-    amount_params.to_csv(path_to_save_amount_params)
+    # Save results with standard errors and R-squared
+    save_params_with_standard_errors(
+        logit_params, logit_se, logit_prsquared, path_to_save_logit_params
+    )
+    save_params_with_standard_errors(
+        amount_params, amount_se, amount_rsquared, path_to_save_amount_params
+    )
 
     # Print summary
     print("\n" + "=" * 70)
@@ -227,18 +282,40 @@ def prepare_inheritance_data(df):
     # Create squared age term
     df["age_sq"] = df["age"] ** 2
 
+    # Create formal care costs dummy variables
+    # Ensure formal_care_costs_dummy exists (fill NaN with 0 if needed)
+    if "formal_care_costs_dummy" not in df.columns:
+        df["formal_care_costs_dummy"] = 0
+
+    # Enforce mutual exclusivity between informal and formal care (base variables)
+    # (informal and formal care are mutually exclusive)
+    # Informal care is dominant: if both are present, set formal care to 0
+    informal_care_mask = (
+        (df["light_care"] > 0) | (df["intensive_care"] > 0) | (df["any_care"] > 0)
+    )
+    df.loc[
+        informal_care_mask & (df["formal_care_costs_dummy"] == 1),
+        "formal_care_costs_dummy",
+    ] = 0
+
     # Create lagged care variables
     # Note: pid is now a column, not an index
     df = df.sort_values(["pid", "syear"])
     df["lagged_light_care"] = df.groupby("pid")["light_care"].shift(1)
     df["lagged_intensive_care"] = df.groupby("pid")["intensive_care"].shift(1)
+    df["lagged_any_care"] = df.groupby("pid")["any_care"].shift(1)
+    df["lagged_formal_care_costs_dummy"] = df.groupby("pid")[
+        "formal_care_costs_dummy"
+    ].shift(1)
 
     # Create caregiving indicators for different time periods
     # Previous period (last year) - lagged
-    df["lagged_any_care"] = df.groupby("pid")["any_care"].shift(1)
     df["any_care_last_year"] = (df["lagged_any_care"] > 0).astype(int)
     df["light_care_last_year"] = (df["lagged_light_care"] > 0).astype(int)
     df["intensive_care_last_year"] = (df["lagged_intensive_care"] > 0).astype(int)
+    df["formal_care_costs_dummy_last_year"] = (
+        df["lagged_formal_care_costs_dummy"] > 0
+    ).astype(int)
 
     # Recent period (t or t-1)
     df["light_care_recent"] = (
@@ -252,6 +329,23 @@ def prepare_inheritance_data(df):
     df["any_care_recent"] = ((df["any_care"] > 0) | (df["lagged_any_care"] > 0)).astype(
         int
     )
+
+    df["formal_care_costs_dummy_recent"] = (
+        (df["formal_care_costs_dummy"] > 0) | (df["lagged_formal_care_costs_dummy"] > 0)
+    ).astype(int)
+
+    # Enforce mutual exclusivity for recent versions
+    # (needed because recent combines current and lagged across periods)
+    # Informal care is dominant: if both are present, set formal care to 0
+    informal_care_recent_mask = (
+        (df["light_care_recent"] > 0)
+        | (df["intensive_care_recent"] > 0)
+        | (df["any_care_recent"] > 0)
+    )
+    df.loc[
+        informal_care_recent_mask & (df["formal_care_costs_dummy_recent"] == 1),
+        "formal_care_costs_dummy_recent",
+    ] = 0
 
     # Create parent death indicators for different time periods
     df["lagged_mother_died"] = df.groupby("pid")["mother_died_this_year"].shift(1)
@@ -310,6 +404,7 @@ def estimate_inheritance_logit_by_sex(df, specs):
 
     Specification:
         P(inheritance_this_year=1) ~ age + age² + any_care_recent +
+                                     formal_care_costs_dummy_recent +
                                      parent_died_recent + education
 
     The parent_died_recent variable captures parental death in t or t-1.
@@ -319,12 +414,18 @@ def estimate_inheritance_logit_by_sex(df, specs):
         "age",
         "age_sq",
         "any_care_recent",
+        "formal_care_costs_dummy_recent",
         "parent_died_recent",
         "education",
         "const",
         "N",
     ]
     logit_params = pd.DataFrame(index=index, columns=columns)
+    # Standard errors DataFrame (without N column)
+    se_columns = [col for col in columns if col != "N"]
+    logit_se = pd.DataFrame(index=index, columns=se_columns)
+    # Pseudo R-squared Series
+    logit_prsquared = pd.Series(index=index, dtype=float)
 
     # Use all observations (no filtering)
     df_filtered = df.copy()
@@ -344,6 +445,7 @@ def estimate_inheritance_logit_by_sex(df, specs):
                 "age",
                 "age_sq",
                 "any_care_recent",
+                "formal_care_costs_dummy_recent",
                 "parent_died_recent",
                 "education",
             ]
@@ -365,6 +467,7 @@ def estimate_inheritance_logit_by_sex(df, specs):
             "age",
             "age_sq",
             "any_care_recent",
+            "formal_care_costs_dummy_recent",
             "parent_died_recent",
             "education",
         ]
@@ -382,6 +485,14 @@ def estimate_inheritance_logit_by_sex(df, specs):
             # Save sample size
             logit_params.loc[sex_label, "N"] = len(df_sex)
 
+            # Save standard errors
+            logit_se.loc[sex_label, "const"] = results.bse["const"]
+            for var in exog_vars:
+                logit_se.loc[sex_label, var] = results.bse[var]
+
+            # Save pseudo R-squared
+            logit_prsquared.loc[sex_label] = results.prsquared
+
             # Print summary
             print(f"  Model converged: {results.mle_retvals['converged']}")
             print(f"  Pseudo R-squared: {results.prsquared:.4f}")
@@ -392,7 +503,7 @@ def estimate_inheritance_logit_by_sex(df, specs):
         except Exception as e:
             print(f"  ERROR: Model estimation failed: {e}")
 
-    return logit_params
+    return logit_params, logit_se, logit_prsquared
 
 
 def estimate_inheritance_amount_by_sex(df, specs):
@@ -406,11 +517,17 @@ def estimate_inheritance_amount_by_sex(df, specs):
         "age_sq",
         "light_care_recent",
         "intensive_care_recent",
+        "formal_care_costs_dummy_recent",
         "education",
         "const",
         "N",
     ]
     amount_params = pd.DataFrame(index=index, columns=columns)
+    # Standard errors DataFrame (without N column)
+    se_columns = [col for col in columns if col != "N"]
+    amount_se = pd.DataFrame(index=index, columns=se_columns)
+    # R-squared Series
+    amount_rsquared = pd.Series(index=index, dtype=float)
 
     # Filter to observations where parent died in t or t-1 AND positive inheritance
     df_filtered = df[
@@ -436,6 +553,7 @@ def estimate_inheritance_amount_by_sex(df, specs):
                 "age_sq",
                 "light_care_recent",
                 "intensive_care_recent",
+                "formal_care_costs_dummy_recent",
                 "education",
             ]
         )
@@ -462,6 +580,7 @@ def estimate_inheritance_amount_by_sex(df, specs):
             "age_sq",
             "light_care_recent",
             "intensive_care_recent",
+            "formal_care_costs_dummy_recent",
             "education",
         ]
         X = sm.add_constant(df_sex[exog_vars])
@@ -478,6 +597,14 @@ def estimate_inheritance_amount_by_sex(df, specs):
             # Save sample size
             amount_params.loc[sex_label, "N"] = len(df_sex)
 
+            # Save standard errors
+            amount_se.loc[sex_label, "const"] = results.bse["const"]
+            for var in exog_vars:
+                amount_se.loc[sex_label, var] = results.bse[var]
+
+            # Save R-squared
+            amount_rsquared.loc[sex_label] = results.rsquared
+
             # Print summary
             print(f"  R-squared: {results.rsquared:.4f}")
             print("  Parameters:")
@@ -487,11 +614,17 @@ def estimate_inheritance_amount_by_sex(df, specs):
         except Exception as e:
             print(f"  ERROR: Model estimation failed: {e}")
 
-    return amount_params
+    return amount_params, amount_se, amount_rsquared
 
 
-def estimate_logit_specification(
-    df, specs, care_var, parent_var=None, filter_condition=None, spec_name="spec"
+def estimate_logit_specification(  # noqa: PLR0915
+    df,
+    specs,
+    care_var,
+    formal_care_var,
+    parent_var=None,
+    filter_condition=None,
+    spec_name="spec",
 ):
     """Estimate a single logit specification with flexible variables.
 
@@ -510,13 +643,48 @@ def estimate_logit_specification(
 
     # Build columns list based on whether parent_var is included
     if parent_var is not None:
-        columns = ["age", "age_sq", care_var, parent_var, "education", "const", "N"]
-        exog_vars_base = ["age", "age_sq", care_var, parent_var, "education"]
+        columns = [
+            "age",
+            "age_sq",
+            care_var,
+            formal_care_var,
+            parent_var,
+            "education",
+            "const",
+            "N",
+        ]
+        exog_vars_base = [
+            "age",
+            "age_sq",
+            care_var,
+            formal_care_var,
+            parent_var,
+            "education",
+        ]
     else:
-        columns = ["age", "age_sq", care_var, "education", "const", "N"]
-        exog_vars_base = ["age", "age_sq", care_var, "education"]
+        columns = [
+            "age",
+            "age_sq",
+            care_var,
+            formal_care_var,
+            "education",
+            "const",
+            "N",
+        ]
+        exog_vars_base = [
+            "age",
+            "age_sq",
+            care_var,
+            formal_care_var,
+            "education",
+        ]
 
     params = pd.DataFrame(index=index, columns=columns)
+    # Standard errors DataFrame (without N column)
+    se_columns = [col for col in columns if col != "N"]
+    se_df = pd.DataFrame(index=index, columns=se_columns)
+    # Pseudo R-squared Series
+    prsquared_series = pd.Series(index=index, dtype=float)
 
     # Apply filter if specified
     if filter_condition is not None:
@@ -543,6 +711,7 @@ def estimate_logit_specification(
             "age",
             "age_sq",
             care_var,
+            formal_care_var,
             "education",
         ]
         if parent_var is not None:
@@ -572,6 +741,14 @@ def estimate_logit_specification(
             # Save sample size
             params.loc[sex_label, "N"] = len(df_sex)
 
+            # Save standard errors
+            se_df.loc[sex_label, "const"] = results.bse["const"]
+            for var in exog_vars_base:
+                se_df.loc[sex_label, var] = results.bse[var]
+
+            # Save pseudo R-squared
+            prsquared_series.loc[sex_label] = results.prsquared
+
             # Print summary
             print(f"  Model converged: {results.mle_retvals['converged']}")
             print(f"  Pseudo R-squared: {results.prsquared:.4f}")
@@ -583,11 +760,17 @@ def estimate_logit_specification(
         except Exception as e:
             print(f"  ERROR: Model estimation failed: {e}")
 
-    return params
+    return params, se_df, prsquared_series
 
 
-def estimate_ols_specification(
-    df, specs, care_var, parent_var=None, filter_condition=None, spec_name="spec"
+def estimate_ols_specification(  # noqa: PLR0915
+    df,
+    specs,
+    care_var,
+    formal_care_var,
+    parent_var=None,
+    filter_condition=None,
+    spec_name="spec",
 ):
     """Estimate a single OLS specification for ln(inheritance_amount).
 
@@ -606,13 +789,48 @@ def estimate_ols_specification(
 
     # Build columns list based on whether parent_var is included
     if parent_var is not None:
-        columns = ["age", "age_sq", care_var, parent_var, "education", "const", "N"]
-        exog_vars_base = ["age", "age_sq", care_var, parent_var, "education"]
+        columns = [
+            "age",
+            "age_sq",
+            care_var,
+            formal_care_var,
+            parent_var,
+            "education",
+            "const",
+            "N",
+        ]
+        exog_vars_base = [
+            "age",
+            "age_sq",
+            care_var,
+            formal_care_var,
+            parent_var,
+            "education",
+        ]
     else:
-        columns = ["age", "age_sq", care_var, "education", "const", "N"]
-        exog_vars_base = ["age", "age_sq", care_var, "education"]
+        columns = [
+            "age",
+            "age_sq",
+            care_var,
+            formal_care_var,
+            "education",
+            "const",
+            "N",
+        ]
+        exog_vars_base = [
+            "age",
+            "age_sq",
+            care_var,
+            formal_care_var,
+            "education",
+        ]
 
     params = pd.DataFrame(index=index, columns=columns)
+    # Standard errors DataFrame (without N column)
+    se_columns = [col for col in columns if col != "N"]
+    se_df = pd.DataFrame(index=index, columns=se_columns)
+    # R-squared Series
+    rsquared_series = pd.Series(index=index, dtype=float)
 
     # Apply filter if specified
     if filter_condition is not None:
@@ -642,6 +860,7 @@ def estimate_ols_specification(
             "age",
             "age_sq",
             care_var,
+            formal_care_var,
             "education",
         ]
         if parent_var is not None:
@@ -674,6 +893,14 @@ def estimate_ols_specification(
             # Save sample size
             params.loc[sex_label, "N"] = len(df_sex)
 
+            # Save standard errors
+            se_df.loc[sex_label, "const"] = results.bse["const"]
+            for var in exog_vars_base:
+                se_df.loc[sex_label, var] = results.bse[var]
+
+            # Save R-squared
+            rsquared_series.loc[sex_label] = results.rsquared
+
             # Print summary
             print(f"  R-squared: {results.rsquared:.4f}")
             print("  Key parameters:")
@@ -684,41 +911,37 @@ def estimate_ols_specification(
         except Exception as e:
             print(f"  ERROR: Model estimation failed: {e}")
 
-    return params
+    return params, se_df, rsquared_series
 
 
-def estimate_logit_specification_two_care(  # noqa: PLR0915
+def estimate_logit_specification_no_care(  # noqa: PLR0915
     df,
     specs,
-    light_care_var,
-    intensive_care_var,
     parent_var=None,
     filter_condition=None,
     spec_name="spec",
 ):
-    """Estimate logit with separate light and intensive care variables.
+    """Estimate a single logit specification without care variables.
+
+    Only includes age, age², education, and optionally parent death variable.
 
     Args:
         df: DataFrame with prepared data
         specs: Model specifications
-        light_care_var: Name of light caregiving variable
-        intensive_care_var: Name of intensive caregiving variable
-        parent_var: Name of parent death variable (None if using filter only)
+        parent_var: Name of parent death variable to include (None if using filter only)
         filter_condition: Optional filtering condition
-        spec_name: Name for this specification
+        spec_name: Name for this specification (for output)
 
     Returns:
-        DataFrame with estimated parameters (includes N)
+        DataFrame with estimated parameters (includes N = sample size)
     """
     index = pd.Index(specs["sex_labels"], name="sex")
 
-    # Build columns list
+    # Build columns list based on whether parent_var is included
     if parent_var is not None:
         columns = [
             "age",
             "age_sq",
-            light_care_var,
-            intensive_care_var,
             parent_var,
             "education",
             "const",
@@ -727,8 +950,6 @@ def estimate_logit_specification_two_care(  # noqa: PLR0915
         exog_vars_base = [
             "age",
             "age_sq",
-            light_care_var,
-            intensive_care_var,
             parent_var,
             "education",
         ]
@@ -736,8 +957,6 @@ def estimate_logit_specification_two_care(  # noqa: PLR0915
         columns = [
             "age",
             "age_sq",
-            light_care_var,
-            intensive_care_var,
             "education",
             "const",
             "N",
@@ -745,14 +964,17 @@ def estimate_logit_specification_two_care(  # noqa: PLR0915
         exog_vars_base = [
             "age",
             "age_sq",
-            light_care_var,
-            intensive_care_var,
             "education",
         ]
 
     params = pd.DataFrame(index=index, columns=columns)
+    # Standard errors DataFrame (without N column)
+    se_columns = [col for col in columns if col != "N"]
+    se_df = pd.DataFrame(index=index, columns=se_columns)
+    # Pseudo R-squared Series
+    prsquared_series = pd.Series(index=index, dtype=float)
 
-    # Apply filter
+    # Apply filter if specified
     if filter_condition is not None:
         df_filtered = df.query(filter_condition).copy()
         filter_desc = filter_condition
@@ -762,8 +984,6 @@ def estimate_logit_specification_two_care(  # noqa: PLR0915
 
     print("\n" + "=" * 70)
     print(f"SPECIFICATION: {spec_name}")
-    print(f"Light care variable: {light_care_var}")
-    print(f"Intensive care variable: {intensive_care_var}")
     print(f"Parent variable: {parent_var or 'N/A (filtered only)'}")
     print(f"Filter: {filter_desc}")
     print("=" * 70)
@@ -777,8 +997,6 @@ def estimate_logit_specification_two_care(  # noqa: PLR0915
             "inheritance_this_year",
             "age",
             "age_sq",
-            light_care_var,
-            intensive_care_var,
             "education",
         ]
         if parent_var is not None:
@@ -808,6 +1026,167 @@ def estimate_logit_specification_two_care(  # noqa: PLR0915
             # Save sample size
             params.loc[sex_label, "N"] = len(df_sex)
 
+            # Save standard errors
+            se_df.loc[sex_label, "const"] = results.bse["const"]
+            for var in exog_vars_base:
+                se_df.loc[sex_label, var] = results.bse[var]
+
+            # Save pseudo R-squared
+            prsquared_series.loc[sex_label] = results.prsquared
+
+            # Print summary
+            print(f"  Model converged: {results.mle_retvals['converged']}")
+            print(f"  Pseudo R-squared: {results.prsquared:.4f}")
+            print("  Key parameters:")
+            if parent_var is not None:
+                print(f"    {parent_var:25s}: {results.params[parent_var]:8.4f}")
+
+        except Exception as e:
+            print(f"  ERROR: Model estimation failed: {e}")
+
+    return params, se_df, prsquared_series
+
+
+def estimate_logit_specification_two_care(  # noqa: PLR0915
+    df,
+    specs,
+    light_care_var,
+    intensive_care_var,
+    formal_care_var,
+    parent_var=None,
+    filter_condition=None,
+    spec_name="spec",
+):
+    """Estimate logit with separate light and intensive care variables.
+
+    Args:
+        df: DataFrame with prepared data
+        specs: Model specifications
+        light_care_var: Name of light caregiving variable
+        intensive_care_var: Name of intensive caregiving variable
+        parent_var: Name of parent death variable (None if using filter only)
+        filter_condition: Optional filtering condition
+        spec_name: Name for this specification
+
+    Returns:
+        DataFrame with estimated parameters (includes N)
+    """
+    index = pd.Index(specs["sex_labels"], name="sex")
+
+    # Build columns list
+    if parent_var is not None:
+        columns = [
+            "age",
+            "age_sq",
+            light_care_var,
+            intensive_care_var,
+            formal_care_var,
+            parent_var,
+            "education",
+            "const",
+            "N",
+        ]
+        exog_vars_base = [
+            "age",
+            "age_sq",
+            light_care_var,
+            intensive_care_var,
+            formal_care_var,
+            parent_var,
+            "education",
+        ]
+    else:
+        columns = [
+            "age",
+            "age_sq",
+            light_care_var,
+            intensive_care_var,
+            formal_care_var,
+            "education",
+            "const",
+            "N",
+        ]
+        exog_vars_base = [
+            "age",
+            "age_sq",
+            light_care_var,
+            intensive_care_var,
+            formal_care_var,
+            "education",
+        ]
+
+    params = pd.DataFrame(index=index, columns=columns)
+    # Standard errors DataFrame (without N column)
+    se_columns = [col for col in columns if col != "N"]
+    se_df = pd.DataFrame(index=index, columns=se_columns)
+    # Pseudo R-squared Series
+    prsquared_series = pd.Series(index=index, dtype=float)
+
+    # Apply filter
+    if filter_condition is not None:
+        df_filtered = df.query(filter_condition).copy()
+        filter_desc = filter_condition
+    else:
+        df_filtered = df.copy()
+        filter_desc = "None"
+
+    print("\n" + "=" * 70)
+    print(f"SPECIFICATION: {spec_name}")
+    print(f"Light care variable: {light_care_var}")
+    print(f"Intensive care variable: {intensive_care_var}")
+    print(f"Parent variable: {parent_var or 'N/A (filtered only)'}")
+    print(f"Filter: {filter_desc}")
+    print("=" * 70)
+    print(f"Total observations: {len(df_filtered)}")
+
+    for sex_var, sex_label in enumerate(specs["sex_labels"]):
+        df_sex = df_filtered[df_filtered["sex"] == sex_var].copy()
+
+        # Drop missing values
+        required_vars = [
+            "inheritance_this_year",
+            "age",
+            "age_sq",
+            light_care_var,
+            intensive_care_var,
+            formal_care_var,
+            "education",
+        ]
+        if parent_var is not None:
+            required_vars.append(parent_var)
+        df_sex = df_sex.dropna(subset=required_vars)
+
+        print(f"\n{sex_label}:")
+        print(f"  Observations: {len(df_sex)}")
+        print(f"  Inheritance rate: {df_sex['inheritance_this_year'].mean():.3f}")
+
+        if len(df_sex) < MIN_SAMPLE_SIZE:
+            print("  WARNING: Too few observations, skipping")
+            continue
+
+        # Estimate logit model
+        X = sm.add_constant(df_sex[exog_vars_base])
+        y = df_sex["inheritance_this_year"]
+
+        try:
+            model = sm.Logit(endog=y, exog=X)
+            results = model.fit(disp=False)
+
+            # Save parameters
+            params.loc[sex_label, "const"] = results.params["const"]
+            for var in exog_vars_base:
+                params.loc[sex_label, var] = results.params[var]
+            # Save sample size
+            params.loc[sex_label, "N"] = len(df_sex)
+
+            # Save standard errors
+            se_df.loc[sex_label, "const"] = results.bse["const"]
+            for var in exog_vars_base:
+                se_df.loc[sex_label, var] = results.bse[var]
+
+            # Save pseudo R-squared
+            prsquared_series.loc[sex_label] = results.prsquared
+
             # Print summary
             print(f"  Model converged: {results.mle_retvals['converged']}")
             print(f"  Pseudo R-squared: {results.prsquared:.4f}")
@@ -823,7 +1202,7 @@ def estimate_logit_specification_two_care(  # noqa: PLR0915
         except Exception as e:
             print(f"  ERROR: Model estimation failed: {e}")
 
-    return params
+    return params, se_df, prsquared_series
 
 
 def estimate_ols_specification_two_care(  # noqa: PLR0915
@@ -831,6 +1210,7 @@ def estimate_ols_specification_two_care(  # noqa: PLR0915
     specs,
     light_care_var,
     intensive_care_var,
+    formal_care_var,
     parent_var=None,
     filter_condition=None,
     spec_name="spec",
@@ -858,6 +1238,7 @@ def estimate_ols_specification_two_care(  # noqa: PLR0915
             "age_sq",
             light_care_var,
             intensive_care_var,
+            formal_care_var,
             parent_var,
             "education",
             "const",
@@ -868,6 +1249,7 @@ def estimate_ols_specification_two_care(  # noqa: PLR0915
             "age_sq",
             light_care_var,
             intensive_care_var,
+            formal_care_var,
             parent_var,
             "education",
         ]
@@ -877,6 +1259,7 @@ def estimate_ols_specification_two_care(  # noqa: PLR0915
             "age_sq",
             light_care_var,
             intensive_care_var,
+            formal_care_var,
             "education",
             "const",
             "N",
@@ -886,10 +1269,16 @@ def estimate_ols_specification_two_care(  # noqa: PLR0915
             "age_sq",
             light_care_var,
             intensive_care_var,
+            formal_care_var,
             "education",
         ]
 
     params = pd.DataFrame(index=index, columns=columns)
+    # Standard errors DataFrame (without N column)
+    se_columns = [col for col in columns if col != "N"]
+    se_df = pd.DataFrame(index=index, columns=se_columns)
+    # R-squared Series
+    rsquared_series = pd.Series(index=index, dtype=float)
 
     # Apply filter
     if filter_condition is not None:
@@ -921,6 +1310,7 @@ def estimate_ols_specification_two_care(  # noqa: PLR0915
             "age_sq",
             light_care_var,
             intensive_care_var,
+            formal_care_var,
             "education",
         ]
         if parent_var is not None:
@@ -953,6 +1343,14 @@ def estimate_ols_specification_two_care(  # noqa: PLR0915
             # Save sample size
             params.loc[sex_label, "N"] = len(df_sex)
 
+            # Save standard errors
+            se_df.loc[sex_label, "const"] = results.bse["const"]
+            for var in exog_vars_base:
+                se_df.loc[sex_label, var] = results.bse[var]
+
+            # Save R-squared
+            rsquared_series.loc[sex_label] = results.rsquared
+
             # Print summary
             print(f"  R-squared: {results.rsquared:.4f}")
             print("  Key parameters:")
@@ -967,13 +1365,14 @@ def estimate_ols_specification_two_care(  # noqa: PLR0915
         except Exception as e:
             print(f"  ERROR: Model estimation failed: {e}")
 
-    return params
+    return params, se_df, rsquared_series
 
 
 @pytask.mark.inheritance
 def task_estimate_inheritance_amount_specifications(
     path_to_specs: Path = SRC / "specs.yaml",
-    path_to_data: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
+    path_to_data: Path = BLD / "data" / "soep_inheritance_sample.csv",
+    path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
     path_to_save_summary: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
@@ -985,16 +1384,31 @@ def task_estimate_inheritance_amount_specifications(
     Tests different combinations of care and parent death timing variables.
     Same specifications as the logit model, but for amount conditional on
     positive inheritance.
+
+    CPI deflation is applied to inheritance_amount before estimation.
     """
     specs = read_and_derive_specs(path_to_specs)
     df = pd.read_csv(path_to_data, index_col=0)
 
-    # Set values above 90th percentile to NaN
-    p90_threshold = df["inheritance_amount"].quantile(0.90)
-    df.loc[df["inheritance_amount"] > p90_threshold, "inheritance_amount"] = np.nan
+    # Load CPI data and deflate inheritance_amount
+    cpi_data = pd.read_csv(path_to_cpi, index_col=0)
+
+    # Set values outside 10th-90th percentile range to NaN
+    p10_threshold = df["inheritance_amount"].quantile(
+        INHERITANCE_QUANTILE_THRESHOLD_LOWER
+    )
+    p90_threshold = df["inheritance_amount"].quantile(
+        INHERITANCE_QUANTILE_THRESHOLD_UPPER
+    )
+    df.loc[
+        (df["inheritance_amount"] < p10_threshold)
+        | (df["inheritance_amount"] > p90_threshold),
+        "inheritance_amount",
+    ] = np.nan
 
     # Prepare data
     df = prepare_inheritance_data(df)
+    df = deflate_inheritance_amount_for_estimation(df, cpi_data, specs)
 
     # Create output directory
     path_to_save_dir = path_to_save_summary.parent
@@ -1006,18 +1420,21 @@ def task_estimate_inheritance_amount_specifications(
         {
             "name": "spec1_any_care_parent_this_year",
             "care_var": "any_care",
+            "formal_care_var": "formal_care_costs_dummy",
             "parent_var": "parent_died_this_year",
             "filter": None,
         },
         {
             "name": "spec2_any_care_recent_parent_recent",
             "care_var": "any_care_recent",
+            "formal_care_var": "formal_care_costs_dummy_recent",
             "parent_var": "parent_died_recent",
             "filter": None,
         },
         {
             "name": "spec3_any_care_last_year_parent_last_year",
             "care_var": "any_care_last_year",
+            "formal_care_var": "formal_care_costs_dummy_last_year",
             "parent_var": "parent_died_last_year",
             "filter": None,
         },
@@ -1025,18 +1442,21 @@ def task_estimate_inheritance_amount_specifications(
         {
             "name": "spec4_any_care_last_year_filter_parent_this_year",
             "care_var": "any_care_last_year",
+            "formal_care_var": "formal_care_costs_dummy_last_year",
             "parent_var": None,
             "filter": "parent_died_this_year == 1",
         },
         {
             "name": "spec7_any_care_this_year_filter_parent_this_year",
             "care_var": "any_care",
+            "formal_care_var": "formal_care_costs_dummy",
             "parent_var": None,
             "filter": "parent_died_this_year == 1",
         },
         {
             "name": "spec10_any_care_recent_filter_parent_this_year",
             "care_var": "any_care_recent",
+            "formal_care_var": "formal_care_costs_dummy_recent",
             "parent_var": None,
             "filter": "parent_died_this_year == 1",
         },
@@ -1044,18 +1464,21 @@ def task_estimate_inheritance_amount_specifications(
         {
             "name": "spec5_any_care_last_year_filter_parent_last_year",
             "care_var": "any_care_last_year",
+            "formal_care_var": "formal_care_costs_dummy_last_year",
             "parent_var": None,
             "filter": "parent_died_last_year == 1",
         },
         {
             "name": "spec8_any_care_this_year_filter_parent_last_year",
             "care_var": "any_care",
+            "formal_care_var": "formal_care_costs_dummy",
             "parent_var": None,
             "filter": "parent_died_last_year == 1",
         },
         {
             "name": "spec11_any_care_recent_filter_parent_last_year",
             "care_var": "any_care_recent",
+            "formal_care_var": "formal_care_costs_dummy_recent",
             "parent_var": None,
             "filter": "parent_died_last_year == 1",
         },
@@ -1063,18 +1486,21 @@ def task_estimate_inheritance_amount_specifications(
         {
             "name": "spec6_any_care_last_year_filter_parent_recent",
             "care_var": "any_care_last_year",
+            "formal_care_var": "formal_care_costs_dummy_last_year",
             "parent_var": None,
             "filter": "parent_died_recent == 1",
         },
         {
             "name": "spec9_any_care_this_year_filter_parent_recent",
             "care_var": "any_care",
+            "formal_care_var": "formal_care_costs_dummy",
             "parent_var": None,
             "filter": "parent_died_recent == 1",
         },
         {
             "name": "spec12_any_care_recent_filter_parent_recent",
             "care_var": "any_care_recent",
+            "formal_care_var": "formal_care_costs_dummy_recent",
             "parent_var": None,
             "filter": "parent_died_recent == 1",
         },
@@ -1083,18 +1509,19 @@ def task_estimate_inheritance_amount_specifications(
     # Run all specifications
     results = {}
     for spec in specifications:
-        params = estimate_ols_specification(
+        params, se_df, rsquared = estimate_ols_specification(
             df=df,
             specs=specs,
             care_var=spec["care_var"],
+            formal_care_var=spec["formal_care_var"],
             parent_var=spec["parent_var"],
             filter_condition=spec["filter"],
             spec_name=spec["name"],
         )
 
-        # Save results
+        # Save results with standard errors and R-squared
         output_path = path_to_save_dir / f"{spec['name']}_params.csv"
-        params.to_csv(output_path)
+        save_params_with_standard_errors(params, se_df, rsquared, output_path)
         results[spec["name"]] = params
 
     # Save summary
@@ -1120,7 +1547,8 @@ def task_estimate_inheritance_amount_specifications(
 @pytask.mark.inheritance
 def task_estimate_inheritance_prob_two_care_specifications(
     path_to_specs: Path = SRC / "specs.yaml",
-    path_to_data: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
+    path_to_data: Path = BLD / "data" / "soep_inheritance_sample.csv",
+    path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
     path_to_save_summary: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
@@ -1130,16 +1558,31 @@ def task_estimate_inheritance_prob_two_care_specifications(
     """Estimate 12 specifications with separate light/intensive care variables.
 
     For inheritance probability (logit).
+
+    CPI deflation is applied to inheritance_amount before estimation.
     """
     specs = read_and_derive_specs(path_to_specs)
     df = pd.read_csv(path_to_data, index_col=0)
 
-    # Set values above 90th percentile to NaN
-    p90_threshold = df["inheritance_amount"].quantile(0.90)
-    df.loc[df["inheritance_amount"] > p90_threshold, "inheritance_amount"] = np.nan
+    # Load CPI data and deflate inheritance_amount
+    cpi_data = pd.read_csv(path_to_cpi, index_col=0)
+
+    # Set values outside 10th-90th percentile range to NaN
+    p10_threshold = df["inheritance_amount"].quantile(
+        INHERITANCE_QUANTILE_THRESHOLD_LOWER
+    )
+    p90_threshold = df["inheritance_amount"].quantile(
+        INHERITANCE_QUANTILE_THRESHOLD_UPPER
+    )
+    df.loc[
+        (df["inheritance_amount"] < p10_threshold)
+        | (df["inheritance_amount"] > p90_threshold),
+        "inheritance_amount",
+    ] = np.nan
 
     # Prepare data
     df = prepare_inheritance_data(df)
+    df = deflate_inheritance_amount_for_estimation(df, cpi_data, specs)
 
     # Create output directory
     path_to_save_dir = path_to_save_summary.parent
@@ -1152,6 +1595,7 @@ def task_estimate_inheritance_prob_two_care_specifications(
             "name": "spec1_care_parent_this_year",
             "light_var": "light_care",
             "intensive_var": "intensive_care",
+            "formal_care_var": "formal_care_costs_dummy",
             "parent_var": "parent_died_this_year",
             "filter": None,
         },
@@ -1159,6 +1603,7 @@ def task_estimate_inheritance_prob_two_care_specifications(
             "name": "spec2_care_recent_parent_recent",
             "light_var": "light_care_recent",
             "intensive_var": "intensive_care_recent",
+            "formal_care_var": "formal_care_costs_dummy_recent",
             "parent_var": "parent_died_recent",
             "filter": None,
         },
@@ -1166,6 +1611,7 @@ def task_estimate_inheritance_prob_two_care_specifications(
             "name": "spec3_care_last_year_parent_last_year",
             "light_var": "light_care_last_year",
             "intensive_var": "intensive_care_last_year",
+            "formal_care_var": "formal_care_costs_dummy_last_year",
             "parent_var": "parent_died_last_year",
             "filter": None,
         },
@@ -1174,6 +1620,7 @@ def task_estimate_inheritance_prob_two_care_specifications(
             "name": "spec4_care_last_year_filter_parent_this_year",
             "light_var": "light_care_last_year",
             "intensive_var": "intensive_care_last_year",
+            "formal_care_var": "formal_care_costs_dummy_last_year",
             "parent_var": None,
             "filter": "parent_died_this_year == 1",
         },
@@ -1181,6 +1628,7 @@ def task_estimate_inheritance_prob_two_care_specifications(
             "name": "spec7_care_this_year_filter_parent_this_year",
             "light_var": "light_care",
             "intensive_var": "intensive_care",
+            "formal_care_var": "formal_care_costs_dummy",
             "parent_var": None,
             "filter": "parent_died_this_year == 1",
         },
@@ -1188,6 +1636,7 @@ def task_estimate_inheritance_prob_two_care_specifications(
             "name": "spec10_care_recent_filter_parent_this_year",
             "light_var": "light_care_recent",
             "intensive_var": "intensive_care_recent",
+            "formal_care_var": "formal_care_costs_dummy_recent",
             "parent_var": None,
             "filter": "parent_died_this_year == 1",
         },
@@ -1196,6 +1645,7 @@ def task_estimate_inheritance_prob_two_care_specifications(
             "name": "spec5_care_last_year_filter_parent_last_year",
             "light_var": "light_care_last_year",
             "intensive_var": "intensive_care_last_year",
+            "formal_care_var": "formal_care_costs_dummy_last_year",
             "parent_var": None,
             "filter": "parent_died_last_year == 1",
         },
@@ -1203,6 +1653,7 @@ def task_estimate_inheritance_prob_two_care_specifications(
             "name": "spec8_care_this_year_filter_parent_last_year",
             "light_var": "light_care",
             "intensive_var": "intensive_care",
+            "formal_care_var": "formal_care_costs_dummy",
             "parent_var": None,
             "filter": "parent_died_last_year == 1",
         },
@@ -1210,6 +1661,7 @@ def task_estimate_inheritance_prob_two_care_specifications(
             "name": "spec11_care_recent_filter_parent_last_year",
             "light_var": "light_care_recent",
             "intensive_var": "intensive_care_recent",
+            "formal_care_var": "formal_care_costs_dummy_recent",
             "parent_var": None,
             "filter": "parent_died_last_year == 1",
         },
@@ -1218,6 +1670,7 @@ def task_estimate_inheritance_prob_two_care_specifications(
             "name": "spec6_care_last_year_filter_parent_recent",
             "light_var": "light_care_last_year",
             "intensive_var": "intensive_care_last_year",
+            "formal_care_var": "formal_care_costs_dummy_last_year",
             "parent_var": None,
             "filter": "parent_died_recent == 1",
         },
@@ -1225,6 +1678,7 @@ def task_estimate_inheritance_prob_two_care_specifications(
             "name": "spec9_care_this_year_filter_parent_recent",
             "light_var": "light_care",
             "intensive_var": "intensive_care",
+            "formal_care_var": "formal_care_costs_dummy",
             "parent_var": None,
             "filter": "parent_died_recent == 1",
         },
@@ -1232,6 +1686,7 @@ def task_estimate_inheritance_prob_two_care_specifications(
             "name": "spec12_care_recent_filter_parent_recent",
             "light_var": "light_care_recent",
             "intensive_var": "intensive_care_recent",
+            "formal_care_var": "formal_care_costs_dummy_recent",
             "parent_var": None,
             "filter": "parent_died_recent == 1",
         },
@@ -1240,19 +1695,20 @@ def task_estimate_inheritance_prob_two_care_specifications(
     # Run all specifications
     results = {}
     for spec in specifications:
-        params = estimate_logit_specification_two_care(
+        params, se_df, rsquared = estimate_logit_specification_two_care(
             df=df,
             specs=specs,
             light_care_var=spec["light_var"],
             intensive_care_var=spec["intensive_var"],
+            formal_care_var=spec["formal_care_var"],
             parent_var=spec["parent_var"],
             filter_condition=spec["filter"],
             spec_name=spec["name"],
         )
 
-        # Save results
+        # Save results with standard errors and R-squared
         output_path = path_to_save_dir / f"{spec['name']}_params.csv"
-        params.to_csv(output_path)
+        save_params_with_standard_errors(params, se_df, rsquared, output_path)
         results[spec["name"]] = params
 
     # Save summary
@@ -1279,7 +1735,8 @@ def task_estimate_inheritance_prob_two_care_specifications(
 @pytask.mark.inheritance
 def task_estimate_inheritance_amount_two_care_specifications(
     path_to_specs: Path = SRC / "specs.yaml",
-    path_to_data: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
+    path_to_data: Path = BLD / "data" / "soep_inheritance_sample.csv",
+    path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
     path_to_save_summary: Annotated[Path, Product] = BLD
     / "estimation"
     / "stochastic_processes"
@@ -1289,16 +1746,31 @@ def task_estimate_inheritance_amount_two_care_specifications(
     """Estimate 12 specifications with separate light/intensive care variables.
 
     For ln(inheritance_amount) (OLS).
+
+    CPI deflation is applied to inheritance_amount before estimation.
     """
     specs = read_and_derive_specs(path_to_specs)
     df = pd.read_csv(path_to_data, index_col=0)
 
-    # Set values above 90th percentile to NaN
-    p90_threshold = df["inheritance_amount"].quantile(0.90)
-    df.loc[df["inheritance_amount"] > p90_threshold, "inheritance_amount"] = np.nan
+    # Load CPI data and deflate inheritance_amount
+    cpi_data = pd.read_csv(path_to_cpi, index_col=0)
+
+    # Set values outside 10th-90th percentile range to NaN
+    p10_threshold = df["inheritance_amount"].quantile(
+        INHERITANCE_QUANTILE_THRESHOLD_LOWER
+    )
+    p90_threshold = df["inheritance_amount"].quantile(
+        INHERITANCE_QUANTILE_THRESHOLD_UPPER
+    )
+    df.loc[
+        (df["inheritance_amount"] < p10_threshold)
+        | (df["inheritance_amount"] > p90_threshold),
+        "inheritance_amount",
+    ] = np.nan
 
     # Prepare data
     df = prepare_inheritance_data(df)
+    df = deflate_inheritance_amount_for_estimation(df, cpi_data, specs)
 
     # Create output directory
     path_to_save_dir = path_to_save_summary.parent
@@ -1311,6 +1783,7 @@ def task_estimate_inheritance_amount_two_care_specifications(
             "name": "spec1_care_parent_this_year",
             "light_var": "light_care",
             "intensive_var": "intensive_care",
+            "formal_care_var": "formal_care_costs_dummy",
             "parent_var": "parent_died_this_year",
             "filter": None,
         },
@@ -1318,6 +1791,7 @@ def task_estimate_inheritance_amount_two_care_specifications(
             "name": "spec2_care_recent_parent_recent",
             "light_var": "light_care_recent",
             "intensive_var": "intensive_care_recent",
+            "formal_care_var": "formal_care_costs_dummy_recent",
             "parent_var": "parent_died_recent",
             "filter": None,
         },
@@ -1325,6 +1799,7 @@ def task_estimate_inheritance_amount_two_care_specifications(
             "name": "spec3_care_last_year_parent_last_year",
             "light_var": "light_care_last_year",
             "intensive_var": "intensive_care_last_year",
+            "formal_care_var": "formal_care_costs_dummy_last_year",
             "parent_var": "parent_died_last_year",
             "filter": None,
         },
@@ -1333,6 +1808,7 @@ def task_estimate_inheritance_amount_two_care_specifications(
             "name": "spec4_care_last_year_filter_parent_this_year",
             "light_var": "light_care_last_year",
             "intensive_var": "intensive_care_last_year",
+            "formal_care_var": "formal_care_costs_dummy_last_year",
             "parent_var": None,
             "filter": "parent_died_this_year == 1",
         },
@@ -1340,6 +1816,7 @@ def task_estimate_inheritance_amount_two_care_specifications(
             "name": "spec7_care_this_year_filter_parent_this_year",
             "light_var": "light_care",
             "intensive_var": "intensive_care",
+            "formal_care_var": "formal_care_costs_dummy",
             "parent_var": None,
             "filter": "parent_died_this_year == 1",
         },
@@ -1347,6 +1824,7 @@ def task_estimate_inheritance_amount_two_care_specifications(
             "name": "spec10_care_recent_filter_parent_this_year",
             "light_var": "light_care_recent",
             "intensive_var": "intensive_care_recent",
+            "formal_care_var": "formal_care_costs_dummy_recent",
             "parent_var": None,
             "filter": "parent_died_this_year == 1",
         },
@@ -1355,6 +1833,7 @@ def task_estimate_inheritance_amount_two_care_specifications(
             "name": "spec5_care_last_year_filter_parent_last_year",
             "light_var": "light_care_last_year",
             "intensive_var": "intensive_care_last_year",
+            "formal_care_var": "formal_care_costs_dummy_last_year",
             "parent_var": None,
             "filter": "parent_died_last_year == 1",
         },
@@ -1362,6 +1841,7 @@ def task_estimate_inheritance_amount_two_care_specifications(
             "name": "spec8_care_this_year_filter_parent_last_year",
             "light_var": "light_care",
             "intensive_var": "intensive_care",
+            "formal_care_var": "formal_care_costs_dummy",
             "parent_var": None,
             "filter": "parent_died_last_year == 1",
         },
@@ -1369,6 +1849,7 @@ def task_estimate_inheritance_amount_two_care_specifications(
             "name": "spec11_care_recent_filter_parent_last_year",
             "light_var": "light_care_recent",
             "intensive_var": "intensive_care_recent",
+            "formal_care_var": "formal_care_costs_dummy_recent",
             "parent_var": None,
             "filter": "parent_died_last_year == 1",
         },
@@ -1377,6 +1858,7 @@ def task_estimate_inheritance_amount_two_care_specifications(
             "name": "spec6_care_last_year_filter_parent_recent",
             "light_var": "light_care_last_year",
             "intensive_var": "intensive_care_last_year",
+            "formal_care_var": "formal_care_costs_dummy_last_year",
             "parent_var": None,
             "filter": "parent_died_recent == 1",
         },
@@ -1384,6 +1866,7 @@ def task_estimate_inheritance_amount_two_care_specifications(
             "name": "spec9_care_this_year_filter_parent_recent",
             "light_var": "light_care",
             "intensive_var": "intensive_care",
+            "formal_care_var": "formal_care_costs_dummy",
             "parent_var": None,
             "filter": "parent_died_recent == 1",
         },
@@ -1391,6 +1874,7 @@ def task_estimate_inheritance_amount_two_care_specifications(
             "name": "spec12_care_recent_filter_parent_recent",
             "light_var": "light_care_recent",
             "intensive_var": "intensive_care_recent",
+            "formal_care_var": "formal_care_costs_dummy_recent",
             "parent_var": None,
             "filter": "parent_died_recent == 1",
         },
@@ -1399,19 +1883,20 @@ def task_estimate_inheritance_amount_two_care_specifications(
     # Run all specifications
     results = {}
     for spec in specifications:
-        params = estimate_ols_specification_two_care(
+        params, se_df, rsquared = estimate_ols_specification_two_care(
             df=df,
             specs=specs,
             light_care_var=spec["light_var"],
             intensive_care_var=spec["intensive_var"],
+            formal_care_var=spec["formal_care_var"],
             parent_var=spec["parent_var"],
             filter_condition=spec["filter"],
             spec_name=spec["name"],
         )
 
-        # Save results
+        # Save results with standard errors and R-squared
         output_path = path_to_save_dir / f"{spec['name']}_params.csv"
-        params.to_csv(output_path)
+        save_params_with_standard_errors(params, se_df, rsquared, output_path)
         results[spec["name"]] = params
 
     # Save summary
@@ -1433,3 +1918,226 @@ def task_estimate_inheritance_amount_two_care_specifications(
             f.write(f"    Intensive care: {spec['intensive_var']}\n")
             f.write(f"    Parent: {spec['parent_var']}\n")
             f.write(f"    Filter: {spec['filter']}\n\n")
+
+
+@pytask.mark.inheritance
+def task_estimate_inheritance_specifications_no_care(
+    path_to_specs: Path = SRC / "specs.yaml",
+    path_to_data: Path = BLD / "data" / "soep_inheritance_sample.csv",
+    path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
+    path_to_save_summary: Annotated[Path, Product] = BLD
+    / "estimation"
+    / "stochastic_processes"
+    / "inheritance_specs_no_care"
+    / "_specs_summary.txt",
+) -> None:
+    """Estimate inheritance probability specifications without care variables.
+
+    Only includes age, age², education, and parent death filtering.
+    Distinguishes by low and high education only.
+
+    CPI deflation is applied to inheritance_amount before estimation.
+    """
+    specs = read_and_derive_specs(path_to_specs)
+    df = pd.read_csv(path_to_data, index_col=0)
+    cpi_data = pd.read_csv(path_to_cpi, index_col=0)
+
+    # Set values outside 10th-90th percentile range to NaN
+    p10_threshold = df["inheritance_amount"].quantile(
+        INHERITANCE_QUANTILE_THRESHOLD_LOWER
+    )
+    p90_threshold = df["inheritance_amount"].quantile(
+        INHERITANCE_QUANTILE_THRESHOLD_UPPER
+    )
+    df.loc[
+        (df["inheritance_amount"] < p10_threshold)
+        | (df["inheritance_amount"] > p90_threshold),
+        "inheritance_amount",
+    ] = np.nan
+
+    # Prepare data
+    df = prepare_inheritance_data(df)
+    df = deflate_inheritance_amount_for_estimation(df, cpi_data, specs)
+
+    # Create output directory
+    path_to_save_dir = path_to_save_summary.parent
+    path_to_save_dir.mkdir(parents=True, exist_ok=True)
+
+    # Define specifications without care variables
+    specifications = [
+        # Spec 1-3: No filtering, different parent death timing
+        {
+            "name": "spec1_no_care_parent_this_year",
+            "parent_var": "parent_died_this_year",
+            "filter": None,
+        },
+        {
+            "name": "spec2_no_care_parent_recent",
+            "parent_var": "parent_died_recent",
+            "filter": None,
+        },
+        {
+            "name": "spec3_no_care_parent_last_year",
+            "parent_var": "parent_died_last_year",
+            "filter": None,
+        },
+        # Spec 4-6: Filter on parent_died_this_year
+        {
+            "name": "spec4_no_care_filter_parent_this_year",
+            "parent_var": None,
+            "filter": "parent_died_this_year == 1",
+        },
+        # Spec 5: Filter on parent_died_last_year
+        {
+            "name": "spec5_no_care_filter_parent_last_year",
+            "parent_var": None,
+            "filter": "parent_died_last_year == 1",
+        },
+        # Spec 6: Filter on parent_died_recent
+        {
+            "name": "spec6_no_care_filter_parent_recent",
+            "parent_var": None,
+            "filter": "parent_died_recent == 1",
+        },
+    ]
+
+    # Run all specifications
+    results = {}
+    for spec in specifications:
+        params, se_df, rsquared = estimate_logit_specification_no_care(
+            df=df,
+            specs=specs,
+            parent_var=spec["parent_var"],
+            filter_condition=spec["filter"],
+            spec_name=spec["name"],
+        )
+
+        # Save results with standard errors and R-squared
+        output_path = path_to_save_dir / f"{spec['name']}_params.csv"
+        save_params_with_standard_errors(params, se_df, rsquared, output_path)
+        results[spec["name"]] = params
+
+    # Save summary
+    print("\n" + "=" * 70)
+    print("ALL NO-CARE SPECIFICATIONS COMPLETED")
+    print("=" * 70)
+    print(f"Results saved to: {path_to_save_dir}")
+
+    # Write summary file for pytask dependency tracking
+    with path_to_save_summary.open("w") as f:
+        f.write("Inheritance Probability (No Care) Specifications Summary\n")
+        f.write("=" * 70 + "\n\n")
+        f.write(f"Total specifications: {len(specifications)}\n")
+        f.write(f"Output directory: {path_to_save_dir}\n\n")
+        f.write("Specifications:\n")
+        for spec in specifications:
+            f.write(f"  - {spec['name']}\n")
+            f.write(f"    Parent: {spec['parent_var']}\n")
+            f.write(f"    Filter: {spec['filter']}\n\n")
+
+
+# ======================================================================================
+# Helper functions
+# ======================================================================================
+
+
+def save_params_with_standard_errors(params_df, se_df, rsquared_df, output_path):
+    """Save parameters DataFrame with standard errors and R-squared as additional rows.
+
+    Standard errors are added as new rows with suffix "_se" in the index.
+    R-squared/pseudo R-squared are added as new rows with suffix "_rsq" in the index.
+    The "N" column will have empty values for standard error and R-squared rows.
+
+    Args:
+        params_df: DataFrame with parameters
+            (index: sex labels, columns: param names + N)
+        se_df: DataFrame with standard errors
+            (same structure as params_df, but without N)
+        rsquared_df: Series or DataFrame with R-squared/pseudo R-squared values
+            (index: sex labels)
+        output_path: Path to save CSV file
+    """
+    # Create combined DataFrame
+    combined_df = params_df.copy()
+
+    # Add standard error rows for each sex
+    for sex_label in params_df.index:
+        se_row_name = f"{sex_label}_se"
+        se_row = pd.Series(index=params_df.columns, dtype=float)
+
+        # Copy standard errors from se_df (excluding N)
+        # Only if the row exists in se_df (estimation may have failed)
+        if sex_label in se_df.index:
+            for col in params_df.columns:
+                if col != "N" and col in se_df.columns:
+                    se_row[col] = se_df.loc[sex_label, col]
+        # N column remains NaN/empty for all SE rows
+
+        combined_df.loc[se_row_name] = se_row
+
+        # Add R-squared row
+        rsq_row_name = f"{sex_label}_rsq"
+        rsq_row = pd.Series(index=params_df.columns, dtype=float)
+
+        # Add R-squared value in the first parameter column (or const if available)
+        if sex_label in rsquared_df.index:
+            rsq_value = rsquared_df.loc[sex_label]
+            # Put R-squared in the first non-N column
+            first_col = [col for col in params_df.columns if col != "N"][0]
+            rsq_row[first_col] = rsq_value
+        # All other columns (including N) remain NaN/empty
+
+        combined_df.loc[rsq_row_name] = rsq_row
+
+    # Reorder to have params, SEs, and R-squared together
+    new_index = []
+    for sex_label in params_df.index:
+        new_index.append(sex_label)
+        new_index.append(f"{sex_label}_se")
+        new_index.append(f"{sex_label}_rsq")
+
+    combined_df = combined_df.reindex(new_index)
+    combined_df.to_csv(output_path)
+
+
+def deflate_inheritance_amount_for_estimation(df, cpi_data, specs, year_var="syear"):
+    """Deflate inheritance amount using consumer price index.
+
+    Similar to _deflate_inheritance_amount but works with DataFrame
+    that may not have MultiIndex (pid, syear).
+
+    Args:
+        df: DataFrame containing inheritance_amount and year_inheritance columns
+        cpi_data: DataFrame with CPI data (should have int_year and cpi columns)
+        specs: Dictionary with specs including reference_year
+
+    Returns:
+        DataFrame with deflated inheritance_amount
+    """
+    # Prepare CPI data
+    cpi_data_copy = cpi_data.rename(columns={"int_year": year_var})
+
+    _base_year = specs["reference_year"]
+    base_year_cpi = cpi_data_copy.loc[
+        cpi_data_copy[year_var] == _base_year, "cpi"
+    ].iloc[0]
+
+    cpi_data_copy["cpi_normalized"] = cpi_data_copy["cpi"] / base_year_cpi
+
+    # Merge CPI data on year_var
+    df = df.merge(
+        cpi_data_copy[[year_var, "cpi_normalized"]],
+        on=year_var,
+        how="left",
+    )
+
+    # Deflate inheritance amount (only where both are not NaN)
+    mask = df["inheritance_amount"].notna() & df["cpi_normalized"].notna()
+    df.loc[mask, "inheritance_amount"] = (
+        df.loc[mask, "inheritance_amount"] / df.loc[mask, "cpi_normalized"]
+    )
+
+    # Drop temporary CPI column
+    df = df.drop(columns=["cpi_normalized"])
+
+    return df
