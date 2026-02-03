@@ -185,10 +185,7 @@ def enforce_model_choice_restriction(df, specs):
     min_ret_age = specs["min_ret_age"]
 
     # Filter out people who are retired before min_ret_age
-    # df = df[~((df["choice"] == 0) & (df["age"] < min_ret_age))]
     df = df[~(df["choice"].isin(retired_values) & (df["age"] < min_ret_age))]
-
-    # df = df[~((df["lagged_choice"] == 0) & (df["age"] <= min_ret_age))]
     df = df[~(df["lagged_choice"].isin(retired_values) & (df["age"] <= min_ret_age))]
 
     # Filter out people who are working after max_ret_age

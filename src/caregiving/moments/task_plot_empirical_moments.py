@@ -147,6 +147,9 @@ def task_plot_empirical_soep_moments(
     end_year = 2019
     start_age = specs["start_age"]
     end_age = specs["end_age_msm"]
+    specs["min_birth_year"] = 1947
+    specs["max_birth_year"] = 1980
+
     start_age_caregivers = specs["start_age_caregiving"]
 
     soep_moments = pd.read_csv(path_to_soep_moments, index_col=[0])
@@ -190,12 +193,13 @@ def task_plot_empirical_soep_moments(
         data_decision=df_full,
         model_class=model_class,
     )
-    # trimmed = df_full.copy()
-    # trimmed["assets_begin_of_period"] = trimmed["wealth"]
 
     # trimmed = trimmed[trimmed["sex"] == SEX].copy()
     # # Filter by year range
     trimmed = trimmed[(trimmed["syear"] >= 2010) & (trimmed["syear"] <= 2020)].copy()
+    # trimmed = trimmed[
+    #     (trimmed["gebjahr"] >= 1952) & (trimmed["gebjahr"] <= 1975)
+    # ].copy()
     # Rename assets_begin_of_period to adjusted_wealth for compatibility with plotting code
     trimmed["adjusted_wealth"] = trimmed["assets_begin_of_period"]
 
