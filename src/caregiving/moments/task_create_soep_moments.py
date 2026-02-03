@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-from dcegm.asset_correction import adjust_observed_assets
 from pytask import Product
 
 import dcegm
@@ -26,8 +25,10 @@ from caregiving.model.shared import (
     SCALE_CAREGIVER_SHARE,
     SEX,
     UNEMPLOYED_CHOICES,
+    WEALTH_END_YEAR,
     WEALTH_MOMENTS_SCALE,
     WEALTH_QUANTILE_CUTOFF,
+    WEALTH_START_YEAR,
     WORK_CHOICES,
 )
 from caregiving.model.state_space import create_state_space_functions
@@ -42,6 +43,7 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.moments.transform_data import load_and_scale_correct_data
+from dcegm.asset_correction import adjust_observed_assets
 
 DEGREES_OF_FREEDOM = 1
 
@@ -79,7 +81,6 @@ def task_create_soep_moments(  # noqa: PLR0915
     """Create moments for MSM estimation."""
 
     specs = pickle.load(path_to_specs.open("rb"))
-    params = yaml.safe_load(path_to_params.open("rb"))
     model_config = pickle.load(path_to_model_config.open("rb"))
 
     model_class = dcegm.setup_model(
@@ -159,7 +160,8 @@ def task_create_soep_moments(  # noqa: PLR0915
         model_class=model_class,
     )
     df_wealth = df_wealth_corrected[
-        (df_wealth_corrected["syear"] >= 2010) & (df_wealth_corrected["syear"] <= 2020)
+        (df_wealth_corrected["syear"] >= WEALTH_START_YEAR)
+        & (df_wealth_corrected["syear"] <= WEALTH_END_YEAR)
     ].copy()
     df_wealth["adjusted_wealth"] = df_wealth["assets_begin_of_period"]
 
@@ -1288,7 +1290,7 @@ def compute_median_by_age_bin(
     age_range : list[int] | np.ndarray
         Age range to use for creating bins (min and max will be used).
     age_bins : tuple[list[int], list[str]] | None
-        Optional (bin_edges, bin_labels). If None, defaults to 5-year bins based on age_range:
+        Optional (bin_edges, bin_labels). If None, defaults to 5-year bins:
           edges:  [age_min, age_min+5, ..., age_max+1]
           labels: ['age_min_age_min+4', 'age_min+5_age_min+9', ...]
         Note: edges must include both the first left edge and the final right edge.
@@ -2312,7 +2314,7 @@ def create_df_wealth(
     return df_wealth
 
 
-def _adjust_wealth_with_lagged_choice(
+def _adjust_wealth_with_lagged_choice(  # noqa: PLR0915
     df: pd.DataFrame,
     states_dict: dict,
     params: dict,
@@ -2430,9 +2432,10 @@ def _adjust_wealth_with_lagged_choice(
             )
 
     # Fix experience scaling for fresh retirees
-    # When someone enters retirement, their experience is still normalized by working scale,
-    # but budget_constraint will rescale it using retirement scale, causing inflated pension points.
-    # We need to adjust the experience value to account for this.
+    # When someone enters retirement, their experience is still normalized by working
+    # scale, but budget_constraint will rescale it using retirement scale, causing
+    # inflated pension points. We need to adjust the experience value to account for
+    # this.
     from caregiving.model.pension_system.experience_stock import (
         calc_pension_points_for_experience,
     )
@@ -2440,7 +2443,8 @@ def _adjust_wealth_with_lagged_choice(
 
     retirement_values = np.asarray(RETIREMENT).ravel().tolist()
     # Current period: if lagged_choice is retirement, they are retired now
-    # (lagged_choice is the choice from previous period, which determines current income)
+    # (lagged_choice is the choice from previous period, which determines current
+    # income)
     is_retired_now = np.isin(df_sorted[lagged_choice_col].values, retirement_values)
 
     # Previous period: check what their lagged_choice was in the previous row
@@ -2453,15 +2457,17 @@ def _adjust_wealth_with_lagged_choice(
     prev_lagged_choice = df_sorted.groupby(person_id_col)[lagged_choice_col].shift(1)
     is_retired_prev = np.isin(prev_lagged_choice.fillna(0).values, retirement_values)
 
-    # Fresh retirees: retired now (lagged_choice is retirement) but not in previous period
-    # (lagged_choice at t-1 was not retirement, meaning they were working before)
+    # Fresh retirees: retired now (lagged_choice is retirement) but not in previous
+    # period (lagged_choice at t-1 was not retirement, meaning they were working
+    # before)
     is_fresh_retiree = is_retired_now & (~is_retired_prev)
 
     if is_fresh_retiree.any():
         # Adjust experience for fresh retirees
         # The issue: For fresh retirees, experience is normalized by working scale,
-        # but budget_constraint will use is_retired=True, which rescales by retirement scale.
-        # This causes experience_years to be inflated, which is then used as pension_points.
+        # but budget_constraint will use is_retired=True, which rescales by
+        # retirement scale. This causes experience_years to be inflated, which is then
+        # used as pension_points.
         experience_adjusted = states_dict_sorted["experience"].copy()
         age_values = df_sorted[age_col].values
         period_values = age_values - model_class.model_specs["start_age"]
@@ -2497,8 +2503,9 @@ def _adjust_wealth_with_lagged_choice(
                 ]
                 max_pp_retirement = model_class.model_specs["max_pp_retirement"]
 
-                # Step 1: Convert normalized experience back to working experience years
-                # The experience value is normalized by working scale (from when they were working)
+                # Step 1: Convert normalized experience back to working experience
+                # years. The experience value is normalized by working scale (from
+                # when they were working)
                 working_exp_years = experience_norm * max_exp_working
 
                 # Step 2: Convert working experience years to pension points
@@ -2532,7 +2539,8 @@ def _adjust_wealth_with_lagged_choice(
                 # which is then passed to calc_pensions_after_ssc as pension_points
                 experience_adjusted[i] = pension_points / max_pp_retirement
 
-                # Verify the fix: after adjustment, construct_experience_years should give correct pension_points
+                # Verify the fix: after adjustment, construct_experience_years should
+                # give correct pension_points
                 corrected_pension_points = experience_adjusted[i] * max_pp_retirement
                 correction_ratio = (
                     corrected_pension_points / pension_points
@@ -2550,11 +2558,12 @@ def _adjust_wealth_with_lagged_choice(
                 f"out of {n_obs} total observations"
             )
             print(
-                f"DEBUG: Average pension points inflation BEFORE fix: {avg_inflation_before:.2f}x"
+                f"DEBUG: Average pension points inflation BEFORE fix: "
+                f"{avg_inflation_before:.2f}x"
             )
             print(
-                f"DEBUG: Average pension points correction AFTER fix: {avg_inflation_after:.2f}x "
-                f"(should be ~1.0)"
+                f"DEBUG: Average pension points correction AFTER fix: "
+                f"{avg_inflation_after:.2f}x (should be ~1.0)"
             )
 
         # Update states_dict with adjusted experience

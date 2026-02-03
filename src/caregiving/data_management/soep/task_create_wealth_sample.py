@@ -23,6 +23,15 @@ from caregiving.data_management.soep.variables import (
 )
 from caregiving.specs.task_write_specs import read_and_derive_specs
 
+# Constants for magic values
+NO_PARTNER_ID = -2
+MIN_MONTH = 1
+MAX_MONTH = 12
+MAX_DAY = 31
+MIN_HH_SIZE_FOR_PARTNER_CHECK = 2
+MAX_HH_SIZE = 2
+MIN_VALID_OBSERVATIONS = 2
+
 
 @pytask.mark.wealth_sample
 def task_create_soep_wealth_data(
@@ -432,7 +441,7 @@ def add_personal_data(
     merged_data.set_index(["pid", "syear"], inplace=True)
     merged_data = calc_age_at_interview(merged_data)
     merged_data = merged_data[merged_data["age"] >= specs["start_age"]]
-    merged_data["is_par"] = np.where(merged_data["parid"] == -2, 0, 1)
+    merged_data["is_par"] = np.where(merged_data["parid"] == NO_PARTNER_ID, 0, 1)
     merged_data.reset_index(inplace=True)
 
     # Add number of children in household to merged_data
@@ -522,8 +531,8 @@ def create_float_interview_date(df, impute_missing_interview=False):
         month, day = _impute_missing_interview_dates(df, month, day)
 
     # Check for invalid data
-    invalid_month = month.isna() | (month < 1) | (month > 12)
-    invalid_day = day.isna() | (day < 1) | (day > 31)
+    invalid_month = month.isna() | (month < MIN_MONTH) | (month > MAX_MONTH)
+    invalid_day = day.isna() | (day < MIN_MONTH) | (day > MAX_DAY)
     any_invalid = invalid_month | invalid_day
 
     # Calculate days from year start
@@ -555,7 +564,9 @@ def _cumulative_days_before_month(months):
 
 def _impute_missing_interview_dates(df, month, day):
     """Impute missing interview dates using mode of valid interviews per year"""
-    valid_month_mask = df["pmonin"].notna() & (df["pmonin"] >= 1) & (df["pmonin"] <= 12)
+    valid_month_mask = (
+        df["pmonin"].notna() & (df["pmonin"] >= MIN_MONTH) & (df["pmonin"] <= MAX_MONTH)
+    )
 
     if valid_month_mask.any():
         if "syear" in df.columns:
@@ -594,7 +605,7 @@ def _impute_missing_interview_dates(df, month, day):
 
     imputed_months = year_values.map(mode_month_by_year).fillna(fallback_month)
 
-    missing_month = month.isna() | (month < 1) | (month > 12)
+    missing_month = month.isna() | (month < MIN_MONTH) | (month > MAX_MONTH)
     month = month.where(~missing_month, imputed_months)
 
     missing_day = day.isna() | (day <= 0)
@@ -618,7 +629,7 @@ def _interpolate_and_extrapolate_wealth_new(wealth_data_full, specs):
     # In households with 2+ people above start age, drop people with no partner
     wealth_data_full = wealth_data_full[
         ~(
-            (wealth_data_full["hh_size_adjusted"] >= 2)
+            (wealth_data_full["hh_size_adjusted"] >= MIN_HH_SIZE_FOR_PARTNER_CHECK)
             & (wealth_data_full["is_par"] == 0)
         )
     ]
@@ -629,7 +640,9 @@ def _interpolate_and_extrapolate_wealth_new(wealth_data_full, specs):
     ].transform("count")
 
     # Drop households with more than 2 people above start age
-    wealth_data_full = wealth_data_full[wealth_data_full["hh_size_adjusted"] <= 2]
+    wealth_data_full = wealth_data_full[
+        wealth_data_full["hh_size_adjusted"] <= MAX_HH_SIZE
+    ]
 
     # Interpolate wealth between observations
     wealth_data_full["wealth"] = wealth_data_full.groupby(
@@ -731,13 +744,13 @@ def _interpolate_and_extrapolate_wealth_new(wealth_data_full, specs):
 
 
 def _extrapolate_wealth_linear(household):
-    """Linearly extrapolate wealth for a household if at least 2 valid observations exist."""
+    """Linearly extrapolate wealth if at least 2 valid observations exist."""
     household_int = household.reset_index()
     wealth = household_int["wealth"].copy()
     syear = household_int["syear"].copy()
     valid = wealth.dropna()
 
-    if len(valid) >= 2:
+    if len(valid) >= MIN_VALID_OBSERVATIONS:
         # Linear extrapolation at start
         if pd.isnull(wealth.iloc[0]):
             first_valid_index = valid.index[0]
@@ -764,7 +777,7 @@ def _extrapolate_wealth_linear(household):
     return household_int.set_index("syear")
 
 
-def _impute_wealth_from_deciles(household, wealth_deciles_df):
+def _impute_wealth_from_deciles(household, wealth_deciles_df):  # noqa: PLR0912, PLR0915
     """Impute wealth for a household with only one valid observation using deciles."""
     household_int = household.reset_index()
     valid = household_int["wealth"].dropna()

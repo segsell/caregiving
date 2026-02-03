@@ -21,10 +21,12 @@ from pytask import Product
 from caregiving.config import BLD
 from caregiving.model.shared import RETIREMENT, WORK
 
+ASSETS_THRESHOLD = 10_000
+
 
 @pytask.mark.debug_income
 @pytask.mark.post_estimation
-def task_plot_income_by_age(
+def task_plot_income_by_age(  # noqa: PLR0912, PLR0915
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_simulated_data: Path = BLD
     / "solve_and_simulate"
@@ -99,12 +101,14 @@ def task_plot_income_by_age(
         )
     else:
         raise ValueError(
-            "Missing required columns 'gross_labor_income' or 'gross_retirement_income'. "
+            "Missing required columns 'gross_labor_income' or "
+            "'gross_retirement_income'. "
             f"Available columns: {df_sim.columns.tolist()}"
         )
 
     # Use net_hh_income as total income (includes interest, care benefits, bequest)
-    # net_hh_income = total_income + interest + care_benefits_and_costs + bequest_from_parent
+    # net_hh_income = total_income + interest + care_benefits_and_costs +
+    # bequest_from_parent
     if "net_hh_income" not in df_sim.columns:
         raise ValueError(
             f"Missing required column 'net_hh_income'. "
@@ -142,7 +146,7 @@ def task_plot_income_by_age(
     else:
         # If it exists, convert to thousands of euros if needed
         # Check if values are very large (likely in euros, not thousands)
-        if df_sim["assets_begin_of_period"].max() > 10000:
+        if df_sim["assets_begin_of_period"].max() > ASSETS_THRESHOLD:
             df_sim["assets_begin_of_period"] = df_sim["assets_begin_of_period"] / 1000.0
 
     # Identify working vs retired individuals
@@ -322,7 +326,7 @@ def task_plot_income_by_age(
 
 @pytask.mark.debug_income
 @pytask.mark.post_estimation
-def task_plot_assets_by_age(
+def task_plot_assets_by_age(  # noqa: PLR0912, PLR0915
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_simulated_data: Path = BLD
     / "solve_and_simulate"
@@ -405,7 +409,7 @@ def task_plot_assets_by_age(
     else:
         # If it exists, convert to thousands of euros if needed
         # Check if values are very large (likely in euros, not thousands)
-        if df_sim["assets_begin_of_period"].max() > 10000:
+        if df_sim["assets_begin_of_period"].max() > ASSETS_THRESHOLD:
             df_sim["assets_begin_of_period"] = df_sim["assets_begin_of_period"] / 1000.0
 
     # Extract assets_end_of_period
@@ -465,7 +469,7 @@ def task_plot_assets_by_age(
             df_sim["assets_end_of_period"] = (
                 df_sim["assets_end_of_period"] * specs["wealth_unit"]
             ) / 1000.0
-        elif df_sim["assets_end_of_period"].max() > 10000:
+        elif df_sim["assets_end_of_period"].max() > ASSETS_THRESHOLD:
             # Already in actual units but needs conversion to thousands
             df_sim["assets_end_of_period"] = df_sim["assets_end_of_period"] / 1000.0
 

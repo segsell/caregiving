@@ -22,7 +22,9 @@ from caregiving.model.shared import (
     RETIREMENT_CHOICES,
     SEX,
     UNEMPLOYED_CHOICES,
+    WEALTH_END_YEAR,
     WEALTH_MOMENTS_SCALE,
+    WEALTH_START_YEAR,
 )
 from caregiving.model.state_space import create_state_space_functions
 from caregiving.model.stochastic_processes.job_transition import (
@@ -128,7 +130,6 @@ def task_plot_empirical_soep_moments(
     """Create moments for MSM estimation."""
 
     specs = pickle.load(path_to_specs.open("rb"))
-    params = yaml.safe_load(path_to_params.open("rb"))
     model_config = pickle.load(path_to_model_config.open("rb"))
 
     model_class = dcegm.setup_model(
@@ -161,8 +162,8 @@ def task_plot_empirical_soep_moments(
     # Load wealth data
     df_wealth = pd.read_csv(path_to_wealth_data, index_col=[0])
     df_wealth = df_wealth.reset_index()
-    df_wealth_full = pd.read_csv(path_to_wealth_data_full, index_col=[0])
-    # df_wealth_full = df_wealth_full.reset_index()
+    # df_wealth_full not used
+    # df_wealth_full = pd.read_csv(path_to_wealth_data_full, index_col=[0])
 
     # Create standardized subsamples using shared functions
     df_non_caregivers = create_df_non_caregivers(
@@ -196,11 +197,13 @@ def task_plot_empirical_soep_moments(
 
     # trimmed = trimmed[trimmed["sex"] == SEX].copy()
     # # Filter by year range
-    trimmed = trimmed[(trimmed["syear"] >= 2010) & (trimmed["syear"] <= 2020)].copy()
+    trimmed = trimmed[
+        (trimmed["syear"] >= WEALTH_START_YEAR) & (trimmed["syear"] <= WEALTH_END_YEAR)
+    ].copy()
     # trimmed = trimmed[
     #     (trimmed["gebjahr"] >= 1952) & (trimmed["gebjahr"] <= 1975)
     # ].copy()
-    # Rename assets_begin_of_period to adjusted_wealth for compatibility with plotting code
+    # Rename assets_begin_of_period to adjusted_wealth for compatibility
     trimmed["adjusted_wealth"] = trimmed["assets_begin_of_period"]
 
     df_good_health = df_with_caregivers[
@@ -527,7 +530,9 @@ def plot_wealth_emp_by_age_bins(
         valid_mask = ~pd.isna(emp_series.values)
         bin_centers_used = [
             age_bin_centers[bin_interval]
-            for bin_interval, is_valid in zip(emp_series.index, valid_mask)
+            for bin_interval, is_valid in zip(
+                emp_series.index, valid_mask, strict=False
+            )
             if is_valid
         ]
         emp_values_clean = emp_series.values[valid_mask]
@@ -797,14 +802,14 @@ def plot_wealth_emp_vs_moments(  # noqa: PLR0912, PLR0915
             values = moments.loc[mask, "value"].copy()
 
             # Create bin labels and map to bin centers for plotting
-            bin_labels = [f"{start}_{end}" for start, end in zip(bin_starts, bin_ends)]
             bin_centers = ((bin_starts + bin_ends) / 2).astype(int)
 
             # Create series with bin centers as index
             s = pd.Series(values.values, index=bin_centers.values)
             return s.sort_index()
         else:
-            # Fall back to age-by-age moments (e.g., mean_wealth_low_education_wealth_age_30)
+            # Fall back to age-by-age moments
+            # (e.g., mean_wealth_low_education_wealth_age_30)
             age_pattern = re.compile(
                 rf"^{stat_name.lower()}_wealth_{tag}_education_wealth_age_(\d+)$"
             )

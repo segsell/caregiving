@@ -9,6 +9,8 @@ SOEP_DOES_NOT_APPLY = -2
 MISSING_VALUE = -99
 BASE_YEAR = 2010  # 2015
 MAX_SYEAR = 2023  # Maximum year in the SOEP
+WEALTH_START_YEAR = 2010
+WEALTH_END_YEAR = 2020
 
 PERIOD_SCALE = 10  # to rescale age in utility functions
 
