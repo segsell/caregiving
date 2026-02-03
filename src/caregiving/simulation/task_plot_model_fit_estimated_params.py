@@ -139,6 +139,42 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
     / "plots"
     / "model_fit_estimated_params"
     / "share_caregivers_intensive_by_age_bin.png",
+    path_to_save_caregiver_share_by_age_bin_any_low_educ_plot: Annotated[
+        Path, Product
+    ] = BLD
+    / "plots"
+    / "model_fit_estimated_params"
+    / "share_caregivers_any_low_educ_by_age_bin.png",
+    path_to_save_caregiver_share_by_age_bin_any_high_educ_plot: Annotated[
+        Path, Product
+    ] = BLD
+    / "plots"
+    / "model_fit_estimated_params"
+    / "share_caregivers_any_high_educ_by_age_bin.png",
+    path_to_save_caregiver_share_by_age_bin_light_low_educ_plot: Annotated[
+        Path, Product
+    ] = BLD
+    / "plots"
+    / "model_fit_estimated_params"
+    / "share_caregivers_light_low_educ_by_age_bin.png",
+    path_to_save_caregiver_share_by_age_bin_light_high_educ_plot: Annotated[
+        Path, Product
+    ] = BLD
+    / "plots"
+    / "model_fit_estimated_params"
+    / "share_caregivers_light_high_educ_by_age_bin.png",
+    path_to_save_caregiver_share_by_age_bin_intensive_low_educ_plot: Annotated[
+        Path, Product
+    ] = BLD
+    / "plots"
+    / "model_fit_estimated_params"
+    / "share_caregivers_intensive_low_educ_by_age_bin.png",
+    path_to_save_caregiver_share_by_age_bin_intensive_high_educ_plot: Annotated[
+        Path, Product
+    ] = BLD
+    / "plots"
+    / "model_fit_estimated_params"
+    / "share_caregivers_intensive_high_educ_by_age_bin.png",
     path_to_save_caregiver_share_by_age_bin_presentation_plot: Annotated[
         Path, Product
     ] = BLD
@@ -364,6 +400,8 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         age_min=40,
         age_max=75,
         scale=SCALE_CAREGIVER_SHARE,
+        care_type="any",
+        education=None,
         path_to_save_plot=path_to_save_caregiver_share_by_age_bin_plot,
     )
     plot_caregiver_shares_by_age_bins(
@@ -374,7 +412,8 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         age_min=40,
         age_max=75,
         scale=SCALE_CAREGIVER_SHARE,
-        moment_prefix="share_informal_care_light_age_bin_",
+        care_type="light",
+        education=None,
         path_to_save_plot=path_to_save_caregiver_share_by_age_bin_light_plot,
     )
     plot_caregiver_shares_by_age_bins(
@@ -385,8 +424,85 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         age_min=40,
         age_max=75,
         scale=SCALE_CAREGIVER_SHARE,
-        moment_prefix="share_informal_care_intensive_age_bin_",
+        care_type="intensive",
+        education=None,
         path_to_save_plot=path_to_save_caregiver_share_by_age_bin_intensive_plot,
+    )
+
+    # Education-specific plots for any care
+    plot_caregiver_shares_by_age_bins(
+        emp_moms,
+        df_sim,
+        specs,
+        choice_set=INFORMAL_CARE,
+        age_min=40,
+        age_max=75,
+        scale=SCALE_CAREGIVER_SHARE,
+        care_type="any",
+        education="low_educ",
+        path_to_save_plot=path_to_save_caregiver_share_by_age_bin_any_low_educ_plot,
+    )
+    plot_caregiver_shares_by_age_bins(
+        emp_moms,
+        df_sim,
+        specs,
+        choice_set=INFORMAL_CARE,
+        age_min=40,
+        age_max=75,
+        scale=SCALE_CAREGIVER_SHARE,
+        care_type="any",
+        education="high_educ",
+        path_to_save_plot=path_to_save_caregiver_share_by_age_bin_any_high_educ_plot,
+    )
+    # Education-specific plots for light care
+    plot_caregiver_shares_by_age_bins(
+        emp_moms,
+        df_sim,
+        specs,
+        choice_set=LIGHT_INFORMAL_CARE,
+        age_min=40,
+        age_max=75,
+        scale=SCALE_CAREGIVER_SHARE,
+        care_type="light",
+        education="low_educ",
+        path_to_save_plot=path_to_save_caregiver_share_by_age_bin_light_low_educ_plot,
+    )
+    plot_caregiver_shares_by_age_bins(
+        emp_moms,
+        df_sim,
+        specs,
+        choice_set=LIGHT_INFORMAL_CARE,
+        age_min=40,
+        age_max=75,
+        scale=SCALE_CAREGIVER_SHARE,
+        care_type="light",
+        education="high_educ",
+        path_to_save_plot=path_to_save_caregiver_share_by_age_bin_light_high_educ_plot,
+    )
+    # Education-specific plots for intensive care
+    plot_caregiver_shares_by_age_bins(
+        emp_moms,
+        df_sim,
+        specs,
+        choice_set=INTENSIVE_INFORMAL_CARE,
+        age_min=40,
+        age_max=75,
+        scale=SCALE_CAREGIVER_SHARE,
+        care_type="intensive",
+        education="low_educ",
+        path_to_save_plot=path_to_save_caregiver_share_by_age_bin_intensive_low_educ_plot,
+    )
+    plot_caregiver_shares_by_age_bins(
+        emp_moms,
+        df_sim,
+        specs,
+        choice_set=INTENSIVE_INFORMAL_CARE,
+        age_min=40,
+        age_max=75,
+        scale=SCALE_CAREGIVER_SHARE,
+        care_type="intensive",
+        education="high_educ",
+        path_to_save_plot=path_to_save_caregiver_share_by_age_bin_intensive_high_educ_plot,
     )
 
     emp_moms_presentation = emp_moms.copy()

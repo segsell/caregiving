@@ -959,7 +959,7 @@ def plot_caregiver_shares_by_age(
         plt.savefig(path_to_save_plot, dpi=300, transparent=False)
 
 
-def plot_caregiver_shares_by_age_bins(
+def plot_caregiver_shares_by_age_bins(  # noqa: PLR0912, PLR0915
     # df_emp: pd.DataFrame,
     emp_moments: pd.DataFrame,
     df_sim: pd.DataFrame,
@@ -970,7 +970,9 @@ def plot_caregiver_shares_by_age_bins(
     age_max: int | None = None,
     bin_width: int = 5,
     scale: float = 1.0,
-    moment_prefix: str = "share_informal_care_age_bin_",
+    care_type: str = "any",  # "any", "light", "intensive"
+    education: str | None = None,  # "low_educ", "high_educ", or None
+    moment_prefix: str | None = None,  # If provided, overrides care_type and education
     path_to_save_plot: str | Path | None = None,
 ):
     """
@@ -980,17 +982,24 @@ def plot_caregiver_shares_by_age_bins(
 
     Parameters
     ----------
-    df_emp, df_sim : pandas.DataFrame
-        Must contain at least 'age', 'choice', 'any_care' and ideally 'sex'.
+    emp_moments : pd.Series or pd.DataFrame
+        Empirical moments indexed by moment names.
+    df_sim : pandas.DataFrame
+        Must contain at least 'age', 'choice', and ideally 'sex' and 'education'.
     specs : dict
         Needs 'start_age' and 'end_age_msm'.
     choice_set : iterable
         Codes in df_sim["choice"] that count as (informal) care for the
         simulated data.
+    care_type : str, default "any"
+        Type of care: "any", "light", or "intensive".
+    education : str | None, default None
+        Education group: "low_educ", "high_educ", or None (no education distinction).
     bin_width : int, default 5
         Width of the age bins.
-    moment_prefix : str, default \"share_informal_care_age_bin_\"
+    moment_prefix : str | None, default None
         Prefix used for looking up empirical moments in ``emp_moments``.
+        If None, constructed from care_type and education.
         The full key is constructed as
         ``f\"{moment_prefix}{start}_{end-1}\"``.
     path_to_save_plot : str | pathlib.Path | None
@@ -1076,7 +1085,15 @@ def plot_caregiver_shares_by_age_bins(
     #     plt.savefig(path_to_save_plot, dpi=300, transparent=False)
     # plt.close(fig)
 
-    # ── 1. Age grid & bin edges ─────────────────────────────────────────
+    # ── 1. Build moment prefix ─────────────────────────────────────────
+    if moment_prefix is None:
+        # Build prefix from care_type and education
+        if education is None:
+            moment_prefix = f"share_informal_care_{care_type}_age_bin_"
+        else:
+            moment_prefix = f"share_informal_care_{care_type}_{education}_age_bin_"
+
+    # ── 2. Age grid & bin edges ─────────────────────────────────────────
     if age_min is None:
         age_min = specs["start_age"]
     if age_max is None:
@@ -1087,17 +1104,28 @@ def plot_caregiver_shares_by_age_bins(
         edges.append(age_max + 1)  # right-open
     bin_starts = edges[:-1]
 
-    # ── 2. Simulated data (unchanged) ───────────────────────────────────
+    # ── 3. Simulated data ───────────────────────────────────────────────
     df_sim = df_sim.loc[df_sim["health"] != DEAD].copy()
     if "sex" in df_sim:
         df_sim = df_sim.loc[df_sim["sex"] == SEX].copy()
 
+    # Filter by education if specified
+    if education is not None:
+        if education == "low_educ":
+            df_sim = df_sim.loc[df_sim["education"] == 0].copy()
+        elif education == "high_educ":
+            df_sim = df_sim.loc[df_sim["education"] == 1].copy()
+        else:
+            raise ValueError(
+                f"education must be 'low_educ', 'high_educ', or None, got {education}"
+            )
+
     care_codes = np.asarray(choice_set).tolist()
 
-    # ── 3. Empirical lookup from *Series* ───────────────────────────────
+    # ── 4. Empirical lookup from *Series* ───────────────────────────────
     emp_lookup = emp_moments.to_dict()  # key → value
 
-    # ── 4. Build vectors of rates ───────────────────────────────────────
+    # ── 5. Build vectors of rates ───────────────────────────────────────
     emp_rates, sim_rates = [], []
 
     for start, end in zip(edges[:-1], edges[1:], strict=False):
