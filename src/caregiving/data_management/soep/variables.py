@@ -702,7 +702,13 @@ def create_hh_has_moved(data):
     return data
 
 
-def deflate_formal_care_costs(df, cpi_data, specs, var_name="formal_care_costs_raw"):
+def deflate_formal_care_costs(
+    df,
+    cpi_data,
+    specs,
+    var_name_in="formal_care_costs_raw",
+    var_name_out="formal_care_costs",
+):
     """Deflate formal care costs using consumer price index.
 
     Args:
@@ -732,58 +738,10 @@ def deflate_formal_care_costs(df, cpi_data, specs, var_name="formal_care_costs_r
         cpi_data[["syear", "cpi_normalized"]], on="syear", how="left"
     )
     # Deflate formal_care_costs
-    df_reset[var_name] = df_reset[var_name] / df_reset["cpi_normalized"]
+    df_reset[var_name_out] = df_reset[var_name_in] / df_reset["cpi_normalized"]
 
     # Drop temporary CPI column and restore index
     df_reset = df_reset.drop(columns=["cpi_normalized"])
-    df = df_reset.set_index(["pid", "syear"])
-
-    return df
-
-
-def _deflate_inheritance_amount(df, cpi_data, specs):
-    """Deflate inheritance amount using consumer price index.
-
-    Args:
-        df: DataFrame with MultiIndex (pid, syear) containing inheritance_amount
-            and year_inheritance columns
-        cpi_data: DataFrame with CPI data (should have int_year and cpi columns)
-        specs: Dictionary with specs including reference_year
-
-    Returns:
-        DataFrame with deflated inheritance_amount
-    """
-    # Reset index temporarily to work with year_inheritance
-    df_reset = df.reset_index()
-
-    # Prepare CPI data (exactly like deflate_wealth)
-    cpi_data_copy = cpi_data.rename(columns={"int_year": "year_inheritance"})
-
-    _base_year = specs["reference_year"]
-    base_year_cpi = cpi_data_copy.loc[
-        cpi_data_copy["year_inheritance"] == _base_year, "cpi"
-    ].iloc[0]
-
-    cpi_data_copy["cpi_normalized"] = cpi_data_copy["cpi"] / base_year_cpi
-
-    # Merge CPI data on year_inheritance (like deflate_wealth merges on syear)
-    df_reset = df_reset.merge(cpi_data_copy, on="year_inheritance", how="left")
-
-    # # Deflate inheritance amount (only where both inheritance_amount and cpi_no
-    # rmalized are not NaN)
-    if "cpi_normalized" not in df_reset.columns:
-        raise ValueError(
-            "cpi_normalized column not found after merge. "
-            f"Columns after merge: {df_reset.columns.tolist()}"
-        )
-
-    mask = df_reset["inheritance_amount"].notna() & df_reset["cpi_normalized"].notna()
-    df_reset.loc[mask, "inheritance_amount"] = (
-        df_reset.loc[mask, "inheritance_amount"] / df_reset.loc[mask, "cpi_normalized"]
-    )
-
-    # Drop temporary CPI columns and restore index
-    df_reset = df_reset.drop(columns=["cpi", "cpi_normalized"])
     df = df_reset.set_index(["pid", "syear"])
 
     return df

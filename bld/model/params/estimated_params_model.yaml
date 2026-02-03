@@ -152,10 +152,14 @@
 # # beta: 0.97
 # # income_shock_mean: 0.0
 # # income_shock_std: 0.16471062648214
-disutil_children_ft_work_high: 0.07904028129374809
-disutil_children_ft_work_low: 0.07820296905199843
-disutil_children_pt_work_high: -0.0973071551967625
-disutil_children_pt_work_low: 0.0307203979060732
+disutil_children_ft_work_high_below_40: 0.07904028129374809
+disutil_children_ft_work_high_above_40: 0.07904028129374809
+disutil_children_ft_work_low_below_40: 0.07820296905199843
+disutil_children_ft_work_low_above_40: 0.07820296905199843
+disutil_children_pt_work_high_below_40: -0.0973071551967625
+disutil_children_pt_work_high_above_40: -0.0973071551967625
+disutil_children_pt_work_low_below_40: 0.0307203979060732
+disutil_children_pt_work_low_above_40: 0.0307203979060732
 disutil_ft_work_high_bad: 4.2169287960206026
 disutil_ft_work_high_good: 0.14926687783227524
 disutil_ft_work_low_bad: 0.48649640049516035
@@ -187,7 +191,9 @@ disutil_unemployed_low_women_informal_care: 0.06634311841895305
 # job_finding_logit_const_women: -2.0557573813205483
 # job_finding_logit_high_educ_women: 0.7036649116866923
 job_finding_logit_const_women: 0.7226
-job_finding_logit_age_women: -0.0586
+job_finding_logit_age_women: -0.586
+job_finding_logit_age_squared_women: 0.0
+job_finding_logit_age_cubed_women: 0.0
 job_finding_logit_high_educ_women: 0.5729
 #
 # job_finding_logit_age_cubed_women: -3.162982266453729e-05

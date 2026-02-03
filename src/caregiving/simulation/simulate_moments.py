@@ -57,6 +57,13 @@ def simulate_moments_pandas(  # noqa: PLR0915
             f"{s}_{s+4}" for s in range(40, 70, 5)
         ],  # ["40_44", "45_49", "50_54", "55_59", "60_64", "65_69"]
     )
+    # 5-year age bins for wealth: [30, 35), [35, 40), ..., [85, 90)
+    age_bins_wealth = (
+        list(range(30, 91, 5)),  # [30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90]
+        [
+            f"{s}_{s+4}" for s in range(30, 86, 5)
+        ],  # ["30_34", "35_39", "40_44", ..., "85_89"]
+    )
     # =================================================================================
     # Calculate how many full 3-year bins we can fit
     # Start from start_age_caregivers and create bins of size 3
@@ -134,18 +141,18 @@ def simulate_moments_pandas(  # noqa: PLR0915
 
     # =================================================================================
     # Wealth moments
-    moments = create_median_by_age(
+    moments = create_median_by_age_bin(
         df_full_low,
         moments,
         variable="assets_begin_of_period",
-        age_range=age_range_wealth,
+        age_bins_and_labels=age_bins_wealth,
         label="low_education",
     )
-    moments = create_median_by_age(
+    moments = create_median_by_age_bin(
         df_full_high,
         moments,
         variable="assets_begin_of_period",
-        age_range=age_range_wealth,
+        age_bins_and_labels=age_bins_wealth,
         label="high_education",
     )
 
@@ -1564,20 +1571,34 @@ def create_moments_jax(sim_df, min_age, max_age, model_specs):  # noqa: PLR0915
         (67, 70),
     ]
 
-    # Mean wealth by education and age bin
-    mean_wealth_by_age_low_educ = get_mean_by_age(
+    # 5-year age bins for wealth: [30, 35), [35, 40), ..., [85, 90)
+    age_bins_wealth_jax = [
+        (30, 35),
+        (35, 40),
+        (40, 45),
+        (45, 50),
+        (50, 55),
+        (55, 60),
+        (60, 65),
+        (65, 70),
+        (70, 75),
+        (75, 80),
+        (80, 85),
+        (85, 90),
+    ]
+
+    # Median wealth by education and age bin
+    median_wealth_by_age_bin_low_educ = get_median_by_age_bin(
         arr_all_low_educ,
         ind=idx,
         variable="assets_begin_of_period",
-        min_age=min_age,
-        max_age=end_age_wealth,
+        bins=age_bins_wealth_jax,
     )
-    mean_wealth_by_age_high_educ = get_mean_by_age(
+    median_wealth_by_age_bin_high_educ = get_median_by_age_bin(
         arr_all_high_educ,
         ind=idx,
         variable="assets_begin_of_period",
-        min_age=min_age,
-        max_age=end_age_wealth,
+        bins=age_bins_wealth_jax,
     )
 
     # Labor shares by education and age
@@ -2196,8 +2217,8 @@ def create_moments_jax(sim_df, min_age, max_age, model_specs):  # noqa: PLR0915
     return jnp.asarray(
         []
         # wealth
-        + mean_wealth_by_age_low_educ
-        + mean_wealth_by_age_high_educ
+        + median_wealth_by_age_bin_low_educ
+        + median_wealth_by_age_bin_high_educ
         # labor shares all
         + share_retired_by_age
         + share_unemployed_by_age
@@ -2399,6 +2420,33 @@ def get_mean_by_age_bin(df_arr, ind, variable, bins, age_var=None):
         means.append(mean)
 
     return means
+
+
+def get_median_by_age_bin(df_arr, ind, variable, bins, age_var=None):
+    """Get median of variable by age bin."""
+    age_var = age_var or "age"
+    age_col = df_arr[:, ind[age_var]]
+
+    values = df_arr[:, ind[variable]]
+
+    medians: list[jnp.ndarray] = []
+    for bin_start, bin_end in bins:
+        age_mask = (age_col >= bin_start) & (age_col < bin_end)
+        # Extract values for this age bin, replacing non-matching with NaN
+        bin_values = jnp.where(age_mask, values, jnp.nan)
+        # Compute median using 50th percentile (JAX doesn't have direct median)
+        # Filter out NaN values: use nanmean approach but for percentile
+        # Convert to numpy for percentile computation (JAX percentile may not
+        # handle NaN)
+        bin_values_np = np.asarray(bin_values)
+        valid_values = bin_values_np[~np.isnan(bin_values_np)]
+        if len(valid_values) > 0:
+            median = np.percentile(valid_values, 50) * WEALTH_MOMENTS_SCALE
+        else:
+            median = np.nan
+        medians.append(jnp.asarray(median))
+
+    return medians
 
 
 def _get_share_by_type(df_arr, ind, choice, care_type):

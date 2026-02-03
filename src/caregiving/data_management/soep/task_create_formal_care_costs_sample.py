@@ -72,7 +72,11 @@ def task_create_formal_care_costs_sample(
 
     # CPI adjustment: deflate formal_care_costs
     df = deflate_formal_care_costs(
-        df, cpi_data=cpi_data, specs=specs, var_name="formal_care_costs_raw"
+        df,
+        cpi_data=cpi_data,
+        specs=specs,
+        var_name_in="formal_care_costs_raw",
+        var_name_out="formal_care_costs",
     )
 
     df = df[
