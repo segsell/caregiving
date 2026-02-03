@@ -40,9 +40,9 @@ from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.moments.task_create_soep_moments import (
     create_df_caregivers,
     create_df_non_caregivers,
+    create_df_wealth,
     create_df_with_caregivers,
 )
-from caregiving.moments.transform_data import create_df_wealth
 
 DEGREES_OF_FREEDOM = 1
 
