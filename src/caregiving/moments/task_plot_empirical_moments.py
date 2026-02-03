@@ -42,7 +42,7 @@ from caregiving.moments.task_create_soep_moments import (
     create_df_non_caregivers,
     create_df_with_caregivers,
 )
-from caregiving.moments.transform_data import load_and_scale_correct_data
+from caregiving.moments.transform_data import create_df_wealth
 
 DEGREES_OF_FREEDOM = 1
 
@@ -188,23 +188,14 @@ def task_plot_empirical_soep_moments(
         end_age=end_age,
     )
 
-    # Process wealth data using load_and_scale_correct_data
-    trimmed = load_and_scale_correct_data(
-        # data_decision=df_wealth_full,
-        data_decision=df_full,
+    trimmed = create_df_wealth(
+        df_full=df_full,
         model_class=model_class,
     )
-
-    # trimmed = trimmed[trimmed["sex"] == SEX].copy()
-    # # Filter by year range
-    trimmed = trimmed[
-        (trimmed["syear"] >= WEALTH_START_YEAR) & (trimmed["syear"] <= WEALTH_END_YEAR)
-    ].copy()
     # trimmed = trimmed[
-    #     (trimmed["gebjahr"] >= 1952) & (trimmed["gebjahr"] <= 1975)
+    #     (trimmed["syear"] >= WEALTH_START_YEAR) &
+    # (trimmed["syear"] <= WEALTH_END_YEAR)
     # ].copy()
-    # Rename assets_begin_of_period to adjusted_wealth for compatibility
-    trimmed["adjusted_wealth"] = trimmed["assets_begin_of_period"]
 
     df_good_health = df_with_caregivers[
         df_with_caregivers["health"] == GOOD_HEALTH

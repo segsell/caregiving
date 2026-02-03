@@ -24,7 +24,9 @@ from caregiving.model.shared import (
     RETIREMENT_NO_CARE,
     SEX,
     UNEMPLOYED_NO_CARE,
-    is_informal_care,
+    is_formal_care,
+    is_intensive_informal_care,
+    is_light_informal_care,
 )
 from caregiving.model.wealth_and_budget.transfers import draw_inheritance_outcome
 
@@ -422,11 +424,19 @@ def test_draw_inheritance_outcome_extreme_probabilities(
     """
     model_specs = copy.deepcopy(load_specs)
     # Set extreme probabilities in the matrix
-    # Determine care type index based on lagged_choice:
-    # - care_type_idx = 0: NO_CARE or FORMAL_CARE (no informal care)
-    # - care_type_idx = 1: LIGHT_INFORMAL_CARE or INTENSIVE_INFORMAL_CARE
-    #   (any informal care)
-    care_type_idx = int(is_informal_care(lagged_choice).astype(int))
+    # Determine care type index based on lagged_choice (same logic as function):
+    # - care_type_idx = 0: no_care (no informal care, no formal care)
+    # - care_type_idx = 1: formal_care (formal care only)
+    # - care_type_idx = 2: light_care (light informal care only)
+    # - care_type_idx = 3: intensive_care (intensive informal care only)
+    is_light = is_light_informal_care(lagged_choice)
+    is_intensive = is_intensive_informal_care(lagged_choice)
+    is_formal = is_formal_care(lagged_choice)
+    care_type_idx = (
+        int(is_formal.astype(int).item()) * 1
+        + int(is_light.astype(int).item()) * 2
+        + int(is_intensive.astype(int).item()) * 3
+    )
     # SEX=1 means index 1 (female) in the matrix
     sex_idx = SEX  # SEX = 1
     model_specs["inheritance_prob_mat"] = (
@@ -453,7 +463,7 @@ def test_draw_inheritance_outcome_extreme_probabilities(
 @pytest.mark.parametrize(
     "period, education, lagged_choice, prob",
     [
-        # No informal care choices (care_type_idx = 0)
+        # No informal care choices (care_type_idx = 0: no_care)
         (10, 0, UNEMPLOYED_NO_CARE[0].item(), 0.2),
         (10, 0, PART_TIME_NO_CARE[0].item(), 0.3),
         (10, 0, FULL_TIME_NO_CARE[0].item(), 0.5),
@@ -461,11 +471,21 @@ def test_draw_inheritance_outcome_extreme_probabilities(
         (20, 1, UNEMPLOYED_NO_CARE[0].item(), 0.3),
         (20, 1, PART_TIME_NO_CARE[0].item(), 0.5),
         (30, 0, RETIREMENT_NO_CARE[0].item(), 0.4),
-        # Informal care choices (care_type_idx = 1)
-        (10, 0, LIGHT_INFORMAL_CARE[0].item(), 0.3),  # Retirement + light
-        (20, 1, LIGHT_INFORMAL_CARE[2].item(), 0.4),  # Part-time + light
-        (15, 0, INTENSIVE_INFORMAL_CARE[1].item(), 0.5),  # Unemployed + intensive
-        (25, 1, INTENSIVE_INFORMAL_CARE[3].item(), 0.6),  # Full-time + intensive
+        # Informal care choices
+        (10, 0, LIGHT_INFORMAL_CARE[0].item(), 0.3),  # care_type_idx = 2: light_care
+        (20, 1, LIGHT_INFORMAL_CARE[2].item(), 0.4),  # care_type_idx = 2: light_care
+        (
+            15,
+            0,
+            INTENSIVE_INFORMAL_CARE[1].item(),
+            0.5,
+        ),  # care_type_idx = 3: intensive_care
+        (
+            25,
+            1,
+            INTENSIVE_INFORMAL_CARE[3].item(),
+            0.6,
+        ),  # care_type_idx = 3: intensive_care
     ],
 )
 def test_draw_inheritance_outcome_respects_probability(
@@ -476,11 +496,19 @@ def test_draw_inheritance_outcome_respects_probability(
     asset_base = 15.0
 
     # Set a specific probability for this combination
-    # Determine care type index from lagged_choice:
-    # - care_type_idx = 0: NO_CARE or FORMAL_CARE (no informal care)
-    # - care_type_idx = 1: LIGHT_INFORMAL_CARE or INTENSIVE_INFORMAL_CARE
-    #   (any informal care)
-    care_type_idx = int(is_informal_care(lagged_choice).astype(int))
+    # Determine care type index from lagged_choice (same logic as function):
+    # - care_type_idx = 0: no_care (no informal care, no formal care)
+    # - care_type_idx = 1: formal_care (formal care only)
+    # - care_type_idx = 2: light_care (light informal care only)
+    # - care_type_idx = 3: intensive_care (intensive informal care only)
+    is_light = is_light_informal_care(lagged_choice)
+    is_intensive = is_intensive_informal_care(lagged_choice)
+    is_formal = is_formal_care(lagged_choice)
+    care_type_idx = (
+        int(is_formal.astype(int).item()) * 1
+        + int(is_light.astype(int).item()) * 2
+        + int(is_intensive.astype(int).item()) * 3
+    )
     sex_idx = SEX  # SEX = 1 (female, index 1)
     # Deep copy once per test, not per iteration
     model_specs = copy.deepcopy(load_specs)

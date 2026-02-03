@@ -177,7 +177,6 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
     """Plot model fit using estimated parameters."""
 
     specs = pickle.load(path_to_specs.open("rb"))
-    params = yaml.safe_load(path_to_params.open("rb"))
     model_config = pickle.load(path_to_model_config.open("rb"))
 
     model_class = dcegm.setup_model(
@@ -231,11 +230,7 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
 
     df_emp_wealth = create_df_wealth(
         df_full=df_emp_full,
-        specs=specs,
-        params=params,
         model_class=model_class,
-        adjust_wealth=False,
-        trim_quantile=True,
     )
 
     # =================================================================================
