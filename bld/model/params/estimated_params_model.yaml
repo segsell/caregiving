@@ -236,7 +236,9 @@ util_intensive_informal_care_high_good: 0.4497328638222296
 util_intensive_informal_care_high_bad: -0.005247943418271838
 util_intensive_informal_care_low_good: 0.4071438633399354
 util_intensive_informal_care_low_bad: 0.08971930509003657
-util_formal_care_good: -0.18538010402635177
-util_formal_care_bad: 0.04182972293415799
+util_formal_care_high_good: -0.18538010402635177
+util_formal_care_high_bad: 0.04182972293415799
+util_formal_care_low_good: -0.18538010402635177
+util_formal_care_low_bad: 0.04182972293415799
 share_unobserved_type_low_educ: 0.8501400152029441
 share_unobserved_type_high_educ: 0.3046364421275729
