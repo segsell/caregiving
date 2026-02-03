@@ -48,6 +48,7 @@ min_long_insured_age: 63
 ret_years_before_SRA: 4
 min_ret_age: 63
 max_ret_age: 67 # 70
+max_age_partner_working: 67 # 70
 # Maximum age to estimate labor market
 max_est_age_labor: 65
 # Assume that part time gives half a year of experience
@@ -64,8 +65,9 @@ unemployment_wealth_thresh: 10_500
 monthly_child_benefits: 184
 monthly_min_wage: 1360
 
-informal_care_cash_benefits: 444 # 0.4239 * 316 + 0.2793 * 545 + 728 *0.1405 + 901 * 0.0617
-formal_care_costs: 600
+# informal_care_cash_benefits: 444 # 0.4239 * 316 + 0.2793 * 545 + 728 *0.1405 + 901 * 0.0617
+informal_care_cash_benefits_light: 235 # Pflegestufe 1 (2010)
+informal_care_cash_benefits_intensive: 570 # Pflegestufe 2 (2010): 440, Pflegestufe 3 (2010): 700
 
 # Retirement parameters
 early_retirement_penalty: 0.036

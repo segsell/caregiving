@@ -113,23 +113,47 @@ def calc_unemployment_benefits(
 #     return unemployment_benefits
 
 
-def calc_care_benefits_and_costs(lagged_choice, education, care_demand, model_specs):
+# def calc_care_benefits_and_costs(lagged_choice, education, care_demand, model_specs):
+#     """Calculate the care benefits and costs."""
+
+#     informal_care_solo = is_informal_care(lagged_choice)
+#     formal_care = is_formal_care(lagged_choice)
+
+#     # # Care benefits
+#     # care_benefits = options["care_benefits"][education, has_sister]
+
+#     # # Care costs
+#     # care_costs = options["care_costs"][education, has_sister]
+
+#     annual_care_benefits = model_specs["informal_care_cash_benefits"] * 12
+#     annual_care_benefits_weighted = annual_care_benefits * informal_care_solo
+
+#     annual_care_costs_weighted = (
+#         model_specs["formal_care_costs"] * formal_care * 12 * 0.5
+#     )
+
+#     return annual_care_benefits_weighted - annual_care_costs_weighted
+
+
+def calc_care_benefits_and_costs(period, lagged_choice, model_specs):
     """Calculate the care benefits and costs."""
 
-    informal_care_solo = is_informal_care(lagged_choice)
+    light_informal_care = is_light_informal_care(lagged_choice)
+    intensive_informal_care = is_intensive_informal_care(lagged_choice)
     formal_care = is_formal_care(lagged_choice)
 
-    # # Care benefits
-    # care_benefits = options["care_benefits"][education, has_sister]
+    monthly_care_benefits_light = model_specs["informal_care_cash_benefits_light"]
+    monthly_care_benefits_intensive = model_specs[
+        "informal_care_cash_benefits_intensive"
+    ]
 
-    # # Care costs
-    # care_costs = options["care_costs"][education, has_sister]
-
-    annual_care_benefits = model_specs["informal_care_cash_benefits"] * 12
-    annual_care_benefits_weighted = annual_care_benefits * informal_care_solo
+    annual_care_benefits_weighted = (
+        monthly_care_benefits_light * light_informal_care
+        + monthly_care_benefits_intensive * intensive_informal_care
+    ) * 12
 
     annual_care_costs_weighted = (
-        model_specs["formal_care_costs"] * formal_care * 12 * 0.5
+        model_specs["formal_care_costs"][period] * formal_care * 12
     )
 
     return annual_care_benefits_weighted - annual_care_costs_weighted

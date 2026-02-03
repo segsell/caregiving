@@ -122,10 +122,15 @@ def budget_constraint(
         period=period,
         model_specs=model_specs,
     )
+    # care_benfits_and_costs = calc_care_benefits_and_costs(
+    #     lagged_choice=lagged_choice,
+    #     education=education,
+    #     care_demand=care_demand,
+    #     model_specs=model_specs,
+    # )
     care_benfits_and_costs = calc_care_benefits_and_costs(
+        period=period,
         lagged_choice=lagged_choice,
-        education=education,
-        care_demand=care_demand,
         model_specs=model_specs,
     )
 
