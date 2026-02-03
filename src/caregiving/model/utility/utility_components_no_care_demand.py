@@ -7,6 +7,7 @@ labor disutility and consumption scale components.
 import jax.numpy as jnp
 
 from caregiving.model.shared import (
+    AGE_40,
     PARTNER_RETIRED,
     SEX,
     is_bad_health,
@@ -37,6 +38,11 @@ def disutility_work(
         SEX, education, has_partner_int, period
     ]
 
+    # Calculate age for age-based parameters
+    age = period + model_specs["start_age"]
+    age_below_40 = (age < AGE_40).astype(int)
+    age_above_40 = (age >= AGE_40).astype(int)
+
     disutil_ft_work = (
         params["disutil_ft_work_high_bad"] * bad_health * education
         + params["disutil_ft_work_low_bad"] * bad_health * (1 - education)
@@ -58,11 +64,24 @@ def disutility_work(
         # + params["disutil_unemployed_low_good_women"] * good_health * (1 - education)
     )
 
-    disutil_children_pt_low = params["disutil_children_pt_work_low"] * nb_children
-    disutil_children_pt_high = params["disutil_children_pt_work_high"] * nb_children
+    # Age-based disutility from children (age < 40 vs age >= 40)
+    disutil_children_pt_low = (
+        params["disutil_children_pt_work_low_below_40"] * age_below_40
+        + params["disutil_children_pt_work_low_above_40"] * age_above_40
+    ) * nb_children
+    disutil_children_pt_high = (
+        params["disutil_children_pt_work_high_below_40"] * age_below_40
+        + params["disutil_children_pt_work_high_above_40"] * age_above_40
+    ) * nb_children
 
-    disutil_children_ft_low = params["disutil_children_ft_work_low"] * nb_children
-    disutil_children_ft_high = params["disutil_children_ft_work_high"] * nb_children
+    disutil_children_ft_low = (
+        params["disutil_children_ft_work_low_below_40"] * age_below_40
+        + params["disutil_children_ft_work_low_above_40"] * age_above_40
+    ) * nb_children
+    disutil_children_ft_high = (
+        params["disutil_children_ft_work_high_below_40"] * age_below_40
+        + params["disutil_children_ft_work_high_above_40"] * age_above_40
+    ) * nb_children
 
     disutil_children_pt = (
         disutil_children_pt_low * (1 - education) + disutil_children_pt_high * education

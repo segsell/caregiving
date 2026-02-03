@@ -10,11 +10,10 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-from dcegm.asset_correction import adjust_observed_assets
 from pytask import Product
 
 import dcegm
-from caregiving.config import BLD, SRC
+from caregiving.config import BLD
 from caregiving.model.shared import (
     BAD_HEALTH,
     DEAD,
@@ -28,14 +27,10 @@ from caregiving.model.shared import (
     UNEMPLOYED_CHOICES,
     WEALTH_END_YEAR,
     WEALTH_MOMENTS_SCALE,
-    WEALTH_QUANTILE_CUTOFF,
     WEALTH_START_YEAR,
     WORK_CHOICES,
 )
 from caregiving.model.state_space import create_state_space_functions
-from caregiving.model.stochastic_processes.job_transition import (
-    job_offer_process_transition_initial_conditions,
-)
 from caregiving.model.task_specify_model import create_stochastic_states_transitions
 from caregiving.model.taste_shocks import shock_function_dict
 from caregiving.model.utility.bequest_utility import (
@@ -44,6 +39,7 @@ from caregiving.model.utility.bequest_utility import (
 from caregiving.model.utility.utility_functions_additive import create_utility_functions
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.moments.transform_data import load_and_scale_correct_data
+from dcegm.asset_correction import adjust_observed_assets
 
 DEGREES_OF_FREEDOM = 1
 
