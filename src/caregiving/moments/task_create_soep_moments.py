@@ -45,7 +45,6 @@ DEGREES_OF_FREEDOM = 1
 @pytask.mark.moments
 @pytask.mark.soep_moments
 def task_create_soep_moments(  # noqa: PLR0915
-    # path_to_specs: Path = SRC / "specs.yaml",
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_model_config: Path = BLD / "model" / "model_config.pkl",
     path_to_model: Path = BLD / "model" / "model.pkl",

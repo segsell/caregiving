@@ -57,6 +57,13 @@ def simulate_moments_pandas(  # noqa: PLR0915
             f"{s}_{s+4}" for s in range(40, 70, 5)
         ],  # ["40_44", "45_49", "50_54", "55_59", "60_64", "65_69"]
     )
+    # 5-year age bins for wealth: [30, 35), [35, 40), ..., [85, 90)
+    age_bins_wealth = (
+        list(range(30, 91, 5)),  # [30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90]
+        [
+            f"{s}_{s+4}" for s in range(30, 86, 5)
+        ],  # ["30_34", "35_39", "40_44", ..., "85_89"]
+    )
     # =================================================================================
     # Calculate how many full 3-year bins we can fit
     # Start from start_age_caregivers and create bins of size 3
@@ -134,18 +141,18 @@ def simulate_moments_pandas(  # noqa: PLR0915
 
     # =================================================================================
     # Wealth moments
-    moments = create_median_by_age(
+    moments = create_median_by_age_bin(
         df_full_low,
         moments,
         variable="assets_begin_of_period",
-        age_range=age_range_wealth,
+        age_bins_and_labels=age_bins_wealth,
         label="low_education",
     )
-    moments = create_median_by_age(
+    moments = create_median_by_age_bin(
         df_full_high,
         moments,
         variable="assets_begin_of_period",
-        age_range=age_range_wealth,
+        age_bins_and_labels=age_bins_wealth,
         label="high_education",
     )
 

@@ -152,10 +152,14 @@
 # # beta: 0.97
 # # income_shock_mean: 0.0
 # # income_shock_std: 0.16471062648214
-disutil_children_ft_work_high: 0.07904028129374809
-disutil_children_ft_work_low: 0.07820296905199843
-disutil_children_pt_work_high: -0.0973071551967625
-disutil_children_pt_work_low: 0.0307203979060732
+disutil_children_ft_work_high_below_40: 0.07904028129374809
+disutil_children_ft_work_high_above_40: 0.07904028129374809
+disutil_children_ft_work_low_below_40: 0.07820296905199843
+disutil_children_ft_work_low_above_40: 0.07820296905199843
+disutil_children_pt_work_high_below_40: -0.0973071551967625
+disutil_children_pt_work_high_above_40: -0.0973071551967625
+disutil_children_pt_work_low_below_40: 0.0307203979060732
+disutil_children_pt_work_low_above_40: 0.0307203979060732
 disutil_ft_work_high_bad: 4.2169287960206026
 disutil_ft_work_high_good: 0.14926687783227524
 disutil_ft_work_low_bad: 0.48649640049516035
