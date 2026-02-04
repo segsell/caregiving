@@ -1164,9 +1164,9 @@ def create_median_by_age_bin(
     )
 
     for age_bin in bin_labels:
-        moments[f"median_{variable}{label}_age_bin_{age_bin}"] = median_by_bin.loc[
-            age_bin
-        ]
+        moments[f"median_{variable}{label}_age_bin_{age_bin}"] = (
+            median_by_bin.loc[age_bin] * WEALTH_MOMENTS_SCALE
+        )
 
     return moments
 
@@ -1213,7 +1213,9 @@ def create_mean_by_age_bin(
     )
 
     for age_bin in bin_labels:
-        moments[f"mean_{variable}{label}_age_bin_{age_bin}"] = mean_by_bin.loc[age_bin]
+        moments[f"mean_{variable}{label}_age_bin_{age_bin}"] = (
+            mean_by_bin.loc[age_bin] * WEALTH_MOMENTS_SCALE
+        )
 
     return moments
 

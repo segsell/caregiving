@@ -241,9 +241,9 @@ taste_shock_scale: 2
 
 # Job finding probability
 job_finding_logit_const_women: 5
-job_finding_logit_age_women: 0.5
-job_finding_logit_age_squared_women: 0.1
-job_finding_logit_age_cubed_women: 0.01
+job_finding_logit_age_women: 5
+job_finding_logit_age_squared_women: 1
+job_finding_logit_age_cubed_women: 0.1
 job_finding_logit_high_educ_women: 5
 # Job finding age dummies
 job_finding_logit_above_50_women: 5
