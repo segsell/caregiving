@@ -37,7 +37,7 @@ def task_plot_initial_wealth(
     path_to_save: Annotated[Path, Product] = BLD
     / "plots"
     / "initial_conditions"
-    / "wealth_distributions.png",
+    / "_wealth_distributions.png",
 ) -> None:
     """Plot initial wealth distributions and model-implied wealth samples."""
 
@@ -145,7 +145,7 @@ def task_plot_education_shares(
     path_to_save: Annotated[Path, Product] = BLD
     / "plots"
     / "initial_conditions"
-    / "education_shares.png",
+    / "_education_shares.png",
 ) -> None:
     """Plot bar chart of education shares (low and high education)."""
     observed_data = pd.read_csv(path_to_sample, index_col=[0])
@@ -195,7 +195,7 @@ def task_plot_job_offer_shares(
     path_to_save: Annotated[Path, Product] = BLD
     / "plots"
     / "initial_conditions"
-    / "job_offer_shares.png",
+    / "_job_offer_shares.png",
 ) -> None:
     """Plot bar chart of positive job offer shares for all, low educ, and high educ."""
     observed_data = pd.read_csv(path_to_sample, index_col=[0])

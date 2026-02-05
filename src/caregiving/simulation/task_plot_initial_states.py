@@ -312,7 +312,7 @@ def task_plot_initial_states_education_shares(
     path_to_save_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "initial_conditions"
-    / "education_shares_from_initial_states.png",
+    / "education_shares.png",
 ) -> None:
     """Plot education shares (low and high education) from initial_states.pkl.
 
@@ -389,7 +389,7 @@ def task_plot_initial_states_job_offer_shares(
     path_to_save_plot: Annotated[Path, Product] = BLD
     / "plots"
     / "initial_conditions"
-    / "job_offer_shares_from_initial_states.png",
+    / "job_offer_shares.png",
 ) -> None:
     """Plot job offer shares for all, low educ, and high educ from initial_states.pkl.
 
