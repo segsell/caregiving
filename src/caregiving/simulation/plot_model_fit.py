@@ -35,15 +35,21 @@ def plot_wealth_by_age_and_education(
     *,
     wealth_var_emp: str,
     wealth_var_sim: str,
-    median: bool = False,
+    median: bool = True,
     age_min: int | None = None,
     age_max: int | None = None,
+    filter_sex: bool = False,
     path_to_save_plot: str | None = None,
 ):
     """
     Plot average/median wealth by age and education (Observed vs Simulated),
     with education groups side by side, shared y-axis, y-labels on left for both
     panels, and internal x-padding near the vertical axes.
+
+    Parameters
+    ----------
+    filter_sex : bool, default False
+        If True, filter on sex (only SEX). If False, include both men and women.
 
     """
     # ---------- 0. Setup ----------
@@ -67,12 +73,16 @@ def plot_wealth_by_age_and_education(
     for edu_idx, edu_label in enumerate(specs["education_labels"]):
         ax = axs[edu_idx]
 
-        emp_edu = data_emp[
-            (data_emp["education"] == edu_idx) & (data_emp["sex"] == SEX)
-        ]
-        sim_edu = data_sim[
-            (data_sim["education"] == edu_idx) & (data_sim["sex"] == SEX)
-        ]
+        if filter_sex:
+            emp_edu = data_emp[
+                (data_emp["education"] == edu_idx) & (data_emp["sex"] == SEX)
+            ]
+            sim_edu = data_sim[
+                (data_sim["education"] == edu_idx) & (data_sim["sex"] == SEX)
+            ]
+        else:
+            emp_edu = data_emp[data_emp["education"] == edu_idx]
+            sim_edu = data_sim[data_sim["education"] == edu_idx]
 
         emp_series = (
             emp_edu.groupby("age", observed=False)[wealth_var_emp]
@@ -132,11 +142,12 @@ def plot_wealth_by_age_bins_and_education(  # noqa: PLR0912, PLR0915
     *,
     wealth_var_emp: str,
     wealth_var_sim: str,
-    median: bool = False,
+    median: bool = True,
     age_min: int | None = None,
     age_max: int | None = None,
     bin_width: int = 5,
     age_bin_ticks: bool = False,
+    filter_sex: bool = False,
     path_to_save_plot: str | None = None,
 ):
     """
@@ -150,6 +161,8 @@ def plot_wealth_by_age_bins_and_education(  # noqa: PLR0912, PLR0915
         If True: X-axis labels are range-style (e.g., "55-59"), rotated 45°,
         and shown at the bottom of every subplot with label "Age bin".
         If False: X-axis ticks every 5 years (e.g., 40, 45, 50...) with label "Age".
+    filter_sex : bool, default True
+        If True, filter on sex (only SEX). If False, include both men and women.
     """
     # ---------- 0. Setup ----------
     if age_min is None:
@@ -182,12 +195,16 @@ def plot_wealth_by_age_bins_and_education(  # noqa: PLR0912, PLR0915
     for edu_idx, edu_label in enumerate(specs["education_labels"]):
         ax = axs[edu_idx]
 
-        emp_edu = data_emp[
-            (data_emp["education"] == edu_idx) & (data_emp["sex"] == SEX)
-        ]
-        sim_edu = data_sim[
-            (data_sim["education"] == edu_idx) & (data_sim["sex"] == SEX)
-        ]
+        if filter_sex:
+            emp_edu = data_emp[
+                (data_emp["education"] == edu_idx) & (data_emp["sex"] == SEX)
+            ]
+            sim_edu = data_sim[
+                (data_sim["education"] == edu_idx) & (data_sim["sex"] == SEX)
+            ]
+        else:
+            emp_edu = data_emp[data_emp["education"] == edu_idx]
+            sim_edu = data_sim[data_sim["education"] == edu_idx]
 
         emp_rates = []
         sim_rates = []

@@ -263,7 +263,6 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         end_year=end_year,
         end_age=end_age,
     )
-
     df_emp_wealth = create_df_wealth(
         df_full=df_emp_full,
         model_class=model_class,
@@ -304,10 +303,12 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         wealth_var_emp="adjusted_wealth",
         wealth_var_sim="assets_begin_of_period",
         median=True,
+        filter_sex=True,
         age_min=30,
         age_max=89,
         path_to_save_plot=path_to_save_wealth_plot,
     )
+
     plot_wealth_by_age_bins_and_education(
         data_emp=df_emp_wealth,
         data_sim=df_sim,
@@ -315,11 +316,13 @@ def task_plot_model_fit_estimated_params(  # noqa: PLR0915
         wealth_var_emp="adjusted_wealth",
         wealth_var_sim="assets_begin_of_period",
         median=True,
+        filter_sex=True,
         age_min=30,
         age_max=89,
         bin_width=5,
         path_to_save_plot=path_to_save_wealth_age_bins_plot,
     )
+
     plot_average_savings_decision(
         df_sim, path_to_save_savings_plot, end_age=specs["end_age"]
     )

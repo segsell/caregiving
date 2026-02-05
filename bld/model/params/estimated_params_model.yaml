@@ -222,8 +222,10 @@ bequest_scale_high: 0.5299969947125845
 bequest_scale_low: 0.018731890731982902
 rho_bequest_high: 2.414346882835183
 rho_bequest_low: 3.022870346976081
-rho_high: 3.988496770595214
-rho_low: 2.696527196049831
+# rho_high: 3.988496770595214
+# rho_low: 2.696527196049831
+rho_high: 1.7051306674218174
+rho_low: 1.7683701318709497
 # util_informal_care_high_good: 0.4497328638222296
 # util_informal_care_high_bad: -0.005247943418271838
 # util_informal_care_low_good: 0.4071438633399354

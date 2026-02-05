@@ -2237,6 +2237,7 @@ def create_df_caregivers(
 def create_df_wealth(
     df_full: pd.DataFrame,
     model_class: Any,
+    filter_sex: bool = False,
 ) -> pd.DataFrame:
     """Create and process wealth dataframe.
 
@@ -2252,8 +2253,13 @@ def create_df_wealth(
     pd.DataFrame
         Processed wealth dataframe with adjusted_wealth column
     """
+    if filter_sex:
+        df = df_full[df_full["sex"] == SEX].copy()
+    else:
+        df = df_full.copy()
+
     df_wealth_corrected = load_and_scale_correct_data(
-        data_decision=df_full,
+        data_decision=df,
         model_class=model_class,
     )
     df_wealth = df_wealth_corrected[

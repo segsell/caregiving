@@ -160,8 +160,8 @@ def task_plot_empirical_soep_moments(
     df_caregivers_full = pd.read_csv(path_to_caregivers_sample, index_col=[0])
 
     # Load wealth data
-    df_wealth = pd.read_csv(path_to_wealth_data, index_col=[0])
-    df_wealth = df_wealth.reset_index()
+    # df_wealth = pd.read_csv(path_to_wealth_data, index_col=[0])
+    # df_wealth = df_wealth.reset_index()
     # df_wealth_full not used
     # df_wealth_full = pd.read_csv(path_to_wealth_data_full, index_col=[0])
 

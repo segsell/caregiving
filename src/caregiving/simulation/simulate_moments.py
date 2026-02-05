@@ -42,46 +42,15 @@ def simulate_moments_pandas(  # noqa: PLR0915
     """Simulate the model for given parametrization and model solution."""
 
     start_age = model_specs["start_age"]
-    # Prefer directly stored caregiving start age if available
-    start_age_caregivers = model_specs["start_age_caregiving"]
     end_age = model_specs["end_age_msm"]
-    end_age_caregiving = model_specs["end_age_caregiving"]
 
     age_range = range(start_age, end_age + 1)
-    # age_range_caregivers = range(start_age_caregivers, end_age_caregiving + 1)
-    age_range_wealth = range(start_age, model_specs["end_age_wealth"] + 1)
 
-    age_bins_caregivers_5year = (
-        list(range(40, 75, 5)),  # [40, 45, 50, 55, 60, 65, 70]
-        [
-            f"{s}_{s+4}" for s in range(40, 70, 5)
-        ],  # ["40_44", "45_49", "50_54", "55_59", "60_64", "65_69"]
-    )
-    # 5-year age bins for wealth: [30, 35), [35, 40), ..., [85, 90)
-    age_bins_wealth = (
-        list(range(30, 91, 5)),  # [30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90]
-        [
-            f"{s}_{s+4}" for s in range(30, 86, 5)
-        ],  # ["30_34", "35_39", "40_44", ..., "85_89"]
-    )
-    # =================================================================================
-    # Calculate how many full 3-year bins we can fit
-    # Start from start_age_caregivers and create bins of size 3
-    # Stop when the next full bin would start beyond end_age_caregiving
-    bin_edges_caregivers = []
-    current_edge = start_age_caregivers
-    while current_edge + 3 <= end_age_caregiving + 1:
-        bin_edges_caregivers.append(current_edge)
-        current_edge += 3
-
-    # Add the final edge for the last full bin (needed for pd.cut with right=False)
-    if bin_edges_caregivers:
-        bin_edges_caregivers.append(bin_edges_caregivers[-1] + 3)
-
-    # Generate labels from bin edges (one fewer label than edges)
-    bin_labels_caregivers = [f"{s}_{s+2}" for s in bin_edges_caregivers[:-1]]
-    age_bins_caregivers_3year = (bin_edges_caregivers, bin_labels_caregivers)
-    # =================================================================================
+    # Use precomputed age bins from specs (computed in task_write_specs.py)
+    # to avoid recomputing them during estimation
+    age_bins_caregivers_5year = model_specs["age_bins_caregivers_5year"]
+    age_bins_wealth = model_specs["age_bins_wealth"]
+    age_bins_caregivers_3year = model_specs["age_bins_caregivers_3year"]
 
     df_full = df_full.loc[df_full["health"] != DEAD].copy()
     df_full["mother_age"] = (
