@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-from dcegm.asset_correction import adjust_observed_assets
 from pytask import Product
 
 from caregiving.config import BLD
@@ -25,6 +24,7 @@ from caregiving.simulation.task_generate_initial_conditions import (
     draw_start_wealth_dist,
 )
 from dcegm import setup_model
+from dcegm.asset_correction import adjust_observed_assets
 
 
 @pytask.mark.initial_wealth
@@ -134,5 +134,126 @@ def task_plot_initial_wealth(
 
     plt.tight_layout()
 
+    plt.savefig(path_to_save, dpi=300)
+    plt.close(fig)
+
+
+@pytask.mark.initial_conditions
+def task_plot_education_shares(
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_sample: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
+    path_to_save: Annotated[Path, Product] = BLD
+    / "plots"
+    / "initial_conditions"
+    / "education_shares.png",
+) -> None:
+    """Plot bar chart of education shares (low and high education)."""
+    observed_data = pd.read_csv(path_to_sample, index_col=[0])
+    specs = pickle.load(path_to_specs.open("rb"))
+
+    # Define start data
+    min_period = observed_data["period"].min()
+    start_period_data = observed_data[observed_data["period"].isin([min_period])].copy()
+
+    # Calculate shares
+    education_counts = start_period_data["education"].value_counts().sort_index()
+    total = len(start_period_data)
+    shares = education_counts / total
+
+    # Create labels
+    labels = [specs["education_labels"][idx] for idx in shares.index]
+
+    # Plot
+    fig, ax = plt.subplots(figsize=(8, 6))
+    bars = ax.bar(labels, shares.values, color=["#1f77b4", "#ff7f0e"], alpha=0.7)
+    ax.set_ylabel("Share", fontsize=12)
+    ax.set_title("Education Distribution", fontsize=14, fontweight="bold")
+    ax.set_ylim([0, 1])
+    ax.grid(True, alpha=0.3, axis="y")
+
+    # Add value labels on bars
+    for bar, share in zip(bars, shares.values, strict=False):
+        height = bar.get_height()
+        ax.text(
+            bar.get_x() + bar.get_width() / 2.0,
+            height,
+            f"{share:.3f}",
+            ha="center",
+            va="bottom",
+            fontsize=11,
+        )
+
+    plt.tight_layout()
+    plt.savefig(path_to_save, dpi=300)
+    plt.close(fig)
+
+
+@pytask.mark.initial_conditions
+def task_plot_job_offer_shares(
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_sample: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
+    path_to_save: Annotated[Path, Product] = BLD
+    / "plots"
+    / "initial_conditions"
+    / "job_offer_shares.png",
+) -> None:
+    """Plot bar chart of positive job offer shares for all, low educ, and high educ."""
+    observed_data = pd.read_csv(path_to_sample, index_col=[0])
+    specs = pickle.load(path_to_specs.open("rb"))
+
+    # Define start data
+    min_period = observed_data["period"].min()
+    start_period_data = observed_data[observed_data["period"].isin([min_period])].copy()
+
+    # Filter out missing job_offer values (if any)
+    data = start_period_data[start_period_data["job_offer"].notna()].copy()
+
+    # Calculate shares
+    # All
+    share_all = (data["job_offer"] == 1).sum() / len(data)
+
+    # Low education
+    data_low = data[data["education"] == 0]
+    share_low = (
+        (data_low["job_offer"] == 1).sum() / len(data_low) if len(data_low) > 0 else 0.0
+    )
+
+    # High education
+    data_high = data[data["education"] == 1]
+    share_high = (
+        (data_high["job_offer"] == 1).sum() / len(data_high)
+        if len(data_high) > 0
+        else 0.0
+    )
+
+    # Create labels
+    labels = [
+        "All",
+        specs["education_labels"][0],
+        specs["education_labels"][1],
+    ]
+    shares = [share_all, share_low, share_high]
+
+    # Plot
+    fig, ax = plt.subplots(figsize=(10, 6))
+    bars = ax.bar(labels, shares, color=["#2ca02c", "#1f77b4", "#ff7f0e"], alpha=0.7)
+    ax.set_ylabel("Share with Positive Job Offer", fontsize=12)
+    ax.set_title("Job Offer Distribution by Education", fontsize=14, fontweight="bold")
+    ax.set_ylim([0, 1])
+    ax.grid(True, alpha=0.3, axis="y")
+
+    # Add value labels on bars
+    for bar, share in zip(bars, shares, strict=False):
+        height = bar.get_height()
+        ax.text(
+            bar.get_x() + bar.get_width() / 2.0,
+            height,
+            f"{share:.3f}",
+            ha="center",
+            va="bottom",
+            fontsize=11,
+        )
+
+    plt.tight_layout()
     plt.savefig(path_to_save, dpi=300)
     plt.close(fig)

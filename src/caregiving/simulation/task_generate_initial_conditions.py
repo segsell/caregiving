@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-from dcegm.asset_correction import adjust_observed_assets
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
@@ -43,6 +42,7 @@ from caregiving.moments.task_create_soep_moments import (
     create_df_wealth,
 )
 from caregiving.moments.transform_data import load_and_scale_correct_data
+from dcegm.asset_correction import adjust_observed_assets
 
 
 @pytask.mark.initial_conditions
@@ -75,10 +75,6 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     / "model"
     / "initial_conditions"
     / "initial_states.pkl",
-    # path_to_save_wealth: Annotated[Path, Product] = BLD
-    # / "model"
-    # / "initial_conditions"
-    # / "wealth.csv",
 ) -> None:
     sex_var = SEX
 
