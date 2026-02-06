@@ -10,7 +10,6 @@ import pytest
 
 from caregiving.config import BLD
 from caregiving.model.shared import (
-    AGE_40,
     CARE_DEMAND_AND_NO_OTHER_SUPPLY,
     CARE_DEMAND_AND_OTHER_SUPPLY,
     FULL_TIME_NO_CARE,
@@ -86,15 +85,11 @@ def create_test_params(disutil_work, disutil_unemployed, rho):
         "disutil_unemployed_low_women": disutil_unemployed,
         "disutil_unemployed_high_women": disutil_unemployed,
         "disutil_partner_retired": 0,
-        # Age-based disutility from children (age < 40 vs age >= 40)
-        "disutil_children_pt_work_low_below_40": 0,
-        "disutil_children_pt_work_low_above_40": 0,
-        "disutil_children_pt_work_high_below_40": 0,
-        "disutil_children_pt_work_high_above_40": 0,
-        "disutil_children_ft_work_low_below_40": 0.1,
-        "disutil_children_ft_work_low_above_40": 0.1,
-        "disutil_children_ft_work_high_below_40": 0.2,
-        "disutil_children_ft_work_high_above_40": 0.2,
+        # Disutility from children (age-agnostic)
+        "disutil_children_pt_work_low": 0,
+        "disutil_children_pt_work_high": 0,
+        "disutil_children_ft_work_low": 0.1,
+        "disutil_children_ft_work_high": 0.2,
         # labor and caregiving
         "disutil_pt_work_high_good_informal_care": disutil_work,
         "disutil_pt_work_high_bad_informal_care": disutil_work + 1,
@@ -272,22 +267,11 @@ def test_utility_func(
     nb_children = model_specs["children_by_state"][
         sex, education, has_partner_int, period
     ]
-    # Calculate age for age-based parameters
-    age = period + model_specs["start_age"]
-    age_below_40 = int(age < AGE_40)
-    age_above_40 = int(age >= AGE_40)
-
-    # Age-based disutility from children for full-time work
+    # Disutility from children for full-time work (age-agnostic)
     if education == 1:  # high education
-        exp_factor_ft_work += (
-            params["disutil_children_ft_work_high_below_40"] * age_below_40
-            + params["disutil_children_ft_work_high_above_40"] * age_above_40
-        ) * nb_children
+        exp_factor_ft_work += params["disutil_children_ft_work_high"] * nb_children
     else:  # low education
-        exp_factor_ft_work += (
-            params["disutil_children_ft_work_low_below_40"] * age_below_40
-            + params["disutil_children_ft_work_low_above_40"] * age_above_40
-        ) * nb_children
+        exp_factor_ft_work += params["disutil_children_ft_work_low"] * nb_children
 
     disutil_pt_work = -exp_factor_pt_work
     disutil_ft_work = -exp_factor_ft_work

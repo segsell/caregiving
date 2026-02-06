@@ -75,10 +75,6 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     / "model"
     / "initial_conditions"
     / "initial_states.pkl",
-    # path_to_save_wealth: Annotated[Path, Product] = BLD
-    # / "model"
-    # / "initial_conditions"
-    # / "wealth.csv",
 ) -> None:
     sex_var = SEX
 

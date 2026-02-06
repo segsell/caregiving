@@ -432,7 +432,70 @@ def task_write_specs(  # noqa: PLR0915
         path_to_formal_care_costs_params_pooled, specs
     )
 
+    # Precompute age bins for moment calculation (used in simulate_moments_pandas)
+    # to avoid recomputing them during estimation
+    specs = precompute_age_bins(specs)
+
     with path_to_save_specs_dict.open("wb") as f:
         pkl.dump(specs, f)
+
+    return specs
+
+
+def precompute_age_bins(specs: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Precompute age bins for moment calculation.
+
+    These age bins are used in simulate_moments_pandas and are precomputed
+    here to avoid recomputing them during estimation.
+
+    Parameters
+    ----------
+    specs : dict
+        Model specifications dict. Must contain:
+        - start_age_caregiving
+        - end_age_caregiving
+
+    Returns
+    -------
+    dict
+        Updated specs dict with age bins added:
+        - age_bins_caregivers_5year: tuple of (bin_edges, bin_labels)
+        - age_bins_wealth: tuple of (bin_edges, bin_labels)
+        - age_bins_caregivers_3year: tuple of (bin_edges, bin_labels)
+
+    """
+    start_age_caregiving = specs["start_age_caregiving"]
+    end_age_caregiving = specs["end_age_caregiving"]
+
+    # 5-year age bins for caregivers: [40, 45, 50, 55, 60, 65, 70]
+    # Labels: ["40_44", "45_49", "50_54", "55_59", "60_64", "65_69"]
+    specs["age_bins_caregivers_5year"] = (
+        list(range(40, 75, 5)),  # [40, 45, 50, 55, 60, 65, 70]
+        [f"{s}_{s+4}" for s in range(40, 70, 5)],  # ["40_44", "45_49", ..., "65_69"]
+    )
+
+    # 5-year age bins for wealth: [30, 35, 40, ..., 85, 90]
+    # Labels: ["30_34", "35_39", ..., "85_89"]
+    specs["age_bins_wealth"] = (
+        list(range(30, 91, 5)),  # [30, 35, 40, ..., 85, 90]
+        [f"{s}_{s+4}" for s in range(30, 86, 5)],  # ["30_34", "35_39", ..., "85_89"]
+    )
+
+    # 3-year age bins for caregivers: from start_age_caregiving to end_age_caregiving
+    # Calculate how many full 3-year bins we can fit
+    bin_edges_caregivers = []
+    current_edge = start_age_caregiving
+    while current_edge + 3 <= end_age_caregiving + 1:
+        bin_edges_caregivers.append(current_edge)
+        current_edge += 3
+
+    # Add the final edge for the last full bin (needed for pd.cut with right=False)
+    if bin_edges_caregivers:
+        bin_edges_caregivers.append(bin_edges_caregivers[-1] + 3)
+
+    # Generate labels from bin edges (one fewer label than edges)
+    bin_labels_caregivers = [f"{s}_{s+2}" for s in bin_edges_caregivers[:-1]]
+    specs["age_bins_caregivers_3year"] = (bin_edges_caregivers, bin_labels_caregivers)
 
     return specs

@@ -152,14 +152,10 @@
 # # beta: 0.97
 # # income_shock_mean: 0.0
 # # income_shock_std: 0.16471062648214
-disutil_children_ft_work_high_below_40: 0.07904028129374809
-disutil_children_ft_work_high_above_40: 0.07904028129374809
-disutil_children_ft_work_low_below_40: 0.07820296905199843
-disutil_children_ft_work_low_above_40: 0.07820296905199843
-disutil_children_pt_work_high_below_40: -0.0973071551967625
-disutil_children_pt_work_high_above_40: -0.0973071551967625
-disutil_children_pt_work_low_below_40: 0.0307203979060732
-disutil_children_pt_work_low_above_40: 0.0307203979060732
+disutil_children_ft_work_high: 0.07904028129374809
+disutil_children_ft_work_low: 0.07820296905199843
+disutil_children_pt_work_high: -0.0973071551967625
+disutil_children_pt_work_low: 0.0307203979060732
 disutil_ft_work_high_bad: 4.2169287960206026
 disutil_ft_work_high_good: 0.14926687783227524
 disutil_ft_work_low_bad: 0.48649640049516035
@@ -222,8 +218,10 @@ bequest_scale_high: 0.5299969947125845
 bequest_scale_low: 0.018731890731982902
 rho_bequest_high: 2.414346882835183
 rho_bequest_low: 3.022870346976081
-rho_high: 3.988496770595214
-rho_low: 2.696527196049831
+# rho_high: 3.988496770595214
+# rho_low: 2.696527196049831
+rho_high: 1.7051306674218174
+rho_low: 1.7683701318709497
 # util_informal_care_high_good: 0.4497328638222296
 # util_informal_care_high_bad: -0.005247943418271838
 # util_informal_care_low_good: 0.4071438633399354
@@ -236,7 +234,9 @@ util_intensive_informal_care_high_good: 0.4497328638222296
 util_intensive_informal_care_high_bad: -0.005247943418271838
 util_intensive_informal_care_low_good: 0.4071438633399354
 util_intensive_informal_care_low_bad: 0.08971930509003657
-util_formal_care_good: -0.18538010402635177
-util_formal_care_bad: 0.04182972293415799
+util_formal_care_high_good: -0.18538010402635177
+util_formal_care_high_bad: 0.04182972293415799
+util_formal_care_low_good: -0.18538010402635177
+util_formal_care_low_bad: 0.04182972293415799
 share_unobserved_type_low_educ: 0.8501400152029441
 share_unobserved_type_high_educ: 0.3046364421275729

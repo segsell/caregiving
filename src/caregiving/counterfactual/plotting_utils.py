@@ -138,6 +138,62 @@ def prepare_dataframes_for_comparison(
     return df_o, df_c
 
 
+def prepare_dfs_for_comparison(
+    *dfs: pd.DataFrame,
+    ever_care_demand: bool = False,
+    restrict_same_agents: bool = True,
+) -> tuple:
+    """Prepare dataframes for comparable scenario comparison.
+
+    Accepts 2 or 3 dataframes in order (e.g. normal, baseline or full, normal,
+    baseline). If ever_care_demand: apply prepare_dataframes_for_comparison
+    (alive + ever care demand) to the first two; if 3 dfs, filter the third to
+    same agents and alive. If restrict_same_agents: keep only (agent, period)
+    that exist in all provided dfs.
+
+    Returns:
+        Same number of dataframes in the same order, filtered.
+    """
+    n_dfs_three = 3
+    n = len(dfs)
+    if n not in (2, n_dfs_three):
+        raise ValueError("prepare_dfs_for_comparison expects 2 or 3 dataframes")
+    df_a, df_b = dfs[0].copy(), dfs[1].copy()
+    df_c = dfs[2].copy() if n == n_dfs_three else None
+
+    if ever_care_demand:
+        df_a, df_b = prepare_dataframes_for_comparison(
+            df_a, df_b, ever_caregivers=False, ever_care_demand=True
+        )
+        if df_c is not None:
+            df_c = ensure_agent_period(df_c)
+            if "health" in df_c.columns:
+                df_c = df_c[df_c["health"] != DEAD].copy()
+            agent_set = df_a["agent"].unique()
+            df_c = df_c[df_c["agent"].isin(agent_set)].copy()
+    else:
+        df_a = ensure_agent_period(df_a)
+        df_b = ensure_agent_period(df_b)
+        if df_c is not None:
+            df_c = ensure_agent_period(df_c)
+
+    if restrict_same_agents:
+        keys_a = df_a[["agent", "period"]].drop_duplicates()
+        keys_b = df_b[["agent", "period"]].drop_duplicates()
+        common = keys_a.merge(keys_b, on=["agent", "period"], how="inner")
+        if df_c is not None:
+            keys_c = df_c[["agent", "period"]].drop_duplicates()
+            common = common.merge(keys_c, on=["agent", "period"], how="inner")
+        df_a = df_a.merge(common, on=["agent", "period"], how="inner")
+        df_b = df_b.merge(common, on=["agent", "period"], how="inner")
+        if df_c is not None:
+            df_c = df_c.merge(common, on=["agent", "period"], how="inner")
+
+    if df_c is not None:
+        return (df_a, df_b, df_c)
+    return (df_a, df_b)
+
+
 def calculate_outcomes(
     df: pd.DataFrame,
     choice_set_type: Literal[

@@ -3,7 +3,6 @@
 import jax.numpy as jnp
 
 from caregiving.model.shared import (  # is_nursing_home_care,
-    AGE_40,
     CARE_DEMAND_LIGHT,
     PARTNER_RETIRED,
     SEX,
@@ -51,11 +50,6 @@ def disutility_work(
         SEX, education, has_partner_int, period
     ]
 
-    # Calculate age for age-based parameters
-    age = period + model_specs["start_age"]
-    age_below_40 = (age < AGE_40).astype(int)
-    age_above_40 = (age >= AGE_40).astype(int)
-
     # =================================================================================
     # No caregiving
     # =================================================================================
@@ -83,24 +77,11 @@ def disutility_work(
         # + params["disutil_unemployed_low_good_women"] * good_health * (1 - education)
     )
 
-    # Age-based disutility from children (age < 40 vs age >= 40)
-    disutil_children_pt_low = (
-        params["disutil_children_pt_work_low_below_40"] * age_below_40
-        + params["disutil_children_pt_work_low_above_40"] * age_above_40
-    ) * nb_children
-    disutil_children_pt_high = (
-        params["disutil_children_pt_work_high_below_40"] * age_below_40
-        + params["disutil_children_pt_work_high_above_40"] * age_above_40
-    ) * nb_children
-
-    disutil_children_ft_low = (
-        params["disutil_children_ft_work_low_below_40"] * age_below_40
-        + params["disutil_children_ft_work_low_above_40"] * age_above_40
-    ) * nb_children
-    disutil_children_ft_high = (
-        params["disutil_children_ft_work_high_below_40"] * age_below_40
-        + params["disutil_children_ft_work_high_above_40"] * age_above_40
-    ) * nb_children
+    # Disutility from children (age-agnostic)
+    disutil_children_pt_low = params["disutil_children_pt_work_low"] * nb_children
+    disutil_children_pt_high = params["disutil_children_pt_work_high"] * nb_children
+    disutil_children_ft_low = params["disutil_children_ft_work_low"] * nb_children
+    disutil_children_ft_high = params["disutil_children_ft_work_high"] * nb_children
 
     disutil_children_pt = (
         disutil_children_pt_low * (1 - education) + disutil_children_pt_high * education
