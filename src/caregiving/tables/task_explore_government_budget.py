@@ -1,4 +1,4 @@
-"""Task to explore government budget components in baseline and counterfactual scenarios."""
+"""Explore government budget components in baseline and counterfactual scenarios."""
 
 import pickle
 from pathlib import Path
@@ -22,15 +22,15 @@ from caregiving.model.shared import (
 from caregiving.model.wealth_and_budget.tax_and_ssc import calc_health_ltc_contr
 
 
-@pytask.mark.tables
-def task_explore_government_budget(
-    path_to_baseline_sim: Path = BLD / "solve_and_simulate"
-    # / "simulated_data_no_inheritance.pkl",
-    / "simulated_data_estimated_params.pkl",
-    path_to_no_care_demand_sim: Path = BLD
+@pytask.mark.explore_government_budget
+def task_explore_government_budget(  # noqa: PLR0915
+    path_to_baseline_sim: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_no_care_demand.pkl",
-    # / "simulated_data_no_care_demand_no_inheritance.pkl",
+    / "simulated_data_no_inheritance.pkl",
+    # / "simulated_data_estimated_params.pkl",
+    path_to_no_care_demand_sim: Path = BLD / "solve_and_simulate"
+    # / "simulated_data_no_care_demand.pkl",
+    / "simulated_data_no_care_demand_no_inheritance.pkl",
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_initial_states: Path = BLD
     / "model"
@@ -63,8 +63,8 @@ def task_explore_government_budget(
         Path to save the output CSV table
     """
 
-    # Load initial states
-    initial_states = pickle.load(path_to_initial_states.open("rb"))
+    # Load initial states (for potential future use)
+    _ = pickle.load(path_to_initial_states.open("rb"))
 
     # Load simulated data
     baseline_df = pd.read_pickle(path_to_baseline_sim)
@@ -76,7 +76,6 @@ def task_explore_government_budget(
 
     baseline_df = convert_to_currency(baseline_df, wealth_unit)
     no_care_demand_df = convert_to_currency(no_care_demand_df, wealth_unit)
-    breakpoint()
 
     # Compare income_tax_single for working choices only
     # Use numpy isin for much faster filtering
@@ -96,7 +95,6 @@ def task_explore_government_budget(
     no_care_demand_income_tax_single_currency = (
         no_care_demand_working["income_tax_single"] * wealth_unit
     )
-    breakpoint()
 
     baseline_income_tax_single_sum = baseline_income_tax_single_currency.sum() / 100_000
     no_care_demand_income_tax_single_sum = (
@@ -106,6 +104,18 @@ def task_explore_government_budget(
     # Diagnostic: Check for negative tax values (shouldn't happen but let's verify)
     baseline_negative_tax = (baseline_income_tax_single_currency < 0).sum()
     no_care_demand_negative_tax = (no_care_demand_income_tax_single_currency < 0).sum()
+
+    # breakpoint()
+    # Tax threshold and income in currency (for above-threshold mask)
+    tax_threshold = specs.get("income_tax_brackets", [0.0, 8004, 13469, 52881, 250730])[
+        1
+    ]
+    baseline_income_currency = baseline_working["own_income_after_ssc"] * wealth_unit
+    no_care_demand_income_currency = (
+        no_care_demand_working["own_income_after_ssc"] * wealth_unit
+    )
+    baseline_above_threshold_mask = baseline_income_currency > tax_threshold
+    no_care_demand_above_threshold_mask = no_care_demand_income_currency > tax_threshold
 
     # Check total tax from workers above threshold
     baseline_tax_above_threshold = (
@@ -135,19 +145,7 @@ def task_explore_government_budget(
     baseline_avg_experience = baseline_working["experience"].mean()
     no_care_demand_avg_experience = no_care_demand_working["experience"].mean()
 
-    # Check income distribution and tax threshold
-    # Tax threshold is typically around 8004 (thresholds[1])
-    # Income values are in wealth_unit, so need to convert to actual currency
-    tax_threshold = specs.get("income_tax_brackets", [0.0, 8004, 13469, 52881, 250730])[
-        1
-    ]
-
-    # Convert income to actual currency for comparison
-    baseline_income_currency = baseline_working["own_income_after_ssc"] * wealth_unit
-    no_care_demand_income_currency = (
-        no_care_demand_working["own_income_after_ssc"] * wealth_unit
-    )
-
+    # Check income distribution and tax threshold (currency already set above)
     baseline_below_threshold = (baseline_income_currency <= tax_threshold).sum()
     no_care_demand_below_threshold = (
         no_care_demand_income_currency <= tax_threshold
@@ -160,10 +158,7 @@ def task_explore_government_budget(
         no_care_demand_below_threshold / no_care_demand_working_mask.sum() * 100
     )
 
-    # Check workers above threshold (the ones actually paying tax)
-    baseline_above_threshold_mask = baseline_income_currency > tax_threshold
-    no_care_demand_above_threshold_mask = no_care_demand_income_currency > tax_threshold
-
+    # Workers above threshold (masks already defined above)
     baseline_above_threshold = baseline_working[baseline_above_threshold_mask]
     no_care_demand_above_threshold = no_care_demand_working[
         no_care_demand_above_threshold_mask
@@ -182,7 +177,7 @@ def task_explore_government_budget(
         no_care_demand_above_threshold_mask
     ].mean()
 
-    breakpoint()
+    # breakpoint()
 
     # Check part-time vs full-time composition
     baseline_pt = (baseline_working["choice"].isin(PART_TIME)).sum()
@@ -192,21 +187,22 @@ def task_explore_government_budget(
 
     print("\n=== Income Tax Single Comparison (Working Choices Only) ===")
     print(
-        f"Baseline income_tax_single sum (in 100k): {baseline_income_tax_single_sum:.2f}"
+        f"Baseline income_tax_single sum (100k): {baseline_income_tax_single_sum:.2f}"
     )
     print(
-        f"No care demand income_tax_single sum (in 100k): {no_care_demand_income_tax_single_sum:.2f}"
+        f"No care demand income_tax_single sum (100k): "
+        f"{no_care_demand_income_tax_single_sum:.2f}"
     )
-    print(
-        f"Difference (in 100k): {baseline_income_tax_single_sum - no_care_demand_income_tax_single_sum:.2f}"
-    )
+    diff_100k = baseline_income_tax_single_sum - no_care_demand_income_tax_single_sum
+    print(f"Difference (100k): {diff_100k:.2f}")
     print(f"\nBaseline workers: {baseline_working_mask.sum()}")
     print(f"No care demand workers: {no_care_demand_working_mask.sum()}")
     print(f"\nBaseline avg gross labor income: {baseline_avg_income:.2f}")
     print(f"No care demand avg gross labor income: {no_care_demand_avg_income:.2f}")
     print(f"\nBaseline avg income after SSC: {baseline_avg_income_after_ssc:.2f}")
     print(
-        f"No care demand avg income after SSC: {no_care_demand_avg_income_after_ssc:.2f}"
+        f"No care demand avg income after SSC: "
+        f"{no_care_demand_avg_income_after_ssc:.2f}"
     )
     print(f"\nBaseline avg income_tax_single (currency): {baseline_avg_tax:.2f}")
     print(
@@ -215,29 +211,38 @@ def task_explore_government_budget(
     print(f"\nBaseline negative tax count: {baseline_negative_tax}")
     print(f"No care demand negative tax count: {no_care_demand_negative_tax}")
     print(
-        f"\nBaseline tax from workers above threshold (100k): {baseline_tax_above_threshold:.2f}"
+        f"\nBaseline tax from workers above threshold (100k): "
+        f"{baseline_tax_above_threshold:.2f}"
     )
     print(
-        f"No care demand tax from workers above threshold (100k): {no_care_demand_tax_above_threshold:.2f}"
+        f"No care demand tax from workers above threshold (100k): "
+        f"{no_care_demand_tax_above_threshold:.2f}"
     )
     print(f"\nBaseline avg experience: {baseline_avg_experience:.2f}")
     print(f"No care demand avg experience: {no_care_demand_avg_experience:.2f}")
     print(
-        f"\nBaseline workers below tax threshold ({tax_threshold}): {baseline_below_threshold} ({baseline_pct_below_threshold:.1f}%)"
+        f"\nBaseline workers below tax threshold ({tax_threshold}): "
+        f"{baseline_below_threshold} ({baseline_pct_below_threshold:.1f}%)"
     )
     print(
-        f"No care demand workers below tax threshold ({tax_threshold}): {no_care_demand_below_threshold} ({no_care_demand_pct_below_threshold:.1f}%)"
+        f"No care demand workers below threshold ({tax_threshold}): "
+        f"{no_care_demand_below_threshold} ({no_care_demand_pct_below_threshold:.1f}%)"
     )
     print(
-        f"\nBaseline workers above threshold: {len(baseline_above_threshold)} (avg income: {baseline_avg_income_above:.2f}, avg tax: {baseline_avg_tax_above:.2f})"
+        f"\nBaseline workers above threshold: {len(baseline_above_threshold)} "
+        f"(avg income: {baseline_avg_income_above:.2f}, "
+        f"avg tax: {baseline_avg_tax_above:.2f})"
     )
     print(
-        f"No care demand workers above threshold: {len(no_care_demand_above_threshold)} (avg income: {no_care_demand_avg_income_above:.2f}, avg tax: {no_care_demand_avg_tax_above:.2f})"
+        f"No care demand workers above threshold: "
+        f"{len(no_care_demand_above_threshold)} "
+        f"(avg income: {no_care_demand_avg_income_above:.2f}, "
+        f"avg tax: {no_care_demand_avg_tax_above:.2f})"
     )
     print(f"\nBaseline: PT={baseline_pt}, FT={baseline_ft}")
     print(f"No care demand: PT={no_care_demand_pt}, FT={no_care_demand_ft}")
 
-    breakpoint()
+    # breakpoint()
 
     # Agent-year comparison
     # Merge on agent and period/age to compare
@@ -277,7 +282,7 @@ def task_explore_government_budget(
 
     # Calculate differences for numeric columns
     for col in available_cols:
-        if col in ["choice"]:  # Skip non-numeric comparison columns
+        if col == "choice":  # Skip non-numeric comparison columns
             continue
         baseline_col = f"{col}_baseline"
         no_care_col = f"{col}_no_care_demand"
@@ -291,9 +296,8 @@ def task_explore_government_budget(
     print(f"Total rows no_care_demand: {len(no_care_demand_df)}")
     print(f"Matched rows: {len(comparison[comparison['_merge'] == 'both'])}")
     print(f"Only in baseline: {len(comparison[comparison['_merge'] == 'left_only'])}")
-    print(
-        f"Only in no_care_demand: {len(comparison[comparison['_merge'] == 'right_only'])}"
-    )
+    only_no_care = len(comparison[comparison["_merge"] == "right_only"])
+    print(f"Only in no_care_demand: {only_no_care}")
 
     if len(comparison[comparison["_merge"] == "both"]) > 0:
         matched = comparison[comparison["_merge"] == "both"].copy()
@@ -302,7 +306,7 @@ def task_explore_government_budget(
         if diff_cols:
             print(matched[diff_cols].describe())
 
-    breakpoint()
+    # breakpoint()
 
     # Calculate net pension payout for each scenario
     baseline_df["net_pension_payout"] = calculate_net_pension_payout(baseline_df)
@@ -339,7 +343,7 @@ def task_explore_government_budget(
     ]
     combined_table = combined_table[column_order]
 
-    breakpoint()
+    # breakpoint()
 
     # Save to CSV
     path_to_save_table.parent.mkdir(parents=True, exist_ok=True)
@@ -350,13 +354,13 @@ def calculate_net_pension_payout(df):
     """Calculate net pension payout from government perspective.
 
     Net pension payout = gross pension income - health/LTC SSC contributions.
-    This follows the same logic as calc_pensions_after_ssc:
-    retirement_income_after_ssc = gross_retirement_income - calc_health_ltc_contr(gross_retirement_income)
+    Same logic as calc_pensions_after_ssc:
+    retirement_income_after_ssc = gross_retirement_income
+        - calc_health_ltc_contr(gross_retirement_income)
 
-    For retirees: net pension = gross pension - health/LTC SSC (what government pays out net)
-    For workers/unemployed: no pension payout (0)
-
-    Note: This is only for own pension, not partner pension.
+    Retirees: net pension = gross - health/LTC SSC (gov pays out net).
+    Workers/unemployed: no pension payout (0).
+    Only for own pension, not partner.
     """
     df = df.copy()
 

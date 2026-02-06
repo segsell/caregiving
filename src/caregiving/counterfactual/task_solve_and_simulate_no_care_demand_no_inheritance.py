@@ -82,7 +82,7 @@ jax.config.update("jax_enable_x64", True)
 #     # 2) Simulate
 #     initial_states = pickle.load(path_to_initial_states.open("rb"))
 
-#     # =================================================================================
+#     # =============================================================================
 #     # sim_df = model_solved.simulate(
 #     #     states_initial=initial_states,
 #     #     seed=specs["seed"],
@@ -92,7 +92,7 @@ jax.config.update("jax_enable_x64", True)
 #     # sim_df.reset_index(inplace=True)
 
 #     # sim_df = create_additional_variables_no_care_demand(sim_df, specs)
-#     # =================================================================================
+#     # =============================================================================
 
 #     sim_df = simulate_scenario(model_solved, initial_states, specs)
 
