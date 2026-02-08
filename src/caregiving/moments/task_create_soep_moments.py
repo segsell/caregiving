@@ -144,6 +144,7 @@ def task_create_soep_moments(  # noqa: PLR0915
         df_full=df_full,
         model_class=model_class,
     )
+    df_wealth = df_wealth[df_wealth["sex"] == SEX].copy()
 
     _df_alive = df[df["health"] != DEAD].copy()
     _df_good_health = df[df["health"] == GOOD_HEALTH].copy()

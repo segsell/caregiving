@@ -192,6 +192,7 @@ def task_plot_empirical_soep_moments(
         df_full=df_full,
         model_class=model_class,
     )
+    trimmed = trimmed[trimmed["sex"] == SEX].copy()
     # trimmed = trimmed[
     #     (trimmed["syear"] >= WEALTH_START_YEAR) &
     # (trimmed["syear"] <= WEALTH_END_YEAR)
