@@ -83,9 +83,7 @@ def calc_full_caregiving_leave_top_up(
     benefit_prior_pt_unemp = gross_pt_income_min_checked * mask_prior_pt_unemp
     benefit_prior_ft_unemp = gross_ft_income_min_checked * mask_prior_ft_unemp
     benefit_prior_ft_pt = (
-        jnp.maximum(
-            gross_ft_income_min_checked - gross_pt_income_min_checked, 0.0
-        )
+        jnp.maximum(gross_ft_income_min_checked - gross_pt_income_min_checked, 0.0)
         * mask_prior_ft_pt
     )
 
