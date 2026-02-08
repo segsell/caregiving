@@ -1,4 +1,9 @@
-"""Calculate caregiving leave top-up benefits."""
+"""Caregiving leave benefits.
+
+Full leave (Norwegian-style): 100% of previous gross wage when not working;
+gross gap when FT→PT; taxable, no SSC, replaces unemployment.
+Normal leave: 65% replacement with bounds (net-based top-up).
+"""
 
 from jax import numpy as jnp
 
@@ -26,41 +31,30 @@ def calc_full_caregiving_leave_top_up(
     household_unemployment_benefits,
     model_specs,
 ):
-    """Calculate additional wage replacement for caregiving leave.
+    """Calculate caregiving leave benefit: 100% of previous gross wage (Norwegian-style).
 
-    This adds on top of the baseline care benefits and costs.
+    Benefit is a gross amount (no SSC deducted), taxable, and when the person is
+    on leave and not working it replaces unemployment (handled in the budget
+    equation). Only caregivers (informal care) who are not retired are eligible.
 
-    Policy:
-    - job_before_caregiving: 0 = none, 1 = PT, 2 = FT.
-    - Only caregivers (current informal care) who are NOT retired are eligible.
-    - Previously non-working (0):
-        * If currently unemployed: receive a lump-sum (monthly_unemployment_benefits).
-        * If currently working (PT/FT): no top up.
-    - Previously PT (1):
-        * If currently PT: no top up.
-        * If currently unemployed: top up to PT net wage.
-        * If currently FT: no top up (working more than before).
-    - Previously FT (2):
-        * If currently FT: no top up.
-        * If currently PT: top up so total income equals FT net wage.
-        * If currently unemployed: top up to FT net wage.
+    Policy (job_before_caregiving: 0=none, 1=PT, 2=FT):
+    - Previously none: no wage replacement.
+    - Previously PT, now unemployed: benefit = 100% of previous gross PT wage.
+    - Previously FT, now unemployed: benefit = 100% of previous gross FT wage.
+    - Previously FT, now PT: benefit = gross gap (gross FT minus gross PT).
     - Retired caregivers never receive wage replacement.
-
     """
     currently_caregiver = is_informal_care(lagged_choice)
     currently_part_time = is_part_time(lagged_choice)
     currently_unemployed = is_unemployed(lagged_choice)
     currently_retired = is_retired(lagged_choice)
 
-    # Base eligibility: caregiver and not retired
     eligible_base = currently_caregiver * (1 - currently_retired)
 
     prior_none = had_no_job_before_caregiving(job_before_caregiving)
     prior_pt = had_pt_job_before_caregiving(job_before_caregiving)
     prior_ft = had_ft_job_before_caregiving(job_before_caregiving)
 
-    # Construct full-time equivalent annual labor income (gross → after SSC),
-    # based on the current experience and income shock.
     hourly_wage = calc_hourly_wage(
         sex=sex,
         education=education,
@@ -69,57 +63,37 @@ def calc_full_caregiving_leave_top_up(
         model_specs=model_specs,
     )
 
-    # Full-time annual hours and minimum wage
     av_hours_ft = model_specs["av_annual_hours_ft"][sex, education]
     annual_min_wage_ft = model_specs["annual_min_wage_ft"]
-
     gross_ft_income = hourly_wage * av_hours_ft
     gross_ft_income_min_checked = jnp.maximum(gross_ft_income, annual_min_wage_ft)
 
-    # Net-of-SSC full-time income
-    net_ft_income = calc_after_ssc_income_worker(gross_ft_income_min_checked)
-
-    # Net PT income (full PT schedule)
     av_hours_pt = model_specs["av_annual_hours_pt"][sex, education]
     annual_min_wage_pt = model_specs["annual_min_wage_pt"][sex, education]
     gross_pt_income = hourly_wage * av_hours_pt
     gross_pt_income_min_checked = jnp.maximum(gross_pt_income, annual_min_wage_pt)
-    net_pt_income = calc_after_ssc_income_worker(gross_pt_income_min_checked)
 
-    # Masks for specific cases
     mask_prior_none_unemp = eligible_base * prior_none * currently_unemployed
     mask_prior_pt_unemp = eligible_base * prior_pt * currently_unemployed
     mask_prior_ft_unemp = eligible_base * prior_ft * currently_unemployed
     mask_prior_ft_pt = eligible_base * prior_ft * currently_part_time
 
-    # Top ups:
-    # - Prior none, now unemployed: no top-up needed.
-    # #   (Unemployment benefits are already handled via jnp.maximum() in budget
-    # constraint,
-    #   so adding them here would cause double-counting)
-    topup_prior_none = 0.0 * mask_prior_none_unemp
-
-    # - Prior PT, now unemployed: top up to PT net wage, MINUS unemployment benefits
-    #   they're already receiving
-    topup_prior_pt = (
-        jnp.maximum(net_pt_income - household_unemployment_benefits, 0.0)
-        * mask_prior_pt_unemp
+    # Norwegian-style: gross benefit; no subtraction of unemployment.
+    benefit_prior_none = 0.0 * mask_prior_none_unemp
+    benefit_prior_pt_unemp = gross_pt_income_min_checked * mask_prior_pt_unemp
+    benefit_prior_ft_unemp = gross_ft_income_min_checked * mask_prior_ft_unemp
+    benefit_prior_ft_pt = (
+        jnp.maximum(
+            gross_ft_income_min_checked - gross_pt_income_min_checked, 0.0
+        )
+        * mask_prior_ft_pt
     )
-
-    # - Prior FT, now unemployed: top up to FT net wage, MINUS unemployment benefits
-    #   they're already receiving
-    topup_prior_ft_unemp = (
-        jnp.maximum(net_ft_income - household_unemployment_benefits, 0.0)
-        * mask_prior_ft_unemp
-    )
-
-    # - Prior FT, now PT: top up so total income equals FT net wage.
-    #   (This case doesn't involve unemployment benefits, so no change needed)
-    ft_gap = jnp.maximum(net_ft_income - labor_income_after_ssc, 0.0)
-    topup_prior_ft_pt = ft_gap * mask_prior_ft_pt
 
     wage_replacement_annual = (
-        topup_prior_none + topup_prior_pt + topup_prior_ft_unemp + topup_prior_ft_pt
+        benefit_prior_none
+        + benefit_prior_pt_unemp
+        + benefit_prior_ft_unemp
+        + benefit_prior_ft_pt
     )
 
     return wage_replacement_annual
@@ -210,8 +184,6 @@ def calc_caregiving_leave_top_up(
     net_pt_income = calc_after_ssc_income_worker(gross_pt_income_min_checked)
 
     # Calculate 65% replacement with bounds for PT and FT
-    # # Apply bounds: benefit = min(max(replacement_rate * net_wage, lower_bound)
-    # , upper_bound)
     benefit_pt = jnp.clip(
         replacement_rate * net_pt_income,
         lower_bound_annual,
@@ -231,9 +203,6 @@ def calc_caregiving_leave_top_up(
 
     # Top ups:
     # - Prior none, now unemployed: no top-up needed.
-    # #   (Unemployment benefits are already handled via jnp.maximum() in budget
-    # constraint,
-    #   so adding them here would cause double-counting)
     topup_prior_none = 0.0 * mask_prior_none_unemp
 
     # - Prior PT, now unemployed: top up to 65% of PT net wage (with bounds),

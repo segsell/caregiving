@@ -122,7 +122,7 @@ def budget_constraint(
     was_worker = is_working(lagged_choice)
     was_retired = is_retired(lagged_choice)
 
-    # Aggregate over choice own income, including caregiving leave top-up
+    # Care leave benefit is gross (no SSC); added to taxable income, subject to tax.
     own_income_after_ssc = (
         was_worker * labor_income_after_ssc
         + was_retired * retirement_income_after_ssc
@@ -154,9 +154,16 @@ def budget_constraint(
         -model_specs["formal_care_costs"] * formal_care * 12 * 0.5
     )
 
-    total_income = jnp.maximum(
+    # When receiving care leave benefit, do not take max with unemployment
+    # (replaces it).
+    receives_care_leave_benefit = caregiving_leave_top_up > 0
+    total_income = jnp.where(
+        receives_care_leave_benefit,
         total_net_household_income + child_benefits,
-        household_unemployment_benefits,
+        jnp.maximum(
+            total_net_household_income + child_benefits,
+            household_unemployment_benefits,
+        ),
     )
 
     # Only compute inheritance if mother recently died this period (state 1)
