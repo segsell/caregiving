@@ -37,11 +37,11 @@ repos:
         name: isort
         args: ["--profile=black"]
 -   repo: https://github.com/asottile/setup-cfg-fmt
-    rev: v3.1.0
+    rev: v3.2.0
     hooks:
     -   id: setup-cfg-fmt
 -   repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 25.12.0
+    rev: 26.1.0
     hooks:
     -   id: black
 # -   repo: https://github.com/PyCQA/docformatter
@@ -50,7 +50,7 @@ repos:
 #     -   id: docformatter
 #         args: [--in-place, --wrap-summaries, "88", --wrap-descriptions, "88", --blank]
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.9
+    rev: v0.15.0
     hooks:
     # Run the linter.
     -   id: ruff
