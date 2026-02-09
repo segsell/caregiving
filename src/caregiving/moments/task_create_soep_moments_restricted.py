@@ -188,9 +188,25 @@ def task_create_soep_moments_wealth_mean(
         label="wealth_high_education",
     )
 
-    moments_df = pd.DataFrame({"value": pd.Series(moments)})
+    # Put mean_wealth moments (and their variances) first in the output
+    mean_wealth_prefixes = (
+        "mean_wealth_low_education_",
+        "mean_wealth_high_education_",
+    )
+    var_wealth_prefixes = (
+        "var_wealth_low_education_",
+        "var_wealth_high_education_",
+    )
+    mean_keys = [k for k in moments if k.startswith(mean_wealth_prefixes)]
+    other_moment_keys = [k for k in moments if not k.startswith(mean_wealth_prefixes)]
+    var_wealth_keys = [k for k in variances if k.startswith(var_wealth_prefixes)]
+    other_var_keys = [k for k in variances if not k.startswith(var_wealth_prefixes)]
+    moments_ordered = {k: moments[k] for k in mean_keys + other_moment_keys}
+    variances_ordered = {k: variances[k] for k in var_wealth_keys + other_var_keys}
+
+    moments_df = pd.DataFrame({"value": pd.Series(moments_ordered)})
     moments_df.index.name = "moment"
-    variances_df = pd.DataFrame({"value": pd.Series(variances)})
+    variances_df = pd.DataFrame({"value": pd.Series(variances_ordered)})
     variances_df.index.name = "moment"
 
     path_to_save_moments.parent.mkdir(parents=True, exist_ok=True)

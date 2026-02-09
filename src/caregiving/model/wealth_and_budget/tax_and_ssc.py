@@ -103,25 +103,71 @@
 import jax.numpy as jnp
 
 
-def calc_net_household_income(own_income, partner_income, has_partner_int, model_specs):
-    """Calculate the income tax for a couple."""
-    # Calculate the income tax for the couple
-    family_income = own_income + partner_income
+def calc_net_household_income(
+    own_income,
+    partner_income,
+    has_partner_int,
+    model_specs,
+    progression_income=0.0,
+):
+    """Calculate net household income after income tax.
 
-    # Calculate split factor. 1 if single, 2 if partnered
+    If progression_income > 0, implements Progressionsvorbehalt (§32b EStG):
+    the progression income (e.g. tax-free benefit) is not part of taxable
+    income, but is added only to compute the average tax rate, which is then
+    applied to taxable income. Disposable income = taxable - tax + progression_income.
+    """
+    taxable_household_income = own_income + partner_income
     split_factor = 1 + has_partner_int
-    income_tax_split = calc_inc_tax_for_single_income(
-        family_income / split_factor, model_specs
+
+    if progression_income is None:
+        progression_income = 0.0
+
+    use_progression = progression_income > 0
+    rate_base_single = (taxable_household_income + progression_income) / split_factor
+    taxable_single = taxable_household_income / split_factor
+
+    # Standard path: tax on family_income
+    income_tax_split_standard = calc_inc_tax_for_single_income(
+        taxable_household_income / split_factor, model_specs
     )
-    income_tax_single = calc_inc_tax_for_single_income(own_income, model_specs)
+    income_tax_standard = income_tax_split_standard * split_factor
+    income_tax_single_standard = calc_inc_tax_for_single_income(own_income, model_specs)
 
-    # Readjust with split factor
-    income_tax = income_tax_split * split_factor
+    # Progression path: average rate from rate_base applied to taxable
+    tax_on_rate_base = calc_inc_tax_for_single_income(rate_base_single, model_specs)
+    # Avoid division by zero when rate_base_single == 0
+    avg_rate = jnp.where(
+        rate_base_single > 0,
+        tax_on_rate_base / rate_base_single,
+        0.0,
+    )
+    tax_single_progression = avg_rate * taxable_single
+    income_tax_progression = tax_single_progression * split_factor
+    # income_tax_single: apply same average rate to own_income
+    income_tax_single_progression = avg_rate * own_income
 
-    return family_income - income_tax, income_tax, income_tax_single
+    income_tax = jnp.where(
+        use_progression,
+        income_tax_progression,
+        income_tax_standard,
+    )
+    income_tax_single = jnp.where(
+        use_progression,
+        income_tax_single_progression,
+        income_tax_single_standard,
+    )
+    # Disposable: when progression, add benefit (not taxed) to (taxable - tax)
+    disposable = jnp.where(
+        use_progression,
+        taxable_household_income - income_tax + progression_income,
+        taxable_household_income - income_tax,
+    )
+
+    return disposable, income_tax, income_tax_single
 
 
-def calc_inc_tax_for_single_income(gross_income, model_specs):
+def calc_inc_tax_for_single_income(taxable_income, model_specs):
     thresholds = model_specs["income_tax_brackets"]
     linear_rates = model_specs["linear_income_tax_rates"]
     quadratic_rates = model_specs["quadratic_income_tax_rates"]
@@ -131,24 +177,24 @@ def calc_inc_tax_for_single_income(gross_income, model_specs):
     # /A-Einkommensteuergesetz/IV-Tarif/Paragraf-32a/inhalt.html
 
     # Check in which bracket the income falls and calculate the tax
-    in_bracket_1 = (gross_income > thresholds[1]) & (gross_income <= thresholds[2])
-    in_bracket_2 = (gross_income > thresholds[2]) & (gross_income <= thresholds[3])
-    in_bracket_3 = (gross_income > thresholds[3]) & (gross_income <= thresholds[4])
-    in_bracket_4 = gross_income > thresholds[4]
+    in_bracket_1 = (taxable_income > thresholds[1]) & (taxable_income <= thresholds[2])
+    in_bracket_2 = (taxable_income > thresholds[2]) & (taxable_income <= thresholds[3])
+    in_bracket_3 = (taxable_income > thresholds[3]) & (taxable_income <= thresholds[4])
+    in_bracket_4 = taxable_income > thresholds[4]
 
-    income_for_formula_1 = (gross_income - thresholds[1]) / 10_000
+    income_for_formula_1 = (taxable_income - thresholds[1]) / 10_000
     tax_bracket_1 = (
         income_for_formula_1 * linear_rates[1]
         + (income_for_formula_1**2) * quadratic_rates[1]
     )
-    income_for_formula_2 = (gross_income - thresholds[2]) / 10_000
+    income_for_formula_2 = (taxable_income - thresholds[2]) / 10_000
     tax_bracket_2 = (
         income_for_formula_2 * linear_rates[2]
         + (income_for_formula_2**2) * quadratic_rates[2]
         + intercepts[2]
     )
-    tax_bracket_3 = gross_income * linear_rates[3] + intercepts[3]
-    tax_bracket_4 = gross_income * linear_rates[4] + intercepts[4]
+    tax_bracket_3 = taxable_income * linear_rates[3] + intercepts[3]
+    tax_bracket_4 = taxable_income * linear_rates[4] + intercepts[4]
     income_tax = (
         in_bracket_1 * tax_bracket_1
         + in_bracket_2 * tax_bracket_2
