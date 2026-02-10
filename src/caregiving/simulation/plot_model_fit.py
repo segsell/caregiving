@@ -28,7 +28,25 @@ from caregiving.model.shared import (
 # ====================================================================================
 
 
-def plot_wealth_by_age_and_education(
+def _trim_wealth_by_quantiles(
+    df: pd.DataFrame,
+    wealth_col: str,
+    q_low: float = 0.0,
+    q_high: float = 1.0,
+) -> pd.DataFrame:
+    """Restrict to rows with wealth in [q_low, q_high] quantiles (computed on df)."""
+    if q_low <= 0.0 and q_high >= 1.0:
+        return df
+    w = df[wealth_col].dropna()
+    if len(w) == 0:
+        return df
+    low = w.quantile(q_low)
+    high = w.quantile(q_high)
+    mask = (df[wealth_col] >= low) & (df[wealth_col] <= high)
+    return df.loc[mask].copy()
+
+
+def plot_wealth_by_age_and_education(  # noqa: PLR0912
     data_emp: pd.DataFrame,
     data_sim: pd.DataFrame,
     specs: dict,
@@ -39,6 +57,10 @@ def plot_wealth_by_age_and_education(
     age_min: int | None = None,
     age_max: int | None = None,
     filter_sex: bool = False,
+    wealth_quantile_low: float = 0.0,
+    wealth_quantile_high: float = 0.98,
+    trim_empirical: bool = True,
+    trim_simulated: bool = True,
     path_to_save_plot: str | None = None,
 ):
     """
@@ -50,6 +72,14 @@ def plot_wealth_by_age_and_education(
     ----------
     filter_sex : bool, default False
         If True, filter on sex (only SEX). If False, include both men and women.
+    wealth_quantile_low : float, default 0.0
+        Lower quantile for trimming wealth before computing the statistic (0 = no trim).
+    wealth_quantile_high : float, default 0.98
+        Upper quantile for trimming wealth (e.g. 0.98 trims top 2%).
+    trim_empirical : bool, default True
+        If True, trim empirical wealth by quantiles before the statistic.
+    trim_simulated : bool, default True
+        If True, trim simulated wealth by quantiles before the statistic.
 
     """
     # ---------- 0. Setup ----------
@@ -83,6 +113,15 @@ def plot_wealth_by_age_and_education(
         else:
             emp_edu = data_emp[data_emp["education"] == edu_idx]
             sim_edu = data_sim[data_sim["education"] == edu_idx]
+
+        if trim_empirical:
+            emp_edu = _trim_wealth_by_quantiles(
+                emp_edu, wealth_var_emp, wealth_quantile_low, wealth_quantile_high
+            )
+        if trim_simulated:
+            sim_edu = _trim_wealth_by_quantiles(
+                sim_edu, wealth_var_sim, wealth_quantile_low, wealth_quantile_high
+            )
 
         emp_series = (
             emp_edu.groupby("age", observed=False)[wealth_var_emp]
@@ -148,6 +187,10 @@ def plot_wealth_by_age_bins_and_education(  # noqa: PLR0912, PLR0915
     bin_width: int = 5,
     age_bin_ticks: bool = False,
     filter_sex: bool = False,
+    wealth_quantile_low: float = 0.0,
+    wealth_quantile_high: float = 0.98,
+    trim_empirical: bool = True,
+    trim_simulated: bool = True,
     path_to_save_plot: str | None = None,
 ):
     """
@@ -163,6 +206,14 @@ def plot_wealth_by_age_bins_and_education(  # noqa: PLR0912, PLR0915
         If False: X-axis ticks every 5 years (e.g., 40, 45, 50...) with label "Age".
     filter_sex : bool, default True
         If True, filter on sex (only SEX). If False, include both men and women.
+    wealth_quantile_low : float, default 0.0
+        Lower quantile for trimming wealth before binning/statistic (0 = no trim).
+    wealth_quantile_high : float, default 0.98
+        Upper quantile for trimming wealth (e.g. 0.98 trims top 2%).
+    trim_empirical : bool, default True
+        If True, trim empirical wealth by quantiles before binning/statistic.
+    trim_simulated : bool, default True
+        If True, trim simulated wealth by quantiles before binning/statistic.
     """
     # ---------- 0. Setup ----------
     if age_min is None:
@@ -205,6 +256,15 @@ def plot_wealth_by_age_bins_and_education(  # noqa: PLR0912, PLR0915
         else:
             emp_edu = data_emp[data_emp["education"] == edu_idx]
             sim_edu = data_sim[data_sim["education"] == edu_idx]
+
+        if trim_empirical:
+            emp_edu = _trim_wealth_by_quantiles(
+                emp_edu, wealth_var_emp, wealth_quantile_low, wealth_quantile_high
+            )
+        if trim_simulated:
+            sim_edu = _trim_wealth_by_quantiles(
+                sim_edu, wealth_var_sim, wealth_quantile_low, wealth_quantile_high
+            )
 
         emp_rates = []
         sim_rates = []
@@ -279,10 +339,16 @@ def plot_average_wealth(
     data_sim,
     specs,
     path_to_save_plot,
+    *,
+    wealth_quantile_low: float = 0.0,
+    wealth_quantile_high: float = 0.98,
+    trim_empirical: bool = True,
+    trim_simulated: bool = True,
 ):
-    """Plot average wealth by age and education."""
+    """Plot average (median) wealth by age and education."""
 
     # data_emp.loc[:, "age"] = data_emp["period"] + specs["start_age"]
+    data_sim = data_sim.copy()
     data_sim.loc[:, "age"] = data_sim["period"] + specs["start_age"]
 
     sex = SEX
@@ -291,6 +357,21 @@ def plot_average_wealth(
         data_sim_edu = data_sim[mask_sim]
         mask_obs = (data_emp["sex"] == sex) & (data_emp["education"] == edu)
         data_decision_edu = data_emp[mask_obs]
+
+        if trim_simulated:
+            data_sim_edu = _trim_wealth_by_quantiles(
+                data_sim_edu,
+                "assets_begin_of_period",
+                wealth_quantile_low,
+                wealth_quantile_high,
+            )
+        if trim_empirical:
+            data_decision_edu = _trim_wealth_by_quantiles(
+                data_decision_edu,
+                "adjusted_wealth",
+                wealth_quantile_low,
+                wealth_quantile_high,
+            )
 
         ages = np.arange(specs["start_age"] + 1, 90)
         average_wealth_sim = (
