@@ -26,6 +26,7 @@ from caregiving.model.shared import (
     UNEMPLOYED_CHOICES,
     WEALTH_END_YEAR,
     WEALTH_MOMENTS_SCALE,
+    WEALTH_QUANTILE_CUTOFF,
     WEALTH_START_YEAR,
     WORK_CHOICES,
 )
@@ -143,6 +144,7 @@ def task_create_soep_moments(  # noqa: PLR0915
     df_wealth = create_df_wealth(
         df_full=df_full,
         model_class=model_class,
+        trim_upper_wealth_quantile=False,
     )
     df_wealth = df_wealth[df_wealth["sex"] == SEX].copy()
 
@@ -2239,6 +2241,7 @@ def create_df_wealth(
     df_full: pd.DataFrame,
     model_class: Any,
     filter_sex: bool = False,
+    trim_upper_wealth_quantile: bool = False,
 ) -> pd.DataFrame:
     """Create and process wealth dataframe.
 
@@ -2248,6 +2251,10 @@ def create_df_wealth(
         Full dataset loaded from CSV
     model_class : Any
         Model class instance
+    filter_sex : bool, default False
+        If True, restrict to SEX.
+    trim_upper_wealth_quantile : bool, default True
+        If True, keep only wealth below WEALTH_QUANTILE_CUTOFF (e.g. top tail excluded).
 
     Returns
     -------
@@ -2268,6 +2275,10 @@ def create_df_wealth(
         & (df_wealth_corrected["syear"] <= WEALTH_END_YEAR)
     ].copy()
     df_wealth["adjusted_wealth"] = df_wealth["assets_begin_of_period"]
+
+    if trim_upper_wealth_quantile:
+        cutoff = df_wealth["adjusted_wealth"].quantile(WEALTH_QUANTILE_CUTOFF)
+        df_wealth = df_wealth[df_wealth["adjusted_wealth"] <= cutoff].copy()
 
     return df_wealth
 

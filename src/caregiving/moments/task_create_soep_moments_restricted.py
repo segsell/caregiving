@@ -165,7 +165,9 @@ def task_create_soep_moments_wealth_mean(
     }
 
     df_full = pd.read_csv(path_to_main_sample, index_col=[0])
-    df_wealth = create_df_wealth(df_full, model_class=model_class)
+    df_wealth = create_df_wealth(
+        df_full, model_class=model_class, trim_upper_wealth_quantile=True
+    )
     df_wealth = df_wealth[df_wealth["sex"] == SEX].copy()
 
     df_wealth_low = df_wealth[df_wealth["education"] == 0].copy()

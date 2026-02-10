@@ -31,10 +31,12 @@ from caregiving.model.shared import (
 def _trim_wealth_by_quantiles(
     df: pd.DataFrame,
     wealth_col: str,
-    q_low: float = 0.0,
-    q_high: float = 1.0,
+    q_low: float | None = None,
+    q_high: float | None = None,
 ) -> pd.DataFrame:
     """Restrict to rows with wealth in [q_low, q_high] quantiles (computed on df)."""
+    if q_low is None is q_high:
+        return df
     if q_low <= 0.0 and q_high >= 1.0:
         return df
     w = df[wealth_col].dropna()
@@ -57,8 +59,8 @@ def plot_wealth_by_age_and_education(  # noqa: PLR0912
     age_min: int | None = None,
     age_max: int | None = None,
     filter_sex: bool = False,
-    wealth_quantile_low: float = 0.0,
-    wealth_quantile_high: float = 0.98,
+    wealth_quantile_low: float | None = None,
+    wealth_quantile_high: float | None = None,
     trim_empirical: bool = True,
     trim_simulated: bool = True,
     path_to_save_plot: str | None = None,
@@ -72,10 +74,10 @@ def plot_wealth_by_age_and_education(  # noqa: PLR0912
     ----------
     filter_sex : bool, default False
         If True, filter on sex (only SEX). If False, include both men and women.
-    wealth_quantile_low : float, default 0.0
-        Lower quantile for trimming wealth before computing the statistic (0 = no trim).
-    wealth_quantile_high : float, default 0.98
-        Upper quantile for trimming wealth (e.g. 0.98 trims top 2%).
+    wealth_quantile_low : float or None, default None
+        Lower quantile for trimming (None = no quantile trimming).
+    wealth_quantile_high : float or None, default None
+        Upper quantile for trimming (None = no quantile trimming).
     trim_empirical : bool, default True
         If True, trim empirical wealth by quantiles before the statistic.
     trim_simulated : bool, default True
@@ -187,8 +189,8 @@ def plot_wealth_by_age_bins_and_education(  # noqa: PLR0912, PLR0915
     bin_width: int = 5,
     age_bin_ticks: bool = False,
     filter_sex: bool = False,
-    wealth_quantile_low: float = 0.0,
-    wealth_quantile_high: float = 0.98,
+    wealth_quantile_low: float | None = None,
+    wealth_quantile_high: float | None = None,
     trim_empirical: bool = True,
     trim_simulated: bool = True,
     path_to_save_plot: str | None = None,
@@ -206,10 +208,10 @@ def plot_wealth_by_age_bins_and_education(  # noqa: PLR0912, PLR0915
         If False: X-axis ticks every 5 years (e.g., 40, 45, 50...) with label "Age".
     filter_sex : bool, default True
         If True, filter on sex (only SEX). If False, include both men and women.
-    wealth_quantile_low : float, default 0.0
-        Lower quantile for trimming wealth before binning/statistic (0 = no trim).
-    wealth_quantile_high : float, default 0.98
-        Upper quantile for trimming wealth (e.g. 0.98 trims top 2%).
+    wealth_quantile_low : float or None, default None
+        Lower quantile for trimming (None = no quantile trimming).
+    wealth_quantile_high : float or None, default None
+        Upper quantile for trimming (None = no quantile trimming).
     trim_empirical : bool, default True
         If True, trim empirical wealth by quantiles before binning/statistic.
     trim_simulated : bool, default True
@@ -340,8 +342,8 @@ def plot_average_wealth(
     specs,
     path_to_save_plot,
     *,
-    wealth_quantile_low: float = 0.0,
-    wealth_quantile_high: float = 0.98,
+    wealth_quantile_low: float | None = None,
+    wealth_quantile_high: float | None = None,
     trim_empirical: bool = True,
     trim_simulated: bool = True,
 ):

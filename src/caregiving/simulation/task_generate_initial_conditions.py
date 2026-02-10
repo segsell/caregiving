@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 import pytask
 import yaml
-from dcegm.asset_correction import adjust_observed_assets
 from pytask import Product
 from scipy import stats
 from sklearn.neighbors import KernelDensity
@@ -25,6 +24,7 @@ from caregiving.model.shared import (
     PARENT_LONGER_DEAD,
     SEX,
     WEALTH_END_YEAR,
+    WEALTH_QUANTILE_CUTOFF,
     WEALTH_START_YEAR,
 )
 from caregiving.model.state_space import create_state_space_functions
@@ -43,6 +43,7 @@ from caregiving.moments.task_create_soep_moments import (
     create_df_wealth,
 )
 from caregiving.moments.transform_data import load_and_scale_correct_data
+from dcegm.asset_correction import adjust_observed_assets
 
 
 @pytask.mark.initial_conditions
@@ -704,8 +705,8 @@ def draw_start_wealth_dist(start_period_data_edu, n_agents_edu, method="kde"):
 
     wealth_start_clipped = np.clip(
         wealth_start,
-        a_min=wealth_data.quantile(0),  # wealth_data.min()
-        a_max=wealth_data.quantile(0.98),
+        a_min=wealth_data.quantile(0),
+        a_max=wealth_data.quantile(WEALTH_QUANTILE_CUTOFF),
     )
 
     return wealth_start_clipped
