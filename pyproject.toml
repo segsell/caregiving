@@ -154,6 +154,10 @@ publication_reverse_employment = "Publication reverse employment rate plotting t
 publication_caregiving_rate = "Publication caregiving rate plotting tasks"
 publication_event_study = "Publication event study plotting tasks"
 publication_event_study_reverse = "Publication event study plotting tasks (reverse, by mother's death)"
+publication_wealth = "Publication wealth/difference plotting tasks (no-inheritance)"
+publication_post_estimation = "Publication post-estimation plotting tasks"
+publication_pre_estimation = "Publication pre-estimation plotting tasks"
+fiscal_costs = "Publication fiscal costs table tasks"
 
 
 [tool.interrogate]

@@ -516,7 +516,7 @@ def task_plot_care_demand_transition_adl_shaded(  # noqa: PLR0912, PLR0915
         ages_plot,
         share_light_plot,
         share_any_plot,
-        color="0.65",
+        color="0.6",
         alpha=0.5,
     )
 
