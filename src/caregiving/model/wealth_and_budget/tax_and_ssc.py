@@ -221,7 +221,30 @@ def calc_after_ssc_income_pensioneer(gross_pesnion):
     return gross_pesnion - ssc
 
 
-def calc_pension_unempl_contr(gross_income):
+# def calc_pension_unempl_contr(gross_income):
+#     """Calc pension and unemployment social security contribution.
+#     Both from GETTSIM (2020)"""
+#     # Threshold weighted with population share west and east
+#     contribution_threshold = 6823.5 * 12
+#     # Unemployment insurance (1.2 percent) and pension insurance (9.3 percent)
+#     rate = 0.105
+#     # calculate pension contribution
+#     pension_contr = jnp.minimum(gross_income, contribution_threshold) * rate
+#     return pension_contr
+
+
+# def calc_health_ltc_contr(gross_income):
+#     """Calc health and ltc social security contribution. Both from GETTSIM (2020)."""
+#     contribution_threshold = 4687.5 * 12
+#     # Sum of health (7 percent), additional health (1.1 percent),
+#     # and long-term (1.525 percent)
+#     rate = 0.09625
+#     # calculate social security contribution
+#     health_contr = jnp.minimum(gross_income, contribution_threshold) * rate
+#     return health_contr
+
+
+def calc_pension_unempl_contr_2020(gross_income):
     """Calc pension and unemployment social security contribution.
     Both from GETTSIM (2020)"""
     # Threshold weighted with population share west and east
@@ -233,7 +256,29 @@ def calc_pension_unempl_contr(gross_income):
     return pension_contr
 
 
-def calc_health_ltc_contr(gross_income):
+def calc_pension_unempl_contr(gross_income):
+    """
+    Pension + unemployment insurance contributions (employee side), Germany 2010.
+
+    Assumptions:
+    - Employee contribution only
+    - West German contribution ceiling
+    - Annual gross income
+    """
+    # Threshold weighted with population share west and east
+    # 5,366.6 EUR per month
+    contribution_threshold = 5366.6 * 12  # = 64,400 EUR/year
+
+    # Contribution rates (employee)
+    # Pension: 9.95%
+    # Unemployment: 1.40%
+    rate = 0.1135  # 0.0995 + 0.014 = 0.1135
+
+    pension_unempl_contr = jnp.minimum(gross_income, contribution_threshold) * rate
+    return pension_unempl_contr
+
+
+def calc_health_ltc_contr_2020(gross_income):
     """Calc health and ltc social security contribution. Both from GETTSIM (2020)."""
     contribution_threshold = 4687.5 * 12
     # Sum of health (7 percent), additional health (1.1 percent),
@@ -242,3 +287,25 @@ def calc_health_ltc_contr(gross_income):
     # calculate social security contribution
     health_contr = jnp.minimum(gross_income, contribution_threshold) * rate
     return health_contr
+
+
+def calc_health_ltc_contr(gross_income):
+    """
+    Health + long-term care insurance contributions (employee side), Germany 2010.
+
+    Assumptions:
+    - Employee contribution only
+    - No childless LTC surcharge
+    - Annual gross income
+    """
+    # Contribution assessment ceiling, 2010
+    # 3,750 EUR per month
+    contribution_threshold = 3750 * 12  # = 45,000 EUR/year
+
+    # Contribution rates (employee)
+    # Health insurance: 7.45%
+    # Long-term care insurance: 1.95%
+    rate = 0.094  # 0.0745 + 0.0195 = 0.094
+
+    health_ltc_contr = jnp.minimum(gross_income, contribution_threshold) * rate
+    return health_ltc_contr

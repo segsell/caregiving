@@ -87,7 +87,6 @@ def task_create_soep_moments(  # noqa: PLR0915
         shock_functions=shock_function_dict(),
         stochastic_states_transitions=create_stochastic_states_transitions(),
         model_load_path=path_to_model,
-        # alternative_sim_specifications=alternative_sim_specifications,
         # debug_info=debug_info,
         # use_stochastic_sparsity=True,
     )
