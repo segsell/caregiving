@@ -38,20 +38,21 @@ from caregiving.model.utility.utility_functions_additive import (
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.model.wealth_and_budget.savings_grid import create_end_of_period_assets
 
-# @pytask.mark.baseline_model
-# def task_specify_model(
-#     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
-#     path_to_save_model_config: Annotated[Path, Product] = BLD
-#     / "model"
-#     / "model_config.pkl",
-#     path_to_save_model: Annotated[Path, Product] = BLD / "model" / "model.pkl",
-# ):
-#     model = specify_model(
-#         path_to_derived_specs=path_to_derived_specs,
-#         path_to_save_model_config=path_to_save_model_config,
-#         path_to_save_model=path_to_save_model,
-#     )
-#     return model
+
+@pytask.mark.baseline_model
+def task_specify_model(
+    path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_save_model_config: Annotated[Path, Product] = BLD
+    / "model"
+    / "model_config.pkl",
+    path_to_save_model: Annotated[Path, Product] = BLD / "model" / "model.pkl",
+):
+    model = specify_model(
+        path_to_derived_specs=path_to_derived_specs,
+        path_to_save_model_config=path_to_save_model_config,
+        path_to_save_model=path_to_save_model,
+    )
+    return model
 
 
 def specify_model(
