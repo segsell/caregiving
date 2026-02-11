@@ -308,3 +308,260 @@ def task_plot_care_demand_transition_adl_and_dead_state(  # noqa: PLR0912, PLR09
     plt.close(fig)
 
     print(f"Care demand by age plot saved to {path_to_save}")
+
+
+@pytask.mark.publication
+@pytask.mark.publication_pre_estimation
+def task_plot_care_demand_transition_adl_shaded(  # noqa: PLR0912, PLR0915
+    path_to_states: Path = BLD / "model" / "initial_conditions" / "initial_states.pkl",
+    path_to_full_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_save: Annotated[Path, Product] = BLD
+    / "figures"
+    / "publication"
+    / "pre_estimation"
+    / "care_demand_by_age_pre_shaded.pdf",
+):
+    """Plot care demand shares with shaded light/intensive areas beneath total line."""
+
+    with path_to_states.open("rb") as f:
+        states = pickle.load(f)
+
+    with path_to_full_specs.open("rb") as f:
+        specs = pickle.load(f)
+
+    start_age = specs["start_age"]
+    plot_max_age = 75
+    n_periods = max(
+        specs["n_periods"],
+        plot_max_age - start_age + 1,
+    )
+    specs_plot = {**specs, "end_age_caregiving": plot_max_age + 1}
+
+    mother_dead_initial = np.asarray(states["mother_dead"], dtype=np.uint8)
+    mother_adl_initial = np.asarray(states["mother_adl"], dtype=np.uint8)
+    education = np.asarray(states["education"], dtype=np.uint8)
+
+    n_edu = specs["n_education_types"]
+    n_adl_states = 3
+    n_care_demand_states = 3
+
+    n_agents = len(mother_dead_initial)
+
+    share_no_care = np.zeros(n_periods)
+    share_light = np.zeros(n_periods)
+    share_intensive = np.zeros(n_periods)
+    share_any_care = np.zeros(n_periods)
+
+    state_by_group = {}
+    for edu in range(n_edu):
+        for adl in range(n_adl_states):
+            for dead in (0, 1):
+                mask = (
+                    (education == edu)
+                    & (mother_adl_initial == adl)
+                    & (mother_dead_initial == dead)
+                )
+                state_by_group[(edu, adl, dead)] = float(mask.sum())
+
+    care_demand_by_group_initial = {}
+    for edu in range(n_edu):
+        for adl in range(n_adl_states):
+            for dead in (0, 1):
+                count = state_by_group.get((edu, adl, dead), 0.0)
+                if count == 0:
+                    continue
+
+                care_demand_probs = care_demand_transition_adl_light_intensive(
+                    adl, dead, 0, edu, specs_plot
+                )
+
+                for care_demand_state in range(n_care_demand_states):
+                    prob = float(care_demand_probs[care_demand_state])
+                    key = (edu, care_demand_state)
+                    care_demand_by_group_initial[key] = (
+                        care_demand_by_group_initial.get(key, 0.0) + count * prob
+                    )
+
+    total_no_care = sum(
+        care_demand_by_group_initial.get((edu, 0), 0.0) for edu in range(n_edu)
+    )
+    total_light = sum(
+        care_demand_by_group_initial.get((edu, 1), 0.0) for edu in range(n_edu)
+    )
+    total_intensive = sum(
+        care_demand_by_group_initial.get((edu, 2), 0.0) for edu in range(n_edu)
+    )
+
+    share_no_care[0] = total_no_care / n_agents
+    share_light[0] = total_light / n_agents
+    share_intensive[0] = total_intensive / n_agents
+    share_any_care[0] = share_light[0] + share_intensive[0]
+
+    for period in range(1, n_periods):
+        state_next = {}
+        for edu in range(n_edu):
+            count_dead = (
+                state_by_group.get((edu, 0, 1), 0.0)
+                + state_by_group.get((edu, 1, 1), 0.0)
+                + state_by_group.get((edu, 2, 1), 0.0)
+            )
+            if count_dead > 0:
+                state_next[(edu, 0, 1)] = count_dead
+
+            for adl_curr in range(n_adl_states):
+                count_alive = state_by_group.get((edu, adl_curr, 0), 0.0)
+                if count_alive == 0:
+                    continue
+
+                death_prob_vector = death_transition(period - 1, 0, edu, specs)
+                alive_prob = float(death_prob_vector[0])
+                dead_prob = float(death_prob_vector[1])
+
+                count_dies = count_alive * dead_prob
+                count_survives = count_alive * alive_prob
+
+                state_next[(edu, 0, 1)] = state_next.get((edu, 0, 1), 0.0) + count_dies
+
+                if count_survives == 0:
+                    continue
+
+                adl_prob_vector = limitations_with_adl_transition(
+                    adl_curr, period - 1, edu, specs
+                )
+
+                count_no_adl = count_survives * float(adl_prob_vector[0])
+                count_adl_1 = count_survives * float(adl_prob_vector[1])
+                count_adl_2_3 = count_survives * float(adl_prob_vector[2])
+
+                state_next[(edu, 0, 0)] = (
+                    state_next.get((edu, 0, 0), 0.0) + count_no_adl
+                )
+                state_next[(edu, 1, 0)] = state_next.get((edu, 1, 0), 0.0) + count_adl_1
+                state_next[(edu, 2, 0)] = (
+                    state_next.get((edu, 2, 0), 0.0) + count_adl_2_3
+                )
+
+        state_by_group = state_next
+
+        care_demand_by_group = {}
+        for edu in range(n_edu):
+            for adl in range(n_adl_states):
+                for dead in (0, 1):
+                    count = state_by_group.get((edu, adl, dead), 0.0)
+                    if count == 0:
+                        continue
+
+                    care_demand_probs = care_demand_transition_adl_light_intensive(
+                        adl, dead, period, edu, specs_plot
+                    )
+
+                    for care_demand_state in range(n_care_demand_states):
+                        prob = float(care_demand_probs[care_demand_state])
+                        key = (edu, care_demand_state)
+                        care_demand_by_group[key] = (
+                            care_demand_by_group.get(key, 0.0) + count * prob
+                        )
+
+        total_no_care = sum(
+            care_demand_by_group.get((edu, 0), 0.0) for edu in range(n_edu)
+        )
+        total_light = sum(
+            care_demand_by_group.get((edu, 1), 0.0) for edu in range(n_edu)
+        )
+        total_intensive = sum(
+            care_demand_by_group.get((edu, 2), 0.0) for edu in range(n_edu)
+        )
+
+        share_no_care[period] = total_no_care / n_agents
+        share_light[period] = total_light / n_agents
+        share_intensive[period] = total_intensive / n_agents
+        share_any_care[period] = share_light[period] + share_intensive[period]
+
+    periods = np.arange(n_periods)
+    ages = start_age + periods
+
+    age_min_plot, age_max_plot = 40, 75
+    mask = (ages >= age_min_plot) & (ages <= age_max_plot)
+    ages_plot = ages[mask]
+    share_any_plot = share_any_care[mask]
+    share_light_plot = share_light[mask]
+    share_intensive_plot = share_intensive[mask]
+
+    fig, ax = plt.subplots(figsize=(10, 8))
+
+    linewidth = 2.0
+    ax.plot(
+        ages_plot,
+        share_any_plot,
+        color="0",
+        linewidth=linewidth,
+        linestyle="-",
+    )
+    ax.plot(
+        ages_plot,
+        share_light_plot,
+        color="0.3",
+        linewidth=linewidth - 1.0,
+        linestyle="-",
+    )
+
+    ax.fill_between(
+        ages_plot,
+        0,
+        share_light_plot,
+        color="0.9",
+        alpha=0.5,
+    )
+    ax.fill_between(
+        ages_plot,
+        share_light_plot,
+        share_any_plot,
+        color="0.65",
+        alpha=0.5,
+    )
+
+    share_intensive_area = share_intensive_plot
+
+    light_idx = int(np.argmax(share_light_plot))
+    intensive_idx = int(np.argmax(share_intensive_area))
+
+    if share_light_plot[light_idx] > 0:
+        ax.text(
+            ages_plot[light_idx],
+            share_light_plot[light_idx] / 2,
+            "Light",
+            color="0.2",
+            fontsize=14,
+            ha="center",
+            va="center",
+        )
+
+    if share_intensive_area[intensive_idx] > 0:
+        ax.text(
+            ages_plot[intensive_idx],
+            share_light_plot[intensive_idx] + share_intensive_area[intensive_idx] / 2,
+            "Intensive",
+            color="0.1",
+            fontsize=14,
+            ha="center",
+            va="center",
+        )
+
+    ax.set_xlim(age_min_plot - 0.5, age_max_plot + 0.5)
+    ax.set_ylim(-0.005, 0.2)
+    ax.set_yticks(np.arange(0, 0.21, 0.05))
+
+    ax.set_xlabel("Age", fontsize=16)
+    ax.set_ylabel("Share", fontsize=16)
+    ax.tick_params(axis="both", labelsize=14, length=8)
+
+    ax.grid(True, axis="y", alpha=0.3, linewidth=0.8)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    plt.tight_layout()
+    path_to_save.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(path_to_save, dpi=1200, bbox_inches="tight")
+    plt.close(fig)
+
+    print(f"Shaded care demand plot saved to {path_to_save}")
