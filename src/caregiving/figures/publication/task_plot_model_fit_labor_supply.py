@@ -12,6 +12,7 @@ from pytask import Product
 
 from caregiving.config import BLD
 from caregiving.figures.publication.plotting_functions import (
+    plot_aggregated_share_by_education_bw,
     plot_choice_shares_by_education_bw,
 )
 from caregiving.model.shared import (
@@ -36,6 +37,7 @@ from caregiving.moments.task_create_soep_moments import (
 
 
 @pytask.mark.publication
+@pytask.mark.publication_model_fit
 def task_plot_model_fit_labor_supply(
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_simulated_data: Path = BLD
@@ -50,7 +52,9 @@ def task_plot_model_fit_labor_supply(
     path_to_save_all_plot: Annotated[Path, Product] = BLD
     / "figures"
     / "publication"
-    / "labor_supply_fit_all.png",
+    / "model_fit"
+    / "labor_supply_fit_all.pdf",
+    standard_deviation: bool = True,
     # path_to_save_all_combined_plot: Annotated[Path, Product] = BLD
     # / "figures"
     # / "publication"
@@ -73,6 +77,9 @@ def task_plot_model_fit_labor_supply(
 
     All plots are in black and white with observed lines dashed and
     simulated lines black solid.
+
+    If standard_deviation is True, add bands of 1.96 * standard
+    deviation around the empirical mean share per age.
 
     """
 
@@ -131,6 +138,7 @@ def task_plot_model_fit_labor_supply(
         data_sim=df_sim,
         specs=specs,
         path_to_save_plot=path_to_save_all_plot,
+        standard_deviation=standard_deviation,
     )
 
     # # Plot 1b: All individuals (combined education levels in one plot)
@@ -156,3 +164,95 @@ def task_plot_model_fit_labor_supply(
     #     specs=specs,
     #     path_to_save_plot=path_to_save_caregivers_plot,
     # )
+
+
+@pytask.mark.publication
+@pytask.mark.publication_model_fit
+def task_plot_model_fit_employment_rate(
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_simulated_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params.pkl",
+    path_to_empirical_data: Path = BLD
+    / "data"
+    / "soep_structural_estimation_sample.csv",
+    path_to_caregivers_sample: Path = BLD
+    / "data"
+    / "soep_structural_caregivers_sample.csv",
+    path_to_save_plot: Annotated[Path, Product] = BLD
+    / "figures"
+    / "publication"
+    / "model_fit"
+    / "labor_supply_fit_employment_rate.pdf",
+    standard_deviation: bool = True,
+) -> None:
+    """Plot employment rate (PT or FT) by age, 1×2 (low / high education)."""
+    specs = pickle.load(path_to_specs.open("rb"))
+    df_emp_full = pd.read_csv(path_to_empirical_data, index_col=[0])
+    df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
+    df_sim["sex"] = SEX
+    df_sim["age"] = df_sim["period"] + specs["start_age"]
+    df_sim = df_sim[df_sim["health"] != DEAD].copy()
+    df_emp_all = create_df_with_caregivers(
+        df_full=df_emp_full,
+        specs=specs,
+        start_year=2001,
+        end_year=2019,
+        end_age=specs["end_age_msm"],
+    )
+    # choice_group: 0=retirement, 1=unemployed, 2=part_time, 3=full_time
+    plot_aggregated_share_by_education_bw(
+        data_emp=df_emp_all,
+        data_sim=df_sim,
+        specs=specs,
+        choice_group_codes=[2, 3],  # PT + FT = employment
+        ylabel="Employment rate (PT or FT)",
+        path_to_save_plot=path_to_save_plot,
+        standard_deviation=standard_deviation,
+    )
+
+
+@pytask.mark.publication
+@pytask.mark.publication_model_fit
+def task_plot_model_fit_non_work(
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_simulated_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params.pkl",
+    path_to_empirical_data: Path = BLD
+    / "data"
+    / "soep_structural_estimation_sample.csv",
+    path_to_caregivers_sample: Path = BLD
+    / "data"
+    / "soep_structural_caregivers_sample.csv",
+    path_to_save_plot: Annotated[Path, Product] = BLD
+    / "figures"
+    / "publication"
+    / "model_fit"
+    / "labor_supply_fit_non_work.pdf",
+    standard_deviation: bool = True,
+) -> None:
+    """Plot non-work (unemployment or retirement) by age, 1×2 (low / high education)."""
+    specs = pickle.load(path_to_specs.open("rb"))
+    df_emp_full = pd.read_csv(path_to_empirical_data, index_col=[0])
+    df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
+    df_sim["sex"] = SEX
+    df_sim["age"] = df_sim["period"] + specs["start_age"]
+    df_sim = df_sim[df_sim["health"] != DEAD].copy()
+    df_emp_all = create_df_with_caregivers(
+        df_full=df_emp_full,
+        specs=specs,
+        start_year=2001,
+        end_year=2019,
+        end_age=specs["end_age_msm"],
+    )
+    # choice_group: 0=retirement, 1=unemployed, 2=part_time, 3=full_time
+    plot_aggregated_share_by_education_bw(
+        data_emp=df_emp_all,
+        data_sim=df_sim,
+        specs=specs,
+        choice_group_codes=[0, 1],  # retirement + unemployed = non-work
+        ylabel="Non-work (unemployment or retirement)",
+        path_to_save_plot=path_to_save_plot,
+        standard_deviation=standard_deviation,
+    )
