@@ -49,6 +49,8 @@ RECEIVED_HELP_DAILY = 1
 CHILD_ONE_GAVE_HELP = 10
 STEP_CHILD_GAVE_HELP = 11
 OTHER_CHILD_GAVE_HELP = 19
+# SHARE sp003 coding: who gave help from outside household
+SPOUSE_PARTNER = 1
 SN_PERSON_ONE = 101
 SN_PERSON_SEVEN = 107
 
@@ -557,6 +559,44 @@ def create_care_variables(dat):  # noqa: PLR0915
     # _val = [1, 0]
     dat["informal_care_general"] = np.select(_cond, _val, default=0)
 
+    # Care from spouse/partner: inside HH (sp021d1) or outside HH (sp003_* = spouse)
+    care_from_spouse_inside = (dat["sp021d1"] == ANSWER_YES).astype(int)
+    care_from_spouse_outside_any = (
+        (dat["sp003_1"] == SPOUSE_PARTNER)
+        | (dat["sp003_2"] == SPOUSE_PARTNER)
+        | (dat["sp003_3"] == SPOUSE_PARTNER)
+    )
+    care_from_spouse_outside_daily = (
+        ((dat["sp003_1"] == SPOUSE_PARTNER) & (dat["sp005_1"] == DAILY))
+        | ((dat["sp003_2"] == SPOUSE_PARTNER) & (dat["sp005_2"] == DAILY))
+        | ((dat["sp003_3"] == SPOUSE_PARTNER) & (dat["sp005_3"] == DAILY))
+    )
+    _cond_spouse = [
+        care_from_spouse_inside.astype(bool) | care_from_spouse_outside_any,
+        (dat["sp020_"].isna()) & (dat["sp002_"].isna()),
+    ]
+    dat["care_from_spouse_partner"] = np.select(_cond_spouse, [1, np.nan], default=0)
+    _cond_spouse_daily = [
+        care_from_spouse_inside.astype(bool) | care_from_spouse_outside_daily,
+        (dat["sp020_"].isna()) & (dat["sp002_"].isna()),
+    ]
+    dat["care_from_spouse_partner_daily"] = np.select(
+        _cond_spouse_daily, [1, np.nan], default=0
+    )
+
+    # Care from spouse/partner inside HH only (no outside-HH)
+    _cond_spouse_inside = [
+        (dat["sp021d1"] == ANSWER_YES),
+        (dat["sp020_"].isna()) & (dat["sp002_"].isna()),
+    ]
+    dat["care_from_spouse_partner_inside_only"] = np.select(
+        _cond_spouse_inside, [1, np.nan], default=0
+    )
+    # Daily: inside-only is same as general (personal care from spouse inside HH)
+    dat["care_from_spouse_partner_inside_only_daily"] = dat[
+        "care_from_spouse_partner_inside_only"
+    ].copy()
+
     # _cond = [
     #     (dat["sp020_"] == 1)  # care from inside the household with personal care
     #     | (
@@ -761,6 +801,15 @@ def create_care_variables(dat):  # noqa: PLR0915
     )
     _exactly_one_child_provides_care_from_outside_hh = daily_child_outside_cnt == 1
 
+    # Save general (any frequency) "two children" mask before overwriting with daily
+    two_children_caregivers_general = (
+        at_least_two_children_provide_care_from_outside_hh
+        | (
+            at_least_one_child_provides_care_from_inside_hh
+            & at_least_one_child_provides_care_from_outside_hh
+        )
+    )
+
     at_least_one_child_provides_care_from_outside_hh = daily_child_outside_cnt >= 1
     at_least_two_children_provide_care_from_outside_hh = daily_child_outside_cnt >= TWO
 
@@ -784,6 +833,16 @@ def create_care_variables(dat):  # noqa: PLR0915
     ]
     _val = [1, 0]
     dat["informal_care_daily_two_children"] = np.select(_cond, _val, default=np.nan)
+
+    # General (any freq): ≥2 children provide care, among those who receive any
+    _cond_two_gen = [
+        (dat["informal_care_general"] == 1) & two_children_caregivers_general,
+        (dat["informal_care_general"] == 1) & (~two_children_caregivers_general),
+    ]
+    _val_two_gen = [1, 0]
+    dat["informal_care_two_children"] = np.select(
+        _cond_two_gen, _val_two_gen, default=np.nan
+    )
 
     _cond = [
         at_least_two_children_provide_care_from_outside_hh,

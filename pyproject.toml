@@ -57,6 +57,7 @@ plot_initial_conditions = "Initial-conditions plotting tasks"
 job_separation = "Job separation estimation and plotting tasks"
 descriptives = "Descriptive statistics / summary table tasks"
 summary_statistics = "Summary statistics table tasks (e.g. structural sample)"
+family_statistics = "Intra-family caregiving statistics (SHARE)"
 within_outside_intensive_care = "Intensive care within vs outside household statistics tasks"
 formal_care_costs = "Formal care costs estimation tasks"
 # Solving

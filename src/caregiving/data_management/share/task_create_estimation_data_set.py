@@ -2054,6 +2054,16 @@ def check_share_informal_care_to_mother_father(dat):
         default=0,
     )
 
+    # Care for both parents simultaneously (same wave)
+    dat["care_to_both_parents"] = (
+        (dat["care_to_mother"] == 1) & (dat["care_to_father"] == 1)
+    ).astype(int)
+    # Intensive (daily) care to both
+    _both_int = (dat["care_to_mother_intensive"] == 1) & (
+        dat["care_to_father_intensive"] == 1
+    )
+    dat["care_to_both_parents_intensive"] = np.where(_both_int, 1, 0)
+
     return dat
 
 
