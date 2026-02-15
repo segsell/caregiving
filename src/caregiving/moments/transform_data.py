@@ -6,13 +6,13 @@ for use in likelihood estimation, including experience scaling and wealth adjust
 
 import numpy as np
 import pandas as pd
-from dcegm.asset_correction import adjust_observed_assets
 
 from caregiving.model.experience_baseline_model import scale_experience_years
 from caregiving.model.pension_system.experience_stock import (
     calc_pension_points_form_experience,
 )
 from caregiving.model.shared import RETIREMENT, SEX, is_retired
+from dcegm.asset_correction import adjust_observed_assets
 
 
 def load_and_scale_correct_data(data_decision, model_class):
