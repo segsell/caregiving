@@ -133,6 +133,130 @@ def task_plot_differences_savings_dec_no_inheritance(
 
 @pytask.mark.publication
 @pytask.mark.publication_wealth
+def task_plot_savings_dec_levels_no_inheritance(
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_baseline_sim_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_no_inheritance.pkl",
+    path_to_no_care_sim_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_no_care_demand_no_inheritance.pkl",
+    path_to_save_plot: Annotated[Path, Product] = BLD
+    / "figures"
+    / "publication"
+    / "post_estimation"
+    / "savings_dec_levels_no_inheritance.pdf",
+    same_agents: bool = True,
+    ever_care_demand: bool = False,
+    caregiving_type: bool = False,
+    ever_caregiver: bool = False,
+    age_min: int = 30,
+    age_max: int = 90,
+) -> None:
+    """Plot average savings decision by age: two lines (baseline and no-care)."""
+    specs = pickle.load(path_to_specs.open("rb"))
+    df_baseline = pd.read_pickle(path_to_baseline_sim_data)
+    df_nocare = pd.read_pickle(path_to_no_care_sim_data)
+    series_baseline, series_no_care = _build_mean_by_age_both_scenarios(
+        df_baseline=df_baseline,
+        df_no_care=df_nocare,
+        specs=specs,
+        age_min=age_min,
+        age_max=age_max,
+        variable="savings_dec",
+        same_agents=same_agents,
+        ever_care_demand=ever_care_demand,
+        caregiving_type=caregiving_type,
+        ever_caregiver=ever_caregiver,
+    )
+    _plot_two_levels_by_age(
+        series_baseline=series_baseline,
+        series_no_care=series_no_care,
+        path_to_save=path_to_save_plot,
+        age_min=age_min,
+        age_max=age_max,
+        ylabel="Average savings decision",
+    )
+
+
+@pytask.mark.publication
+@pytask.mark.publication_wealth
+@pytask.mark.publication_percentage
+def task_plot_savings_dec_pct_deviation_no_inheritance(
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_baseline_sim_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_no_inheritance.pkl",
+    path_to_no_care_sim_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_no_care_demand_no_inheritance.pkl",
+    path_to_save_plot: Annotated[Path, Product] = BLD
+    / "figures"
+    / "publication"
+    / "post_estimation"
+    / "savings_dec_pct_deviation_no_inheritance.pdf",
+    same_agents: bool = True,
+    ever_care_demand: bool = False,
+    caregiving_type: bool = False,
+    ever_caregiver: bool = False,
+    age_min: int = 32,
+    age_max: int = 80,
+) -> None:
+    """Plot percentage deviation of savings decision from baseline by age (one line).
+
+    For each age: (no_care / baseline) / baseline x 100 when both positive;
+    when both negative use absolute values then negate:
+    -(|no_care|-|baseline|)/|baseline|x100;
+
+    when any is zero or opposite signs, 0.
+
+    """
+    specs = pickle.load(path_to_specs.open("rb"))
+    df_baseline = pd.read_pickle(path_to_baseline_sim_data)
+    df_nocare = pd.read_pickle(path_to_no_care_sim_data)
+    series_baseline, series_no_care = _build_mean_by_age_both_scenarios(
+        df_baseline=df_baseline,
+        df_no_care=df_nocare,
+        specs=specs,
+        age_min=age_min,
+        age_max=age_max,
+        variable="savings_dec",
+        same_agents=same_agents,
+        ever_care_demand=ever_care_demand,
+        caregiving_type=caregiving_type,
+        ever_caregiver=ever_caregiver,
+    )
+    # Both positive: (no_care - baseline) / baseline * 100
+    # Both negative: - (|no_care| - |baseline|) / |baseline| * 100
+    # Any zero or opposite signs: 0
+    mask_both_pos = (series_baseline > 0) & (series_no_care > 0)
+    mask_both_neg = (series_baseline < 0) & (series_no_care < 0)
+    mask_any_zero = (series_baseline == 0) | (series_no_care == 0)
+    pct_dev = pd.Series(0.0, index=series_baseline.index)
+    pct_dev = pct_dev.astype(float)
+    pct_dev.loc[mask_both_pos] = (
+        (series_no_care - series_baseline)
+        .div(series_baseline)
+        .mul(100)
+        .loc[mask_both_pos]
+    )
+    pct_dev.loc[mask_both_neg] = -(
+        (series_no_care.abs() - series_baseline.abs())
+        .div(series_baseline.abs())
+        .mul(100)
+        .loc[mask_both_neg]
+    )
+    pct_dev.loc[mask_any_zero] = 0
+    _plot_pct_deviation_by_age(
+        pct_series=pct_dev,
+        path_to_save=path_to_save_plot,
+        age_min=age_min,
+        age_max=age_max,
+    )
+
+
+@pytask.mark.publication
+@pytask.mark.publication_wealth
 def task_plot_differences_savings_rate_no_inheritance(
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_baseline_sim_data: Path = BLD
@@ -1053,6 +1177,45 @@ def _prepare_simulation_dataframe(
             raise ValueError("Simulation data must include 'period' to construct age.")
         df["age"] = df["period"] + specs["start_age"]
     return df
+
+
+def _plot_pct_deviation_by_age(
+    pct_series: pd.Series,
+    path_to_save: Path,
+    age_min: int,
+    age_max: int,
+) -> None:
+    """Create a one-line plot: percentage deviation from baseline by age."""
+    ages = pct_series.index.to_numpy()
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    ax.axhline(0, color="0.6", linewidth=1.2, linestyle="--")
+    ax.plot(
+        ages,
+        pct_series,
+        color="0.15",
+        linewidth=2.0,
+        linestyle="-",
+    )
+
+    ax.set_xlim(age_min - 1, age_max + 1)
+    ax.set_xlabel("Age", fontsize=16)
+    ax.set_ylabel(
+        "Percentage deviation from baseline (no-care vs baseline)",
+        fontsize=16,
+    )
+    ax.tick_params(axis="both", labelsize=14, length=8)
+
+    ax.grid(True, axis="y", alpha=0.3, linewidth=0.8)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    plt.tight_layout()
+    path_to_save.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(path_to_save, dpi=1200, bbox_inches="tight")
+    plt.close(fig)
+
+    print(f"Plot saved to {path_to_save}")
 
 
 def _plot_difference_by_age(
