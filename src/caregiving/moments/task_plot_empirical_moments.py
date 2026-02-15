@@ -160,8 +160,8 @@ def task_plot_empirical_soep_moments(
     df_caregivers_full = pd.read_csv(path_to_caregivers_sample, index_col=[0])
 
     # Load wealth data
-    df_wealth = pd.read_csv(path_to_wealth_data, index_col=[0])
-    df_wealth = df_wealth.reset_index()
+    # df_wealth = pd.read_csv(path_to_wealth_data, index_col=[0])
+    # df_wealth = df_wealth.reset_index()
     # df_wealth_full not used
     # df_wealth_full = pd.read_csv(path_to_wealth_data_full, index_col=[0])
 
@@ -192,6 +192,7 @@ def task_plot_empirical_soep_moments(
         df_full=df_full,
         model_class=model_class,
     )
+    trimmed = trimmed[trimmed["sex"] == SEX].copy()
     # trimmed = trimmed[
     #     (trimmed["syear"] >= WEALTH_START_YEAR) &
     # (trimmed["syear"] <= WEALTH_END_YEAR)
@@ -220,7 +221,7 @@ def task_plot_empirical_soep_moments(
         # data_emp=df_wealth,
         specs=specs,
         wealth_var_emp="adjusted_wealth",
-        median=True,
+        median=False,
         age_min=30,
         age_max=90,
         path_to_save_plot=path_to_save_wealth,
@@ -229,7 +230,7 @@ def task_plot_empirical_soep_moments(
         data_emp=trimmed,
         specs=specs,
         wealth_var_emp="adjusted_wealth",
-        median=True,
+        median=False,
         age_bin_width=5,
         age_min=30,
         age_max=90,
@@ -247,7 +248,7 @@ def task_plot_empirical_soep_moments(
         moments=soep_moments / WEALTH_MOMENTS_SCALE,
         specs=specs,
         wealth_var_emp="adjusted_wealth",
-        median=True,
+        median=False,
         age_min=30,
         age_max=90,
         path_to_save_plot=path_to_save_wealth_empirical_vs_moments,

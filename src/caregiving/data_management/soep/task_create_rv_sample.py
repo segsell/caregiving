@@ -5,6 +5,7 @@ from typing import Annotated
 
 import numpy as np
 import pandas as pd
+import pytask
 from pytask import Product
 
 from caregiving.config import BLD
@@ -13,6 +14,7 @@ MONTHS_WORK_THRESHOLD = 6
 MONTHS_CARE_THRESHOLD = 6
 
 
+# @pytask.mark.event_study_sample
 def task_create_rv_sample(
     path_to_rv_data: Path = BLD / "data" / "rv_raw.csv",
     path_to_save: Annotated[Path, Product] = BLD / "data" / "rv_sample.csv",
@@ -165,8 +167,6 @@ def task_create_rv_sample(
         lambda x: (x > 0).sum() >= MONTHS_WORK_THRESHOLD
     )
 
-    rv_data["EGP_main_yearly"].describe()
-
     rv_data["rv_care"] = np.where(
         (rv_data["STATUS_2"] == "PFL") | (rv_data["STATUS_3"] == "PFL"), 1, 0
     )
@@ -232,12 +232,15 @@ def task_create_rv_sample(
     rv_year.sort_values(["rv_id", "syear"], inplace=True)
 
     for col in EGP_vars:
-        rv_year[f"{col}_yearly_cum"] = rv_year.groupby("rv_id")[col].cumsum()
+        rv_year[f"{col}_yearly_cum"] = rv_year.groupby("rv_id")[
+            f"{col}_yearly"
+        ].cumsum()
 
     # Save the filtered data
     rv_year.to_csv(path_to_save)
 
 
+@pytask.mark.event_study_sample
 def task_merge_soep_rv_sample(
     path_to_soep_event_study_sample: Path = BLD
     / "data"

@@ -69,6 +69,7 @@ HEALTH_CARE = [
 
 SOCIAL_SUPPORT = [
     "sp020_",  # someone in this household helped you regularly with personal care
+    "sp021d1",  # R received help with personal care from: spouse/partner (inside HH)
     "sp021d10",  # from own child
     "sp021d11",  # from stepchild
     "sp021d20",  # from son-in-law
