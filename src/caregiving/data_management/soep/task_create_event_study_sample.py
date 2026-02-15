@@ -29,7 +29,7 @@ from caregiving.model.shared import N_MONTHS, N_WEEKS_IN_YEAR
 from caregiving.specs.task_write_specs import read_and_derive_specs
 
 
-@pytask.mark.skip()
+@pytask.mark.event_study_sample
 def task_create_event_study_sample(
     path_to_specs: Path = SRC / "specs.yaml",
     path_to_cpi: Path = SRC / "data" / "statistical_office" / "cpi_germany.csv",
@@ -76,7 +76,7 @@ def task_create_event_study_sample(
         Self-reported health status.
         0: bad, 1: good
 
-    working_hours
+    working_hours_contractual
         Contractual weekly working hours.
 
     working_hours_actual
@@ -138,7 +138,7 @@ def task_create_event_study_sample(
     health_p
         Health status indicator of the partner.
 
-    working_hours_p
+    working_hours_contractual_p
         Contractual weekly working hours of the partner.
 
     working_hours_actual_p
@@ -147,8 +147,11 @@ def task_create_event_study_sample(
     pglabgro_deflated_p
         Partner's monthly gross labor income, deflated to the base year.
 
-    hourly_wage_p
-        Partner's computed hourly wage.
+    hourly_wage_contractual_p
+        Partner's hourly wage (gross monthly labor income / contractual monthly hours).
+
+    hourly_wage_actual_p
+        Partner's hourly wage (gross monthly labor income / actual monthly hours).
 
     any_care_p
         Indicator for whether the partner provided any care.
@@ -167,6 +170,8 @@ def task_create_event_study_sample(
     df = create_choice_variable(df)
 
     df = generate_working_hours(df, include_actual_hours=True, drop_missing=False)
+    df = df.rename(columns={"working_hours": "working_hours_contractual"})
+
     _syear_counts1 = df["syear"].value_counts().sort_index()
     print(
         "Number of observations per year after generating working hours:\n"
@@ -236,10 +241,11 @@ def task_create_event_study_sample(
         "education": "float16",
         "children": "int8",
         "health": "float16",
-        "working_hours": "float32",
+        "working_hours_contractual": "float32",
         "working_hours_actual": "float32",
         "pglabgro_deflated": "float32",
-        "hourly_wage": "float32",
+        "hourly_wage_contractual": "float32",
+        "hourly_wage_actual": "float32",
         "job_sep_fired_vs_not": "int8",
         "job_sep_fired_vs_voluntary": "float32",
         "pli0046": "int8",
@@ -260,10 +266,11 @@ def task_create_event_study_sample(
         "choice_p": "float16",
         "education_p": "float16",
         "health_p": "float16",
-        "working_hours_p": "float32",
+        "working_hours_contractual_p": "float32",
         "working_hours_actual_p": "float32",
         "pglabgro_deflated_p": "float32",
-        "hourly_wage_p": "float32",
+        "hourly_wage_contractual_p": "float32",
+        "hourly_wage_actual_p": "float32",
         "any_care_p": "float32",
         # unprocessed
         "birthregion_ew": "int8",
@@ -317,9 +324,18 @@ def create_hourly_wage(df):
         df["pglabgro_deflated"] > 0, df["pglabgro_deflated"], 0
     )
 
-    df["monthly_hours"] = df["working_hours"] * N_MONTHS / N_WEEKS_IN_YEAR
-    df["hourly_wage"] = np.where(
-        df["working_hours"] == 0, 0, df["pglabgro_deflated"] / df["monthly_hours"]
+    df["monthly_hours"] = df["working_hours_contractual"] * N_WEEKS_IN_YEAR / N_MONTHS
+    df["hourly_wage_contractual"] = np.where(
+        df["working_hours_contractual"] == 0,
+        0,
+        df["pglabgro_deflated"] / df["monthly_hours"],
+    )
+
+    df["monthly_hours_actual"] = df["working_hours_actual"] * N_WEEKS_IN_YEAR / N_MONTHS
+    df["hourly_wage_actual"] = np.where(
+        df["working_hours_actual"] == 0,
+        0,
+        df["pglabgro_deflated"] / df["monthly_hours_actual"],
     )
 
     return df
