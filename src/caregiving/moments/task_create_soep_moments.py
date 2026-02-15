@@ -26,6 +26,7 @@ from caregiving.model.shared import (
     UNEMPLOYED_CHOICES,
     WEALTH_END_YEAR,
     WEALTH_MOMENTS_SCALE,
+    WEALTH_QUANTILE_CUTOFF,
     WEALTH_START_YEAR,
     WORK_CHOICES,
 )
@@ -86,7 +87,6 @@ def task_create_soep_moments(  # noqa: PLR0915
         shock_functions=shock_function_dict(),
         stochastic_states_transitions=create_stochastic_states_transitions(),
         model_load_path=path_to_model,
-        # alternative_sim_specifications=alternative_sim_specifications,
         # debug_info=debug_info,
         # use_stochastic_sparsity=True,
     )
@@ -143,7 +143,9 @@ def task_create_soep_moments(  # noqa: PLR0915
     df_wealth = create_df_wealth(
         df_full=df_full,
         model_class=model_class,
+        trim_upper_wealth_quantile=False,
     )
+    df_wealth = df_wealth[df_wealth["sex"] == SEX].copy()
 
     _df_alive = df[df["health"] != DEAD].copy()
     _df_good_health = df[df["health"] == GOOD_HEALTH].copy()
@@ -2237,6 +2239,8 @@ def create_df_caregivers(
 def create_df_wealth(
     df_full: pd.DataFrame,
     model_class: Any,
+    filter_sex: bool = False,
+    trim_upper_wealth_quantile: bool = False,
 ) -> pd.DataFrame:
     """Create and process wealth dataframe.
 
@@ -2246,14 +2250,23 @@ def create_df_wealth(
         Full dataset loaded from CSV
     model_class : Any
         Model class instance
+    filter_sex : bool, default False
+        If True, restrict to SEX.
+    trim_upper_wealth_quantile : bool, default True
+        If True, keep only wealth below WEALTH_QUANTILE_CUTOFF (e.g. top tail excluded).
 
     Returns
     -------
     pd.DataFrame
         Processed wealth dataframe with adjusted_wealth column
     """
+    if filter_sex:
+        df = df_full[df_full["sex"] == SEX].copy()
+    else:
+        df = df_full.copy()
+
     df_wealth_corrected = load_and_scale_correct_data(
-        data_decision=df_full,
+        data_decision=df,
         model_class=model_class,
     )
     df_wealth = df_wealth_corrected[
@@ -2261,6 +2274,10 @@ def create_df_wealth(
         & (df_wealth_corrected["syear"] <= WEALTH_END_YEAR)
     ].copy()
     df_wealth["adjusted_wealth"] = df_wealth["assets_begin_of_period"]
+
+    if trim_upper_wealth_quantile:
+        cutoff = df_wealth["adjusted_wealth"].quantile(WEALTH_QUANTILE_CUTOFF)
+        df_wealth = df_wealth[df_wealth["adjusted_wealth"] <= cutoff].copy()
 
     return df_wealth
 

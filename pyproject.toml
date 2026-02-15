@@ -56,6 +56,8 @@ generate_initial_conditions_10k = "Generate initial conditions with 10k agents"
 plot_initial_conditions = "Initial-conditions plotting tasks"
 job_separation = "Job separation estimation and plotting tasks"
 descriptives = "Descriptive statistics / summary table tasks"
+summary_statistics = "Summary statistics table tasks (e.g. structural sample)"
+family_statistics = "Intra-family caregiving statistics (SHARE)"
 within_outside_intensive_care = "Intensive care within vs outside household statistics tasks"
 formal_care_costs = "Formal care costs estimation tasks"
 # Solving
@@ -118,6 +120,9 @@ career_costs = "Career costs computation tasks"
 career_costs_caregiving_leave_with_job_retention = "Career costs for caregiving leave with job retention"
 career_costs_full_caregiving_leave_with_job_retention = "Career costs for full caregiving leave with job retention"
 government_budget = "Government budget computation tasks"
+tables = "Table / government budget table generation tasks"
+top_up = "Caregiving leave top-up table tasks"
+explore_government_budget = "Explore government budget tasks"
 # Plotting
 figures = "Figure generation tasks"
 bar_chart = "Bar chart plotting tasks"
@@ -151,6 +156,11 @@ publication_reverse_employment = "Publication reverse employment rate plotting t
 publication_caregiving_rate = "Publication caregiving rate plotting tasks"
 publication_event_study = "Publication event study plotting tasks"
 publication_event_study_reverse = "Publication event study plotting tasks (reverse, by mother's death)"
+publication_wealth = "Publication wealth/difference plotting tasks (no-inheritance)"
+publication_model_fit = "Publication model fit plotting tasks"
+publication_post_estimation = "Publication post-estimation plotting tasks"
+publication_pre_estimation = "Publication pre-estimation plotting tasks"
+fiscal_costs = "Publication fiscal costs table tasks"
 
 
 [tool.interrogate]

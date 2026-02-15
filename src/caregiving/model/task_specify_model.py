@@ -40,7 +40,6 @@ from caregiving.model.wealth_and_budget.savings_grid import create_end_of_period
 
 
 @pytask.mark.baseline_model
-@pytask.mark.soep_moments
 def task_specify_model(
     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_save_model_config: Annotated[Path, Product] = BLD

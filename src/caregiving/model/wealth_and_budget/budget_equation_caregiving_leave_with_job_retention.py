@@ -113,7 +113,6 @@ def budget_constraint(
         income_shock_previous_period=income_shock_for_labor,
         sex=sex_var,
         labor_income_after_ssc=labor_income_after_ssc,
-        household_unemployment_benefits=household_unemployment_benefits,
         model_specs=model_specs,
     )
 
@@ -122,22 +121,39 @@ def budget_constraint(
     was_worker = is_working(lagged_choice)
     was_retired = is_retired(lagged_choice)
 
-    # Aggregate over choice own income, including caregiving leave top-up
-    own_income_after_ssc = (
-        was_worker * labor_income_after_ssc
-        + was_retired * retirement_income_after_ssc
-        + caregiving_leave_top_up
+    # Taxable own income excluding 65% caregiving leave benefit (Progressionsvorbehalt:
+    # benefit is tax-free but used only to compute average tax rate in tax module).
+    own_income_for_tax = (
+        was_worker * labor_income_after_ssc + was_retired * retirement_income_after_ssc
     )
-
-    # Calculate total household net income (taxes on earnings + wage replacement)
+    # Calculate total household net income; when progression_income > 0, tax module
+    # returns disposable = taxable - tax + progression_income (benefit not in tax base).
     total_net_household_income, income_tax_total, income_tax_single = (
         calc_net_household_income(
-            own_income=own_income_after_ssc,
+            own_income=own_income_for_tax,
             partner_income=partner_income_after_ssc,
             has_partner_int=has_partner_int,
             model_specs=model_specs,
+            progression_income=caregiving_leave_top_up,
         )
     )
+
+    # ================================================================================
+    # Net cost of 65% leave: benefit is tax-free but Progressionsvorbehalt raises
+    # tax on other income. Tax increase from progression = extra revenue.
+    _, tax_without_progression, _ = calc_net_household_income(
+        own_income=own_income_for_tax,
+        partner_income=partner_income_after_ssc,
+        has_partner_int=has_partner_int,
+        model_specs=model_specs,
+        progression_income=0.0,
+    )
+    tax_increase_from_progression = income_tax_total - tax_without_progression
+    normal_leave_net_cost = caregiving_leave_top_up - tax_increase_from_progression
+    # ================================================================================
+
+    # For reporting: total own income including benefit
+    own_income_after_ssc = own_income_for_tax + caregiving_leave_top_up
 
     child_benefits = calc_child_benefits(
         education=education,
@@ -147,16 +163,23 @@ def budget_constraint(
         model_specs=model_specs,
     )
 
-    # # Formal care costs only (no informal care cash benefits, as caregiving lea
-    # ve top-up replaces them)
+    # # Formal care costs only (no informal care cash benefits, as caregiving leave
+    # top-up replaces them)
     formal_care = is_formal_care(lagged_choice)
-    annual_formal_care_costs = (
+    annual_formal_care_costs_agent = (
         -model_specs["formal_care_costs"] * formal_care * 12 * 0.5
     )
 
+    household_net_income_before_floor = total_net_household_income + child_benefits
     total_income = jnp.maximum(
-        total_net_household_income + child_benefits,
+        household_net_income_before_floor,
         household_unemployment_benefits,
+    )
+
+    # Unemployment is an income floor: government pays only the top-up to reach it.
+    unemployment_transfer_paid = jnp.maximum(
+        0.0,
+        household_unemployment_benefits - household_net_income_before_floor,
     )
 
     # Only compute inheritance if mother recently died this period (state 1)
@@ -179,7 +202,7 @@ def budget_constraint(
     interest_rate = model_specs["interest_rate"]
     interest = interest_rate * assets_scaled
     total_income_plus_interest = (
-        total_income + interest + annual_formal_care_costs + bequest_from_parent
+        total_income + interest + annual_formal_care_costs_agent + bequest_from_parent
     )
 
     # Calculate beginning of period wealth M_t
@@ -204,10 +227,8 @@ def budget_constraint(
         gross_partner_income=gross_partner_income,
         gross_partner_pension=gross_partner_pension,
         child_benefits=child_benefits,
-        care_benefits_and_costs=annual_formal_care_costs,
-        # Only formal care costs (no benefits
-        household_unemployment_benefits=household_unemployment_benefits,
-        # own_unemployment_benefits=own_unemployment_benefits,
+        care_benefits_and_costs=annual_formal_care_costs_agent,
+        unemployment_transfer_paid=unemployment_transfer_paid,
         caregiving_leave_top_up=caregiving_leave_top_up,
         model_specs=model_specs,
     )
@@ -233,8 +254,15 @@ def budget_constraint(
         # # "care_benefits_and_costs": care_benfits_and_costs / model_specs["wealth_u
         # nit"],
         "child_benefits": child_benefits / model_specs["wealth_unit"],
+        "formal_care_costs": annual_formal_care_costs_agent
+        / model_specs["wealth_unit"],
         "household_unemployment_benefits": household_unemployment_benefits
         / model_specs["wealth_unit"],
+        "unemployment_transfer_paid": unemployment_transfer_paid
+        / model_specs["wealth_unit"],
+        "tax_increase_from_progression": tax_increase_from_progression
+        / model_specs["wealth_unit"],
+        "normal_leave_net_cost": normal_leave_net_cost / model_specs["wealth_unit"],
         # Government budget components
         "income_tax": income_tax_total / model_specs["wealth_unit"],
         "income_tax_single": income_tax_single / model_specs["wealth_unit"],

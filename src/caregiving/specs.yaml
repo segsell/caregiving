@@ -66,8 +66,14 @@ monthly_child_benefits: 184
 monthly_min_wage: 1360
 
 # informal_care_cash_benefits: 444 # 0.4239 * 316 + 0.2793 * 545 + 728 *0.1405 + 901 * 0.0617
-informal_care_cash_benefits_light: 235 # Pflegestufe 1 (2010)
-informal_care_cash_benefits_intensive: 570 # Pflegestufe 2 (2010): 440, Pflegestufe 3 (2010): 700
+# https://www.portal-sozialpolitik.de/index.php?page=pflegeversicherung
+informal_care_cash_benefits_light: 225 # Pflegestufe 1 (2010)
+informal_care_cash_benefits_intensive: 557.5 # Pflegestufe 2 (2010): 430, Pflegestufe 3 (2010): 685
+
+# Beiträge der Pflegeversicherung zu stationärer Pflege
+# source: https://helmut-goepfert.de/pflegeversicherung/82-hoehere-pflegeleistungen-ab-01012010.html
+nursing_home_contribution_light: 1023 # annual: 12_276
+nursing_home_contribution_intensive: 1394.5 # (1279 + 1510) / 2 --> annual: 16_734
 
 # Retirement parameters
 early_retirement_penalty: 0.036
@@ -77,10 +83,14 @@ monthly_pension_point_value_east_2010: 24.13
 pop_share_west: 0.827
 pop_share_east: 0.173
 
-# Caregiving leave parameters
+# Caregiving leave (65%): tax-free with Progressionsvorbehalt; replaces unemployment
 caregiving_leave_benefit_replacement_rate: 0.65
 caregiving_leave_benefit_lower_bound: 300
 caregiving_leave_benefit_upper_bound: 1800
+
+# source: https://www.nav.no/grunnbelopet
+# annual Grunnbeløp x 6 (6G) in 2010: 75 641 kr * 6 = 453 846 kr / year
+norwegian_6G_annual: 56700
 
 
 # # Tax system from https://esth.bundesfinanzministerium.de/esth/2020

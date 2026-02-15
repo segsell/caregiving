@@ -25,6 +25,7 @@ from caregiving.model.shared import (
     PARENT_LONGER_DEAD,
     SEX,
     WEALTH_END_YEAR,
+    WEALTH_QUANTILE_CUTOFF,
     WEALTH_START_YEAR,
 )
 from caregiving.model.state_space import create_state_space_functions
@@ -75,10 +76,6 @@ def task_generate_start_states_for_solution(  # noqa: PLR0915
     / "model"
     / "initial_conditions"
     / "initial_states.pkl",
-    # path_to_save_wealth: Annotated[Path, Product] = BLD
-    # / "model"
-    # / "initial_conditions"
-    # / "wealth.csv",
 ) -> None:
     sex_var = SEX
 
@@ -708,8 +705,8 @@ def draw_start_wealth_dist(start_period_data_edu, n_agents_edu, method="kde"):
 
     wealth_start_clipped = np.clip(
         wealth_start,
-        a_min=wealth_data.quantile(0),  # wealth_data.min()
-        a_max=wealth_data.quantile(0.98),
+        a_min=wealth_data.quantile(0),
+        a_max=wealth_data.quantile(WEALTH_QUANTILE_CUTOFF),
     )
 
     return wealth_start_clipped

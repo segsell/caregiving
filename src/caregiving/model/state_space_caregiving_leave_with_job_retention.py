@@ -7,7 +7,9 @@ touching the original job-retention specification.
 
 import jax.numpy as jnp
 
-from caregiving.model.experience_baseline_model import get_next_period_experience
+from caregiving.model.experience_caregiving_leave_model import (
+    get_next_period_experience_caregiving_leave,
+)
 from caregiving.model.shared import (
     NO_CARE_DEMAND,
     PARENT_LONGER_DEAD,
@@ -31,7 +33,7 @@ def create_state_space_functions():
         "next_period_deterministic_state": (
             next_period_deterministic_state_with_job_retention
         ),
-        "next_period_experience": get_next_period_experience,
+        "next_period_experience": get_next_period_experience_caregiving_leave,
         "sparsity_condition": sparsity_condition_with_job_retention,
     }
 
