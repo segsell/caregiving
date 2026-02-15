@@ -32,25 +32,24 @@ from caregiving.model.wealth_and_budget.budget_equation_no_care_demand_no_inheri
 )
 from caregiving.model.wealth_and_budget.savings_grid import create_end_of_period_assets
 
+# @pytask.mark.no_inheritance
+# @pytask.mark.no_care_demand_model_no_inheritance
+# def task_specify_model_no_care_demand_no_inheritance(
+#     path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+#     path_to_save_model_config: Annotated[Path, Product] = BLD
+#     / "model"
+#     / "model_config_no_care_demand_no_inheritance.pkl",
+#     path_to_save_model: Annotated[Path, Product] = BLD
+#     / "model"
+#     / "model_no_care_demand_no_inheritance.pkl",
+# ):
+#     model = specify_model_no_care_demand_no_inheritance(
+#         path_to_derived_specs=path_to_derived_specs,
+#         path_to_save_model_config=path_to_save_model_config,
+#         path_to_save_model=path_to_save_model,
+#     )
 
-@pytask.mark.no_inheritance
-@pytask.mark.no_care_demand_model_no_inheritance
-def task_specify_model_no_care_demand_no_inheritance(
-    path_to_derived_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
-    path_to_save_model_config: Annotated[Path, Product] = BLD
-    / "model"
-    / "model_config_no_care_demand_no_inheritance.pkl",
-    path_to_save_model: Annotated[Path, Product] = BLD
-    / "model"
-    / "model_no_care_demand_no_inheritance.pkl",
-):
-    model = specify_model_no_care_demand_no_inheritance(
-        path_to_derived_specs=path_to_derived_specs,
-        path_to_save_model_config=path_to_save_model_config,
-        path_to_save_model=path_to_save_model,
-    )
-
-    return model
+#     return model
 
 
 def specify_model_no_care_demand_no_inheritance(

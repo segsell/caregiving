@@ -165,6 +165,7 @@ bld/plots/
 bld/figures/
 bld/solve_and_simulate/
 bld/_old_model/
+bld/tables/publication/
 
 
 # File too large to be tracked

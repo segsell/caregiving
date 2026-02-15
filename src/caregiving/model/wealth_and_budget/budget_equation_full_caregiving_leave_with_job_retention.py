@@ -12,7 +12,7 @@ from caregiving.model.wealth_and_budget.caregiving_leave_top_up import (
     calc_full_caregiving_leave_top_up,
 )
 from caregiving.model.wealth_and_budget.government_budget_caregiving_leave_with_job_retention import (  # noqa: E501
-    calc_government_budget_components_caregiving_leave_with_job_retention,
+    calc_government_budget_components_full_caregiving_leave_with_job_retention,
 )
 from caregiving.model.wealth_and_budget.partner_income import (
     calc_partner_income_after_ssc,
@@ -112,17 +112,16 @@ def budget_constraint(
         experience_years=experience_years,
         income_shock_previous_period=income_shock_for_labor,
         sex=sex_var,
-        labor_income_after_ssc=labor_income_after_ssc,
-        household_unemployment_benefits=household_unemployment_benefits,
         model_specs=model_specs,
     )
 
     # Select relevant income
-    # bools of last period decision: income is paid in following period!
+    # bools of last period decision: income is paid in following period
     was_worker = is_working(lagged_choice)
     was_retired = is_retired(lagged_choice)
 
-    # Aggregate over choice own income, including caregiving leave top-up
+    # Care leave benefit: taxable, but not subject to SSC in this model
+    # (added after SSC).
     own_income_after_ssc = (
         was_worker * labor_income_after_ssc
         + was_retired * retirement_income_after_ssc
@@ -139,6 +138,22 @@ def budget_constraint(
         )
     )
 
+    # Net cost of full leave to government: gross benefit minus income tax
+    # attributable to the (taxable) benefit.
+    own_income_for_tax_without_benefit = (
+        was_worker * labor_income_after_ssc + was_retired * retirement_income_after_ssc
+    )
+    disposable_without_benefit, total_tax_without_benefit, _ = (
+        calc_net_household_income(
+            own_income=own_income_for_tax_without_benefit,
+            partner_income=partner_income_after_ssc,
+            has_partner_int=has_partner_int,
+            model_specs=model_specs,
+        )
+    )
+    tax_attributable_to_benefit = income_tax_total - total_tax_without_benefit
+    full_leave_net_cost = caregiving_leave_top_up - tax_attributable_to_benefit
+
     child_benefits = calc_child_benefits(
         education=education,
         sex=sex_var,
@@ -150,14 +165,34 @@ def budget_constraint(
     # # Formal care costs only (no informal care cash benefits, as caregiving lea
     # ve top-up replaces them)
     formal_care = is_formal_care(lagged_choice)
-    annual_formal_care_costs = (
+    annual_formal_care_costs_agent = (
         -model_specs["formal_care_costs"] * formal_care * 12 * 0.5
     )
 
+    household_net_income_before_floor = total_net_household_income + child_benefits
     total_income = jnp.maximum(
-        total_net_household_income + child_benefits,
-        household_unemployment_benefits,
+        household_net_income_before_floor, household_unemployment_benefits
     )
+
+    # Unemployment is an income floor
+    # government pays the caregiving leave top-up to reach the floor, not further
+    unemployment_transfer_paid = jnp.maximum(
+        0.0, household_unemployment_benefits - household_net_income_before_floor
+    )
+
+    # ================================================================================
+    # Transfer crowd-out (ΔU): saving from paying less unemployment top-up when
+    # the household receives the leave benefit. Net cost incl. transfer = B − ΔT − ΔU.
+    income_without_benefit = disposable_without_benefit + child_benefits
+    transfer_without_benefit = jnp.maximum(
+        0.0, household_unemployment_benefits - income_without_benefit
+    )
+    transfer_with_benefit = unemployment_transfer_paid
+    delta_transfer_savings = transfer_without_benefit - transfer_with_benefit
+    full_leave_net_cost_incl_transfer = (
+        caregiving_leave_top_up - tax_attributable_to_benefit - delta_transfer_savings
+    )
+    # ================================================================================
 
     # Only compute inheritance if mother recently died this period (state 1)
     mother_died_recently = mother_dead == PARENT_RECENTLY_DEAD
@@ -179,7 +214,7 @@ def budget_constraint(
     interest_rate = model_specs["interest_rate"]
     interest = interest_rate * assets_scaled
     total_income_plus_interest = (
-        total_income + interest + annual_formal_care_costs + bequest_from_parent
+        total_income + interest + annual_formal_care_costs_agent + bequest_from_parent
     )
 
     # Calculate beginning of period wealth M_t
@@ -193,8 +228,7 @@ def budget_constraint(
         total_tax_revenue,
         government_expenditures,
         net_government_budget,
-    ) = calc_government_budget_components_caregiving_leave_with_job_retention(
-        # single_income_tax_total=income_tax_single,
+    ) = calc_government_budget_components_full_caregiving_leave_with_job_retention(
         household_income_tax_total=income_tax_total,
         was_worker=was_worker,
         was_retired=was_retired,
@@ -204,10 +238,9 @@ def budget_constraint(
         gross_partner_income=gross_partner_income,
         gross_partner_pension=gross_partner_pension,
         child_benefits=child_benefits,
-        care_benefits_and_costs=annual_formal_care_costs,
-        household_unemployment_benefits=household_unemployment_benefits,
-        # own_unemployment_benefits=own_unemployment_benefits,
-        caregiving_leave_top_up=caregiving_leave_top_up,
+        care_benefits_and_costs=annual_formal_care_costs_agent,
+        unemployment_transfer_paid=unemployment_transfer_paid,
+        full_caregiving_leave_benefit=caregiving_leave_top_up,
         model_specs=model_specs,
     )
 
@@ -228,11 +261,21 @@ def budget_constraint(
         "bequest_from_parent": bequest_from_parent / model_specs["wealth_unit"],
         "gets_inheritance": gets_inheritance,
         "caregiving_leave_top_up": caregiving_leave_top_up / model_specs["wealth_unit"],
+        "tax_attributable_to_full_leave": tax_attributable_to_benefit
+        / model_specs["wealth_unit"],
+        "full_leave_net_cost": full_leave_net_cost / model_specs["wealth_unit"],
+        "delta_transfer_savings": delta_transfer_savings / model_specs["wealth_unit"],
+        "full_leave_net_cost_incl_transfer": full_leave_net_cost_incl_transfer
+        / model_specs["wealth_unit"],
         "own_income_after_ssc": own_income_after_ssc / model_specs["wealth_unit"],
         # # "care_benefits_and_costs": care_benfits_and_costs / model_specs["wealth_u
         # nit"],
         "child_benefits": child_benefits / model_specs["wealth_unit"],
+        "formal_care_costs": annual_formal_care_costs_agent
+        / model_specs["wealth_unit"],
         "household_unemployment_benefits": household_unemployment_benefits
+        / model_specs["wealth_unit"],
+        "unemployment_transfer_paid": unemployment_transfer_paid
         / model_specs["wealth_unit"],
         # Government budget components
         "income_tax": income_tax_total / model_specs["wealth_unit"],

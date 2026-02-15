@@ -28,22 +28,60 @@ from caregiving.model.shared import (
 # ====================================================================================
 
 
-def plot_wealth_by_age_and_education(
+def _trim_wealth_by_quantiles(
+    df: pd.DataFrame,
+    wealth_col: str,
+    q_low: float | None = None,
+    q_high: float | None = None,
+) -> pd.DataFrame:
+    """Restrict to rows with wealth in [q_low, q_high] quantiles (computed on df)."""
+    if q_low is None is q_high:
+        return df
+    if q_low <= 0.0 and q_high >= 1.0:
+        return df
+    w = df[wealth_col].dropna()
+    if len(w) == 0:
+        return df
+    low = w.quantile(q_low)
+    high = w.quantile(q_high)
+    mask = (df[wealth_col] >= low) & (df[wealth_col] <= high)
+    return df.loc[mask].copy()
+
+
+def plot_wealth_by_age_and_education(  # noqa: PLR0912
     data_emp: pd.DataFrame,
     data_sim: pd.DataFrame,
     specs: dict,
     *,
     wealth_var_emp: str,
     wealth_var_sim: str,
-    median: bool = False,
+    median: bool = True,
     age_min: int | None = None,
     age_max: int | None = None,
+    filter_sex: bool = False,
+    wealth_quantile_low: float | None = None,
+    wealth_quantile_high: float | None = None,
+    trim_empirical: bool = True,
+    trim_simulated: bool = True,
     path_to_save_plot: str | None = None,
 ):
     """
     Plot average/median wealth by age and education (Observed vs Simulated),
     with education groups side by side, shared y-axis, y-labels on left for both
     panels, and internal x-padding near the vertical axes.
+
+    Parameters
+    ----------
+    filter_sex : bool, default False
+        If True, filter on sex (only SEX). If False, include both men and women.
+    wealth_quantile_low : float or None, default None
+        Lower quantile for trimming (None = no quantile trimming).
+    wealth_quantile_high : float or None, default None
+        Upper quantile for trimming (None = no quantile trimming).
+    trim_empirical : bool, default True
+        If True, trim empirical wealth by quantiles before the statistic.
+    trim_simulated : bool, default True
+        If True, trim simulated wealth by quantiles before the statistic.
 
     """
     # ---------- 0. Setup ----------
@@ -67,12 +105,25 @@ def plot_wealth_by_age_and_education(
     for edu_idx, edu_label in enumerate(specs["education_labels"]):
         ax = axs[edu_idx]
 
-        emp_edu = data_emp[
-            (data_emp["education"] == edu_idx) & (data_emp["sex"] == SEX)
-        ]
-        sim_edu = data_sim[
-            (data_sim["education"] == edu_idx) & (data_sim["sex"] == SEX)
-        ]
+        if filter_sex:
+            emp_edu = data_emp[
+                (data_emp["education"] == edu_idx) & (data_emp["sex"] == SEX)
+            ]
+            sim_edu = data_sim[
+                (data_sim["education"] == edu_idx) & (data_sim["sex"] == SEX)
+            ]
+        else:
+            emp_edu = data_emp[data_emp["education"] == edu_idx]
+            sim_edu = data_sim[data_sim["education"] == edu_idx]
+
+        if trim_empirical:
+            emp_edu = _trim_wealth_by_quantiles(
+                emp_edu, wealth_var_emp, wealth_quantile_low, wealth_quantile_high
+            )
+        if trim_simulated:
+            sim_edu = _trim_wealth_by_quantiles(
+                sim_edu, wealth_var_sim, wealth_quantile_low, wealth_quantile_high
+            )
 
         emp_series = (
             emp_edu.groupby("age", observed=False)[wealth_var_emp]
@@ -132,11 +183,16 @@ def plot_wealth_by_age_bins_and_education(  # noqa: PLR0912, PLR0915
     *,
     wealth_var_emp: str,
     wealth_var_sim: str,
-    median: bool = False,
+    median: bool = True,
     age_min: int | None = None,
     age_max: int | None = None,
     bin_width: int = 5,
     age_bin_ticks: bool = False,
+    filter_sex: bool = False,
+    wealth_quantile_low: float | None = None,
+    wealth_quantile_high: float | None = None,
+    trim_empirical: bool = True,
+    trim_simulated: bool = True,
     path_to_save_plot: str | None = None,
 ):
     """
@@ -150,6 +206,16 @@ def plot_wealth_by_age_bins_and_education(  # noqa: PLR0912, PLR0915
         If True: X-axis labels are range-style (e.g., "55-59"), rotated 45°,
         and shown at the bottom of every subplot with label "Age bin".
         If False: X-axis ticks every 5 years (e.g., 40, 45, 50...) with label "Age".
+    filter_sex : bool, default True
+        If True, filter on sex (only SEX). If False, include both men and women.
+    wealth_quantile_low : float or None, default None
+        Lower quantile for trimming (None = no quantile trimming).
+    wealth_quantile_high : float or None, default None
+        Upper quantile for trimming (None = no quantile trimming).
+    trim_empirical : bool, default True
+        If True, trim empirical wealth by quantiles before binning/statistic.
+    trim_simulated : bool, default True
+        If True, trim simulated wealth by quantiles before binning/statistic.
     """
     # ---------- 0. Setup ----------
     if age_min is None:
@@ -182,12 +248,25 @@ def plot_wealth_by_age_bins_and_education(  # noqa: PLR0912, PLR0915
     for edu_idx, edu_label in enumerate(specs["education_labels"]):
         ax = axs[edu_idx]
 
-        emp_edu = data_emp[
-            (data_emp["education"] == edu_idx) & (data_emp["sex"] == SEX)
-        ]
-        sim_edu = data_sim[
-            (data_sim["education"] == edu_idx) & (data_sim["sex"] == SEX)
-        ]
+        if filter_sex:
+            emp_edu = data_emp[
+                (data_emp["education"] == edu_idx) & (data_emp["sex"] == SEX)
+            ]
+            sim_edu = data_sim[
+                (data_sim["education"] == edu_idx) & (data_sim["sex"] == SEX)
+            ]
+        else:
+            emp_edu = data_emp[data_emp["education"] == edu_idx]
+            sim_edu = data_sim[data_sim["education"] == edu_idx]
+
+        if trim_empirical:
+            emp_edu = _trim_wealth_by_quantiles(
+                emp_edu, wealth_var_emp, wealth_quantile_low, wealth_quantile_high
+            )
+        if trim_simulated:
+            sim_edu = _trim_wealth_by_quantiles(
+                sim_edu, wealth_var_sim, wealth_quantile_low, wealth_quantile_high
+            )
 
         emp_rates = []
         sim_rates = []
@@ -262,10 +341,16 @@ def plot_average_wealth(
     data_sim,
     specs,
     path_to_save_plot,
+    *,
+    wealth_quantile_low: float | None = None,
+    wealth_quantile_high: float | None = None,
+    trim_empirical: bool = True,
+    trim_simulated: bool = True,
 ):
-    """Plot average wealth by age and education."""
+    """Plot average (median) wealth by age and education."""
 
     # data_emp.loc[:, "age"] = data_emp["period"] + specs["start_age"]
+    data_sim = data_sim.copy()
     data_sim.loc[:, "age"] = data_sim["period"] + specs["start_age"]
 
     sex = SEX
@@ -274,6 +359,21 @@ def plot_average_wealth(
         data_sim_edu = data_sim[mask_sim]
         mask_obs = (data_emp["sex"] == sex) & (data_emp["education"] == edu)
         data_decision_edu = data_emp[mask_obs]
+
+        if trim_simulated:
+            data_sim_edu = _trim_wealth_by_quantiles(
+                data_sim_edu,
+                "assets_begin_of_period",
+                wealth_quantile_low,
+                wealth_quantile_high,
+            )
+        if trim_empirical:
+            data_decision_edu = _trim_wealth_by_quantiles(
+                data_decision_edu,
+                "adjusted_wealth",
+                wealth_quantile_low,
+                wealth_quantile_high,
+            )
 
         ages = np.arange(specs["start_age"] + 1, 90)
         average_wealth_sim = (
@@ -959,7 +1059,7 @@ def plot_caregiver_shares_by_age(
         plt.savefig(path_to_save_plot, dpi=300, transparent=False)
 
 
-def plot_caregiver_shares_by_age_bins(
+def plot_caregiver_shares_by_age_bins(  # noqa: PLR0912, PLR0915
     # df_emp: pd.DataFrame,
     emp_moments: pd.DataFrame,
     df_sim: pd.DataFrame,
@@ -970,7 +1070,9 @@ def plot_caregiver_shares_by_age_bins(
     age_max: int | None = None,
     bin_width: int = 5,
     scale: float = 1.0,
-    moment_prefix: str = "share_informal_care_age_bin_",
+    care_type: str = "any",  # "any", "light", "intensive"
+    education: str | None = None,  # "low_educ", "high_educ", or None
+    moment_prefix: str | None = None,  # If provided, overrides care_type and education
     path_to_save_plot: str | Path | None = None,
 ):
     """
@@ -980,17 +1082,24 @@ def plot_caregiver_shares_by_age_bins(
 
     Parameters
     ----------
-    df_emp, df_sim : pandas.DataFrame
-        Must contain at least 'age', 'choice', 'any_care' and ideally 'sex'.
+    emp_moments : pd.Series or pd.DataFrame
+        Empirical moments indexed by moment names.
+    df_sim : pandas.DataFrame
+        Must contain at least 'age', 'choice', and ideally 'sex' and 'education'.
     specs : dict
         Needs 'start_age' and 'end_age_msm'.
     choice_set : iterable
         Codes in df_sim["choice"] that count as (informal) care for the
         simulated data.
+    care_type : str, default "any"
+        Type of care: "any", "light", or "intensive".
+    education : str | None, default None
+        Education group: "low_educ", "high_educ", or None (no education distinction).
     bin_width : int, default 5
         Width of the age bins.
-    moment_prefix : str, default \"share_informal_care_age_bin_\"
+    moment_prefix : str | None, default None
         Prefix used for looking up empirical moments in ``emp_moments``.
+        If None, constructed from care_type and education.
         The full key is constructed as
         ``f\"{moment_prefix}{start}_{end-1}\"``.
     path_to_save_plot : str | pathlib.Path | None
@@ -1076,7 +1185,15 @@ def plot_caregiver_shares_by_age_bins(
     #     plt.savefig(path_to_save_plot, dpi=300, transparent=False)
     # plt.close(fig)
 
-    # ── 1. Age grid & bin edges ─────────────────────────────────────────
+    # ── 1. Build moment prefix ─────────────────────────────────────────
+    if moment_prefix is None:
+        # Build prefix from care_type and education
+        if education is None:
+            moment_prefix = f"share_informal_care_{care_type}_age_bin_"
+        else:
+            moment_prefix = f"share_informal_care_{care_type}_{education}_age_bin_"
+
+    # ── 2. Age grid & bin edges ─────────────────────────────────────────
     if age_min is None:
         age_min = specs["start_age"]
     if age_max is None:
@@ -1087,17 +1204,28 @@ def plot_caregiver_shares_by_age_bins(
         edges.append(age_max + 1)  # right-open
     bin_starts = edges[:-1]
 
-    # ── 2. Simulated data (unchanged) ───────────────────────────────────
+    # ── 3. Simulated data ───────────────────────────────────────────────
     df_sim = df_sim.loc[df_sim["health"] != DEAD].copy()
     if "sex" in df_sim:
         df_sim = df_sim.loc[df_sim["sex"] == SEX].copy()
 
+    # Filter by education if specified
+    if education is not None:
+        if education == "low_educ":
+            df_sim = df_sim.loc[df_sim["education"] == 0].copy()
+        elif education == "high_educ":
+            df_sim = df_sim.loc[df_sim["education"] == 1].copy()
+        else:
+            raise ValueError(
+                f"education must be 'low_educ', 'high_educ', or None, got {education}"
+            )
+
     care_codes = np.asarray(choice_set).tolist()
 
-    # ── 3. Empirical lookup from *Series* ───────────────────────────────
+    # ── 4. Empirical lookup from *Series* ───────────────────────────────
     emp_lookup = emp_moments.to_dict()  # key → value
 
-    # ── 4. Build vectors of rates ───────────────────────────────────────
+    # ── 5. Build vectors of rates ───────────────────────────────────────
     emp_rates, sim_rates = [], []
 
     for start, end in zip(edges[:-1], edges[1:], strict=False):

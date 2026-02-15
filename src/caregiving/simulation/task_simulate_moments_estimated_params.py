@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import pytask
 from numpy.testing import assert_allclose
+from numpy.testing import assert_array_almost_equal as aaae
 from pytask import Product
 
 from caregiving.config import BLD
@@ -17,6 +18,9 @@ from caregiving.simulation.simulate_moments import (
     plot_model_fit_labor_moments_pandas_by_education,
     simulate_moments_jax,
     simulate_moments_pandas,
+)
+from caregiving.simulation.simulate_moments_restricted import (
+    simulate_moments_pandas_mean_wealth,
 )
 
 jax.config.update("jax_enable_x64", True)
@@ -75,6 +79,9 @@ def task_simulate_moments_estimated_params(
     sim_df = sim_df[required_cols].copy()
 
     sim_moms_pandas = simulate_moments_pandas(sim_df, model_specs=specs)
+    sim_moms_pandas_mean_wealth = simulate_moments_pandas_mean_wealth(
+        sim_df, model_specs=specs
+    )
     sim_moms_jax = simulate_moments_jax(sim_df, model_specs=specs)
 
     # Save moments
@@ -106,6 +113,21 @@ def task_simulate_moments_estimated_params(
     )
     assert np.equal(emp_moms.shape, sim_moms_pandas.shape)
     assert np.equal(emp_moms.shape, sim_moms_jax.shape)
+    assert np.equal(emp_moms.shape, sim_moms_pandas_mean_wealth.shape)
+
+    # Non-wealth moments must match between median and mean-wealth versions
+    wealth_prefixes = (
+        "median_assets_begin_of_period_",
+        "mean_assets_begin_of_period_",
+    )
+    non_wealth_keys = [
+        k for k in sim_moms_pandas.index if not k.startswith(wealth_prefixes)
+    ]
+    aaae(
+        sim_moms_pandas.loc[non_wealth_keys].values,
+        sim_moms_pandas_mean_wealth.loc[non_wealth_keys].values,
+        decimal=12,
+    )
 
     # states = {
     #     "not_working": NOT_WORKING,
