@@ -39,6 +39,7 @@ for age_min_val, age_max_val, age_label_val in (
     (60, 70, "ages_60_70"),
 ):
 
+    @pytask.mark.publication_counterfactual
     @pytask.mark.publication_event_study
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_at_least")
@@ -55,6 +56,7 @@ for age_min_val, age_max_val, age_label_val in (
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
+        / "counterfactual"
         / "event_study"
         / "employment"
         / (
@@ -242,6 +244,7 @@ for age_min_val, age_max_val, age_label_val in (
     (60, 70, "ages_60_70"),
 ):
 
+    @pytask.mark.publication_counterfactual
     @pytask.mark.publication_event_study
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_consecutive")
@@ -258,6 +261,7 @@ for age_min_val, age_max_val, age_label_val in (
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
+        / "counterfactual"
         / "event_study"
         / "employment"
         / (

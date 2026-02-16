@@ -152,91 +152,156 @@
 # # beta: 0.97
 # # income_shock_mean: 0.0
 # # income_shock_std: 0.16471062648214
-disutil_children_ft_work_high: 0.07904028129374809
-disutil_children_ft_work_low: 0.07820296905199843
-disutil_children_pt_work_high: -0.0973071551967625
-disutil_children_pt_work_low: 0.0307203979060732
-disutil_ft_work_high_bad: 4.2169287960206026
-disutil_ft_work_high_good: 0.14926687783227524
-disutil_ft_work_low_bad: 0.48649640049516035
-disutil_ft_work_low_good: 0.5192820490081471
-disutil_partner_retired: 0.0199095724339258
-disutil_pt_work_high_bad: 0.004859621922956955
-disutil_pt_work_high_good: 0.590006934018976
-disutil_pt_work_low_bad: 0.19374952130962145
-disutil_pt_work_low_good: 0.6248923349138279
-disutil_unemployed_high_women: 0.5365145578262942
-disutil_unemployed_low_women: 0.6812535244271196
-disutil_children_ft_work_high_informal_care: 0.1942670549712838
-disutil_children_ft_work_low_informal_care: 0.005717584725226881
-disutil_children_pt_work_high_informal_care: 0.008907736009450056
-disutil_children_pt_work_low_informal_care: 0.03362159748369783
-disutil_ft_work_high_bad_informal_care: 1.4903818024737372
-disutil_ft_work_high_good_informal_care: 0.3236442955767617
-disutil_ft_work_low_bad_informal_care: 0.0019556266565952567
-disutil_ft_work_low_good_informal_care: 0.8458666870616265
-disutil_pt_work_high_bad_informal_care: 0.12347023547112436
-disutil_pt_work_high_good_informal_care: 0.5843970469038435
-disutil_pt_work_low_bad_informal_care: 0.001495238677501598
-disutil_pt_work_low_good_informal_care: 0.6691995501084983
-disutil_unemployed_high_women_informal_care: 0.3497385868246754
-disutil_unemployed_low_women_informal_care: 0.06634311841895305
-# job_finding_logit_age_cubed_women: -0.0028360458847878356
-# job_finding_logit_age_squared_women: 0.0025777626023206057
-# job_finding_logit_age_women: 0.0031981241526811907
-# job_finding_logit_const_women: -2.0557573813205483
-# job_finding_logit_high_educ_women: 0.7036649116866923
-job_finding_logit_const_women: 0.7226
-job_finding_logit_age_women: -0.586
-job_finding_logit_age_squared_women: 0.0
-job_finding_logit_age_cubed_women: 0.0
-job_finding_logit_high_educ_women: 0.5729
-#
-# job_finding_logit_age_cubed_women: -3.162982266453729e-05
-# job_finding_logit_age_squared_women: 0.0016012387939461
-# job_finding_logit_age_women: 0.0065131540323549
-# job_finding_logit_const_women: -2.03524742129707
-# job_finding_logit_high_educ_women: 0.6955095961575429
-# job_finding_logit_const_women: -1.4881
-# job_finding_logit_high_educ_women: 0.8371
-# job_finding_logit_above_50_women: -0.3399
-# job_finding_logit_above_55_women: -0.0784
-# job_finding_logit_above_60_women: -0.4856
-#
-# Level shifts for light and intensive informal care (additive adjustments)
-disutil_unemployed_light_informal_care_low: 0.0
-disutil_unemployed_light_informal_care_high: 0.0
-disutil_ft_work_light_informal_care_low: 0.0
-disutil_ft_work_light_informal_care_high: 0.0
-disutil_unemployed_intensive_informal_care_low: 0.0
-disutil_unemployed_intensive_informal_care_high: 0.0
-disutil_ft_work_intensive_informal_care_low: 0.0
-disutil_ft_work_intensive_informal_care_high: 0.0
-#
-taste_shock_scale: 0.38629128041487326
-bequest_scale_high: 0.5299969947125845
-bequest_scale_low: 0.018731890731982902
-rho_bequest_high: 2.414346882835183
-rho_bequest_low: 3.022870346976081
-# rho_high: 3.988496770595214
-# rho_low: 2.696527196049831
-rho_high: 1.7051306674218174
-rho_low: 1.7683701318709497
-# util_informal_care_high_good: 0.4497328638222296
-# util_informal_care_high_bad: -0.005247943418271838
-# util_informal_care_low_good: 0.4071438633399354
-# util_informal_care_low_bad: 0.08971930509003657
-util_light_informal_care_high_good: 0.4497328638222296
-util_light_informal_care_high_bad: -0.005247943418271838
-util_light_informal_care_low_good: 0.4071438633399354
-util_light_informal_care_low_bad: 0.08971930509003657
-util_intensive_informal_care_high_good: 0.4497328638222296
-util_intensive_informal_care_high_bad: -0.005247943418271838
-util_intensive_informal_care_low_good: 0.4071438633399354
-util_intensive_informal_care_low_bad: 0.08971930509003657
-util_formal_care_high_good: -0.18538010402635177
-util_formal_care_high_bad: 0.04182972293415799
-util_formal_care_low_good: -0.18538010402635177
-util_formal_care_low_bad: 0.04182972293415799
-share_unobserved_type_low_educ: 0.8501400152029441
-share_unobserved_type_high_educ: 0.3046364421275729
+# new
+# disutil_children_ft_work_high: 0.07904028129374809
+# disutil_children_ft_work_low: 0.07820296905199843
+# disutil_children_pt_work_high: -0.0973071551967625
+# disutil_children_pt_work_low: 0.0307203979060732
+# disutil_ft_work_high_bad: 4.2169287960206026
+# disutil_ft_work_high_good: 0.14926687783227524
+# disutil_ft_work_low_bad: 0.48649640049516035
+# disutil_ft_work_low_good: 0.5192820490081471
+# disutil_partner_retired: 0.0199095724339258
+# disutil_pt_work_high_bad: 0.004859621922956955
+# disutil_pt_work_high_good: 0.590006934018976
+# disutil_pt_work_low_bad: 0.19374952130962145
+# disutil_pt_work_low_good: 0.6248923349138279
+# disutil_unemployed_high_women: 0.5365145578262942
+# disutil_unemployed_low_women: 0.6812535244271196
+# disutil_children_ft_work_high_informal_care: 0.1942670549712838
+# disutil_children_ft_work_low_informal_care: 0.005717584725226881
+# disutil_children_pt_work_high_informal_care: 0.008907736009450056
+# disutil_children_pt_work_low_informal_care: 0.03362159748369783
+# disutil_ft_work_high_bad_informal_care: 1.4903818024737372
+# disutil_ft_work_high_good_informal_care: 0.3236442955767617
+# disutil_ft_work_low_bad_informal_care: 0.0019556266565952567
+# disutil_ft_work_low_good_informal_care: 0.8458666870616265
+# disutil_pt_work_high_bad_informal_care: 0.12347023547112436
+# disutil_pt_work_high_good_informal_care: 0.5843970469038435
+# disutil_pt_work_low_bad_informal_care: 0.001495238677501598
+# disutil_pt_work_low_good_informal_care: 0.6691995501084983
+# disutil_unemployed_high_women_informal_care: 0.3497385868246754
+# disutil_unemployed_low_women_informal_care: 0.06634311841895305
+# # job_finding_logit_age_cubed_women: -0.0028360458847878356
+# # job_finding_logit_age_squared_women: 0.0025777626023206057
+# # job_finding_logit_age_women: 0.0031981241526811907
+# # job_finding_logit_const_women: -2.0557573813205483
+# # job_finding_logit_high_educ_women: 0.7036649116866923
+# job_finding_logit_const_women: 0.7226
+# job_finding_logit_age_women: -0.586
+# job_finding_logit_age_squared_women: 0.0
+# job_finding_logit_age_cubed_women: 0.0
+# job_finding_logit_high_educ_women: 0.5729
+# #
+# # job_finding_logit_age_cubed_women: -3.162982266453729e-05
+# # job_finding_logit_age_squared_women: 0.0016012387939461
+# # job_finding_logit_age_women: 0.0065131540323549
+# # job_finding_logit_const_women: -2.03524742129707
+# # job_finding_logit_high_educ_women: 0.6955095961575429
+# # job_finding_logit_const_women: -1.4881
+# # job_finding_logit_high_educ_women: 0.8371
+# # job_finding_logit_above_50_women: -0.3399
+# # job_finding_logit_above_55_women: -0.0784
+# # job_finding_logit_above_60_women: -0.4856
+# #
+# # Level shifts for light and intensive informal care (additive adjustments)
+# disutil_unemployed_light_informal_care_low: 0.0
+# disutil_unemployed_light_informal_care_high: 0.0
+# disutil_ft_work_light_informal_care_low: 0.0
+# disutil_ft_work_light_informal_care_high: 0.0
+# disutil_unemployed_intensive_informal_care_low: 0.0
+# disutil_unemployed_intensive_informal_care_high: 0.0
+# disutil_ft_work_intensive_informal_care_low: 0.0
+# disutil_ft_work_intensive_informal_care_high: 0.0
+# #
+# taste_shock_scale: 0.38629128041487326
+# bequest_scale_high: 0.5299969947125845
+# bequest_scale_low: 0.018731890731982902
+# rho_bequest_high: 2.414346882835183
+# rho_bequest_low: 3.022870346976081
+# # rho_high: 3.988496770595214
+# # rho_low: 2.696527196049831
+# rho_high: 1.7051306674218174
+# rho_low: 1.7683701318709497
+# # util_informal_care_high_good: 0.4497328638222296
+# # util_informal_care_high_bad: -0.005247943418271838
+# # util_informal_care_low_good: 0.4071438633399354
+# # util_informal_care_low_bad: 0.08971930509003657
+# util_light_informal_care_high_good: 0.4497328638222296
+# util_light_informal_care_high_bad: -0.005247943418271838
+# util_light_informal_care_low_good: 0.4071438633399354
+# util_light_informal_care_low_bad: 0.08971930509003657
+# util_intensive_informal_care_high_good: 0.4497328638222296
+# util_intensive_informal_care_high_bad: -0.005247943418271838
+# util_intensive_informal_care_low_good: 0.4071438633399354
+# util_intensive_informal_care_low_bad: 0.08971930509003657
+# util_formal_care_high_good: -0.18538010402635177
+# util_formal_care_high_bad: 0.04182972293415799
+# util_formal_care_low_good: -0.18538010402635177
+# util_formal_care_low_bad: 0.04182972293415799
+# share_unobserved_type_low_educ: 0.8501400152029441
+# share_unobserved_type_high_educ: 0.3046364421275729
+# new new
+bequest_scale_high: 0.3395753614719549
+bequest_scale_low: 0.03564106330851222
+disutil_children_ft_work_high: 0.4952031315670786
+disutil_children_ft_work_high_informal_care: -0.018083314243701944
+disutil_children_ft_work_low: 0.05771520076547504
+disutil_children_ft_work_low_informal_care: 0.22549401096954158
+disutil_children_pt_work_high: -0.2357681214892603
+disutil_children_pt_work_high_informal_care: -0.20540619502538182
+disutil_children_pt_work_low: -0.06346271713015166
+disutil_children_pt_work_low_informal_care: 0.10938863902444773
+disutil_ft_work_high_bad: 5.0
+disutil_ft_work_high_bad_informal_care: 2.7199301064792265
+disutil_ft_work_high_good: 0.62763046166976
+disutil_ft_work_high_good_informal_care: 1.9659603841898472
+disutil_ft_work_intensive_informal_care_high: -0.4665953470390215
+disutil_ft_work_intensive_informal_care_low: -0.013318692059355467
+disutil_ft_work_light_informal_care_high: -0.5836772934894625
+disutil_ft_work_light_informal_care_low: 0.06012885300381346
+disutil_ft_work_low_bad: 1.6640909460360127
+disutil_ft_work_low_bad_informal_care: 0.9733850344068685
+disutil_ft_work_low_good: 0.21441771109829952
+disutil_ft_work_low_good_informal_care: 1.4346115250519813
+disutil_partner_retired: -0.003757002778947144
+disutil_pt_work_high_bad: 0.37446685169540433
+disutil_pt_work_high_bad_informal_care: 0.5340754390692791
+disutil_pt_work_high_good: 1.7262543444038345
+disutil_pt_work_high_good_informal_care: 2.500110726916182
+disutil_pt_work_low_bad: 0.11778295541262888
+disutil_pt_work_low_bad_informal_care: 1.6906337994345848
+disutil_pt_work_low_good: 0.6736018235159532
+disutil_pt_work_low_good_informal_care: 0.9309171391564895
+disutil_unemployed_high_women: 0.5876215306344098
+disutil_unemployed_high_women_informal_care: 1.271373555799788
+disutil_unemployed_intensive_informal_care_high: 1.0175780723397667
+disutil_unemployed_intensive_informal_care_low: 0.22222385929932834
+disutil_unemployed_light_informal_care_high: -0.1433782924359016
+disutil_unemployed_light_informal_care_low: -1.0261988813351905
+disutil_unemployed_low_women: 0.36644747063826
+disutil_unemployed_low_women_informal_care: 0.007467538927735332
+job_finding_logit_age_cubed_women: -0.014986031766181544
+job_finding_logit_age_squared_women: 0.03613597860022924
+job_finding_logit_age_women: -0.19048261358999907
+job_finding_logit_const_women: -0.09808201748039175
+job_finding_logit_high_educ_women: 0.08664467248116008
+rho_bequest_high: 0.7726901366561061
+rho_bequest_low: 0.007791295820826005
+rho_high: 0.8745960436930434
+rho_low: 2.0122849963328266
+taste_shock_scale: 0.9968803860992833
+share_unobserved_type_high_educ: 0.7235903620692307
+share_unobserved_type_low_educ: 0.7288743437113344
+util_light_informal_care_high_good: 1.0034055139502474
+util_light_informal_care_high_bad: -0.012879065688424094
+util_light_informal_care_low_good: 0.3545841951736612
+util_light_informal_care_low_bad: 0.060789635920057976
+util_intensive_informal_care_high_good: 0.11124861262757324
+util_intensive_informal_care_high_bad: 0.015675122184519434
+util_intensive_informal_care_low_good: 0.8508997774765259
+util_intensive_informal_care_low_bad: 0.0939390377557917
+util_formal_care_high_good: -0.22421072463236147
+util_formal_care_high_bad: 0.040368237167856494
+util_formal_care_low_good: -0.33859908466591365
+util_formal_care_low_bad: 0.04229836048513642

@@ -151,6 +151,7 @@ post_caregiving_leave_top_up = "Post-estimation caregiving leave top-up plotting
 debug = "Debugging and exploratory tasks"
 # Publication plots
 publication = "Publication figure generation tasks"
+publication_counterfactual = "Publication counterfactual (event study / employment by distance) figure tasks"
 publication_employment = "Publication employment rate plotting tasks"
 publication_reverse_employment = "Publication reverse employment rate plotting tasks (by mother's death)"
 publication_caregiving_rate = "Publication caregiving rate plotting tasks"

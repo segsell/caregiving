@@ -262,6 +262,7 @@ for age_min_val, age_max_val, age_label_val in (
     (60, 70, "ages_60_70"),
 ):
 
+    @pytask.mark.publication_counterfactual
     @pytask.mark.publication_employment
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_care_demand_type_0")
@@ -271,13 +272,14 @@ for age_min_val, age_max_val, age_label_val in (
         age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
-        / "simulated_data_estimated_params.pkl",
+        / "simulated_data_estimated_params_back_to_Jan7.pkl",
         path_to_no_care_demand_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_no_care_demand.pkl",
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
+        / "counterfactual"
         / "employment"
         / (
             f"employment_rate_by_distance_to_first_care_demand_type_0_"
@@ -504,6 +506,7 @@ for age_min_val, age_max_val, age_label_val in (
     (60, 70, "ages_60_70"),
 ):
 
+    @pytask.mark.publication_counterfactual
     @pytask.mark.publication_employment
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_care_demand_all")
@@ -513,13 +516,14 @@ for age_min_val, age_max_val, age_label_val in (
         age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
-        / "simulated_data_estimated_params.pkl",
+        / "simulated_data_estimated_params_back_to_Jan7.pkl",
         path_to_no_care_demand_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_no_care_demand.pkl",
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
+        / "counterfactual"
         / "employment"
         / f"employment_rate_by_distance_to_first_care_demand_all_{age_label_val}.pdf",
         ever_caregivers: bool = False,
@@ -728,6 +732,7 @@ for age_min_val, age_max_val, age_label_val in (
     (60, 70, "ages_60_70"),
 ):
 
+    @pytask.mark.publication_counterfactual
     @pytask.mark.publication_employment
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_care_demand_type_1_caregiving_duration")
@@ -737,13 +742,14 @@ for age_min_val, age_max_val, age_label_val in (
         age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
-        / "simulated_data_estimated_params.pkl",
+        / "simulated_data_estimated_params_back_to_Jan7.pkl",
         path_to_no_care_demand_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_no_care_demand.pkl",
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
+        / "counterfactual"
         / "employment"
         / (
             f"employment_rate_by_distance_to_first_care_demand_type_1_"
@@ -967,6 +973,7 @@ for age_min_val, age_max_val, age_label_val in (
     (60, 70, "ages_60_70"),
 ):
 
+    @pytask.mark.publication_counterfactual
     @pytask.mark.publication_employment
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_care_demand_type_1_care_demand_duration")
@@ -976,13 +983,14 @@ for age_min_val, age_max_val, age_label_val in (
         age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
-        / "simulated_data_estimated_params.pkl",
+        / "simulated_data_estimated_params_back_to_Jan7.pkl",
         path_to_no_care_demand_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_no_care_demand.pkl",
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
+        / "counterfactual"
         / "employment"
         / (
             f"employment_rate_by_distance_to_first_care_demand_type_1_"
@@ -1206,6 +1214,7 @@ for age_min_val, age_max_val, age_label_val in (
     (60, 70, "ages_60_70"),
 ):
 
+    @pytask.mark.publication_counterfactual
     @pytask.mark.publication_employment
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_at_least")
@@ -1215,13 +1224,14 @@ for age_min_val, age_max_val, age_label_val in (
         age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
-        / "simulated_data_estimated_params.pkl",
+        / "simulated_data_estimated_params_back_to_Jan7.pkl",
         path_to_no_care_demand_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_no_care_demand.pkl",
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
+        / "counterfactual"
         / "employment"
         / (
             f"employment_rate_by_distance_to_first_care_at_least_"
@@ -1416,13 +1426,14 @@ for age_min_val, age_max_val, age_label_val in (
         age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
-        / "simulated_data_estimated_params.pkl",
+        / "simulated_data_estimated_params_back_to_Jan7.pkl",
         path_to_no_care_demand_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_no_care_demand.pkl",
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
+        / "counterfactual"
         / "employment"
         / f"employment_rate_by_distance_to_first_care_{age_label_val}.pdf",
         ever_caregivers: bool = False,

@@ -41,6 +41,7 @@ for age_min_val, age_max_val, age_label_val in (
     (60, 70, "ages_60_70"),
 ):
 
+    @pytask.mark.publication_counterfactual
     @pytask.mark.publication_event_study_reverse
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_mother_death_at_least")
@@ -57,6 +58,7 @@ for age_min_val, age_max_val, age_label_val in (
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
+        / "counterfactual"
         / "event_study_reverse"
         / "employment"
         / (
@@ -271,6 +273,7 @@ for age_min_val, age_max_val, age_label_val in (
     (60, 70, "ages_60_70"),
 ):
 
+    @pytask.mark.publication_counterfactual
     @pytask.mark.publication_event_study_reverse
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_mother_death_consecutive")
@@ -287,6 +290,7 @@ for age_min_val, age_max_val, age_label_val in (
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
+        / "counterfactual"
         / "event_study_reverse"
         / "employment"
         / (
@@ -520,6 +524,7 @@ for age_min_val, age_max_val, age_label_val in (
     (60, 70, "ages_60_70"),
 ):
 
+    @pytask.mark.publication_counterfactual
     @pytask.mark.publication_event_study_reverse
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_mother_death_care_demand_exact")
@@ -536,6 +541,7 @@ for age_min_val, age_max_val, age_label_val in (
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
+        / "counterfactual"
         / "event_study_reverse"
         / "employment"
         / (
@@ -770,6 +776,7 @@ for age_min_val, age_max_val, age_label_val in (
     (60, 70, "ages_60_70"),
 ):
 
+    @pytask.mark.publication_counterfactual
     @pytask.mark.publication_event_study_reverse
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_mother_death_care_demand_at_least")
@@ -786,6 +793,7 @@ for age_min_val, age_max_val, age_label_val in (
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
+        / "counterfactual"
         / "event_study_reverse"
         / "employment"
         / (
