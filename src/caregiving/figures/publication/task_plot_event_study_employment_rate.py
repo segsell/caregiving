@@ -49,10 +49,10 @@ for age_min_val, age_max_val, age_label_val in (
         age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
-        / "simulated_data_estimated_params_Jan7.pkl",
+        / "simulated_data_estimated_params.pkl",
         path_to_no_care_demand_data: Path = BLD
         / "solve_and_simulate"
-        / "simulated_data_no_care_demand_back_to_Jan7.pkl",
+        / "simulated_data_no_care_demand.pkl",
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
@@ -254,10 +254,10 @@ for age_min_val, age_max_val, age_label_val in (
         age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
-        / "simulated_data_estimated_params_Jan7.pkl",
+        / "simulated_data_estimated_params.pkl",
         path_to_no_care_demand_data: Path = BLD
         / "solve_and_simulate"
-        / "simulated_data_no_care_demand_back_to_Jan7.pkl",
+        / "simulated_data_no_care_demand.pkl",
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
@@ -538,10 +538,10 @@ for age_min_val, age_max_val, age_label_val in (
         age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
-        / "simulated_data_estimated_params_Jan7.pkl",
+        / "simulated_data_estimated_params.pkl",
         path_to_no_care_demand_data: Path = BLD
         / "solve_and_simulate"
-        / "simulated_data_no_care_demand_back_to_Jan7.pkl",
+        / "simulated_data_no_care_demand.pkl",
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
@@ -606,10 +606,10 @@ for age_min_val, age_max_val, age_label_val in (
         age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
-        / "simulated_data_estimated_params_Jan7.pkl",
+        / "simulated_data_estimated_params.pkl",
         path_to_no_care_demand_data: Path = BLD
         / "solve_and_simulate"
-        / "simulated_data_no_care_demand_back_to_Jan7.pkl",
+        / "simulated_data_no_care_demand.pkl",
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
@@ -674,10 +674,10 @@ for age_min_val, age_max_val, age_label_val in (
         age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
-        / "simulated_data_estimated_params_Jan7.pkl",
+        / "simulated_data_estimated_params.pkl",
         path_to_no_care_demand_data: Path = BLD
         / "solve_and_simulate"
-        / "simulated_data_no_care_demand_back_to_Jan7.pkl",
+        / "simulated_data_no_care_demand.pkl",
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
@@ -751,10 +751,10 @@ for age_min_val, age_max_val, age_label_val in (
         age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
-        / "simulated_data_estimated_params_Jan7.pkl",
+        / "simulated_data_estimated_params.pkl",
         path_to_no_care_demand_data: Path = BLD
         / "solve_and_simulate"
-        / "simulated_data_no_care_demand_back_to_Jan7.pkl",
+        / "simulated_data_no_care_demand.pkl",
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
