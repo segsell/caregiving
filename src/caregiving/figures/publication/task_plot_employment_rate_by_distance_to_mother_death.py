@@ -28,6 +28,9 @@ from caregiving.figures.publication.plotting_helpers_mother_death import (
     identify_agents_by_care_demand_before_death_at_least,
     identify_agents_by_caregiving_before_death,
     identify_agents_by_caregiving_before_death_at_least,
+    identify_agents_by_exact_caregiving_years_in_window,
+    identify_agents_by_first_care_demand_timing_before_death,
+    identify_agents_by_first_caregiving_timing_before_death,
     identify_agents_by_total_caregiving_before_death,
 )
 from caregiving.model.shared import (
@@ -540,6 +543,7 @@ for age_min_val, age_max_val, age_label_val in (
 
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication_reverse_employment
+    @pytask.mark.publication_reverse_employment_total_caregiving
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_mother_death_total_caregiving")
     def task_plot_employment_rate_by_distance_to_mother_death_total(  # noqa: PLR0912, PLR0915
@@ -548,10 +552,10 @@ for age_min_val, age_max_val, age_label_val in (
         age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
-        / "simulated_data_estimated_params.pkl",
+        / "simulated_data_estimated_params_Jan7.pkl",
         path_to_no_care_demand_data: Path = BLD
         / "solve_and_simulate"
-        / "simulated_data_no_care_demand.pkl",
+        / "simulated_data_no_care_demand_back_to_Jan7.pkl",
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
@@ -750,6 +754,948 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
 
+# Sixth battery: first care demand timing before mother's death (5 groups: t=-3, -5, -7, -10, 11+)
+# Version A: all agents
+for age_min_val, age_max_val, age_label_val in (
+    (None, None, "all_ages"),
+    (40, 49, "ages_40_49"),
+    (50, 59, "ages_50_59"),
+    (60, 70, "ages_60_70"),
+):
+
+    @pytask.mark.publication_counterfactual
+    @pytask.mark.publication_reverse_employment
+    # @pytask.mark.publication_reverse_employment_care_demand_start
+    @pytask.mark.publication
+    @pytask.task(id=f"{age_label_val}_mother_death_care_demand_start_all")
+    def task_plot_employment_rate_by_distance_to_mother_death_care_demand_start_all(  # noqa: PLR0912, PLR0915
+        age_min: int | None = age_min_val,
+        age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
+        path_to_original_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_estimated_params.pkl",
+        path_to_no_care_demand_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_no_care_demand.pkl",
+        path_to_plot: Annotated[Path, Product] = BLD
+        / "figures"
+        / "publication"
+        / "counterfactual"
+        / "reverse_employment"
+        / "care_demand_start"
+        / (
+            f"employment_rate_by_distance_to_mother_death_care_demand_start_all_"
+            f"{age_label_val}.pdf"
+        ),
+        ever_caregivers: bool = False,
+        ever_care_demand: bool = False,
+        window: int = 20,
+    ) -> None:
+        """Plot employment rate by distance to mother's death (first care demand timing, all agents).
+
+        Five lines: first care demand at t=-3, -5, -7, -10, or 11+ years before death.
+        Thin vertical dashed lines at -3, -5, -7, -10, -11. No caregiving_type filter.
+        """
+        df_o, df_c = prepare_dataframes_simple(
+            pd.read_pickle(path_to_original_data),
+            pd.read_pickle(path_to_no_care_demand_data),
+            ever_caregivers,
+            ever_care_demand,
+        )
+
+        o_work, _, _ = calculate_simple_outcomes(df_o, "original")
+        c_work, _, _ = calculate_simple_outcomes(df_c, "no_care_demand")
+        o_cols = df_o[["agent", "period"]].copy()
+        o_cols["work_o"] = o_work
+        c_cols = df_c[["agent", "period"]].copy()
+        c_cols["work_c"] = c_work
+        merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
+        merged = merged.merge(
+            df_o[["agent", "period", "mother_dead", "age"]],
+            on=["agent", "period"],
+            how="left",
+        )
+
+        df_o_dist = add_distance_to_mother_death(df_o)
+        dist_map = (
+            df_o_dist.groupby("agent", observed=False)["first_death_period"]
+            .first()
+            .reset_index()
+        )
+        merged = merged.merge(dist_map, on="agent", how="left")
+        merged["distance_to_mother_death"] = (
+            merged["period"] - merged["first_death_period"]
+        )
+
+        death_mask = df_o["mother_dead"] == PARENT_RECENTLY_DEAD
+        first_death_with_age = (
+            df_o.loc[death_mask, ["agent", "period", "age"]]
+            .sort_values(["agent", "period"])
+            .drop_duplicates("agent")
+            .rename(columns={"period": "first_death_period", "age": "age_at_death"})
+        )
+        merged = merged.merge(
+            first_death_with_age[["agent", "age_at_death"]], on="agent", how="left"
+        )
+        merged = merged[
+            merged["first_death_period"].notna()
+            & (merged["distance_to_mother_death"] >= -window)
+            & (merged["distance_to_mother_death"] <= window)
+        ]
+        if age_min is not None:
+            merged = merged[merged["age_at_death"] >= age_min].copy()
+        if age_max is not None:
+            merged = merged[merged["age_at_death"] <= age_max].copy()
+
+        prof = (
+            merged.groupby("distance_to_mother_death", observed=False)[
+                ["work_o", "work_c"]
+            ]
+            .mean()
+            .reset_index()
+            .sort_values("distance_to_mother_death")
+        )
+        prof = prof.rename(
+            columns={"distance_to_mother_death": "distance_to_first_care"}
+        )
+
+        first_death_by_agent = merged[["agent", "first_death_period"]].drop_duplicates()
+        agents_3, agents_5, agents_7, agents_10, agents_11_plus = (
+            identify_agents_by_first_care_demand_timing_before_death(
+                df_o, first_death_by_agent
+            )
+        )
+
+        merged_3 = merged[merged["agent"].isin(agents_3)]
+        prof_1_year = (
+            merged_3.groupby("distance_to_mother_death", observed=False)[["work_o"]]
+            .mean()
+            .reset_index()
+            .sort_values("distance_to_mother_death")
+        )
+        prof_1_year = prof_1_year.rename(
+            columns={"distance_to_mother_death": "distance_to_first_care"}
+        )
+        merged_5 = merged[merged["agent"].isin(agents_5)]
+        prof_2_year = (
+            merged_5.groupby("distance_to_mother_death", observed=False)[["work_o"]]
+            .mean()
+            .reset_index()
+            .sort_values("distance_to_mother_death")
+        )
+        prof_2_year = prof_2_year.rename(
+            columns={"distance_to_mother_death": "distance_to_first_care"}
+        )
+        merged_7 = merged[merged["agent"].isin(agents_7)]
+        prof_3_year = (
+            merged_7.groupby("distance_to_mother_death", observed=False)[["work_o"]]
+            .mean()
+            .reset_index()
+            .sort_values("distance_to_mother_death")
+        )
+        prof_3_year = prof_3_year.rename(
+            columns={"distance_to_mother_death": "distance_to_first_care"}
+        )
+        merged_10 = merged[merged["agent"].isin(agents_10)]
+        prof_4_year = (
+            merged_10.groupby("distance_to_mother_death", observed=False)[["work_o"]]
+            .mean()
+            .reset_index()
+            .sort_values("distance_to_mother_death")
+        )
+        prof_4_year = prof_4_year.rename(
+            columns={"distance_to_mother_death": "distance_to_first_care"}
+        )
+        merged_11_plus = merged[merged["agent"].isin(agents_11_plus)]
+        prof_5_year = (
+            merged_11_plus.groupby("distance_to_mother_death", observed=False)[
+                ["work_o"]
+            ]
+            .mean()
+            .reset_index()
+            .sort_values("distance_to_mother_death")
+        )
+        prof_5_year = prof_5_year.rename(
+            columns={"distance_to_mother_death": "distance_to_first_care"}
+        )
+
+        start_labels = (
+            "Baseline (First care demand 3 years before death)",
+            "Baseline (First care demand 5 years before death)",
+            "Baseline (First care demand 7 years before death)",
+            "Baseline (First care demand 10 years before death)",
+            "Baseline (First care demand 11+ years before death)",
+        )
+        plot_employment_rate_by_distance_to_mother_death(
+            prof=prof,
+            prof_1_year=prof_1_year,
+            prof_2_year=prof_2_year,
+            prof_3_year=prof_3_year,
+            prof_4_year=prof_4_year,
+            prof_5_year=prof_5_year,
+            window=window,
+            path_to_plot=path_to_plot,
+            subgroup_labels=start_labels,
+            vertical_lines_at=[-3, -5, -7, -10, -11],
+        )
+
+
+# Sixth battery: first care demand timing (Version B: caregiving_type == 1)
+for age_min_val, age_max_val, age_label_val in (
+    (None, None, "all_ages"),
+    # (40, 49, "ages_40_49"),
+    (50, 59, "ages_50_59"),
+    (60, 70, "ages_60_70"),
+):
+
+    @pytask.mark.publication_counterfactual
+    @pytask.mark.publication_reverse_employment
+    @pytask.mark.publication_reverse_employment_care_demand_start
+    @pytask.mark.publication
+    @pytask.task(id=f"{age_label_val}_mother_death_care_demand_start_type1")
+    def task_plot_employment_rate_by_distance_to_mother_death_care_demand_start_type1(  # noqa: PLR0912, PLR0915
+        age_min: int | None = age_min_val,
+        age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
+        path_to_original_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_estimated_params.pkl",
+        path_to_no_care_demand_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_no_care_demand.pkl",
+        path_to_plot: Annotated[Path, Product] = BLD
+        / "figures"
+        / "publication"
+        / "counterfactual"
+        / "reverse_employment"
+        / "care_demand_start"
+        / (
+            f"employment_rate_by_distance_to_mother_death_care_demand_start_type1_"
+            f"{age_label_val}.pdf"
+        ),
+        ever_caregivers: bool = False,
+        ever_care_demand: bool = False,
+        window: int = 20,
+    ) -> None:
+        """Plot employment rate by distance to mother's death (first care demand timing, type 1).
+
+        Five lines: first care demand at t=-3, -5, -7, -10, or 11+ years before death.
+        Restricted to caregiving_type == 1. Thin vertical dashed lines at -3, -5, -7, -10, -11.
+        """
+        df_o, df_c = prepare_dataframes_simple(
+            pd.read_pickle(path_to_original_data),
+            pd.read_pickle(path_to_no_care_demand_data),
+            ever_caregivers,
+            ever_care_demand,
+        )
+
+        if "caregiving_type" not in df_o.columns:
+            raise ValueError(
+                "caregiving_type column not found. Cannot filter to type 1."
+            )
+        type_1_agents = df_o[df_o["caregiving_type"] == 1]["agent"].unique()
+        df_o = df_o[df_o["agent"].isin(type_1_agents)].copy()
+        df_c = df_c[df_c["agent"].isin(type_1_agents)].copy()
+
+        o_work, _, _ = calculate_simple_outcomes(df_o, "original")
+        c_work, _, _ = calculate_simple_outcomes(df_c, "no_care_demand")
+        o_cols = df_o[["agent", "period"]].copy()
+        o_cols["work_o"] = o_work
+        c_cols = df_c[["agent", "period"]].copy()
+        c_cols["work_c"] = c_work
+        merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
+        merged = merged.merge(
+            df_o[["agent", "period", "mother_dead", "age"]],
+            on=["agent", "period"],
+            how="left",
+        )
+
+        df_o_dist = add_distance_to_mother_death(df_o)
+        dist_map = (
+            df_o_dist.groupby("agent", observed=False)["first_death_period"]
+            .first()
+            .reset_index()
+        )
+        merged = merged.merge(dist_map, on="agent", how="left")
+        merged["distance_to_mother_death"] = (
+            merged["period"] - merged["first_death_period"]
+        )
+
+        death_mask = df_o["mother_dead"] == PARENT_RECENTLY_DEAD
+        first_death_with_age = (
+            df_o.loc[death_mask, ["agent", "period", "age"]]
+            .sort_values(["agent", "period"])
+            .drop_duplicates("agent")
+            .rename(columns={"period": "first_death_period", "age": "age_at_death"})
+        )
+        merged = merged.merge(
+            first_death_with_age[["agent", "age_at_death"]], on="agent", how="left"
+        )
+        merged = merged[
+            merged["first_death_period"].notna()
+            & (merged["distance_to_mother_death"] >= -window)
+            & (merged["distance_to_mother_death"] <= window)
+        ]
+        if age_min is not None:
+            merged = merged[merged["age_at_death"] >= age_min].copy()
+        if age_max is not None:
+            merged = merged[merged["age_at_death"] <= age_max].copy()
+
+        prof = (
+            merged.groupby("distance_to_mother_death", observed=False)[
+                ["work_o", "work_c"]
+            ]
+            .mean()
+            .reset_index()
+            .sort_values("distance_to_mother_death")
+        )
+        prof = prof.rename(
+            columns={"distance_to_mother_death": "distance_to_first_care"}
+        )
+
+        first_death_by_agent = merged[["agent", "first_death_period"]].drop_duplicates()
+        agents_3, agents_5, agents_7, agents_10, agents_11_plus = (
+            identify_agents_by_first_care_demand_timing_before_death(
+                df_o, first_death_by_agent
+            )
+        )
+
+        merged_3 = merged[merged["agent"].isin(agents_3)]
+        prof_1_year = (
+            merged_3.groupby("distance_to_mother_death", observed=False)[["work_o"]]
+            .mean()
+            .reset_index()
+            .sort_values("distance_to_mother_death")
+        )
+        prof_1_year = prof_1_year.rename(
+            columns={"distance_to_mother_death": "distance_to_first_care"}
+        )
+        merged_5 = merged[merged["agent"].isin(agents_5)]
+        prof_2_year = (
+            merged_5.groupby("distance_to_mother_death", observed=False)[["work_o"]]
+            .mean()
+            .reset_index()
+            .sort_values("distance_to_mother_death")
+        )
+        prof_2_year = prof_2_year.rename(
+            columns={"distance_to_mother_death": "distance_to_first_care"}
+        )
+        merged_7 = merged[merged["agent"].isin(agents_7)]
+        prof_3_year = (
+            merged_7.groupby("distance_to_mother_death", observed=False)[["work_o"]]
+            .mean()
+            .reset_index()
+            .sort_values("distance_to_mother_death")
+        )
+        prof_3_year = prof_3_year.rename(
+            columns={"distance_to_mother_death": "distance_to_first_care"}
+        )
+        merged_10 = merged[merged["agent"].isin(agents_10)]
+        prof_4_year = (
+            merged_10.groupby("distance_to_mother_death", observed=False)[["work_o"]]
+            .mean()
+            .reset_index()
+            .sort_values("distance_to_mother_death")
+        )
+        prof_4_year = prof_4_year.rename(
+            columns={"distance_to_mother_death": "distance_to_first_care"}
+        )
+        merged_11_plus = merged[merged["agent"].isin(agents_11_plus)]
+        prof_5_year = (
+            merged_11_plus.groupby("distance_to_mother_death", observed=False)[
+                ["work_o"]
+            ]
+            .mean()
+            .reset_index()
+            .sort_values("distance_to_mother_death")
+        )
+        prof_5_year = prof_5_year.rename(
+            columns={"distance_to_mother_death": "distance_to_first_care"}
+        )
+
+        start_labels = (
+            "Baseline (First care demand 3 years before death)",
+            "Baseline (First care demand 5 years before death)",
+            "Baseline (First care demand 7 years before death)",
+            "Baseline (First care demand 10 years before death)",
+            "Baseline (First care demand 11+ years before death)",
+        )
+        plot_employment_rate_by_distance_to_mother_death(
+            prof=prof,
+            prof_1_year=prof_1_year,
+            prof_2_year=prof_2_year,
+            prof_3_year=prof_3_year,
+            prof_4_year=prof_4_year,
+            prof_5_year=prof_5_year,
+            window=window,
+            path_to_plot=path_to_plot,
+            subgroup_labels=start_labels,
+            vertical_lines_at=[-3, -5, -7, -10, -11],
+        )
+
+
+# First care demand <5y before death; 4 lines = exact 1,2,3,4 years caregiving in [-4,-1]
+# No caregiving_type filter (same agents in baseline and counterfactual). One vertical line at -5.
+for age_min_val, age_max_val, age_label_val in (
+    (None, None, "all_ages"),
+    (45, 50, "ages_45_50"),
+    (50, 55, "ages_50_55"),
+    (55, 60, "ages_55_60"),
+    (60, 65, "ages_60_65"),
+):
+
+    @pytask.mark.publication_counterfactual
+    @pytask.mark.publication_reverse_employment
+    @pytask.mark.publication_reverse_employment_care_demand_start
+    @pytask.mark.publication_reverse_employment_care_demand_start_caregivers
+    @pytask.mark.publication
+    @pytask.task(
+        id=f"{age_label_val}_mother_death_first_care_demand_under_5_exact_caregiving"
+    )
+    def task_plot_employment_rate_by_distance_to_mother_death_first_caregiving_spell_type1(  # noqa: PLR0912, PLR0915
+        age_min: int | None = age_min_val,
+        age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
+        path_to_original_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_estimated_params.pkl",
+        path_to_no_care_demand_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_no_care_demand.pkl",
+        path_to_plot: Annotated[Path, Product] = BLD
+        / "figures"
+        / "publication"
+        / "counterfactual"
+        / "reverse_employment"
+        / "care_demand_start"
+        / (
+            f"employment_rate_by_distance_to_mother_death_first_care_demand_under_5_"
+            f"exact_caregiving_{age_label_val}.pdf"
+        ),
+        ever_caregivers: bool = False,
+        ever_care_demand: bool = False,
+        window: int = 20,
+    ) -> None:
+        """Plot employment rate by distance to mother's death (first care demand <5y, exact caregiving).
+
+        Sample: agents whose first care demand is 1-4 years before mother's death (distance in
+        [-4,-1]). No caregiving_type filter: counterfactual uses same agents as baseline.
+        Four lines: exact 1, 2, 3, or 4 years of (informal) caregiving in [-4,-1]. One vertical line at -5.
+        """
+        df_o, df_c = prepare_dataframes_simple(
+            pd.read_pickle(path_to_original_data),
+            pd.read_pickle(path_to_no_care_demand_data),
+            ever_caregivers,
+            ever_care_demand,
+        )
+
+        # Restrict to agents whose first care demand is 1-4 years before death (<5 years before)
+        first_care_demand = (
+            df_o[df_o["care_demand"] > 0]
+            .groupby("agent", observed=False)["period"]
+            .min()
+            .reset_index()
+            .rename(columns={"period": "first_care_demand_period"})
+        )
+        df_o_dist = add_distance_to_mother_death(df_o)
+        first_death = (
+            df_o_dist.groupby("agent", observed=False)["first_death_period"]
+            .first()
+            .reset_index()
+        )
+        timing = first_care_demand.merge(
+            first_death[["agent", "first_death_period"]], on="agent", how="inner"
+        )
+        timing["dist_at_first_care_demand"] = (
+            timing["first_care_demand_period"] - timing["first_death_period"]
+        )
+        agents_sample = timing[
+            (timing["dist_at_first_care_demand"] >= -4)
+            & (timing["dist_at_first_care_demand"] <= -1)
+        ]["agent"].unique()
+
+        df_o = df_o[df_o["agent"].isin(agents_sample)].copy()
+        df_c = df_c[df_c["agent"].isin(agents_sample)].copy()
+
+        o_work, _, _ = calculate_simple_outcomes(df_o, "original")
+        c_work, _, _ = calculate_simple_outcomes(df_c, "no_care_demand")
+        care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
+        o_cols = df_o[["agent", "period", "choice"]].copy()
+        o_cols["work_o"] = o_work
+        o_cols["current_caregiving"] = o_cols["choice"].isin(care_codes).astype(int)
+        c_cols = df_c[["agent", "period"]].copy()
+        c_cols["work_c"] = c_work
+        merged = o_cols[["agent", "period", "work_o", "current_caregiving"]].merge(
+            c_cols, on=["agent", "period"], how="inner"
+        )
+        merged = merged.merge(
+            df_o[["agent", "period", "mother_dead", "age"]],
+            on=["agent", "period"],
+            how="left",
+        )
+
+        dist_map = first_death[first_death["agent"].isin(agents_sample)]
+        merged = merged.merge(dist_map, on="agent", how="left")
+        merged["distance_to_mother_death"] = (
+            merged["period"] - merged["first_death_period"]
+        )
+
+        death_mask = df_o["mother_dead"] == PARENT_RECENTLY_DEAD
+        first_death_with_age = (
+            df_o.loc[death_mask, ["agent", "period", "age"]]
+            .sort_values(["agent", "period"])
+            .drop_duplicates("agent")
+            .rename(columns={"period": "first_death_period", "age": "age_at_death"})
+        )
+        merged = merged.merge(
+            first_death_with_age[["agent", "age_at_death"]], on="agent", how="left"
+        )
+        merged = merged[
+            merged["first_death_period"].notna()
+            & (merged["distance_to_mother_death"] >= -window)
+            & (merged["distance_to_mother_death"] <= window)
+        ]
+        if age_min is not None:
+            merged = merged[merged["age_at_death"] >= age_min].copy()
+        if age_max is not None:
+            merged = merged[merged["age_at_death"] <= age_max].copy()
+
+        prof = (
+            merged.groupby("distance_to_mother_death", observed=False)[
+                ["work_o", "work_c"]
+            ]
+            .mean()
+            .reset_index()
+            .sort_values("distance_to_mother_death")
+        )
+        prof = prof.rename(
+            columns={"distance_to_mother_death": "distance_to_first_care"}
+        )
+
+        # Exact 1, 2, 3, 4 years of caregiving in [-4, -1] (no consecutive requirement)
+        agents_1, agents_2, agents_3, agents_4 = (
+            identify_agents_by_exact_caregiving_years_in_window(
+                merged, "distance_to_mother_death", window_start=-4, window_end=-1
+            )
+        )
+
+        merged_1 = merged[merged["agent"].isin(agents_1)]
+        prof_1_year = (
+            merged_1.groupby("distance_to_mother_death", observed=False)[["work_o"]]
+            .mean()
+            .reset_index()
+            .sort_values("distance_to_mother_death")
+        )
+        prof_1_year = prof_1_year.rename(
+            columns={"distance_to_mother_death": "distance_to_first_care"}
+        )
+        merged_2 = merged[merged["agent"].isin(agents_2)]
+        prof_2_year = (
+            merged_2.groupby("distance_to_mother_death", observed=False)[["work_o"]]
+            .mean()
+            .reset_index()
+            .sort_values("distance_to_mother_death")
+        )
+        prof_2_year = prof_2_year.rename(
+            columns={"distance_to_mother_death": "distance_to_first_care"}
+        )
+        merged_3 = merged[merged["agent"].isin(agents_3)]
+        prof_3_year = (
+            merged_3.groupby("distance_to_mother_death", observed=False)[["work_o"]]
+            .mean()
+            .reset_index()
+            .sort_values("distance_to_mother_death")
+        )
+        prof_3_year = prof_3_year.rename(
+            columns={"distance_to_mother_death": "distance_to_first_care"}
+        )
+        merged_4 = merged[merged["agent"].isin(agents_4)]
+        prof_4_year = (
+            merged_4.groupby("distance_to_mother_death", observed=False)[["work_o"]]
+            .mean()
+            .reset_index()
+            .sort_values("distance_to_mother_death")
+        )
+        prof_4_year = prof_4_year.rename(
+            columns={"distance_to_mother_death": "distance_to_first_care"}
+        )
+
+        exact_caregiving_labels = (
+            "Baseline (1 year caregiving)",
+            "Baseline (2 years caregiving)",
+            "Baseline (3 years caregiving)",
+            "Baseline (4 years caregiving)",
+        )
+        plot_employment_rate_by_distance_to_mother_death(
+            prof=prof,
+            prof_1_year=prof_1_year,
+            prof_2_year=prof_2_year,
+            prof_3_year=prof_3_year,
+            prof_4_year=prof_4_year,
+            prof_5_year=None,
+            window=window,
+            path_to_plot=path_to_plot,
+            subgroup_labels=exact_caregiving_labels,
+            vertical_lines_at=[-5],
+        )
+
+
+# First care demand in [-9,-5] (5-9y before death); 5 lines = exact 1,2,3,4, 5+ years caregiving in [-9,-5]
+# Age groups: all_ages, ages_60_70 only. Vertical lines at -10, -5.
+for age_min_val, age_max_val, age_label_val in (
+    (None, None, "all_ages"),
+    (50, 55, "ages_50_55"),
+    (55, 60, "ages_55_60"),
+    (60, 65, "ages_60_65"),
+    (60, 70, "ages_60_70"),
+):
+
+    @pytask.mark.publication_counterfactual
+    @pytask.mark.publication_reverse_employment
+    @pytask.mark.publication_reverse_employment_care_demand_start
+    @pytask.mark.publication_reverse_employment_care_demand_start_caregivers
+    @pytask.mark.publication
+    @pytask.task(
+        id=f"{age_label_val}_mother_death_first_care_demand_5_to_9_exact_caregiving"
+    )
+    def task_plot_employment_rate_by_distance_to_mother_death_first_care_demand_5_to_9(  # noqa: PLR0912, PLR0915
+        age_min: int | None = age_min_val,
+        age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
+        path_to_original_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_estimated_params.pkl",
+        path_to_no_care_demand_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_no_care_demand.pkl",
+        path_to_plot: Annotated[Path, Product] = BLD
+        / "figures"
+        / "publication"
+        / "counterfactual"
+        / "reverse_employment"
+        / "care_demand_start"
+        / (
+            f"employment_rate_by_distance_to_mother_death_first_care_demand_5_to_9_"
+            f"exact_caregiving_{age_label_val}.pdf"
+        ),
+        ever_caregivers: bool = False,
+        ever_care_demand: bool = False,
+        window: int = 20,
+    ) -> None:
+        """First care demand 5-9y before death; exact 1,2,3,4, 5+ years caregiving in [-9,-5]. No type filter."""
+        df_o, df_c = prepare_dataframes_simple(
+            pd.read_pickle(path_to_original_data),
+            pd.read_pickle(path_to_no_care_demand_data),
+            ever_caregivers,
+            ever_care_demand,
+        )
+        first_care_demand = (
+            df_o[df_o["care_demand"] > 0]
+            .groupby("agent", observed=False)["period"]
+            .min()
+            .reset_index()
+            .rename(columns={"period": "first_care_demand_period"})
+        )
+        df_o_dist = add_distance_to_mother_death(df_o)
+        first_death = (
+            df_o_dist.groupby("agent", observed=False)["first_death_period"]
+            .first()
+            .reset_index()
+        )
+        timing = first_care_demand.merge(
+            first_death[["agent", "first_death_period"]], on="agent", how="inner"
+        )
+        timing["dist_at_first_care_demand"] = (
+            timing["first_care_demand_period"] - timing["first_death_period"]
+        )
+        agents_sample = timing[
+            (timing["dist_at_first_care_demand"] >= -9)
+            & (timing["dist_at_first_care_demand"] <= -5)
+        ]["agent"].unique()
+
+        df_o = df_o[df_o["agent"].isin(agents_sample)].copy()
+        df_c = df_c[df_c["agent"].isin(agents_sample)].copy()
+
+        o_work, _, _ = calculate_simple_outcomes(df_o, "original")
+        c_work, _, _ = calculate_simple_outcomes(df_c, "no_care_demand")
+        care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
+        o_cols = df_o[["agent", "period", "choice"]].copy()
+        o_cols["work_o"] = o_work
+        o_cols["current_caregiving"] = o_cols["choice"].isin(care_codes).astype(int)
+        c_cols = df_c[["agent", "period"]].copy()
+        c_cols["work_c"] = c_work
+        merged = o_cols[["agent", "period", "work_o", "current_caregiving"]].merge(
+            c_cols, on=["agent", "period"], how="inner"
+        )
+        merged = merged.merge(
+            df_o[["agent", "period", "mother_dead", "age"]],
+            on=["agent", "period"],
+            how="left",
+        )
+        dist_map = first_death[first_death["agent"].isin(agents_sample)]
+        merged = merged.merge(dist_map, on="agent", how="left")
+        merged["distance_to_mother_death"] = (
+            merged["period"] - merged["first_death_period"]
+        )
+        death_mask = df_o["mother_dead"] == PARENT_RECENTLY_DEAD
+        first_death_with_age = (
+            df_o.loc[death_mask, ["agent", "period", "age"]]
+            .sort_values(["agent", "period"])
+            .drop_duplicates("agent")
+            .rename(columns={"period": "first_death_period", "age": "age_at_death"})
+        )
+        merged = merged.merge(
+            first_death_with_age[["agent", "age_at_death"]], on="agent", how="left"
+        )
+        merged = merged[
+            merged["first_death_period"].notna()
+            & (merged["distance_to_mother_death"] >= -window)
+            & (merged["distance_to_mother_death"] <= window)
+        ]
+        if age_min is not None:
+            merged = merged[merged["age_at_death"] >= age_min].copy()
+        if age_max is not None:
+            merged = merged[merged["age_at_death"] <= age_max].copy()
+
+        prof = (
+            merged.groupby("distance_to_mother_death", observed=False)[
+                ["work_o", "work_c"]
+            ]
+            .mean()
+            .reset_index()
+            .sort_values("distance_to_mother_death")
+        )
+        prof = prof.rename(
+            columns={"distance_to_mother_death": "distance_to_first_care"}
+        )
+
+        agents_1, agents_2, agents_3, agents_4, agents_5_plus = (
+            identify_agents_by_exact_caregiving_years_in_window(
+                merged,
+                "distance_to_mother_death",
+                window_start=-9,
+                window_end=-5,
+                include_5_plus=True,
+            )
+        )
+
+        def _prof_for_agents(agents_arr):
+            m = merged[merged["agent"].isin(agents_arr)]
+            p = (
+                m.groupby("distance_to_mother_death", observed=False)[["work_o"]]
+                .mean()
+                .reset_index()
+                .sort_values("distance_to_mother_death")
+            )
+            return p.rename(
+                columns={"distance_to_mother_death": "distance_to_first_care"}
+            )
+
+        prof_1_year = _prof_for_agents(agents_1)
+        prof_2_year = _prof_for_agents(agents_2)
+        prof_3_year = _prof_for_agents(agents_3)
+        prof_4_year = _prof_for_agents(agents_4)
+        prof_5_year = _prof_for_agents(agents_5_plus)
+
+        labels_5 = (
+            "Baseline (1 year caregiving)",
+            "Baseline (2 years caregiving)",
+            "Baseline (3 years caregiving)",
+            "Baseline (4 years caregiving)",
+            "Baseline (5+ years caregiving)",
+        )
+        plot_employment_rate_by_distance_to_mother_death(
+            prof=prof,
+            prof_1_year=prof_1_year,
+            prof_2_year=prof_2_year,
+            prof_3_year=prof_3_year,
+            prof_4_year=prof_4_year,
+            prof_5_year=prof_5_year,
+            window=window,
+            path_to_plot=path_to_plot,
+            subgroup_labels=labels_5,
+            vertical_lines_at=[-10, -5],
+        )
+
+
+# First care demand <= -10 (10+ years before death); 5 lines = exact 1,2,3,4, 5+ years caregiving in [-window,-1]
+# Age groups: all_ages, ages_60_70 only. Vertical line at -10.
+for age_min_val, age_max_val, age_label_val in (
+    (None, None, "all_ages"),
+    (50, 55, "ages_50_55"),
+    (55, 60, "ages_55_60"),
+    (60, 65, "ages_60_65"),
+    (60, 70, "ages_60_70"),
+):
+
+    @pytask.mark.publication_counterfactual
+    @pytask.mark.publication_reverse_employment
+    @pytask.mark.publication_reverse_employment_care_demand_start
+    @pytask.mark.publication_reverse_employment_care_demand_start_caregivers
+    @pytask.mark.publication
+    @pytask.task(
+        id=f"{age_label_val}_mother_death_first_care_demand_10_plus_exact_caregiving"
+    )
+    def task_plot_employment_rate_by_distance_to_mother_death_first_care_demand_10_plus(  # noqa: PLR0912, PLR0915
+        age_min: int | None = age_min_val,
+        age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
+        path_to_original_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_estimated_params.pkl",
+        path_to_no_care_demand_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_no_care_demand.pkl",
+        path_to_plot: Annotated[Path, Product] = BLD
+        / "figures"
+        / "publication"
+        / "counterfactual"
+        / "reverse_employment"
+        / "care_demand_start"
+        / (
+            f"employment_rate_by_distance_to_mother_death_first_care_demand_10_plus_"
+            f"exact_caregiving_{age_label_val}.pdf"
+        ),
+        ever_caregivers: bool = False,
+        ever_care_demand: bool = False,
+        window: int = 20,
+    ) -> None:
+        """First care demand 10+ years before death; exact 1,2,3,4, 5+ years caregiving in [-window,-1]. No type filter."""
+        df_o, df_c = prepare_dataframes_simple(
+            pd.read_pickle(path_to_original_data),
+            pd.read_pickle(path_to_no_care_demand_data),
+            ever_caregivers,
+            ever_care_demand,
+        )
+        first_care_demand = (
+            df_o[df_o["care_demand"] > 0]
+            .groupby("agent", observed=False)["period"]
+            .min()
+            .reset_index()
+            .rename(columns={"period": "first_care_demand_period"})
+        )
+        df_o_dist = add_distance_to_mother_death(df_o)
+        first_death = (
+            df_o_dist.groupby("agent", observed=False)["first_death_period"]
+            .first()
+            .reset_index()
+        )
+        timing = first_care_demand.merge(
+            first_death[["agent", "first_death_period"]], on="agent", how="inner"
+        )
+        timing["dist_at_first_care_demand"] = (
+            timing["first_care_demand_period"] - timing["first_death_period"]
+        )
+        agents_sample = timing[timing["dist_at_first_care_demand"] <= -10][
+            "agent"
+        ].unique()
+
+        df_o = df_o[df_o["agent"].isin(agents_sample)].copy()
+        df_c = df_c[df_c["agent"].isin(agents_sample)].copy()
+
+        o_work, _, _ = calculate_simple_outcomes(df_o, "original")
+        c_work, _, _ = calculate_simple_outcomes(df_c, "no_care_demand")
+        care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
+        o_cols = df_o[["agent", "period", "choice"]].copy()
+        o_cols["work_o"] = o_work
+        o_cols["current_caregiving"] = o_cols["choice"].isin(care_codes).astype(int)
+        c_cols = df_c[["agent", "period"]].copy()
+        c_cols["work_c"] = c_work
+        merged = o_cols[["agent", "period", "work_o", "current_caregiving"]].merge(
+            c_cols, on=["agent", "period"], how="inner"
+        )
+        merged = merged.merge(
+            df_o[["agent", "period", "mother_dead", "age"]],
+            on=["agent", "period"],
+            how="left",
+        )
+        dist_map = first_death[first_death["agent"].isin(agents_sample)]
+        merged = merged.merge(dist_map, on="agent", how="left")
+        merged["distance_to_mother_death"] = (
+            merged["period"] - merged["first_death_period"]
+        )
+        death_mask = df_o["mother_dead"] == PARENT_RECENTLY_DEAD
+        first_death_with_age = (
+            df_o.loc[death_mask, ["agent", "period", "age"]]
+            .sort_values(["agent", "period"])
+            .drop_duplicates("agent")
+            .rename(columns={"period": "first_death_period", "age": "age_at_death"})
+        )
+        merged = merged.merge(
+            first_death_with_age[["agent", "age_at_death"]], on="agent", how="left"
+        )
+        merged = merged[
+            merged["first_death_period"].notna()
+            & (merged["distance_to_mother_death"] >= -window)
+            & (merged["distance_to_mother_death"] <= window)
+        ]
+        if age_min is not None:
+            merged = merged[merged["age_at_death"] >= age_min].copy()
+        if age_max is not None:
+            merged = merged[merged["age_at_death"] <= age_max].copy()
+
+        prof = (
+            merged.groupby("distance_to_mother_death", observed=False)[
+                ["work_o", "work_c"]
+            ]
+            .mean()
+            .reset_index()
+            .sort_values("distance_to_mother_death")
+        )
+        prof = prof.rename(
+            columns={"distance_to_mother_death": "distance_to_first_care"}
+        )
+
+        agents_1, agents_2, agents_3, agents_4, agents_5_plus = (
+            identify_agents_by_exact_caregiving_years_in_window(
+                merged,
+                "distance_to_mother_death",
+                window_start=-window,
+                window_end=-1,
+                include_5_plus=True,
+            )
+        )
+
+        def _prof_for_agents(agents_arr):
+            m = merged[merged["agent"].isin(agents_arr)]
+            p = (
+                m.groupby("distance_to_mother_death", observed=False)[["work_o"]]
+                .mean()
+                .reset_index()
+                .sort_values("distance_to_mother_death")
+            )
+            return p.rename(
+                columns={"distance_to_mother_death": "distance_to_first_care"}
+            )
+
+        prof_1_year = _prof_for_agents(agents_1)
+        prof_2_year = _prof_for_agents(agents_2)
+        prof_3_year = _prof_for_agents(agents_3)
+        prof_4_year = _prof_for_agents(agents_4)
+        prof_5_year = _prof_for_agents(agents_5_plus)
+
+        labels_5 = (
+            "Baseline (1 year caregiving)",
+            "Baseline (2 years caregiving)",
+            "Baseline (3 years caregiving)",
+            "Baseline (4 years caregiving)",
+            "Baseline (5+ years caregiving)",
+        )
+        plot_employment_rate_by_distance_to_mother_death(
+            prof=prof,
+            prof_1_year=prof_1_year,
+            prof_2_year=prof_2_year,
+            prof_3_year=prof_3_year,
+            prof_4_year=prof_4_year,
+            prof_5_year=prof_5_year,
+            window=window,
+            path_to_plot=path_to_plot,
+            subgroup_labels=labels_5,
+            vertical_lines_at=[-10],
+        )
+
+
 def plot_employment_rate_by_distance_to_mother_death(  # noqa: PLR0912, PLR0913
     prof,
     prof_1_year,
@@ -759,7 +1705,8 @@ def plot_employment_rate_by_distance_to_mother_death(  # noqa: PLR0912, PLR0913
     prof_5_year=None,
     window: int = 20,
     path_to_plot: Optional[Path] = None,
-    subgroup_labels: Optional[tuple[str, str, str, str, str]] = None,
+    subgroup_labels: Optional[tuple[str, ...]] = None,
+    vertical_lines_at: Optional[list[int]] = None,
 ) -> None:
     """Plot employment rate by distance to mother's death.
 
@@ -775,8 +1722,10 @@ def plot_employment_rate_by_distance_to_mother_death(  # noqa: PLR0912, PLR0913
         prof_5_year: Optional DataFrame for 5-year caregivers (before death)
         window: Window size around event (e.g., 20 = -20 to +20 periods)
         path_to_plot: Optional path to save the plot. If None, plot is not saved.
-        subgroup_labels: Optional tuple of 5 legend labels for the duration lines.
+        subgroup_labels: Optional tuple of 4 or 5 legend labels for the duration lines.
             If None, uses default labels (consecutive years before death).
+        vertical_lines_at: Optional list of x positions for thin vertical dashed lines
+            (e.g. [-3, -5, -7, -10, -11] for first care demand timing).
     """
     # Plot
     # Increased figure size to maintain visual balance with thinner lines/text
@@ -880,7 +1829,8 @@ def plot_employment_rate_by_distance_to_mother_death(  # noqa: PLR0912, PLR0913
 
     # Plot baseline employment rate for 5-year caregivers
     # (care at t=-1, t=-2, t=-3, t=-4, t=-5, but NOT t=-6)
-    if prof_5_year is not None and len(prof_5_year) > 0:
+    # Skip if only 4 subgroup labels (e.g. first caregiving spell timing)
+    if prof_5_year is not None and len(prof_5_year) > 0 and len(labels) > 4:
         plt.plot(
             prof_5_year["distance_to_first_care"],
             prof_5_year["work_o"],
@@ -894,6 +1844,17 @@ def plot_employment_rate_by_distance_to_mother_death(  # noqa: PLR0912, PLR0913
             markerfacecolor="none",
             markeredgewidth=1.5,
         )
+
+    # Optional thin vertical dashed lines (e.g. at first care demand timing)
+    if vertical_lines_at:
+        for x in vertical_lines_at:
+            plt.axvline(
+                x=x,
+                color="gray",
+                linestyle="--",
+                linewidth=0.6,
+                alpha=0.7,
+            )
 
     # Add vertical line at t=0 (mother's death)
     # Position at -0.5 with spaced-out dashes
