@@ -7,6 +7,215 @@ publication plotting task modules.
 import numpy as np
 import pandas as pd
 
+from caregiving.counterfactual.plotting_utils import ensure_agent_period
+
+
+def add_distance_to_first_care_demand(df_original: pd.DataFrame) -> pd.DataFrame:
+    """Add distance_to_first_care_demand column.
+
+    Sets 0 as first time care_demand > 0 (light or intensive care demand).
+    """
+    df = df_original.reset_index(drop=True)
+    df = ensure_agent_period(df)
+    care_demand_mask = df["care_demand"] > 0
+    first_care_demand = (
+        df.loc[care_demand_mask, ["agent", "period"]]
+        .sort_values(["agent", "period"])
+        .drop_duplicates("agent")
+        .rename(columns={"period": "first_care_demand_period"})
+    )
+    out = df.merge(first_care_demand, on="agent", how="left")
+    out["distance_to_first_care_demand"] = (
+        out["period"] - out["first_care_demand_period"]
+    )
+    return out
+
+
+def identify_agents_by_duration(
+    merged: pd.DataFrame,
+    distance_col: str,
+    duration_type: str = "care_demand",
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Identify agents by duration of care demand or caregiving (exact consecutive years).
+
+    For care_demand: Identifies agents who experience care_demand > 0 for
+    1, 2, 3, or 4 years (includes all agents, not just informal caregivers).
+    For caregiving: Identifies agents who provide informal care for
+    1, 2, 3, or 4 years (only type_1 agents can provide informal care).
+
+    Args:
+        merged: DataFrame with agent, distance, and relevant columns
+        distance_col: Name of distance column (e.g., "distance_to_first_care_demand")
+        duration_type: "care_demand" or "caregiving"
+
+    Returns:
+        Tuple of (agents_1_year, agents_2_year, agents_3_year, agents_4_year)
+        as numpy arrays of agent IDs
+    """
+    merged = merged.copy()
+    if duration_type == "care_demand":
+        merged["care_status"] = (merged["care_demand"] > 0).astype(int)
+    elif duration_type == "caregiving":
+        if "current_caregiving" not in merged.columns:
+            raise ValueError(
+                "current_caregiving column not found. "
+                "Cannot identify caregiving duration."
+            )
+        merged["care_status"] = merged["current_caregiving"]
+    else:
+        raise ValueError(
+            f"duration_type must be 'care_demand' or 'caregiving', got {duration_type}"
+        )
+
+    agent_care_matrix = merged[merged[distance_col] >= 0].pivot_table(
+        index="agent",
+        columns=distance_col,
+        values="care_status",
+        aggfunc="first",
+    )
+
+    agents_1_year = []
+    for agent in agent_care_matrix.index:
+        care_at_0 = (
+            agent_care_matrix.loc[agent, 0] == 1
+            if 0 in agent_care_matrix.columns
+            and pd.notna(agent_care_matrix.loc[agent, 0])
+            else False
+        )
+        care_at_1 = (
+            agent_care_matrix.loc[agent, 1] == 0
+            if 1 in agent_care_matrix.columns
+            and pd.notna(agent_care_matrix.loc[agent, 1])
+            else True
+        )
+        care_at_2 = (
+            agent_care_matrix.loc[agent, 2] == 0
+            if 2 in agent_care_matrix.columns  # noqa: PLR2004
+            and pd.notna(agent_care_matrix.loc[agent, 2])
+            else True
+        )
+        if care_at_0 and care_at_1 and care_at_2:
+            agents_1_year.append(agent)
+
+    agents_2_year = []
+    for agent in agent_care_matrix.index:
+        care_at_0 = (
+            agent_care_matrix.loc[agent, 0] == 1
+            if 0 in agent_care_matrix.columns
+            and pd.notna(agent_care_matrix.loc[agent, 0])
+            else False
+        )
+        care_at_1 = (
+            agent_care_matrix.loc[agent, 1] == 1
+            if 1 in agent_care_matrix.columns
+            and pd.notna(agent_care_matrix.loc[agent, 1])
+            else False
+        )
+        care_at_2 = (
+            agent_care_matrix.loc[agent, 2] == 0
+            if 2 in agent_care_matrix.columns  # noqa: PLR2004
+            and pd.notna(agent_care_matrix.loc[agent, 2])
+            else True
+        )
+        care_at_3 = (
+            agent_care_matrix.loc[agent, 3] == 0
+            if 3 in agent_care_matrix.columns  # noqa: PLR2004
+            and pd.notna(agent_care_matrix.loc[agent, 3])
+            else True
+        )
+        if care_at_0 and care_at_1 and care_at_2 and care_at_3:
+            agents_2_year.append(agent)
+
+    agents_3_year = []
+    for agent in agent_care_matrix.index:
+        care_at_0 = (
+            agent_care_matrix.loc[agent, 0] == 1
+            if 0 in agent_care_matrix.columns
+            and pd.notna(agent_care_matrix.loc[agent, 0])
+            else False
+        )
+        care_at_1 = (
+            agent_care_matrix.loc[agent, 1] == 1
+            if 1 in agent_care_matrix.columns
+            and pd.notna(agent_care_matrix.loc[agent, 1])
+            else False
+        )
+        care_at_2 = (
+            agent_care_matrix.loc[agent, 2] == 1
+            if 2 in agent_care_matrix.columns  # noqa: PLR2004
+            and pd.notna(agent_care_matrix.loc[agent, 2])
+            else False
+        )
+        care_at_3 = (
+            agent_care_matrix.loc[agent, 3] == 0
+            if 3 in agent_care_matrix.columns  # noqa: PLR2004
+            and pd.notna(agent_care_matrix.loc[agent, 3])
+            else True
+        )
+        care_at_4 = (
+            agent_care_matrix.loc[agent, 4] == 0
+            if 4 in agent_care_matrix.columns  # noqa: PLR2004
+            and pd.notna(agent_care_matrix.loc[agent, 4])
+            else True
+        )
+        if care_at_0 and care_at_1 and care_at_2 and care_at_3 and care_at_4:
+            agents_3_year.append(agent)
+
+    agents_4_year = []
+    for agent in agent_care_matrix.index:
+        care_at_0 = (
+            agent_care_matrix.loc[agent, 0] == 1
+            if 0 in agent_care_matrix.columns
+            and pd.notna(agent_care_matrix.loc[agent, 0])
+            else False
+        )
+        care_at_1 = (
+            agent_care_matrix.loc[agent, 1] == 1
+            if 1 in agent_care_matrix.columns
+            and pd.notna(agent_care_matrix.loc[agent, 1])
+            else False
+        )
+        care_at_2 = (
+            agent_care_matrix.loc[agent, 2] == 1
+            if 2 in agent_care_matrix.columns  # noqa: PLR2004
+            and pd.notna(agent_care_matrix.loc[agent, 2])
+            else False
+        )
+        care_at_3 = (
+            agent_care_matrix.loc[agent, 3] == 1
+            if 3 in agent_care_matrix.columns  # noqa: PLR2004
+            and pd.notna(agent_care_matrix.loc[agent, 3])
+            else False
+        )
+        care_at_4 = (
+            agent_care_matrix.loc[agent, 4] == 0
+            if 4 in agent_care_matrix.columns  # noqa: PLR2004
+            and pd.notna(agent_care_matrix.loc[agent, 4])
+            else True
+        )
+        care_at_5 = (
+            agent_care_matrix.loc[agent, 5] == 0
+            if 5 in agent_care_matrix.columns  # noqa: PLR2004
+            and pd.notna(agent_care_matrix.loc[agent, 5])
+            else True
+        )
+        if (
+            care_at_0
+            and care_at_1
+            and care_at_2
+            and care_at_3
+            and care_at_4
+            and care_at_5
+        ):
+            agents_4_year.append(agent)
+
+    return (
+        np.array(agents_1_year),
+        np.array(agents_2_year),
+        np.array(agents_3_year),
+        np.array(agents_4_year),
+    )
+
 
 def identify_agents_by_duration_at_least(
     merged: pd.DataFrame,
