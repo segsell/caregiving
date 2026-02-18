@@ -725,3 +725,56 @@ def identify_agents_by_caregiving_before_death_at_least(
         np.array(agents_4_year),
         None,
     )
+
+
+def identify_agents_by_total_caregiving_before_death(
+    merged: pd.DataFrame,
+    distance_col: str,
+    window: int,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Identify agents by total (cumulative) caregiving years before mother's death.
+
+    Counts how many periods with caregiving in the window before death
+    (distance in [-window, -1]). Groups are mutually exclusive:
+    - 1-year: exactly 1 total period with caregiving before death
+    - 2-year: exactly 2 total periods
+    - 3-year: exactly 3 total periods
+    - 4-year: exactly 4 total periods
+    - 5-year: 5 or more total periods (5+)
+
+    Not consecutive: periods can be any time in the window (e.g. t=-1 and t=-10).
+
+    Args:
+        merged: DataFrame with agent, distance_col, and current_caregiving columns
+        distance_col: Name of distance column (e.g., "distance_to_mother_death")
+        window: Window size (e.g. 20); uses periods with distance in [-window, -1]
+
+    Returns:
+        Tuple of (agents_1_year, agents_2_year, agents_3_year, agents_4_year,
+        agents_5_year) as numpy arrays of agent IDs. agents_5_year is 5+ total years.
+    """
+    if "current_caregiving" not in merged.columns:
+        raise ValueError(
+            "current_caregiving column not found. "
+            "Cannot identify total caregiving before death."
+        )
+    before_death = merged[
+        (merged[distance_col] >= -window) & (merged[distance_col] <= -1)
+    ].copy()
+    total_care = (
+        before_death.groupby("agent", observed=False)["current_caregiving"]
+        .sum()
+        .astype(int)
+    )
+    agents_1_year = total_care[total_care == 1].index.to_numpy()
+    agents_2_year = total_care[total_care == 2].index.to_numpy()
+    agents_3_year = total_care[total_care == 3].index.to_numpy()
+    agents_4_year = total_care[total_care == 4].index.to_numpy()
+    agents_5_year = total_care[total_care >= 5].index.to_numpy()
+    return (
+        agents_1_year,
+        agents_2_year,
+        agents_3_year,
+        agents_4_year,
+        agents_5_year,
+    )
