@@ -37,9 +37,9 @@ for age_min_val, age_max_val, age_label_val in (
     (60, 70, "ages_60_70"),
 ):
 
-    @pytask.mark.publication_counterfactual
-    @pytask.mark.publication_event_study
-    @pytask.mark.publication
+    # @pytask.mark.publication_counterfactual
+    # @pytask.mark.publication_event_study
+    # @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_at_least")
     def task_plot_event_study_employment_rate(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,

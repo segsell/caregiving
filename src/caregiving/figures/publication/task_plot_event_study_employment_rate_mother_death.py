@@ -41,9 +41,9 @@ for age_min_val, age_max_val, age_label_val in (
     (60, 70, "ages_60_70"),
 ):
 
-    @pytask.mark.publication_counterfactual
-    @pytask.mark.publication_event_study_reverse
-    @pytask.mark.publication
+    # @pytask.mark.publication_counterfactual
+    # @pytask.mark.publication_event_study_reverse
+    # @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_mother_death_at_least")
     def task_plot_event_study_employment_rate_mother_death(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,
@@ -273,9 +273,9 @@ for age_min_val, age_max_val, age_label_val in (
     (60, 70, "ages_60_70"),
 ):
 
-    @pytask.mark.publication_counterfactual
-    @pytask.mark.publication_event_study_reverse
-    @pytask.mark.publication
+    # @pytask.mark.publication_counterfactual
+    # @pytask.mark.publication_event_study_reverse
+    # @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_mother_death_consecutive")
     def task_plot_event_study_employment_rate_mother_death_consecutive(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,
@@ -524,9 +524,9 @@ for age_min_val, age_max_val, age_label_val in (
     (60, 70, "ages_60_70"),
 ):
 
-    @pytask.mark.publication_counterfactual
-    @pytask.mark.publication_event_study_reverse
-    @pytask.mark.publication
+    # @pytask.mark.publication_counterfactual
+    # @pytask.mark.publication_event_study_reverse
+    # @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_mother_death_care_demand_exact")
     def task_plot_event_study_employment_rate_mother_death_care_demand_exact(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,
@@ -776,9 +776,9 @@ for age_min_val, age_max_val, age_label_val in (
     (60, 70, "ages_60_70"),
 ):
 
-    @pytask.mark.publication_counterfactual
-    @pytask.mark.publication_event_study_reverse
-    @pytask.mark.publication
+    # @pytask.mark.publication_counterfactual
+    # @pytask.mark.publication_event_study_reverse
+    # @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_mother_death_care_demand_at_least")
     def task_plot_event_study_employment_rate_mother_death_care_demand_at_least(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,

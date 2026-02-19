@@ -252,6 +252,7 @@ def task_create_event_study_sample(
         "any_care": "float32",
         "light_care": "float32",
         "intensive_care": "float32",
+        "person_needing_care_in_hh": "float32",
         "n_sisters": "float32",
         "n_brothers": "float32",
         # parent information

@@ -4,6 +4,10 @@ This module contains shared helper functions used across multiple
 publication plotting task modules.
 """
 
+from pathlib import Path
+from typing import Optional
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
@@ -541,3 +545,163 @@ def identify_agents_by_consecutive_duration(  # noqa: PLR0912
         np.array(agents_3_year),
         np.array(agents_4_year),
     )
+
+
+def plot_employment_rate_by_distance(  # noqa: PLR0913
+    prof,
+    prof_1_year,
+    prof_2_year,
+    prof_3_year,
+    prof_4_year,
+    prof_5_year=None,
+    window: int = 20,
+    path_to_plot: Optional[Path] = None,
+    xlabel: str = "Year relative to start of first care spell",
+    outcome_baseline: str = "work_o",
+    outcome_counterfactual: str = "work_c",
+    ylabel: str = "Employment Rate",
+    ylim: tuple[float, float] | None = (-0.025, 1.0),
+    subgroup_labels: Optional[tuple[str, ...]] = None,
+) -> None:
+    """Plot employment or full-time rate by distance to first care/care demand.
+
+    Creates an event study plot comparing baseline vs no-care-demand rates,
+    with separate lines for different caregiving/care-demand durations.
+
+    Args:
+        prof: DataFrame with distance_to_first_care and outcome columns
+        prof_1_year: DataFrame for 1-year duration subgroup (has outcome_baseline col)
+        prof_2_year: DataFrame for 2-year duration subgroup
+        prof_3_year: DataFrame for 3-year duration subgroup
+        prof_4_year: DataFrame for 4-year duration subgroup
+        window: Window size around event (e.g., 20 = -20 to +20 periods)
+        path_to_plot: Optional path to save the plot. If None, plot is not saved.
+        xlabel: Label for x-axis (default: "Year relative to start of first care spell")
+        outcome_baseline: Column name in prof and prof_* for baseline (e.g. work_o, full_time_o)
+        outcome_counterfactual: Column name in prof for no-care-demand (e.g. work_c, full_time_c)
+        ylabel: Label for y-axis (e.g. "Employment Rate", "Full-Time Rate")
+        ylim: Fixed (ymin, ymax) for y-axis. If None, y-axis scale is determined by data.
+    """
+    plt.figure(figsize=(14, 8))
+
+    plt.plot(
+        prof["distance_to_first_care"],
+        prof[outcome_baseline],
+        label="Baseline",
+        color="black",
+        linewidth=2.0,
+        linestyle="--",
+        marker=None,
+    )
+    plt.plot(
+        prof["distance_to_first_care"],
+        prof[outcome_counterfactual],
+        label="No Care Demand",
+        color="black",
+        linewidth=2.0,
+        linestyle="-",
+        marker=None,
+    )
+
+    default_labels = (
+        "Baseline (1-year exact consecutive caregiving spell)",
+        "Baseline (2-year exact consecutive caregiving spells)",
+        "Baseline (3-year exact consecutive caregiving spells)",
+        "Baseline (4-year exact consecutive caregiving spells)",
+    )
+    labels = subgroup_labels if subgroup_labels is not None else default_labels
+
+    if len(prof_1_year) > 0:
+        plt.plot(
+            prof_1_year["distance_to_first_care"],
+            prof_1_year[outcome_baseline],
+            label=labels[0],
+            color="0.8",
+            linewidth=2.0,
+            linestyle="-",
+            marker="8",
+            markersize=5,
+            markevery=1,
+            markerfacecolor="none",
+            markeredgewidth=1.5,
+        )
+    if len(prof_2_year) > 0:
+        plt.plot(
+            prof_2_year["distance_to_first_care"],
+            prof_2_year[outcome_baseline],
+            label=labels[1],
+            color="0.6",
+            linewidth=2.0,
+            linestyle="-",
+            marker="^",
+            markersize=5,
+            markevery=1,
+            markerfacecolor="none",
+            markeredgewidth=1.5,
+        )
+    if len(prof_3_year) > 0:
+        plt.plot(
+            prof_3_year["distance_to_first_care"],
+            prof_3_year[outcome_baseline],
+            label=labels[2],
+            color="0.4",
+            linewidth=2.0,
+            linestyle="-",
+            marker="D",
+            markersize=5,
+            markevery=1,
+            markerfacecolor="none",
+            markeredgewidth=1.5,
+        )
+    if len(prof_4_year) > 0:
+        plt.plot(
+            prof_4_year["distance_to_first_care"],
+            prof_4_year[outcome_baseline],
+            label=labels[3],
+            color="0.2",
+            linewidth=2.0,
+            linestyle="-",
+            marker="s",
+            markersize=5,
+            markevery=1,
+            markerfacecolor="none",
+            markeredgewidth=1.5,
+        )
+    if prof_5_year is not None and len(prof_5_year) > 0 and len(labels) > 4:
+        plt.plot(
+            prof_5_year["distance_to_first_care"],
+            prof_5_year[outcome_baseline],
+            label=labels[4],
+            color="black",
+            linewidth=2.0,
+            linestyle="-",
+            marker="*",
+            markersize=6,
+            markevery=1,
+            markerfacecolor="none",
+            markeredgewidth=1.5,
+        )
+
+    plt.axvline(
+        x=-0.5,
+        color="k",
+        linestyle=(0, (7, 7)),
+        linewidth=1.0,
+    )
+    plt.xlabel(xlabel, fontsize=14)
+    plt.ylabel(ylabel, fontsize=14)
+    plt.xlim(-window - 0.5, window + 0.5)
+    if ylim is not None:
+        plt.ylim(ylim[0], ylim[1])
+    plt.grid(True, axis="y", alpha=0.3, linewidth=0.8)
+    plt.xticks(range(-window, window + 1, 5), fontsize=12)
+    plt.yticks(fontsize=12)
+    ax = plt.gca()
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.tick_params(axis="both", length=8)
+    plt.tight_layout()
+    if path_to_plot:
+        path_to_plot.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(path_to_plot, dpi=1200, bbox_inches="tight")
+    plt.close()
