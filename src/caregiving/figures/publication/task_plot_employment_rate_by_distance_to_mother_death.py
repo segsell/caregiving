@@ -48,8 +48,8 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication_reverse_employment
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_mother_death")
-    def task_plot_employment_rate_by_distance_to_mother_death(  # noqa: PLR0912, PLR0915
+    @pytask.task(id=f"{age_label_val}_mother_death_exact_caregiving")
+    def task_plot_employment_rate_by_distance_to_mother_death_exact_caregiving(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -64,7 +64,7 @@ for age_min_val, age_max_val, age_label_val in (
         / "publication"
         / "counterfactual"
         / "reverse_employment"
-        / f"employment_rate_by_distance_to_mother_death_exact_{age_label_val}.pdf",
+        / f"employment_rate_by_distance_to_mother_death_exact_caregiving_{age_label_val}.pdf",
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
         window: int = 20,
@@ -304,8 +304,8 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication_reverse_employment
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_mother_death_at_least")
-    def task_plot_employment_rate_by_distance_to_mother_death_at_least(  # noqa: PLR0912, PLR0915
+    @pytask.task(id=f"{age_label_val}_mother_death_at_least_caregiving")
+    def task_plot_employment_rate_by_distance_to_mother_death_at_least_caregiving(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -321,7 +321,7 @@ for age_min_val, age_max_val, age_label_val in (
         / "counterfactual"
         / "reverse_employment"
         / (
-            f"employment_rate_by_distance_to_mother_death_at_least_"
+            f"employment_rate_by_distance_to_mother_death_at_least_caregiving_"
             f"{age_label_val}.pdf"
         ),
         ever_caregivers: bool = False,

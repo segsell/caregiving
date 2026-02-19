@@ -80,7 +80,7 @@ def task_solve_and_simulate_no_care_demand(
     sim_df.to_pickle(path_to_save_simulated_data)
 
 
-@pytask.mark.solve_no_care_demand_Jan7
+@pytask.mark.solve_no_care_demand_back_to_Jan7
 @pytask.mark.no_care_demand_model
 def task_solve_and_simulate_no_care_demand_Jan7(
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
@@ -89,7 +89,7 @@ def task_solve_and_simulate_no_care_demand_Jan7(
     path_to_estimated_params: Path = BLD
     / "model"
     / "params"
-    / "estimated_params_Jan7.yaml",
+    / "estimated_params_back_to_Jan7.yaml",
     path_to_initial_states: Path = (
         BLD / "model" / "initial_conditions" / "initial_states.pkl"
     ),

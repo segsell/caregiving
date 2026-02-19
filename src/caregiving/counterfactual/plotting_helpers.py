@@ -81,8 +81,10 @@ def prepare_dataframes_simple(
     Args:
         df_o: Original DataFrame
         df_c: Counterfactual DataFrame
-        ever_caregivers: If True, filter to ever-caregivers
-        ever_care_demand: If True, filter to agents who ever experienced care demand
+        ever_caregivers: If True, filter both df_o and df_c to agents who ever
+            provided informal care (choice in INFORMAL_CARE) in df_o
+        ever_care_demand: If True, filter both df_o and df_c to agents who ever
+            experienced care demand in df_o
 
     Returns:
         Tuple of prepared DataFrames
