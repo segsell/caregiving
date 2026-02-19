@@ -23,29 +23,19 @@ from pytask import Product
 
 from caregiving.config import BLD
 from caregiving.counterfactual.plotting_helpers import (
+    add_distance_to_first_care,
+    add_distance_to_first_care_demand,
     calculate_simple_outcomes,
     get_age_at_first_event,
+    identify_agents_by_total_caregiving_over_lifecycle,
     prepare_dataframes_simple,
 )
-from caregiving.counterfactual.task_plot_labor_supply_differences import (
-    _add_distance_to_first_care,
-)
 from caregiving.model.shared import INFORMAL_CARE
-
-# Reuse total caregiving lifecycle grouping and care-demand distance from by_distance module
-from caregiving.figures.publication.task_plot_employment_rate_by_distance_to_first_care import (
-    MAX_AGE_CAREGIVING,
-    _add_distance_to_first_care_demand,
-    _identify_agents_by_total_caregiving_over_lifecycle,
-)
 
 # Distance column name used in profile DataFrames (for plotting)
 _DIST_COL = "distance_to_first_care"
 
-
-# ---------------------------------------------------------------------------
-# Task parameter grids
-# ---------------------------------------------------------------------------
+# Age groups: (age_min, age_max, age_label) for task id and path_to_plot filename
 _AGE_GROUPS = (
     (None, None, "all_ages"),
     (40, 49, "ages_40_49"),
@@ -53,293 +43,1337 @@ _AGE_GROUPS = (
     (60, 70, "ages_60_70"),
 )
 
-_EVENT_CONFIG = (
-    (
-        "care_demand",
-        "Year relative to start of first care demand",
-        "first_care_demand",
-    ),
-    (
-        "caregiving_spell",
-        "Year relative to start of first caregiving spell",
-        "first_caregiving_spell",
-    ),
-)
 
-_DATA_CONFIG = (
-    (
-        "estimated_params",
-        BLD / "solve_and_simulate" / "simulated_data_estimated_params.pkl",
-        BLD / "solve_and_simulate" / "simulated_data_no_care_demand.pkl",
-        "",
-    ),
-    (
-        "back_to_Jan7",
-        BLD / "solve_and_simulate" / "simulated_data_estimated_params_back_to_Jan7.pkl",
-        BLD / "solve_and_simulate" / "simulated_data_no_care_demand_back_to_Jan7.pkl",
-        "back_to_Jan7_",
-    ),
-)
+# ---------------------------------------------------------------------------
+# Employment event study: first care demand, standard data
+# One loop over age groups; path_to_plot and args written in the function signature.
+# ---------------------------------------------------------------------------
+for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
 
-
-def _make_employment_tasks() -> None:
-    """Generate event study employment rate tasks (total care years 1–5+)."""
-    for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
-        for event_type, xlabel, event_name in _EVENT_CONFIG:
-            for data_name, path_o, path_c, file_prefix in _DATA_CONFIG:
-                _path_o = path_o
-                _path_c = path_c
-                _path_specs = BLD / "model" / "specs" / "specs_full.pkl"
-                _age_min = age_min_val
-                _age_max = age_max_val
-                _age_label = age_label_val
-                _event_type = event_type
-                _xlabel = xlabel
-                _file_prefix = file_prefix
-                _event_name = event_name
-
-                task_id = (
-                    f"{age_label_val}_employment_{event_name}_{data_name}".replace(
-                        ".", "_"
-                    )
-                )
-                path_to_plot = (
-                    BLD
-                    / "figures"
-                    / "publication"
-                    / "counterfactual"
-                    / "event_study"
-                    / "employment"
-                    / "total_caregiving_years"
-                    / (
-                        f"{_file_prefix}event_study_employment_rate_by_distance_to_"
-                        f"{_event_name}_total_caregiving_{_age_label}.pdf"
-                    )
-                )
-
-                @pytask.mark.publication_counterfactual
-                @pytask.mark.publication_employment
-                @pytask.mark.publication_employment_check
-                @pytask.mark.publication
-                @pytask.task(id=task_id)
-                def task_plot_event_study_employment_rate_total_caregiving(
-                    age_min: int | None = _age_min,
-                    age_max: int | None = _age_max,
-                    age_label: str = _age_label,
-                    path_to_original_data: Path = _path_o,
-                    path_to_no_care_demand_data: Path = _path_c,
-                    path_to_specs: Path = _path_specs,
-                    path_to_plot: Annotated[Path, Product] = path_to_plot,
-                    ever_caregivers: bool = True,
-                    ever_care_demand: bool = False,
-                    window: int = 20,
-                    *,
-                    _ev_type: str = event_type,
-                    _xlbl: str = xlabel,
-                ) -> None:
-                    """Event study: employment rate difference by distance (total care years 1–5+)."""
-                    with path_to_specs.open("rb") as f:
-                        specs = pickle.load(f)
-                    start_age = int(specs["start_age"])
-                    df_o, df_c = prepare_dataframes_simple(
-                        pd.read_pickle(path_to_original_data),
-                        pd.read_pickle(path_to_no_care_demand_data),
-                        ever_caregivers,
-                        ever_care_demand,
-                    )
-                    o_work, _, _ = calculate_simple_outcomes(df_o, "original")
-                    c_work, _, _ = calculate_simple_outcomes(df_c, "no_care_demand")
-                    _, prof_diff, p1, p2, p3, p4, p5 = (
-                        _event_study_total_caregiving_merged_and_profiles(
-                            df_o,
-                            df_c,
-                            o_work,
-                            c_work,
-                            window,
-                            age_min,
-                            age_max,
-                            _ev_type,
-                            start_age,
-                        )
-                    )
-                    plot_outcome_difference_by_distance_total_caregiving(
-                        prof_diff=prof_diff,
-                        prof_1_year_diff=p1,
-                        prof_2_year_diff=p2,
-                        prof_3_year_diff=p3,
-                        prof_4_year_diff=p4,
-                        prof_5_year_diff=p5,
-                        window=window,
-                        path_to_plot=path_to_plot,
-                        xlabel=_xlbl,
-                        ylabel="Difference in employment rate",
-                    )
-
-
-_make_employment_tasks()
-
-
-def _make_other_outcome_tasks() -> None:
-    """Generate event study full_time, part_time, working_hours, labor_income tasks."""
-    # (outcome_dir, outcome_key, ylabel, filename_fmt, endogenous_ylim)
-    outcome_specs = (
-        (
-            "full_time",
-            "full_time",
-            "Difference in full-time rate",
-            "event_study_full_time_by_distance_to_{event}_total_caregiving_{age}.pdf",
-            False,
+    @pytask.mark.publication_event_study
+    @pytask.mark.publication_counterfactual
+    @pytask.mark.publication
+    @pytask.task(id=f"{age_label_val}_employment_first_care_demand_estimated_params")
+    def task_plot_event_study_employment_rate_by_distance_to_first_care_demand_total_caregiving(  # noqa: E501
+        age_min: int | None = age_min_val,
+        age_max: int | None = age_max_val,
+        path_to_original_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_estimated_params.pkl",
+        path_to_no_care_demand_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_no_care_demand.pkl",
+        path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+        path_to_plot: Annotated[Path, Product] = BLD
+        / "figures"
+        / "publication"
+        / "counterfactual"
+        / "event_study"
+        / "employment"
+        / "total_caregiving_years"
+        / (
+            f"event_study_employment_rate_by_distance_to_first_care_demand_"
+            f"total_caregiving_{age_label_val}.pdf"
         ),
-        (
-            "part_time",
-            "part_time",
-            "Difference in part-time rate",
-            "event_study_part_time_by_distance_to_{event}_total_caregiving_{age}.pdf",
-            False,
+        ever_caregivers: bool = True,
+        ever_care_demand: bool = False,
+        window: int = 20,
+    ) -> None:
+        """Event study: employment rate difference by distance to first care demand (total care years 1–5+)."""
+        with path_to_specs.open("rb") as f:
+            specs = pickle.load(f)
+        start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
+        df_o, df_c = prepare_dataframes_simple(
+            pd.read_pickle(path_to_original_data),
+            pd.read_pickle(path_to_no_care_demand_data),
+            ever_caregivers,
+            ever_care_demand,
+        )
+        o_work, _, _ = calculate_simple_outcomes(df_o, "original")
+        c_work, _, _ = calculate_simple_outcomes(df_c, "no_care_demand")
+        _, prof_diff, p1, p2, p3, p4, p5 = (
+            event_study_total_caregiving_merged_and_profiles(
+                df_o,
+                df_c,
+                o_work,
+                c_work,
+                window,
+                age_min,
+                age_max,
+                "care_demand",
+                start_age,
+                end_age_caregiving,
+            )
+        )
+        plot_outcome_difference_by_distance_total_caregiving(
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
+            xlabel="Year relative to start of first care demand",
+            ylabel="Difference in employment rate",
+        )
+
+
+# ---------------------------------------------------------------------------
+# Employment event study: first care demand, back_to_Jan7 data
+# ---------------------------------------------------------------------------
+for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
+
+    @pytask.mark.publication_event_study
+    @pytask.mark.publication_counterfactual
+    @pytask.mark.publication
+    @pytask.task(id=f"{age_label_val}_employment_first_care_demand_back_to_Jan7")
+    def task_plot_event_study_employment_rate_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7(  # noqa: E501
+        age_min: int | None = age_min_val,
+        age_max: int | None = age_max_val,
+        path_to_original_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_estimated_params_back_to_Jan7.pkl",
+        path_to_no_care_demand_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_no_care_demand_back_to_Jan7.pkl",
+        path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+        path_to_plot: Annotated[Path, Product] = BLD
+        / "figures"
+        / "publication"
+        / "counterfactual"
+        / "event_study"
+        / "employment"
+        / "total_caregiving_years"
+        / (
+            f"back_to_Jan7_event_study_employment_rate_by_distance_to_first_care_demand_"
+            f"total_caregiving_{age_label_val}.pdf"
         ),
-        (
-            "working_hours",
-            "working_hours",
-            "Difference in weekly working hours",
-            "event_study_working_hours_weekly_by_distance_to_{event}_total_caregiving_{age}.pdf",
-            True,
+        ever_caregivers: bool = True,
+        ever_care_demand: bool = False,
+        window: int = 20,
+    ) -> None:
+        """Event study: employment rate difference by distance to first care demand (total care years 1–5+), back_to_Jan7 data."""
+        with path_to_specs.open("rb") as f:
+            specs = pickle.load(f)
+        start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
+        df_o, df_c = prepare_dataframes_simple(
+            pd.read_pickle(path_to_original_data),
+            pd.read_pickle(path_to_no_care_demand_data),
+            ever_caregivers,
+            ever_care_demand,
+        )
+        o_work, _, _ = calculate_simple_outcomes(df_o, "original")
+        c_work, _, _ = calculate_simple_outcomes(df_c, "no_care_demand")
+        _, prof_diff, p1, p2, p3, p4, p5 = (
+            event_study_total_caregiving_merged_and_profiles(
+                df_o,
+                df_c,
+                o_work,
+                c_work,
+                window,
+                age_min,
+                age_max,
+                "care_demand",
+                start_age,
+                end_age_caregiving,
+            )
+        )
+        plot_outcome_difference_by_distance_total_caregiving(
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
+            xlabel="Year relative to start of first care demand",
+            ylabel="Difference in employment rate",
+        )
+
+
+# ---------------------------------------------------------------------------
+# Employment event study: first caregiving spell, standard data
+# ---------------------------------------------------------------------------
+for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
+
+    @pytask.mark.publication_event_study
+    @pytask.mark.publication_counterfactual
+    @pytask.mark.publication
+    @pytask.task(id=f"{age_label_val}_employment_first_caregiving_spell_estimated_params")
+    def task_plot_event_study_employment_rate_by_distance_to_first_caregiving_spell_total_caregiving(  # noqa: E501
+        age_min: int | None = age_min_val,
+        age_max: int | None = age_max_val,
+        path_to_original_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_estimated_params.pkl",
+        path_to_no_care_demand_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_no_care_demand.pkl",
+        path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+        path_to_plot: Annotated[Path, Product] = BLD
+        / "figures"
+        / "publication"
+        / "counterfactual"
+        / "event_study"
+        / "employment"
+        / "total_caregiving_years"
+        / (
+            f"event_study_employment_rate_by_distance_to_first_caregiving_spell_"
+            f"total_caregiving_{age_label_val}.pdf"
         ),
-        (
-            "labor_income",
-            "labor_income",
-            "Difference in monthly gross labor income",
-            "event_study_monthly_gross_labor_income_by_distance_to_{event}_total_caregiving_{age}.pdf",
-            True,
+        ever_caregivers: bool = True,
+        ever_care_demand: bool = False,
+        window: int = 20,
+    ) -> None:
+        """Event study: employment rate difference by distance to first caregiving spell (total care years 1–5+)."""
+        with path_to_specs.open("rb") as f:
+            specs = pickle.load(f)
+        start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
+        df_o, df_c = prepare_dataframes_simple(
+            pd.read_pickle(path_to_original_data),
+            pd.read_pickle(path_to_no_care_demand_data),
+            ever_caregivers,
+            ever_care_demand,
+        )
+        o_work, _, _ = calculate_simple_outcomes(df_o, "original")
+        c_work, _, _ = calculate_simple_outcomes(df_c, "no_care_demand")
+        _, prof_diff, p1, p2, p3, p4, p5 = (
+            event_study_total_caregiving_merged_and_profiles(
+                df_o,
+                df_c,
+                o_work,
+                c_work,
+                window,
+                age_min,
+                age_max,
+                "caregiving_spell",
+                start_age,
+                end_age_caregiving,
+            )
+        )
+        plot_outcome_difference_by_distance_total_caregiving(
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
+            xlabel="Year relative to start of first caregiving spell",
+            ylabel="Difference in employment rate",
+        )
+
+
+# ---------------------------------------------------------------------------
+# Employment event study: first caregiving spell, back_to_Jan7 data
+# ---------------------------------------------------------------------------
+for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
+
+    @pytask.mark.publication_event_study
+    @pytask.mark.publication_counterfactual
+    @pytask.mark.publication
+    @pytask.task(id=f"{age_label_val}_employment_first_caregiving_spell_back_to_Jan7")
+    def task_plot_event_study_employment_rate_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7(  # noqa: E501
+        age_min: int | None = age_min_val,
+        age_max: int | None = age_max_val,
+        path_to_original_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_estimated_params_back_to_Jan7.pkl",
+        path_to_no_care_demand_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_no_care_demand_back_to_Jan7.pkl",
+        path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+        path_to_plot: Annotated[Path, Product] = BLD
+        / "figures"
+        / "publication"
+        / "counterfactual"
+        / "event_study"
+        / "employment"
+        / "total_caregiving_years"
+        / (
+            f"back_to_Jan7_event_study_employment_rate_by_distance_to_first_caregiving_spell_"
+            f"total_caregiving_{age_label_val}.pdf"
         ),
-    )
-
-    for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
-        for event_type, xlabel, event_name in _EVENT_CONFIG:
-            for data_name, path_o, path_c, file_prefix in _DATA_CONFIG:
-                for out_dir, out_key, ylabel, fn_fmt, endogenous in outcome_specs:
-                    filename = fn_fmt.format(event=event_name, age=age_label_val)
-                    _path_o = path_o
-                    _path_c = path_c
-                    _path_specs = BLD / "model" / "specs" / "specs_full.pkl"
-                    _age_min = age_min_val
-                    _age_max = age_max_val
-                    _age_label = age_label_val
-                    _event_type = event_type
-                    _xlabel = xlabel
-                    _file_prefix = file_prefix
-                    _out_dir = out_dir
-                    _ylabel = ylabel
-                    _endogenous = endogenous
-
-                    path_to_plot = (
-                        BLD
-                        / "figures"
-                        / "publication"
-                        / "counterfactual"
-                        / "event_study"
-                        / _out_dir
-                        / "total_caregiving_years"
-                        / f"{_file_prefix}{filename}"
-                    )
-
-                    task_id = (
-                        f"{age_label_val}_{out_key}_{event_name}_{data_name}".replace(
-                            ".", "_"
-                        )
-                    )
-
-                    @pytask.mark.publication_other_check
-                    @pytask.mark.publication_counterfactual
-                    @pytask.mark.publication
-                    @pytask.task(id=task_id)
-                    def _task(
-                        age_min: int | None = _age_min,
-                        age_max: int | None = _age_max,
-                        age_label: str = _age_label,
-                        path_to_original_data: Path = _path_o,
-                        path_to_no_care_demand_data: Path = _path_c,
-                        path_to_specs: Path = _path_specs,
-                        path_to_plot: Annotated[Path, Product] = path_to_plot,
-                        ever_caregivers: bool = True,
-                        ever_care_demand: bool = False,
-                        window: int = 20,
-                        *,
-                        _captured_out_dir: str = out_dir,
-                        _captured_event_type: str = event_type,
-                        _captured_xlabel: str = xlabel,
-                        _captured_ylabel: str = ylabel,
-                        _captured_endogenous: bool = endogenous,
-                    ) -> None:
-                        with path_to_specs.open("rb") as f:
-                            specs = pickle.load(f)
-                        start_age = int(specs["start_age"])
-                        df_o, df_c = prepare_dataframes_simple(
-                            pd.read_pickle(path_to_original_data),
-                            pd.read_pickle(path_to_no_care_demand_data),
-                            ever_caregivers,
-                            ever_care_demand,
-                        )
-                        if _captured_out_dir == "full_time":
-                            _, o_out, _ = calculate_simple_outcomes(df_o, "original")
-                            _, c_out, _ = calculate_simple_outcomes(
-                                df_c, "no_care_demand"
-                            )
-                        elif _captured_out_dir == "part_time":
-                            _, _, o_out = calculate_simple_outcomes(df_o, "original")
-                            _, _, c_out = calculate_simple_outcomes(
-                                df_c, "no_care_demand"
-                            )
-                        elif _captured_out_dir == "working_hours":
-                            o_out = (
-                                df_o["working_hours"].astype(float) / 52.0
-                                if "working_hours" in df_o.columns
-                                else pd.Series(0.0, index=df_o.index)
-                            )
-                            c_out = (
-                                df_c["working_hours"].astype(float) / 52.0
-                                if "working_hours" in df_c.columns
-                                else pd.Series(0.0, index=df_c.index)
-                            )
-                        else:  # labor_income
-                            o_out = (
-                                df_o["gross_labor_income"].astype(float) / 12.0
-                                if "gross_labor_income" in df_o.columns
-                                else pd.Series(0.0, index=df_o.index)
-                            )
-                            c_out = (
-                                df_c["gross_labor_income"].astype(float) / 12.0
-                                if "gross_labor_income" in df_c.columns
-                                else pd.Series(0.0, index=df_c.index)
-                            )
-                        _, prof_diff, p1, p2, p3, p4, p5 = (
-                            _event_study_total_caregiving_merged_and_profiles(
-                                df_o,
-                                df_c,
-                                o_out,
-                                c_out,
-                                window,
-                                age_min,
-                                age_max,
-                                _captured_event_type,
-                                start_age,
-                            )
-                        )
-                        plot_outcome_difference_by_distance_total_caregiving(
-                            prof_diff=prof_diff,
-                            prof_1_year_diff=p1,
-                            prof_2_year_diff=p2,
-                            prof_3_year_diff=p3,
-                            prof_4_year_diff=p4,
-                            prof_5_year_diff=p5,
-                            window=window,
-                            path_to_plot=path_to_plot,
-                            xlabel=_captured_xlabel,
-                            ylabel=_captured_ylabel,
-                            endogenous_ylim=_captured_endogenous,
-                        )
+        ever_caregivers: bool = True,
+        ever_care_demand: bool = False,
+        window: int = 20,
+    ) -> None:
+        """Event study: employment rate difference by distance to first caregiving spell (total care years 1–5+), back_to_Jan7 data."""
+        with path_to_specs.open("rb") as f:
+            specs = pickle.load(f)
+        start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
+        df_o, df_c = prepare_dataframes_simple(
+            pd.read_pickle(path_to_original_data),
+            pd.read_pickle(path_to_no_care_demand_data),
+            ever_caregivers,
+            ever_care_demand,
+        )
+        o_work, _, _ = calculate_simple_outcomes(df_o, "original")
+        c_work, _, _ = calculate_simple_outcomes(df_c, "no_care_demand")
+        _, prof_diff, p1, p2, p3, p4, p5 = (
+            event_study_total_caregiving_merged_and_profiles(
+                df_o,
+                df_c,
+                o_work,
+                c_work,
+                window,
+                age_min,
+                age_max,
+                "caregiving_spell",
+                start_age,
+                end_age_caregiving,
+            )
+        )
+        plot_outcome_difference_by_distance_total_caregiving(
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
+            xlabel="Year relative to start of first caregiving spell",
+            ylabel="Difference in employment rate",
+        )
 
 
-_make_other_outcome_tasks()
+# ---------------------------------------------------------------------------
+# Full-time event study: first care demand, standard data
+# ---------------------------------------------------------------------------
+for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
+
+    @pytask.mark.publication_event_study
+    @pytask.mark.publication_counterfactual
+    @pytask.mark.publication
+    @pytask.task(id=f"{age_label_val}_full_time_first_care_demand_estimated_params")
+    def task_plot_event_study_full_time_by_distance_to_first_care_demand_total_caregiving(  # noqa: E501
+        age_min: int | None = age_min_val,
+        age_max: int | None = age_max_val,
+        path_to_original_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_estimated_params.pkl",
+        path_to_no_care_demand_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_no_care_demand.pkl",
+        path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+        path_to_plot: Annotated[Path, Product] = BLD
+        / "figures"
+        / "publication"
+        / "counterfactual"
+        / "event_study"
+        / "full_time"
+        / "total_caregiving_years"
+        / (
+            f"event_study_full_time_by_distance_to_first_care_demand_"
+            f"total_caregiving_{age_label_val}.pdf"
+        ),
+        ever_caregivers: bool = True,
+        ever_care_demand: bool = False,
+        window: int = 20,
+    ) -> None:
+        """Event study: full-time rate difference by distance to first care demand (total care years 1–5+)."""
+        with path_to_specs.open("rb") as f:
+            specs = pickle.load(f)
+        start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
+        df_o, df_c = prepare_dataframes_simple(
+            pd.read_pickle(path_to_original_data),
+            pd.read_pickle(path_to_no_care_demand_data),
+            ever_caregivers,
+            ever_care_demand,
+        )
+        _, o_out, _ = calculate_simple_outcomes(df_o, "original")
+        _, c_out, _ = calculate_simple_outcomes(df_c, "no_care_demand")
+        _, prof_diff, p1, p2, p3, p4, p5 = (
+            event_study_total_caregiving_merged_and_profiles(
+                df_o, df_c, o_out, c_out, window, age_min, age_max,
+                "care_demand", start_age, end_age_caregiving,
+            )
+        )
+        plot_outcome_difference_by_distance_total_caregiving(
+            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
+            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
+            window=window, path_to_plot=path_to_plot,
+            xlabel="Year relative to start of first care demand",
+            ylabel="Difference in full-time rate",
+        )
+
+
+# Full-time: first care demand, back_to_Jan7
+for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
+
+    @pytask.mark.publication_event_study
+    @pytask.mark.publication_counterfactual
+    @pytask.mark.publication
+    @pytask.task(id=f"{age_label_val}_full_time_first_care_demand_back_to_Jan7")
+    def task_plot_event_study_full_time_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7(  # noqa: E501
+        age_min: int | None = age_min_val,
+        age_max: int | None = age_max_val,
+        path_to_original_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_estimated_params_back_to_Jan7.pkl",
+        path_to_no_care_demand_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_no_care_demand_back_to_Jan7.pkl",
+        path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+        path_to_plot: Annotated[Path, Product] = BLD
+        / "figures"
+        / "publication"
+        / "counterfactual"
+        / "event_study"
+        / "full_time"
+        / "total_caregiving_years"
+        / (
+            f"back_to_Jan7_event_study_full_time_by_distance_to_first_care_demand_"
+            f"total_caregiving_{age_label_val}.pdf"
+        ),
+        ever_caregivers: bool = True,
+        ever_care_demand: bool = False,
+        window: int = 20,
+    ) -> None:
+        """Event study: full-time rate difference by distance to first care demand (total care years 1–5+), back_to_Jan7."""
+        with path_to_specs.open("rb") as f:
+            specs = pickle.load(f)
+        start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
+        df_o, df_c = prepare_dataframes_simple(
+            pd.read_pickle(path_to_original_data),
+            pd.read_pickle(path_to_no_care_demand_data),
+            ever_caregivers,
+            ever_care_demand,
+        )
+        _, o_out, _ = calculate_simple_outcomes(df_o, "original")
+        _, c_out, _ = calculate_simple_outcomes(df_c, "no_care_demand")
+        _, prof_diff, p1, p2, p3, p4, p5 = (
+            event_study_total_caregiving_merged_and_profiles(
+                df_o, df_c, o_out, c_out, window, age_min, age_max,
+                "care_demand", start_age, end_age_caregiving,
+            )
+        )
+        plot_outcome_difference_by_distance_total_caregiving(
+            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
+            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
+            window=window, path_to_plot=path_to_plot,
+            xlabel="Year relative to start of first care demand",
+            ylabel="Difference in full-time rate",
+        )
+
+
+# Full-time: first caregiving spell, standard
+for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
+
+    @pytask.mark.publication_event_study
+    @pytask.mark.publication_counterfactual
+    @pytask.mark.publication
+    @pytask.task(id=f"{age_label_val}_full_time_first_caregiving_spell_estimated_params")
+    def task_plot_event_study_full_time_by_distance_to_first_caregiving_spell_total_caregiving(  # noqa: E501
+        age_min: int | None = age_min_val,
+        age_max: int | None = age_max_val,
+        path_to_original_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_estimated_params.pkl",
+        path_to_no_care_demand_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_no_care_demand.pkl",
+        path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+        path_to_plot: Annotated[Path, Product] = BLD
+        / "figures"
+        / "publication"
+        / "counterfactual"
+        / "event_study"
+        / "full_time"
+        / "total_caregiving_years"
+        / (
+            f"event_study_full_time_by_distance_to_first_caregiving_spell_"
+            f"total_caregiving_{age_label_val}.pdf"
+        ),
+        ever_caregivers: bool = True,
+        ever_care_demand: bool = False,
+        window: int = 20,
+    ) -> None:
+        """Event study: full-time rate difference by distance to first caregiving spell (total care years 1–5+)."""
+        with path_to_specs.open("rb") as f:
+            specs = pickle.load(f)
+        start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
+        df_o, df_c = prepare_dataframes_simple(
+            pd.read_pickle(path_to_original_data),
+            pd.read_pickle(path_to_no_care_demand_data),
+            ever_caregivers,
+            ever_care_demand,
+        )
+        _, o_out, _ = calculate_simple_outcomes(df_o, "original")
+        _, c_out, _ = calculate_simple_outcomes(df_c, "no_care_demand")
+        _, prof_diff, p1, p2, p3, p4, p5 = (
+            event_study_total_caregiving_merged_and_profiles(
+                df_o, df_c, o_out, c_out, window, age_min, age_max,
+                "caregiving_spell", start_age, end_age_caregiving,
+            )
+        )
+        plot_outcome_difference_by_distance_total_caregiving(
+            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
+            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
+            window=window, path_to_plot=path_to_plot,
+            xlabel="Year relative to start of first caregiving spell",
+            ylabel="Difference in full-time rate",
+        )
+
+
+# Full-time: first caregiving spell, back_to_Jan7
+for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
+
+    @pytask.mark.publication_event_study
+    @pytask.mark.publication_counterfactual
+    @pytask.mark.publication
+    @pytask.task(id=f"{age_label_val}_full_time_first_caregiving_spell_back_to_Jan7")
+    def task_plot_event_study_full_time_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7(  # noqa: E501
+        age_min: int | None = age_min_val,
+        age_max: int | None = age_max_val,
+        path_to_original_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_estimated_params_back_to_Jan7.pkl",
+        path_to_no_care_demand_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_no_care_demand_back_to_Jan7.pkl",
+        path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+        path_to_plot: Annotated[Path, Product] = BLD
+        / "figures"
+        / "publication"
+        / "counterfactual"
+        / "event_study"
+        / "full_time"
+        / "total_caregiving_years"
+        / (
+            f"back_to_Jan7_event_study_full_time_by_distance_to_first_caregiving_spell_"
+            f"total_caregiving_{age_label_val}.pdf"
+        ),
+        ever_caregivers: bool = True,
+        ever_care_demand: bool = False,
+        window: int = 20,
+    ) -> None:
+        """Event study: full-time rate difference by distance to first caregiving spell (total care years 1–5+), back_to_Jan7."""
+        with path_to_specs.open("rb") as f:
+            specs = pickle.load(f)
+        start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
+        df_o, df_c = prepare_dataframes_simple(
+            pd.read_pickle(path_to_original_data),
+            pd.read_pickle(path_to_no_care_demand_data),
+            ever_caregivers,
+            ever_care_demand,
+        )
+        _, o_out, _ = calculate_simple_outcomes(df_o, "original")
+        _, c_out, _ = calculate_simple_outcomes(df_c, "no_care_demand")
+        _, prof_diff, p1, p2, p3, p4, p5 = (
+            event_study_total_caregiving_merged_and_profiles(
+                df_o, df_c, o_out, c_out, window, age_min, age_max,
+                "caregiving_spell", start_age, end_age_caregiving,
+            )
+        )
+        plot_outcome_difference_by_distance_total_caregiving(
+            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
+            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
+            window=window, path_to_plot=path_to_plot,
+            xlabel="Year relative to start of first caregiving spell",
+            ylabel="Difference in full-time rate",
+        )
+
+
+# ---------------------------------------------------------------------------
+# Part-time event study: first care demand (standard), back_to_Jan7, caregiving spell (standard), caregiving spell back_to_Jan7
+# ---------------------------------------------------------------------------
+for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
+
+    @pytask.mark.publication_event_study
+    @pytask.mark.publication_counterfactual
+    @pytask.mark.publication
+    @pytask.task(id=f"{age_label_val}_part_time_first_care_demand_estimated_params")
+    def task_plot_event_study_part_time_by_distance_to_first_care_demand_total_caregiving(  # noqa: E501
+        age_min: int | None = age_min_val,
+        age_max: int | None = age_max_val,
+        path_to_original_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_estimated_params.pkl",
+        path_to_no_care_demand_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_no_care_demand.pkl",
+        path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+        path_to_plot: Annotated[Path, Product] = BLD
+        / "figures"
+        / "publication"
+        / "counterfactual"
+        / "event_study"
+        / "part_time"
+        / "total_caregiving_years"
+        / (
+            f"event_study_part_time_by_distance_to_first_care_demand_"
+            f"total_caregiving_{age_label_val}.pdf"
+        ),
+        ever_caregivers: bool = True,
+        ever_care_demand: bool = False,
+        window: int = 20,
+    ) -> None:
+        """Event study: part-time rate difference by distance to first care demand (total care years 1–5+)."""
+        with path_to_specs.open("rb") as f:
+            specs = pickle.load(f)
+        start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
+        df_o, df_c = prepare_dataframes_simple(
+            pd.read_pickle(path_to_original_data),
+            pd.read_pickle(path_to_no_care_demand_data),
+            ever_caregivers,
+            ever_care_demand,
+        )
+        _, _, o_out = calculate_simple_outcomes(df_o, "original")
+        _, _, c_out = calculate_simple_outcomes(df_c, "no_care_demand")
+        _, prof_diff, p1, p2, p3, p4, p5 = (
+            event_study_total_caregiving_merged_and_profiles(
+                df_o, df_c, o_out, c_out, window, age_min, age_max,
+                "care_demand", start_age, end_age_caregiving,
+            )
+        )
+        plot_outcome_difference_by_distance_total_caregiving(
+            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
+            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
+            window=window, path_to_plot=path_to_plot,
+            xlabel="Year relative to start of first care demand",
+            ylabel="Difference in part-time rate",
+        )
+
+
+for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
+
+    @pytask.mark.publication_event_study
+    @pytask.mark.publication_counterfactual
+    @pytask.mark.publication
+    @pytask.task(id=f"{age_label_val}_part_time_first_care_demand_back_to_Jan7")
+    def task_plot_event_study_part_time_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7(  # noqa: E501
+        age_min: int | None = age_min_val,
+        age_max: int | None = age_max_val,
+        path_to_original_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_estimated_params_back_to_Jan7.pkl",
+        path_to_no_care_demand_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_no_care_demand_back_to_Jan7.pkl",
+        path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+        path_to_plot: Annotated[Path, Product] = BLD
+        / "figures"
+        / "publication"
+        / "counterfactual"
+        / "event_study"
+        / "part_time"
+        / "total_caregiving_years"
+        / (
+            f"back_to_Jan7_event_study_part_time_by_distance_to_first_care_demand_"
+            f"total_caregiving_{age_label_val}.pdf"
+        ),
+        ever_caregivers: bool = True,
+        ever_care_demand: bool = False,
+        window: int = 20,
+    ) -> None:
+        """Event study: part-time rate difference by distance to first care demand (total care years 1–5+), back_to_Jan7."""
+        with path_to_specs.open("rb") as f:
+            specs = pickle.load(f)
+        start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
+        df_o, df_c = prepare_dataframes_simple(
+            pd.read_pickle(path_to_original_data),
+            pd.read_pickle(path_to_no_care_demand_data),
+            ever_caregivers,
+            ever_care_demand,
+        )
+        _, _, o_out = calculate_simple_outcomes(df_o, "original")
+        _, _, c_out = calculate_simple_outcomes(df_c, "no_care_demand")
+        _, prof_diff, p1, p2, p3, p4, p5 = (
+            event_study_total_caregiving_merged_and_profiles(
+                df_o, df_c, o_out, c_out, window, age_min, age_max,
+                "care_demand", start_age, end_age_caregiving,
+            )
+        )
+        plot_outcome_difference_by_distance_total_caregiving(
+            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
+            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
+            window=window, path_to_plot=path_to_plot,
+            xlabel="Year relative to start of first care demand",
+            ylabel="Difference in part-time rate",
+        )
+
+
+for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
+
+    @pytask.mark.publication_event_study
+    @pytask.mark.publication_counterfactual
+    @pytask.mark.publication
+    @pytask.task(id=f"{age_label_val}_part_time_first_caregiving_spell_estimated_params")
+    def task_plot_event_study_part_time_by_distance_to_first_caregiving_spell_total_caregiving(  # noqa: E501
+        age_min: int | None = age_min_val,
+        age_max: int | None = age_max_val,
+        path_to_original_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_estimated_params.pkl",
+        path_to_no_care_demand_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_no_care_demand.pkl",
+        path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+        path_to_plot: Annotated[Path, Product] = BLD
+        / "figures"
+        / "publication"
+        / "counterfactual"
+        / "event_study"
+        / "part_time"
+        / "total_caregiving_years"
+        / (
+            f"event_study_part_time_by_distance_to_first_caregiving_spell_"
+            f"total_caregiving_{age_label_val}.pdf"
+        ),
+        ever_caregivers: bool = True,
+        ever_care_demand: bool = False,
+        window: int = 20,
+    ) -> None:
+        """Event study: part-time rate difference by distance to first caregiving spell (total care years 1–5+)."""
+        with path_to_specs.open("rb") as f:
+            specs = pickle.load(f)
+        start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
+        df_o, df_c = prepare_dataframes_simple(
+            pd.read_pickle(path_to_original_data),
+            pd.read_pickle(path_to_no_care_demand_data),
+            ever_caregivers,
+            ever_care_demand,
+        )
+        _, _, o_out = calculate_simple_outcomes(df_o, "original")
+        _, _, c_out = calculate_simple_outcomes(df_c, "no_care_demand")
+        _, prof_diff, p1, p2, p3, p4, p5 = (
+            event_study_total_caregiving_merged_and_profiles(
+                df_o, df_c, o_out, c_out, window, age_min, age_max,
+                "caregiving_spell", start_age, end_age_caregiving,
+            )
+        )
+        plot_outcome_difference_by_distance_total_caregiving(
+            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
+            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
+            window=window, path_to_plot=path_to_plot,
+            xlabel="Year relative to start of first caregiving spell",
+            ylabel="Difference in part-time rate",
+        )
+
+
+for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
+
+    @pytask.mark.publication_event_study
+    @pytask.mark.publication_counterfactual
+    @pytask.mark.publication
+    @pytask.task(id=f"{age_label_val}_part_time_first_caregiving_spell_back_to_Jan7")
+    def task_plot_event_study_part_time_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7(  # noqa: E501
+        age_min: int | None = age_min_val,
+        age_max: int | None = age_max_val,
+        path_to_original_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_estimated_params_back_to_Jan7.pkl",
+        path_to_no_care_demand_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_no_care_demand_back_to_Jan7.pkl",
+        path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+        path_to_plot: Annotated[Path, Product] = BLD
+        / "figures"
+        / "publication"
+        / "counterfactual"
+        / "event_study"
+        / "part_time"
+        / "total_caregiving_years"
+        / (
+            f"back_to_Jan7_event_study_part_time_by_distance_to_first_caregiving_spell_"
+            f"total_caregiving_{age_label_val}.pdf"
+        ),
+        ever_caregivers: bool = True,
+        ever_care_demand: bool = False,
+        window: int = 20,
+    ) -> None:
+        """Event study: part-time rate difference by distance to first caregiving spell (total care years 1–5+), back_to_Jan7."""
+        with path_to_specs.open("rb") as f:
+            specs = pickle.load(f)
+        start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
+        df_o, df_c = prepare_dataframes_simple(
+            pd.read_pickle(path_to_original_data),
+            pd.read_pickle(path_to_no_care_demand_data),
+            ever_caregivers,
+            ever_care_demand,
+        )
+        _, _, o_out = calculate_simple_outcomes(df_o, "original")
+        _, _, c_out = calculate_simple_outcomes(df_c, "no_care_demand")
+        _, prof_diff, p1, p2, p3, p4, p5 = (
+            event_study_total_caregiving_merged_and_profiles(
+                df_o, df_c, o_out, c_out, window, age_min, age_max,
+                "caregiving_spell", start_age, end_age_caregiving,
+            )
+        )
+        plot_outcome_difference_by_distance_total_caregiving(
+            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
+            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
+            window=window, path_to_plot=path_to_plot,
+            xlabel="Year relative to start of first caregiving spell",
+            ylabel="Difference in part-time rate",
+        )
+
+
+# ---------------------------------------------------------------------------
+# Working hours event study: 4 variants (care_demand standard/back_to_Jan7, caregiving_spell standard/back_to_Jan7)
+# ---------------------------------------------------------------------------
+for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
+
+    @pytask.mark.publication_event_study
+    @pytask.mark.publication_counterfactual
+    @pytask.mark.publication
+    @pytask.task(id=f"{age_label_val}_working_hours_first_care_demand_estimated_params")
+    def task_plot_event_study_working_hours_by_distance_to_first_care_demand_total_caregiving(  # noqa: E501
+        age_min: int | None = age_min_val,
+        age_max: int | None = age_max_val,
+        path_to_original_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_estimated_params.pkl",
+        path_to_no_care_demand_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_no_care_demand.pkl",
+        path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+        path_to_plot: Annotated[Path, Product] = BLD
+        / "figures"
+        / "publication"
+        / "counterfactual"
+        / "event_study"
+        / "working_hours"
+        / "total_caregiving_years"
+        / (
+            f"event_study_working_hours_weekly_by_distance_to_first_care_demand_"
+            f"total_caregiving_{age_label_val}.pdf"
+        ),
+        ever_caregivers: bool = True,
+        ever_care_demand: bool = False,
+        window: int = 20,
+    ) -> None:
+        """Event study: weekly working hours difference by distance to first care demand (total care years 1–5+)."""
+        with path_to_specs.open("rb") as f:
+            specs = pickle.load(f)
+        start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
+        df_o, df_c = prepare_dataframes_simple(
+            pd.read_pickle(path_to_original_data),
+            pd.read_pickle(path_to_no_care_demand_data),
+            ever_caregivers,
+            ever_care_demand,
+        )
+        o_out = (
+            df_o["working_hours"].astype(float) / 52.0
+            if "working_hours" in df_o.columns
+            else pd.Series(0.0, index=df_o.index)
+        )
+        c_out = (
+            df_c["working_hours"].astype(float) / 52.0
+            if "working_hours" in df_c.columns
+            else pd.Series(0.0, index=df_c.index)
+        )
+        _, prof_diff, p1, p2, p3, p4, p5 = (
+            event_study_total_caregiving_merged_and_profiles(
+                df_o, df_c, o_out, c_out, window, age_min, age_max,
+                "care_demand", start_age, end_age_caregiving,
+            )
+        )
+        plot_outcome_difference_by_distance_total_caregiving(
+            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
+            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
+            window=window, path_to_plot=path_to_plot,
+            xlabel="Year relative to start of first care demand",
+            ylabel="Difference in weekly working hours",
+            endogenous_ylim=True,
+        )
+
+
+for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
+
+    @pytask.mark.publication_event_study
+    @pytask.mark.publication_counterfactual
+    @pytask.mark.publication
+    @pytask.task(id=f"{age_label_val}_working_hours_first_care_demand_back_to_Jan7")
+    def task_plot_event_study_working_hours_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7(  # noqa: E501
+        age_min: int | None = age_min_val,
+        age_max: int | None = age_max_val,
+        path_to_original_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_estimated_params_back_to_Jan7.pkl",
+        path_to_no_care_demand_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_no_care_demand_back_to_Jan7.pkl",
+        path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+        path_to_plot: Annotated[Path, Product] = BLD
+        / "figures"
+        / "publication"
+        / "counterfactual"
+        / "event_study"
+        / "working_hours"
+        / "total_caregiving_years"
+        / (
+            f"back_to_Jan7_event_study_working_hours_weekly_by_distance_to_first_care_demand_"
+            f"total_caregiving_{age_label_val}.pdf"
+        ),
+        ever_caregivers: bool = True,
+        ever_care_demand: bool = False,
+        window: int = 20,
+    ) -> None:
+        """Event study: weekly working hours difference by distance to first care demand (total care years 1–5+), back_to_Jan7."""
+        with path_to_specs.open("rb") as f:
+            specs = pickle.load(f)
+        start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
+        df_o, df_c = prepare_dataframes_simple(
+            pd.read_pickle(path_to_original_data),
+            pd.read_pickle(path_to_no_care_demand_data),
+            ever_caregivers,
+            ever_care_demand,
+        )
+        o_out = (
+            df_o["working_hours"].astype(float) / 52.0
+            if "working_hours" in df_o.columns
+            else pd.Series(0.0, index=df_o.index)
+        )
+        c_out = (
+            df_c["working_hours"].astype(float) / 52.0
+            if "working_hours" in df_c.columns
+            else pd.Series(0.0, index=df_c.index)
+        )
+        _, prof_diff, p1, p2, p3, p4, p5 = (
+            event_study_total_caregiving_merged_and_profiles(
+                df_o, df_c, o_out, c_out, window, age_min, age_max,
+                "care_demand", start_age, end_age_caregiving,
+            )
+        )
+        plot_outcome_difference_by_distance_total_caregiving(
+            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
+            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
+            window=window, path_to_plot=path_to_plot,
+            xlabel="Year relative to start of first care demand",
+            ylabel="Difference in weekly working hours",
+            endogenous_ylim=True,
+        )
+
+
+for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
+
+    @pytask.mark.publication_event_study
+    @pytask.mark.publication_counterfactual
+    @pytask.mark.publication
+    @pytask.task(id=f"{age_label_val}_working_hours_first_caregiving_spell_estimated_params")
+    def task_plot_event_study_working_hours_by_distance_to_first_caregiving_spell_total_caregiving(  # noqa: E501
+        age_min: int | None = age_min_val,
+        age_max: int | None = age_max_val,
+        path_to_original_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_estimated_params.pkl",
+        path_to_no_care_demand_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_no_care_demand.pkl",
+        path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+        path_to_plot: Annotated[Path, Product] = BLD
+        / "figures"
+        / "publication"
+        / "counterfactual"
+        / "event_study"
+        / "working_hours"
+        / "total_caregiving_years"
+        / (
+            f"event_study_working_hours_weekly_by_distance_to_first_caregiving_spell_"
+            f"total_caregiving_{age_label_val}.pdf"
+        ),
+        ever_caregivers: bool = True,
+        ever_care_demand: bool = False,
+        window: int = 20,
+    ) -> None:
+        """Event study: weekly working hours difference by distance to first caregiving spell (total care years 1–5+)."""
+        with path_to_specs.open("rb") as f:
+            specs = pickle.load(f)
+        start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
+        df_o, df_c = prepare_dataframes_simple(
+            pd.read_pickle(path_to_original_data),
+            pd.read_pickle(path_to_no_care_demand_data),
+            ever_caregivers,
+            ever_care_demand,
+        )
+        o_out = (
+            df_o["working_hours"].astype(float) / 52.0
+            if "working_hours" in df_o.columns
+            else pd.Series(0.0, index=df_o.index)
+        )
+        c_out = (
+            df_c["working_hours"].astype(float) / 52.0
+            if "working_hours" in df_c.columns
+            else pd.Series(0.0, index=df_c.index)
+        )
+        _, prof_diff, p1, p2, p3, p4, p5 = (
+            event_study_total_caregiving_merged_and_profiles(
+                df_o, df_c, o_out, c_out, window, age_min, age_max,
+                "caregiving_spell", start_age, end_age_caregiving,
+            )
+        )
+        plot_outcome_difference_by_distance_total_caregiving(
+            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
+            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
+            window=window, path_to_plot=path_to_plot,
+            xlabel="Year relative to start of first caregiving spell",
+            ylabel="Difference in weekly working hours",
+            endogenous_ylim=True,
+        )
+
+
+for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
+
+    @pytask.mark.publication_event_study
+    @pytask.mark.publication_counterfactual
+    @pytask.mark.publication
+    @pytask.task(id=f"{age_label_val}_working_hours_first_caregiving_spell_back_to_Jan7")
+    def task_plot_event_study_working_hours_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7(  # noqa: E501
+        age_min: int | None = age_min_val,
+        age_max: int | None = age_max_val,
+        path_to_original_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_estimated_params_back_to_Jan7.pkl",
+        path_to_no_care_demand_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_no_care_demand_back_to_Jan7.pkl",
+        path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+        path_to_plot: Annotated[Path, Product] = BLD
+        / "figures"
+        / "publication"
+        / "counterfactual"
+        / "event_study"
+        / "working_hours"
+        / "total_caregiving_years"
+        / (
+            f"back_to_Jan7_event_study_working_hours_weekly_by_distance_to_first_caregiving_spell_"
+            f"total_caregiving_{age_label_val}.pdf"
+        ),
+        ever_caregivers: bool = True,
+        ever_care_demand: bool = False,
+        window: int = 20,
+    ) -> None:
+        """Event study: weekly working hours difference by distance to first caregiving spell (total care years 1–5+), back_to_Jan7."""
+        with path_to_specs.open("rb") as f:
+            specs = pickle.load(f)
+        start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
+        df_o, df_c = prepare_dataframes_simple(
+            pd.read_pickle(path_to_original_data),
+            pd.read_pickle(path_to_no_care_demand_data),
+            ever_caregivers,
+            ever_care_demand,
+        )
+        o_out = (
+            df_o["working_hours"].astype(float) / 52.0
+            if "working_hours" in df_o.columns
+            else pd.Series(0.0, index=df_o.index)
+        )
+        c_out = (
+            df_c["working_hours"].astype(float) / 52.0
+            if "working_hours" in df_c.columns
+            else pd.Series(0.0, index=df_c.index)
+        )
+        _, prof_diff, p1, p2, p3, p4, p5 = (
+            event_study_total_caregiving_merged_and_profiles(
+                df_o, df_c, o_out, c_out, window, age_min, age_max,
+                "caregiving_spell", start_age, end_age_caregiving,
+            )
+        )
+        plot_outcome_difference_by_distance_total_caregiving(
+            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
+            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
+            window=window, path_to_plot=path_to_plot,
+            xlabel="Year relative to start of first caregiving spell",
+            ylabel="Difference in weekly working hours",
+            endogenous_ylim=True,
+        )
+
+
+# ---------------------------------------------------------------------------
+# Labor income event study: 4 variants
+# ---------------------------------------------------------------------------
+for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
+
+    @pytask.mark.publication_event_study
+    @pytask.mark.publication_counterfactual
+    @pytask.mark.publication
+    @pytask.task(id=f"{age_label_val}_labor_income_first_care_demand_estimated_params")
+    def task_plot_event_study_labor_income_by_distance_to_first_care_demand_total_caregiving(  # noqa: E501
+        age_min: int | None = age_min_val,
+        age_max: int | None = age_max_val,
+        path_to_original_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_estimated_params.pkl",
+        path_to_no_care_demand_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_no_care_demand.pkl",
+        path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+        path_to_plot: Annotated[Path, Product] = BLD
+        / "figures"
+        / "publication"
+        / "counterfactual"
+        / "event_study"
+        / "labor_income"
+        / "total_caregiving_years"
+        / (
+            f"event_study_monthly_gross_labor_income_by_distance_to_first_care_demand_"
+            f"total_caregiving_{age_label_val}.pdf"
+        ),
+        ever_caregivers: bool = True,
+        ever_care_demand: bool = False,
+        window: int = 20,
+    ) -> None:
+        """Event study: monthly gross labor income difference by distance to first care demand (total care years 1–5+)."""
+        with path_to_specs.open("rb") as f:
+            specs = pickle.load(f)
+        start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
+        df_o, df_c = prepare_dataframes_simple(
+            pd.read_pickle(path_to_original_data),
+            pd.read_pickle(path_to_no_care_demand_data),
+            ever_caregivers,
+            ever_care_demand,
+        )
+        o_out = (
+            df_o["gross_labor_income"].astype(float) / 12.0
+            if "gross_labor_income" in df_o.columns
+            else pd.Series(0.0, index=df_o.index)
+        )
+        c_out = (
+            df_c["gross_labor_income"].astype(float) / 12.0
+            if "gross_labor_income" in df_c.columns
+            else pd.Series(0.0, index=df_c.index)
+        )
+        _, prof_diff, p1, p2, p3, p4, p5 = (
+            event_study_total_caregiving_merged_and_profiles(
+                df_o, df_c, o_out, c_out, window, age_min, age_max,
+                "care_demand", start_age, end_age_caregiving,
+            )
+        )
+        plot_outcome_difference_by_distance_total_caregiving(
+            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
+            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
+            window=window, path_to_plot=path_to_plot,
+            xlabel="Year relative to start of first care demand",
+            ylabel="Difference in monthly gross labor income",
+            endogenous_ylim=True,
+        )
+
+
+for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
+
+    @pytask.mark.publication_event_study
+    @pytask.mark.publication_counterfactual
+    @pytask.mark.publication
+    @pytask.task(id=f"{age_label_val}_labor_income_first_care_demand_back_to_Jan7")
+    def task_plot_event_study_labor_income_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7(  # noqa: E501
+        age_min: int | None = age_min_val,
+        age_max: int | None = age_max_val,
+        path_to_original_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_estimated_params_back_to_Jan7.pkl",
+        path_to_no_care_demand_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_no_care_demand_back_to_Jan7.pkl",
+        path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+        path_to_plot: Annotated[Path, Product] = BLD
+        / "figures"
+        / "publication"
+        / "counterfactual"
+        / "event_study"
+        / "labor_income"
+        / "total_caregiving_years"
+        / (
+            f"back_to_Jan7_event_study_monthly_gross_labor_income_by_distance_to_first_care_demand_"
+            f"total_caregiving_{age_label_val}.pdf"
+        ),
+        ever_caregivers: bool = True,
+        ever_care_demand: bool = False,
+        window: int = 20,
+    ) -> None:
+        """Event study: monthly gross labor income difference by distance to first care demand (total care years 1–5+), back_to_Jan7."""
+        with path_to_specs.open("rb") as f:
+            specs = pickle.load(f)
+        start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
+        df_o, df_c = prepare_dataframes_simple(
+            pd.read_pickle(path_to_original_data),
+            pd.read_pickle(path_to_no_care_demand_data),
+            ever_caregivers,
+            ever_care_demand,
+        )
+        o_out = (
+            df_o["gross_labor_income"].astype(float) / 12.0
+            if "gross_labor_income" in df_o.columns
+            else pd.Series(0.0, index=df_o.index)
+        )
+        c_out = (
+            df_c["gross_labor_income"].astype(float) / 12.0
+            if "gross_labor_income" in df_c.columns
+            else pd.Series(0.0, index=df_c.index)
+        )
+        _, prof_diff, p1, p2, p3, p4, p5 = (
+            event_study_total_caregiving_merged_and_profiles(
+                df_o, df_c, o_out, c_out, window, age_min, age_max,
+                "care_demand", start_age, end_age_caregiving,
+            )
+        )
+        plot_outcome_difference_by_distance_total_caregiving(
+            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
+            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
+            window=window, path_to_plot=path_to_plot,
+            xlabel="Year relative to start of first care demand",
+            ylabel="Difference in monthly gross labor income",
+            endogenous_ylim=True,
+        )
+
+
+for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
+
+    @pytask.mark.publication_event_study
+    @pytask.mark.publication_counterfactual
+    @pytask.mark.publication
+    @pytask.task(id=f"{age_label_val}_labor_income_first_caregiving_spell_estimated_params")
+    def task_plot_event_study_labor_income_by_distance_to_first_caregiving_spell_total_caregiving(  # noqa: E501
+        age_min: int | None = age_min_val,
+        age_max: int | None = age_max_val,
+        path_to_original_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_estimated_params.pkl",
+        path_to_no_care_demand_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_no_care_demand.pkl",
+        path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+        path_to_plot: Annotated[Path, Product] = BLD
+        / "figures"
+        / "publication"
+        / "counterfactual"
+        / "event_study"
+        / "labor_income"
+        / "total_caregiving_years"
+        / (
+            f"event_study_monthly_gross_labor_income_by_distance_to_first_caregiving_spell_"
+            f"total_caregiving_{age_label_val}.pdf"
+        ),
+        ever_caregivers: bool = True,
+        ever_care_demand: bool = False,
+        window: int = 20,
+    ) -> None:
+        """Event study: monthly gross labor income difference by distance to first caregiving spell (total care years 1–5+)."""
+        with path_to_specs.open("rb") as f:
+            specs = pickle.load(f)
+        start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
+        df_o, df_c = prepare_dataframes_simple(
+            pd.read_pickle(path_to_original_data),
+            pd.read_pickle(path_to_no_care_demand_data),
+            ever_caregivers,
+            ever_care_demand,
+        )
+        o_out = (
+            df_o["gross_labor_income"].astype(float) / 12.0
+            if "gross_labor_income" in df_o.columns
+            else pd.Series(0.0, index=df_o.index)
+        )
+        c_out = (
+            df_c["gross_labor_income"].astype(float) / 12.0
+            if "gross_labor_income" in df_c.columns
+            else pd.Series(0.0, index=df_c.index)
+        )
+        _, prof_diff, p1, p2, p3, p4, p5 = (
+            event_study_total_caregiving_merged_and_profiles(
+                df_o, df_c, o_out, c_out, window, age_min, age_max,
+                "caregiving_spell", start_age, end_age_caregiving,
+            )
+        )
+        plot_outcome_difference_by_distance_total_caregiving(
+            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
+            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
+            window=window, path_to_plot=path_to_plot,
+            xlabel="Year relative to start of first caregiving spell",
+            ylabel="Difference in monthly gross labor income",
+            endogenous_ylim=True,
+        )
+
+
+for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
+
+    @pytask.mark.publication_event_study
+    @pytask.mark.publication_counterfactual
+    @pytask.mark.publication
+    @pytask.task(id=f"{age_label_val}_labor_income_first_caregiving_spell_back_to_Jan7")
+    def task_plot_event_study_labor_income_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7(  # noqa: E501
+        age_min: int | None = age_min_val,
+        age_max: int | None = age_max_val,
+        path_to_original_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_estimated_params_back_to_Jan7.pkl",
+        path_to_no_care_demand_data: Path = BLD
+        / "solve_and_simulate"
+        / "simulated_data_no_care_demand_back_to_Jan7.pkl",
+        path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+        path_to_plot: Annotated[Path, Product] = BLD
+        / "figures"
+        / "publication"
+        / "counterfactual"
+        / "event_study"
+        / "labor_income"
+        / "total_caregiving_years"
+        / (
+            f"back_to_Jan7_event_study_monthly_gross_labor_income_by_distance_to_first_caregiving_spell_"
+            f"total_caregiving_{age_label_val}.pdf"
+        ),
+        ever_caregivers: bool = True,
+        ever_care_demand: bool = False,
+        window: int = 20,
+    ) -> None:
+        """Event study: monthly gross labor income difference by distance to first caregiving spell (total care years 1–5+), back_to_Jan7."""
+        with path_to_specs.open("rb") as f:
+            specs = pickle.load(f)
+        start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
+        df_o, df_c = prepare_dataframes_simple(
+            pd.read_pickle(path_to_original_data),
+            pd.read_pickle(path_to_no_care_demand_data),
+            ever_caregivers,
+            ever_care_demand,
+        )
+        o_out = (
+            df_o["gross_labor_income"].astype(float) / 12.0
+            if "gross_labor_income" in df_o.columns
+            else pd.Series(0.0, index=df_o.index)
+        )
+        c_out = (
+            df_c["gross_labor_income"].astype(float) / 12.0
+            if "gross_labor_income" in df_c.columns
+            else pd.Series(0.0, index=df_c.index)
+        )
+        _, prof_diff, p1, p2, p3, p4, p5 = (
+            event_study_total_caregiving_merged_and_profiles(
+                df_o, df_c, o_out, c_out, window, age_min, age_max,
+                "caregiving_spell", start_age, end_age_caregiving,
+            )
+        )
+        plot_outcome_difference_by_distance_total_caregiving(
+            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
+            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
+            window=window, path_to_plot=path_to_plot,
+            xlabel="Year relative to start of first caregiving spell",
+            ylabel="Difference in monthly gross labor income",
+            endogenous_ylim=True,
+        )
 
 
 def plot_outcome_difference_by_distance_total_caregiving(  # noqa: PLR0913
@@ -445,7 +1479,7 @@ def plot_outcome_difference_by_distance_total_caregiving(  # noqa: PLR0913
     plt.close()
 
 
-def _event_study_total_caregiving_merged_and_profiles(
+def event_study_total_caregiving_merged_and_profiles(
     df_o: pd.DataFrame,
     df_c: pd.DataFrame,
     outcome_o_series: pd.Series,
@@ -455,6 +1489,7 @@ def _event_study_total_caregiving_merged_and_profiles(
     age_max: int | None,
     event_type: Literal["care_demand", "caregiving_spell"],
     start_age: int,
+    end_age_caregiving: int,
 ) -> tuple[
     pd.DataFrame,
     pd.DataFrame,
@@ -483,7 +1518,7 @@ def _event_study_total_caregiving_merged_and_profiles(
             on=["agent", "period"],
             how="left",
         )
-        df_o_dist = _add_distance_to_first_care_demand(df_o)
+        df_o_dist = add_distance_to_first_care_demand(df_o)
         dist_col_raw = "first_care_demand_period"
         age_col = "age_at_first_care_demand"
         care_demand_mask = df_o["care_demand"] > 0
@@ -491,7 +1526,7 @@ def _event_study_total_caregiving_merged_and_profiles(
             df_o, care_demand_mask, "age_at_first_care_demand"
         )
     else:
-        df_o_dist = _add_distance_to_first_care(df_o)
+        df_o_dist = add_distance_to_first_care(df_o)
         dist_col_raw = "first_care_period"
         age_col = "age_at_first_care"
         caregiving_mask = df_o["choice"].isin(care_codes)
@@ -530,8 +1565,8 @@ def _event_study_total_caregiving_merged_and_profiles(
         agents_3_year,
         agents_4_year,
         agents_5_year,
-    ) = _identify_agents_by_total_caregiving_over_lifecycle(
-        df_o, start_age, MAX_AGE_CAREGIVING
+    ) = identify_agents_by_total_caregiving_over_lifecycle(
+        df_o, start_age, end_age_caregiving
     )
 
     def _prof_for_agents(agents: np.ndarray) -> pd.DataFrame:

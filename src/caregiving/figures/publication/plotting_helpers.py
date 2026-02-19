@@ -8,6 +8,24 @@ import numpy as np
 import pandas as pd
 
 from caregiving.counterfactual.plotting_utils import ensure_agent_period
+from caregiving.model.shared import INFORMAL_CARE
+
+
+def add_distance_to_first_care(df_original: pd.DataFrame) -> pd.DataFrame:
+    """Add distance_to_first_care column; 0 is first period providing informal care."""
+    df = df_original.reset_index(drop=True)
+    df = ensure_agent_period(df)
+    care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
+    caregiving_mask = df["choice"].isin(care_codes)
+    first_care = (
+        df.loc[caregiving_mask, ["agent", "period"]]
+        .sort_values(["agent", "period"])
+        .drop_duplicates("agent")
+        .rename(columns={"period": "first_care_period"})
+    )
+    out = df.merge(first_care, on="agent", how="left")
+    out["distance_to_first_care"] = out["period"] - out["first_care_period"]
+    return out
 
 
 def add_distance_to_first_care_demand(df_original: pd.DataFrame) -> pd.DataFrame:

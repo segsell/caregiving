@@ -34,11 +34,9 @@ from caregiving.counterfactual.plotting_utils import (
     ensure_agent_period,
     prepare_dataframes_for_comparison,
 )
-from caregiving.counterfactual.task_plot_labor_supply_differences import (
-    _add_distance_to_first_care,
-)
-from caregiving.counterfactual.task_plot_labor_supply_differences_no_care_demand import (  # noqa: E501
-    _add_distance_to_first_care_demand,
+from caregiving.counterfactual.plotting_helpers import (
+    add_distance_to_first_care,
+    add_distance_to_first_care_demand,
 )
 from caregiving.model.shared import DEAD, INFORMAL_CARE
 
@@ -138,7 +136,7 @@ def task_plot_matched_differences_by_distance_caregiving_leave(  # noqa: PLR0915
         merged["diff_caregiving_leave_top_up"] = merged["caregiving_leave_top_up_cg"]
 
     # Distance to first care in caregiving-leave scenario
-    df_cg_dist = _add_distance_to_first_care(df_cg)
+    df_cg_dist = add_distance_to_first_care(df_cg)
     dist_map = (
         df_cg_dist.groupby("agent", observed=False)["first_care_period"]
         .first()
@@ -333,7 +331,7 @@ def task_plot_matched_differences_by_age_at_first_care_cg_leave(  # noqa: PLR091
     if "caregiving_leave_top_up" in cg_outcomes:
         merged["diff_caregiving_leave_top_up"] = merged["caregiving_leave_top_up_o"]
 
-    df_cg_dist = _add_distance_to_first_care(df_cg)
+    df_cg_dist = add_distance_to_first_care(df_cg)
     dist_map = (
         df_cg_dist.groupby("agent", observed=False)["first_care_period"]
         .first()
@@ -646,7 +644,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_cg_leave(  # noqa: P
     if "caregiving_leave_top_up" in cg_outcomes:
         merged["diff_caregiving_leave_top_up"] = merged["caregiving_leave_top_up_o"]
 
-    df_cg_dist = _add_distance_to_first_care(df_cg)
+    df_cg_dist = add_distance_to_first_care(df_cg)
     dist_map = (
         df_cg_dist.groupby("agent", observed=False)["first_care_period"]
         .first()
@@ -992,7 +990,7 @@ def task_plot_matched_differences_by_age_at_first_care_demand_cg_leave(  # noqa:
     if "caregiving_leave_top_up" in cg_outcomes:
         merged["diff_caregiving_leave_top_up"] = merged["caregiving_leave_top_up_o"]
 
-    df_cg_dist = _add_distance_to_first_care_demand(df_cg)
+    df_cg_dist = add_distance_to_first_care_demand(df_cg)
     dist_map = (
         df_cg_dist.groupby("agent", observed=False)["first_care_demand_period"]
         .first()
@@ -1346,7 +1344,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_cg_leave(  # 
     if "caregiving_leave_top_up" in cg_outcomes:
         merged["diff_caregiving_leave_top_up"] = merged["caregiving_leave_top_up_o"]
 
-    df_cg_dist = _add_distance_to_first_care_demand(df_cg)
+    df_cg_dist = add_distance_to_first_care_demand(df_cg)
     dist_map = (
         df_cg_dist.groupby("agent", observed=False)["first_care_demand_period"]
         .first()
@@ -1750,7 +1748,7 @@ def task_plot_matched_differences_by_distance_to_first_care_all_outcomes(  # noq
         merged["diff_caregiving_leave_top_up"] = merged["caregiving_leave_top_up_o"]
         outcome_names.append("caregiving_leave_top_up")
 
-    df_cg_dist = _add_distance_to_first_care(df_cg)
+    df_cg_dist = add_distance_to_first_care(df_cg)
     dist_map = (
         df_cg_dist.groupby("agent", observed=False)["first_care_period"]
         .first()
@@ -2061,7 +2059,7 @@ def task_plot_matched_differences_by_distance_to_first_care_demand_all_outcomes(
         merged["diff_caregiving_leave_top_up"] = merged["caregiving_leave_top_up_o"]
         outcome_names.append("caregiving_leave_top_up")
 
-    df_cg_dist = _add_distance_to_first_care_demand(df_cg)
+    df_cg_dist = add_distance_to_first_care_demand(df_cg)
     dist_map = (
         df_cg_dist.groupby("agent", observed=False)["first_care_demand_period"]
         .first()
@@ -2377,7 +2375,7 @@ def task_plot_matched_differences_by_distance_to_first_care_all_outcomes_vs_base
         merged["diff_caregiving_leave_top_up"] = merged["caregiving_leave_top_up_o"]
         outcome_names.append("caregiving_leave_top_up")
 
-    df_cg_dist = _add_distance_to_first_care(df_cg)
+    df_cg_dist = add_distance_to_first_care(df_cg)
     dist_map = (
         df_cg_dist.groupby("agent", observed=False)["first_care_period"]
         .first()
@@ -2686,7 +2684,7 @@ def task_plot_matched_differences_by_distance_to_first_care_demand_all_outcomes_
         merged["diff_caregiving_leave_top_up"] = merged["caregiving_leave_top_up_o"]
         outcome_names.append("caregiving_leave_top_up")
 
-    df_cg_dist = _add_distance_to_first_care_demand(df_cg)
+    df_cg_dist = add_distance_to_first_care_demand(df_cg)
     dist_map = (
         df_cg_dist.groupby("agent", observed=False)["first_care_demand_period"]
         .first()
@@ -2970,7 +2968,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_cg_leave_vs_baseline
     if "caregiving_leave_top_up" in cg_outcomes:
         merged["diff_caregiving_leave_top_up"] = merged["caregiving_leave_top_up_o"]
 
-    df_cg_dist = _add_distance_to_first_care(df_cg)
+    df_cg_dist = add_distance_to_first_care(df_cg)
     dist_map = (
         df_cg_dist.groupby("agent", observed=False)["first_care_period"]
         .first()
@@ -3315,7 +3313,7 @@ def task_plot_matched_differences_by_age_at_first_care_demand_cg_leave_vs_baseli
     if "caregiving_leave_top_up" in cg_outcomes:
         merged["diff_caregiving_leave_top_up"] = merged["caregiving_leave_top_up_o"]
 
-    df_cg_dist = _add_distance_to_first_care_demand(df_cg)
+    df_cg_dist = add_distance_to_first_care_demand(df_cg)
     dist_map = (
         df_cg_dist.groupby("agent", observed=False)["first_care_demand_period"]
         .first()
@@ -3668,7 +3666,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_cg_leave_vs_b
     if "caregiving_leave_top_up" in cg_outcomes:
         merged["diff_caregiving_leave_top_up"] = merged["caregiving_leave_top_up_o"]
 
-    df_cg_dist = _add_distance_to_first_care_demand(df_cg)
+    df_cg_dist = add_distance_to_first_care_demand(df_cg)
     dist_map = (
         df_cg_dist.groupby("agent", observed=False)["first_care_demand_period"]
         .first()

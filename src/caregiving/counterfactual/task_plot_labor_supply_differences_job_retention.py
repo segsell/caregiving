@@ -33,11 +33,9 @@ from caregiving.counterfactual.plotting_utils import (
     ensure_agent_period,
     prepare_dataframes_for_comparison,
 )
-from caregiving.counterfactual.task_plot_labor_supply_differences import (
-    _add_distance_to_first_care,
-)
-from caregiving.counterfactual.task_plot_labor_supply_differences_no_care_demand import (  # noqa: E402, E501
-    _add_distance_to_first_care_demand,
+from caregiving.counterfactual.plotting_helpers import (
+    add_distance_to_first_care,
+    add_distance_to_first_care_demand,
 )
 from caregiving.model.shared import DEAD, INFORMAL_CARE
 
@@ -120,7 +118,7 @@ def task_plot_matched_differences_by_distance(  # noqa: PLR0915, E501
     merged["diff_savings_rate"] = merged["savings_rate_jr"] - merged["savings_rate_ncd"]
 
     # Compute distance in job retention and attach
-    df_jr_dist = _add_distance_to_first_care(df_jr)
+    df_jr_dist = add_distance_to_first_care(df_jr)
     dist_map = (
         df_jr_dist.groupby("agent", observed=False)["first_care_period"]
         .first()
@@ -278,7 +276,7 @@ def task_plot_matched_differences_by_age_at_first_care(  # noqa: PLR0915, E501
         )
 
     # Compute distance and age at first care from job retention
-    df_jr_dist = _add_distance_to_first_care(df_jr)
+    df_jr_dist = add_distance_to_first_care(df_jr)
 
     # Get first care period for each agent
     dist_map = (
@@ -518,7 +516,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care(  # noqa: PLR0915, E
         )
 
     # Compute distance and age at first care from job retention
-    df_jr_dist = _add_distance_to_first_care(df_jr)
+    df_jr_dist = add_distance_to_first_care(df_jr)
 
     # Get first care period for each agent
     dist_map = (
@@ -723,7 +721,7 @@ def task_plot_matched_differences_by_distance_vs_baseline(  # noqa: PLR0915, E50
     )
 
     # Compute distance in job retention and attach
-    df_jr_dist = _add_distance_to_first_care(df_jr)
+    df_jr_dist = add_distance_to_first_care(df_jr)
     dist_map = (
         df_jr_dist.groupby("agent", observed=False)["first_care_period"]
         .first()
@@ -881,7 +879,7 @@ def task_plot_matched_differences_by_age_at_first_care_vs_baseline(
         )
 
     # Compute distance and age at first care from job retention
-    df_jr_dist = _add_distance_to_first_care(df_jr)
+    df_jr_dist = add_distance_to_first_care(df_jr)
 
     # Get first care period for each agent
     dist_map = (
@@ -1127,7 +1125,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_vs_baseline(
         )
 
     # Compute distance and age at first care from job retention
-    df_jr_dist = _add_distance_to_first_care(df_jr)
+    df_jr_dist = add_distance_to_first_care(df_jr)
 
     # Get first care period for each agent
     dist_map = (
@@ -1372,7 +1370,7 @@ def task_plot_matched_differences_by_distance_by_care_demand(  # noqa: PLR0915, 
         )
 
     # Compute distance to first care demand in job retention and attach
-    df_jr_dist = _add_distance_to_first_care_demand(df_jr)
+    df_jr_dist = add_distance_to_first_care_demand(df_jr)
     dist_map = (
         df_jr_dist.groupby("agent", observed=False)["first_care_demand_period"]
         .first()
@@ -1572,7 +1570,7 @@ def task_plot_matched_differences_by_age_at_first_care_demand(  # noqa: PLR0915,
         )
 
     # Compute distance and age at first care demand from job retention
-    df_jr_dist = _add_distance_to_first_care_demand(df_jr)
+    df_jr_dist = add_distance_to_first_care_demand(df_jr)
 
     # Get first care demand period for each agent
     dist_map = (
@@ -1844,7 +1842,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand(
         )
 
     # Compute distance and age at first care demand from job retention
-    df_jr_dist = _add_distance_to_first_care_demand(df_jr)
+    df_jr_dist = add_distance_to_first_care_demand(df_jr)
 
     # Get first care demand period for each agent
     dist_map = (
@@ -2056,7 +2054,7 @@ def task_plot_matched_differences_by_distance_by_care_demand_vs_baseline(
         )
 
     # Compute distance to first care demand in job retention and attach
-    df_jr_dist = _add_distance_to_first_care_demand(df_jr)
+    df_jr_dist = add_distance_to_first_care_demand(df_jr)
     dist_map = (
         df_jr_dist.groupby("agent", observed=False)["first_care_demand_period"]
         .first()
@@ -2254,7 +2252,7 @@ def task_plot_matched_differences_by_age_at_first_care_demand_vs_baseline(
         )
 
     # Compute distance and age at first care demand from job retention
-    df_jr_dist = _add_distance_to_first_care_demand(df_jr)
+    df_jr_dist = add_distance_to_first_care_demand(df_jr)
 
     # Get first care demand period for each agent
     dist_map = (
@@ -2486,7 +2484,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_vs_baseline(
         )
 
     # Compute distance and age at first care demand from job retention
-    df_jr_dist = _add_distance_to_first_care_demand(df_jr)
+    df_jr_dist = add_distance_to_first_care_demand(df_jr)
 
     # Get first care demand period for each agent
     dist_map = (

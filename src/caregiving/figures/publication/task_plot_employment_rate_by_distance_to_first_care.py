@@ -17,13 +17,13 @@ from pytask import Product
 
 from caregiving.config import BLD
 from caregiving.counterfactual.plotting_helpers import (
+    add_distance_to_first_care,
+    add_distance_to_first_care_demand,
     calculate_simple_outcomes,
     ensure_agent_period,
     get_age_at_first_event,
+    identify_agents_by_total_caregiving_over_lifecycle,
     prepare_dataframes_simple,
-)
-from caregiving.counterfactual.task_plot_labor_supply_differences import (
-    _add_distance_to_first_care,
 )
 from caregiving.figures.publication.plotting_helpers import (
     identify_agents_by_duration_at_least,
@@ -32,32 +32,6 @@ from caregiving.model.shared import (
     ALL_CARE,
     INFORMAL_CARE,
 )
-
-# Max age for caregiving (inclusive); from specs end_age_caregiving
-MAX_AGE_CAREGIVING = 70
-
-
-def _add_distance_to_first_care_demand(df_original: pd.DataFrame) -> pd.DataFrame:
-    """Add distance_to_first_care_demand column.
-
-    Sets 0 as first time care_demand > 0 (light or intensive care demand).
-    """
-    # Flatten any existing index to avoid column/index name ambiguity
-    df = df_original.reset_index(drop=True)
-    df = ensure_agent_period(df)
-    # Find first period where care_demand > 0
-    care_demand_mask = df["care_demand"] > 0
-    first_care_demand = (
-        df.loc[care_demand_mask, ["agent", "period"]]
-        .sort_values(["agent", "period"])
-        .drop_duplicates("agent")
-        .rename(columns={"period": "first_care_demand_period"})
-    )
-    out = df.merge(first_care_demand, on="agent", how="left")
-    out["distance_to_first_care_demand"] = (
-        out["period"] - out["first_care_demand_period"]
-    )
-    return out
 
 
 def _identify_agents_by_duration(
@@ -256,43 +230,6 @@ def _identify_agents_by_duration(
         np.array(agents_3_year),
         np.array(agents_4_year),
     )
-
-
-def _identify_agents_by_total_caregiving_over_lifecycle(
-    df_full: pd.DataFrame,
-    start_age: int,
-    max_age_caregiving: int = MAX_AGE_CAREGIVING,
-    informal_care_choices: list | None = None,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Identify agents by total (cumulative) caregiving years over lifecycle up to max_age.
-
-    Counts periods with informal caregiving from start until age <= max_age_caregiving.
-    Groups: exactly 1, 2, 3, 4, or 5+ total years. Not necessarily consecutive.
-
-    Args:
-        df_full: Full DataFrame with agent, period, choice columns
-        start_age: Agent age at period 0 (age = period + start_age)
-        max_age_caregiving: Max age (inclusive) for caregiving; default MAX_AGE_CAREGIVING
-        informal_care_choices: Choice codes for informal care; default INFORMAL_CARE
-
-    Returns:
-        Tuple of (agents_1_year, agents_2_year, agents_3_year, agents_4_year, agents_5_year)
-    """
-    if informal_care_choices is None:
-        informal_care_choices = np.asarray(INFORMAL_CARE).ravel().tolist()
-    df = df_full.copy()
-    df["age"] = df["period"] + start_age
-    df = df[df["age"] <= max_age_caregiving]
-    df["current_caregiving"] = df["choice"].isin(informal_care_choices).astype(int)
-    total_care = (
-        df.groupby("agent", observed=False)["current_caregiving"].sum().astype(int)
-    )
-    agents_1_year = total_care[total_care == 1].index.to_numpy()
-    agents_2_year = total_care[total_care == 2].index.to_numpy()
-    agents_3_year = total_care[total_care == 3].index.to_numpy()
-    agents_4_year = total_care[total_care == 4].index.to_numpy()
-    agents_5_year = total_care[total_care >= 5].index.to_numpy()
-    return (agents_1_year, agents_2_year, agents_3_year, agents_4_year, agents_5_year)
 
 
 # ---------------------------------------------------------------------------
@@ -499,7 +436,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
         # Compute distance to first care demand in baseline and attach
-        df_o_dist = _add_distance_to_first_care_demand(df_o)
+        df_o_dist = add_distance_to_first_care_demand(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_demand_period"]
             .first()
@@ -728,7 +665,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
         # Compute distance to first care demand in baseline and attach
-        df_o_dist = _add_distance_to_first_care_demand(df_o)
+        df_o_dist = add_distance_to_first_care_demand(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_demand_period"]
             .first()
@@ -972,7 +909,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
         # Compute distance to first care demand in baseline and attach
-        df_o_dist = _add_distance_to_first_care_demand(df_o)
+        df_o_dist = add_distance_to_first_care_demand(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_demand_period"]
             .first()
@@ -1219,7 +1156,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
         # Compute distance to first care demand in baseline and attach
-        df_o_dist = _add_distance_to_first_care_demand(df_o)
+        df_o_dist = add_distance_to_first_care_demand(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_demand_period"]
             .first()
@@ -1395,6 +1332,7 @@ for age_min_val, age_max_val, age_label_val in (
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
 
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -1416,7 +1354,7 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
-        df_o_dist = _add_distance_to_first_care_demand(df_o)
+        df_o_dist = add_distance_to_first_care_demand(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_demand_period"]
             .first()
@@ -1459,8 +1397,8 @@ for age_min_val, age_max_val, age_label_val in (
             agents_3_year,
             agents_4_year,
             agents_5_year,
-        ) = _identify_agents_by_total_caregiving_over_lifecycle(
-            df_o, start_age, MAX_AGE_CAREGIVING
+        ) = identify_agents_by_total_caregiving_over_lifecycle(
+            df_o, start_age, end_age_caregiving
         )
 
         def _prof_for_agents(agents):
@@ -1551,6 +1489,7 @@ for age_min_val, age_max_val, age_label_val in (
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
 
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -1572,7 +1511,7 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
-        df_o_dist = _add_distance_to_first_care_demand(df_o)
+        df_o_dist = add_distance_to_first_care_demand(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_demand_period"]
             .first()
@@ -1615,8 +1554,8 @@ for age_min_val, age_max_val, age_label_val in (
             agents_3_year,
             agents_4_year,
             agents_5_year,
-        ) = _identify_agents_by_total_caregiving_over_lifecycle(
-            df_o, start_age, MAX_AGE_CAREGIVING
+        ) = identify_agents_by_total_caregiving_over_lifecycle(
+            df_o, start_age, end_age_caregiving
         )
 
         def _prof_for_agents(agents):
@@ -1707,6 +1646,7 @@ for age_min_val, age_max_val, age_label_val in (
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
 
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -1736,7 +1676,7 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
-        df_o_dist = _add_distance_to_first_care_demand(df_o)
+        df_o_dist = add_distance_to_first_care_demand(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_demand_period"]
             .first()
@@ -1779,8 +1719,8 @@ for age_min_val, age_max_val, age_label_val in (
             agents_3_year,
             agents_4_year,
             agents_5_year,
-        ) = _identify_agents_by_total_caregiving_over_lifecycle(
-            df_o, start_age, MAX_AGE_CAREGIVING
+        ) = identify_agents_by_total_caregiving_over_lifecycle(
+            df_o, start_age, end_age_caregiving
         )
 
         def _prof_for_agents(agents):
@@ -1874,6 +1814,7 @@ for age_min_val, age_max_val, age_label_val in (
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
 
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -1903,7 +1844,7 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
-        df_o_dist = _add_distance_to_first_care_demand(df_o)
+        df_o_dist = add_distance_to_first_care_demand(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_demand_period"]
             .first()
@@ -1946,8 +1887,8 @@ for age_min_val, age_max_val, age_label_val in (
             agents_3_year,
             agents_4_year,
             agents_5_year,
-        ) = _identify_agents_by_total_caregiving_over_lifecycle(
-            df_o, start_age, MAX_AGE_CAREGIVING
+        ) = identify_agents_by_total_caregiving_over_lifecycle(
+            df_o, start_age, end_age_caregiving
         )
 
         def _prof_for_agents(agents):
@@ -2040,6 +1981,7 @@ for age_min_val, age_max_val, age_label_val in (
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
 
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -2061,7 +2003,7 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
-        df_o_dist = _add_distance_to_first_care_demand(df_o)
+        df_o_dist = add_distance_to_first_care_demand(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_demand_period"]
             .first()
@@ -2104,8 +2046,8 @@ for age_min_val, age_max_val, age_label_val in (
             agents_3_year,
             agents_4_year,
             agents_5_year,
-        ) = _identify_agents_by_total_caregiving_over_lifecycle(
-            df_o, start_age, MAX_AGE_CAREGIVING
+        ) = identify_agents_by_total_caregiving_over_lifecycle(
+            df_o, start_age, end_age_caregiving
         )
 
         def _prof_for_agents(agents):
@@ -2195,6 +2137,7 @@ for age_min_val, age_max_val, age_label_val in (
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
 
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -2216,7 +2159,7 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
-        df_o_dist = _add_distance_to_first_care_demand(df_o)
+        df_o_dist = add_distance_to_first_care_demand(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_demand_period"]
             .first()
@@ -2259,8 +2202,8 @@ for age_min_val, age_max_val, age_label_val in (
             agents_3_year,
             agents_4_year,
             agents_5_year,
-        ) = _identify_agents_by_total_caregiving_over_lifecycle(
-            df_o, start_age, MAX_AGE_CAREGIVING
+        ) = identify_agents_by_total_caregiving_over_lifecycle(
+            df_o, start_age, end_age_caregiving
         )
 
         def _prof_for_agents(agents):
@@ -2350,6 +2293,7 @@ for age_min_val, age_max_val, age_label_val in (
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
 
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -2379,7 +2323,7 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
-        df_o_dist = _add_distance_to_first_care_demand(df_o)
+        df_o_dist = add_distance_to_first_care_demand(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_demand_period"]
             .first()
@@ -2422,8 +2366,8 @@ for age_min_val, age_max_val, age_label_val in (
             agents_3_year,
             agents_4_year,
             agents_5_year,
-        ) = _identify_agents_by_total_caregiving_over_lifecycle(
-            df_o, start_age, MAX_AGE_CAREGIVING
+        ) = identify_agents_by_total_caregiving_over_lifecycle(
+            df_o, start_age, end_age_caregiving
         )
 
         def _prof_for_agents(agents):
@@ -2516,6 +2460,7 @@ for age_min_val, age_max_val, age_label_val in (
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
 
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -2545,7 +2490,7 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
-        df_o_dist = _add_distance_to_first_care_demand(df_o)
+        df_o_dist = add_distance_to_first_care_demand(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_demand_period"]
             .first()
@@ -2588,8 +2533,8 @@ for age_min_val, age_max_val, age_label_val in (
             agents_3_year,
             agents_4_year,
             agents_5_year,
-        ) = _identify_agents_by_total_caregiving_over_lifecycle(
-            df_o, start_age, MAX_AGE_CAREGIVING
+        ) = identify_agents_by_total_caregiving_over_lifecycle(
+            df_o, start_age, end_age_caregiving
         )
 
         def _prof_for_agents(agents):
@@ -2689,6 +2634,7 @@ for age_min_val, age_max_val, age_label_val in (
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
 
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -2705,7 +2651,7 @@ for age_min_val, age_max_val, age_label_val in (
         c_cols = df_c[["agent", "period"]].copy()
         c_cols["full_time_c"] = c_ft.astype(float)
         merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
-        df_o_dist = _add_distance_to_first_care(df_o)
+        df_o_dist = add_distance_to_first_care(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_period"]
             .first()
@@ -2742,8 +2688,8 @@ for age_min_val, age_max_val, age_label_val in (
             agents_3_year,
             agents_4_year,
             agents_5_year,
-        ) = _identify_agents_by_total_caregiving_over_lifecycle(
-            df_o, start_age, MAX_AGE_CAREGIVING
+        ) = identify_agents_by_total_caregiving_over_lifecycle(
+            df_o, start_age, end_age_caregiving
         )
         merged_1_year = merged[merged["agent"].isin(agents_1_year)].copy()
         prof_1_year = (
@@ -2849,6 +2795,7 @@ for age_min_val, age_max_val, age_label_val in (
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
 
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -2865,7 +2812,7 @@ for age_min_val, age_max_val, age_label_val in (
         c_cols = df_c[["agent", "period"]].copy()
         c_cols["part_time_c"] = c_pt.astype(float)
         merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
-        df_o_dist = _add_distance_to_first_care(df_o)
+        df_o_dist = add_distance_to_first_care(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_period"]
             .first()
@@ -2902,8 +2849,8 @@ for age_min_val, age_max_val, age_label_val in (
             agents_3_year,
             agents_4_year,
             agents_5_year,
-        ) = _identify_agents_by_total_caregiving_over_lifecycle(
-            df_o, start_age, MAX_AGE_CAREGIVING
+        ) = identify_agents_by_total_caregiving_over_lifecycle(
+            df_o, start_age, end_age_caregiving
         )
         merged_1_year = merged[merged["agent"].isin(agents_1_year)].copy()
         prof_1_year = (
@@ -3009,6 +2956,7 @@ for age_min_val, age_max_val, age_label_val in (
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
 
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -3033,7 +2981,7 @@ for age_min_val, age_max_val, age_label_val in (
         c_cols = df_c[["agent", "period"]].copy()
         c_cols["working_hours_weekly_c"] = wh_c.values
         merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
-        df_o_dist = _add_distance_to_first_care(df_o)
+        df_o_dist = add_distance_to_first_care(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_period"]
             .first()
@@ -3070,8 +3018,8 @@ for age_min_val, age_max_val, age_label_val in (
             agents_3_year,
             agents_4_year,
             agents_5_year,
-        ) = _identify_agents_by_total_caregiving_over_lifecycle(
-            df_o, start_age, MAX_AGE_CAREGIVING
+        ) = identify_agents_by_total_caregiving_over_lifecycle(
+            df_o, start_age, end_age_caregiving
         )
         merged_1_year = merged[merged["agent"].isin(agents_1_year)].copy()
         prof_1_year = (
@@ -3178,6 +3126,7 @@ for age_min_val, age_max_val, age_label_val in (
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
 
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -3202,7 +3151,7 @@ for age_min_val, age_max_val, age_label_val in (
         c_cols = df_c[["agent", "period"]].copy()
         c_cols["monthly_gross_labor_income_c"] = inc_c.values
         merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
-        df_o_dist = _add_distance_to_first_care(df_o)
+        df_o_dist = add_distance_to_first_care(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_period"]
             .first()
@@ -3239,8 +3188,8 @@ for age_min_val, age_max_val, age_label_val in (
             agents_3_year,
             agents_4_year,
             agents_5_year,
-        ) = _identify_agents_by_total_caregiving_over_lifecycle(
-            df_o, start_age, MAX_AGE_CAREGIVING
+        ) = identify_agents_by_total_caregiving_over_lifecycle(
+            df_o, start_age, end_age_caregiving
         )
         merged_1_year = merged[merged["agent"].isin(agents_1_year)].copy()
         prof_1_year = (
@@ -3343,6 +3292,7 @@ for age_min_val, age_max_val, age_label_val in (
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
 
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -3359,7 +3309,7 @@ for age_min_val, age_max_val, age_label_val in (
         c_cols = df_c[["agent", "period"]].copy()
         c_cols["full_time_c"] = c_ft.astype(float)
         merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
-        df_o_dist = _add_distance_to_first_care(df_o)
+        df_o_dist = add_distance_to_first_care(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_period"]
             .first()
@@ -3396,8 +3346,8 @@ for age_min_val, age_max_val, age_label_val in (
             agents_3_year,
             agents_4_year,
             agents_5_year,
-        ) = _identify_agents_by_total_caregiving_over_lifecycle(
-            df_o, start_age, MAX_AGE_CAREGIVING
+        ) = identify_agents_by_total_caregiving_over_lifecycle(
+            df_o, start_age, end_age_caregiving
         )
         merged_1_year = merged[merged["agent"].isin(agents_1_year)].copy()
         prof_1_year = (
@@ -3499,6 +3449,7 @@ for age_min_val, age_max_val, age_label_val in (
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
 
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -3515,7 +3466,7 @@ for age_min_val, age_max_val, age_label_val in (
         c_cols = df_c[["agent", "period"]].copy()
         c_cols["part_time_c"] = c_pt.astype(float)
         merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
-        df_o_dist = _add_distance_to_first_care(df_o)
+        df_o_dist = add_distance_to_first_care(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_period"]
             .first()
@@ -3552,8 +3503,8 @@ for age_min_val, age_max_val, age_label_val in (
             agents_3_year,
             agents_4_year,
             agents_5_year,
-        ) = _identify_agents_by_total_caregiving_over_lifecycle(
-            df_o, start_age, MAX_AGE_CAREGIVING
+        ) = identify_agents_by_total_caregiving_over_lifecycle(
+            df_o, start_age, end_age_caregiving
         )
         merged_1_year = merged[merged["agent"].isin(agents_1_year)].copy()
         prof_1_year = (
@@ -3655,6 +3606,7 @@ for age_min_val, age_max_val, age_label_val in (
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
 
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -3679,7 +3631,7 @@ for age_min_val, age_max_val, age_label_val in (
         c_cols = df_c[["agent", "period"]].copy()
         c_cols["working_hours_weekly_c"] = wh_c.values
         merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
-        df_o_dist = _add_distance_to_first_care(df_o)
+        df_o_dist = add_distance_to_first_care(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_period"]
             .first()
@@ -3716,8 +3668,8 @@ for age_min_val, age_max_val, age_label_val in (
             agents_3_year,
             agents_4_year,
             agents_5_year,
-        ) = _identify_agents_by_total_caregiving_over_lifecycle(
-            df_o, start_age, MAX_AGE_CAREGIVING
+        ) = identify_agents_by_total_caregiving_over_lifecycle(
+            df_o, start_age, end_age_caregiving
         )
         merged_1_year = merged[merged["agent"].isin(agents_1_year)].copy()
         prof_1_year = (
@@ -3820,6 +3772,7 @@ for age_min_val, age_max_val, age_label_val in (
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
 
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -3844,7 +3797,7 @@ for age_min_val, age_max_val, age_label_val in (
         c_cols = df_c[["agent", "period"]].copy()
         c_cols["monthly_gross_labor_income_c"] = inc_c.values
         merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
-        df_o_dist = _add_distance_to_first_care(df_o)
+        df_o_dist = add_distance_to_first_care(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_period"]
             .first()
@@ -3881,8 +3834,8 @@ for age_min_val, age_max_val, age_label_val in (
             agents_3_year,
             agents_4_year,
             agents_5_year,
-        ) = _identify_agents_by_total_caregiving_over_lifecycle(
-            df_o, start_age, MAX_AGE_CAREGIVING
+        ) = identify_agents_by_total_caregiving_over_lifecycle(
+            df_o, start_age, end_age_caregiving
         )
         merged_1_year = merged[merged["agent"].isin(agents_1_year)].copy()
         prof_1_year = (
@@ -4048,7 +4001,7 @@ for age_min_val, age_max_val, age_label_val in (
         merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
 
         # Compute distance to first care in baseline and attach
-        df_o_dist = _add_distance_to_first_care(df_o)
+        df_o_dist = add_distance_to_first_care(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_period"]
             .first()
@@ -4241,7 +4194,7 @@ for age_min_val, age_max_val, age_label_val in (
         merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
 
         # Compute distance to first care in baseline and attach
-        df_o_dist = _add_distance_to_first_care(df_o)
+        df_o_dist = add_distance_to_first_care(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_period"]
             .first()
@@ -4474,11 +4427,12 @@ for age_min_val, age_max_val, age_label_val in (
 
         Sample restricted to ever caregivers (same as 1–5+ total care years). Data: estimated_params, no_care_demand.
         Event: t=0 = first care demand. Duration: 1,2,3,4,5+ = TOTAL caregiving years over
-        lifecycle (up to MAX_AGE_CAREGIVING), not necessarily consecutive.
+        lifecycle (up to end_age_caregiving from specs), not necessarily consecutive.
         """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
 
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -4500,7 +4454,7 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
-        df_o_dist = _add_distance_to_first_care_demand(df_o)
+        df_o_dist = add_distance_to_first_care_demand(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_demand_period"]
             .first()
@@ -4543,8 +4497,8 @@ for age_min_val, age_max_val, age_label_val in (
             agents_3_year,
             agents_4_year,
             agents_5_year,
-        ) = _identify_agents_by_total_caregiving_over_lifecycle(
-            df_o, start_age, MAX_AGE_CAREGIVING
+        ) = identify_agents_by_total_caregiving_over_lifecycle(
+            df_o, start_age, end_age_caregiving
         )
 
         def _prof_for_agents(agents):
@@ -4629,11 +4583,12 @@ for age_min_val, age_max_val, age_label_val in (
 
         Sample restricted to ever caregivers. Data: estimated_params_Jan7, no_care_demand_back_to_Jan7.
         Event: t=0 = first care demand. Duration: 1,2,3,4,5+ = TOTAL caregiving years over
-        lifecycle (up to MAX_AGE_CAREGIVING), not necessarily consecutive.
+        lifecycle (up to end_age_caregiving from specs), not necessarily consecutive.
         """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
 
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -4655,7 +4610,7 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
-        df_o_dist = _add_distance_to_first_care_demand(df_o)
+        df_o_dist = add_distance_to_first_care_demand(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_demand_period"]
             .first()
@@ -4698,8 +4653,8 @@ for age_min_val, age_max_val, age_label_val in (
             agents_3_year,
             agents_4_year,
             agents_5_year,
-        ) = _identify_agents_by_total_caregiving_over_lifecycle(
-            df_o, start_age, MAX_AGE_CAREGIVING
+        ) = identify_agents_by_total_caregiving_over_lifecycle(
+            df_o, start_age, end_age_caregiving
         )
 
         def _prof_for_agents(agents):
@@ -4786,11 +4741,12 @@ for age_min_val, age_max_val, age_label_val in (
 
         Sample restricted to ever caregivers. Data: estimated_params, no_care_demand.
         Event: t=0 = first caregiving spell. Duration: 1,2,3,4,5+ = TOTAL caregiving years
-        over lifecycle (up to MAX_AGE_CAREGIVING), not necessarily consecutive.
+        over lifecycle (up to end_age_caregiving from specs), not necessarily consecutive.
         """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
 
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -4807,7 +4763,7 @@ for age_min_val, age_max_val, age_label_val in (
         c_cols = df_c[["agent", "period"]].copy()
         c_cols["work_c"] = c_work
         merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
-        df_o_dist = _add_distance_to_first_care(df_o)
+        df_o_dist = add_distance_to_first_care(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_period"]
             .first()
@@ -4847,8 +4803,8 @@ for age_min_val, age_max_val, age_label_val in (
             agents_3_year,
             agents_4_year,
             agents_5_year,
-        ) = _identify_agents_by_total_caregiving_over_lifecycle(
-            df_o, start_age, MAX_AGE_CAREGIVING
+        ) = identify_agents_by_total_caregiving_over_lifecycle(
+            df_o, start_age, end_age_caregiving
         )
 
         merged_1_year = merged[merged["agent"].isin(agents_1_year)].copy()
@@ -4951,11 +4907,12 @@ for age_min_val, age_max_val, age_label_val in (
 
         Sample restricted to ever caregivers. Data: estimated_params_Jan7, no_care_demand_back_to_Jan7.
         Event: t=0 = first caregiving spell. Duration: 1,2,3,4,5+ = TOTAL caregiving years
-        over lifecycle (up to MAX_AGE_CAREGIVING), not necessarily consecutive.
+        over lifecycle (up to end_age_caregiving from specs), not necessarily consecutive.
         """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
 
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -4972,7 +4929,7 @@ for age_min_val, age_max_val, age_label_val in (
         c_cols = df_c[["agent", "period"]].copy()
         c_cols["work_c"] = c_work
         merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
-        df_o_dist = _add_distance_to_first_care(df_o)
+        df_o_dist = add_distance_to_first_care(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_period"]
             .first()
@@ -5012,8 +4969,8 @@ for age_min_val, age_max_val, age_label_val in (
             agents_3_year,
             agents_4_year,
             agents_5_year,
-        ) = _identify_agents_by_total_caregiving_over_lifecycle(
-            df_o, start_age, MAX_AGE_CAREGIVING
+        ) = identify_agents_by_total_caregiving_over_lifecycle(
+            df_o, start_age, end_age_caregiving
         )
 
         merged_1_year = merged[merged["agent"].isin(agents_1_year)].copy()
@@ -5117,11 +5074,12 @@ for age_min_val, age_max_val, age_label_val in (
 
         Sample restricted to ever caregivers. Data: estimated_params_back_to_Jan7, no_care_demand_back_to_Jan7.
         Event: t=0 = first care demand. Duration: 1,2,3,4,5+ = TOTAL caregiving years over
-        lifecycle (up to MAX_AGE_CAREGIVING), not necessarily consecutive.
+        lifecycle (up to end_age_caregiving from specs), not necessarily consecutive.
         """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
 
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -5143,7 +5101,7 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
-        df_o_dist = _add_distance_to_first_care_demand(df_o)
+        df_o_dist = add_distance_to_first_care_demand(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_demand_period"]
             .first()
@@ -5186,8 +5144,8 @@ for age_min_val, age_max_val, age_label_val in (
             agents_3_year,
             agents_4_year,
             agents_5_year,
-        ) = _identify_agents_by_total_caregiving_over_lifecycle(
-            df_o, start_age, MAX_AGE_CAREGIVING
+        ) = identify_agents_by_total_caregiving_over_lifecycle(
+            df_o, start_age, end_age_caregiving
         )
 
         def _prof_for_agents(agents):
@@ -5273,11 +5231,12 @@ for age_min_val, age_max_val, age_label_val in (
 
         Sample restricted to ever caregivers. Data: estimated_params_back_to_Jan7, no_care_demand_back_to_Jan7.
         Event: t=0 = first caregiving spell. Duration: 1,2,3,4,5+ = TOTAL caregiving years
-        over lifecycle (up to MAX_AGE_CAREGIVING), not necessarily consecutive.
+        over lifecycle (up to end_age_caregiving from specs), not necessarily consecutive.
         """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
+        end_age_caregiving = int(specs["end_age_caregiving"])
 
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -5294,7 +5253,7 @@ for age_min_val, age_max_val, age_label_val in (
         c_cols = df_c[["agent", "period"]].copy()
         c_cols["work_c"] = c_work
         merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
-        df_o_dist = _add_distance_to_first_care(df_o)
+        df_o_dist = add_distance_to_first_care(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_period"]
             .first()
@@ -5334,8 +5293,8 @@ for age_min_val, age_max_val, age_label_val in (
             agents_3_year,
             agents_4_year,
             agents_5_year,
-        ) = _identify_agents_by_total_caregiving_over_lifecycle(
-            df_o, start_age, MAX_AGE_CAREGIVING
+        ) = identify_agents_by_total_caregiving_over_lifecycle(
+            df_o, start_age, end_age_caregiving
         )
 
         merged_1_year = merged[merged["agent"].isin(agents_1_year)].copy()

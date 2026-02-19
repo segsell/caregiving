@@ -153,6 +153,78 @@ def get_age_at_first_event(
     return first_event[["agent", age_col_name]]
 
 
+def add_distance_to_first_care(df_original: pd.DataFrame) -> pd.DataFrame:
+    """Add distance_to_first_care column; 0 is first period providing informal care."""
+    df = df_original.reset_index(drop=True)
+    df = ensure_agent_period(df)
+    care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
+    caregiving_mask = df["choice"].isin(care_codes)
+    first_care = (
+        df.loc[caregiving_mask, ["agent", "period"]]
+        .sort_values(["agent", "period"])
+        .drop_duplicates("agent")
+        .rename(columns={"period": "first_care_period"})
+    )
+    out = df.merge(first_care, on="agent", how="left")
+    out["distance_to_first_care"] = out["period"] - out["first_care_period"]
+    return out
+
+
+def add_distance_to_first_care_demand(df_original: pd.DataFrame) -> pd.DataFrame:
+    """Add first_care_demand_period and distance; 0 is first period with care_demand > 0."""
+    df = df_original.reset_index(drop=True)
+    df = ensure_agent_period(df)
+    care_demand_mask = df["care_demand"] > 0
+    first_care_demand = (
+        df.loc[care_demand_mask, ["agent", "period"]]
+        .sort_values(["agent", "period"])
+        .drop_duplicates("agent")
+        .rename(columns={"period": "first_care_demand_period"})
+    )
+    out = df.merge(first_care_demand, on="agent", how="left")
+    out["distance_to_first_care_demand"] = (
+        out["period"] - out["first_care_demand_period"]
+    )
+    return out
+
+
+def identify_agents_by_total_caregiving_over_lifecycle(
+    df_full: pd.DataFrame,
+    start_age: int,
+    end_age_caregiving: int,
+    informal_care_choices: list | None = None,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Identify agents by total caregiving years over lifecycle up to end_age_caregiving.
+
+    Counts periods with informal caregiving from start until age <= end_age_caregiving.
+    Groups: exactly 1, 2, 3, 4, or 5+ total years (not necessarily consecutive).
+
+    Args:
+        df_full: DataFrame with agent, period, choice
+        start_age: Agent age at period 0 (age = period + start_age)
+        end_age_caregiving: Max age (inclusive) for caregiving; from specs.
+        informal_care_choices: Choice codes for informal care; default INFORMAL_CARE
+
+    Returns:
+        Tuple of (agents_1_year, agents_2_year, agents_3_year, agents_4_year, agents_5_year)
+    """
+    if informal_care_choices is None:
+        informal_care_choices = np.asarray(INFORMAL_CARE).ravel().tolist()
+    df = df_full.copy()
+    df["age"] = df["period"] + start_age
+    df = df[df["age"] <= end_age_caregiving]
+    df["current_caregiving"] = df["choice"].isin(informal_care_choices).astype(int)
+    total_care = (
+        df.groupby("agent", observed=False)["current_caregiving"].sum().astype(int)
+    )
+    agents_1_year = total_care[total_care == 1].index.to_numpy()
+    agents_2_year = total_care[total_care == 2].index.to_numpy()
+    agents_3_year = total_care[total_care == 3].index.to_numpy()
+    agents_4_year = total_care[total_care == 4].index.to_numpy()
+    agents_5_year = total_care[total_care >= 5].index.to_numpy()
+    return (agents_1_year, agents_2_year, agents_3_year, agents_4_year, agents_5_year)
+
+
 def get_distinct_colors(n: int) -> list[str]:
     """Get distinct colors for plotting.
 

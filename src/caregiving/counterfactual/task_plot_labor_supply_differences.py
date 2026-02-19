@@ -49,6 +49,7 @@ from caregiving.model.wealth_and_budget.wages import (
 from caregiving.model.wealth_and_budget.wages_no_care_demand import (
     calculate_gross_labor_income as calculate_gross_labor_income_ncd,
 )
+from caregiving.counterfactual.plotting_helpers import add_distance_to_first_care
 
 jax.config.update("jax_enable_x64", True)
 
@@ -590,24 +591,6 @@ def ensure_agent_period(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def _add_distance_to_first_care(df_original: pd.DataFrame) -> pd.DataFrame:
-    """Add distance_to_first_care column to original data where 0 is first care."""
-    # Flatten any existing index to avoid column/index name ambiguity
-    df = df_original.reset_index(drop=True)
-    df = ensure_agent_period(df)
-    care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
-    caregiving_mask = df["choice"].isin(care_codes)
-    first_care = (
-        df.loc[caregiving_mask, ["agent", "period"]]
-        .sort_values(["agent", "period"])
-        .drop_duplicates("agent")
-        .rename(columns={"period": "first_care_period"})
-    )
-    out = df.merge(first_care, on="agent", how="left")
-    out["distance_to_first_care"] = out["period"] - out["first_care_period"]
-    return out
-
-
 def _compute_total_income_like_sim(df: pd.DataFrame) -> pd.DataFrame:
     """Compute total_income per period as in simulate career-costs builder.
 
@@ -871,7 +854,7 @@ def _matched_diff_profile_by_distance(
     merged["diff_outcome"] = merged["outcome_o"] - merged["outcome_c"]
 
     # Compute distance in original and attach
-    df_o_dist = _add_distance_to_first_care(df_o)
+    df_o_dist = add_distance_to_first_care(df_o)
     dist_map = (
         df_o_dist.groupby("agent", observed=False)["first_care_period"]
         .first()
@@ -1098,7 +1081,7 @@ def task_plot_outcomes_by_distance_to_first_care(
         ].copy()
 
     # Compute distance in original and copy to counterfactual
-    df_original = _add_distance_to_first_care(df_original)
+    df_original = add_distance_to_first_care(df_original)
     # Merge the per-agent first_care_period and compute distance in counterfactual
     dist_map = (
         df_original.groupby("agent", observed=False)["first_care_period"]
@@ -1224,7 +1207,7 @@ def task_plot_matched_differences_by_distance(  # noqa: PLR0915
     merged["diff_pt"] = merged["pt_o"] - merged["pt_c"]
 
     # Compute distance in original and attach
-    df_o_dist = _add_distance_to_first_care(df_o)
+    df_o_dist = add_distance_to_first_care(df_o)
     dist_map = (
         df_o_dist.groupby("agent", observed=False)["first_care_period"]
         .first()
@@ -1737,7 +1720,7 @@ def task_plot_pre_care_to_at_care_transitions(
 
     # Ensure agent/period columns and compute distance to first care
     df = ensure_agent_period(df)
-    df = _add_distance_to_first_care(df)
+    df = add_distance_to_first_care(df)
 
     # Keep only first-care rows (caregivers at t=0)
     df0 = df[df["distance_to_first_care"] == 0].copy()
@@ -1835,7 +1818,7 @@ def task_plot_raw_shares_by_distance_for_future_caregivers(
     df = ensure_agent_period(df)
 
     # Compute event-time (distance to first care) in baseline
-    df = _add_distance_to_first_care(df)
+    df = add_distance_to_first_care(df)
 
     # Identify agents who start informal caregiving at t=0
     care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()

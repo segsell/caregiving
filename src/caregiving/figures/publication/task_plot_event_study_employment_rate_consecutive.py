@@ -21,10 +21,8 @@ from caregiving.counterfactual.plotting_helpers import (
     get_age_at_first_event,
     prepare_dataframes_simple,
 )
-from caregiving.counterfactual.task_plot_labor_supply_differences import (
-    _add_distance_to_first_care,
-)
 from caregiving.figures.publication.plotting_helpers import (
+    add_distance_to_first_care,
     identify_agents_by_consecutive_duration,
     identify_agents_by_duration_at_least,
 )
@@ -136,7 +134,7 @@ for age_min_val, age_max_val, age_label_val in (
         merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
 
         # Compute distance to first care in baseline and attach
-        df_o_dist = _add_distance_to_first_care(df_o)
+        df_o_dist = add_distance_to_first_care(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_period"]
             .first()
@@ -344,7 +342,7 @@ for age_min_val, age_max_val, age_label_val in (
         merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
 
         # Compute distance to first care in baseline and attach
-        df_o_dist = _add_distance_to_first_care(df_o)
+        df_o_dist = add_distance_to_first_care(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_period"]
             .first()
@@ -466,7 +464,7 @@ def _event_study_consecutive_merged_and_profiles(
     c_cols = df_c[["agent", "period"]].copy()
     c_cols["outcome_c"] = np.asarray(outcome_c_series).astype(float)
     merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
-    df_o_dist = _add_distance_to_first_care(df_o)
+    df_o_dist = add_distance_to_first_care(df_o)
     dist_map = (
         df_o_dist.groupby("agent", observed=False)["first_care_period"]
         .first()
