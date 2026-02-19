@@ -2618,6 +2618,7 @@ for age_min_val, age_max_val, age_label_val in (
         / "publication"
         / "counterfactual"
         / "full_time"
+        / "total_caregiving_years"
         / (
             f"full_time_share_by_distance_to_first_caregiving_spell_"
             f"total_caregiving_{age_label_val}.pdf"
@@ -2779,6 +2780,7 @@ for age_min_val, age_max_val, age_label_val in (
         / "publication"
         / "counterfactual"
         / "part_time"
+        / "total_caregiving_years"
         / (
             f"part_time_share_by_distance_to_first_caregiving_spell_"
             f"total_caregiving_{age_label_val}.pdf"
@@ -3280,6 +3282,7 @@ for age_min_val, age_max_val, age_label_val in (
         / "publication"
         / "counterfactual"
         / "full_time"
+        / "total_caregiving_years"
         / (
             f"back_to_Jan7_full_time_share_by_distance_to_first_caregiving_spell_"
             f"total_caregiving_{age_label_val}.pdf"
@@ -3437,6 +3440,7 @@ for age_min_val, age_max_val, age_label_val in (
         / "publication"
         / "counterfactual"
         / "part_time"
+        / "total_caregiving_years"
         / (
             f"back_to_Jan7_part_time_share_by_distance_to_first_caregiving_spell_"
             f"total_caregiving_{age_label_val}.pdf"
