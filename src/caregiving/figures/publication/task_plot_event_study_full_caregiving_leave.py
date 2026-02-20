@@ -43,7 +43,6 @@ def _path_plot(subdir: str, filename: str) -> Path:
         BLD
         / "figures"
         / "publication"
-        / "counterfactual"
         / _PLOT_PREFIX
         / subdir
         / "total_caregiving_years"
@@ -73,8 +72,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window: int = 20,
+        compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: employment rate diff (baseline − full leave) by distance to first care demand."""
+        """Event study: employment rate diff (policy − baseline) by distance to first care demand."""
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -89,14 +89,28 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         c_work, _, _ = calculate_simple_outcomes(df_c, "job_retention")
         _, prof_diff, p1, p2, p3, p4, p5 = (
             event_study_total_caregiving_merged_and_profiles(
-                df_o, df_c, o_work, c_work, window, age_min, age_max,
-                "care_demand", start_age, end_age_caregiving,
+                df_o,
+                df_c,
+                o_work,
+                c_work,
+                window,
+                age_min,
+                age_max,
+                "care_demand",
+                start_age,
+                end_age_caregiving,
+                compare_against_baseline=compare_against_baseline,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
-            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
-            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
-            window=window, path_to_plot=path_to_plot,
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             ylabel="Difference in employment rate",
         )
@@ -106,7 +120,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 
     @pytask.mark.publication_event_study_caregiving_leave
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_employment_first_caregiving_spell_{_TASK_ID_SUFFIX}")
+    @pytask.task(
+        id=f"{age_label_val}_employment_first_caregiving_spell_{_TASK_ID_SUFFIX}"
+    )
     def task_plot_event_study_employment_by_distance_to_first_caregiving_spell_full_leave(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -121,8 +137,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window: int = 20,
+        compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: employment rate diff (baseline − full leave) by distance to first caregiving spell."""
+        """Event study: employment rate diff (policy − baseline) by distance to first caregiving spell."""
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -137,14 +154,28 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         c_work, _, _ = calculate_simple_outcomes(df_c, "job_retention")
         _, prof_diff, p1, p2, p3, p4, p5 = (
             event_study_total_caregiving_merged_and_profiles(
-                df_o, df_c, o_work, c_work, window, age_min, age_max,
-                "caregiving_spell", start_age, end_age_caregiving,
+                df_o,
+                df_c,
+                o_work,
+                c_work,
+                window,
+                age_min,
+                age_max,
+                "caregiving_spell",
+                start_age,
+                end_age_caregiving,
+                compare_against_baseline=compare_against_baseline,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
-            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
-            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
-            window=window, path_to_plot=path_to_plot,
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             ylabel="Difference in employment rate",
         )
@@ -172,8 +203,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window: int = 20,
+        compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: full-time rate diff (baseline − full leave) by distance to first care demand."""
+        """Event study: full-time rate diff (policy − baseline) by distance to first care demand."""
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -188,14 +220,28 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         _, c_out, _ = calculate_simple_outcomes(df_c, "job_retention")
         _, prof_diff, p1, p2, p3, p4, p5 = (
             event_study_total_caregiving_merged_and_profiles(
-                df_o, df_c, o_out, c_out, window, age_min, age_max,
-                "care_demand", start_age, end_age_caregiving,
+                df_o,
+                df_c,
+                o_out,
+                c_out,
+                window,
+                age_min,
+                age_max,
+                "care_demand",
+                start_age,
+                end_age_caregiving,
+                compare_against_baseline=compare_against_baseline,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
-            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
-            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
-            window=window, path_to_plot=path_to_plot,
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             ylabel="Difference in full-time rate",
         )
@@ -205,7 +251,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 
     @pytask.mark.publication_event_study_caregiving_leave
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_full_time_first_caregiving_spell_{_TASK_ID_SUFFIX}")
+    @pytask.task(
+        id=f"{age_label_val}_full_time_first_caregiving_spell_{_TASK_ID_SUFFIX}"
+    )
     def task_plot_event_study_full_time_by_distance_to_first_caregiving_spell_full_leave(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -220,8 +268,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window: int = 20,
+        compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: full-time rate diff (baseline − full leave) by distance to first caregiving spell."""
+        """Event study: full-time rate diff (policy − baseline) by distance to first caregiving spell."""
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -236,14 +285,28 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         _, c_out, _ = calculate_simple_outcomes(df_c, "job_retention")
         _, prof_diff, p1, p2, p3, p4, p5 = (
             event_study_total_caregiving_merged_and_profiles(
-                df_o, df_c, o_out, c_out, window, age_min, age_max,
-                "caregiving_spell", start_age, end_age_caregiving,
+                df_o,
+                df_c,
+                o_out,
+                c_out,
+                window,
+                age_min,
+                age_max,
+                "caregiving_spell",
+                start_age,
+                end_age_caregiving,
+                compare_against_baseline=compare_against_baseline,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
-            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
-            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
-            window=window, path_to_plot=path_to_plot,
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             ylabel="Difference in full-time rate",
         )
@@ -271,8 +334,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window: int = 20,
+        compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: part-time rate diff (baseline − full leave) by distance to first care demand."""
+        """Event study: part-time rate diff (policy − baseline) by distance to first care demand."""
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -287,14 +351,28 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         _, _, c_out = calculate_simple_outcomes(df_c, "job_retention")
         _, prof_diff, p1, p2, p3, p4, p5 = (
             event_study_total_caregiving_merged_and_profiles(
-                df_o, df_c, o_out, c_out, window, age_min, age_max,
-                "care_demand", start_age, end_age_caregiving,
+                df_o,
+                df_c,
+                o_out,
+                c_out,
+                window,
+                age_min,
+                age_max,
+                "care_demand",
+                start_age,
+                end_age_caregiving,
+                compare_against_baseline=compare_against_baseline,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
-            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
-            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
-            window=window, path_to_plot=path_to_plot,
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             ylabel="Difference in part-time rate",
         )
@@ -304,7 +382,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 
     @pytask.mark.publication_event_study_caregiving_leave
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_part_time_first_caregiving_spell_{_TASK_ID_SUFFIX}")
+    @pytask.task(
+        id=f"{age_label_val}_part_time_first_caregiving_spell_{_TASK_ID_SUFFIX}"
+    )
     def task_plot_event_study_part_time_by_distance_to_first_caregiving_spell_full_leave(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -319,8 +399,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window: int = 20,
+        compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: part-time rate diff (baseline − full leave) by distance to first caregiving spell."""
+        """Event study: part-time rate diff (policy − baseline) by distance to first caregiving spell."""
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -335,14 +416,28 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         _, _, c_out = calculate_simple_outcomes(df_c, "job_retention")
         _, prof_diff, p1, p2, p3, p4, p5 = (
             event_study_total_caregiving_merged_and_profiles(
-                df_o, df_c, o_out, c_out, window, age_min, age_max,
-                "caregiving_spell", start_age, end_age_caregiving,
+                df_o,
+                df_c,
+                o_out,
+                c_out,
+                window,
+                age_min,
+                age_max,
+                "caregiving_spell",
+                start_age,
+                end_age_caregiving,
+                compare_against_baseline=compare_against_baseline,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
-            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
-            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
-            window=window, path_to_plot=path_to_plot,
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             ylabel="Difference in part-time rate",
         )
@@ -355,7 +450,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 
     @pytask.mark.publication_event_study_caregiving_leave
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_working_hours_first_care_demand_{_TASK_ID_SUFFIX}")
+    @pytask.task(
+        id=f"{age_label_val}_working_hours_first_care_demand_{_TASK_ID_SUFFIX}"
+    )
     def task_plot_event_study_working_hours_by_distance_to_first_care_demand_full_leave(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -370,8 +467,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window: int = 20,
+        compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: weekly working hours diff (baseline − full leave) by distance to first care demand."""
+        """Event study: weekly working hours diff (policy − baseline) by distance to first care demand."""
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -394,14 +492,28 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         )
         _, prof_diff, p1, p2, p3, p4, p5 = (
             event_study_total_caregiving_merged_and_profiles(
-                df_o, df_c, wh_o, wh_c, window, age_min, age_max,
-                "care_demand", start_age, end_age_caregiving,
+                df_o,
+                df_c,
+                wh_o,
+                wh_c,
+                window,
+                age_min,
+                age_max,
+                "care_demand",
+                start_age,
+                end_age_caregiving,
+                compare_against_baseline=compare_against_baseline,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
-            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
-            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
-            window=window, path_to_plot=path_to_plot,
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             ylabel="Difference in weekly working hours",
         )
@@ -411,7 +523,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 
     @pytask.mark.publication_event_study_caregiving_leave
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_working_hours_first_caregiving_spell_{_TASK_ID_SUFFIX}")
+    @pytask.task(
+        id=f"{age_label_val}_working_hours_first_caregiving_spell_{_TASK_ID_SUFFIX}"
+    )
     def task_plot_event_study_working_hours_by_distance_to_first_caregiving_spell_full_leave(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -426,8 +540,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window: int = 20,
+        compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: weekly working hours diff (baseline − full leave) by distance to first caregiving spell."""
+        """Event study: weekly working hours diff (policy − baseline) by distance to first caregiving spell."""
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -450,14 +565,28 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         )
         _, prof_diff, p1, p2, p3, p4, p5 = (
             event_study_total_caregiving_merged_and_profiles(
-                df_o, df_c, wh_o, wh_c, window, age_min, age_max,
-                "caregiving_spell", start_age, end_age_caregiving,
+                df_o,
+                df_c,
+                wh_o,
+                wh_c,
+                window,
+                age_min,
+                age_max,
+                "caregiving_spell",
+                start_age,
+                end_age_caregiving,
+                compare_against_baseline=compare_against_baseline,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
-            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
-            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
-            window=window, path_to_plot=path_to_plot,
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             ylabel="Difference in weekly working hours",
         )
@@ -485,8 +614,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window: int = 20,
+        compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: monthly gross labor income diff (baseline − full leave) by distance to first care demand."""
+        """Event study: monthly gross labor income diff (policy − baseline) by distance to first care demand."""
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -509,14 +639,28 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         )
         _, prof_diff, p1, p2, p3, p4, p5 = (
             event_study_total_caregiving_merged_and_profiles(
-                df_o, df_c, inc_o, inc_c, window, age_min, age_max,
-                "care_demand", start_age, end_age_caregiving,
+                df_o,
+                df_c,
+                inc_o,
+                inc_c,
+                window,
+                age_min,
+                age_max,
+                "care_demand",
+                start_age,
+                end_age_caregiving,
+                compare_against_baseline=compare_against_baseline,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
-            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
-            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
-            window=window, path_to_plot=path_to_plot,
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             ylabel="Difference in monthly gross labor income",
             endogenous_ylim=True,
@@ -527,7 +671,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 
     @pytask.mark.publication_event_study_caregiving_leave
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_labor_income_first_caregiving_spell_{_TASK_ID_SUFFIX}")
+    @pytask.task(
+        id=f"{age_label_val}_labor_income_first_caregiving_spell_{_TASK_ID_SUFFIX}"
+    )
     def task_plot_event_study_labor_income_by_distance_to_first_caregiving_spell_full_leave(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -542,8 +688,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window: int = 20,
+        compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: monthly gross labor income diff (baseline − full leave) by distance to first caregiving spell."""
+        """Event study: monthly gross labor income diff (policy − baseline) by distance to first caregiving spell."""
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -566,14 +713,28 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         )
         _, prof_diff, p1, p2, p3, p4, p5 = (
             event_study_total_caregiving_merged_and_profiles(
-                df_o, df_c, inc_o, inc_c, window, age_min, age_max,
-                "caregiving_spell", start_age, end_age_caregiving,
+                df_o,
+                df_c,
+                inc_o,
+                inc_c,
+                window,
+                age_min,
+                age_max,
+                "caregiving_spell",
+                start_age,
+                end_age_caregiving,
+                compare_against_baseline=compare_against_baseline,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
-            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
-            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
-            window=window, path_to_plot=path_to_plot,
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             ylabel="Difference in monthly gross labor income",
             endogenous_ylim=True,
@@ -602,8 +763,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window: int = 20,
+        compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: job finding rate diff (baseline − full leave) by distance to first care demand."""
+        """Event study: job finding rate diff (policy − baseline) by distance to first care demand."""
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -618,14 +780,28 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         c_out = job_offer_outcome_series(df_c, "job_finding")
         _, prof_diff, p1, p2, p3, p4, p5 = (
             event_study_total_caregiving_merged_and_profiles(
-                df_o, df_c, o_out, c_out, window, age_min, age_max,
-                "care_demand", start_age, end_age_caregiving,
+                df_o,
+                df_c,
+                o_out,
+                c_out,
+                window,
+                age_min,
+                age_max,
+                "care_demand",
+                start_age,
+                end_age_caregiving,
+                compare_against_baseline=compare_against_baseline,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
-            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
-            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
-            window=window, path_to_plot=path_to_plot,
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             ylabel="Difference in job finding rate",
         )
@@ -635,7 +811,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 
     @pytask.mark.publication_event_study_caregiving_leave
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_job_finding_first_caregiving_spell_{_TASK_ID_SUFFIX}")
+    @pytask.task(
+        id=f"{age_label_val}_job_finding_first_caregiving_spell_{_TASK_ID_SUFFIX}"
+    )
     def task_plot_event_study_job_finding_by_distance_to_first_caregiving_spell_full_leave(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -650,8 +828,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window: int = 20,
+        compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: job finding rate diff (baseline − full leave) by distance to first caregiving spell."""
+        """Event study: job finding rate diff (policy − baseline) by distance to first caregiving spell."""
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -666,14 +845,28 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         c_out = job_offer_outcome_series(df_c, "job_finding")
         _, prof_diff, p1, p2, p3, p4, p5 = (
             event_study_total_caregiving_merged_and_profiles(
-                df_o, df_c, o_out, c_out, window, age_min, age_max,
-                "caregiving_spell", start_age, end_age_caregiving,
+                df_o,
+                df_c,
+                o_out,
+                c_out,
+                window,
+                age_min,
+                age_max,
+                "caregiving_spell",
+                start_age,
+                end_age_caregiving,
+                compare_against_baseline=compare_against_baseline,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
-            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
-            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
-            window=window, path_to_plot=path_to_plot,
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             ylabel="Difference in job finding rate",
         )
@@ -686,7 +879,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 
     @pytask.mark.publication_event_study_caregiving_leave
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_job_retention_first_care_demand_{_TASK_ID_SUFFIX}")
+    @pytask.task(
+        id=f"{age_label_val}_job_retention_first_care_demand_{_TASK_ID_SUFFIX}"
+    )
     def task_plot_event_study_job_retention_by_distance_to_first_care_demand_full_leave(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -701,8 +896,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window: int = 20,
+        compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: job retention rate diff (baseline − full leave) by distance to first care demand."""
+        """Event study: job retention rate diff (policy − baseline) by distance to first care demand."""
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -717,14 +913,28 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         c_out = job_offer_outcome_series(df_c, "job_retention")
         _, prof_diff, p1, p2, p3, p4, p5 = (
             event_study_total_caregiving_merged_and_profiles(
-                df_o, df_c, o_out, c_out, window, age_min, age_max,
-                "care_demand", start_age, end_age_caregiving,
+                df_o,
+                df_c,
+                o_out,
+                c_out,
+                window,
+                age_min,
+                age_max,
+                "care_demand",
+                start_age,
+                end_age_caregiving,
+                compare_against_baseline=compare_against_baseline,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
-            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
-            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
-            window=window, path_to_plot=path_to_plot,
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             ylabel="Difference in job retention rate",
         )
@@ -734,7 +944,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 
     @pytask.mark.publication_event_study_caregiving_leave
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_job_retention_first_caregiving_spell_{_TASK_ID_SUFFIX}")
+    @pytask.task(
+        id=f"{age_label_val}_job_retention_first_caregiving_spell_{_TASK_ID_SUFFIX}"
+    )
     def task_plot_event_study_job_retention_by_distance_to_first_caregiving_spell_full_leave(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -749,8 +961,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window: int = 20,
+        compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: job retention rate diff (baseline − full leave) by distance to first caregiving spell."""
+        """Event study: job retention rate diff (policy − baseline) by distance to first caregiving spell."""
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -765,14 +978,28 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         c_out = job_offer_outcome_series(df_c, "job_retention")
         _, prof_diff, p1, p2, p3, p4, p5 = (
             event_study_total_caregiving_merged_and_profiles(
-                df_o, df_c, o_out, c_out, window, age_min, age_max,
-                "caregiving_spell", start_age, end_age_caregiving,
+                df_o,
+                df_c,
+                o_out,
+                c_out,
+                window,
+                age_min,
+                age_max,
+                "caregiving_spell",
+                start_age,
+                end_age_caregiving,
+                compare_against_baseline=compare_against_baseline,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
-            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
-            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
-            window=window, path_to_plot=path_to_plot,
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             ylabel="Difference in job retention rate",
         )

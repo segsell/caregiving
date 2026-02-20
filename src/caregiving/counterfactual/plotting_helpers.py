@@ -394,6 +394,7 @@ def event_study_total_caregiving_merged_and_profiles(
     event_type: Literal["care_demand", "caregiving_spell"],
     start_age: int,
     end_age_caregiving: int,
+    compare_against_baseline: bool = True,
 ) -> tuple[
     pd.DataFrame,
     pd.DataFrame,
@@ -407,6 +408,9 @@ def event_study_total_caregiving_merged_and_profiles(
 
     Returns (merged, prof_diff, prof_1_year_diff, ..., prof_5_year_diff).
     All profiles have columns EVENT_STUDY_DIST_COL and 'diff'.
+
+    When compare_against_baseline is True, diff = policy − baseline (outcome_c − outcome_o).
+    When False, diff = baseline − policy (outcome_o − outcome_c).
     """
     care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
     o_cols = df_o[["agent", "period", "choice"]].copy()
@@ -453,7 +457,10 @@ def event_study_total_caregiving_merged_and_profiles(
     if age_max is not None:
         merged = merged[merged[age_col] <= age_max].copy()
 
-    merged["diff"] = merged["outcome_o"] - merged["outcome_c"]
+    if compare_against_baseline:
+        merged["diff"] = merged["outcome_c"] - merged["outcome_o"]
+    else:
+        merged["diff"] = merged["outcome_o"] - merged["outcome_c"]
     merged[EVENT_STUDY_DIST_COL] = merged["distance_raw"]
 
     prof_diff = (

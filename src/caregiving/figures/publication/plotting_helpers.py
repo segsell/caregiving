@@ -5,7 +5,7 @@ publication plotting task modules.
 """
 
 from pathlib import Path
-from typing import Optional
+from typing import Iterable, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -562,6 +562,7 @@ def plot_employment_rate_by_distance(  # noqa: PLR0913
     ylabel: str = "Employment Rate",
     ylim: tuple[float, float] | None = (-0.025, 1.0),
     subgroup_labels: Optional[tuple[str, ...]] = None,
+    extra_vlines: Optional[Iterable[float]] = None,
 ) -> None:
     """Plot employment or full-time rate by distance to first care/care demand.
 
@@ -688,6 +689,14 @@ def plot_employment_rate_by_distance(  # noqa: PLR0913
         linestyle=(0, (7, 7)),
         linewidth=1.0,
     )
+    if extra_vlines is not None:
+        for x in extra_vlines:
+            plt.axvline(
+                x=x,
+                color="gray",
+                linestyle=(0, (3, 3)),
+                linewidth=0.8,
+            )
     plt.xlabel(xlabel, fontsize=14)
     plt.ylabel(ylabel, fontsize=14)
     plt.xlim(-window - 0.5, window + 0.5)
