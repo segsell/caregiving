@@ -17,11 +17,11 @@ from pytask import Product
 from caregiving.config import BLD
 from caregiving.counterfactual.plotting_helpers import calculate_simple_outcomes
 from caregiving.counterfactual.plotting_utils import ensure_agent_period
-from caregiving.model.shared import DEAD, INFORMAL_CARE
 from caregiving.figures.publication.plotting_helpers import (
     add_distance_to_first_care_demand,
     identify_agents_by_duration,
 )
+from caregiving.model.shared import DEAD, INFORMAL_CARE
 
 # Style for 5 duration groups: 1–4 exact consecutive years, 5+ at least
 _GROUP_STYLE = [

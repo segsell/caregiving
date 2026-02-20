@@ -633,13 +633,12 @@ def compute_panel_k(
     spells_caregiving: pd.DataFrame,
 ) -> dict[str, Any]:
     """Panel K: Same outcomes as Panel J (avg consec caregiving spell length / avg total caregiving years) but grouped by agent's age at mother's death."""
-    age_death = (
-        df.dropna(subset=["age_at_mother_death"])
-        .drop_duplicates("agent")[["agent", "age_at_mother_death"]]
-    )
+    age_death = df.dropna(subset=["age_at_mother_death"]).drop_duplicates("agent")[
+        ["agent", "age_at_mother_death"]
+    ]
     total_years = df.groupby("agent")["current_caregiving"].sum().rename("total_years")
-    agents_with_total = (
-        total_years.reset_index().merge(age_death, on="agent", how="inner")
+    agents_with_total = total_years.reset_index().merge(
+        age_death, on="agent", how="inner"
     )
     out_consec = {}
     out_total = {}
@@ -716,15 +715,11 @@ def compute_panel_l(df: pd.DataFrame) -> dict[str, Any]:
     out_exp = {}
     out_total = {}
     for (lo, hi), lab in zip(CARE_AGE_BINS, CARE_AGE_BIN_LABELS):
-        mask = agents_df["first_care_demand_age"].between(
-            lo, hi - 1, inclusive="both"
-        )
+        mask = agents_df["first_care_demand_age"].between(lo, hi - 1, inclusive="both")
         sub = agents_df.loc[mask]
         sub_exp = sub["exp_at_ret"].dropna()
         out_exp[lab] = float(sub_exp.mean()) if len(sub_exp) > 0 else np.nan
-        out_total[lab] = (
-            float(sub["total_years"].mean()) if len(sub) > 0 else np.nan
-        )
+        out_total[lab] = float(sub["total_years"].mean()) if len(sub) > 0 else np.nan
     return {"exp_at_retirement": out_exp, "total_avg_years": out_total}
 
 
@@ -736,10 +731,9 @@ def compute_panel_m(df: pd.DataFrame) -> dict[str, Any]:
             "exp_at_retirement": {lab: np.nan for lab in CARE_AGE_BIN_LABELS},
             "total_avg_years": {lab: np.nan for lab in CARE_AGE_BIN_LABELS},
         }
-    age_death = (
-        df.dropna(subset=["age_at_mother_death"])
-        .drop_duplicates("agent")[["agent", "age_at_mother_death"]]
-    )
+    age_death = df.dropna(subset=["age_at_mother_death"]).drop_duplicates("agent")[
+        ["agent", "age_at_mother_death"]
+    ]
     total_years = df.groupby("agent")["current_caregiving"].sum().rename("total_years")
     caregivers = total_years[total_years > 0]
     agents_df = (
@@ -750,15 +744,11 @@ def compute_panel_m(df: pd.DataFrame) -> dict[str, Any]:
     out_exp = {}
     out_total = {}
     for (lo, hi), lab in zip(CARE_AGE_BINS, CARE_AGE_BIN_LABELS):
-        mask = agents_df["age_at_mother_death"].between(
-            lo, hi - 1, inclusive="both"
-        )
+        mask = agents_df["age_at_mother_death"].between(lo, hi - 1, inclusive="both")
         sub = agents_df.loc[mask]
         sub_exp = sub["exp_at_ret"].dropna()
         out_exp[lab] = float(sub_exp.mean()) if len(sub_exp) > 0 else np.nan
-        out_total[lab] = (
-            float(sub["total_years"].mean()) if len(sub) > 0 else np.nan
-        )
+        out_total[lab] = float(sub["total_years"].mean()) if len(sub) > 0 else np.nan
     return {"exp_at_retirement": out_exp, "total_avg_years": out_total}
 
 
@@ -936,47 +926,57 @@ def build_latex_table(
         lines.append(
             f"Spell start age {lab} & {_fmt_avg(panel_i['consec_avg_length'][lab])} & {_fmt_avg(panel_i['total_avg_years'][lab])} \\\\"
         )
-    lines.extend([
-        "\\midrule",
-        "\\textbf{Panel J: Avg. consecutive spell length / Avg. total caregiving years by age at \\textit{first care demand} start} & & \\\\",
-        "\\midrule",
-    ])
+    lines.extend(
+        [
+            "\\midrule",
+            "\\textbf{Panel J: Avg. consecutive spell length / Avg. total caregiving years by age at \\textit{first care demand} start} & & \\\\",
+            "\\midrule",
+        ]
+    )
     for lab in CARE_AGE_BIN_LABELS:
         lines.append(
             f"First care demand age {lab} & {_fmt_avg(panel_j['consec_avg_length'][lab])} & {_fmt_avg(panel_j['total_avg_years'][lab])} \\\\"
         )
-    lines.extend([
-        "\\midrule",
-        "\\textbf{Panel K: Avg. consecutive spell length / Avg. total caregiving years by age at mother's death} & & \\\\",
-        "\\midrule",
-    ])
+    lines.extend(
+        [
+            "\\midrule",
+            "\\textbf{Panel K: Avg. consecutive spell length / Avg. total caregiving years by age at mother's death} & & \\\\",
+            "\\midrule",
+        ]
+    )
     for lab in CARE_AGE_BIN_LABELS:
         lines.append(
             f"Mother death age {lab} & {_fmt_avg(panel_k['consec_avg_length'][lab])} & {_fmt_avg(panel_k['total_avg_years'][lab])} \\\\"
         )
-    lines.extend([
-        "\\midrule",
-        "\\textbf{Panel L: Avg. experience (years) at retirement entry / Avg. total caregiving years by age at \\textit{first care demand} start} & & \\\\",
-        "\\midrule",
-    ])
+    lines.extend(
+        [
+            "\\midrule",
+            "\\textbf{Panel L: Avg. experience (years) at retirement entry / Avg. total caregiving years by age at \\textit{first care demand} start} & & \\\\",
+            "\\midrule",
+        ]
+    )
     for lab in CARE_AGE_BIN_LABELS:
         lines.append(
             f"First care demand age {lab} & {_fmt_avg(panel_l['exp_at_retirement'][lab])} & {_fmt_avg(panel_l['total_avg_years'][lab])} \\\\"
         )
-    lines.extend([
-        "\\midrule",
-        "\\textbf{Panel M: Avg. experience (years) at retirement entry / Avg. total caregiving years by age at mother's death} & & \\\\",
-        "\\midrule",
-    ])
+    lines.extend(
+        [
+            "\\midrule",
+            "\\textbf{Panel M: Avg. experience (years) at retirement entry / Avg. total caregiving years by age at mother's death} & & \\\\",
+            "\\midrule",
+        ]
+    )
     for lab in CARE_AGE_BIN_LABELS:
         lines.append(
             f"Mother death age {lab} & {_fmt_avg(panel_m['exp_at_retirement'][lab])} & {_fmt_avg(panel_m['total_avg_years'][lab])} \\\\"
         )
-    lines.extend([
-        "\\bottomrule",
-        "\\end{tabular}",
-        "\\end{table}",
-    ])
+    lines.extend(
+        [
+            "\\bottomrule",
+            "\\end{tabular}",
+            "\\end{table}",
+        ]
+    )
     return "\n".join(lines)
 
 

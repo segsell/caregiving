@@ -16,11 +16,9 @@ from pytask import Product
 
 from caregiving.config import BLD
 from caregiving.counterfactual.plotting_helpers import (
+    add_distance_to_first_care,
     calculate_simple_outcomes,
     prepare_dataframes_simple,
-)
-from caregiving.counterfactual.plotting_helpers import (
-    add_distance_to_first_care,
 )
 from caregiving.model.shared import (
     INFORMAL_CARE,

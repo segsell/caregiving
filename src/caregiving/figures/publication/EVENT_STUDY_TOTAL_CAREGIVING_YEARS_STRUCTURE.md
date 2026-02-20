@@ -41,10 +41,10 @@ This document describes the organization of the event-study (difference) tasks t
 
 For each outcome there are **four task blocks** (four loops):
 
-1. First care demand, standard data  
-2. First care demand, back_to_Jan7 data  
-3. First caregiving spell, standard data  
-4. First caregiving spell, back_to_Jan7 data  
+1. First care demand, standard data
+2. First care demand, back_to_Jan7 data
+3. First caregiving spell, standard data
+4. First caregiving spell, back_to_Jan7 data
 
 Each block is a loop over `_AGE_GROUPS` defining a single task function (same name for all four ages in that block).
 
@@ -78,16 +78,16 @@ BLD / "figures" / "publication" / "counterfactual" / "event_study" / {outcome} /
 
 **Filename conventions:**
 
-- **Standard data (estimated_params + no_care_demand):**  
-  `event_study_{outcome_descriptor}_by_distance_to_{event}_total_caregiving_{age_label}.pdf`  
+- **Standard data (estimated_params + no_care_demand):**
+  `event_study_{outcome_descriptor}_by_distance_to_{event}_total_caregiving_{age_label}.pdf`
   Examples:
   - Employment: `event_study_employment_rate_by_distance_to_first_care_demand_total_caregiving_all_ages.pdf`
   - Full-time: `event_study_full_time_by_distance_to_first_care_demand_total_caregiving_ages_40_49.pdf`
   - Working hours: `event_study_working_hours_weekly_by_distance_to_first_caregiving_spell_total_caregiving_all_ages.pdf`
   - Labor income: `event_study_monthly_gross_labor_income_by_distance_to_first_care_demand_total_caregiving_all_ages.pdf`
 
-- **back_to_Jan7 data:**  
-  Same name with prefix `back_to_Jan7_`, e.g.  
+- **back_to_Jan7 data:**
+  Same name with prefix `back_to_Jan7_`, e.g.
   `back_to_Jan7_event_study_employment_rate_by_distance_to_first_care_demand_total_caregiving_all_ages.pdf`
 
 `{event}` in the filename is either `first_care_demand` or `first_caregiving_spell`. `{age_label}` is `all_ages`, `ages_40_49`, `ages_50_59`, or `ages_60_70`.
@@ -98,20 +98,20 @@ BLD / "figures" / "publication" / "counterfactual" / "event_study" / {outcome} /
 
 Task function names are fixed per block (same name for all four ages in the loop). They encode outcome, event, and data variant:
 
-- **Employment, first care demand, standard:**  
+- **Employment, first care demand, standard:**
   `task_plot_event_study_employment_rate_by_distance_to_first_care_demand_total_caregiving`
-- **Employment, first care demand, back_to_Jan7:**  
+- **Employment, first care demand, back_to_Jan7:**
   `task_plot_event_study_employment_rate_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7`
-- **Employment, first caregiving spell, standard:**  
+- **Employment, first caregiving spell, standard:**
   `task_plot_event_study_employment_rate_by_distance_to_first_caregiving_spell_total_caregiving`
-- **Employment, first caregiving spell, back_to_Jan7:**  
+- **Employment, first caregiving spell, back_to_Jan7:**
   `task_plot_event_study_employment_rate_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7`
 
 For other outcomes the pattern is:
 
-- `task_plot_event_study_{outcome}_by_distance_to_first_care_demand_total_caregiving`  
-- `task_plot_event_study_{outcome}_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7`  
-- `task_plot_event_study_{outcome}_by_distance_to_first_caregiving_spell_total_caregiving`  
+- `task_plot_event_study_{outcome}_by_distance_to_first_care_demand_total_caregiving`
+- `task_plot_event_study_{outcome}_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7`
+- `task_plot_event_study_{outcome}_by_distance_to_first_caregiving_spell_total_caregiving`
 - `task_plot_event_study_{outcome}_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7`
 
 where `{outcome}` is `full_time`, `part_time`, `working_hours`, or `labor_income`.
@@ -133,10 +133,10 @@ So each of the 80 tasks has a distinct id.
 
 ## 7. Shared logic inside the module
 
-- **`event_study_total_caregiving_merged_and_profiles(...)`**  
+- **`event_study_total_caregiving_merged_and_profiles(...)`**
   Builds the merged (baseline vs no-care-demand) dataframe, computes distance to the event (care_demand or caregiving_spell), filters by window and optional age at event, computes outcome difference, then uses `identify_agents_by_total_caregiving_over_lifecycle(df_o, start_age, end_age_caregiving)` to get five agent groups and returns (merged, prof_diff, prof_1_year_diff, …, prof_5_year_diff). All profiles use a common distance column name (`_DIST_COL = "distance_to_first_care"`) and a `"diff"` column so the same plot function can be used for all outcomes.
 
-- **`plot_outcome_difference_by_distance_total_caregiving(...)`**  
+- **`plot_outcome_difference_by_distance_total_caregiving(...)`**
   Takes the six profile DataFrames (baseline diff plus five subgroup diffs), window, path_to_plot, xlabel, ylabel, and optional `endogenous_ylim`. Produces the event-study figure (dashed baseline, 0 line, vline at −0.5, five subgroup lines with labels "1 total care year", …, "5+ total care years"). For working_hours and labor_income, `endogenous_ylim=True` is used.
 
 - **Specs:** Each task loads `path_to_specs` (BLD / "model" / "specs" / "specs_full.pkl") to read `start_age` and `end_age_caregiving` for the lifecycle grouping. No hardcoded MAX_AGE_CAREGIVING.
@@ -180,13 +180,13 @@ The **new** module would:
 
 ## 10. Proposed path and subfolder
 
-- **Base (existing in mother_death):**  
+- **Base (existing in mother_death):**
   `BLD / "figures" / "publication" / "counterfactual" / "event_study_reverse"`
 
-- **Per-outcome (existing for employment):**  
+- **Per-outcome (existing for employment):**
   `event_study_reverse / {outcome}` with `{outcome}` in `employment`, `full_time`, `part_time`, `working_hours`, `labor_income`.
 
-- **New subfolder for total-caregiving-years reverse plots:**  
+- **New subfolder for total-caregiving-years reverse plots:**
   `event_study_reverse / {outcome} / "total_caregiving_years"`
 
 So the full path pattern for the new tasks would be:
@@ -208,34 +208,34 @@ Align with:
 
 **Proposed task function names (one per block; same name for all four ages in the loop):**
 
-- Employment, standard data:  
+- Employment, standard data:
   `task_plot_event_study_employment_rate_by_distance_to_mother_death_total_caregiving`
-- Employment, back_to_Jan7:  
+- Employment, back_to_Jan7:
   `task_plot_event_study_employment_rate_by_distance_to_mother_death_total_caregiving_back_to_Jan7`
-- Full-time, standard:  
+- Full-time, standard:
   `task_plot_event_study_full_time_by_distance_to_mother_death_total_caregiving`
-- Full-time, back_to_Jan7:  
+- Full-time, back_to_Jan7:
   `task_plot_event_study_full_time_by_distance_to_mother_death_total_caregiving_back_to_Jan7`
 - (Same pattern for part_time, working_hours, labor_income.)
 
 **Proposed output filenames:**
 
-- Standard:  
-  `event_study_{outcome_descriptor}_by_distance_to_mother_death_total_caregiving_{age_label}.pdf`  
-  Examples:  
-  `event_study_employment_rate_by_distance_to_mother_death_total_caregiving_all_ages.pdf`,  
-  `event_study_full_time_by_distance_to_mother_death_total_caregiving_ages_40_49.pdf`,  
-  `event_study_working_hours_weekly_by_distance_to_mother_death_total_caregiving_all_ages.pdf`,  
+- Standard:
+  `event_study_{outcome_descriptor}_by_distance_to_mother_death_total_caregiving_{age_label}.pdf`
+  Examples:
+  `event_study_employment_rate_by_distance_to_mother_death_total_caregiving_all_ages.pdf`,
+  `event_study_full_time_by_distance_to_mother_death_total_caregiving_ages_40_49.pdf`,
+  `event_study_working_hours_weekly_by_distance_to_mother_death_total_caregiving_all_ages.pdf`,
   `event_study_monthly_gross_labor_income_by_distance_to_mother_death_total_caregiving_all_ages.pdf`.
-- back_to_Jan7:  
-  Prefix `back_to_Jan7_`, e.g.  
+- back_to_Jan7:
+  Prefix `back_to_Jan7_`, e.g.
   `back_to_Jan7_event_study_employment_rate_by_distance_to_mother_death_total_caregiving_all_ages.pdf`.
 
 **Proposed task ids (unique per age × outcome × data):**
 
-- `{age_label_val}_employment_mother_death_total_caregiving_estimated_params`  
-- `{age_label_val}_employment_mother_death_total_caregiving_back_to_Jan7`  
-- `{age_label_val}_full_time_mother_death_total_caregiving_estimated_params`  
+- `{age_label_val}_employment_mother_death_total_caregiving_estimated_params`
+- `{age_label_val}_employment_mother_death_total_caregiving_back_to_Jan7`
+- `{age_label_val}_full_time_mother_death_total_caregiving_estimated_params`
 - … (and similarly for part_time, working_hours, labor_income and for back_to_Jan7).
 
 (Exact id scheme can be simplified to e.g. `{age_label_val}_employment_mother_death_total_caregiving` and `{age_label_val}_employment_mother_death_total_caregiving_back_to_Jan7` if preferred.)
@@ -244,60 +244,60 @@ Align with:
 
 ## 12. What needs to be implemented (checklist)
 
-1. **New module**  
+1. **New module**
    - Create `task_plot_reverse_event_study_total_caregiving_years.py` (no changes to existing mother_death or total_caregiving_years code in this step).
 
-2. **Event and distance**  
-   - Reuse `add_distance_to_mother_death(df_o)` from `plotting_helpers_mother_death` to get `first_death_period` and distance.  
-   - Filter to agent-periods with valid `first_death_period` and distance in [−window, +window].  
+2. **Event and distance**
+   - Reuse `add_distance_to_mother_death(df_o)` from `plotting_helpers_mother_death` to get `first_death_period` and distance.
+   - Filter to agent-periods with valid `first_death_period` and distance in [−window, +window].
    - Filter by age at mother’s death (age_min / age_max) using the same pattern as in the mother_death tasks (e.g. `age_at_death` from first period where `mother_dead == PARENT_RECENTLY_DEAD`).
 
-3. **Merged data and outcome difference**  
-   - Merge baseline outcome and no-care-demand outcome on (agent, period); compute diff = outcome_o − outcome_c.  
-   - Build overall profile: mean(diff) by distance.  
+3. **Merged data and outcome difference**
+   - Merge baseline outcome and no-care-demand outcome on (agent, period); compute diff = outcome_o − outcome_c.
+   - Build overall profile: mean(diff) by distance.
    - No “event end” or “end of caregiving spell” — the only event is mother’s death.
 
-4. **Total caregiving years grouping**  
-   - Load specs (path_to_specs) to get `start_age` and `end_age_caregiving`.  
-   - Call `identify_agents_by_total_caregiving_over_lifecycle(df_o, start_age, end_age_caregiving)` from counterfactual plotting_helpers to get five agent arrays (1, 2, 3, 4, 5+ total care years over lifecycle).  
-   - For each group, compute profile of mean(diff) by distance.  
+4. **Total caregiving years grouping**
+   - Load specs (path_to_specs) to get `start_age` and `end_age_caregiving`.
+   - Call `identify_agents_by_total_caregiving_over_lifecycle(df_o, start_age, end_age_caregiving)` from counterfactual plotting_helpers to get five agent arrays (1, 2, 3, 4, 5+ total care years over lifecycle).
+   - For each group, compute profile of mean(diff) by distance.
    - Ensure profile DataFrames use a single distance column name (e.g. `distance_to_first_care` or a shared constant) and a `"diff"` column so the same plotting function can be reused.
 
-5. **Plotting**  
-   - Reuse the same layout as in `task_plot_event_study_total_caregiving_years`: dashed baseline diff, horizontal line at 0, vertical line at t = −0.5, five subgroup lines (“1 total care year”, …, “5+ total care years”).  
-   - Either call `plot_outcome_difference_by_distance_total_caregiving` from the existing total_caregiving_years module (if the distance column name and signatures are compatible) or implement a local wrapper / duplicate that accepts the mother-death distance column name and the same six profiles.  
-   - xlabel: e.g. “Year relative to mother’s death”.  
+5. **Plotting**
+   - Reuse the same layout as in `task_plot_event_study_total_caregiving_years`: dashed baseline diff, horizontal line at 0, vertical line at t = −0.5, five subgroup lines (“1 total care year”, …, “5+ total care years”).
+   - Either call `plot_outcome_difference_by_distance_total_caregiving` from the existing total_caregiving_years module (if the distance column name and signatures are compatible) or implement a local wrapper / duplicate that accepts the mother-death distance column name and the same six profiles.
+   - xlabel: e.g. “Year relative to mother’s death”.
    - ylabel: same as in the forward module per outcome; use `endogenous_ylim=True` for working_hours and labor_income.
 
-6. **Outcomes**  
-   - Employment: work indicator from `calculate_simple_outcomes`.  
-   - Full-time / part-time: from `calculate_simple_outcomes`.  
-   - Working hours: `df["working_hours"].astype(float) / 52.0` (weekly).  
-   - Labor income: `df["gross_labor_income"].astype(float) / 12.0` (monthly).  
+6. **Outcomes**
+   - Employment: work indicator from `calculate_simple_outcomes`.
+   - Full-time / part-time: from `calculate_simple_outcomes`.
+   - Working hours: `df["working_hours"].astype(float) / 52.0` (weekly).
+   - Labor income: `df["gross_labor_income"].astype(float) / 12.0` (monthly).
    Same as in `task_plot_event_study_total_caregiving_years.py`.
 
-7. **Data pairs**  
-   - Standard: `simulated_data_estimated_params.pkl` + `simulated_data_no_care_demand.pkl`.  
-   - back_to_Jan7: `simulated_data_estimated_params_back_to_Jan7.pkl` + `simulated_data_no_care_demand_back_to_Jan7.pkl`.  
+7. **Data pairs**
+   - Standard: `simulated_data_estimated_params.pkl` + `simulated_data_no_care_demand.pkl`.
+   - back_to_Jan7: `simulated_data_estimated_params_back_to_Jan7.pkl` + `simulated_data_no_care_demand_back_to_Jan7.pkl`.
    - path_to_specs: BLD / "model" / "specs" / "specs_full.pkl" for all tasks.
 
-8. **Task structure**  
-   - One loop per (outcome, data variant) over the four age groups.  
-   - Each loop defines a single named task function with path_to_plot, path_to_original_data, path_to_no_care_demand_data, path_to_specs, age_min, age_max written directly in the signature (no globals()).  
+8. **Task structure**
+   - One loop per (outcome, data variant) over the four age groups.
+   - Each loop defines a single named task function with path_to_plot, path_to_original_data, path_to_no_care_demand_data, path_to_specs, age_min, age_max written directly in the signature (no globals()).
    - Task count: 5 outcomes × 2 data variants × 4 ages = **40 tasks**.
 
-9. **Pytask marks**  
+9. **Pytask marks**
    - Use the same marks as in the mother_death module for reverse event studies (e.g. `@pytask.mark.publication_event_study_reverse`, `@pytask.mark.publication_counterfactual`, `@pytask.mark.publication`). Do not reuse `publication_event_study` if that is reserved for forward event studies.
 
-10. **Sample**  
+10. **Sample**
    - Decide whether to use ever_caregivers=True/False and ever_care_demand=True/False. The forward total_caregiving_years module uses ever_caregivers=True, ever_care_demand=False. The existing mother_death tasks use ever_caregivers=False, ever_care_demand=False. For consistency with “total caregiving years” (which is defined only for caregivers), using ever_caregivers=True (and ever_care_demand=False) in the new reverse total_caregiving_years tasks would align with the forward module; document the choice in the docstring.
 
-11. **Helper**  
-   - Implement a single helper in the new module (e.g. `reverse_event_study_total_caregiving_merged_and_profiles`) that: takes df_o, df_c, outcome_o_series, outcome_c_series, window, age_min, age_max, path_to_specs (or start_age/end_age_caregiving), and returns (merged, prof_diff, prof_1_year_diff, …, prof_5_year_diff) and the distance column name used in the profiles, so the same plot function can be called for all outcomes.  
+11. **Helper**
+   - Implement a single helper in the new module (e.g. `reverse_event_study_total_caregiving_merged_and_profiles`) that: takes df_o, df_c, outcome_o_series, outcome_c_series, window, age_min, age_max, path_to_specs (or start_age/end_age_caregiving), and returns (merged, prof_diff, prof_1_year_diff, …, prof_5_year_diff) and the distance column name used in the profiles, so the same plot function can be called for all outcomes.
    - Distance is computed from `add_distance_to_mother_death`; grouping from `identify_agents_by_total_caregiving_over_lifecycle`; no care_demand or first_care_period logic.
 
-12. **Naming consistency**  
-   - Function names and filenames should clearly indicate: (1) event study, (2) outcome, (3) “by distance to mother death”, (4) “total caregiving”, (5) data variant (suffix or prefix back_to_Jan7).  
+12. **Naming consistency**
+   - Function names and filenames should clearly indicate: (1) event study, (2) outcome, (3) “by distance to mother death”, (4) “total caregiving”, (5) data variant (suffix or prefix back_to_Jan7).
    - Subfolder `total_caregiving_years` under `event_study_reverse/{outcome}/` keeps reverse total-caregiving-years plots separate from any other reverse plots (e.g. at_least, consecutive) in the same outcome folder.
 
 ---

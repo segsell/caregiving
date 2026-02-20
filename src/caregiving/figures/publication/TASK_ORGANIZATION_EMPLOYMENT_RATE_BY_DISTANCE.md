@@ -76,15 +76,15 @@ For each variant we have **one loop over the four age groups** and **one task fu
 
 Same structure: for each (outcome, event, data) there is **one loop over the four age groups** and **one function name**.
 
-- **First care demand, standard data:**  
-  `task_plot_<outcome>_share_by_distance_to_first_care_demand_total_caregiving` (or `task_plot_working_hours_by_distance_to_...` / `task_plot_labor_income_by_distance_to_...`).  
+- **First care demand, standard data:**
+  `task_plot_<outcome>_share_by_distance_to_first_care_demand_total_caregiving` (or `task_plot_working_hours_by_distance_to_...` / `task_plot_labor_income_by_distance_to_...`).
   Output: `counterfactual/<outcome>/total_caregiving_years/<outcome>_share_by_distance_to_first_care_demand_total_caregiving_{age}.pdf` (or the corresponding working_hours / labor_income filename).
-- **First care demand, back_to_Jan7:**  
-  `task_plot_<outcome>_share_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7` (same for working_hours / labor_income).  
+- **First care demand, back_to_Jan7:**
+  `task_plot_<outcome>_share_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7` (same for working_hours / labor_income).
   Filename prefix: `back_to_Jan7_`.
-- **First caregiving spell, standard:**  
+- **First caregiving spell, standard:**
   `task_plot_<outcome>_share_by_distance_to_first_caregiving_spell_total_caregiving`.
-- **First caregiving spell, back_to_Jan7:**  
+- **First caregiving spell, back_to_Jan7:**
   `task_plot_<outcome>_share_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7`.
 
 So in total: **one loop per (outcome, event, data)**; inside the loop, **one named task function** with **path_to_plot and all other arguments written directly in the signature**; no globals, no factory, no dynamic names.

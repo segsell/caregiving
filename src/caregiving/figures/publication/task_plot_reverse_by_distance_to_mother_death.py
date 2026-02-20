@@ -22,12 +22,12 @@ from caregiving.counterfactual.plotting_helpers import (
     calculate_simple_outcomes,
     prepare_dataframes_simple,
 )
+from caregiving.figures.publication.plotting_helpers import (
+    plot_employment_rate_by_distance,
+)
 from caregiving.figures.publication.plotting_helpers_mother_death import (
     add_distance_to_mother_death,
     identify_agents_by_total_caregiving_before_death,
-)
-from caregiving.figures.publication.plotting_helpers import (
-    plot_employment_rate_by_distance,
 )
 from caregiving.model.shared import (
     INFORMAL_CARE,
@@ -83,9 +83,7 @@ def _build_profiles_total_caregiving_before_death(
             .reset_index()
             .sort_values("distance_to_mother_death")
         )
-        return p.rename(
-            columns={"distance_to_mother_death": "distance_to_first_care"}
-        )
+        return p.rename(columns={"distance_to_mother_death": "distance_to_first_care"})
 
     prof_1_year = _prof_for_agents(agents_1)
     prof_2_year = _prof_for_agents(agents_2)
@@ -639,7 +637,9 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_reverse
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_mother_death_total_caregiving_back_to_Jan7_employment")
+    @pytask.task(
+        id=f"{age_label_val}_mother_death_total_caregiving_back_to_Jan7_employment"
+    )
     def task_plot_employment_rate_by_distance_to_mother_death_total_caregiving_back_to_Jan7(  # noqa: PLR0913
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -739,7 +739,9 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_reverse
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_mother_death_total_caregiving_back_to_Jan7_full_time")
+    @pytask.task(
+        id=f"{age_label_val}_mother_death_total_caregiving_back_to_Jan7_full_time"
+    )
     def task_plot_full_time_share_by_distance_to_mother_death_total_caregiving_back_to_Jan7(  # noqa: PLR0913
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -839,7 +841,9 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_reverse
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_mother_death_total_caregiving_back_to_Jan7_part_time")
+    @pytask.task(
+        id=f"{age_label_val}_mother_death_total_caregiving_back_to_Jan7_part_time"
+    )
     def task_plot_part_time_share_by_distance_to_mother_death_total_caregiving_back_to_Jan7(  # noqa: PLR0913
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -939,7 +943,9 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_reverse
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_mother_death_total_caregiving_back_to_Jan7_working_hours")
+    @pytask.task(
+        id=f"{age_label_val}_mother_death_total_caregiving_back_to_Jan7_working_hours"
+    )
     def task_plot_working_hours_by_distance_to_mother_death_total_caregiving_back_to_Jan7(  # noqa: PLR0913
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -1047,7 +1053,9 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_reverse
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_mother_death_total_caregiving_back_to_Jan7_labor_income")
+    @pytask.task(
+        id=f"{age_label_val}_mother_death_total_caregiving_back_to_Jan7_labor_income"
+    )
     def task_plot_labor_income_by_distance_to_mother_death_total_caregiving_back_to_Jan7(  # noqa: PLR0913
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
