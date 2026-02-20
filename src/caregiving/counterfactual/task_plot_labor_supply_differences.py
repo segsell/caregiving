@@ -16,6 +16,7 @@ import pytask
 from pytask import Product
 
 from caregiving.config import BLD, JET_COLOR_MAP
+from caregiving.counterfactual.plotting_helpers import add_distance_to_first_care
 from caregiving.model.experience_baseline_model import construct_experience_years
 from caregiving.model.shared import (
     DEAD,
@@ -49,7 +50,6 @@ from caregiving.model.wealth_and_budget.wages import (
 from caregiving.model.wealth_and_budget.wages_no_care_demand import (
     calculate_gross_labor_income as calculate_gross_labor_income_ncd,
 )
-from caregiving.counterfactual.plotting_helpers import add_distance_to_first_care
 
 jax.config.update("jax_enable_x64", True)
 

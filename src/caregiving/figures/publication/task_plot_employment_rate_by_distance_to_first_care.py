@@ -1037,7 +1037,6 @@ for age_min_val, age_max_val, age_label_val in (
 
 for age_min_val, age_max_val, age_label_val in (
     (None, None, "all_ages"),
-    #
     (40, 49, "ages_40_49"),
     (50, 59, "ages_50_59"),
     (60, 70, "ages_60_70"),
@@ -1405,7 +1404,9 @@ for age_min_val, age_max_val, age_label_val in (
         def _prof_for_agents(agents):
             m = merged[merged["agent"].isin(agents)].copy()
             p = (
-                m.groupby("distance_to_first_care_demand", observed=False)[["full_time_o"]]
+                m.groupby("distance_to_first_care_demand", observed=False)[
+                    ["full_time_o"]
+                ]
                 .mean()
                 .reset_index()
                 .sort_values("distance_to_first_care_demand")
@@ -1562,7 +1563,9 @@ for age_min_val, age_max_val, age_label_val in (
         def _prof_for_agents(agents):
             m = merged[merged["agent"].isin(agents)].copy()
             p = (
-                m.groupby("distance_to_first_care_demand", observed=False)[["part_time_o"]]
+                m.groupby("distance_to_first_care_demand", observed=False)[
+                    ["part_time_o"]
+                ]
                 .mean()
                 .reset_index()
                 .sort_values("distance_to_first_care_demand")
@@ -1949,7 +1952,9 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication_full_time
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_care_demand_total_caregiving_back_to_Jan7_full_time")
+    @pytask.task(
+        id=f"{age_label_val}_care_demand_total_caregiving_back_to_Jan7_full_time"
+    )
     def task_plot_full_time_share_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -2054,7 +2059,9 @@ for age_min_val, age_max_val, age_label_val in (
         def _prof_for_agents(agents):
             m = merged[merged["agent"].isin(agents)].copy()
             p = (
-                m.groupby("distance_to_first_care_demand", observed=False)[["full_time_o"]]
+                m.groupby("distance_to_first_care_demand", observed=False)[
+                    ["full_time_o"]
+                ]
                 .mean()
                 .reset_index()
                 .sort_values("distance_to_first_care_demand")
@@ -2105,7 +2112,9 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication_part_time
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_care_demand_total_caregiving_back_to_Jan7_part_time")
+    @pytask.task(
+        id=f"{age_label_val}_care_demand_total_caregiving_back_to_Jan7_part_time"
+    )
     def task_plot_part_time_share_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -2210,7 +2219,9 @@ for age_min_val, age_max_val, age_label_val in (
         def _prof_for_agents(agents):
             m = merged[merged["agent"].isin(agents)].copy()
             p = (
-                m.groupby("distance_to_first_care_demand", observed=False)[["part_time_o"]]
+                m.groupby("distance_to_first_care_demand", observed=False)[
+                    ["part_time_o"]
+                ]
                 .mean()
                 .reset_index()
                 .sort_values("distance_to_first_care_demand")
@@ -2261,7 +2272,9 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication_working_hours
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_care_demand_total_caregiving_back_to_Jan7_working_hours")
+    @pytask.task(
+        id=f"{age_label_val}_care_demand_total_caregiving_back_to_Jan7_working_hours"
+    )
     def task_plot_working_hours_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -2428,7 +2441,9 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication_labor_income
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_care_demand_total_caregiving_back_to_Jan7_labor_income")
+    @pytask.task(
+        id=f"{age_label_val}_care_demand_total_caregiving_back_to_Jan7_labor_income"
+    )
     def task_plot_labor_income_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -2660,7 +2675,9 @@ for age_min_val, age_max_val, age_label_val in (
             .reset_index()
         )
         merged = merged.merge(dist_map, on="agent", how="left")
-        merged["distance_to_first_care"] = merged["period"] - merged["first_care_period"]
+        merged["distance_to_first_care"] = (
+            merged["period"] - merged["first_care_period"]
+        )
         caregiving_mask = df_o["choice"].isin(care_codes)
         first_care_with_age = get_age_at_first_event(
             df_o, caregiving_mask, "age_at_first_care"
@@ -2695,35 +2712,45 @@ for age_min_val, age_max_val, age_label_val in (
         )
         merged_1_year = merged[merged["agent"].isin(agents_1_year)].copy()
         prof_1_year = (
-            merged_1_year.groupby("distance_to_first_care", observed=False)[["full_time_o"]]
+            merged_1_year.groupby("distance_to_first_care", observed=False)[
+                ["full_time_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_2_year = merged[merged["agent"].isin(agents_2_year)].copy()
         prof_2_year = (
-            merged_2_year.groupby("distance_to_first_care", observed=False)[["full_time_o"]]
+            merged_2_year.groupby("distance_to_first_care", observed=False)[
+                ["full_time_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_3_year = merged[merged["agent"].isin(agents_3_year)].copy()
         prof_3_year = (
-            merged_3_year.groupby("distance_to_first_care", observed=False)[["full_time_o"]]
+            merged_3_year.groupby("distance_to_first_care", observed=False)[
+                ["full_time_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_4_year = merged[merged["agent"].isin(agents_4_year)].copy()
         prof_4_year = (
-            merged_4_year.groupby("distance_to_first_care", observed=False)[["full_time_o"]]
+            merged_4_year.groupby("distance_to_first_care", observed=False)[
+                ["full_time_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_5_year = merged[merged["agent"].isin(agents_5_year)].copy()
         prof_5_year = (
-            merged_5_year.groupby("distance_to_first_care", observed=False)[["full_time_o"]]
+            merged_5_year.groupby("distance_to_first_care", observed=False)[
+                ["full_time_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
@@ -2822,7 +2849,9 @@ for age_min_val, age_max_val, age_label_val in (
             .reset_index()
         )
         merged = merged.merge(dist_map, on="agent", how="left")
-        merged["distance_to_first_care"] = merged["period"] - merged["first_care_period"]
+        merged["distance_to_first_care"] = (
+            merged["period"] - merged["first_care_period"]
+        )
         caregiving_mask = df_o["choice"].isin(care_codes)
         first_care_with_age = get_age_at_first_event(
             df_o, caregiving_mask, "age_at_first_care"
@@ -2857,35 +2886,45 @@ for age_min_val, age_max_val, age_label_val in (
         )
         merged_1_year = merged[merged["agent"].isin(agents_1_year)].copy()
         prof_1_year = (
-            merged_1_year.groupby("distance_to_first_care", observed=False)[["part_time_o"]]
+            merged_1_year.groupby("distance_to_first_care", observed=False)[
+                ["part_time_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_2_year = merged[merged["agent"].isin(agents_2_year)].copy()
         prof_2_year = (
-            merged_2_year.groupby("distance_to_first_care", observed=False)[["part_time_o"]]
+            merged_2_year.groupby("distance_to_first_care", observed=False)[
+                ["part_time_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_3_year = merged[merged["agent"].isin(agents_3_year)].copy()
         prof_3_year = (
-            merged_3_year.groupby("distance_to_first_care", observed=False)[["part_time_o"]]
+            merged_3_year.groupby("distance_to_first_care", observed=False)[
+                ["part_time_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_4_year = merged[merged["agent"].isin(agents_4_year)].copy()
         prof_4_year = (
-            merged_4_year.groupby("distance_to_first_care", observed=False)[["part_time_o"]]
+            merged_4_year.groupby("distance_to_first_care", observed=False)[
+                ["part_time_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_5_year = merged[merged["agent"].isin(agents_5_year)].copy()
         prof_5_year = (
-            merged_5_year.groupby("distance_to_first_care", observed=False)[["part_time_o"]]
+            merged_5_year.groupby("distance_to_first_care", observed=False)[
+                ["part_time_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
@@ -2991,7 +3030,9 @@ for age_min_val, age_max_val, age_label_val in (
             .reset_index()
         )
         merged = merged.merge(dist_map, on="agent", how="left")
-        merged["distance_to_first_care"] = merged["period"] - merged["first_care_period"]
+        merged["distance_to_first_care"] = (
+            merged["period"] - merged["first_care_period"]
+        )
         caregiving_mask = df_o["choice"].isin(care_codes)
         first_care_with_age = get_age_at_first_event(
             df_o, caregiving_mask, "age_at_first_care"
@@ -3026,35 +3067,45 @@ for age_min_val, age_max_val, age_label_val in (
         )
         merged_1_year = merged[merged["agent"].isin(agents_1_year)].copy()
         prof_1_year = (
-            merged_1_year.groupby("distance_to_first_care", observed=False)[["working_hours_weekly_o"]]
+            merged_1_year.groupby("distance_to_first_care", observed=False)[
+                ["working_hours_weekly_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_2_year = merged[merged["agent"].isin(agents_2_year)].copy()
         prof_2_year = (
-            merged_2_year.groupby("distance_to_first_care", observed=False)[["working_hours_weekly_o"]]
+            merged_2_year.groupby("distance_to_first_care", observed=False)[
+                ["working_hours_weekly_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_3_year = merged[merged["agent"].isin(agents_3_year)].copy()
         prof_3_year = (
-            merged_3_year.groupby("distance_to_first_care", observed=False)[["working_hours_weekly_o"]]
+            merged_3_year.groupby("distance_to_first_care", observed=False)[
+                ["working_hours_weekly_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_4_year = merged[merged["agent"].isin(agents_4_year)].copy()
         prof_4_year = (
-            merged_4_year.groupby("distance_to_first_care", observed=False)[["working_hours_weekly_o"]]
+            merged_4_year.groupby("distance_to_first_care", observed=False)[
+                ["working_hours_weekly_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_5_year = merged[merged["agent"].isin(agents_5_year)].copy()
         prof_5_year = (
-            merged_5_year.groupby("distance_to_first_care", observed=False)[["working_hours_weekly_o"]]
+            merged_5_year.groupby("distance_to_first_care", observed=False)[
+                ["working_hours_weekly_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
@@ -3161,7 +3212,9 @@ for age_min_val, age_max_val, age_label_val in (
             .reset_index()
         )
         merged = merged.merge(dist_map, on="agent", how="left")
-        merged["distance_to_first_care"] = merged["period"] - merged["first_care_period"]
+        merged["distance_to_first_care"] = (
+            merged["period"] - merged["first_care_period"]
+        )
         caregiving_mask = df_o["choice"].isin(care_codes)
         first_care_with_age = get_age_at_first_event(
             df_o, caregiving_mask, "age_at_first_care"
@@ -3196,35 +3249,45 @@ for age_min_val, age_max_val, age_label_val in (
         )
         merged_1_year = merged[merged["agent"].isin(agents_1_year)].copy()
         prof_1_year = (
-            merged_1_year.groupby("distance_to_first_care", observed=False)[["monthly_gross_labor_income_o"]]
+            merged_1_year.groupby("distance_to_first_care", observed=False)[
+                ["monthly_gross_labor_income_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_2_year = merged[merged["agent"].isin(agents_2_year)].copy()
         prof_2_year = (
-            merged_2_year.groupby("distance_to_first_care", observed=False)[["monthly_gross_labor_income_o"]]
+            merged_2_year.groupby("distance_to_first_care", observed=False)[
+                ["monthly_gross_labor_income_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_3_year = merged[merged["agent"].isin(agents_3_year)].copy()
         prof_3_year = (
-            merged_3_year.groupby("distance_to_first_care", observed=False)[["monthly_gross_labor_income_o"]]
+            merged_3_year.groupby("distance_to_first_care", observed=False)[
+                ["monthly_gross_labor_income_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_4_year = merged[merged["agent"].isin(agents_4_year)].copy()
         prof_4_year = (
-            merged_4_year.groupby("distance_to_first_care", observed=False)[["monthly_gross_labor_income_o"]]
+            merged_4_year.groupby("distance_to_first_care", observed=False)[
+                ["monthly_gross_labor_income_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_5_year = merged[merged["agent"].isin(agents_5_year)].copy()
         prof_5_year = (
-            merged_5_year.groupby("distance_to_first_care", observed=False)[["monthly_gross_labor_income_o"]]
+            merged_5_year.groupby("distance_to_first_care", observed=False)[
+                ["monthly_gross_labor_income_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
@@ -3266,7 +3329,9 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication_full_time
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_caregiving_spell_total_caregiving_back_to_Jan7_full_time")
+    @pytask.task(
+        id=f"{age_label_val}_caregiving_spell_total_caregiving_back_to_Jan7_full_time"
+    )
     def task_plot_full_time_share_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -3320,7 +3385,9 @@ for age_min_val, age_max_val, age_label_val in (
             .reset_index()
         )
         merged = merged.merge(dist_map, on="agent", how="left")
-        merged["distance_to_first_care"] = merged["period"] - merged["first_care_period"]
+        merged["distance_to_first_care"] = (
+            merged["period"] - merged["first_care_period"]
+        )
         caregiving_mask = df_o["choice"].isin(care_codes)
         first_care_with_age = get_age_at_first_event(
             df_o, caregiving_mask, "age_at_first_care"
@@ -3355,35 +3422,45 @@ for age_min_val, age_max_val, age_label_val in (
         )
         merged_1_year = merged[merged["agent"].isin(agents_1_year)].copy()
         prof_1_year = (
-            merged_1_year.groupby("distance_to_first_care", observed=False)[["full_time_o"]]
+            merged_1_year.groupby("distance_to_first_care", observed=False)[
+                ["full_time_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_2_year = merged[merged["agent"].isin(agents_2_year)].copy()
         prof_2_year = (
-            merged_2_year.groupby("distance_to_first_care", observed=False)[["full_time_o"]]
+            merged_2_year.groupby("distance_to_first_care", observed=False)[
+                ["full_time_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_3_year = merged[merged["agent"].isin(agents_3_year)].copy()
         prof_3_year = (
-            merged_3_year.groupby("distance_to_first_care", observed=False)[["full_time_o"]]
+            merged_3_year.groupby("distance_to_first_care", observed=False)[
+                ["full_time_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_4_year = merged[merged["agent"].isin(agents_4_year)].copy()
         prof_4_year = (
-            merged_4_year.groupby("distance_to_first_care", observed=False)[["full_time_o"]]
+            merged_4_year.groupby("distance_to_first_care", observed=False)[
+                ["full_time_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_5_year = merged[merged["agent"].isin(agents_5_year)].copy()
         prof_5_year = (
-            merged_5_year.groupby("distance_to_first_care", observed=False)[["full_time_o"]]
+            merged_5_year.groupby("distance_to_first_care", observed=False)[
+                ["full_time_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
@@ -3424,7 +3501,9 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication_part_time
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_caregiving_spell_total_caregiving_back_to_Jan7_part_time")
+    @pytask.task(
+        id=f"{age_label_val}_caregiving_spell_total_caregiving_back_to_Jan7_part_time"
+    )
     def task_plot_part_time_share_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -3478,7 +3557,9 @@ for age_min_val, age_max_val, age_label_val in (
             .reset_index()
         )
         merged = merged.merge(dist_map, on="agent", how="left")
-        merged["distance_to_first_care"] = merged["period"] - merged["first_care_period"]
+        merged["distance_to_first_care"] = (
+            merged["period"] - merged["first_care_period"]
+        )
         caregiving_mask = df_o["choice"].isin(care_codes)
         first_care_with_age = get_age_at_first_event(
             df_o, caregiving_mask, "age_at_first_care"
@@ -3513,35 +3594,45 @@ for age_min_val, age_max_val, age_label_val in (
         )
         merged_1_year = merged[merged["agent"].isin(agents_1_year)].copy()
         prof_1_year = (
-            merged_1_year.groupby("distance_to_first_care", observed=False)[["part_time_o"]]
+            merged_1_year.groupby("distance_to_first_care", observed=False)[
+                ["part_time_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_2_year = merged[merged["agent"].isin(agents_2_year)].copy()
         prof_2_year = (
-            merged_2_year.groupby("distance_to_first_care", observed=False)[["part_time_o"]]
+            merged_2_year.groupby("distance_to_first_care", observed=False)[
+                ["part_time_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_3_year = merged[merged["agent"].isin(agents_3_year)].copy()
         prof_3_year = (
-            merged_3_year.groupby("distance_to_first_care", observed=False)[["part_time_o"]]
+            merged_3_year.groupby("distance_to_first_care", observed=False)[
+                ["part_time_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_4_year = merged[merged["agent"].isin(agents_4_year)].copy()
         prof_4_year = (
-            merged_4_year.groupby("distance_to_first_care", observed=False)[["part_time_o"]]
+            merged_4_year.groupby("distance_to_first_care", observed=False)[
+                ["part_time_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_5_year = merged[merged["agent"].isin(agents_5_year)].copy()
         prof_5_year = (
-            merged_5_year.groupby("distance_to_first_care", observed=False)[["part_time_o"]]
+            merged_5_year.groupby("distance_to_first_care", observed=False)[
+                ["part_time_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
@@ -3582,7 +3673,9 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication_working_hours
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_caregiving_spell_total_caregiving_back_to_Jan7_working_hours")
+    @pytask.task(
+        id=f"{age_label_val}_caregiving_spell_total_caregiving_back_to_Jan7_working_hours"
+    )
     def task_plot_working_hours_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -3643,7 +3736,9 @@ for age_min_val, age_max_val, age_label_val in (
             .reset_index()
         )
         merged = merged.merge(dist_map, on="agent", how="left")
-        merged["distance_to_first_care"] = merged["period"] - merged["first_care_period"]
+        merged["distance_to_first_care"] = (
+            merged["period"] - merged["first_care_period"]
+        )
         caregiving_mask = df_o["choice"].isin(care_codes)
         first_care_with_age = get_age_at_first_event(
             df_o, caregiving_mask, "age_at_first_care"
@@ -3678,35 +3773,45 @@ for age_min_val, age_max_val, age_label_val in (
         )
         merged_1_year = merged[merged["agent"].isin(agents_1_year)].copy()
         prof_1_year = (
-            merged_1_year.groupby("distance_to_first_care", observed=False)[["working_hours_weekly_o"]]
+            merged_1_year.groupby("distance_to_first_care", observed=False)[
+                ["working_hours_weekly_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_2_year = merged[merged["agent"].isin(agents_2_year)].copy()
         prof_2_year = (
-            merged_2_year.groupby("distance_to_first_care", observed=False)[["working_hours_weekly_o"]]
+            merged_2_year.groupby("distance_to_first_care", observed=False)[
+                ["working_hours_weekly_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_3_year = merged[merged["agent"].isin(agents_3_year)].copy()
         prof_3_year = (
-            merged_3_year.groupby("distance_to_first_care", observed=False)[["working_hours_weekly_o"]]
+            merged_3_year.groupby("distance_to_first_care", observed=False)[
+                ["working_hours_weekly_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_4_year = merged[merged["agent"].isin(agents_4_year)].copy()
         prof_4_year = (
-            merged_4_year.groupby("distance_to_first_care", observed=False)[["working_hours_weekly_o"]]
+            merged_4_year.groupby("distance_to_first_care", observed=False)[
+                ["working_hours_weekly_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_5_year = merged[merged["agent"].isin(agents_5_year)].copy()
         prof_5_year = (
-            merged_5_year.groupby("distance_to_first_care", observed=False)[["working_hours_weekly_o"]]
+            merged_5_year.groupby("distance_to_first_care", observed=False)[
+                ["working_hours_weekly_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
@@ -3748,7 +3853,9 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication_labor_income
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_caregiving_spell_total_caregiving_back_to_Jan7_labor_income")
+    @pytask.task(
+        id=f"{age_label_val}_caregiving_spell_total_caregiving_back_to_Jan7_labor_income"
+    )
     def task_plot_labor_income_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -3809,7 +3916,9 @@ for age_min_val, age_max_val, age_label_val in (
             .reset_index()
         )
         merged = merged.merge(dist_map, on="agent", how="left")
-        merged["distance_to_first_care"] = merged["period"] - merged["first_care_period"]
+        merged["distance_to_first_care"] = (
+            merged["period"] - merged["first_care_period"]
+        )
         caregiving_mask = df_o["choice"].isin(care_codes)
         first_care_with_age = get_age_at_first_event(
             df_o, caregiving_mask, "age_at_first_care"
@@ -3844,35 +3953,45 @@ for age_min_val, age_max_val, age_label_val in (
         )
         merged_1_year = merged[merged["agent"].isin(agents_1_year)].copy()
         prof_1_year = (
-            merged_1_year.groupby("distance_to_first_care", observed=False)[["monthly_gross_labor_income_o"]]
+            merged_1_year.groupby("distance_to_first_care", observed=False)[
+                ["monthly_gross_labor_income_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_2_year = merged[merged["agent"].isin(agents_2_year)].copy()
         prof_2_year = (
-            merged_2_year.groupby("distance_to_first_care", observed=False)[["monthly_gross_labor_income_o"]]
+            merged_2_year.groupby("distance_to_first_care", observed=False)[
+                ["monthly_gross_labor_income_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_3_year = merged[merged["agent"].isin(agents_3_year)].copy()
         prof_3_year = (
-            merged_3_year.groupby("distance_to_first_care", observed=False)[["monthly_gross_labor_income_o"]]
+            merged_3_year.groupby("distance_to_first_care", observed=False)[
+                ["monthly_gross_labor_income_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_4_year = merged[merged["agent"].isin(agents_4_year)].copy()
         prof_4_year = (
-            merged_4_year.groupby("distance_to_first_care", observed=False)[["monthly_gross_labor_income_o"]]
+            merged_4_year.groupby("distance_to_first_care", observed=False)[
+                ["monthly_gross_labor_income_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")
         )
         merged_5_year = merged[merged["agent"].isin(agents_5_year)].copy()
         prof_5_year = (
-            merged_5_year.groupby("distance_to_first_care", observed=False)[["monthly_gross_labor_income_o"]]
+            merged_5_year.groupby("distance_to_first_care", observed=False)[
+                ["monthly_gross_labor_income_o"]
+            ]
             .mean()
             .reset_index()
             .sort_values("distance_to_first_care")

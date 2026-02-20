@@ -18,6 +18,8 @@ from pytask import Product
 
 from caregiving.config import BLD
 from caregiving.counterfactual.plotting_helpers import (
+    add_distance_to_first_care,
+    add_distance_to_first_care_demand,
     calculate_simple_outcomes,
     get_age_at_first_event,
     get_distinct_colors,
@@ -34,10 +36,6 @@ from caregiving.counterfactual.plotting_utils import (
     ensure_agent_period,
     merge_and_compute_differences,
     prepare_dataframes_for_comparison,
-)
-from caregiving.counterfactual.plotting_helpers import (
-    add_distance_to_first_care,
-    add_distance_to_first_care_demand,
 )
 from caregiving.model.shared import DEAD, INFORMAL_CARE
 

@@ -23,12 +23,12 @@ from caregiving.counterfactual.plotting_helpers import (
     calculate_simple_outcomes,
     prepare_dataframes_simple,
 )
+from caregiving.figures.publication.plotting_helpers import (
+    plot_employment_rate_by_distance,
+)
 from caregiving.figures.publication.plotting_helpers_mother_death import (
     add_distance_to_mother_death,
     identify_agents_by_total_caregiving_before_death,
-)
-from caregiving.figures.publication.plotting_helpers import (
-    plot_employment_rate_by_distance,
 )
 from caregiving.model.shared import (
     INFORMAL_CARE,
@@ -2593,9 +2593,15 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
     @pytask.task(
+<<<<<<< HEAD
         id=f"{age_label_val}_mother_death_back_to_Jan7_{_CARE_CONDITION_1}_employment"
     )
     def task_plot_employment_rate_by_distance_to_mother_death_back_to_Jan7_care_geq10(  # noqa: PLR0913
+=======
+        id=f"{age_label_val}_mother_death_total_caregiving_back_to_Jan7_part_time"
+    )
+    def task_plot_part_time_share_by_distance_to_mother_death_total_caregiving_back_to_Jan7(  # noqa: PLR0913
+>>>>>>> 539a158f1776ce7ade6ccc4f2ff529b2c62b5a52
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         path_to_original_data: Path = BLD
@@ -2669,9 +2675,15 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
     @pytask.task(
+<<<<<<< HEAD
         id=f"{age_label_val}_mother_death_back_to_Jan7_{_CARE_CONDITION_1}_full_time"
     )
     def task_plot_full_time_by_distance_to_mother_death_back_to_Jan7_care_geq10(  # noqa: PLR0913
+=======
+        id=f"{age_label_val}_mother_death_total_caregiving_back_to_Jan7_working_hours"
+    )
+    def task_plot_working_hours_by_distance_to_mother_death_total_caregiving_back_to_Jan7(  # noqa: PLR0913
+>>>>>>> 539a158f1776ce7ade6ccc4f2ff529b2c62b5a52
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         path_to_original_data: Path = BLD
@@ -3003,9 +3015,15 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
     @pytask.task(
+<<<<<<< HEAD
         id=f"{age_label_val}_mother_death_back_to_Jan7_{_CARE_CONDITION_2}_employment"
     )
     def task_plot_employment_rate_by_distance_to_mother_death_back_to_Jan7_care_less10(  # noqa: PLR0913
+=======
+        id=f"{age_label_val}_mother_death_total_caregiving_back_to_Jan7_labor_income"
+    )
+    def task_plot_labor_income_by_distance_to_mother_death_total_caregiving_back_to_Jan7(  # noqa: PLR0913
+>>>>>>> 539a158f1776ce7ade6ccc4f2ff529b2c62b5a52
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         path_to_original_data: Path = BLD

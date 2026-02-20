@@ -41,11 +41,13 @@ from caregiving.figures.publication.plotting_helpers_mother_death import (
 )
 from caregiving.model.shared import PARENT_RECENTLY_DEAD
 
+
 def _get_plot_outcome_difference_by_distance_total_caregiving():
     """Lazy import to avoid loading the forward event-study module at collect time (prevents duplicate task ids)."""
     from caregiving.figures.publication.task_plot_event_study_total_caregiving_years import (
         plot_outcome_difference_by_distance_total_caregiving,
     )
+
     return plot_outcome_difference_by_distance_total_caregiving
 
 
@@ -102,6 +104,7 @@ def reverse_event_study_total_caregiving_merged_and_profiles(
         .reset_index()
     )
     merged = merged.merge(dist_map, on="agent", how="left")
+<<<<<<< HEAD
     # Safeguard: ensure mother's death occurs in the same period in no-care-demand
     df_c_dist = add_distance_to_mother_death(df_c)
     first_death_c = (
@@ -125,6 +128,9 @@ def reverse_event_study_total_caregiving_merged_and_profiles(
     merged["distance_to_mother_death"] = (
         merged["period"] - merged["first_death_period"]
     )
+=======
+    merged["distance_to_mother_death"] = merged["period"] - merged["first_death_period"]
+>>>>>>> 539a158f1776ce7ade6ccc4f2ff529b2c62b5a52
     death_mask = df_o["mother_dead"] == PARENT_RECENTLY_DEAD
     first_death_with_age = (
         df_o.loc[death_mask, ["agent", "period", "age"]]
@@ -192,7 +198,9 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
     @pytask.mark.publication_event_study_reverse
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_reverse_event_study_mother_death_employment_total_caregiving_estimated_params")
+    @pytask.task(
+        id=f"{age_label_val}_reverse_event_study_mother_death_employment_total_caregiving_estimated_params"
+    )
     def task_plot_event_study_employment_rate_by_distance_to_mother_death_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -233,14 +241,26 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
         c_work, _, _ = calculate_simple_outcomes(df_c, "no_care_demand")
         _, prof_diff, p1, p2, p3, p4, p5 = (
             reverse_event_study_total_caregiving_merged_and_profiles(
-                df_o, df_c, o_work, c_work, window, age_min, age_max,
-                start_age, end_age_caregiving,
+                df_o,
+                df_c,
+                o_work,
+                c_work,
+                window,
+                age_min,
+                age_max,
+                start_age,
+                end_age_caregiving,
             )
         )
         _get_plot_outcome_difference_by_distance_total_caregiving()(
-            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
-            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
-            window=window, path_to_plot=path_to_plot,
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             ylabel="Difference in employment rate",
         )
@@ -254,7 +274,9 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
     @pytask.mark.publication_event_study_reverse
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_reverse_event_study_mother_death_employment_total_caregiving_back_to_Jan7")
+    @pytask.task(
+        id=f"{age_label_val}_reverse_event_study_mother_death_employment_total_caregiving_back_to_Jan7"
+    )
     def task_plot_event_study_employment_rate_by_distance_to_mother_death_total_caregiving_back_to_Jan7(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -295,14 +317,26 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
         c_work, _, _ = calculate_simple_outcomes(df_c, "no_care_demand")
         _, prof_diff, p1, p2, p3, p4, p5 = (
             reverse_event_study_total_caregiving_merged_and_profiles(
-                df_o, df_c, o_work, c_work, window, age_min, age_max,
-                start_age, end_age_caregiving,
+                df_o,
+                df_c,
+                o_work,
+                c_work,
+                window,
+                age_min,
+                age_max,
+                start_age,
+                end_age_caregiving,
             )
         )
         _get_plot_outcome_difference_by_distance_total_caregiving()(
-            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
-            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
-            window=window, path_to_plot=path_to_plot,
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             ylabel="Difference in employment rate",
         )
@@ -316,7 +350,9 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
     @pytask.mark.publication_event_study_reverse
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_reverse_event_study_mother_death_full_time_total_caregiving_estimated_params")
+    @pytask.task(
+        id=f"{age_label_val}_reverse_event_study_mother_death_full_time_total_caregiving_estimated_params"
+    )
     def task_plot_event_study_full_time_by_distance_to_mother_death_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -357,14 +393,26 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
         _, c_out, _ = calculate_simple_outcomes(df_c, "no_care_demand")
         _, prof_diff, p1, p2, p3, p4, p5 = (
             reverse_event_study_total_caregiving_merged_and_profiles(
-                df_o, df_c, o_out, c_out, window, age_min, age_max,
-                start_age, end_age_caregiving,
+                df_o,
+                df_c,
+                o_out,
+                c_out,
+                window,
+                age_min,
+                age_max,
+                start_age,
+                end_age_caregiving,
             )
         )
         _get_plot_outcome_difference_by_distance_total_caregiving()(
-            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
-            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
-            window=window, path_to_plot=path_to_plot,
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             ylabel="Difference in full-time rate",
         )
@@ -375,7 +423,9 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
     @pytask.mark.publication_event_study_reverse
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_reverse_event_study_mother_death_full_time_total_caregiving_back_to_Jan7")
+    @pytask.task(
+        id=f"{age_label_val}_reverse_event_study_mother_death_full_time_total_caregiving_back_to_Jan7"
+    )
     def task_plot_event_study_full_time_by_distance_to_mother_death_total_caregiving_back_to_Jan7(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -416,14 +466,26 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
         _, c_out, _ = calculate_simple_outcomes(df_c, "no_care_demand")
         _, prof_diff, p1, p2, p3, p4, p5 = (
             reverse_event_study_total_caregiving_merged_and_profiles(
-                df_o, df_c, o_out, c_out, window, age_min, age_max,
-                start_age, end_age_caregiving,
+                df_o,
+                df_c,
+                o_out,
+                c_out,
+                window,
+                age_min,
+                age_max,
+                start_age,
+                end_age_caregiving,
             )
         )
         _get_plot_outcome_difference_by_distance_total_caregiving()(
-            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
-            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
-            window=window, path_to_plot=path_to_plot,
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             ylabel="Difference in full-time rate",
         )
@@ -437,7 +499,9 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
     @pytask.mark.publication_event_study_reverse
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_reverse_event_study_mother_death_part_time_total_caregiving_estimated_params")
+    @pytask.task(
+        id=f"{age_label_val}_reverse_event_study_mother_death_part_time_total_caregiving_estimated_params"
+    )
     def task_plot_event_study_part_time_by_distance_to_mother_death_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -478,14 +542,26 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
         _, _, c_out = calculate_simple_outcomes(df_c, "no_care_demand")
         _, prof_diff, p1, p2, p3, p4, p5 = (
             reverse_event_study_total_caregiving_merged_and_profiles(
-                df_o, df_c, o_out, c_out, window, age_min, age_max,
-                start_age, end_age_caregiving,
+                df_o,
+                df_c,
+                o_out,
+                c_out,
+                window,
+                age_min,
+                age_max,
+                start_age,
+                end_age_caregiving,
             )
         )
         _get_plot_outcome_difference_by_distance_total_caregiving()(
-            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
-            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
-            window=window, path_to_plot=path_to_plot,
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             ylabel="Difference in part-time rate",
         )
@@ -496,7 +572,9 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
     @pytask.mark.publication_event_study_reverse
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_reverse_event_study_mother_death_part_time_total_caregiving_back_to_Jan7")
+    @pytask.task(
+        id=f"{age_label_val}_reverse_event_study_mother_death_part_time_total_caregiving_back_to_Jan7"
+    )
     def task_plot_event_study_part_time_by_distance_to_mother_death_total_caregiving_back_to_Jan7(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -537,14 +615,26 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
         _, _, c_out = calculate_simple_outcomes(df_c, "no_care_demand")
         _, prof_diff, p1, p2, p3, p4, p5 = (
             reverse_event_study_total_caregiving_merged_and_profiles(
-                df_o, df_c, o_out, c_out, window, age_min, age_max,
-                start_age, end_age_caregiving,
+                df_o,
+                df_c,
+                o_out,
+                c_out,
+                window,
+                age_min,
+                age_max,
+                start_age,
+                end_age_caregiving,
             )
         )
         _get_plot_outcome_difference_by_distance_total_caregiving()(
-            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
-            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
-            window=window, path_to_plot=path_to_plot,
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             ylabel="Difference in part-time rate",
         )
@@ -558,7 +648,9 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
     @pytask.mark.publication_event_study_reverse
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_reverse_event_study_mother_death_working_hours_total_caregiving_estimated_params")
+    @pytask.task(
+        id=f"{age_label_val}_reverse_event_study_mother_death_working_hours_total_caregiving_estimated_params"
+    )
     def task_plot_event_study_working_hours_by_distance_to_mother_death_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -607,14 +699,26 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
         )
         _, prof_diff, p1, p2, p3, p4, p5 = (
             reverse_event_study_total_caregiving_merged_and_profiles(
-                df_o, df_c, o_out, c_out, window, age_min, age_max,
-                start_age, end_age_caregiving,
+                df_o,
+                df_c,
+                o_out,
+                c_out,
+                window,
+                age_min,
+                age_max,
+                start_age,
+                end_age_caregiving,
             )
         )
         _get_plot_outcome_difference_by_distance_total_caregiving()(
-            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
-            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
-            window=window, path_to_plot=path_to_plot,
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             ylabel="Difference in weekly working hours",
             endogenous_ylim=True,
@@ -626,7 +730,9 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
     @pytask.mark.publication_event_study_reverse
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_reverse_event_study_mother_death_working_hours_total_caregiving_back_to_Jan7")
+    @pytask.task(
+        id=f"{age_label_val}_reverse_event_study_mother_death_working_hours_total_caregiving_back_to_Jan7"
+    )
     def task_plot_event_study_working_hours_by_distance_to_mother_death_total_caregiving_back_to_Jan7(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -675,14 +781,26 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
         )
         _, prof_diff, p1, p2, p3, p4, p5 = (
             reverse_event_study_total_caregiving_merged_and_profiles(
-                df_o, df_c, o_out, c_out, window, age_min, age_max,
-                start_age, end_age_caregiving,
+                df_o,
+                df_c,
+                o_out,
+                c_out,
+                window,
+                age_min,
+                age_max,
+                start_age,
+                end_age_caregiving,
             )
         )
         _get_plot_outcome_difference_by_distance_total_caregiving()(
-            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
-            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
-            window=window, path_to_plot=path_to_plot,
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             ylabel="Difference in weekly working hours",
             endogenous_ylim=True,
@@ -697,7 +815,9 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
     @pytask.mark.publication_event_study_reverse
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_reverse_event_study_mother_death_labor_income_total_caregiving_estimated_params")
+    @pytask.task(
+        id=f"{age_label_val}_reverse_event_study_mother_death_labor_income_total_caregiving_estimated_params"
+    )
     def task_plot_event_study_labor_income_by_distance_to_mother_death_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -746,14 +866,26 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
         )
         _, prof_diff, p1, p2, p3, p4, p5 = (
             reverse_event_study_total_caregiving_merged_and_profiles(
-                df_o, df_c, o_out, c_out, window, age_min, age_max,
-                start_age, end_age_caregiving,
+                df_o,
+                df_c,
+                o_out,
+                c_out,
+                window,
+                age_min,
+                age_max,
+                start_age,
+                end_age_caregiving,
             )
         )
         _get_plot_outcome_difference_by_distance_total_caregiving()(
-            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
-            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
-            window=window, path_to_plot=path_to_plot,
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             ylabel="Difference in monthly gross labor income",
             endogenous_ylim=True,
@@ -765,7 +897,9 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
     @pytask.mark.publication_event_study_reverse
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
-    @pytask.task(id=f"{age_label_val}_reverse_event_study_mother_death_labor_income_total_caregiving_back_to_Jan7")
+    @pytask.task(
+        id=f"{age_label_val}_reverse_event_study_mother_death_labor_income_total_caregiving_back_to_Jan7"
+    )
     def task_plot_event_study_labor_income_by_distance_to_mother_death_total_caregiving_back_to_Jan7(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
@@ -814,14 +948,26 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
         )
         _, prof_diff, p1, p2, p3, p4, p5 = (
             reverse_event_study_total_caregiving_merged_and_profiles(
-                df_o, df_c, o_out, c_out, window, age_min, age_max,
-                start_age, end_age_caregiving,
+                df_o,
+                df_c,
+                o_out,
+                c_out,
+                window,
+                age_min,
+                age_max,
+                start_age,
+                end_age_caregiving,
             )
         )
         _get_plot_outcome_difference_by_distance_total_caregiving()(
-            prof_diff=prof_diff, prof_1_year_diff=p1, prof_2_year_diff=p2,
-            prof_3_year_diff=p3, prof_4_year_diff=p4, prof_5_year_diff=p5,
-            window=window, path_to_plot=path_to_plot,
+            prof_diff=prof_diff,
+            prof_1_year_diff=p1,
+            prof_2_year_diff=p2,
+            prof_3_year_diff=p3,
+            prof_4_year_diff=p4,
+            prof_5_year_diff=p5,
+            window=window,
+            path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             ylabel="Difference in monthly gross labor income",
             endogenous_ylim=True,
