@@ -38,7 +38,7 @@ for age_min_val, age_max_val, age_label_val in (
 ):
 
     # @pytask.mark.publication_counterfactual
-    # @pytask.mark.publication_event_study
+    # @pytask.mark.publication_event_study_at_least
     # @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_at_least")
     def task_plot_event_study_employment_rate(  # noqa: PLR0912, PLR0915
@@ -243,7 +243,7 @@ for age_min_val, age_max_val, age_label_val in (
 ):
 
     @pytask.mark.publication_counterfactual
-    @pytask.mark.publication_event_study
+    @pytask.mark.publication_event_study_consecutive
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_consecutive")
     def task_plot_event_study_employment_rate_consecutive(  # noqa: PLR0912, PLR0915
@@ -526,7 +526,7 @@ for age_min_val, age_max_val, age_label_val in (
 ):
 
     @pytask.mark.publication_counterfactual
-    @pytask.mark.publication_event_study
+    @pytask.mark.publication_event_study_consecutive
     @pytask.mark.publication_full_time
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_consecutive_full_time")
@@ -594,7 +594,7 @@ for age_min_val, age_max_val, age_label_val in (
 ):
 
     @pytask.mark.publication_counterfactual
-    @pytask.mark.publication_event_study
+    @pytask.mark.publication_event_study_consecutive
     @pytask.mark.publication_part_time
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_consecutive_part_time")
@@ -662,7 +662,7 @@ for age_min_val, age_max_val, age_label_val in (
 ):
 
     @pytask.mark.publication_counterfactual
-    @pytask.mark.publication_event_study
+    @pytask.mark.publication_event_study_consecutive
     @pytask.mark.publication_working_hours
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_consecutive_working_hours")
@@ -739,7 +739,7 @@ for age_min_val, age_max_val, age_label_val in (
 ):
 
     @pytask.mark.publication_counterfactual
-    @pytask.mark.publication_event_study
+    @pytask.mark.publication_event_study_consecutive
     @pytask.mark.publication_labor_income
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_consecutive_labor_income")

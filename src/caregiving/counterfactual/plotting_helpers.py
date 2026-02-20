@@ -4,6 +4,7 @@ This module provides reusable functions to reduce code duplication in plotting t
 """
 
 from pathlib import Path
+from typing import Literal, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,6 +17,7 @@ from caregiving.model.shared import (
     FULL_TIME,
     INFORMAL_CARE,
     PART_TIME,
+    RETIREMENT,
     WORK,
 )
 from caregiving.model.shared_no_care_demand import (
@@ -223,6 +225,273 @@ def identify_agents_by_total_caregiving_over_lifecycle(
     agents_4_year = total_care[total_care == 4].index.to_numpy()
     agents_5_year = total_care[total_care >= 5].index.to_numpy()
     return (agents_1_year, agents_2_year, agents_3_year, agents_4_year, agents_5_year)
+
+
+# ============================================================================
+# Event study (total caregiving years): shared constants and helpers
+# ============================================================================
+
+# Distance column name used in event-study profile DataFrames
+EVENT_STUDY_DIST_COL = "distance_to_first_care"
+
+# Age groups for event-study tasks: (age_min, age_max, age_label)
+AGE_GROUPS_EVENT_STUDY = (
+    (None, None, "all_ages"),
+    (40, 49, "ages_40_49"),
+    (50, 59, "ages_50_59"),
+    (60, 70, "ages_60_70"),
+)
+
+_WORK_SET = set(np.asarray(WORK).ravel().tolist())
+_RETIREMENT_SET = set(np.asarray(RETIREMENT).ravel().tolist())
+
+
+def job_offer_outcome_series(
+    df: pd.DataFrame,
+    kind: Literal["job_finding", "job_retention"],
+) -> pd.Series:
+    """Build outcome series for job finding or job retention (conditional on lagged status).
+
+    job_finding: mean(job_offer) among (agent, period) where previous period was
+        not working and not retired (unemployed). job_retention: mean(job_offer)
+        among (agent, period) where previous period was working (1 - separation).
+    Returns a series with same index as df; NaN where condition not met (excluded from mean).
+    """
+    if "job_offer" not in df.columns:
+        return pd.Series(np.nan, index=df.index)
+    df_prev = df[["agent", "period", "choice"]].copy()
+    df_prev["period"] = df_prev["period"] + 1
+    df_prev = df_prev.rename(columns={"choice": "lagged_choice"})
+    merged = df.merge(df_prev, on=["agent", "period"], how="left")
+    # Use right-side column after merge (suffix _y if df already had 'lagged_choice')
+    lagged_col = "lagged_choice_y" if "lagged_choice_y" in merged.columns else "lagged_choice"
+    merged["lagged_working"] = merged[lagged_col].isin(_WORK_SET)
+    merged["lagged_retired"] = merged[lagged_col].isin(_RETIREMENT_SET)
+    if kind == "job_finding":
+        mask = (
+            (~merged["lagged_working"])
+            & (~merged["lagged_retired"])
+            & merged[lagged_col].notna()
+        )
+    else:
+        mask = merged["lagged_working"].fillna(False)
+    outcome = merged["job_offer"].astype(float).where(mask)
+    outcome.index = df.index
+    return outcome
+
+
+def plot_outcome_difference_by_distance_total_caregiving(  # noqa: PLR0913
+    prof_diff: pd.DataFrame,
+    prof_1_year_diff: pd.DataFrame,
+    prof_2_year_diff: pd.DataFrame,
+    prof_3_year_diff: pd.DataFrame,
+    prof_4_year_diff: pd.DataFrame,
+    prof_5_year_diff: pd.DataFrame,
+    window: int = 20,
+    path_to_plot: Optional[Path] = None,
+    xlabel: str = "Year relative to start of first care spell",
+    ylabel: str = "Difference in outcome",
+    endogenous_ylim: bool = False,
+) -> None:
+    """Plot outcome difference by distance with 5 lines: total care years 1, 2, 3, 4, 5+.
+
+    Same layout as event study consecutive: dashed black baseline, horizontal line at 0,
+    vertical line at t=-0.5, five subgroup lines (1, 2, 3, 4, 5+ total care years).
+    Profile DataFrames must have column EVENT_STUDY_DIST_COL and 'diff'.
+    """
+    plt.figure(figsize=(14, 8))
+
+    plt.plot(
+        prof_diff[EVENT_STUDY_DIST_COL],
+        prof_diff["diff"],
+        label="Baseline",
+        color="black",
+        linewidth=2.0,
+        linestyle="--",
+        marker=None,
+    )
+    plt.axhline(y=0, color="k", linestyle="-", linewidth=0.8, alpha=0.5)
+
+    def _plot_prof(prof: pd.DataFrame, label: str, color: str, marker: str) -> None:
+        if len(prof) > 0:
+            plt.plot(
+                prof[EVENT_STUDY_DIST_COL],
+                prof["diff"],
+                label=label,
+                color=color,
+                linewidth=2.0,
+                linestyle="-",
+                marker=marker,
+                markersize=5,
+                markevery=1,
+                markerfacecolor="none",
+                markeredgewidth=1.5,
+            )
+
+    _plot_prof(prof_1_year_diff, "1 total care year", "0.9", "8")
+    _plot_prof(prof_2_year_diff, "2 total care years", "0.7", "^")
+    _plot_prof(prof_3_year_diff, "3 total care years", "0.5", "D")
+    _plot_prof(prof_4_year_diff, "4 total care years", "0.3", "s")
+    _plot_prof(prof_5_year_diff, "5+ total care years", "0.1", "v")
+
+    plt.axvline(
+        x=-0.5,
+        color="k",
+        linestyle=(0, (7, 7)),
+        linewidth=1.0,
+    )
+    plt.xlabel(xlabel, fontsize=14)
+    plt.ylabel(ylabel, fontsize=14)
+    plt.xlim(-window - 0.5, window + 0.5)
+
+    all_diffs = []
+    for p in (
+        prof_diff,
+        prof_1_year_diff,
+        prof_2_year_diff,
+        prof_3_year_diff,
+        prof_4_year_diff,
+        prof_5_year_diff,
+    ):
+        if len(p) > 0 and "diff" in p.columns:
+            all_diffs.extend(p["diff"].tolist())
+    finite_diffs = [x for x in all_diffs if np.isfinite(x)]
+    if finite_diffs:
+        if endogenous_ylim:
+            y_min, y_max = min(finite_diffs), max(finite_diffs)
+            pad = (y_max - y_min) * 0.1 if y_max > y_min else 0.1
+            plt.ylim(y_min - pad, y_max + pad)
+        else:
+            y_max = max(abs(min(finite_diffs)), abs(max(finite_diffs)))
+            y_lim = (int(y_max * 1.1 / 0.05) + 1) * 0.05
+            y_lim = max(y_lim, 0.05)
+            plt.ylim(-y_lim, y_lim)
+    else:
+        plt.ylim(-0.1, 0.1)
+
+    plt.grid(True, axis="y", alpha=0.3, linewidth=0.8)
+    plt.xticks(range(-window, window + 1, 5), fontsize=12)
+    plt.yticks(fontsize=12)
+    ax = plt.gca()
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.tick_params(axis="both", length=8)
+    plt.tight_layout()
+    if path_to_plot:
+        path_to_plot.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(path_to_plot, dpi=1200, bbox_inches="tight")
+    plt.close()
+
+
+def event_study_total_caregiving_merged_and_profiles(
+    df_o: pd.DataFrame,
+    df_c: pd.DataFrame,
+    outcome_o_series: pd.Series,
+    outcome_c_series: pd.Series,
+    window: int,
+    age_min: int | None,
+    age_max: int | None,
+    event_type: Literal["care_demand", "caregiving_spell"],
+    start_age: int,
+    end_age_caregiving: int,
+) -> tuple[
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+]:
+    """Build merged df and profile diffs for event study (total care years 1–5+).
+
+    Returns (merged, prof_diff, prof_1_year_diff, ..., prof_5_year_diff).
+    All profiles have columns EVENT_STUDY_DIST_COL and 'diff'.
+    """
+    care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
+    o_cols = df_o[["agent", "period", "choice"]].copy()
+    o_cols["outcome_o"] = np.asarray(outcome_o_series).astype(float)
+    o_cols["current_caregiving"] = o_cols["choice"].isin(care_codes).astype(int)
+    c_cols = df_c[["agent", "period"]].copy()
+    c_cols["outcome_c"] = np.asarray(outcome_c_series).astype(float)
+    merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
+
+    if event_type == "care_demand":
+        merged = merged.merge(
+            df_o[["agent", "period", "care_demand"]],
+            on=["agent", "period"],
+            how="left",
+        )
+        df_o_dist = add_distance_to_first_care_demand(df_o)
+        dist_col_raw = "first_care_demand_period"
+        age_col = "age_at_first_care_demand"
+        care_demand_mask = df_o["care_demand"] > 0
+        first_event = get_age_at_first_event(
+            df_o, care_demand_mask, "age_at_first_care_demand"
+        )
+    else:
+        df_o_dist = add_distance_to_first_care(df_o)
+        dist_col_raw = "first_care_period"
+        age_col = "age_at_first_care"
+        caregiving_mask = df_o["choice"].isin(care_codes)
+        first_event = get_age_at_first_event(df_o, caregiving_mask, "age_at_first_care")
+
+    dist_map = (
+        df_o_dist.groupby("agent", observed=False)[dist_col_raw].first().reset_index()
+    )
+    merged = merged.merge(dist_map, on="agent", how="left")
+    merged["distance_raw"] = merged["period"] - merged[dist_col_raw]
+    merged = merged.merge(first_event, on="agent", how="left")
+
+    merged = merged[
+        merged[dist_col_raw].notna()
+        & (merged["distance_raw"] >= -window)
+        & (merged["distance_raw"] <= window)
+    ]
+    if age_min is not None:
+        merged = merged[merged[age_col] >= age_min].copy()
+    if age_max is not None:
+        merged = merged[merged[age_col] <= age_max].copy()
+
+    merged["diff"] = merged["outcome_o"] - merged["outcome_c"]
+    merged[EVENT_STUDY_DIST_COL] = merged["distance_raw"]
+
+    prof_diff = (
+        merged.groupby(EVENT_STUDY_DIST_COL, observed=False)["diff"]
+        .mean()
+        .reset_index()
+        .sort_values(EVENT_STUDY_DIST_COL)
+    )
+
+    (
+        agents_1_year,
+        agents_2_year,
+        agents_3_year,
+        agents_4_year,
+        agents_5_year,
+    ) = identify_agents_by_total_caregiving_over_lifecycle(
+        df_o, start_age, end_age_caregiving
+    )
+
+    def _prof_for_agents(agents: np.ndarray) -> pd.DataFrame:
+        m = merged[merged["agent"].isin(agents)]
+        if len(m) == 0:
+            return pd.DataFrame(columns=[EVENT_STUDY_DIST_COL, "diff"])
+        p = (
+            m.groupby(EVENT_STUDY_DIST_COL, observed=False)["diff"]
+            .mean()
+            .reset_index()
+            .sort_values(EVENT_STUDY_DIST_COL)
+        )
+        return p
+
+    prof_1 = _prof_for_agents(agents_1_year)
+    prof_2 = _prof_for_agents(agents_2_year)
+    prof_3 = _prof_for_agents(agents_3_year)
+    prof_4 = _prof_for_agents(agents_4_year)
+    prof_5 = _prof_for_agents(agents_5_year)
+
+    return merged, prof_diff, prof_1, prof_2, prof_3, prof_4, prof_5
 
 
 def get_distinct_colors(n: int) -> list[str]:

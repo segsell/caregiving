@@ -7,6 +7,14 @@ All outcomes (employment, full_time, part_time, working_hours, labor_income) and
 data pairs (estimated_params, back_to_Jan7). Outputs to
 event_study_reverse/{outcome}/total_caregiving_years/.
 
+Event definition:
+- t=0 is the period in which the mother dies (first period with mother_dead == PARENT_RECENTLY_DEAD).
+- This event is defined from the baseline simulation; the same (agent, period) timeline is used
+  for both baseline and no-care-demand. Baseline and no-care-demand use the same initial states
+  and mother's death is exogenous (does not depend on care choices), so for each agent the
+  mother dies in the same period in both scenarios. The "event" in the counterfactual is
+  therefore the same calendar event; we use the baseline only to label distance.
+
 Sample: ever_caregivers=True, ever_care_demand=False (aligned with forward module).
 Pytask marks: publication_event_study_reverse, publication_counterfactual, publication.
 """
@@ -94,6 +102,26 @@ def reverse_event_study_total_caregiving_merged_and_profiles(
         .reset_index()
     )
     merged = merged.merge(dist_map, on="agent", how="left")
+    # Safeguard: ensure mother's death occurs in the same period in no-care-demand
+    df_c_dist = add_distance_to_mother_death(df_c)
+    first_death_c = (
+        df_c_dist.groupby("agent", observed=False)["first_death_period"]
+        .first()
+        .reset_index()
+        .rename(columns={"first_death_period": "first_death_period_c"})
+    )
+    merged = merged.merge(first_death_c, on="agent", how="left")
+    both = merged["first_death_period"].notna() & merged["first_death_period_c"].notna()
+    mismatch = both & (merged["first_death_period"] != merged["first_death_period_c"])
+    if mismatch.any():
+        n = mismatch.sum()
+        agents_bad = merged.loc[mismatch, "agent"].unique()
+        raise AssertionError(
+            f"Mother's death period must match in baseline and no-care-demand (same "
+            f"initial states, exogenous death). Found {n} (agent, period) rows with "
+            f"mismatch across {len(agents_bad)} agents. Example agents: {agents_bad[:5].tolist()}"
+        )
+    merged = merged.drop(columns=["first_death_period_c"])
     merged["distance_to_mother_death"] = (
         merged["period"] - merged["first_death_period"]
     )

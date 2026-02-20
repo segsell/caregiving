@@ -96,6 +96,68 @@ def _build_profiles_total_caregiving_before_death(
     return prof, prof_1_year, prof_2_year, prof_3_year, prof_4_year, prof_5_year
 
 
+def _add_mother_death_distance_and_safeguard(
+    merged: pd.DataFrame,
+    df_o: pd.DataFrame,
+    df_c: pd.DataFrame,
+    window: int,
+    age_min: int | None,
+    age_max: int | None,
+) -> pd.DataFrame:
+    """Add first_death_period, distance_to_mother_death, age_at_death; assert baseline and no-care-demand death period match; filter by window and optional age at death."""
+    dist_map = (
+        add_distance_to_mother_death(df_o)
+        .groupby("agent", observed=False)["first_death_period"]
+        .first()
+        .reset_index()
+    )
+    merged = merged.merge(dist_map, on="agent", how="left")
+    # Safeguard: mother's death must occur in the same period in no-care-demand
+    df_c_dist = add_distance_to_mother_death(df_c)
+    first_death_c = (
+        df_c_dist.groupby("agent", observed=False)["first_death_period"]
+        .first()
+        .reset_index()
+        .rename(columns={"first_death_period": "first_death_period_c"})
+    )
+    merged = merged.merge(first_death_c, on="agent", how="left")
+    both = merged["first_death_period"].notna() & merged["first_death_period_c"].notna()
+    mismatch = both & (merged["first_death_period"] != merged["first_death_period_c"])
+    if mismatch.any():
+        n = mismatch.sum()
+        agents_bad = merged.loc[mismatch, "agent"].unique()
+        raise AssertionError(
+            "Mother's death period must match in baseline and no-care-demand (same "
+            "initial states, exogenous death). Found "
+            f"{n} (agent, period) rows with mismatch across {len(agents_bad)} agents. "
+            f"Example agents: {agents_bad[:5].tolist()}"
+        )
+    merged = merged.drop(columns=["first_death_period_c"])
+    merged["distance_to_mother_death"] = (
+        merged["period"] - merged["first_death_period"]
+    )
+    death_mask = df_o["mother_dead"] == PARENT_RECENTLY_DEAD
+    first_death_with_age = (
+        df_o.loc[death_mask, ["agent", "period", "age"]]
+        .sort_values(["agent", "period"])
+        .drop_duplicates("agent")
+        .rename(columns={"period": "first_death_period", "age": "age_at_death"})
+    )
+    merged = merged.merge(
+        first_death_with_age[["agent", "age_at_death"]], on="agent", how="left"
+    )
+    merged = merged[
+        merged["first_death_period"].notna()
+        & (merged["distance_to_mother_death"] >= -window)
+        & (merged["distance_to_mother_death"] <= window)
+    ]
+    if age_min is not None:
+        merged = merged[merged["age_at_death"] >= age_min].copy()
+    if age_max is not None:
+        merged = merged[merged["age_at_death"] <= age_max].copy()
+    return merged
+
+
 # ---------------------------------------------------------------------------
 # Standard data: estimated_params, no_care_demand
 # ---------------------------------------------------------------------------
@@ -156,36 +218,9 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
-        dist_map = (
-            add_distance_to_mother_death(df_o)
-            .groupby("agent", observed=False)["first_death_period"]
-            .first()
-            .reset_index()
+        merged = _add_mother_death_distance_and_safeguard(
+            merged, df_o, df_c, window, age_min, age_max
         )
-        merged = merged.merge(dist_map, on="agent", how="left")
-        merged["distance_to_mother_death"] = (
-            merged["period"] - merged["first_death_period"]
-        )
-        death_mask = df_o["mother_dead"] == PARENT_RECENTLY_DEAD
-        first_death_with_age = (
-            df_o.loc[death_mask, ["agent", "period", "age"]]
-            .sort_values(["agent", "period"])
-            .drop_duplicates("agent")
-            .rename(columns={"period": "first_death_period", "age": "age_at_death"})
-        )
-        merged = merged.merge(
-            first_death_with_age[["agent", "age_at_death"]], on="agent", how="left"
-        )
-        merged = merged[
-            merged["first_death_period"].notna()
-            & (merged["distance_to_mother_death"] >= -window)
-            & (merged["distance_to_mother_death"] <= window)
-        ]
-        if age_min is not None:
-            merged = merged[merged["age_at_death"] >= age_min].copy()
-        if age_max is not None:
-            merged = merged[merged["age_at_death"] <= age_max].copy()
-
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
             merged, window, "work_o", "work_c"
         )
@@ -256,36 +291,9 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
-        dist_map = (
-            add_distance_to_mother_death(df_o)
-            .groupby("agent", observed=False)["first_death_period"]
-            .first()
-            .reset_index()
+        merged = _add_mother_death_distance_and_safeguard(
+            merged, df_o, df_c, window, age_min, age_max
         )
-        merged = merged.merge(dist_map, on="agent", how="left")
-        merged["distance_to_mother_death"] = (
-            merged["period"] - merged["first_death_period"]
-        )
-        death_mask = df_o["mother_dead"] == PARENT_RECENTLY_DEAD
-        first_death_with_age = (
-            df_o.loc[death_mask, ["agent", "period", "age"]]
-            .sort_values(["agent", "period"])
-            .drop_duplicates("agent")
-            .rename(columns={"period": "first_death_period", "age": "age_at_death"})
-        )
-        merged = merged.merge(
-            first_death_with_age[["agent", "age_at_death"]], on="agent", how="left"
-        )
-        merged = merged[
-            merged["first_death_period"].notna()
-            & (merged["distance_to_mother_death"] >= -window)
-            & (merged["distance_to_mother_death"] <= window)
-        ]
-        if age_min is not None:
-            merged = merged[merged["age_at_death"] >= age_min].copy()
-        if age_max is not None:
-            merged = merged[merged["age_at_death"] <= age_max].copy()
-
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
             merged, window, "full_time_o", "full_time_c"
         )
@@ -356,36 +364,9 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
-        dist_map = (
-            add_distance_to_mother_death(df_o)
-            .groupby("agent", observed=False)["first_death_period"]
-            .first()
-            .reset_index()
+        merged = _add_mother_death_distance_and_safeguard(
+            merged, df_o, df_c, window, age_min, age_max
         )
-        merged = merged.merge(dist_map, on="agent", how="left")
-        merged["distance_to_mother_death"] = (
-            merged["period"] - merged["first_death_period"]
-        )
-        death_mask = df_o["mother_dead"] == PARENT_RECENTLY_DEAD
-        first_death_with_age = (
-            df_o.loc[death_mask, ["agent", "period", "age"]]
-            .sort_values(["agent", "period"])
-            .drop_duplicates("agent")
-            .rename(columns={"period": "first_death_period", "age": "age_at_death"})
-        )
-        merged = merged.merge(
-            first_death_with_age[["agent", "age_at_death"]], on="agent", how="left"
-        )
-        merged = merged[
-            merged["first_death_period"].notna()
-            & (merged["distance_to_mother_death"] >= -window)
-            & (merged["distance_to_mother_death"] <= window)
-        ]
-        if age_min is not None:
-            merged = merged[merged["age_at_death"] >= age_min].copy()
-        if age_max is not None:
-            merged = merged[merged["age_at_death"] <= age_max].copy()
-
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
             merged, window, "part_time_o", "part_time_c"
         )
@@ -464,36 +445,9 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
-        dist_map = (
-            add_distance_to_mother_death(df_o)
-            .groupby("agent", observed=False)["first_death_period"]
-            .first()
-            .reset_index()
+        merged = _add_mother_death_distance_and_safeguard(
+            merged, df_o, df_c, window, age_min, age_max
         )
-        merged = merged.merge(dist_map, on="agent", how="left")
-        merged["distance_to_mother_death"] = (
-            merged["period"] - merged["first_death_period"]
-        )
-        death_mask = df_o["mother_dead"] == PARENT_RECENTLY_DEAD
-        first_death_with_age = (
-            df_o.loc[death_mask, ["agent", "period", "age"]]
-            .sort_values(["agent", "period"])
-            .drop_duplicates("agent")
-            .rename(columns={"period": "first_death_period", "age": "age_at_death"})
-        )
-        merged = merged.merge(
-            first_death_with_age[["agent", "age_at_death"]], on="agent", how="left"
-        )
-        merged = merged[
-            merged["first_death_period"].notna()
-            & (merged["distance_to_mother_death"] >= -window)
-            & (merged["distance_to_mother_death"] <= window)
-        ]
-        if age_min is not None:
-            merged = merged[merged["age_at_death"] >= age_min].copy()
-        if age_max is not None:
-            merged = merged[merged["age_at_death"] <= age_max].copy()
-
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
             merged, window, "working_hours_weekly_o", "working_hours_weekly_c"
         )
@@ -572,36 +526,9 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
-        dist_map = (
-            add_distance_to_mother_death(df_o)
-            .groupby("agent", observed=False)["first_death_period"]
-            .first()
-            .reset_index()
+        merged = _add_mother_death_distance_and_safeguard(
+            merged, df_o, df_c, window, age_min, age_max
         )
-        merged = merged.merge(dist_map, on="agent", how="left")
-        merged["distance_to_mother_death"] = (
-            merged["period"] - merged["first_death_period"]
-        )
-        death_mask = df_o["mother_dead"] == PARENT_RECENTLY_DEAD
-        first_death_with_age = (
-            df_o.loc[death_mask, ["agent", "period", "age"]]
-            .sort_values(["agent", "period"])
-            .drop_duplicates("agent")
-            .rename(columns={"period": "first_death_period", "age": "age_at_death"})
-        )
-        merged = merged.merge(
-            first_death_with_age[["agent", "age_at_death"]], on="agent", how="left"
-        )
-        merged = merged[
-            merged["first_death_period"].notna()
-            & (merged["distance_to_mother_death"] >= -window)
-            & (merged["distance_to_mother_death"] <= window)
-        ]
-        if age_min is not None:
-            merged = merged[merged["age_at_death"] >= age_min].copy()
-        if age_max is not None:
-            merged = merged[merged["age_at_death"] <= age_max].copy()
-
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
             merged,
             window,
@@ -686,36 +613,9 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
-        dist_map = (
-            add_distance_to_mother_death(df_o)
-            .groupby("agent", observed=False)["first_death_period"]
-            .first()
-            .reset_index()
+        merged = _add_mother_death_distance_and_safeguard(
+            merged, df_o, df_c, window, age_min, age_max
         )
-        merged = merged.merge(dist_map, on="agent", how="left")
-        merged["distance_to_mother_death"] = (
-            merged["period"] - merged["first_death_period"]
-        )
-        death_mask = df_o["mother_dead"] == PARENT_RECENTLY_DEAD
-        first_death_with_age = (
-            df_o.loc[death_mask, ["agent", "period", "age"]]
-            .sort_values(["agent", "period"])
-            .drop_duplicates("agent")
-            .rename(columns={"period": "first_death_period", "age": "age_at_death"})
-        )
-        merged = merged.merge(
-            first_death_with_age[["agent", "age_at_death"]], on="agent", how="left"
-        )
-        merged = merged[
-            merged["first_death_period"].notna()
-            & (merged["distance_to_mother_death"] >= -window)
-            & (merged["distance_to_mother_death"] <= window)
-        ]
-        if age_min is not None:
-            merged = merged[merged["age_at_death"] >= age_min].copy()
-        if age_max is not None:
-            merged = merged[merged["age_at_death"] <= age_max].copy()
-
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
             merged, window, "work_o", "work_c"
         )
@@ -786,36 +686,9 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
-        dist_map = (
-            add_distance_to_mother_death(df_o)
-            .groupby("agent", observed=False)["first_death_period"]
-            .first()
-            .reset_index()
+        merged = _add_mother_death_distance_and_safeguard(
+            merged, df_o, df_c, window, age_min, age_max
         )
-        merged = merged.merge(dist_map, on="agent", how="left")
-        merged["distance_to_mother_death"] = (
-            merged["period"] - merged["first_death_period"]
-        )
-        death_mask = df_o["mother_dead"] == PARENT_RECENTLY_DEAD
-        first_death_with_age = (
-            df_o.loc[death_mask, ["agent", "period", "age"]]
-            .sort_values(["agent", "period"])
-            .drop_duplicates("agent")
-            .rename(columns={"period": "first_death_period", "age": "age_at_death"})
-        )
-        merged = merged.merge(
-            first_death_with_age[["agent", "age_at_death"]], on="agent", how="left"
-        )
-        merged = merged[
-            merged["first_death_period"].notna()
-            & (merged["distance_to_mother_death"] >= -window)
-            & (merged["distance_to_mother_death"] <= window)
-        ]
-        if age_min is not None:
-            merged = merged[merged["age_at_death"] >= age_min].copy()
-        if age_max is not None:
-            merged = merged[merged["age_at_death"] <= age_max].copy()
-
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
             merged, window, "full_time_o", "full_time_c"
         )
@@ -886,36 +759,9 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
-        dist_map = (
-            add_distance_to_mother_death(df_o)
-            .groupby("agent", observed=False)["first_death_period"]
-            .first()
-            .reset_index()
+        merged = _add_mother_death_distance_and_safeguard(
+            merged, df_o, df_c, window, age_min, age_max
         )
-        merged = merged.merge(dist_map, on="agent", how="left")
-        merged["distance_to_mother_death"] = (
-            merged["period"] - merged["first_death_period"]
-        )
-        death_mask = df_o["mother_dead"] == PARENT_RECENTLY_DEAD
-        first_death_with_age = (
-            df_o.loc[death_mask, ["agent", "period", "age"]]
-            .sort_values(["agent", "period"])
-            .drop_duplicates("agent")
-            .rename(columns={"period": "first_death_period", "age": "age_at_death"})
-        )
-        merged = merged.merge(
-            first_death_with_age[["agent", "age_at_death"]], on="agent", how="left"
-        )
-        merged = merged[
-            merged["first_death_period"].notna()
-            & (merged["distance_to_mother_death"] >= -window)
-            & (merged["distance_to_mother_death"] <= window)
-        ]
-        if age_min is not None:
-            merged = merged[merged["age_at_death"] >= age_min].copy()
-        if age_max is not None:
-            merged = merged[merged["age_at_death"] <= age_max].copy()
-
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
             merged, window, "part_time_o", "part_time_c"
         )
@@ -994,36 +840,9 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
-        dist_map = (
-            add_distance_to_mother_death(df_o)
-            .groupby("agent", observed=False)["first_death_period"]
-            .first()
-            .reset_index()
+        merged = _add_mother_death_distance_and_safeguard(
+            merged, df_o, df_c, window, age_min, age_max
         )
-        merged = merged.merge(dist_map, on="agent", how="left")
-        merged["distance_to_mother_death"] = (
-            merged["period"] - merged["first_death_period"]
-        )
-        death_mask = df_o["mother_dead"] == PARENT_RECENTLY_DEAD
-        first_death_with_age = (
-            df_o.loc[death_mask, ["agent", "period", "age"]]
-            .sort_values(["agent", "period"])
-            .drop_duplicates("agent")
-            .rename(columns={"period": "first_death_period", "age": "age_at_death"})
-        )
-        merged = merged.merge(
-            first_death_with_age[["agent", "age_at_death"]], on="agent", how="left"
-        )
-        merged = merged[
-            merged["first_death_period"].notna()
-            & (merged["distance_to_mother_death"] >= -window)
-            & (merged["distance_to_mother_death"] <= window)
-        ]
-        if age_min is not None:
-            merged = merged[merged["age_at_death"] >= age_min].copy()
-        if age_max is not None:
-            merged = merged[merged["age_at_death"] <= age_max].copy()
-
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
             merged, window, "working_hours_weekly_o", "working_hours_weekly_c"
         )
@@ -1102,36 +921,9 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
-        dist_map = (
-            add_distance_to_mother_death(df_o)
-            .groupby("agent", observed=False)["first_death_period"]
-            .first()
-            .reset_index()
+        merged = _add_mother_death_distance_and_safeguard(
+            merged, df_o, df_c, window, age_min, age_max
         )
-        merged = merged.merge(dist_map, on="agent", how="left")
-        merged["distance_to_mother_death"] = (
-            merged["period"] - merged["first_death_period"]
-        )
-        death_mask = df_o["mother_dead"] == PARENT_RECENTLY_DEAD
-        first_death_with_age = (
-            df_o.loc[death_mask, ["agent", "period", "age"]]
-            .sort_values(["agent", "period"])
-            .drop_duplicates("agent")
-            .rename(columns={"period": "first_death_period", "age": "age_at_death"})
-        )
-        merged = merged.merge(
-            first_death_with_age[["agent", "age_at_death"]], on="agent", how="left"
-        )
-        merged = merged[
-            merged["first_death_period"].notna()
-            & (merged["distance_to_mother_death"] >= -window)
-            & (merged["distance_to_mother_death"] <= window)
-        ]
-        if age_min is not None:
-            merged = merged[merged["age_at_death"] >= age_min].copy()
-        if age_max is not None:
-            merged = merged[merged["age_at_death"] <= age_max].copy()
-
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
             merged,
             window,
