@@ -247,7 +247,7 @@ Align with:
 1. **New module**
    - Create `task_plot_reverse_event_study_total_caregiving_years.py` (no changes to existing mother_death or total_caregiving_years code in this step).
 
-2. **Event and distance**  
+2. **Event and distance**
    - **Event in baseline:** t = 0 is the period in which the mother dies (first period with `mother_dead == PARENT_RECENTLY_DEAD`). This is computed from the baseline simulation (`df_o`) via `add_distance_to_mother_death(df_o)` → `first_death_period` and distance = period − first_death_period.
    - **Corresponding event in no-care-demand:** The same calendar event. Baseline and no-care-demand use the same initial states (`initial_states.pkl`), and mother's death is exogenous (death transition does not depend on care choices). So for each agent the mother dies in the same period in both scenarios. We use the baseline only to *define* t = 0; the counterfactual has the same event by construction.
    - Reuse `add_distance_to_mother_death(df_o)` from `plotting_helpers_mother_death` to get `first_death_period` and distance.
