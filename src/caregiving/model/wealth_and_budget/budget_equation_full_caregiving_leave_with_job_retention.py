@@ -267,9 +267,24 @@ def budget_constraint(
         "delta_transfer_savings": delta_transfer_savings / model_specs["wealth_unit"],
         "full_leave_net_cost_incl_transfer": full_leave_net_cost_incl_transfer
         / model_specs["wealth_unit"],
+        "labor_income_after_ssc": labor_income_after_ssc / model_specs["wealth_unit"],
+        "retirement_income_after_ssc": retirement_income_after_ssc
+        / model_specs["wealth_unit"],
         "own_income_after_ssc": own_income_after_ssc / model_specs["wealth_unit"],
-        # # "care_benefits_and_costs": care_benfits_and_costs / model_specs["wealth_u
-        # nit"],
+        "own_income_for_tax_without_benefit": own_income_for_tax_without_benefit
+        / model_specs["wealth_unit"],
+        "partner_income_after_ssc": partner_income_after_ssc
+        / model_specs["wealth_unit"],
+        "total_net_household_income": total_net_household_income
+        / model_specs["wealth_unit"],
+        "household_net_income_before_floor": household_net_income_before_floor
+        / model_specs["wealth_unit"],
+        "disposable_without_benefit": disposable_without_benefit
+        / model_specs["wealth_unit"],
+        "total_tax_without_benefit": total_tax_without_benefit
+        / model_specs["wealth_unit"],
+        "transfer_without_benefit": transfer_without_benefit
+        / model_specs["wealth_unit"],
         "child_benefits": child_benefits / model_specs["wealth_unit"],
         "formal_care_costs": annual_formal_care_costs_agent
         / model_specs["wealth_unit"],

@@ -82,10 +82,6 @@ def specify_model(
         "n_periods": n_periods,
         "choices": choices,
         "deterministic_states": {
-            # "partner_state": [0],
-            # "health": [1],  # good health
-            # "education": [0],
-            # "caregiving_type": [1],
             "caregiving_type": np.arange(2, dtype=int),
             "education": np.arange(specs["n_education_types"], dtype=int),
             "already_retired": np.arange(2, dtype=int),

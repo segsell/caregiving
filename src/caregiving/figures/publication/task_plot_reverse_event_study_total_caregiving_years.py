@@ -91,11 +91,6 @@ def reverse_event_study_total_caregiving_merged_and_profiles(
     c_cols = df_c[["agent", "period"]].copy()
     c_cols["outcome_c"] = np.asarray(outcome_c_series).astype(float)
     merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
-    merged = merged.merge(
-        df_o[["agent", "period", "mother_dead", "age"]],
-        on=["agent", "period"],
-        how="left",
-    )
 
     df_o_dist = add_distance_to_mother_death(df_o)
     dist_map = (
@@ -104,7 +99,6 @@ def reverse_event_study_total_caregiving_merged_and_profiles(
         .reset_index()
     )
     merged = merged.merge(dist_map, on="agent", how="left")
-<<<<<<< HEAD
     # Safeguard: ensure mother's death occurs in the same period in no-care-demand
     df_c_dist = add_distance_to_mother_death(df_c)
     first_death_c = (
@@ -125,12 +119,7 @@ def reverse_event_study_total_caregiving_merged_and_profiles(
             f"mismatch across {len(agents_bad)} agents. Example agents: {agents_bad[:5].tolist()}"
         )
     merged = merged.drop(columns=["first_death_period_c"])
-    merged["distance_to_mother_death"] = (
-        merged["period"] - merged["first_death_period"]
-    )
-=======
     merged["distance_to_mother_death"] = merged["period"] - merged["first_death_period"]
->>>>>>> 539a158f1776ce7ade6ccc4f2ff529b2c62b5a52
     death_mask = df_o["mother_dead"] == PARENT_RECENTLY_DEAD
     first_death_with_age = (
         df_o.loc[death_mask, ["agent", "period", "age"]]

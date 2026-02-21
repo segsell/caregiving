@@ -20,25 +20,93 @@ from caregiving.tables.publication.task_government_budget_caregiving_leave_top_u
 END_AGE_CAREGIVING = 100
 
 # Outcome columns for which we report avg per caregiver (currency). In df: wealth_unit.
+# Missing columns yield NaN (e.g. baseline has no caregiving_leave_top_up).
 OUTCOME_COLUMNS_AVG_PER_CAREGIVER = [
+    # --- Revenue side ---
     "income_tax",
     "income_tax_single",
+    "own_ssc",
+    "partner_ssc",
+    "total_tax_revenue",
+    # --- Expenditure side ---
+    "government_expenditures",
+    "care_benefits_and_costs",
+    "caregiving_leave_top_up",
+    "formal_care_costs",
+    "household_unemployment_benefits",
+    "unemployment_transfer_paid",
+    # --- Net ---
+    "net_government_budget",
+    # --- Income ---
+    "own_income_after_ssc",
     "joint_gross_labor_income",
     "joint_gross_retirement_income",
-    "household_unemployment_benefits",
-    "total_tax_revenue",
-    "net_government_budget",
+    # --- Leave-specific decomposition ---
+    "normal_leave_net_cost",
+    "tax_increase_from_progression",
+    "full_leave_net_cost",
+    "full_leave_net_cost_incl_transfer",
+    "tax_attributable_to_full_leave",
+    "delta_transfer_savings",
 ]
-# LaTeX column headers for the table (one per outcome).
 OUTCOME_COLUMN_LABELS = [
-    "Avg. income tax per caregiver (currency)",
-    "Avg. income tax (single) per caregiver (currency)",
-    "Avg. joint gross labor income per caregiver (currency)",
-    "Avg. joint gross retirement income per caregiver (currency)",
-    "Avg. household unemployment benefits per caregiver (currency)",
-    "Avg. total tax revenue per caregiver (currency)",
-    "Avg. net government budget per caregiver (currency)",
+    # --- Revenue side ---
+    "Avg. income tax",
+    "Avg. income tax (single)",
+    "Avg. own SSC",
+    "Avg. partner SSC",
+    "Avg. total tax revenue",
+    # --- Expenditure side ---
+    "Avg. gov. expenditures",
+    "Avg. care benefits and costs",
+    "Avg. leave top-up (gross)",
+    "Avg. formal care costs",
+    "Avg. HH unemployment benefits",
+    "Avg. unemployment transfer paid",
+    # --- Net ---
+    "Avg. net gov. budget",
+    # --- Income ---
+    "Avg. own income after SSC",
+    "Avg. joint gross labor income",
+    "Avg. joint gross retirement income",
+    # --- Leave-specific decomposition ---
+    "Avg. normal leave net cost",
+    "Avg. tax increase (progression)",
+    "Avg. full leave net cost",
+    "Avg. full leave net cost (incl. transfer)",
+    "Avg. tax attributable to full leave",
+    "Avg. transfer savings (delta)",
 ]
+
+
+def _n_total_agents(df: pd.DataFrame, start_age: int) -> int:
+    """Count total unique agents in the simulation (age <= END_AGE_CAREGIVING)."""
+    if isinstance(df.index, pd.MultiIndex):
+        df = df.reset_index()
+    df = df.copy()
+    if "age" not in df.columns and "period" in df.columns:
+        df["age"] = start_age + df["period"]
+    df = df[df["age"] <= END_AGE_CAREGIVING]
+    return int(df["agent"].nunique()) if "agent" in df.columns else 0
+
+
+def _total_sum_column(
+    df: pd.DataFrame, column: str, wealth_unit: float, start_age: int
+) -> float:
+    """Sum column × wealth_unit over rows where lagged_choice ∈ INFORMAL_CARE."""
+    if isinstance(df.index, pd.MultiIndex):
+        df = df.reset_index()
+    df = df.copy()
+    if "age" not in df.columns and "period" in df.columns:
+        df["age"] = start_age + df["period"]
+    df = df[df["age"] <= END_AGE_CAREGIVING]
+    if column not in df.columns or "lagged_choice" not in df.columns:
+        return np.nan
+    care_choices = np.asarray(INFORMAL_CARE).ravel()
+    rows = df[df["lagged_choice"].isin(care_choices)]
+    if rows.empty:
+        return np.nan
+    return float((rows[column].values * wealth_unit).sum())
 
 
 @pytask.mark.tables
@@ -129,6 +197,43 @@ def task_create_fiscal_costs(
     avg_monthly_normal = _avg_monthly_per_caregiving_month(avg_normal, avg_years_normal)
     avg_monthly_full = _avg_monthly_per_caregiving_month(avg_full, avg_years_full)
 
+    # --- N total agents, share ever caregiving, per-capita cost ---
+    n_total_baseline = _n_total_agents(baseline_df, start_age)
+    n_total_normal = _n_total_agents(normal_df, start_age)
+    n_total_full = _n_total_agents(full_df, start_age)
+
+    def _safe_div(num, den):
+        return num / den if den else np.nan
+
+    share_cg_baseline = _safe_div(n_baseline, n_total_baseline)
+    share_cg_normal = _safe_div(n_normal, n_total_normal)
+    share_cg_full = _safe_div(n_full, n_total_full)
+
+    percap_baseline = _safe_div(cost_baseline, n_total_baseline)
+    percap_normal = _safe_div(cost_normal, n_total_normal)
+    percap_full = _safe_div(cost_full, n_total_full)
+
+    # --- Total gross benefit (leave_top_up for leave; gross care_benefits for baseline)
+    gross_benefit_baseline = cost_baseline
+    gross_benefit_normal = _total_sum_column(
+        normal_df, "caregiving_leave_top_up", wealth_unit, start_age
+    )
+    gross_benefit_full = _total_sum_column(
+        full_df, "caregiving_leave_top_up", wealth_unit, start_age
+    )
+
+    # --- Total net cost from model aux (NaN if column missing in old sim data) ---
+    net_cost_aux_baseline = cost_baseline
+    net_cost_aux_normal = _total_sum_column(
+        normal_df, "normal_leave_net_cost", wealth_unit, start_age
+    )
+    net_cost_aux_full = _total_sum_column(
+        full_df, "full_leave_net_cost", wealth_unit, start_age
+    )
+    net_cost_incl_transfer_full = _total_sum_column(
+        full_df, "full_leave_net_cost_incl_transfer", wealth_unit, start_age
+    )
+
     # Avg per caregiver for outcomes (same rows as cost: lagged_choice in INFORMAL_CARE)
     outcomes_baseline = _avg_outcomes_per_caregiver_baseline(
         baseline_df, wealth_unit, start_age, OUTCOME_COLUMNS_AVG_PER_CAREGIVER
@@ -140,21 +245,37 @@ def task_create_fiscal_costs(
         full_df, specs, OUTCOME_COLUMNS_AVG_PER_CAREGIVER
     )
 
+    # =====================================================================
+    # Build table
+    # =====================================================================
     table_dict = {
         "Policy": [
-            "Baseline (cash benefits for informal care)",
-            "Normal caregiving leave with job retention",
-            "Full caregiving leave with job retention",
+            "Baseline (cash benefits)",
+            r"Normal leave (65\%)",
+            r"Full leave (100\%)",
         ],
-        "Total cost (currency)": [cost_baseline, cost_normal, cost_full],
-        "N unique caregivers": [n_baseline, n_normal, n_full],
-        "Avg. caregiving years (cond. on caregivers)": [
+        "Total cost (net)": [cost_baseline, cost_normal, cost_full],
+        "Total gross benefit": [
+            gross_benefit_baseline,
+            gross_benefit_normal,
+            gross_benefit_full,
+        ],
+        "Total net cost (model)": [
+            net_cost_aux_baseline,
+            net_cost_aux_normal,
+            net_cost_aux_full,
+        ],
+        "N caregivers": [n_baseline, n_normal, n_full],
+        "N total agents": [n_total_baseline, n_total_normal, n_total_full],
+        "Share ever caregiving": [share_cg_baseline, share_cg_normal, share_cg_full],
+        "Avg. caregiving years": [
             avg_years_baseline,
             avg_years_normal,
             avg_years_full,
         ],
-        "Avg cost per caregiver (currency)": [avg_baseline, avg_normal, avg_full],
-        "Avg. monthly cost per caregiver per caregiving month (currency)": [
+        "Avg cost per caregiver": [avg_baseline, avg_normal, avg_full],
+        "Per-capita cost (all agents)": [percap_baseline, percap_normal, percap_full],
+        "Avg. monthly cost per CG month": [
             avg_monthly_baseline,
             avg_monthly_normal,
             avg_monthly_full,
@@ -168,17 +289,32 @@ def task_create_fiscal_costs(
             outcomes_normal[col],
             outcomes_full[col],
         ]
-    table = pd.DataFrame(table_dict)
+    table_wide = pd.DataFrame(table_dict)
+
+    # Transpose: metrics as rows, policies as columns.
+    # "Policy" column becomes the new column headers; metric names become the index.
+    table = table_wide.set_index("Policy").T
+    table.index.name = "Metric"
+
+    # Compute Δ columns
+    baseline_col = table.columns[0]
+    for leave_col, delta_label in [
+        (table.columns[1], "Δ Normal − Baseline"),
+        (table.columns[2], "Δ Full − Baseline"),
+    ]:
+        table[delta_label] = pd.to_numeric(
+            table[leave_col], errors="coerce"
+        ) - pd.to_numeric(table[baseline_col], errors="coerce")
 
     path_to_save_table.parent.mkdir(parents=True, exist_ok=True)
-    n_cols = 6 + len(OUTCOME_COLUMNS_AVG_PER_CAREGIVER)
+    n_data_cols = len(table.columns)
     latex_str = table.to_latex(
-        index=False,
         float_format="%.2f",
-        column_format="l" + "r" * (n_cols - 1),
+        column_format="l" + "r" * n_data_cols,
         caption="Fiscal costs of caregiving policies (life cycle until age "
         f"{end_age_caregiving}).",
         label="tab:fiscal_costs_caregiving",
+        na_rep="--",
     )
     path_to_save_table.write_text(latex_str)
 

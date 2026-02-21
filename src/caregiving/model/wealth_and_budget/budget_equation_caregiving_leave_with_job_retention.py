@@ -250,9 +250,17 @@ def budget_constraint(
         "bequest_from_parent": bequest_from_parent / model_specs["wealth_unit"],
         "gets_inheritance": gets_inheritance,
         "caregiving_leave_top_up": caregiving_leave_top_up / model_specs["wealth_unit"],
+        "labor_income_after_ssc": labor_income_after_ssc / model_specs["wealth_unit"],
+        "retirement_income_after_ssc": retirement_income_after_ssc
+        / model_specs["wealth_unit"],
         "own_income_after_ssc": own_income_after_ssc / model_specs["wealth_unit"],
-        # # "care_benefits_and_costs": care_benfits_and_costs / model_specs["wealth_u
-        # nit"],
+        "own_income_for_tax": own_income_for_tax / model_specs["wealth_unit"],
+        "partner_income_after_ssc": partner_income_after_ssc
+        / model_specs["wealth_unit"],
+        "total_net_household_income": total_net_household_income
+        / model_specs["wealth_unit"],
+        "household_net_income_before_floor": household_net_income_before_floor
+        / model_specs["wealth_unit"],
         "child_benefits": child_benefits / model_specs["wealth_unit"],
         "formal_care_costs": annual_formal_care_costs_agent
         / model_specs["wealth_unit"],
@@ -261,6 +269,8 @@ def budget_constraint(
         "unemployment_transfer_paid": unemployment_transfer_paid
         / model_specs["wealth_unit"],
         "tax_increase_from_progression": tax_increase_from_progression
+        / model_specs["wealth_unit"],
+        "tax_without_progression": tax_without_progression
         / model_specs["wealth_unit"],
         "normal_leave_net_cost": normal_leave_net_cost / model_specs["wealth_unit"],
         # Government budget components
