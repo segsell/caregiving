@@ -270,8 +270,7 @@ def budget_constraint(
         / model_specs["wealth_unit"],
         "tax_increase_from_progression": tax_increase_from_progression
         / model_specs["wealth_unit"],
-        "tax_without_progression": tax_without_progression
-        / model_specs["wealth_unit"],
+        "tax_without_progression": tax_without_progression / model_specs["wealth_unit"],
         "normal_leave_net_cost": normal_leave_net_cost / model_specs["wealth_unit"],
         # Government budget components
         "income_tax": income_tax_total / model_specs["wealth_unit"],
