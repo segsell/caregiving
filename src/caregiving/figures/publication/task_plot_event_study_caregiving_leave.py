@@ -17,14 +17,12 @@ from pytask import Product
 
 from caregiving.config import BLD
 from caregiving.counterfactual.plotting_helpers import (
-    calculate_simple_outcomes,
-    prepare_dataframes_simple,
-)
-from caregiving.counterfactual.plotting_helpers import (
     AGE_GROUPS_EVENT_STUDY,
+    calculate_simple_outcomes,
     event_study_total_caregiving_merged_and_profiles,
     job_offer_outcome_series,
     plot_outcome_difference_by_distance_total_caregiving,
+    prepare_dataframes_simple,
 )
 
 _PATH_ORIGINAL = BLD / "solve_and_simulate" / "simulated_data_estimated_params.pkl"

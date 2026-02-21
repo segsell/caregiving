@@ -264,7 +264,9 @@ def job_offer_outcome_series(
     df_prev = df_prev.rename(columns={"choice": "lagged_choice"})
     merged = df.merge(df_prev, on=["agent", "period"], how="left")
     # Use right-side column after merge (suffix _y if df already had 'lagged_choice')
-    lagged_col = "lagged_choice_y" if "lagged_choice_y" in merged.columns else "lagged_choice"
+    lagged_col = (
+        "lagged_choice_y" if "lagged_choice_y" in merged.columns else "lagged_choice"
+    )
     merged["lagged_working"] = merged[lagged_col].isin(_WORK_SET)
     merged["lagged_retired"] = merged[lagged_col].isin(_RETIREMENT_SET)
     if kind == "job_finding":

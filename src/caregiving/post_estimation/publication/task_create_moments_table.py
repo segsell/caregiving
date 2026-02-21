@@ -33,9 +33,7 @@ _GROUPS: list[dict] = [
         ],
     },
     {
-        "label": (
-            "Share providing informal care by 5-year age bin and education"
-        ),
+        "label": ("Share providing informal care by 5-year age bin and education"),
         "dataset": "GSOEP/SHARE",
         "patterns": [
             r"^share_informal_care_(any|light|intensive)_(low|high)_educ_age_bin_\d+_\d+$",
@@ -87,9 +85,7 @@ _GROUPS: list[dict] = [
         "patterns": [rf"^share_{_LS}_light_caregivers_age_bin_\d+_\d+$"],
     },
     {
-        "label": (
-            "Light caregiver labor supply by 3-year age bin and education"
-        ),
+        "label": ("Light caregiver labor supply by 3-year age bin and education"),
         "dataset": "GSOEP",
         "patterns": [
             rf"^share_{_LS}_light_caregivers_(low|high)_education_age_bin_\d+_\d+$",
@@ -102,8 +98,7 @@ _GROUPS: list[dict] = [
     },
     {
         "label": (
-            "Intensive caregiver labor supply by 3-year age bin"
-            " and education"
+            "Intensive caregiver labor supply by 3-year age bin" " and education"
         ),
         "dataset": "GSOEP",
         "patterns": [
@@ -123,8 +118,7 @@ _GROUPS: list[dict] = [
     {
         "panel": "Panel E: Transitions",
         "label": (
-            "Year-to-year labor supply transitions"
-            " by 5-year age bin and education"
+            "Year-to-year labor supply transitions" " by 5-year age bin and education"
         ),
         "dataset": "GSOEP",
         "patterns": [
@@ -148,9 +142,7 @@ _GROUPS: list[dict] = [
 
 @pytask.mark.publication_moments_table
 def task_create_moments_table(
-    path_to_moments: Path = BLD
-    / "moments"
-    / "moments_full_with_mean_wealth.csv",
+    path_to_moments: Path = BLD / "moments" / "moments_full_with_mean_wealth.csv",
     path_to_save: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
@@ -220,13 +212,15 @@ def _build_rows(moments: list[str]) -> list[dict]:
         if "ages_override" in grp:
             ages = grp["ages_override"]
         grand_total += n
-        rows.append({
-            "label": grp["label"],
-            "dataset": grp.get("dataset", "GSOEP"),
-            "panel": grp.get("panel"),
-            "n": n,
-            "ages": ages,
-        })
+        rows.append(
+            {
+                "label": grp["label"],
+                "dataset": grp.get("dataset", "GSOEP"),
+                "panel": grp.get("panel"),
+                "n": n,
+                "ages": ages,
+            }
+        )
 
     rows.append({"label": "__total__", "grand_total": grand_total})
     return rows
@@ -259,8 +253,7 @@ def _build_latex(rows: list[dict]) -> str:
             L.append(r"\midrule")
 
         L.append(
-            f"{row['label']} & {row['dataset']}"
-            f" & {row['ages']} & {row['n']} \\\\",
+            f"{row['label']} & {row['dataset']}" f" & {row['ages']} & {row['n']} \\\\",
         )
 
     gt = rows[-1]["grand_total"]
