@@ -87,9 +87,7 @@ def next_period_deterministic_state_beirat(
         * had_ft_job_before_caregiving(job_before_caregiving)
     )
 
-    still_eligible_for_full = (years_leave_used_total < 3) * (
-        full_leave_year_used == 0
-    )
+    still_eligible_for_full = (years_leave_used_total < 3) * (full_leave_year_used == 0)
     still_eligible_for_partial = years_leave_used_total < 3
 
     actually_on_full_leave = on_full_leave * still_eligible_for_full
