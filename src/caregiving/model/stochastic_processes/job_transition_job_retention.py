@@ -99,6 +99,56 @@ def job_offer_process_transition_with_job_retention(
     return jnp.array([prob_no_job, 1 - prob_no_job])
 
 
+def job_offer_process_transition_beirat(
+    params,
+    model_specs,
+    education,
+    period,
+    choice,
+    job_before_caregiving,
+    years_leave_used_total,
+):
+    """Job offer transition for Beirat model: retention only when total leave < 3."""
+    retirement_choice = is_retired(choice)
+    unemployment_choice = is_unemployed(choice)
+    labor_choice = is_working(choice)
+
+    caregiving_choice = is_informal_care(choice)
+    employed_before_caregiving = had_pt_job_before_caregiving(
+        job_before_caregiving
+    ) | had_ft_job_before_caregiving(job_before_caregiving)
+
+    job_sep_prob = model_specs["job_sep_probs"][SEX, education, period]
+    job_finding_prob = calc_job_finding_prob_women_linear(
+        period, education, params, model_specs
+    )
+
+    leave_entitlement_remaining = years_leave_used_total < 3
+    caregiver_with_previous_job = (
+        employed_before_caregiving & caregiving_choice & leave_entitlement_remaining
+    )
+    job_sep_prob_with_caregiver_retention = jnp.where(
+        caregiver_with_previous_job, 0.0, job_sep_prob
+    )
+
+    caregiving_leave = caregiving_choice & (
+        is_unemployed(choice) | is_part_time(choice) | is_full_time(choice)
+    )
+    job_finding_prob_with_caregiver_retention = jnp.where(
+        caregiving_leave & employed_before_caregiving & leave_entitlement_remaining,
+        1.0,
+        job_finding_prob,
+    )
+
+    prob_no_job = (
+        job_sep_prob_with_caregiver_retention * labor_choice
+        + (1 - job_finding_prob_with_caregiver_retention) * unemployment_choice
+        + 1 * retirement_choice
+    )
+
+    return jnp.array([prob_no_job, 1 - prob_no_job])
+
+
 def job_offer_process_transition_leave_with_job_retention(
     params, model_specs, education, period, choice, job_before_caregiving
 ):
@@ -168,6 +218,56 @@ def job_offer_process_transition_leave_with_job_retention(
     )
 
     # Transition probability
+    prob_no_job = (
+        job_sep_prob_with_caregiver_retention * labor_choice
+        + (1 - job_finding_prob_with_caregiver_retention) * unemployment_choice
+        + 1 * retirement_choice
+    )
+
+    return jnp.array([prob_no_job, 1 - prob_no_job])
+
+
+def job_offer_process_transition_beirat(
+    params,
+    model_specs,
+    education,
+    period,
+    choice,
+    job_before_caregiving,
+    years_leave_used_total,
+):
+    """Job offer transition for Beirat model: retention only when total leave < 3."""
+    retirement_choice = is_retired(choice)
+    unemployment_choice = is_unemployed(choice)
+    labor_choice = is_working(choice)
+
+    caregiving_choice = is_informal_care(choice)
+    employed_before_caregiving = had_pt_job_before_caregiving(
+        job_before_caregiving
+    ) | had_ft_job_before_caregiving(job_before_caregiving)
+
+    job_sep_prob = model_specs["job_sep_probs"][SEX, education, period]
+    job_finding_prob = calc_job_finding_prob_women_linear(
+        period, education, params, model_specs
+    )
+
+    leave_entitlement_remaining = years_leave_used_total < 3
+    caregiver_with_previous_job = (
+        employed_before_caregiving & caregiving_choice & leave_entitlement_remaining
+    )
+    job_sep_prob_with_caregiver_retention = jnp.where(
+        caregiver_with_previous_job, 0.0, job_sep_prob
+    )
+
+    caregiving_leave = caregiving_choice & (
+        is_unemployed(choice) | is_part_time(choice) | is_full_time(choice)
+    )
+    job_finding_prob_with_caregiver_retention = jnp.where(
+        caregiving_leave & employed_before_caregiving & leave_entitlement_remaining,
+        1.0,
+        job_finding_prob,
+    )
+
     prob_no_job = (
         job_sep_prob_with_caregiver_retention * labor_choice
         + (1 - job_finding_prob_with_caregiver_retention) * unemployment_choice

@@ -1,6 +1,6 @@
 """Publication: behavioral changes from caregiving policies (LaTeX table).
 
-Compares three policy regimes across thirteen panels:
+Compares three policy regimes across twenty-four panels:
   A) Labor supply shares by age group
   B) Caregiving shares by age group (conditional on care demand > 0)
   C) Caregiving shares — Low Education
@@ -14,6 +14,17 @@ Compares three policy regimes across thirteen panels:
   K) Labor state at first CG year (by age at first CG)
   L) Ever-CG labor supply excl. first CG year
   M) Ever-CG labor by total CG duration (1yr, 2-3yr, 4+yr)
+  N) CG labor composition — Low Education
+  O) CG labor composition — High Education
+  P) CG benefits/top-ups — Low Education
+  Q) CG benefits/top-ups — High Education
+  R) Leave eligibility by education (job_before_caregiving composition)
+  S) Duration heterogeneity — Low Education (condensed)
+  T) Duration heterogeneity — High Education (condensed)
+  U) Pension/experience at retirement — Low Education
+  V) Pension/experience at retirement — High Education
+  W) Lifecycle outcomes for ever-CG — Low Education
+  X) Lifecycle outcomes for ever-CG — High Education
 """
 
 import pickle
@@ -76,6 +87,7 @@ _REQUIRED_COLUMNS = [
     "caregiving_leave_top_up",
     "caregiving_type",
     "experience",
+    "job_before_caregiving",
 ]
 
 _CG_FT = [11, 15]
@@ -175,6 +187,51 @@ def _build_policy_changes_table(
             "M: Ever-CG by CG duration",
             _panel_k_ever_cg_by_duration,
             {},
+        ),
+        ("N: CG labor (Low Edu)", _panel_cg_labor_by_edu, {"edu_level": 0}),
+        ("O: CG labor (High Edu)", _panel_cg_labor_by_edu, {"edu_level": 1}),
+        (
+            "P: CG benefits (Low Edu)",
+            _panel_cg_benefits_by_edu,
+            {"edu_level": 0, "wealth_unit": wealth_unit},
+        ),
+        (
+            "Q: CG benefits (High Edu)",
+            _panel_cg_benefits_by_edu,
+            {"edu_level": 1, "wealth_unit": wealth_unit},
+        ),
+        ("R: Leave eligibility by edu", _panel_leave_eligibility, {}),
+        ("S: Duration (Low Edu)", _panel_duration_by_edu, {"edu_level": 0}),
+        ("T: Duration (High Edu)", _panel_duration_by_edu, {"edu_level": 1}),
+        (
+            "U: Pension/exp (Low Edu)",
+            _panel_pension_by_edu,
+            {
+                "edu_level": 0,
+                "wealth_unit": wealth_unit,
+                "max_exps_period_working": max_exps,
+                "start_age": start_age,
+            },
+        ),
+        (
+            "V: Pension/exp (High Edu)",
+            _panel_pension_by_edu,
+            {
+                "edu_level": 1,
+                "wealth_unit": wealth_unit,
+                "max_exps_period_working": max_exps,
+                "start_age": start_age,
+            },
+        ),
+        (
+            "W: Lifecycle (Low Edu)",
+            _panel_lifecycle_by_edu,
+            {"edu_level": 0, "wealth_unit": wealth_unit},
+        ),
+        (
+            "X: Lifecycle (High Edu)",
+            _panel_lifecycle_by_edu,
+            {"edu_level": 1, "wealth_unit": wealth_unit},
         ),
     ]
 
@@ -758,4 +815,203 @@ def _panel_k_ever_cg_by_duration(df: pd.DataFrame) -> dict[str, float]:
                     rows[key] = np.nan
                 else:
                     rows[key] = float(sub["choice"].isin(choices_arr).mean())
+    return rows
+
+
+# ---------------------------------------------------------------------------
+# Panels N–X: education-stratified distributional analysis
+# ---------------------------------------------------------------------------
+
+
+def _panel_cg_labor_by_edu(df: pd.DataFrame, edu_level: int) -> dict[str, float]:
+    """CG labor composition for a specific education group (reuses Panel E)."""
+    raw = _panel_c_cg_labor(df[df["education"] == edu_level])
+    label = _EDU_LABELS.get(edu_level, f"Edu {edu_level}")
+    return {f"{k} [{label}]": v for k, v in raw.items()}
+
+
+def _panel_cg_benefits_by_edu(
+    df: pd.DataFrame, edu_level: int, wealth_unit: float
+) -> dict[str, float]:
+    """CG benefits/top-ups for a specific education group (reuses Panel G)."""
+    raw = _panel_e_cg_benefits(df[df["education"] == edu_level], wealth_unit=wealth_unit)
+    label = _EDU_LABELS.get(edu_level, f"Edu {edu_level}")
+    return {f"{k} [{label}]": v for k, v in raw.items()}
+
+
+def _panel_leave_eligibility(df: pd.DataFrame) -> dict[str, float]:
+    """Prior-job composition among caregivers, by education.
+
+    job_before_caregiving: 0 = no prior job (leave-ineligible), 1 = PT, 2 = FT.
+    """
+    informal = np.asarray(INFORMAL_CARE).ravel()
+    rows: dict[str, float] = {}
+
+    if "job_before_caregiving" not in df.columns:
+        for label in _EDU_LABELS.values():
+            rows[f"Share no prior job (CG) [{label}]"] = np.nan
+            rows[f"Share prior PT (CG) [{label}]"] = np.nan
+            rows[f"Share prior FT (CG) [{label}]"] = np.nan
+        rows["Share no prior job (CG) [All]"] = np.nan
+        return rows
+
+    cg_df = df[df["choice"].isin(informal)]
+
+    for edu_level, label in _EDU_LABELS.items():
+        edu_cg = cg_df[cg_df["education"] == edu_level]
+        if edu_cg.empty:
+            rows[f"Share no prior job (CG) [{label}]"] = np.nan
+            rows[f"Share prior PT (CG) [{label}]"] = np.nan
+            rows[f"Share prior FT (CG) [{label}]"] = np.nan
+        else:
+            jbc = edu_cg["job_before_caregiving"]
+            rows[f"Share no prior job (CG) [{label}]"] = float((jbc == 0).mean())
+            rows[f"Share prior PT (CG) [{label}]"] = float((jbc == 1).mean())
+            rows[f"Share prior FT (CG) [{label}]"] = float((jbc == 2).mean())
+
+    if cg_df.empty:
+        rows["Share no prior job (CG) [All]"] = np.nan
+    else:
+        rows["Share no prior job (CG) [All]"] = float(
+            (cg_df["job_before_caregiving"] == 0).mean()
+        )
+
+    return rows
+
+
+def _panel_duration_by_edu(df: pd.DataFrame, edu_level: int) -> dict[str, float]:
+    """Condensed duration heterogeneity for one education group.
+
+    Focuses on empl. rate (All 30--67 and 60--67) and retirement (63--67)
+    to show whether the job retention channel benefits this group.
+    """
+    label = _EDU_LABELS.get(edu_level, f"Edu {edu_level}")
+    informal = np.asarray(INFORMAL_CARE).ravel()
+
+    if "total_cg_years" not in df.columns:
+        return {}
+
+    edu_df = df[df["education"] == edu_level]
+    ever_cg_agents = set(edu_df.loc[edu_df["choice"].isin(informal), "agent"].unique())
+    ever_cg_df = edu_df[edu_df["agent"].isin(ever_cg_agents)]
+    if ever_cg_df.empty:
+        return {}
+
+    agent_cg_years = ever_cg_df.groupby("agent")["total_cg_years"].first()
+
+    outcomes = [
+        ("Empl. rate", _EMPLOYED, [("All (30--67)", 30, 67), ("60--67", 60, 67)]),
+        ("Share retired", RETIREMENT, [("63--67", 63, 67)]),
+    ]
+
+    rows: dict[str, float] = {}
+    for dur_label, dur_lo, dur_hi in CG_DURATION_GROUPS:
+        agents_in_group = set(
+            agent_cg_years[
+                (agent_cg_years >= dur_lo) & (agent_cg_years <= dur_hi)
+            ].index
+        )
+        dur_df = ever_cg_df[ever_cg_df["agent"].isin(agents_in_group)]
+
+        for outcome_label, choice_set, age_bins in outcomes:
+            choices_arr = np.asarray(choice_set).ravel()
+            for age_label, lo, hi in age_bins:
+                sub = dur_df[(dur_df["age"] >= lo) & (dur_df["age"] <= hi)]
+                key = f"{outcome_label} ({dur_label}, {age_label}) [{label}]"
+                rows[key] = (
+                    float(sub["choice"].isin(choices_arr).mean())
+                    if not sub.empty
+                    else np.nan
+                )
+    return rows
+
+
+def _panel_pension_by_edu(
+    df: pd.DataFrame,
+    edu_level: int,
+    wealth_unit: float,
+    max_exps_period_working: np.ndarray,
+    start_age: int,
+) -> dict[str, float]:
+    """Pension and experience at retirement for one education group."""
+    label = _EDU_LABELS.get(edu_level, f"Edu {edu_level}")
+    edu_df = df[df["education"] == edu_level]
+
+    ret_raw = _panel_g_retirement(edu_df, wealth_unit=wealth_unit)
+    exp_raw = _panel_h_experience_at_retirement(
+        edu_df,
+        max_exps_period_working=max_exps_period_working,
+        start_age=start_age,
+    )
+
+    rows: dict[str, float] = {}
+    for k, v in ret_raw.items():
+        rows[f"{k} [{label}]"] = v
+    for k, v in exp_raw.items():
+        rows[f"{k} [{label}]"] = v
+    return rows
+
+
+def _panel_lifecycle_by_edu(
+    df: pd.DataFrame, edu_level: int, wealth_unit: float
+) -> dict[str, float]:
+    """Lifecycle outcomes for ever-caregivers in one education group.
+
+    Reports avg. gross labor income (30--67), avg. gross pension income
+    (retired periods), and avg. benefit per CG period.  The pct-change
+    columns then directly show the policy impact on each.
+    """
+    label = _EDU_LABELS.get(edu_level, f"Edu {edu_level}")
+    informal = np.asarray(INFORMAL_CARE).ravel()
+    retired_choices = np.asarray(RETIREMENT).ravel()
+
+    edu_df = df[df["education"] == edu_level]
+    ever_cg_agents = set(edu_df.loc[edu_df["choice"].isin(informal), "agent"].unique())
+    ever_cg = edu_df[edu_df["agent"].isin(ever_cg_agents)]
+
+    rows: dict[str, float] = {}
+
+    if ever_cg.empty:
+        rows[f"Avg. gross labor inc. (ever CG, 30--67) [{label}]"] = np.nan
+        rows[f"Avg. gross pension inc. (ever CG, ret) [{label}]"] = np.nan
+        rows[f"Avg. benefit per CG period [{label}]"] = np.nan
+        rows[f"Avg. consumption (ever CG, <63) [{label}]"] = np.nan
+        return rows
+
+    working_age = ever_cg[(ever_cg["age"] >= 30) & (ever_cg["age"] <= 67)]
+    rows[f"Avg. gross labor inc. (ever CG, 30--67) [{label}]"] = (
+        _safe_mean(working_age["gross_labor_income"]) * wealth_unit
+        if "gross_labor_income" in working_age.columns
+        else np.nan
+    )
+
+    ret_periods = ever_cg[ever_cg["choice"].isin(retired_choices)]
+    rows[f"Avg. gross pension inc. (ever CG, ret) [{label}]"] = (
+        _safe_mean(ret_periods["gross_retirement_income"]) * wealth_unit
+        if "gross_retirement_income" in ret_periods.columns and not ret_periods.empty
+        else np.nan
+    )
+
+    if "caregiving_leave_top_up" in ever_cg.columns:
+        benefit_col = "caregiving_leave_top_up"
+    elif "care_benefits_and_costs" in ever_cg.columns:
+        benefit_col = "care_benefits_and_costs"
+    else:
+        benefit_col = None
+
+    cg_periods = ever_cg[ever_cg["lagged_choice"].isin(informal)]
+    if benefit_col and not cg_periods.empty:
+        rows[f"Avg. benefit per CG period [{label}]"] = (
+            _safe_mean(cg_periods[benefit_col]) * wealth_unit
+        )
+    else:
+        rows[f"Avg. benefit per CG period [{label}]"] = np.nan
+
+    under63 = ever_cg[ever_cg["age"] < 63]
+    rows[f"Avg. consumption (ever CG, <63) [{label}]"] = (
+        _safe_mean(under63["consumption"]) * wealth_unit
+        if "consumption" in under63.columns
+        else np.nan
+    )
+
     return rows
