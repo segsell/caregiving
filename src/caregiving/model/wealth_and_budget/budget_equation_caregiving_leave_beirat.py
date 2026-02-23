@@ -252,8 +252,7 @@ def budget_constraint(
         "household_net_income_before_floor": household_net_income_before_floor
         / model_specs["wealth_unit"],
         "child_benefits": child_benefits / model_specs["wealth_unit"],
-        "care_benefits_and_costs": care_benefits_and_costs
-        / model_specs["wealth_unit"],
+        "care_benefits_and_costs": care_benefits_and_costs / model_specs["wealth_unit"],
         "formal_care_costs": annual_formal_care_costs_agent
         / model_specs["wealth_unit"],
         "household_unemployment_benefits": household_unemployment_benefits

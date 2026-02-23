@@ -205,10 +205,7 @@ def get_next_period_experience_caregiving_leave_beirat(
 
     had_job = prior_ft | prior_pt
     on_full_leave = (
-        currently_caregiver
-        * (1 - retired_this_period)
-        * currently_unemployed
-        * had_job
+        currently_caregiver * (1 - retired_this_period) * currently_unemployed * had_job
     )
     on_partial_leave = (
         currently_caregiver * (1 - retired_this_period) * currently_pt * prior_ft
@@ -218,7 +215,9 @@ def get_next_period_experience_caregiving_leave_beirat(
     eligible_partial = years_leave_used_total < 3
 
     # Freeze only when on leave and under cap(s); at most one term is non-zero.
-    on_caregiving_leave = (on_full_leave * eligible_full + on_partial_leave * eligible_partial) > 0
+    on_caregiving_leave = (
+        on_full_leave * eligible_full + on_partial_leave * eligible_partial
+    ) > 0
 
     exp_update_frozen = (
         prior_ft * 1.0

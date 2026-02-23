@@ -831,7 +831,9 @@ def _panel_cg_benefits_by_edu(
     df: pd.DataFrame, edu_level: int, wealth_unit: float
 ) -> dict[str, float]:
     """CG benefits/top-ups for a specific education group (reuses Panel G)."""
-    raw = _panel_e_cg_benefits(df[df["education"] == edu_level], wealth_unit=wealth_unit)
+    raw = _panel_e_cg_benefits(
+        df[df["education"] == edu_level], wealth_unit=wealth_unit
+    )
     label = _EDU_LABELS.get(edu_level, f"Edu {edu_level}")
     return {f"{k} [{label}]": v for k, v in raw.items()}
 

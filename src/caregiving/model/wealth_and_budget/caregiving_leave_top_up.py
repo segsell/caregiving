@@ -290,16 +290,10 @@ def calc_caregiving_leave_top_up_beirat(
     ) | had_ft_job_before_caregiving(job_before_caregiving)
 
     on_full_leave = (
-        currently_caregiver
-        * (1 - currently_retired)
-        * currently_unemployed
-        * had_job
+        currently_caregiver * (1 - currently_retired) * currently_unemployed * had_job
     )
     on_partial_leave = (
-        currently_caregiver
-        * (1 - currently_retired)
-        * currently_part_time
-        * prior_ft
+        currently_caregiver * (1 - currently_retired) * currently_part_time * prior_ft
     )
 
     eligible_full = (years_leave_used_total < 3) * (full_leave_year_used == 0)

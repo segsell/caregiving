@@ -103,7 +103,7 @@ def specify_model_caregiving_leave_beirat(
             "already_retired": np.arange(2, dtype=int),
             "job_before_caregiving": np.arange(3, dtype=int),  # 0=none, 1=PT, 2=FT
             "years_leave_used_total": np.arange(4, dtype=int),  # 0..3
-            "full_leave_year_used": np.arange(2, dtype=int),   # 0 or 1
+            "full_leave_year_used": np.arange(2, dtype=int),  # 0 or 1
         },
         "stochastic_states": {
             "partner_state": np.arange(specs["n_partner_states"], dtype=int),
