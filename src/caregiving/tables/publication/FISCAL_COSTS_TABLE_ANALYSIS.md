@@ -400,24 +400,103 @@ Priority ranking for inclusion in a comprehensive fiscal comparison table:
 
 ## 6. Summary: What to Do Next
 
-### Quick wins (table-level changes only, no budget constraint changes needed) — IMPLEMENTED
+### Phase 0: Quick wins (table-level changes only) — IMPLEMENTED
 
 1. **DONE** — Added `normal_leave_net_cost`, `full_leave_net_cost`, `full_leave_net_cost_incl_transfer`, `tax_increase_from_progression`, `tax_attributable_to_full_leave`, `delta_transfer_savings`, `caregiving_leave_top_up`, `care_benefits_and_costs`, `formal_care_costs`, `unemployment_transfer_paid`, `own_ssc`, `partner_ssc`, `government_expenditures`, `own_income_after_ssc` to OUTCOME_COLUMNS.
 2. **DONE** — Added `government_expenditures` to outcome columns.
-3. **DONE** — Δ rows appended: "Δ Normal − Baseline" and "Δ Full − Baseline".
+3. **DONE** — Δ rows appended: "Delta Normal − Baseline" and "Delta Full − Baseline".
 4. **DONE** — Per-capita cost column added (total cost / N total agents).
 5. **DONE** — Share ever caregiving column added (N caregivers / N total agents).
 6. **DONE** — Total gross benefit and Total net cost (from model aux) columns added.
 7. **DONE** — N total agents column added.
 
-### Requires budget constraint changes
+### Phase 1: RAM optimization and life-cycle scope — IMPLEMENTED
 
-6. Add `labor_income_after_ssc`, `retirement_income_after_ssc`, `partner_income_after_ssc` to aux dicts in all three budget constraint files → re-solve and re-simulate.
-7. Fix baseline unemployment transfer to be consistent with leave policies (actual top-up vs full floor).
-8. Add `experience_years` for pension analysis.
+8. **DONE** — Simulation DataFrames are now subsetted to `_REQUIRED_COLUMNS` immediately after loading via `_load_sim_df()`, reducing memory footprint substantially (from ~50+ columns to ~30).
+9. **DONE** — Life-cycle scope extended from `end_age_caregiving` (70) to `end_age` (100). The caption now reads "life cycle ages 30–100". This captures pension income effects that persist well beyond the caregiving window. Key rationale: `max_ret_age` is 67, meaning retirement income accrues for 33 additional periods (ages 67–100). Truncating at age 70 missed most of the pension income stream.
+10. **DONE** — Runtime assertion verifying `age == start_age + period` for all three DataFrames (confirms period and age evolve identically).
 
-### Requires new task functions
+### Phase 2: Government formal care cost (social planner perspective) — IMPLEMENTED
 
-9. Education-stratified fiscal table.
-10. Age-profile fiscal table (by age group).
-11. Cost-effectiveness ratios (combine fiscal data with behavioral outcomes).
+11. **DONE** — Added government/social-planner formal care cost computation. This is *distinct* from the agent's co-payment (`formal_care_costs` in the budget constraint). The agent's cost is the nursing home insurance contribution; the government cost is the full cost of providing formal care.
+
+#### Design and implementation
+
+**Constants (module-level, easily adjustable):**
+
+| Variable | Value | Unit | Description |
+|----------|-------|------|-------------|
+| `GOV_COST_NURSING_HOME` | 1,500 | EUR/month | Government cost per nursing home resident |
+| `SHARE_PURE_FORMAL_HOME_CARE` | 0.1 | fraction | Share of "formal care" that is home care (not nursing home) |
+| `PURE_FORMAL_HOME_CARE_COST` | 1,000 | EUR/month | Government cost per home care recipient |
+| `GOV_ANNUAL_FORMAL_CARE_COST` | 17,400 | EUR/year | Weighted annual cost (derived, not set manually) |
+
+**Weighted annual cost formula:**
+```
+GOV_ANNUAL_FORMAL_CARE_COST = (1 - 0.1) × 1500 × 12  +  0.1 × 1000 × 12
+                             = 16,200 + 1,200
+                             = 17,400 EUR/year
+```
+
+**Conditioning on `lagged_choice`:** Formal care costs are computed for agent-period pairs where `lagged_choice ∈ FORMAL_CARE` (choices [4,5,6,7]). This is correct because the budget constraint computes all income and costs in period t based on the decision made in t-1 (the lagged choice). The `formal_care_costs` variable in the budget constraint follows this same convention:
+```python
+formal_care = is_formal_care(lagged_choice)
+annual_formal_care_costs_agent = -model_specs["formal_care_costs"][period] * formal_care * 12
+```
+
+**Why `lagged_choice` not `choice`:** In the budget constraint, `lagged_choice` is d_{t-1}. Income, taxes, benefits, and care costs in period t are all determined by what the agent did in t-1. The wage is from working in t-1, the pension is from being retired in t-1, and the formal care cost is from using formal care in t-1. Using `choice` (d_t) would be off by one period.
+
+**Distinction from agent's formal care cost:**
+- Agent's cost (`formal_care_costs` in aux): The insurance co-payment, computed as `-model_specs["formal_care_costs"][period] × is_formal_care(lagged_choice) × 12`. This varies by age (period-indexed array from estimated regression).
+- Government's cost (`_total_gov_formal_care_cost`): The social planner's full cost of providing nursing home or home care, fixed per formal-care period. This is the resource cost to society, not the transfer within the insurance system.
+
+**Table column:** "Gov. formal care cost (total)" — total government cost of formal care across all agent-periods, for each policy scenario. The Δ columns show how much the government saves on formal care when informal care is subsidized.
+
+### Phase 3: Budget constraint aux additions — COMPLETED (user-side)
+
+The user has confirmed that all short-term aux additions from §5 have been implemented in the budget constraint files and simulation data has been regenerated. The following are now available in simulated DataFrames:
+
+- `labor_income_after_ssc` — all three policies
+- `retirement_income_after_ssc` — all three policies
+- `partner_income_after_ssc` — all three policies
+- `unemployment_transfer_paid` — all three policies (baseline was missing before)
+- `own_income_for_tax` / `own_income_for_tax_without_benefit` — normal / full leave
+- `total_net_household_income` — all three policies
+- `household_net_income_before_floor` — all three policies
+- `tax_without_progression` — normal leave
+- `disposable_without_benefit`, `total_tax_without_benefit`, `transfer_without_benefit` — full leave
+
+### Phase 4: New task functions — IN PROGRESS
+
+#### 4a. Education-stratified fiscal table
+Split all metrics by education level (low/high). Requires adding an `education` column to `_REQUIRED_COLUMNS` and grouping the computation.
+
+**Implementation approach:**
+- Add `education` to `_REQUIRED_COLUMNS`.
+- Create `task_create_fiscal_costs_by_education()` that calls the same helper functions but filters `df[df["education"] == edu]` before computing.
+- Output: separate LaTeX table or panel with education groups as sub-columns.
+
+#### 4b. Age-profile fiscal table
+Show fiscal metrics by age group (e.g., 30-39, 40-49, 50-59, 60-69, 70-79, 80+). This reveals how costs and revenues shift across the life cycle.
+
+**Implementation approach:**
+- Create `task_create_fiscal_costs_by_age_group()` that bins ages and computes per-group.
+- Particularly relevant for showing that retirement income effects extend beyond the caregiving window (ages 70+).
+
+#### 4c. Cost-effectiveness ratios
+Combine fiscal costs with behavioral outcomes:
+- Cost per additional caregiving year induced (vs. baseline)
+- Cost per avoided formal care period
+- Cost per EUR of informal care value provided
+
+**Implementation approach:**
+- Requires valuation of informal care (e.g., replacement cost method).
+- Compute Δ caregiving years × cost per additional year.
+
+#### 4d. Lifecycle vs caregiving-period comparison
+Currently all cost aggregations condition on `lagged_choice ∈ INFORMAL_CARE` (numerator) or `choice ∈ INFORMAL_CARE` (denominator). This captures only caregiving periods. A lifecycle comparison would sum over all periods for agents who *ever* provide care, capturing spillovers like preserved job attachment and pension accumulation.
+
+**Implementation approach:**
+- Identify ever-caregivers: `agents_who_ever_care = df[df["choice"].isin(care_choices)]["agent"].unique()`
+- Filter full lifecycle for these agents: `df[df["agent"].isin(agents_who_ever_care)]`
+- Sum outcomes over their full lifecycle, not just caregiving periods.
