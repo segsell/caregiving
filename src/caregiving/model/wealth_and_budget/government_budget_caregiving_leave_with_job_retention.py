@@ -111,6 +111,9 @@ def calc_government_budget_components_caregiving_leave_with_job_retention(
     total_tax_revenue = household_income_tax_total + own_ssc + partner_ssc
 
     # 4. Government expenditures. Unemployment is an income floor (only top-up paid).
+    # care_benefits_and_costs = Pflegegeld - formal_care_costs (household net). Only
+    # the positive part is government expenditure (cash benefits to caregivers); when
+    # net is negative (e.g. formal care only), the government pays no care benefit.
     care_benefits = jnp.maximum(care_benefits_and_costs, 0.0)
     government_expenditures = (
         child_benefits
@@ -243,6 +246,8 @@ def calc_government_budget_components_full_caregiving_leave_with_job_retention(
     # 4. Government expenditures: actual cash paid out. Unemployment is an
     # income floor; only the top-up to the floor is paid (passed from budget
     # equation). Full leave at gross (no double counting of tax; net cost in aux).
+    # care_benefits = max(Pflegegeld - formal_care_costs, 0): only count cash
+    # benefits (Pflegegeld) as expenditure; when net is negative, no care benefit paid.
     care_benefits = jnp.maximum(care_benefits_and_costs, 0.0)
     government_expenditures = (
         child_benefits

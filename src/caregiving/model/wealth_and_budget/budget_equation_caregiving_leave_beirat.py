@@ -151,7 +151,9 @@ def budget_constraint(
         model_specs=model_specs,
     )
 
-    # Baseline Pflegegeld (informal care cash benefits) minus formal care costs
+    # Baseline Pflegegeld (informal care cash benefits) minus formal care costs.
+    # Use only care_benefits_and_costs in total_income_plus_interest (no separate
+    # formal cost term) to avoid double-counting.
     care_benefits_and_costs = calc_care_benefits_and_costs(
         period=period,
         lagged_choice=lagged_choice,

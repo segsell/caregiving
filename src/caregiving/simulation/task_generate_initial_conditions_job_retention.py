@@ -1,7 +1,8 @@
-"""Initial conditions for the job retention simulation.
+"""Initial conditions for the job retention and Beirat leave simulations.
 
 This module creates initial conditions for the job retention counterfactual
 by loading the baseline initial states and adding the job_before_caregiving variable.
+For the Beirat leave model it also adds years_leave_used_total and full_leave_year_used.
 """
 
 import pickle
@@ -50,5 +51,39 @@ def task_generate_start_states_for_solution_job_retention(
     )
 
     # Save job retention states
+    with path_to_save_updated_states.open("wb") as f:
+        pickle.dump(states, f)
+
+
+@pytask.mark.initial_conditions
+@pytask.mark.initial_conditions_beirat
+def task_generate_start_states_for_solution_beirat(
+    path_to_baseline_states: Path = BLD
+    / "model"
+    / "initial_conditions"
+    / "initial_states.pkl",
+    path_to_save_updated_states: Annotated[Path, Product] = BLD
+    / "model"
+    / "initial_conditions"
+    / "initial_states_beirat.pkl",
+) -> None:
+    """Generate initial conditions for Beirat leave model simulation.
+
+    Loads the baseline initial states and adds job_before_caregiving,
+    years_leave_used_total, and full_leave_year_used, all initialized to zeros.
+    """
+    with path_to_baseline_states.open("rb") as f:
+        states = pickle.load(f)
+
+    states["job_before_caregiving"] = jnp.zeros_like(
+        states["experience"], dtype=jnp.uint8
+    )
+    states["years_leave_used_total"] = jnp.zeros_like(
+        states["experience"], dtype=jnp.uint8
+    )
+    states["full_leave_year_used"] = jnp.zeros_like(
+        states["experience"], dtype=jnp.uint8
+    )
+
     with path_to_save_updated_states.open("wb") as f:
         pickle.dump(states, f)

@@ -22,6 +22,7 @@ from caregiving.model.wealth_and_budget.pension_payments import (
 )
 from caregiving.model.wealth_and_budget.tax_and_ssc import calc_net_household_income
 from caregiving.model.wealth_and_budget.transfers import (
+    calc_care_benefits_and_costs,
     calc_child_benefits,
     calc_inheritance_amount,
     calc_unemployment_benefits,
@@ -162,8 +163,13 @@ def budget_constraint(
         model_specs=model_specs,
     )
 
-    # # Formal care costs only (no informal care cash benefits, as caregiving lea
-    # ve top-up replaces them)
+    # Baseline Pflegegeld (informal care cash benefits) minus formal care costs
+    care_benefits_and_costs = calc_care_benefits_and_costs(
+        period=period,
+        lagged_choice=lagged_choice,
+        model_specs=model_specs,
+    )
+
     formal_care = is_formal_care(lagged_choice)
     annual_formal_care_costs_agent = (
         -model_specs["formal_care_costs"][period] * formal_care * 12
@@ -214,7 +220,7 @@ def budget_constraint(
     interest_rate = model_specs["interest_rate"]
     interest = interest_rate * assets_scaled
     total_income_plus_interest = (
-        total_income + interest + annual_formal_care_costs_agent + bequest_from_parent
+        total_income + interest + care_benefits_and_costs + bequest_from_parent
     )
 
     # Calculate beginning of period wealth M_t
@@ -238,7 +244,7 @@ def budget_constraint(
         gross_partner_income=gross_partner_income,
         gross_partner_pension=gross_partner_pension,
         child_benefits=child_benefits,
-        care_benefits_and_costs=annual_formal_care_costs_agent,
+        care_benefits_and_costs=care_benefits_and_costs,
         unemployment_transfer_paid=unemployment_transfer_paid,
         full_caregiving_leave_benefit=caregiving_leave_top_up,
         model_specs=model_specs,
@@ -286,6 +292,8 @@ def budget_constraint(
         "transfer_without_benefit": transfer_without_benefit
         / model_specs["wealth_unit"],
         "child_benefits": child_benefits / model_specs["wealth_unit"],
+        "care_benefits_and_costs": care_benefits_and_costs
+        / model_specs["wealth_unit"],
         "formal_care_costs": annual_formal_care_costs_agent
         / model_specs["wealth_unit"],
         "household_unemployment_benefits": household_unemployment_benefits
