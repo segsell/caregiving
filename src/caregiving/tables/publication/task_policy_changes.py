@@ -84,7 +84,9 @@ _CG_EMPLOYED = [10, 11, 14, 15]
 _CG_UNEMPLOYED = [9, 13]
 _CG_RETIRED = [8, 12]
 
-_EMPLOYED = np.concatenate([np.asarray(FULL_TIME).ravel(), np.asarray(PART_TIME).ravel()])
+_EMPLOYED = np.concatenate(
+    [np.asarray(FULL_TIME).ravel(), np.asarray(PART_TIME).ravel()]
+)
 
 AGE_GROUPS_BROAD = [
     ("40--49", 40, 49),
@@ -479,9 +481,7 @@ def _panel_d_ever_cg_labor(df: pd.DataFrame) -> dict[str, float]:
     return rows
 
 
-def _panel_e_cg_benefits(
-    df: pd.DataFrame, wealth_unit: float
-) -> dict[str, float]:
+def _panel_e_cg_benefits(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]:
     """Average benefit/top-up while caregiving, conditional on labor state.
 
     Baseline sim data contains ``care_benefits_and_costs`` (Pflegegeld);
@@ -612,9 +612,9 @@ def _panel_h_experience_at_retirement(
 
     periods = merged["first_ret_period"].values.astype(int)
     clipped = np.clip(periods, 0, len(max_exps_period_working) - 1)
-    merged["exp_years_at_ret"] = merged["experience"].values * max_exps_period_working[
-        clipped
-    ]
+    merged["exp_years_at_ret"] = (
+        merged["experience"].values * max_exps_period_working[clipped]
+    )
     merged["ret_age"] = start_age + merged["first_ret_period"]
 
     ever_cg = set(df.loc[df["choice"].isin(informal_choices), "agent"].unique())
@@ -683,8 +683,7 @@ def _panel_j_ever_cg_excl_first(df: pd.DataFrame) -> dict[str, float]:
 
     ever_cg_agents = set(df.loc[df["choice"].isin(informal), "agent"].unique())
     excl = df[
-        df["agent"].isin(ever_cg_agents)
-        & (df["period"] != df["first_cg_period"])
+        df["agent"].isin(ever_cg_agents) & (df["period"] != df["first_cg_period"])
     ]
     if excl.empty:
         return {}
@@ -726,9 +725,7 @@ def _panel_k_ever_cg_by_duration(df: pd.DataFrame) -> dict[str, float]:
     if ever_cg_df.empty:
         return {}
 
-    agent_cg_years = (
-        ever_cg_df.groupby("agent")["total_cg_years"].first()
-    )
+    agent_cg_years = ever_cg_df.groupby("agent")["total_cg_years"].first()
 
     outcomes = [
         ("Share FT", FULL_TIME),

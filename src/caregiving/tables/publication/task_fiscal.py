@@ -47,7 +47,9 @@ IN_KIND_BENEFITS_UTILIZATION_RATE = 0.7
 # ---------------------------------------------------------------------------
 SHARE_LIVE_IN_HOME_CARE_2021 = 0.1275
 SHARE_PURE_FORMAL_HOME_CARE_2021 = 0.1619
-SHARE_NURSING_HOME = 1.0 - SHARE_LIVE_IN_HOME_CARE_2021 - SHARE_PURE_FORMAL_HOME_CARE_2021
+SHARE_NURSING_HOME = (
+    1.0 - SHARE_LIVE_IN_HOME_CARE_2021 - SHARE_PURE_FORMAL_HOME_CARE_2021
+)
 
 # ---------------------------------------------------------------------------
 # Derived annual government costs per formal-care period, by demand level.
