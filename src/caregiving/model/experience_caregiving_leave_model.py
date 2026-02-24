@@ -234,3 +234,102 @@ def get_next_period_experience_caregiving_leave_beirat(
     )
 
     return exp_scaled
+
+
+def get_next_period_experience_caregiving_leave_full_beirat(
+    period,
+    lagged_choice,
+    already_retired,
+    partner_state,
+    education,
+    experience,
+    job_before_caregiving,
+    years_leave_used_total,
+    full_leave_year_used,
+    model_specs,
+):
+    """Experience for full Beirat model (max 3 years, max 1 full leave).
+
+    Freeze only when on leave (full or partial) and under caps: full leave only if
+    full_leave_year_used == 0 and total < 3; partial only if total < 3. Matches
+    calc_caregiving_leave_top_up_full_beirat eligibility.
+    """
+    sex = SEX
+
+    retired_this_period = is_retired(lagged_choice)
+    fresh_retired = (already_retired == 0) & retired_this_period
+
+    last_period = period - 1
+    last_period = last_period * (period != 0) + (period == 0) * (-1)
+
+    exp_years_last_period = construct_experience_years(
+        float_experience=experience,
+        period=last_period,
+        is_retired=already_retired,
+        model_specs=model_specs,
+    )
+
+    currently_caregiver = is_informal_care(lagged_choice)
+    currently_unemployed = is_unemployed(lagged_choice)
+    currently_pt = is_part_time(lagged_choice)
+
+    prior_ft = job_before_caregiving == JOB_RETENTION_FULL_TIME
+    prior_pt = job_before_caregiving == JOB_RETENTION_PART_TIME
+    prior_none = job_before_caregiving == 0
+    had_job = prior_ft | prior_pt
+
+    on_full_leave = (
+        currently_caregiver
+        * (1 - retired_this_period)
+        * currently_unemployed
+        * had_job
+    )
+    on_partial_leave = (
+        currently_caregiver
+        * (1 - retired_this_period)
+        * currently_pt
+        * prior_ft
+    )
+
+    eligible_full = (years_leave_used_total < 3) * (full_leave_year_used == 0)
+    eligible_partial = years_leave_used_total < 3
+
+    on_caregiving_leave = (
+        on_full_leave * eligible_full + on_partial_leave * eligible_partial
+    ) > 0
+
+    exp_update_frozen = (
+        prior_ft * 1.0
+        + prior_pt * model_specs["exp_increase_part_time"]
+        + prior_none * 0.0
+    )
+
+    intensive_care = is_intensive_informal_care(lagged_choice)
+    exp_update_baseline = is_full_time(lagged_choice) + is_part_time(lagged_choice) * (
+        model_specs["exp_increase_part_time"] * (1 - intensive_care) + intensive_care
+    )
+
+    exp_update = jnp.where(on_caregiving_leave, exp_update_frozen, exp_update_baseline)
+    exp_years_this_period = exp_years_last_period + exp_update
+
+    pension_points = calc_pension_points_for_experience(
+        period=period,
+        experience_years=exp_years_last_period,
+        sex=sex,
+        partner_state=partner_state,
+        education=education,
+        model_specs=model_specs,
+    )
+
+    exp_years_this_period = jax.lax.select(
+        fresh_retired, on_true=pension_points, on_false=exp_years_this_period
+    )
+
+    exp_scaled = scale_experience_years(
+        experience_years=exp_years_this_period,
+        period=period,
+        is_retired=retired_this_period,
+        model_specs=model_specs,
+    )
+
+    return exp_scaled

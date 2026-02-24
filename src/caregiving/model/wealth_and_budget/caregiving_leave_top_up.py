@@ -282,3 +282,60 @@ def calc_caregiving_leave_top_up_beirat(
     )
     eligible = on_partial_leave * (years_leave_used_total < 3)
     return raw * eligible
+
+
+def calc_caregiving_leave_top_up_full_beirat(
+    lagged_choice,
+    education,
+    job_before_caregiving,
+    experience_years,
+    income_shock_previous_period,
+    sex,
+    labor_income_after_ssc,
+    years_leave_used_total,
+    full_leave_year_used,
+    model_specs,
+):
+    """65% caregiving leave top-up for full Beirat: max 3 years total, max 1 year full leave.
+
+    Full leave = unemployed while caregiving with prior job; eligible only when
+    full_leave_year_used == 0 and years_leave_used_total < 3.
+    Partial leave = PT with prior FT; eligible when years_leave_used_total < 3.
+    Same benefit amounts as calc_caregiving_leave_top_up; only eligibility is gated.
+    """
+    raw = calc_caregiving_leave_top_up(
+        lagged_choice=lagged_choice,
+        education=education,
+        job_before_caregiving=job_before_caregiving,
+        experience_years=experience_years,
+        income_shock_previous_period=income_shock_previous_period,
+        sex=sex,
+        labor_income_after_ssc=labor_income_after_ssc,
+        model_specs=model_specs,
+    )
+    currently_caregiver = is_informal_care(lagged_choice)
+    currently_unemployed = is_unemployed(lagged_choice)
+    currently_part_time = is_part_time(lagged_choice)
+    had_job = had_pt_job_before_caregiving(
+        job_before_caregiving
+    ) | had_ft_job_before_caregiving(job_before_caregiving)
+    prior_ft = had_ft_job_before_caregiving(job_before_caregiving)
+
+    on_full_leave = (
+        currently_caregiver
+        * (1 - is_retired(lagged_choice))
+        * currently_unemployed
+        * had_job
+    )
+    on_partial_leave = (
+        currently_caregiver
+        * (1 - is_retired(lagged_choice))
+        * currently_part_time
+        * prior_ft
+    )
+
+    eligible_full = (years_leave_used_total < 3) * (full_leave_year_used == 0)
+    eligible_partial = years_leave_used_total < 3
+
+    eligible = on_full_leave * eligible_full + on_partial_leave * eligible_partial
+    return raw * eligible

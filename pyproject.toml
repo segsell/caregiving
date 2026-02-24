@@ -303,6 +303,7 @@ extend-ignore = [
 "src/caregiving/counterfactual/task_compute_career_costs.py" = ["E501"]
 "src/caregiving/counterfactual/task_simulate_forced_care_demand_at_50.py" = ["E501"]
 "src/caregiving/counterfactual/task_solve_and_simulate_caregiving_leave_beirat_estimated_params.py" = ["E501"]
+"src/caregiving/counterfactual/task_solve_and_simulate_caregiving_leave_full_beirat_estimated_params.py" = ["E501"]
 "src/caregiving/counterfactual/task_solve_and_simulate_caregiving_leave_with_job_retention_estimated_params.py" = ["E501"]
 "src/caregiving/counterfactual/task_solve_and_simulate_higher_formal_care_costs_estimated_params.py" = ["E501"]
 "src/caregiving/counterfactual/task_solve_and_simulate_job_retention_estimated_params.py" = ["E501"]
