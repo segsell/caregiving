@@ -1,4 +1,4 @@
-"""State space for Beirat caregiving leave (max 3 years, max 1 full leave)."""
+"""State space for Beirat caregiving leave (max 3 years, partial leave only)."""
 
 import jax.numpy as jnp
 
@@ -48,17 +48,13 @@ def next_period_deterministic_state_beirat(
     already_retired,
     job_before_caregiving,
     years_leave_used_total,
-    full_leave_year_used,
 ):
-    """Update deterministic states: job_before_caregiving + Beirat leave counters.
+    """Update deterministic states: job_before_caregiving + Beirat leave counter.
 
-    years_leave_used_total in {0,1,2,3}; full_leave_year_used in {0,1}.
-    Invalid combination (0, 1) excluded by sparsity.
-
-    job_before_caregiving transition is unchanged from the unlimited leave model
-    (no dependence on leave counters), so we reuse next_period_deterministic_state_with_job_retention
-    and add only the Beirat counter updates. Leave classification uses the *current*
-    (input) job_before_caregiving (state at start of this period), not the updated one.
+    Partial leave only: years_leave_used_total in {0,1,2,3} increments when on
+    partial leave (PT while caregiving with prior FT job) and total < 3.
+    job_before_caregiving transition is unchanged from the unlimited leave model;
+    we add only the years_leave_used_total update.
     """
     base = next_period_deterministic_state_with_job_retention(
         period=period,
@@ -68,45 +64,21 @@ def next_period_deterministic_state_beirat(
         job_before_caregiving=job_before_caregiving,
     )
 
-    # Classify *this* period's leave using state at start of period (input job_before_caregiving).
-    current_caregiver = is_informal_care(choice)
-    employed_before_caregiving = had_pt_job_before_caregiving(
-        job_before_caregiving
-    ) | had_ft_job_before_caregiving(job_before_caregiving)
-
-    on_full_leave = (
-        current_caregiver
-        * (1 - is_retired(choice))
-        * is_unemployed(choice)
-        * employed_before_caregiving
-    )
     on_partial_leave = (
-        current_caregiver
+        is_informal_care(choice)
         * (1 - is_retired(choice))
         * is_part_time(choice)
         * had_ft_job_before_caregiving(job_before_caregiving)
     )
-
-    still_eligible_for_full = (years_leave_used_total < 3) * (full_leave_year_used == 0)
-    still_eligible_for_partial = years_leave_used_total < 3
-
-    actually_on_full_leave = on_full_leave * still_eligible_for_full
-    actually_on_partial_leave = on_partial_leave * still_eligible_for_partial
-
-    increment_leave = (actually_on_full_leave + actually_on_partial_leave).astype(
-        jnp.int32
-    )
+    still_eligible = years_leave_used_total < 3
+    increment_leave = (on_partial_leave * still_eligible).astype(jnp.int32)
     years_leave_used_total_new = jnp.minimum(
         years_leave_used_total + increment_leave, 3
-    )
-    full_leave_year_used_new = jnp.maximum(
-        full_leave_year_used, actually_on_full_leave.astype(jnp.int32)
     )
 
     return {
         **base,
         "years_leave_used_total": years_leave_used_total_new,
-        "full_leave_year_used": full_leave_year_used_new,
     }
 
 
@@ -122,12 +94,11 @@ def sparsity_condition_beirat(  # noqa: PLR0911, PLR0912
     care_demand,
     job_before_caregiving,
     years_leave_used_total,
-    full_leave_year_used,
     job_offer,
     caregiving_type,
     model_specs,
 ):
-    """Sparsity for Beirat model: same as job retention + exclude (total=0, full=1)."""
+    """Sparsity for Beirat model (partial leave only): same as caregiving leave with job retention."""
     start_age = model_specs["start_age"]
     max_ret_age = model_specs["max_ret_age"]
     min_ret_age_state_space = model_specs["min_ret_age"]
@@ -140,10 +111,6 @@ def sparsity_condition_beirat(  # noqa: PLR0911, PLR0912
     last_period = model_specs["n_periods"] - 1
 
     age = start_age + period
-
-    # Invalid Beirat state: cannot have used full leave with 0 total
-    if (years_leave_used_total == 0) & (full_leave_year_used == 1):
-        return False
 
     if (age <= min_ret_age_state_space) & (is_retired(lagged_choice)):
         return False
@@ -169,11 +136,11 @@ def sparsity_condition_beirat(  # noqa: PLR0911, PLR0912
         return False
     elif (not is_informal_care(lagged_choice)) & (job_before_caregiving != 0):
         return False
+    # ================================================================================
+
+    # ================================================================================
     else:
-        _proxy = {
-            "years_leave_used_total": 0,
-            "full_leave_year_used": 0,
-        }
+        _proxy = {"years_leave_used_total": 0}
         if is_dead(health):
             if period == last_period:
                 return True
@@ -242,7 +209,6 @@ def sparsity_condition_beirat(  # noqa: PLR0911, PLR0912
                 "job_offer": 0,
                 "job_before_caregiving": job_before_caregiving,
                 "years_leave_used_total": years_leave_used_total,
-                "full_leave_year_used": full_leave_year_used,
             }
             return state_proxy
         elif age > end_age_caregiving + 1:
@@ -260,7 +226,6 @@ def sparsity_condition_beirat(  # noqa: PLR0911, PLR0912
                 "job_offer": job_offer,
                 "job_before_caregiving": job_before_caregiving,
                 "years_leave_used_total": years_leave_used_total,
-                "full_leave_year_used": full_leave_year_used,
             }
             return state_proxy
         elif age < start_age_caregiving:

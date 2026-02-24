@@ -43,7 +43,6 @@ def budget_constraint(
     mother_dead,
     job_before_caregiving,
     years_leave_used_total,
-    full_leave_year_used,
     asset_end_of_previous_period,  # A_{t-1}
     income_shock_previous_period,  # epsilon_{t - 1}
     params,
@@ -101,7 +100,7 @@ def budget_constraint(
         model_specs=model_specs,
     )
 
-    # Gated 65% leave top-up (Beirat: max 3 years total, max 1 full leave)
+    # Gated 65% leave top-up (Beirat: max 3 years, partial leave only; no benefit when unemployed)
     caregiving_leave_top_up = calc_caregiving_leave_top_up_beirat(
         lagged_choice=lagged_choice,
         education=education,
@@ -111,7 +110,6 @@ def budget_constraint(
         sex=sex_var,
         labor_income_after_ssc=labor_income_after_ssc,
         years_leave_used_total=years_leave_used_total,
-        full_leave_year_used=full_leave_year_used,
         model_specs=model_specs,
     )
 

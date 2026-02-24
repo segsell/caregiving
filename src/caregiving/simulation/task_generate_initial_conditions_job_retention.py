@@ -2,7 +2,7 @@
 
 This module creates initial conditions for the job retention counterfactual
 by loading the baseline initial states and adding the job_before_caregiving variable.
-For the Beirat leave model it also adds years_leave_used_total and full_leave_year_used.
+For the Beirat leave model it also adds years_leave_used_total (partial leave only).
 """
 
 import pickle
@@ -69,8 +69,8 @@ def task_generate_start_states_for_solution_beirat(
 ) -> None:
     """Generate initial conditions for Beirat leave model simulation.
 
-    Loads the baseline initial states and adds job_before_caregiving,
-    years_leave_used_total, and full_leave_year_used, all initialized to zeros.
+    Loads the baseline initial states and adds job_before_caregiving and
+    years_leave_used_total (partial leave only), initialized to zeros.
     """
     with path_to_baseline_states.open("rb") as f:
         states = pickle.load(f)
@@ -79,9 +79,6 @@ def task_generate_start_states_for_solution_beirat(
         states["experience"], dtype=jnp.uint8
     )
     states["years_leave_used_total"] = jnp.zeros_like(
-        states["experience"], dtype=jnp.uint8
-    )
-    states["full_leave_year_used"] = jnp.zeros_like(
         states["experience"], dtype=jnp.uint8
     )
 

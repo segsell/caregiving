@@ -169,17 +169,10 @@ def get_next_period_experience_caregiving_leave_beirat(
     experience,
     job_before_caregiving,
     years_leave_used_total,
-    full_leave_year_used,
     model_specs,
 ):
-    """Experience for Beirat model: freeze only when on leave AND eligible (total < 3).
-
-    Same as get_next_period_experience_caregiving_leave but on_caregiving_leave
-    is gated: full leave only if full_leave_year_used == 0 and total < 3;
-    partial leave only if total < 3. Definitions of on_full_leave / on_partial_leave
-    and eligibility match calc_caregiving_leave_top_up_beirat (freeze only in
-    periods that count toward the cap and receive the benefit).
-    """
+    """Experience for Beirat model (partial leave only):
+    freeze only when on partial leave and total < 3."""
     sex = SEX
 
     retired_this_period = is_retired(lagged_choice)
@@ -196,28 +189,15 @@ def get_next_period_experience_caregiving_leave_beirat(
     )
 
     currently_caregiver = is_informal_care(lagged_choice)
-    currently_unemployed = is_unemployed(lagged_choice)
     currently_pt = is_part_time(lagged_choice)
-
     prior_ft = job_before_caregiving == JOB_RETENTION_FULL_TIME
     prior_pt = job_before_caregiving == JOB_RETENTION_PART_TIME
     prior_none = job_before_caregiving == 0
 
-    had_job = prior_ft | prior_pt
-    on_full_leave = (
-        currently_caregiver * (1 - retired_this_period) * currently_unemployed * had_job
-    )
     on_partial_leave = (
         currently_caregiver * (1 - retired_this_period) * currently_pt * prior_ft
     )
-
-    eligible_full = (years_leave_used_total < 3) * (full_leave_year_used == 0)
-    eligible_partial = years_leave_used_total < 3
-
-    # Freeze only when on leave and under cap(s); at most one term is non-zero.
-    on_caregiving_leave = (
-        on_full_leave * eligible_full + on_partial_leave * eligible_partial
-    ) > 0
+    on_caregiving_leave = (on_partial_leave * (years_leave_used_total < 3)) > 0
 
     exp_update_frozen = (
         prior_ft * 1.0

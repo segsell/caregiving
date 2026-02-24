@@ -1,9 +1,10 @@
-"""Specify model for Beirat caregiving leave (max 3 years, max 1 full leave).
+"""Specify model for Beirat caregiving leave (max 3 years, partial leave only).
 
-Implements the Pflegebeirat recommendation: total leave cap 3 years, of which
-at most 1 can be full leave; up to 3 years partial leave if no full leave is
-taken. Baseline Pflegegeld (care cash benefits) kept in place alongside the
-65% leave top-up.
+Implements a variant of the Pflegebeirat recommendation: total leave cap 3 years,
+partial leave only (no full leave). Agents receive the 65% Lohnersatzleistung only
+when they work (PT or FT) while caregiving; no wage replacement if unemployed
+during caregiving. Baseline Pflegegeld (care cash benefits) kept in place alongside
+the leave top-up.
 """
 
 import pickle
@@ -59,7 +60,7 @@ def task_specify_model_caregiving_leave_beirat(
     / "model"
     / "model_caregiving_leave_beirat.pkl",
 ):
-    """Build Beirat caregiving leave model (3-year cap, 1 full leave, Pflegegeld kept)."""
+    """Build Beirat caregiving leave model (3-year cap, partial leave only, Pflegegeld kept)."""
     model = specify_model_caregiving_leave_beirat(
         path_to_derived_specs=path_to_derived_specs,
         path_to_save_model_config=path_to_save_model_config,
@@ -79,9 +80,10 @@ def specify_model_caregiving_leave_beirat(
 ):
     """Generate model for Beirat caregiving leave counterfactual.
 
-    - job_before_caregiving (0/1/2), years_leave_used_total (0..3), full_leave_year_used (0/1)
-    - Job retention and 65% leave top-up only when years_leave_used_total < 3
-    - Full-leave benefit only when full_leave_year_used == 0
+    - job_before_caregiving (0/1/2), years_leave_used_total (0..3)
+    - No full leave: 65% leave top-up only when working (PT/FT) while caregiving,
+      and only when years_leave_used_total < 3. No Lohnersatzleistung when
+      unemployed during caregiving.
     - Baseline Pflegegeld (calc_care_benefits_and_costs) included in budget
     """
     with path_to_derived_specs.open("rb") as f:
@@ -103,7 +105,6 @@ def specify_model_caregiving_leave_beirat(
             "already_retired": np.arange(2, dtype=int),
             "job_before_caregiving": np.arange(3, dtype=int),  # 0=none, 1=PT, 2=FT
             "years_leave_used_total": np.arange(4, dtype=int),  # 0..3
-            "full_leave_year_used": np.arange(2, dtype=int),  # 0 or 1
         },
         "stochastic_states": {
             "partner_state": np.arange(specs["n_partner_states"], dtype=int),
