@@ -237,9 +237,9 @@ EVENT_STUDY_DIST_COL = "distance_to_first_care"
 # Age groups for event-study tasks: (age_min, age_max, age_label)
 AGE_GROUPS_EVENT_STUDY = (
     (None, None, "all_ages"),
-    (40, 49, "ages_40_49"),
-    (50, 59, "ages_50_59"),
-    (60, 70, "ages_60_70"),
+    # (40, 49, "ages_40_49"),
+    # (50, 59, "ages_50_59"),
+    # (60, 70, "ages_60_70"),
 )
 
 _WORK_SET = set(np.asarray(WORK).ravel().tolist())
@@ -282,69 +282,88 @@ def job_offer_outcome_series(
     return outcome
 
 
-def plot_outcome_difference_by_distance_total_caregiving(  # noqa: PLR0913
+def _plot_outcome_difference_by_distance_total_caregiving_impl(  # noqa: PLR0913
     prof_diff: pd.DataFrame,
     prof_1_year_diff: pd.DataFrame,
     prof_2_year_diff: pd.DataFrame,
     prof_3_year_diff: pd.DataFrame,
     prof_4_year_diff: pd.DataFrame,
     prof_5_year_diff: pd.DataFrame,
-    window: int = 20,
-    path_to_plot: Optional[Path] = None,
-    xlabel: str = "Year relative to start of first care spell",
-    ylabel: str = "Difference in outcome",
-    endogenous_ylim: bool = False,
+    window_low: int,
+    window_high: int,
+    path_to_plot: Optional[Path],
+    xlabel: str,
+    ylabel: str,
+    endogenous_ylim: bool,
+    label_fontsize: float,
+    xtick_fontsize: float,
+    ytick_fontsize: float,
+    tick_length: float,
+    tick_width: float,
+    font_family: Optional[str] = None,
 ) -> None:
-    """Plot outcome difference by distance with 5 lines: total care years 1, 2, 3, 4, 5+.
-
-    Same layout as event study consecutive: dashed black baseline, horizontal line at 0,
-    vertical line at t=-0.5, five subgroup lines (1, 2, 3, 4, 5+ total care years).
-    Profile DataFrames must have column EVENT_STUDY_DIST_COL and 'diff'.
-    """
-    plt.figure(figsize=(14, 8))
+    """Implementation: plot outcome difference by distance (total care years 1–5+)."""
+    if font_family is not None:
+        plt.rcParams["font.family"] = "serif"
+        plt.rcParams["font.serif"] = [font_family]
+    plt.figure(figsize=(14, 12))
 
     plt.plot(
         prof_diff[EVENT_STUDY_DIST_COL],
         prof_diff["diff"],
         label="Baseline",
         color="black",
-        linewidth=2.0,
+        linewidth=3.7,
         linestyle="--",
         marker=None,
     )
-    plt.axhline(y=0, color="k", linestyle="-", linewidth=0.8, alpha=0.5)
+    plt.axhline(y=0, color="k", linestyle="-", linewidth=1.6)
 
-    def _plot_prof(prof: pd.DataFrame, label: str, color: str, marker: str) -> None:
+    def _plot_prof(
+        prof: pd.DataFrame,
+        label: str,
+        color: str,
+        marker: str,
+        markersize: float = 9,
+        markeredgewidth: float = 3.0,
+    ) -> None:
         if len(prof) > 0:
             plt.plot(
                 prof[EVENT_STUDY_DIST_COL],
                 prof["diff"],
                 label=label,
                 color=color,
-                linewidth=2.0,
+                linewidth=3.7,
                 linestyle="-",
                 marker=marker,
-                markersize=5,
+                markersize=markersize,
                 markevery=1,
                 markerfacecolor="none",
-                markeredgewidth=1.5,
+                markeredgewidth=markeredgewidth,
             )
 
-    _plot_prof(prof_1_year_diff, "1 total care year", "0.9", "8")
+    _plot_prof(prof_1_year_diff, "1 total care year", "0.85", "8")
     _plot_prof(prof_2_year_diff, "2 total care years", "0.7", "^")
     _plot_prof(prof_3_year_diff, "3 total care years", "0.5", "D")
     _plot_prof(prof_4_year_diff, "4 total care years", "0.3", "s")
-    _plot_prof(prof_5_year_diff, "5+ total care years", "0.1", "v")
+    _plot_prof(
+        prof_5_year_diff,
+        "5+ total care years",
+        "0.1",
+        "*",
+        markersize=12,
+        markeredgewidth=3.5,
+    )
 
     plt.axvline(
         x=-0.5,
         color="k",
         linestyle=(0, (7, 7)),
-        linewidth=1.0,
+        linewidth=1.85,
     )
-    plt.xlabel(xlabel, fontsize=14)
-    plt.ylabel(ylabel, fontsize=14)
-    plt.xlim(-window - 0.5, window + 0.5)
+    plt.xlabel(xlabel, fontsize=label_fontsize)
+    plt.ylabel(ylabel, fontsize=label_fontsize)
+    plt.xlim(window_low - 0.5, window_high + 0.5)
 
     all_diffs = []
     for p in (
@@ -367,22 +386,118 @@ def plot_outcome_difference_by_distance_total_caregiving(  # noqa: PLR0913
             y_max = max(abs(min(finite_diffs)), abs(max(finite_diffs)))
             y_lim = (int(y_max * 1.1 / 0.05) + 1) * 0.05
             y_lim = max(y_lim, 0.05)
-            plt.ylim(-y_lim, y_lim)
+            # Add small margin so bottom y-tick is not clamped to x-axis
+            y_margin = 0.03 * (2 * y_lim)
+            plt.ylim(-y_lim - y_margin, y_lim + y_margin)
     else:
         plt.ylim(-0.1, 0.1)
 
-    plt.grid(True, axis="y", alpha=0.3, linewidth=0.8)
-    plt.xticks(range(-window, window + 1, 5), fontsize=12)
-    plt.yticks(fontsize=12)
+    tick_step = 5
+    plt.grid(True, axis="y", alpha=0.18, linewidth=1.15)
+    plt.xticks(range(window_low, window_high + 1, tick_step), fontsize=xtick_fontsize)
+    plt.yticks(fontsize=ytick_fontsize)
     ax = plt.gca()
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-    ax.tick_params(axis="both", length=8)
+    ax.tick_params(axis="both", length=tick_length, width=tick_width)
+    # Explicitly set font on all text so Times New Roman (or requested font) is used
+    if font_family is not None:
+        ax.xaxis.get_label().set_fontfamily(font_family)
+        ax.yaxis.get_label().set_fontfamily(font_family)
+        for label in ax.get_xticklabels():
+            label.set_fontfamily(font_family)
+        for label in ax.get_yticklabels():
+            label.set_fontfamily(font_family)
     plt.tight_layout()
+    # Ensure gap between bottom y-tick label and x-axis so layout is not clamped
+    plt.subplots_adjust(bottom=0.11)
     if path_to_plot:
         path_to_plot.parent.mkdir(parents=True, exist_ok=True)
-        plt.savefig(path_to_plot, dpi=1200, bbox_inches="tight")
+        # Use pad_inches so labels/numbers are not cut off; embed fonts in PDF for crisp text
+        save_kwargs = {
+            "dpi": 1200,
+            "bbox_inches": "tight",
+            "pad_inches": 0.25,
+        }
+        is_pdf = path_to_plot.suffix.lower() == ".pdf"
+        if is_pdf:
+            _pdf_fonttype = plt.rcParams["pdf.fonttype"]
+            plt.rcParams["pdf.fonttype"] = 42  # TrueType fonts in PDF for sharp text
+        plt.savefig(path_to_plot, **save_kwargs)
+        if is_pdf:
+            plt.rcParams["pdf.fonttype"] = _pdf_fonttype
     plt.close()
+
+
+def plot_outcome_difference_by_distance_total_caregiving(  # noqa: PLR0913
+    prof_diff: pd.DataFrame,
+    prof_1_year_diff: pd.DataFrame,
+    prof_2_year_diff: pd.DataFrame,
+    prof_3_year_diff: pd.DataFrame,
+    prof_4_year_diff: pd.DataFrame,
+    prof_5_year_diff: pd.DataFrame,
+    window_low: int = -20,
+    window_high: int = 20,
+    path_to_plot: Optional[Path] = None,
+    xlabel: str = "Year relative to start of first care spell",
+    ylabel: str = "Difference in outcome",
+    endogenous_ylim: bool = False,
+    font_family: Optional[str] = "Times New Roman",
+    label_fontsize: float = 28,
+    xtick_fontsize: float = 25,
+    ytick_fontsize: float = 25,
+    tick_length: float = 16,
+    tick_width: float = 1.85,
+) -> None:
+    """Plot outcome difference by distance with 5 lines: total care years 1, 2, 3, 4, 5+.
+
+    Same layout as event study consecutive: dashed black baseline, horizontal line at 0,
+    vertical line at t=-0.5, five subgroup lines (1, 2, 3, 4, 5+ total care years).
+    Profile DataFrames must have column EVENT_STUDY_DIST_COL and 'diff'.
+    """
+    if font_family is not None:
+        with plt.rc_context({"font.family": "serif", "font.serif": [font_family]}):
+            _plot_outcome_difference_by_distance_total_caregiving_impl(
+                prof_diff,
+                prof_1_year_diff,
+                prof_2_year_diff,
+                prof_3_year_diff,
+                prof_4_year_diff,
+                prof_5_year_diff,
+                window_low,
+                window_high,
+                path_to_plot,
+                xlabel,
+                ylabel,
+                endogenous_ylim,
+                label_fontsize,
+                xtick_fontsize,
+                ytick_fontsize,
+                tick_length,
+                tick_width,
+                font_family,
+            )
+    else:
+        _plot_outcome_difference_by_distance_total_caregiving_impl(
+            prof_diff,
+            prof_1_year_diff,
+            prof_2_year_diff,
+            prof_3_year_diff,
+            prof_4_year_diff,
+            prof_5_year_diff,
+            window_low,
+            window_high,
+            path_to_plot,
+            xlabel,
+            ylabel,
+            endogenous_ylim,
+            label_fontsize,
+            xtick_fontsize,
+            ytick_fontsize,
+            tick_length,
+            tick_width,
+            None,
+        )
 
 
 def event_study_total_caregiving_merged_and_profiles(
@@ -390,7 +505,8 @@ def event_study_total_caregiving_merged_and_profiles(
     df_c: pd.DataFrame,
     outcome_o_series: pd.Series,
     outcome_c_series: pd.Series,
-    window: int,
+    window_low: int,
+    window_high: int,
     age_min: int | None,
     age_max: int | None,
     event_type: Literal["care_demand", "caregiving_spell"],
@@ -451,8 +567,8 @@ def event_study_total_caregiving_merged_and_profiles(
 
     merged = merged[
         merged[dist_col_raw].notna()
-        & (merged["distance_raw"] >= -window)
-        & (merged["distance_raw"] <= window)
+        & (merged["distance_raw"] >= window_low)
+        & (merged["distance_raw"] <= window_high)
     ]
     if age_min is not None:
         merged = merged[merged[age_col] >= age_min].copy()
