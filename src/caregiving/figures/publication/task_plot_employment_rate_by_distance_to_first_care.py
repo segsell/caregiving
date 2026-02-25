@@ -3472,7 +3472,7 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Plot full-time share by distance to first caregiving spell (ever caregivers, total care years 1–5+).        """
+        """Plot full-time share by distance to first caregiving spell (ever caregivers, total care years 1–5+)."""
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
         else:
@@ -3651,7 +3651,7 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Plot part-time share by distance to first caregiving spell (ever caregivers, total care years 1–5+).        """
+        """Plot part-time share by distance to first caregiving spell (ever caregivers, total care years 1–5+)."""
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
         else:
@@ -3829,7 +3829,7 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Plot weekly working hours by distance to first caregiving spell (ever caregivers, total care years 1–5+).        """
+        """Plot weekly working hours by distance to first caregiving spell (ever caregivers, total care years 1–5+)."""
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
         else:
@@ -4016,7 +4016,7 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Plot monthly gross labor income by distance to first caregiving spell (ever caregivers, total care years 1–5+).        """
+        """Plot monthly gross labor income by distance to first caregiving spell (ever caregivers, total care years 1–5+)."""
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
         else:
