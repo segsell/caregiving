@@ -95,11 +95,16 @@ def specify_model_caregiving_leave_beirat(
     savings_grid = create_end_of_period_assets()
     experience_grid = define_experience_grid(specs)
 
+    # savings_grid = np.linspace(0, 1_000_000, 3)
+    # experience_grid = np.linspace(0, 1, 2)
+
     model_config = {
         "min_period_batch_segments": [33, 43, 44],
         "n_periods": n_periods,
         "choices": choices,
         "deterministic_states": {
+            # "caregiving_type": [0],
+            # "education": [0],
             "caregiving_type": np.arange(2, dtype=int),
             "education": np.arange(specs["n_education_types"], dtype=int),
             "already_retired": np.arange(2, dtype=int),
@@ -107,6 +112,8 @@ def specify_model_caregiving_leave_beirat(
             "years_leave_used_total": np.arange(4, dtype=int),  # 0..3
         },
         "stochastic_states": {
+            # "partner_state": [0],
+            # "health": [1],
             "partner_state": np.arange(specs["n_partner_states"], dtype=int),
             "health": np.arange(specs["n_health_states"], dtype=int),
             "job_offer": np.arange(2, dtype=int),

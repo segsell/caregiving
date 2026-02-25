@@ -212,10 +212,10 @@ def sparsity_condition_beirat(  # noqa: PLR0911, PLR0912
     elif (not is_informal_care(lagged_choice)) & (job_before_caregiving != 0):
         return False
     # ================================================================================
-
+    elif (caregiving_type == 0) & (years_leave_used_total > 0):
+        return False
     # ================================================================================
     else:
-        _proxy = {"years_leave_used_total": 0}
         if is_dead(health):
             if period == last_period:
                 return True
@@ -232,7 +232,7 @@ def sparsity_condition_beirat(  # noqa: PLR0911, PLR0912
                 "care_demand": NO_CARE_DEMAND,
                 "job_offer": 0,
                 "job_before_caregiving": 0,
-                **_proxy,
+                "years_leave_used_total": years_leave_used_total,
             }
             return state_proxy
         elif mother_dead == PARENT_LONGER_DEAD:
@@ -249,7 +249,7 @@ def sparsity_condition_beirat(  # noqa: PLR0911, PLR0912
                 "care_demand": NO_CARE_DEMAND,
                 "job_offer": job_offer,
                 "job_before_caregiving": 0,
-                **_proxy,
+                "years_leave_used_total": years_leave_used_total,
             }
             return state_proxy
         elif age > max_ret_age + 1:
@@ -266,7 +266,7 @@ def sparsity_condition_beirat(  # noqa: PLR0911, PLR0912
                 "care_demand": care_demand,
                 "job_offer": 0,
                 "job_before_caregiving": 0,
-                **_proxy,
+                "years_leave_used_total": years_leave_used_total,
             }
             return state_proxy
         elif (age <= max_ret_age + 1) and is_retired(lagged_choice):
@@ -317,7 +317,7 @@ def sparsity_condition_beirat(  # noqa: PLR0911, PLR0912
                 "care_demand": NO_CARE_DEMAND,
                 "job_offer": job_offer,
                 "job_before_caregiving": job_before_caregiving,
-                **_proxy,
+                "years_leave_used_total": 0,
             }
             return state_proxy
 
@@ -384,6 +384,10 @@ def sparsity_condition_full_beirat(  # noqa: PLR0911, PLR0912
         return False
     elif (not is_informal_care(lagged_choice)) & (job_before_caregiving != 0):
         return False
+    # ================================================================================
+    elif (caregiving_type == 0) & (years_leave_used_total > 0):
+        return False
+    # ================================================================================
     else:
         _proxy_full = {
             "years_leave_used_total": 0,
@@ -405,7 +409,8 @@ def sparsity_condition_full_beirat(  # noqa: PLR0911, PLR0912
                 "care_demand": NO_CARE_DEMAND,
                 "job_offer": 0,
                 "job_before_caregiving": 0,
-                **_proxy_full,
+                "years_leave_used_total": years_leave_used_total,
+                "full_leave_year_used": full_leave_year_used,
             }
             return state_proxy
         elif mother_dead == PARENT_LONGER_DEAD:
@@ -422,7 +427,8 @@ def sparsity_condition_full_beirat(  # noqa: PLR0911, PLR0912
                 "care_demand": NO_CARE_DEMAND,
                 "job_offer": job_offer,
                 "job_before_caregiving": 0,
-                **_proxy_full,
+                "years_leave_used_total": years_leave_used_total,
+                "full_leave_year_used": full_leave_year_used,
             }
             return state_proxy
         elif age > max_ret_age + 1:
@@ -439,7 +445,8 @@ def sparsity_condition_full_beirat(  # noqa: PLR0911, PLR0912
                 "care_demand": care_demand,
                 "job_offer": 0,
                 "job_before_caregiving": 0,
-                **_proxy_full,
+                "years_leave_used_total": years_leave_used_total,
+                "full_leave_year_used": full_leave_year_used,
             }
             return state_proxy
         elif (age <= max_ret_age + 1) and is_retired(lagged_choice):
@@ -492,7 +499,8 @@ def sparsity_condition_full_beirat(  # noqa: PLR0911, PLR0912
                 "care_demand": NO_CARE_DEMAND,
                 "job_offer": job_offer,
                 "job_before_caregiving": job_before_caregiving,
-                **_proxy_full,
+                "years_leave_used_total": 0,
+                "full_leave_year_used": 0,
             }
             return state_proxy
 
