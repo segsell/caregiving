@@ -265,6 +265,7 @@ for age_min_val, age_max_val, age_label_val in (
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Plot caregiving rates by distance to first care demand spell.
 
@@ -302,6 +303,10 @@ for age_min_val, age_max_val, age_label_val in (
             window: Window size around event (e.g., 20 = -20 to +20 periods)
 
         """
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         # Load and prepare data
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -373,8 +378,8 @@ for age_min_val, age_max_val, age_label_val in (
         # and trim to window
         merged = merged[
             merged["first_care_demand_period"].notna()
-            & (merged["distance_to_first_care_demand"] >= -window_low)
-            & (merged["distance_to_first_care_demand"] <= window_high)
+            & (merged["distance_to_first_care_demand"] >= -w_low)
+            & (merged["distance_to_first_care_demand"] <= w_high)
         ]
 
         # Filter by age at first care demand period if specified
@@ -470,8 +475,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_2_year=prof_2_year,
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
-            window_low=window_low,
-            window_high=window_high,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
         )
@@ -506,6 +511,7 @@ for age_min_val, age_max_val, age_label_val in (
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Plot caregiving rates by distance to first care demand spell (all agents).
 
@@ -539,6 +545,10 @@ for age_min_val, age_max_val, age_label_val in (
             window: Window size around event (e.g., 20 = -20 to +20 periods)
 
         """
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         # Load and prepare data
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -599,8 +609,8 @@ for age_min_val, age_max_val, age_label_val in (
         # and trim to window
         merged = merged[
             merged["first_care_demand_period"].notna()
-            & (merged["distance_to_first_care_demand"] >= -window_low)
-            & (merged["distance_to_first_care_demand"] <= window_high)
+            & (merged["distance_to_first_care_demand"] >= -w_low)
+            & (merged["distance_to_first_care_demand"] <= w_high)
         ]
 
         # Filter by age at first care demand period if specified
@@ -696,8 +706,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_2_year=prof_2_year,
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
-            window_low=window_low,
-            window_high=window_high,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
         )
@@ -735,6 +745,7 @@ for age_min_val, age_max_val, age_label_val in (
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Plot caregiving rates by distance to first care demand spell.
 
@@ -772,6 +783,10 @@ for age_min_val, age_max_val, age_label_val in (
             window: Window size around event (e.g., 20 = -20 to +20 periods)
 
         """
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         # Load and prepare data
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -840,8 +855,8 @@ for age_min_val, age_max_val, age_label_val in (
         # and trim to window
         merged = merged[
             merged["first_care_demand_period"].notna()
-            & (merged["distance_to_first_care_demand"] >= -window_low)
-            & (merged["distance_to_first_care_demand"] <= window_high)
+            & (merged["distance_to_first_care_demand"] >= -w_low)
+            & (merged["distance_to_first_care_demand"] <= w_high)
         ]
 
         # Filter by age at first care demand period if specified
@@ -937,8 +952,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_2_year=prof_2_year,
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
-            window_low=window_low,
-            window_high=window_high,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
         )
@@ -976,6 +991,7 @@ for age_min_val, age_max_val, age_label_val in (
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Plot caregiving rates by distance to first care demand spell.
 
@@ -1013,6 +1029,10 @@ for age_min_val, age_max_val, age_label_val in (
             window: Window size around event (e.g., 20 = -20 to +20 periods)
 
         """
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         # Load and prepare data
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -1081,8 +1101,8 @@ for age_min_val, age_max_val, age_label_val in (
         # and trim to window
         merged = merged[
             merged["first_care_demand_period"].notna()
-            & (merged["distance_to_first_care_demand"] >= -window_low)
-            & (merged["distance_to_first_care_demand"] <= window_high)
+            & (merged["distance_to_first_care_demand"] >= -w_low)
+            & (merged["distance_to_first_care_demand"] <= w_high)
         ]
 
         # Filter by age at first care demand period if specified
@@ -1178,8 +1198,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_2_year=prof_2_year,
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
-            window_low=window_low,
-            window_high=window_high,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
         )
@@ -1214,6 +1234,7 @@ for age_min_val, age_max_val, age_label_val in (
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Plot overall caregiving rates by distance to first caregiving spell.
 
@@ -1246,6 +1267,10 @@ for age_min_val, age_max_val, age_label_val in (
             window: Window size around event (e.g., 20 = -20 to +20 periods)
 
         """
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         # Load and prepare data
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -1297,8 +1322,8 @@ for age_min_val, age_max_val, age_label_val in (
         # and trim to window
         merged = merged[
             merged["first_care_period"].notna()
-            & (merged["distance_to_first_care"] >= -window_low)
-            & (merged["distance_to_first_care"] <= window_high)
+            & (merged["distance_to_first_care"] >= -w_low)
+            & (merged["distance_to_first_care"] <= w_high)
         ]
 
         # Filter by age at first care period if specified
@@ -1469,8 +1494,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_2_year=prof_2_year,
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
-            window_low=window_low,
-            window_high=window_high,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
         )
 
