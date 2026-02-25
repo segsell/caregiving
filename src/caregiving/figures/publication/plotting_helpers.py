@@ -11,6 +11,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from caregiving.counterfactual.plotting_helpers import (
+    PUBLICATION_PLOT_STYLE,
+    publication_savefig,
+)
 from caregiving.counterfactual.plotting_utils import ensure_agent_period
 from caregiving.model.shared import INFORMAL_CARE
 
@@ -554,7 +558,8 @@ def plot_employment_rate_by_distance(  # noqa: PLR0913
     prof_3_year,
     prof_4_year,
     prof_5_year=None,
-    window: int = 20,
+    window_low: int = 20,
+    window_high: int = 20,
     path_to_plot: Optional[Path] = None,
     xlabel: str = "Year relative to start of first care spell",
     outcome_baseline: str = "work_o",
@@ -569,13 +574,17 @@ def plot_employment_rate_by_distance(  # noqa: PLR0913
     Creates an event study plot comparing baseline vs no-care-demand rates,
     with separate lines for different caregiving/care-demand durations.
 
+    window_low and window_high are positive integers (years before/after t=0);
+    internally window_low is negated for the axis range.
+
     Args:
         prof: DataFrame with distance_to_first_care and outcome columns
         prof_1_year: DataFrame for 1-year duration subgroup (has outcome_baseline col)
         prof_2_year: DataFrame for 2-year duration subgroup
         prof_3_year: DataFrame for 3-year duration subgroup
         prof_4_year: DataFrame for 4-year duration subgroup
-        window: Window size around event (e.g., 20 = -20 to +20 periods)
+        window_low: Years before t=0 (positive int).
+        window_high: Years after t=0 (positive int).
         path_to_plot: Optional path to save the plot. If None, plot is not saved.
         xlabel: Label for x-axis (default: "Year relative to start of first care spell")
         outcome_baseline: Column name in prof and prof_* for baseline (e.g. work_o, full_time_o)
@@ -583,14 +592,16 @@ def plot_employment_rate_by_distance(  # noqa: PLR0913
         ylabel: Label for y-axis (e.g. "Employment Rate", "Full-Time Rate")
         ylim: Fixed (ymin, ymax) for y-axis. If None, y-axis scale is determined by data.
     """
-    plt.figure(figsize=(14, 8))
+    w_low = -window_low
+    S = PUBLICATION_PLOT_STYLE
+    plt.figure(figsize=S["figsize"])
 
     plt.plot(
         prof["distance_to_first_care"],
         prof[outcome_baseline],
         label="Baseline",
         color="black",
-        linewidth=2.0,
+        linewidth=S["linewidth"],
         linestyle="--",
         marker=None,
     )
@@ -599,7 +610,7 @@ def plot_employment_rate_by_distance(  # noqa: PLR0913
         prof[outcome_counterfactual],
         label="No Care Demand",
         color="black",
-        linewidth=2.0,
+        linewidth=S["linewidth"],
         linestyle="-",
         marker=None,
     )
@@ -618,13 +629,13 @@ def plot_employment_rate_by_distance(  # noqa: PLR0913
             prof_1_year[outcome_baseline],
             label=labels[0],
             color="0.8",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="8",
-            markersize=5,
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
     if len(prof_2_year) > 0:
         plt.plot(
@@ -632,13 +643,13 @@ def plot_employment_rate_by_distance(  # noqa: PLR0913
             prof_2_year[outcome_baseline],
             label=labels[1],
             color="0.6",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="^",
-            markersize=5,
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
     if len(prof_3_year) > 0:
         plt.plot(
@@ -646,13 +657,13 @@ def plot_employment_rate_by_distance(  # noqa: PLR0913
             prof_3_year[outcome_baseline],
             label=labels[2],
             color="0.4",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="D",
-            markersize=5,
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
     if len(prof_4_year) > 0:
         plt.plot(
@@ -660,13 +671,13 @@ def plot_employment_rate_by_distance(  # noqa: PLR0913
             prof_4_year[outcome_baseline],
             label=labels[3],
             color="0.2",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="s",
-            markersize=5,
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
     if prof_5_year is not None and len(prof_5_year) > 0 and len(labels) > 4:
         plt.plot(
@@ -674,20 +685,20 @@ def plot_employment_rate_by_distance(  # noqa: PLR0913
             prof_5_year[outcome_baseline],
             label=labels[4],
             color="black",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="*",
-            markersize=6,
+            markersize=S["markersize_star"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth_star"],
         )
 
     plt.axvline(
         x=-0.5,
         color="k",
         linestyle=(0, (7, 7)),
-        linewidth=1.0,
+        linewidth=S["axvline_linewidth"],
     )
     if extra_vlines is not None:
         for x in extra_vlines:
@@ -697,20 +708,19 @@ def plot_employment_rate_by_distance(  # noqa: PLR0913
                 linestyle=(0, (3, 3)),
                 linewidth=0.8,
             )
-    plt.xlabel(xlabel, fontsize=14)
-    plt.ylabel(ylabel, fontsize=14)
-    plt.xlim(-window - 0.5, window + 0.5)
+    plt.xlabel(xlabel, fontsize=S["label_fontsize"])
+    plt.ylabel(ylabel, fontsize=S["label_fontsize"])
+    plt.xlim(w_low - 0.5, window_high + 0.5)
     if ylim is not None:
         plt.ylim(ylim[0], ylim[1])
-    plt.grid(True, axis="y", alpha=0.3, linewidth=0.8)
-    plt.xticks(range(-window, window + 1, 5), fontsize=12)
-    plt.yticks(fontsize=12)
+    plt.grid(True, axis="y", alpha=S["grid_alpha"], linewidth=S["grid_linewidth"])
+    plt.xticks(range(w_low, window_high + 1, 5), fontsize=S["xtick_fontsize"])
+    plt.yticks(fontsize=S["ytick_fontsize"])
     ax = plt.gca()
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-    ax.tick_params(axis="both", length=8)
+    ax.tick_params(axis="both", length=S["tick_length"], width=S["tick_width"])
     plt.tight_layout()
     if path_to_plot:
-        path_to_plot.parent.mkdir(parents=True, exist_ok=True)
-        plt.savefig(path_to_plot, dpi=1200, bbox_inches="tight")
+        publication_savefig(path_to_plot)
     plt.close()

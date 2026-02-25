@@ -237,10 +237,49 @@ EVENT_STUDY_DIST_COL = "distance_to_first_care"
 # Age groups for event-study tasks: (age_min, age_max, age_label)
 AGE_GROUPS_EVENT_STUDY = (
     (None, None, "all_ages"),
-    # (40, 49, "ages_40_49"),
-    # (50, 59, "ages_50_59"),
-    # (60, 70, "ages_60_70"),
+    (40, 49, "ages_40_49"),
+    (50, 59, "ages_50_59"),
+    (60, 70, "ages_60_70"),
 )
+
+# Shared publication figure style (figsize, fonts, lines, grid) for distance-by-outcome plots
+PUBLICATION_PLOT_STYLE = {
+    "figsize": (14, 12),
+    "label_fontsize": 28,
+    "xtick_fontsize": 25,
+    "ytick_fontsize": 25,
+    "tick_length": 16,
+    "tick_width": 1.85,
+    "linewidth": 3.7,
+    "markersize": 9,
+    "markeredgewidth": 3.0,
+    "markersize_star": 12,
+    "markeredgewidth_star": 3.5,
+    "grid_alpha": 0.18,
+    "grid_linewidth": 1.15,
+    "axvline_linewidth": 1.85,
+    "axhline_linewidth": 1.6,
+    "savefig_dpi": 1200,
+    "savefig_pad_inches": 0.25,
+}
+
+
+def publication_savefig(path: Path) -> None:
+    """Save current figure with publication defaults (DPI, padding, PDF font embedding)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    is_pdf = path.suffix.lower() == ".pdf"
+    if is_pdf:
+        _pdf_fonttype = plt.rcParams["pdf.fonttype"]
+        plt.rcParams["pdf.fonttype"] = 42
+    plt.savefig(
+        path,
+        dpi=PUBLICATION_PLOT_STYLE["savefig_dpi"],
+        bbox_inches="tight",
+        pad_inches=PUBLICATION_PLOT_STYLE["savefig_pad_inches"],
+    )
+    if is_pdf:
+        plt.rcParams["pdf.fonttype"] = _pdf_fonttype
+
 
 _WORK_SET = set(np.asarray(WORK).ravel().tolist())
 _RETIREMENT_SET = set(np.asarray(RETIREMENT).ravel().tolist())

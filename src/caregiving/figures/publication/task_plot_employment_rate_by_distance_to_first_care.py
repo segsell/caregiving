@@ -353,7 +353,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
     ) -> None:
         """Plot employment rate by distance to first care demand (type 0; sanity check).
 
@@ -459,8 +460,8 @@ for age_min_val, age_max_val, age_label_val in (
         # and trim to window
         merged = merged[
             merged["first_care_demand_period"].notna()
-            & (merged["distance_to_first_care_demand"] >= -window)
-            & (merged["distance_to_first_care_demand"] <= window)
+            & (merged["distance_to_first_care_demand"] >= -window_low)
+            & (merged["distance_to_first_care_demand"] <= window_high)
         ]
 
         # Filter by age at first care demand period if specified
@@ -556,7 +557,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_2_year=prof_2_year,
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
         )
@@ -594,7 +596,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
     ) -> None:
         """Plot employment rate by distance to first care demand (all agents).
 
@@ -688,8 +691,8 @@ for age_min_val, age_max_val, age_label_val in (
         # and trim to window
         merged = merged[
             merged["first_care_demand_period"].notna()
-            & (merged["distance_to_first_care_demand"] >= -window)
-            & (merged["distance_to_first_care_demand"] <= window)
+            & (merged["distance_to_first_care_demand"] >= -window_low)
+            & (merged["distance_to_first_care_demand"] <= window_high)
         ]
 
         # Filter by age at first care demand period if specified
@@ -785,7 +788,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_2_year=prof_2_year,
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
         )
@@ -823,7 +827,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
         caregiving_type_1: bool = True,
     ) -> None:
         """Plot employment rate by distance to first care demand (type 1, caregiving duration).
@@ -932,8 +937,8 @@ for age_min_val, age_max_val, age_label_val in (
         # and trim to window
         merged = merged[
             merged["first_care_demand_period"].notna()
-            & (merged["distance_to_first_care_demand"] >= -window)
-            & (merged["distance_to_first_care_demand"] <= window)
+            & (merged["distance_to_first_care_demand"] >= -window_low)
+            & (merged["distance_to_first_care_demand"] <= window_high)
         ]
 
         # Filter by age at first care demand period if specified
@@ -1029,7 +1034,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_2_year=prof_2_year,
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
         )
@@ -1067,7 +1073,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
         caregiving_type_1: bool = False,
     ) -> None:
         """Plot employment rate by distance to first care demand (type 1, exact care demand duration).
@@ -1178,8 +1185,8 @@ for age_min_val, age_max_val, age_label_val in (
         # and trim to window
         merged = merged[
             merged["first_care_demand_period"].notna()
-            & (merged["distance_to_first_care_demand"] >= -window)
-            & (merged["distance_to_first_care_demand"] <= window)
+            & (merged["distance_to_first_care_demand"] >= -window_low)
+            & (merged["distance_to_first_care_demand"] <= window_high)
         ]
 
         # Filter by age at first care demand period if specified
@@ -1275,7 +1282,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_2_year=prof_2_year,
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
         )
@@ -1322,7 +1330,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
     ) -> None:
         """Plot full-time share by distance to first care demand (ever caregivers, total care years 1–5+).
 
@@ -1371,8 +1380,8 @@ for age_min_val, age_max_val, age_label_val in (
         merged = merged.merge(first_care_demand_with_age, on="agent", how="left")
         merged = merged[
             merged["first_care_demand_period"].notna()
-            & (merged["distance_to_first_care_demand"] >= -window)
-            & (merged["distance_to_first_care_demand"] <= window)
+            & (merged["distance_to_first_care_demand"] >= -window_low)
+            & (merged["distance_to_first_care_demand"] <= window_high)
         ]
         if age_min is not None:
             merged = merged[merged["age_at_first_care_demand"] >= age_min].copy()
@@ -1435,7 +1444,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             outcome_baseline="full_time_o",
@@ -1481,7 +1491,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
     ) -> None:
         """Plot part-time share by distance to first care demand (ever caregivers, total care years 1–5+).
 
@@ -1530,8 +1541,8 @@ for age_min_val, age_max_val, age_label_val in (
         merged = merged.merge(first_care_demand_with_age, on="agent", how="left")
         merged = merged[
             merged["first_care_demand_period"].notna()
-            & (merged["distance_to_first_care_demand"] >= -window)
-            & (merged["distance_to_first_care_demand"] <= window)
+            & (merged["distance_to_first_care_demand"] >= -window_low)
+            & (merged["distance_to_first_care_demand"] <= window_high)
         ]
         if age_min is not None:
             merged = merged[merged["age_at_first_care_demand"] >= age_min].copy()
@@ -1594,7 +1605,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             outcome_baseline="part_time_o",
@@ -1640,7 +1652,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
     ) -> None:
         """Plot weekly working hours by distance to first care demand (ever caregivers, total care years 1–5+).
 
@@ -1697,8 +1710,8 @@ for age_min_val, age_max_val, age_label_val in (
         merged = merged.merge(first_care_demand_with_age, on="agent", how="left")
         merged = merged[
             merged["first_care_demand_period"].notna()
-            & (merged["distance_to_first_care_demand"] >= -window)
-            & (merged["distance_to_first_care_demand"] <= window)
+            & (merged["distance_to_first_care_demand"] >= -window_low)
+            & (merged["distance_to_first_care_demand"] <= window_high)
         ]
         if age_min is not None:
             merged = merged[merged["age_at_first_care_demand"] >= age_min].copy()
@@ -1761,7 +1774,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             outcome_baseline="working_hours_weekly_o",
@@ -1808,7 +1822,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
     ) -> None:
         """Plot monthly gross labor income by distance to first care demand (ever caregivers, total care years 1–5+).
 
@@ -1865,8 +1880,8 @@ for age_min_val, age_max_val, age_label_val in (
         merged = merged.merge(first_care_demand_with_age, on="agent", how="left")
         merged = merged[
             merged["first_care_demand_period"].notna()
-            & (merged["distance_to_first_care_demand"] >= -window)
-            & (merged["distance_to_first_care_demand"] <= window)
+            & (merged["distance_to_first_care_demand"] >= -window_low)
+            & (merged["distance_to_first_care_demand"] <= window_high)
         ]
         if age_min is not None:
             merged = merged[merged["age_at_first_care_demand"] >= age_min].copy()
@@ -1929,7 +1944,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             outcome_baseline="monthly_gross_labor_income_o",
@@ -1978,7 +1994,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
     ) -> None:
         """Plot full-time share by distance to first care demand (ever caregivers, total care years 1–5+).
 
@@ -2026,8 +2043,8 @@ for age_min_val, age_max_val, age_label_val in (
         merged = merged.merge(first_care_demand_with_age, on="agent", how="left")
         merged = merged[
             merged["first_care_demand_period"].notna()
-            & (merged["distance_to_first_care_demand"] >= -window)
-            & (merged["distance_to_first_care_demand"] <= window)
+            & (merged["distance_to_first_care_demand"] >= -window_low)
+            & (merged["distance_to_first_care_demand"] <= window_high)
         ]
         if age_min is not None:
             merged = merged[merged["age_at_first_care_demand"] >= age_min].copy()
@@ -2090,7 +2107,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             outcome_baseline="full_time_o",
@@ -2138,7 +2156,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
     ) -> None:
         """Plot part-time share by distance to first care demand (ever caregivers, total care years 1–5+).
 
@@ -2186,8 +2205,8 @@ for age_min_val, age_max_val, age_label_val in (
         merged = merged.merge(first_care_demand_with_age, on="agent", how="left")
         merged = merged[
             merged["first_care_demand_period"].notna()
-            & (merged["distance_to_first_care_demand"] >= -window)
-            & (merged["distance_to_first_care_demand"] <= window)
+            & (merged["distance_to_first_care_demand"] >= -window_low)
+            & (merged["distance_to_first_care_demand"] <= window_high)
         ]
         if age_min is not None:
             merged = merged[merged["age_at_first_care_demand"] >= age_min].copy()
@@ -2250,7 +2269,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             outcome_baseline="part_time_o",
@@ -2298,7 +2318,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
     ) -> None:
         """Plot weekly working hours by distance to first care demand (ever caregivers, total care years 1–5+).
 
@@ -2354,8 +2375,8 @@ for age_min_val, age_max_val, age_label_val in (
         merged = merged.merge(first_care_demand_with_age, on="agent", how="left")
         merged = merged[
             merged["first_care_demand_period"].notna()
-            & (merged["distance_to_first_care_demand"] >= -window)
-            & (merged["distance_to_first_care_demand"] <= window)
+            & (merged["distance_to_first_care_demand"] >= -window_low)
+            & (merged["distance_to_first_care_demand"] <= window_high)
         ]
         if age_min is not None:
             merged = merged[merged["age_at_first_care_demand"] >= age_min].copy()
@@ -2418,7 +2439,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             outcome_baseline="working_hours_weekly_o",
@@ -2467,7 +2489,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
     ) -> None:
         """Plot monthly gross labor income by distance to first care demand (ever caregivers, total care years 1–5+).
 
@@ -2523,8 +2546,8 @@ for age_min_val, age_max_val, age_label_val in (
         merged = merged.merge(first_care_demand_with_age, on="agent", how="left")
         merged = merged[
             merged["first_care_demand_period"].notna()
-            & (merged["distance_to_first_care_demand"] >= -window)
-            & (merged["distance_to_first_care_demand"] <= window)
+            & (merged["distance_to_first_care_demand"] >= -window_low)
+            & (merged["distance_to_first_care_demand"] <= window_high)
         ]
         if age_min is not None:
             merged = merged[merged["age_at_first_care_demand"] >= age_min].copy()
@@ -2587,7 +2610,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             outcome_baseline="monthly_gross_labor_income_o",
@@ -2641,7 +2665,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
     ) -> None:
         """Plot full-time share by distance to first caregiving spell (ever caregivers, total care years 1–5+).
 
@@ -2685,8 +2710,8 @@ for age_min_val, age_max_val, age_label_val in (
         merged = merged.merge(first_care_with_age, on="agent", how="left")
         merged = merged[
             merged["first_care_period"].notna()
-            & (merged["distance_to_first_care"] >= -window)
-            & (merged["distance_to_first_care"] <= window)
+            & (merged["distance_to_first_care"] >= -window_low)
+            & (merged["distance_to_first_care"] <= window_high)
         ]
         if age_min is not None:
             merged = merged[merged["age_at_first_care"] >= age_min].copy()
@@ -2769,7 +2794,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             outcome_baseline="full_time_o",
@@ -2815,7 +2841,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
     ) -> None:
         """Plot part-time share by distance to first caregiving spell (ever caregivers, total care years 1–5+).
 
@@ -2859,8 +2886,8 @@ for age_min_val, age_max_val, age_label_val in (
         merged = merged.merge(first_care_with_age, on="agent", how="left")
         merged = merged[
             merged["first_care_period"].notna()
-            & (merged["distance_to_first_care"] >= -window)
-            & (merged["distance_to_first_care"] <= window)
+            & (merged["distance_to_first_care"] >= -window_low)
+            & (merged["distance_to_first_care"] <= window_high)
         ]
         if age_min is not None:
             merged = merged[merged["age_at_first_care"] >= age_min].copy()
@@ -2943,7 +2970,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             outcome_baseline="part_time_o",
@@ -2988,7 +3016,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
     ) -> None:
         """Plot weekly working hours by distance to first caregiving spell (ever caregivers, total care years 1–5+).
 
@@ -3040,8 +3069,8 @@ for age_min_val, age_max_val, age_label_val in (
         merged = merged.merge(first_care_with_age, on="agent", how="left")
         merged = merged[
             merged["first_care_period"].notna()
-            & (merged["distance_to_first_care"] >= -window)
-            & (merged["distance_to_first_care"] <= window)
+            & (merged["distance_to_first_care"] >= -window_low)
+            & (merged["distance_to_first_care"] <= window_high)
         ]
         if age_min is not None:
             merged = merged[merged["age_at_first_care"] >= age_min].copy()
@@ -3124,7 +3153,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             outcome_baseline="working_hours_weekly_o",
@@ -3170,7 +3200,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
     ) -> None:
         """Plot monthly gross labor income by distance to first caregiving spell (ever caregivers, total care years 1–5+).
 
@@ -3222,8 +3253,8 @@ for age_min_val, age_max_val, age_label_val in (
         merged = merged.merge(first_care_with_age, on="agent", how="left")
         merged = merged[
             merged["first_care_period"].notna()
-            & (merged["distance_to_first_care"] >= -window)
-            & (merged["distance_to_first_care"] <= window)
+            & (merged["distance_to_first_care"] >= -window_low)
+            & (merged["distance_to_first_care"] <= window_high)
         ]
         if age_min is not None:
             merged = merged[merged["age_at_first_care"] >= age_min].copy()
@@ -3306,7 +3337,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             outcome_baseline="monthly_gross_labor_income_o",
@@ -3355,7 +3387,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
     ) -> None:
         """Plot full-time share by distance to first caregiving spell (ever caregivers, total care years 1–5+)."""
         with path_to_specs.open("rb") as f:
@@ -3395,8 +3428,8 @@ for age_min_val, age_max_val, age_label_val in (
         merged = merged.merge(first_care_with_age, on="agent", how="left")
         merged = merged[
             merged["first_care_period"].notna()
-            & (merged["distance_to_first_care"] >= -window)
-            & (merged["distance_to_first_care"] <= window)
+            & (merged["distance_to_first_care"] >= -window_low)
+            & (merged["distance_to_first_care"] <= window_high)
         ]
         if age_min is not None:
             merged = merged[merged["age_at_first_care"] >= age_min].copy()
@@ -3479,7 +3512,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             outcome_baseline="full_time_o",
@@ -3527,7 +3561,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
     ) -> None:
         """Plot part-time share by distance to first caregiving spell (ever caregivers, total care years 1–5+)."""
         with path_to_specs.open("rb") as f:
@@ -3567,8 +3602,8 @@ for age_min_val, age_max_val, age_label_val in (
         merged = merged.merge(first_care_with_age, on="agent", how="left")
         merged = merged[
             merged["first_care_period"].notna()
-            & (merged["distance_to_first_care"] >= -window)
-            & (merged["distance_to_first_care"] <= window)
+            & (merged["distance_to_first_care"] >= -window_low)
+            & (merged["distance_to_first_care"] <= window_high)
         ]
         if age_min is not None:
             merged = merged[merged["age_at_first_care"] >= age_min].copy()
@@ -3651,7 +3686,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             outcome_baseline="part_time_o",
@@ -3698,7 +3734,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
     ) -> None:
         """Plot weekly working hours by distance to first caregiving spell (ever caregivers, total care years 1–5+)."""
         with path_to_specs.open("rb") as f:
@@ -3746,8 +3783,8 @@ for age_min_val, age_max_val, age_label_val in (
         merged = merged.merge(first_care_with_age, on="agent", how="left")
         merged = merged[
             merged["first_care_period"].notna()
-            & (merged["distance_to_first_care"] >= -window)
-            & (merged["distance_to_first_care"] <= window)
+            & (merged["distance_to_first_care"] >= -window_low)
+            & (merged["distance_to_first_care"] <= window_high)
         ]
         if age_min is not None:
             merged = merged[merged["age_at_first_care"] >= age_min].copy()
@@ -3830,7 +3867,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             outcome_baseline="working_hours_weekly_o",
@@ -3878,7 +3916,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
     ) -> None:
         """Plot monthly gross labor income by distance to first caregiving spell (ever caregivers, total care years 1–5+)."""
         with path_to_specs.open("rb") as f:
@@ -3926,8 +3965,8 @@ for age_min_val, age_max_val, age_label_val in (
         merged = merged.merge(first_care_with_age, on="agent", how="left")
         merged = merged[
             merged["first_care_period"].notna()
-            & (merged["distance_to_first_care"] >= -window)
-            & (merged["distance_to_first_care"] <= window)
+            & (merged["distance_to_first_care"] >= -window_low)
+            & (merged["distance_to_first_care"] <= window_high)
         ]
         if age_min is not None:
             merged = merged[merged["age_at_first_care"] >= age_min].copy()
@@ -4010,7 +4049,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             outcome_baseline="monthly_gross_labor_income_o",
@@ -4053,7 +4093,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
     ) -> None:
         """Plot employment rate by distance to first caregiving spell (at least N years).
 
@@ -4148,8 +4189,8 @@ for age_min_val, age_max_val, age_label_val in (
         # and trim to window
         merged = merged[
             merged["first_care_period"].notna()
-            & (merged["distance_to_first_care"] >= -window)
-            & (merged["distance_to_first_care"] <= window)
+            & (merged["distance_to_first_care"] >= -window_low)
+            & (merged["distance_to_first_care"] <= window_high)
         ]
 
         # Filter by age at first care period if specified
@@ -4220,7 +4261,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_2_year=prof_2_year,
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
         )
 
@@ -4256,7 +4298,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
     ) -> None:
         """Plot overall employment rate by distance to first caregiving spell (exact caregiving).
 
@@ -4341,8 +4384,8 @@ for age_min_val, age_max_val, age_label_val in (
         # and trim to window
         merged = merged[
             merged["first_care_period"].notna()
-            & (merged["distance_to_first_care"] >= -window)
-            & (merged["distance_to_first_care"] <= window)
+            & (merged["distance_to_first_care"] >= -window_low)
+            & (merged["distance_to_first_care"] <= window_high)
         ]
 
         # Filter by age at first care period if specified
@@ -4501,7 +4544,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_2_year=prof_2_year,
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
         )
 
@@ -4545,7 +4589,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
     ) -> None:
         """Plot employment rate by distance to first care demand, grouped by total caregiving years.
 
@@ -4595,8 +4640,8 @@ for age_min_val, age_max_val, age_label_val in (
         merged = merged.merge(first_care_demand_with_age, on="agent", how="left")
         merged = merged[
             merged["first_care_demand_period"].notna()
-            & (merged["distance_to_first_care_demand"] >= -window)
-            & (merged["distance_to_first_care_demand"] <= window)
+            & (merged["distance_to_first_care_demand"] >= -window_low)
+            & (merged["distance_to_first_care_demand"] <= window_high)
         ]
         if age_min is not None:
             merged = merged[merged["age_at_first_care_demand"] >= age_min].copy()
@@ -4657,7 +4702,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             subgroup_labels=total_labels,
@@ -4701,7 +4747,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
     ) -> None:
         """Plot employment rate by distance to first care demand, grouped by total caregiving years.
 
@@ -4751,8 +4798,8 @@ for age_min_val, age_max_val, age_label_val in (
         merged = merged.merge(first_care_demand_with_age, on="agent", how="left")
         merged = merged[
             merged["first_care_demand_period"].notna()
-            & (merged["distance_to_first_care_demand"] >= -window)
-            & (merged["distance_to_first_care_demand"] <= window)
+            & (merged["distance_to_first_care_demand"] >= -window_low)
+            & (merged["distance_to_first_care_demand"] <= window_high)
         ]
         if age_min is not None:
             merged = merged[merged["age_at_first_care_demand"] >= age_min].copy()
@@ -4813,7 +4860,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             subgroup_labels=total_labels,
@@ -4859,7 +4907,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
     ) -> None:
         """Plot employment rate by distance to first caregiving spell, grouped by total caregiving years.
 
@@ -4904,8 +4953,8 @@ for age_min_val, age_max_val, age_label_val in (
         merged = merged.merge(first_care_with_age, on="agent", how="left")
         merged = merged[
             merged["first_care_period"].notna()
-            & (merged["distance_to_first_care"] >= -window)
-            & (merged["distance_to_first_care"] <= window)
+            & (merged["distance_to_first_care"] >= -window_low)
+            & (merged["distance_to_first_care"] <= window_high)
         ]
         if age_min is not None:
             merged = merged[merged["age_at_first_care"] >= age_min].copy()
@@ -4981,7 +5030,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             subgroup_labels=total_labels,
@@ -5025,7 +5075,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
     ) -> None:
         """Plot employment rate by distance to first caregiving spell, grouped by total caregiving years.
 
@@ -5070,8 +5121,8 @@ for age_min_val, age_max_val, age_label_val in (
         merged = merged.merge(first_care_with_age, on="agent", how="left")
         merged = merged[
             merged["first_care_period"].notna()
-            & (merged["distance_to_first_care"] >= -window)
-            & (merged["distance_to_first_care"] <= window)
+            & (merged["distance_to_first_care"] >= -window_low)
+            & (merged["distance_to_first_care"] <= window_high)
         ]
         if age_min is not None:
             merged = merged[merged["age_at_first_care"] >= age_min].copy()
@@ -5147,7 +5198,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             subgroup_labels=total_labels,
@@ -5192,7 +5244,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
     ) -> None:
         """Plot employment rate by distance to first care demand, grouped by total caregiving years.
 
@@ -5242,8 +5295,8 @@ for age_min_val, age_max_val, age_label_val in (
         merged = merged.merge(first_care_demand_with_age, on="agent", how="left")
         merged = merged[
             merged["first_care_demand_period"].notna()
-            & (merged["distance_to_first_care_demand"] >= -window)
-            & (merged["distance_to_first_care_demand"] <= window)
+            & (merged["distance_to_first_care_demand"] >= -window_low)
+            & (merged["distance_to_first_care_demand"] <= window_high)
         ]
         if age_min is not None:
             merged = merged[merged["age_at_first_care_demand"] >= age_min].copy()
@@ -5304,7 +5357,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             subgroup_labels=total_labels,
@@ -5349,7 +5403,8 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
     ) -> None:
         """Plot employment rate by distance to first caregiving spell, grouped by total caregiving years.
 
@@ -5394,8 +5449,8 @@ for age_min_val, age_max_val, age_label_val in (
         merged = merged.merge(first_care_with_age, on="agent", how="left")
         merged = merged[
             merged["first_care_period"].notna()
-            & (merged["distance_to_first_care"] >= -window)
-            & (merged["distance_to_first_care"] <= window)
+            & (merged["distance_to_first_care"] >= -window_low)
+            & (merged["distance_to_first_care"] <= window_high)
         ]
         if age_min is not None:
             merged = merged[merged["age_at_first_care"] >= age_min].copy()
@@ -5471,7 +5526,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=window_low,
+            window_high=window_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             subgroup_labels=total_labels,

@@ -15,7 +15,11 @@ import pytask
 from pytask import Product
 
 from caregiving.config import BLD
-from caregiving.counterfactual.plotting_helpers import calculate_simple_outcomes
+from caregiving.counterfactual.plotting_helpers import (
+    PUBLICATION_PLOT_STYLE,
+    calculate_simple_outcomes,
+    publication_savefig,
+)
 from caregiving.counterfactual.plotting_utils import ensure_agent_period
 from caregiving.figures.publication.plotting_helpers import (
     add_distance_to_first_care_demand,
@@ -94,7 +98,8 @@ def _identify_agents_at_least_5_years_care_demand(
 
 def _prepare_merged_type1(
     path_to_data: Path,
-    window: int,
+    window_low: int,
+    window_high: int,
     ever_caregivers: bool = False,
     ever_care_demand: bool = False,
 ) -> pd.DataFrame:
@@ -131,8 +136,8 @@ def _prepare_merged_type1(
     )
     merged = merged[
         merged["first_care_demand_period"].notna()
-        & (merged["distance_to_first_care_demand"] >= -window)
-        & (merged["distance_to_first_care_demand"] <= window)
+        & (merged["distance_to_first_care_demand"] >= -window_low)
+        & (merged["distance_to_first_care_demand"] <= window_high)
     ]
     return merged
 
@@ -140,7 +145,8 @@ def _prepare_merged_type1(
 def _compute_no_care_demand_profile(
     path_to_original_data: Path,
     path_to_no_care_demand_data: Path,
-    window: int,
+    window_low: int,
+    window_high: int,
     outcome_col: str,
     ever_caregivers: bool = False,
     ever_care_demand: bool = False,
@@ -178,8 +184,8 @@ def _compute_no_care_demand_profile(
     )
     merged_ncd = merged_ncd[
         merged_ncd["first_care_demand_period"].notna()
-        & (merged_ncd["distance_to_first_care_demand"] >= -window)
-        & (merged_ncd["distance_to_first_care_demand"] <= window)
+        & (merged_ncd["distance_to_first_care_demand"] >= -window_low)
+        & (merged_ncd["distance_to_first_care_demand"] <= window_high)
     ]
     merged_ncd = _add_outcome_columns_no_care_demand(merged_ncd)
     if outcome_col not in merged_ncd.columns:
@@ -297,18 +303,23 @@ def plot_conditional_means_by_distance(
     prof_4_year: pd.DataFrame,
     prof_5_year: pd.DataFrame,
     ylabel: str,
-    window: int = 20,
+    window_low: int = 20,
+    window_high: int = 20,
     path_to_plot: Optional[Path] = None,
     prof_no_care_demand: Optional[pd.DataFrame] = None,
     prof_ever_caregiver: Optional[pd.DataFrame] = None,
 ) -> None:
     """Plot conditional means (5 groups) along distance to first care demand.
 
+    window_low and window_high are positive integers (years before/after t=0);
+    internally window_low is negated for the axis range.
     Uses same marker/color style as publication employment-by-distance plots.
     Optionally add: no-care-demand mean by distance (black solid), ever-caregiver
     mean by distance in original (dashed).
     """
-    plt.figure(figsize=(14, 8))
+    w_low = -window_low
+    S = PUBLICATION_PLOT_STYLE
+    plt.figure(figsize=S["figsize"])
     xlabel = "Year relative to start of first care demand"
     dist_col_plot = "distance_to_first_care"
 
@@ -327,13 +338,13 @@ def plot_conditional_means_by_distance(
                 prof["value"],
                 label=style["label"],
                 color=style["color"],
-                linewidth=2.0,
+                linewidth=S["linewidth"],
                 linestyle="-",
                 marker=style["marker"],
                 markersize=style["markersize"],
                 markevery=1,
                 markerfacecolor="none",
-                markeredgewidth=1.5,
+                markeredgewidth=style.get("markeredgewidth", S["markeredgewidth"]),
             )
 
     if prof_no_care_demand is not None and len(prof_no_care_demand) > 0:
@@ -345,7 +356,7 @@ def plot_conditional_means_by_distance(
             p["value"],
             label="No care demand (mean)",
             color="black",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
         )
     if prof_ever_caregiver is not None and len(prof_ever_caregiver) > 0:
@@ -357,7 +368,7 @@ def plot_conditional_means_by_distance(
             p["value"],
             label="Ever caregiver (original)",
             color="black",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="--",
         )
 
@@ -365,22 +376,22 @@ def plot_conditional_means_by_distance(
         x=-0.5,
         color="k",
         linestyle=(0, (7, 7)),
-        linewidth=1.0,
+        linewidth=S["axvline_linewidth"],
     )
-    plt.xlabel(xlabel, fontsize=14)
-    plt.ylabel(ylabel, fontsize=14)
-    plt.xlim(-window - 0.5, window + 0.5)
-    plt.grid(True, axis="y", alpha=0.3, linewidth=0.8)
-    plt.xticks(range(-window, window + 1, 5), fontsize=12)
-    plt.yticks(fontsize=12)
+    plt.xlabel(xlabel, fontsize=S["label_fontsize"])
+    plt.ylabel(ylabel, fontsize=S["label_fontsize"])
+    plt.xlim(w_low - 0.5, window_high + 0.5)
+    plt.grid(True, axis="y", alpha=S["grid_alpha"], linewidth=S["grid_linewidth"])
+    plt.xticks(range(w_low, window_high + 1, 5), fontsize=S["xtick_fontsize"])
+    plt.yticks(fontsize=S["ytick_fontsize"])
     ax = plt.gca()
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-    ax.tick_params(axis="both", length=8)
+    ax.tick_params(axis="both", length=S["tick_length"], width=S["tick_width"])
     plt.legend(loc="best", prop={"size": 10}, framealpha=0.9)
     plt.tight_layout()
     if path_to_plot:
-        plt.savefig(path_to_plot, dpi=1200, bbox_inches="tight")
+        publication_savefig(path_to_plot)
     plt.close()
 
 
@@ -405,13 +416,14 @@ def task_conditional_means_employment_rate(
     / "publication"
     / "final"
     / f"conditional_means_employment_rate_{_PLOT_NAME_SUFFIX}.pdf",
-    window: int = 20,
+    window_low: int = 20,
+    window_high: int = 20,
     ever_caregivers: bool = False,
     ever_care_demand: bool = False,
 ) -> None:
     """Conditional mean employment rate by distance to first care demand (caregiving_type==1)."""
     merged = _prepare_merged_type1(
-        path_to_original_data, window, ever_caregivers, ever_care_demand
+        path_to_original_data, window_low, window_high, ever_caregivers, ever_care_demand
     )
     merged = _add_outcome_columns(merged)
     agents_1, agents_2, agents_3, agents_4 = identify_agents_by_duration(
@@ -426,7 +438,8 @@ def task_conditional_means_employment_rate(
     prof_no_care = _compute_no_care_demand_profile(
         path_to_original_data,
         path_to_no_care_demand_data,
-        window,
+        window_low,
+        window_high,
         "work",
         ever_caregivers,
         ever_care_demand,
@@ -439,7 +452,8 @@ def task_conditional_means_employment_rate(
         prof_4,
         prof_5,
         ylabel="Employment Rate",
-        window=window,
+        window_low=window_low,
+        window_high=window_high,
         path_to_plot=path_to_plot,
         prof_no_care_demand=prof_no_care,
         prof_ever_caregiver=prof_ever_cg,
@@ -460,13 +474,14 @@ def task_conditional_means_part_time_rate(
     / "publication"
     / "final"
     / f"conditional_means_part_time_rate_{_PLOT_NAME_SUFFIX}.pdf",
-    window: int = 20,
+    window_low: int = 20,
+    window_high: int = 20,
     ever_caregivers: bool = False,
     ever_care_demand: bool = False,
 ) -> None:
     """Conditional mean part-time rate by distance to first care demand (caregiving_type==1)."""
     merged = _prepare_merged_type1(
-        path_to_original_data, window, ever_caregivers, ever_care_demand
+        path_to_original_data, window_low, window_high, ever_caregivers, ever_care_demand
     )
     merged = _add_outcome_columns(merged)
     agents_1, agents_2, agents_3, agents_4 = identify_agents_by_duration(
@@ -481,7 +496,8 @@ def task_conditional_means_part_time_rate(
     prof_no_care = _compute_no_care_demand_profile(
         path_to_original_data,
         path_to_no_care_demand_data,
-        window,
+        window_low,
+        window_high,
         "part_time",
         ever_caregivers,
         ever_care_demand,
@@ -494,7 +510,8 @@ def task_conditional_means_part_time_rate(
         prof_4,
         prof_5,
         ylabel="Part-Time Rate",
-        window=window,
+        window_low=window_low,
+        window_high=window_high,
         path_to_plot=path_to_plot,
         prof_no_care_demand=prof_no_care,
         prof_ever_caregiver=prof_ever_cg,
@@ -515,13 +532,14 @@ def task_conditional_means_full_time_rate(
     / "publication"
     / "final"
     / f"conditional_means_full_time_rate_{_PLOT_NAME_SUFFIX}.pdf",
-    window: int = 20,
+    window_low: int = 20,
+    window_high: int = 20,
     ever_caregivers: bool = False,
     ever_care_demand: bool = False,
 ) -> None:
     """Conditional mean full-time rate by distance to first care demand (caregiving_type==1)."""
     merged = _prepare_merged_type1(
-        path_to_original_data, window, ever_caregivers, ever_care_demand
+        path_to_original_data, window_low, window_high, ever_caregivers, ever_care_demand
     )
     merged = _add_outcome_columns(merged)
     agents_1, agents_2, agents_3, agents_4 = identify_agents_by_duration(
@@ -536,7 +554,8 @@ def task_conditional_means_full_time_rate(
     prof_no_care = _compute_no_care_demand_profile(
         path_to_original_data,
         path_to_no_care_demand_data,
-        window,
+        window_low,
+        window_high,
         "full_time",
         ever_caregivers,
         ever_care_demand,
@@ -549,7 +568,8 @@ def task_conditional_means_full_time_rate(
         prof_4,
         prof_5,
         ylabel="Full-Time Rate",
-        window=window,
+        window_low=window_low,
+        window_high=window_high,
         path_to_plot=path_to_plot,
         prof_no_care_demand=prof_no_care,
         prof_ever_caregiver=prof_ever_cg,
@@ -570,13 +590,14 @@ def task_conditional_means_working_hours_weekly(
     / "publication"
     / "final"
     / f"conditional_means_working_hours_weekly_{_PLOT_NAME_SUFFIX}.pdf",
-    window: int = 20,
+    window_low: int = 20,
+    window_high: int = 20,
     ever_caregivers: bool = False,
     ever_care_demand: bool = False,
 ) -> None:
     """Conditional mean working hours (weekly) by distance to first care demand (caregiving_type==1)."""
     merged = _prepare_merged_type1(
-        path_to_original_data, window, ever_caregivers, ever_care_demand
+        path_to_original_data, window_low, window_high, ever_caregivers, ever_care_demand
     )
     merged = _add_outcome_columns(merged)
     agents_1, agents_2, agents_3, agents_4 = identify_agents_by_duration(
@@ -591,7 +612,8 @@ def task_conditional_means_working_hours_weekly(
     prof_no_care = _compute_no_care_demand_profile(
         path_to_original_data,
         path_to_no_care_demand_data,
-        window,
+        window_low,
+        window_high,
         "working_hours_weekly",
         ever_caregivers,
         ever_care_demand,
@@ -604,7 +626,8 @@ def task_conditional_means_working_hours_weekly(
         prof_4,
         prof_5,
         ylabel="Working Hours (weekly)",
-        window=window,
+        window_low=window_low,
+        window_high=window_high,
         path_to_plot=path_to_plot,
         prof_no_care_demand=prof_no_care,
         prof_ever_caregiver=prof_ever_cg,
@@ -625,13 +648,14 @@ def task_conditional_means_monthly_gross_labor_income(
     / "publication"
     / "final"
     / f"conditional_means_monthly_gross_labor_income_{_PLOT_NAME_SUFFIX}.pdf",
-    window: int = 20,
+    window_low: int = 20,
+    window_high: int = 20,
     ever_caregivers: bool = False,
     ever_care_demand: bool = False,
 ) -> None:
     """Conditional mean monthly gross labor income by distance to first care demand (caregiving_type==1)."""
     merged = _prepare_merged_type1(
-        path_to_original_data, window, ever_caregivers, ever_care_demand
+        path_to_original_data, window_low, window_high, ever_caregivers, ever_care_demand
     )
     merged = _add_outcome_columns(merged)
     agents_1, agents_2, agents_3, agents_4 = identify_agents_by_duration(
@@ -652,7 +676,8 @@ def task_conditional_means_monthly_gross_labor_income(
     prof_no_care = _compute_no_care_demand_profile(
         path_to_original_data,
         path_to_no_care_demand_data,
-        window,
+        window_low,
+        window_high,
         "monthly_gross_labor_income",
         ever_caregivers,
         ever_care_demand,
@@ -665,7 +690,8 @@ def task_conditional_means_monthly_gross_labor_income(
         prof_4,
         prof_5,
         ylabel="Monthly Gross Labor Income",
-        window=window,
+        window_low=window_low,
+        window_high=window_high,
         path_to_plot=path_to_plot,
         prof_no_care_demand=prof_no_care,
         prof_ever_caregiver=prof_ever_cg,

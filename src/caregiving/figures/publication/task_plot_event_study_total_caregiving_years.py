@@ -49,6 +49,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_employment_rate_by_distance_to_first_care_demand_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params_Feb16.pkl",
@@ -71,9 +72,20 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 15,
         window_high: int = 15,
+        window_by_age: dict[str, tuple[int, int]] | None = (
+            {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
+        ),
     ) -> None:
-        """Event study: employment rate difference by distance to first care demand (total care years 1–5+)."""
+        """Event study: employment rate difference by distance to first care demand (total care years 1–5+).
 
+        window_by_age overrides window_low/window_high per age group; keys are AGE_GROUPS_EVENT_STUDY
+        labels ("all_ages", "ages_40_49", "ages_50_59", "ages_60_70"); value is (window_low, window_high).
+        """
+
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -92,8 +104,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 df_c,
                 o_work,
                 c_work,
-                window_low,
-                window_high,
+                w_low,
+                w_high,
                 age_min,
                 age_max,
                 "care_demand",
@@ -109,8 +121,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             prof_3_year_diff=p3,
             prof_4_year_diff=p4,
             prof_5_year_diff=p5,
-            window_low=window_low,
-            window_high=window_high,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             ylabel="Difference in employment rate",
