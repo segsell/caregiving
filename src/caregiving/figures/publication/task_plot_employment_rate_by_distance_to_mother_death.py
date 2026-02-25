@@ -18,9 +18,11 @@ from pytask import Product
 
 from caregiving.config import BLD
 from caregiving.counterfactual.plotting_helpers import (
+    PUBLICATION_PLOT_STYLE,
     calculate_simple_outcomes,
     ensure_agent_period,
     prepare_dataframes_simple,
+    publication_savefig,
 )
 from caregiving.figures.publication.plotting_helpers_mother_death import (
     add_distance_to_mother_death,
@@ -1727,9 +1729,8 @@ def plot_employment_rate_by_distance_to_mother_death(  # noqa: PLR0912, PLR0913
         vertical_lines_at: Optional list of x positions for thin vertical dashed lines
             (e.g. [-3, -5, -7, -10, -11] for first care demand timing).
     """
-    # Plot
-    # Increased figure size to maintain visual balance with thinner lines/text
-    plt.figure(figsize=(14, 8))
+    S = PUBLICATION_PLOT_STYLE
+    plt.figure(figsize=S["figsize"])
 
     # Plot overall baseline employment rate (entire baseline sample) - dashed black line
     plt.plot(
@@ -1737,7 +1738,7 @@ def plot_employment_rate_by_distance_to_mother_death(  # noqa: PLR0912, PLR0913
         prof["work_o"],
         label="Baseline",
         color="black",
-        linewidth=2.0,
+        linewidth=S["linewidth"],
         linestyle="--",
         marker=None,
     )
@@ -1748,7 +1749,7 @@ def plot_employment_rate_by_distance_to_mother_death(  # noqa: PLR0912, PLR0913
         prof["work_c"],
         label="No Care Demand",
         color="black",
-        linewidth=2.0,
+        linewidth=S["linewidth"],
         linestyle="-",
         marker=None,
     )
@@ -1767,82 +1768,77 @@ def plot_employment_rate_by_distance_to_mother_death(  # noqa: PLR0912, PLR0913
             prof_1_year["work_o"],
             label=labels[0],
             color="0.8",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="8",  # Octagon
-            markersize=5,
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
 
     # Plot baseline employment rate for 2-year caregivers
-    # (care at t=-1, t=-2, but NOT t=-3)
     if len(prof_2_year) > 0:
         plt.plot(
             prof_2_year["distance_to_first_care"],
             prof_2_year["work_o"],
             label=labels[1],
             color="0.6",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="^",
-            markersize=5,
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
 
     # Plot baseline employment rate for 3-year caregivers
-    # (care at t=-1, t=-2, t=-3, but NOT t=-4)
     if len(prof_3_year) > 0:
         plt.plot(
             prof_3_year["distance_to_first_care"],
             prof_3_year["work_o"],
             label=labels[2],
             color="0.4",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="D",  # Diamond
-            markersize=5,
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
 
     # Plot baseline employment rate for 4-year caregivers
-    # (care at t=-1, t=-2, t=-3, t=-4, but NOT t=-5)
     if len(prof_4_year) > 0:
         plt.plot(
             prof_4_year["distance_to_first_care"],
             prof_4_year["work_o"],
             label=labels[3],
             color="0.2",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="s",  # Hollow square
-            markersize=5,
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
 
     # Plot baseline employment rate for 5-year caregivers
-    # (care at t=-1, t=-2, t=-3, t=-4, t=-5, but NOT t=-6)
-    # Skip if only 4 subgroup labels (e.g. first caregiving spell timing)
     if prof_5_year is not None and len(prof_5_year) > 0 and len(labels) > 4:
         plt.plot(
             prof_5_year["distance_to_first_care"],
             prof_5_year["work_o"],
             label=labels[4],
             color="black",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="*",  # Star
-            markersize=6,
+            markersize=S["markersize_star"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth_star"],
         )
 
     # Optional thin vertical dashed lines (e.g. at first care demand timing)
@@ -1857,40 +1853,32 @@ def plot_employment_rate_by_distance_to_mother_death(  # noqa: PLR0912, PLR0913
             )
 
     # Add vertical line at t=0 (mother's death)
-    # Position at -0.5 with spaced-out dashes
     plt.axvline(
         x=-0.5,
         color="k",
-        linestyle=(
-            0,
-            (7, 7),
-        ),  # Custom dash pattern: 7 points on, 7 points off (2/3 of 10)
-        linewidth=1.0,
+        linestyle=(0, (7, 7)),
+        linewidth=S["axvline_linewidth"],
     )
 
     # Formatting
-    plt.xlabel("Year relative to mother's death", fontsize=14)
-    plt.ylabel("Employment Rate", fontsize=14)
-    # Add padding: x-axis extends beyond -window and window, y-axis extends below 0
+    plt.xlabel("Year relative to mother's death", fontsize=S["label_fontsize"])
+    plt.ylabel("Employment Rate", fontsize=S["label_fontsize"])
     plt.xlim(-window - 0.5, window + 0.5)
-    plt.ylim(-0.025, 1.0)  # Employment rate is between 0 and 1, with padding below
-    plt.grid(True, axis="y", alpha=0.3, linewidth=0.8)  # Only horizontal grid lines
-    # Set ticks to original range (no ticks in padding area)
-    plt.xticks(range(-window, window + 1, 5), fontsize=12)
-    plt.yticks(fontsize=12)
-    # plt.legend(loc="best", prop={"size": 12}, framealpha=0.9)  # Temporarily hidden
+    plt.ylim(-0.025, 1.0)
+    plt.grid(
+        True, axis="y", alpha=S["grid_alpha"], linewidth=S["grid_linewidth"]
+    )
+    plt.xticks(range(-window, window + 1, 5), fontsize=S["xtick_fontsize"])
+    plt.yticks(fontsize=S["ytick_fontsize"])
 
-    # Remove top and right spines (box lines)
     ax = plt.gca()
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-
-    # Make tick marks longer
-    ax.tick_params(axis="both", length=8)
+    ax.tick_params(axis="both", length=S["tick_length"], width=S["tick_width"])
 
     plt.tight_layout()
     if path_to_plot:
-        plt.savefig(path_to_plot, dpi=1200, bbox_inches="tight")
+        publication_savefig(path_to_plot)
     plt.close()
 
 
@@ -2439,9 +2427,8 @@ def plot_employment_rate_by_distance_to_mother_death_care_demand(  # noqa: PLR09
         window: Window size around event (e.g., 20 = -20 to +20 periods)
         path_to_plot: Optional path to save the plot. If None, plot is not saved.
     """
-    # Plot
-    # Increased figure size to maintain visual balance with thinner lines/text
-    plt.figure(figsize=(14, 8))
+    S = PUBLICATION_PLOT_STYLE
+    plt.figure(figsize=S["figsize"])
 
     # Plot overall baseline employment rate (entire baseline sample) - dashed black line
     plt.plot(
@@ -2449,7 +2436,7 @@ def plot_employment_rate_by_distance_to_mother_death_care_demand(  # noqa: PLR09
         prof["work_o"],
         label="Baseline",
         color="black",
-        linewidth=2.0,
+        linewidth=S["linewidth"],
         linestyle="--",
         marker=None,
     )
@@ -2460,7 +2447,7 @@ def plot_employment_rate_by_distance_to_mother_death_care_demand(  # noqa: PLR09
         prof["work_c"],
         label="No Care Demand",
         color="black",
-        linewidth=2.0,
+        linewidth=S["linewidth"],
         linestyle="-",
         marker=None,
     )
@@ -2472,13 +2459,13 @@ def plot_employment_rate_by_distance_to_mother_death_care_demand(  # noqa: PLR09
             prof_1_year["work_o"],
             label="Baseline (1-Year Care Demand)",
             color="0.8",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="8",  # Octagon
-            markersize=5,
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
 
     # Plot baseline employment rate for 2-year care demand group
@@ -2488,13 +2475,13 @@ def plot_employment_rate_by_distance_to_mother_death_care_demand(  # noqa: PLR09
             prof_2_year["work_o"],
             label="Baseline (2-Year Care Demand)",
             color="0.6",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="^",
-            markersize=5,
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
 
     # Plot baseline employment rate for 3-year care demand group
@@ -2504,13 +2491,13 @@ def plot_employment_rate_by_distance_to_mother_death_care_demand(  # noqa: PLR09
             prof_3_year["work_o"],
             label="Baseline (3-Year Care Demand)",
             color="0.4",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="D",  # Diamond
-            markersize=5,
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
 
     # Plot baseline employment rate for 4-year care demand group
@@ -2520,13 +2507,13 @@ def plot_employment_rate_by_distance_to_mother_death_care_demand(  # noqa: PLR09
             prof_4_year["work_o"],
             label="Baseline (4-Year Care Demand)",
             color="0.2",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="s",  # Hollow square
-            markersize=5,
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
 
     # Plot baseline employment rate for 5-year care demand group
@@ -2536,48 +2523,40 @@ def plot_employment_rate_by_distance_to_mother_death_care_demand(  # noqa: PLR09
             prof_5_year["work_o"],
             label="Baseline (5+ Year Care Demand)",
             color="black",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="*",  # Star
-            markersize=6,
+            markersize=S["markersize_star"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth_star"],
         )
 
     # Add vertical line at t=0 (mother's death)
-    # Position at -0.5 with spaced-out dashes
     plt.axvline(
         x=-0.5,
         color="k",
-        linestyle=(
-            0,
-            (7, 7),
-        ),  # Custom dash pattern: 7 points on, 7 points off (2/3 of 10)
-        linewidth=1.0,
+        linestyle=(0, (7, 7)),
+        linewidth=S["axvline_linewidth"],
     )
 
     # Formatting
-    plt.xlabel("Year relative to mother's death", fontsize=14)
-    plt.ylabel("Employment Rate", fontsize=14)
-    # Add padding: x-axis extends beyond -window and window, y-axis extends below 0
+    plt.xlabel("Year relative to mother's death", fontsize=S["label_fontsize"])
+    plt.ylabel("Employment Rate", fontsize=S["label_fontsize"])
     plt.xlim(-window - 0.5, window + 0.5)
-    plt.ylim(-0.025, 1.0)  # Employment rate is between 0 and 1, with padding below
-    plt.grid(True, axis="y", alpha=0.3, linewidth=0.8)  # Only horizontal grid lines
-    # Set ticks to original range (no ticks in padding area)
-    plt.xticks(range(-window, window + 1, 5), fontsize=12)
-    plt.yticks(fontsize=12)
-    # plt.legend(loc="best", prop={"size": 12}, framealpha=0.9)  # Temporarily hidden
+    plt.ylim(-0.025, 1.0)
+    plt.grid(
+        True, axis="y", alpha=S["grid_alpha"], linewidth=S["grid_linewidth"]
+    )
+    plt.xticks(range(-window, window + 1, 5), fontsize=S["xtick_fontsize"])
+    plt.yticks(fontsize=S["ytick_fontsize"])
 
-    # Remove top and right spines (box lines)
     ax = plt.gca()
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-
-    # Make tick marks longer
-    ax.tick_params(axis="both", length=8)
+    ax.tick_params(axis="both", length=S["tick_length"], width=S["tick_width"])
 
     plt.tight_layout()
     if path_to_plot:
-        plt.savefig(path_to_plot, dpi=1200, bbox_inches="tight")
+        publication_savefig(path_to_plot)
     plt.close()
