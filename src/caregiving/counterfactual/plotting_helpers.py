@@ -436,7 +436,7 @@ def plot_outcome_difference_by_distance_total_caregiving(  # noqa: PLR0913
     prof_3_year_diff: pd.DataFrame,
     prof_4_year_diff: pd.DataFrame,
     prof_5_year_diff: pd.DataFrame,
-    window_low: int = -20,
+    window_low: int = 20,
     window_high: int = 20,
     path_to_plot: Optional[Path] = None,
     xlabel: str = "Year relative to start of first care spell",
@@ -454,7 +454,11 @@ def plot_outcome_difference_by_distance_total_caregiving(  # noqa: PLR0913
     Same layout as event study consecutive: dashed black baseline, horizontal line at 0,
     vertical line at t=-0.5, five subgroup lines (1, 2, 3, 4, 5+ total care years).
     Profile DataFrames must have column EVENT_STUDY_DIST_COL and 'diff'.
+
+    window_low and window_high are positive integers (years before/after t=0);
+    internally window_low is negated for the axis range.
     """
+    w_low = -window_low
     if font_family is not None:
         with plt.rc_context({"font.family": "serif", "font.serif": [font_family]}):
             _plot_outcome_difference_by_distance_total_caregiving_impl(
@@ -464,7 +468,7 @@ def plot_outcome_difference_by_distance_total_caregiving(  # noqa: PLR0913
                 prof_3_year_diff,
                 prof_4_year_diff,
                 prof_5_year_diff,
-                window_low,
+                w_low,
                 window_high,
                 path_to_plot,
                 xlabel,
@@ -485,7 +489,7 @@ def plot_outcome_difference_by_distance_total_caregiving(  # noqa: PLR0913
             prof_3_year_diff,
             prof_4_year_diff,
             prof_5_year_diff,
-            window_low,
+            w_low,
             window_high,
             path_to_plot,
             xlabel,
@@ -529,7 +533,11 @@ def event_study_total_caregiving_merged_and_profiles(
 
     When compare_against_baseline is True, diff = policy − baseline (outcome_c − outcome_o).
     When False, diff = baseline − policy (outcome_o − outcome_c).
+
+    window_low and window_high are positive integers (years before/after t=0);
+    internally window_low is negated for the distance filter.
     """
+    w_low = -window_low
     care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
     o_cols = df_o[["agent", "period", "choice"]].copy()
     o_cols["outcome_o"] = np.asarray(outcome_o_series).astype(float)
@@ -567,7 +575,7 @@ def event_study_total_caregiving_merged_and_profiles(
 
     merged = merged[
         merged[dist_col_raw].notna()
-        & (merged["distance_raw"] >= window_low)
+        & (merged["distance_raw"] >= w_low)
         & (merged["distance_raw"] <= window_high)
     ]
     if age_min is not None:
