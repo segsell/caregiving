@@ -423,7 +423,11 @@ def task_conditional_means_employment_rate(
 ) -> None:
     """Conditional mean employment rate by distance to first care demand (caregiving_type==1)."""
     merged = _prepare_merged_type1(
-        path_to_original_data, window_low, window_high, ever_caregivers, ever_care_demand
+        path_to_original_data,
+        window_low,
+        window_high,
+        ever_caregivers,
+        ever_care_demand,
     )
     merged = _add_outcome_columns(merged)
     agents_1, agents_2, agents_3, agents_4 = identify_agents_by_duration(
@@ -481,7 +485,11 @@ def task_conditional_means_part_time_rate(
 ) -> None:
     """Conditional mean part-time rate by distance to first care demand (caregiving_type==1)."""
     merged = _prepare_merged_type1(
-        path_to_original_data, window_low, window_high, ever_caregivers, ever_care_demand
+        path_to_original_data,
+        window_low,
+        window_high,
+        ever_caregivers,
+        ever_care_demand,
     )
     merged = _add_outcome_columns(merged)
     agents_1, agents_2, agents_3, agents_4 = identify_agents_by_duration(
@@ -539,7 +547,11 @@ def task_conditional_means_full_time_rate(
 ) -> None:
     """Conditional mean full-time rate by distance to first care demand (caregiving_type==1)."""
     merged = _prepare_merged_type1(
-        path_to_original_data, window_low, window_high, ever_caregivers, ever_care_demand
+        path_to_original_data,
+        window_low,
+        window_high,
+        ever_caregivers,
+        ever_care_demand,
     )
     merged = _add_outcome_columns(merged)
     agents_1, agents_2, agents_3, agents_4 = identify_agents_by_duration(
@@ -597,7 +609,11 @@ def task_conditional_means_working_hours_weekly(
 ) -> None:
     """Conditional mean working hours (weekly) by distance to first care demand (caregiving_type==1)."""
     merged = _prepare_merged_type1(
-        path_to_original_data, window_low, window_high, ever_caregivers, ever_care_demand
+        path_to_original_data,
+        window_low,
+        window_high,
+        ever_caregivers,
+        ever_care_demand,
     )
     merged = _add_outcome_columns(merged)
     agents_1, agents_2, agents_3, agents_4 = identify_agents_by_duration(
@@ -655,7 +671,11 @@ def task_conditional_means_monthly_gross_labor_income(
 ) -> None:
     """Conditional mean monthly gross labor income by distance to first care demand (caregiving_type==1)."""
     merged = _prepare_merged_type1(
-        path_to_original_data, window_low, window_high, ever_caregivers, ever_care_demand
+        path_to_original_data,
+        window_low,
+        window_high,
+        ever_caregivers,
+        ever_care_demand,
     )
     merged = _add_outcome_columns(merged)
     agents_1, agents_2, agents_3, agents_4 = identify_agents_by_duration(
