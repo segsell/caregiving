@@ -41,6 +41,7 @@ from caregiving.counterfactual.plotting_helpers import (
 # ---------------------------------------------------------------------------
 for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 
+    @pytask.mark.explore
     @pytask.mark.publication_event_study
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
@@ -50,10 +51,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         age_max: int | None = age_max_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
-        / "simulated_data_estimated_params.pkl",
+        / "simulated_data_estimated_params_Feb16.pkl",
         path_to_no_care_demand_data: Path = BLD
         / "solve_and_simulate"
-        / "simulated_data_no_care_demand.pkl",
+        / "simulated_data_no_care_demand_Feb16.pkl",
         path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
@@ -95,6 +96,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "care_demand",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
@@ -170,6 +172,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "care_demand",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
@@ -247,6 +250,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "caregiving_spell",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
@@ -322,6 +326,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "caregiving_spell",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
@@ -397,6 +402,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "care_demand",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
@@ -470,6 +476,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "care_demand",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
@@ -545,6 +552,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "caregiving_spell",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
@@ -618,6 +626,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "caregiving_spell",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
@@ -693,6 +702,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "care_demand",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
@@ -765,6 +775,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "care_demand",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
@@ -839,6 +850,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "caregiving_spell",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
@@ -911,6 +923,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "caregiving_spell",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
@@ -994,6 +1007,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "care_demand",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
@@ -1075,6 +1089,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "care_demand",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
@@ -1158,6 +1173,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "caregiving_spell",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
@@ -1241,6 +1257,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "caregiving_spell",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
@@ -1325,6 +1342,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "care_demand",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
@@ -1406,6 +1424,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "care_demand",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
@@ -1489,6 +1508,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "caregiving_spell",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
@@ -1570,6 +1590,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "caregiving_spell",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
@@ -1647,6 +1668,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "care_demand",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
@@ -1720,6 +1742,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "care_demand",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
@@ -1795,6 +1818,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "caregiving_spell",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
@@ -1868,6 +1892,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "caregiving_spell",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
@@ -1944,6 +1969,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "care_demand",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
@@ -2017,6 +2043,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "care_demand",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
@@ -2092,6 +2119,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "caregiving_spell",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(
@@ -2167,6 +2195,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 "caregiving_spell",
                 start_age,
                 end_age_caregiving,
+                compare_against_baseline=False,
             )
         )
         plot_outcome_difference_by_distance_total_caregiving(

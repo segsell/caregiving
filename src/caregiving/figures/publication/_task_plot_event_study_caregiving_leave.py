@@ -53,7 +53,7 @@ def _path_plot(subdir: str, filename: str) -> Path:
 # ---------------------------------------------------------------------------
 for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 
-    # @pytask.mark.explore
+    @pytask.mark.explore
     @pytask.mark.publication_event_study_caregiving_leave
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_employment_first_care_demand_{_TASK_ID_SUFFIX}")
