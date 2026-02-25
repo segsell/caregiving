@@ -279,16 +279,10 @@ def get_next_period_experience_caregiving_leave_full_beirat(
     had_job = prior_ft | prior_pt
 
     on_full_leave = (
-        currently_caregiver
-        * (1 - retired_this_period)
-        * currently_unemployed
-        * had_job
+        currently_caregiver * (1 - retired_this_period) * currently_unemployed * had_job
     )
     on_partial_leave = (
-        currently_caregiver
-        * (1 - retired_this_period)
-        * currently_pt
-        * prior_ft
+        currently_caregiver * (1 - retired_this_period) * currently_pt * prior_ft
     )
 
     eligible_full = (years_leave_used_total < 3) * (full_leave_year_used == 0)
