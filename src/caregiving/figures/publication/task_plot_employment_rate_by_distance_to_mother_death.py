@@ -69,7 +69,9 @@ for age_min_val, age_max_val, age_label_val in (
         / f"employment_rate_by_distance_to_mother_death_exact_caregiving_{age_label_val}.pdf",
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Plot employment rate by distance to mother's death.
 
@@ -112,9 +114,15 @@ for age_min_val, age_max_val, age_label_val in (
             path_to_plot: Path to save the plot (constructed from age_label)
             ever_caregivers: If True, filter to agents who ever provided care
             ever_care_demand: If True, filter to agents who ever experienced care demand
-            window: Window size around event (e.g., 20 = -20 to +20 periods)
+            window_low: Years before t=0 (positive int).
+            window_high: Years after t=0 (positive int).
+            window_by_age: Optional per-age (window_low, window_high); keys as in age groups.
 
         """
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         # Load and prepare data
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -178,8 +186,8 @@ for age_min_val, age_max_val, age_label_val in (
         # and trim to window
         merged = merged[
             merged["first_death_period"].notna()
-            & (merged["distance_to_mother_death"] >= -window)
-            & (merged["distance_to_mother_death"] <= window)
+            & (merged["distance_to_mother_death"] >= -w_low)
+            & (merged["distance_to_mother_death"] <= w_high)
         ]
 
         # Filter by age at mother's death period if specified
@@ -291,7 +299,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
         )
 
@@ -328,7 +337,9 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Plot employment rate by distance to mother's death (at least N years).
 
@@ -369,9 +380,15 @@ for age_min_val, age_max_val, age_label_val in (
             path_to_plot: Path to save the plot (constructed from age_label)
             ever_caregivers: If True, filter to agents who ever provided care
             ever_care_demand: If True, filter to agents who ever experienced care demand
-            window: Window size around event (e.g., 20 = -20 to +20 periods)
+            window_low: Years before t=0 (positive int).
+            window_high: Years after t=0 (positive int).
+            window_by_age: Optional per-age (window_low, window_high); keys as in age groups.
 
         """
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         # Load and prepare data
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -435,8 +452,8 @@ for age_min_val, age_max_val, age_label_val in (
         # and trim to window
         merged = merged[
             merged["first_death_period"].notna()
-            & (merged["distance_to_mother_death"] >= -window)
-            & (merged["distance_to_mother_death"] <= window)
+            & (merged["distance_to_mother_death"] >= -w_low)
+            & (merged["distance_to_mother_death"] <= w_high)
         ]
 
         # Filter by age at mother's death period if specified
@@ -531,7 +548,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_2_year=prof_2_year,
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
-            window=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
         )
 
@@ -569,7 +587,9 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Plot employment rate by distance to mother's death (total care years).
 
@@ -588,6 +608,10 @@ for age_min_val, age_max_val, age_label_val in (
           4) Identify agents by total caregiving years before death (1, 2, 3, 4, 5+).
           5) Aggregate and plot.
         """
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         # Load and prepare data
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -641,8 +665,8 @@ for age_min_val, age_max_val, age_label_val in (
 
         merged = merged[
             merged["first_death_period"].notna()
-            & (merged["distance_to_mother_death"] >= -window)
-            & (merged["distance_to_mother_death"] <= window)
+            & (merged["distance_to_mother_death"] >= -w_low)
+            & (merged["distance_to_mother_death"] <= w_high)
         ]
 
         if age_min is not None:
@@ -667,7 +691,7 @@ for age_min_val, age_max_val, age_label_val in (
             identify_agents_by_total_caregiving_before_death(
                 merged,
                 distance_col="distance_to_mother_death",
-                window=window,
+                window=w_low,
             )
         )
 
@@ -750,7 +774,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             subgroup_labels=total_labels,
         )
@@ -792,13 +817,19 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Plot employment rate by distance to mother's death (first care demand timing, all agents).
 
         Five lines: first care demand at t=-3, -5, -7, -10, or 11+ years before death.
         Thin vertical dashed lines at -3, -5, -7, -10, -11. No caregiving_type filter.
         """
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
             pd.read_pickle(path_to_no_care_demand_data),
@@ -842,8 +873,8 @@ for age_min_val, age_max_val, age_label_val in (
         )
         merged = merged[
             merged["first_death_period"].notna()
-            & (merged["distance_to_mother_death"] >= -window)
-            & (merged["distance_to_mother_death"] <= window)
+            & (merged["distance_to_mother_death"] >= -w_low)
+            & (merged["distance_to_mother_death"] <= w_high)
         ]
         if age_min is not None:
             merged = merged[merged["age_at_death"] >= age_min].copy()
@@ -936,7 +967,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             subgroup_labels=start_labels,
             vertical_lines_at=[-3, -5, -7, -10, -11],
@@ -978,13 +1010,19 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Plot employment rate by distance to mother's death (first care demand timing, type 1).
 
         Five lines: first care demand at t=-3, -5, -7, -10, or 11+ years before death.
         Restricted to caregiving_type == 1. Thin vertical dashed lines at -3, -5, -7, -10, -11.
         """
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
             pd.read_pickle(path_to_no_care_demand_data),
@@ -1036,8 +1074,8 @@ for age_min_val, age_max_val, age_label_val in (
         )
         merged = merged[
             merged["first_death_period"].notna()
-            & (merged["distance_to_mother_death"] >= -window)
-            & (merged["distance_to_mother_death"] <= window)
+            & (merged["distance_to_mother_death"] >= -w_low)
+            & (merged["distance_to_mother_death"] <= w_high)
         ]
         if age_min is not None:
             merged = merged[merged["age_at_death"] >= age_min].copy()
@@ -1130,7 +1168,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             subgroup_labels=start_labels,
             vertical_lines_at=[-3, -5, -7, -10, -11],
@@ -1177,7 +1216,9 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Plot employment rate by distance to mother's death (first care demand <5y, exact caregiving).
 
@@ -1185,6 +1226,10 @@ for age_min_val, age_max_val, age_label_val in (
         [-4,-1]). No caregiving_type filter: counterfactual uses same agents as baseline.
         Four lines: exact 1, 2, 3, or 4 years of (informal) caregiving in [-4,-1]. One vertical line at -5.
         """
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
             pd.read_pickle(path_to_no_care_demand_data),
@@ -1255,8 +1300,8 @@ for age_min_val, age_max_val, age_label_val in (
         )
         merged = merged[
             merged["first_death_period"].notna()
-            & (merged["distance_to_mother_death"] >= -window)
-            & (merged["distance_to_mother_death"] <= window)
+            & (merged["distance_to_mother_death"] >= -w_low)
+            & (merged["distance_to_mother_death"] <= w_high)
         ]
         if age_min is not None:
             merged = merged[merged["age_at_death"] >= age_min].copy()
@@ -1336,7 +1381,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=None,
-            window=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             subgroup_labels=exact_caregiving_labels,
             vertical_lines_at=[-5],
@@ -1383,9 +1429,15 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """First care demand 5-9y before death; exact 1,2,3,4, 5+ years caregiving in [-9,-5]. No type filter."""
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
             pd.read_pickle(path_to_no_care_demand_data),
@@ -1452,8 +1504,8 @@ for age_min_val, age_max_val, age_label_val in (
         )
         merged = merged[
             merged["first_death_period"].notna()
-            & (merged["distance_to_mother_death"] >= -window)
-            & (merged["distance_to_mother_death"] <= window)
+            & (merged["distance_to_mother_death"] >= -w_low)
+            & (merged["distance_to_mother_death"] <= w_high)
         ]
         if age_min is not None:
             merged = merged[merged["age_at_death"] >= age_min].copy()
@@ -1514,7 +1566,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             subgroup_labels=labels_5,
             vertical_lines_at=[-10, -5],
@@ -1561,9 +1614,15 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """First care demand 10+ years before death; exact 1,2,3,4, 5+ years caregiving in [-window,-1]. No type filter."""
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
             pd.read_pickle(path_to_no_care_demand_data),
@@ -1629,8 +1688,8 @@ for age_min_val, age_max_val, age_label_val in (
         )
         merged = merged[
             merged["first_death_period"].notna()
-            & (merged["distance_to_mother_death"] >= -window)
-            & (merged["distance_to_mother_death"] <= window)
+            & (merged["distance_to_mother_death"] >= -w_low)
+            & (merged["distance_to_mother_death"] <= w_high)
         ]
         if age_min is not None:
             merged = merged[merged["age_at_death"] >= age_min].copy()
@@ -1653,7 +1712,7 @@ for age_min_val, age_max_val, age_label_val in (
             identify_agents_by_exact_caregiving_years_in_window(
                 merged,
                 "distance_to_mother_death",
-                window_start=-window,
+                window_start=-w_low,
                 window_end=-1,
                 include_5_plus=True,
             )
@@ -1691,7 +1750,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             subgroup_labels=labels_5,
             vertical_lines_at=[-10],
@@ -1705,7 +1765,8 @@ def plot_employment_rate_by_distance_to_mother_death(  # noqa: PLR0912, PLR0913
     prof_3_year,
     prof_4_year,
     prof_5_year=None,
-    window: int = 20,
+    window_low: int = 20,
+    window_high: int = 20,
     path_to_plot: Optional[Path] = None,
     subgroup_labels: Optional[tuple[str, ...]] = None,
     vertical_lines_at: Optional[list[int]] = None,
@@ -1722,7 +1783,8 @@ def plot_employment_rate_by_distance_to_mother_death(  # noqa: PLR0912, PLR0913
         prof_3_year: DataFrame for 3-year caregivers (before death)
         prof_4_year: DataFrame for 4-year caregivers (before death)
         prof_5_year: Optional DataFrame for 5-year caregivers (before death)
-        window: Window size around event (e.g., 20 = -20 to +20 periods)
+        window_low: Years before t=0 (positive int).
+        window_high: Years after t=0 (positive int).
         path_to_plot: Optional path to save the plot. If None, plot is not saved.
         subgroup_labels: Optional tuple of 4 or 5 legend labels for the duration lines.
             If None, uses default labels (consecutive years before death).
@@ -1863,12 +1925,14 @@ def plot_employment_rate_by_distance_to_mother_death(  # noqa: PLR0912, PLR0913
     # Formatting
     plt.xlabel("Year relative to mother's death", fontsize=S["label_fontsize"])
     plt.ylabel("Employment Rate", fontsize=S["label_fontsize"])
-    plt.xlim(-window - 0.5, window + 0.5)
+    plt.xlim(-window_low - 0.5, window_high + 0.5)
     plt.ylim(-0.025, 1.0)
     plt.grid(
         True, axis="y", alpha=S["grid_alpha"], linewidth=S["grid_linewidth"]
     )
-    plt.xticks(range(-window, window + 1, 5), fontsize=S["xtick_fontsize"])
+    plt.xticks(
+        range(-window_low, window_high + 1, 5), fontsize=S["xtick_fontsize"]
+    )
     plt.yticks(fontsize=S["ytick_fontsize"])
 
     ax = plt.gca()
@@ -1915,7 +1979,9 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Plot employment rate by distance to mother's death (exact care demand).
 
@@ -1960,9 +2026,15 @@ for age_min_val, age_max_val, age_label_val in (
             path_to_plot: Path to save the plot (constructed from age_label)
             ever_caregivers: If True, filter to agents who ever provided care
             ever_care_demand: If True, filter to agents who ever experienced care demand
-            window: Window size around event (e.g., 20 = -20 to +20 periods)
+            window_low: Years before t=0 (positive int).
+            window_high: Years after t=0 (positive int).
+            window_by_age: Optional per-age (window_low, window_high); keys as in age groups.
 
         """
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         # Load and prepare data
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -2030,8 +2102,8 @@ for age_min_val, age_max_val, age_label_val in (
         # and trim to window
         merged = merged[
             merged["first_death_period"].notna()
-            & (merged["distance_to_mother_death"] >= -window)
-            & (merged["distance_to_mother_death"] <= window)
+            & (merged["distance_to_mother_death"] >= -w_low)
+            & (merged["distance_to_mother_death"] <= w_high)
         ]
 
         # Filter by age at mother's death period if specified
@@ -2139,7 +2211,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
         )
 
@@ -2176,7 +2249,9 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Plot employment rate by distance to mother's death (at least care demand).
 
@@ -2220,9 +2295,15 @@ for age_min_val, age_max_val, age_label_val in (
             path_to_plot: Path to save the plot (constructed from age_label)
             ever_caregivers: If True, filter to agents who ever provided care
             ever_care_demand: If True, filter to agents who ever experienced care demand
-            window: Window size around event (e.g., 20 = -20 to +20 periods)
+            window_low: Years before t=0 (positive int).
+            window_high: Years after t=0 (positive int).
+            window_by_age: Optional per-age (window_low, window_high); keys as in age groups.
 
         """
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         # Load and prepare data
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -2290,8 +2371,8 @@ for age_min_val, age_max_val, age_label_val in (
         # and trim to window
         merged = merged[
             merged["first_death_period"].notna()
-            & (merged["distance_to_mother_death"] >= -window)
-            & (merged["distance_to_mother_death"] <= window)
+            & (merged["distance_to_mother_death"] >= -w_low)
+            & (merged["distance_to_mother_death"] <= w_high)
         ]
 
         # Filter by age at mother's death period if specified
@@ -2397,7 +2478,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
             prof_5_year=prof_5_year,
-            window=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
         )
 
@@ -2409,7 +2491,8 @@ def plot_employment_rate_by_distance_to_mother_death_care_demand(  # noqa: PLR09
     prof_3_year,
     prof_4_year,
     prof_5_year,
-    window: int = 20,
+    window_low: int = 20,
+    window_high: int = 20,
     path_to_plot: Optional[Path] = None,
 ) -> None:
     """Plot employment rate by distance to mother's death (care demand).
@@ -2424,7 +2507,8 @@ def plot_employment_rate_by_distance_to_mother_death_care_demand(  # noqa: PLR09
         prof_3_year: DataFrame for 3-year care demand group
         prof_4_year: DataFrame for 4-year care demand group
         prof_5_year: DataFrame for 5-year care demand group
-        window: Window size around event (e.g., 20 = -20 to +20 periods)
+        window_low: Years before t=0 (positive int).
+        window_high: Years after t=0 (positive int).
         path_to_plot: Optional path to save the plot. If None, plot is not saved.
     """
     S = PUBLICATION_PLOT_STYLE
@@ -2543,12 +2627,14 @@ def plot_employment_rate_by_distance_to_mother_death_care_demand(  # noqa: PLR09
     # Formatting
     plt.xlabel("Year relative to mother's death", fontsize=S["label_fontsize"])
     plt.ylabel("Employment Rate", fontsize=S["label_fontsize"])
-    plt.xlim(-window - 0.5, window + 0.5)
+    plt.xlim(-window_low - 0.5, window_high + 0.5)
     plt.ylim(-0.025, 1.0)
     plt.grid(
         True, axis="y", alpha=S["grid_alpha"], linewidth=S["grid_linewidth"]
     )
-    plt.xticks(range(-window, window + 1, 5), fontsize=S["xtick_fontsize"])
+    plt.xticks(
+        range(-window_low, window_high + 1, 5), fontsize=S["xtick_fontsize"]
+    )
     plt.yticks(fontsize=S["ytick_fontsize"])
 
     ax = plt.gca()

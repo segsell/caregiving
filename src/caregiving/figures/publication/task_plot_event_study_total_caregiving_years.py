@@ -88,6 +88,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             w_low, w_high = window_low, window_high
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
+
         start_age = int(specs["start_age"])
         end_age_caregiving = int(specs["end_age_caregiving"])
         df_o, df_c = prepare_dataframes_simple(

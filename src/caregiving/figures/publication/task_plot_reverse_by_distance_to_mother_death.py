@@ -60,8 +60,7 @@ def _build_profiles_total_caregiving_before_death(
         identify_agents_by_total_caregiving_before_death(
             merged,
             distance_col="distance_to_mother_death",
-            window_low=window,
-            window_high=window,
+            window=window,
         )
     )
 
@@ -100,12 +99,14 @@ def _add_mother_death_distance_and_filter(
     merged: pd.DataFrame,
     df_o: pd.DataFrame,
     df_c: pd.DataFrame,
-    window: int,
+    window_low: int,
+    window_high: int,
     age_min: int | None,
     age_max: int | None,
 ) -> pd.DataFrame:
     """Add first_death_period, distance_to_mother_death, age_at_death; filter by window and optional age at death.
 
+    window_low, window_high are positive integers (years before/after t=0).
     Distance is defined from the baseline only (no-care-demand has fewer stochastic
     draws per period so RNG diverges and mother_dead can differ; we still compare
     outcomes on the same (agent, period) grid using baseline's death timing).
@@ -130,8 +131,8 @@ def _add_mother_death_distance_and_filter(
     )
     merged = merged[
         merged["first_death_period"].notna()
-        & (merged["distance_to_mother_death"] >= -window)
-        & (merged["distance_to_mother_death"] <= window)
+        & (merged["distance_to_mother_death"] >= -window_low)
+        & (merged["distance_to_mother_death"] <= window_high)
     ]
     if age_min is not None:
         merged = merged[merged["age_at_death"] >= age_min].copy()
@@ -213,7 +214,9 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Employment rate by distance to mother's death, total care years 1–5+ before death. Standard data."""
         df_o, df_c = prepare_dataframes_simple(
@@ -236,11 +239,15 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         merged = _add_mother_death_distance_and_filter(
-            merged, df_o, df_c, window, age_min, age_max
+            merged, df_o, df_c, w_low, w_high, age_min, age_max
         )
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
-            merged, window, "work_o", "work_c"
+            merged, w_low, "work_o", "work_c"
         )
         plot_employment_rate_by_distance(
             prof=prof,
@@ -249,8 +256,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=p3,
             prof_4_year=p4,
             prof_5_year=p5,
-            window_low=window,
-            window_high=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             outcome_baseline="work_o",
@@ -287,7 +294,9 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Full-time share by distance to mother's death, total care years 1–5+ before death. Standard data."""
         df_o, df_c = prepare_dataframes_simple(
@@ -310,11 +319,15 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         merged = _add_mother_death_distance_and_filter(
-            merged, df_o, df_c, window, age_min, age_max
+            merged, df_o, df_c, w_low, w_high, age_min, age_max
         )
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
-            merged, window, "full_time_o", "full_time_c"
+            merged, w_low, "full_time_o", "full_time_c"
         )
         plot_employment_rate_by_distance(
             prof=prof,
@@ -323,8 +336,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=p3,
             prof_4_year=p4,
             prof_5_year=p5,
-            window_low=window,
-            window_high=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             outcome_baseline="full_time_o",
@@ -361,7 +374,9 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Part-time share by distance to mother's death, total care years 1–5+ before death. Standard data."""
         df_o, df_c = prepare_dataframes_simple(
@@ -384,11 +399,15 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         merged = _add_mother_death_distance_and_filter(
-            merged, df_o, df_c, window, age_min, age_max
+            merged, df_o, df_c, w_low, w_high, age_min, age_max
         )
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
-            merged, window, "part_time_o", "part_time_c"
+            merged, w_low, "part_time_o", "part_time_c"
         )
         plot_employment_rate_by_distance(
             prof=prof,
@@ -397,8 +416,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=p3,
             prof_4_year=p4,
             prof_5_year=p5,
-            window_low=window,
-            window_high=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             outcome_baseline="part_time_o",
@@ -435,7 +454,9 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Weekly working hours by distance to mother's death, total care years 1–5+ before death. Standard data."""
         df_o, df_c = prepare_dataframes_simple(
@@ -466,11 +487,15 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         merged = _add_mother_death_distance_and_filter(
-            merged, df_o, df_c, window, age_min, age_max
+            merged, df_o, df_c, w_low, w_high, age_min, age_max
         )
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
-            merged, window, "working_hours_weekly_o", "working_hours_weekly_c"
+            merged, w_low, "working_hours_weekly_o", "working_hours_weekly_c"
         )
         plot_employment_rate_by_distance(
             prof=prof,
@@ -479,8 +504,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=p3,
             prof_4_year=p4,
             prof_5_year=p5,
-            window_low=window,
-            window_high=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             outcome_baseline="working_hours_weekly_o",
@@ -517,7 +542,9 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Monthly gross labor income by distance to mother's death, total care years 1–5+ before death. Standard data."""
         df_o, df_c = prepare_dataframes_simple(
@@ -548,12 +575,16 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         merged = _add_mother_death_distance_and_filter(
-            merged, df_o, df_c, window, age_min, age_max
+            merged, df_o, df_c, w_low, w_high, age_min, age_max
         )
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
             merged,
-            window,
+            w_low,
             "monthly_gross_labor_income_o",
             "monthly_gross_labor_income_c",
         )
@@ -564,8 +595,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=p3,
             prof_4_year=p4,
             prof_5_year=p5,
-            window_low=window,
-            window_high=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             outcome_baseline="monthly_gross_labor_income_o",
@@ -594,6 +625,7 @@ for age_min_val, age_max_val, age_label_val in (
     def task_plot_employment_rate_by_distance_to_mother_death_care_geq10(  # noqa: PLR0913
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params.pkl",
@@ -611,7 +643,9 @@ for age_min_val, age_max_val, age_label_val in (
         / f"employment_rate_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -633,15 +667,19 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         merged = _add_mother_death_distance_and_filter(
-            merged, df_o, df_c, window, age_min, age_max
+            merged, df_o, df_c, w_low, w_high, age_min, age_max
         )
         first_care_map = _first_care_demand_period_map(df_o)
         merged = _filter_merged_by_first_care_demand_to_death(
             merged, first_care_map, ">=10"
         )
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
-            merged, window, "work_o", "work_c"
+            merged, w_low, "work_o", "work_c"
         )
         plot_employment_rate_by_distance(
             prof=prof,
@@ -650,8 +688,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=p3,
             prof_4_year=p4,
             prof_5_year=p5,
-            window_low=window,
-            window_high=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             outcome_baseline="work_o",
@@ -669,6 +707,7 @@ for age_min_val, age_max_val, age_label_val in (
     def task_plot_full_time_by_distance_to_mother_death_care_geq10(  # noqa: PLR0913
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params.pkl",
@@ -686,7 +725,9 @@ for age_min_val, age_max_val, age_label_val in (
         / f"full_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -708,15 +749,19 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         merged = _add_mother_death_distance_and_filter(
-            merged, df_o, df_c, window, age_min, age_max
+            merged, df_o, df_c, w_low, w_high, age_min, age_max
         )
         first_care_map = _first_care_demand_period_map(df_o)
         merged = _filter_merged_by_first_care_demand_to_death(
             merged, first_care_map, ">=10"
         )
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
-            merged, window, "full_time_o", "full_time_c"
+            merged, w_low, "full_time_o", "full_time_c"
         )
         plot_employment_rate_by_distance(
             prof=prof,
@@ -725,8 +770,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=p3,
             prof_4_year=p4,
             prof_5_year=p5,
-            window_low=window,
-            window_high=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             outcome_baseline="full_time_o",
@@ -997,6 +1042,7 @@ for age_min_val, age_max_val, age_label_val in (
     def task_plot_employment_rate_by_distance_to_mother_death_care_less10(  # noqa: PLR0913
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params.pkl",
@@ -1014,7 +1060,9 @@ for age_min_val, age_max_val, age_label_val in (
         / f"employment_rate_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -1036,15 +1084,19 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         merged = _add_mother_death_distance_and_filter(
-            merged, df_o, df_c, window, age_min, age_max
+            merged, df_o, df_c, w_low, w_high, age_min, age_max
         )
         first_care_map = _first_care_demand_period_map(df_o)
         merged = _filter_merged_by_first_care_demand_to_death(
             merged, first_care_map, "<10"
         )
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
-            merged, window, "work_o", "work_c"
+            merged, w_low, "work_o", "work_c"
         )
         plot_employment_rate_by_distance(
             prof=prof,
@@ -1053,8 +1105,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=p3,
             prof_4_year=p4,
             prof_5_year=p5,
-            window_low=window,
-            window_high=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             outcome_baseline="work_o",
@@ -1072,6 +1124,7 @@ for age_min_val, age_max_val, age_label_val in (
     def task_plot_full_time_by_distance_to_mother_death_care_less10(  # noqa: PLR0913
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params.pkl",
@@ -1089,7 +1142,9 @@ for age_min_val, age_max_val, age_label_val in (
         / f"full_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -1111,15 +1166,19 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         merged = _add_mother_death_distance_and_filter(
-            merged, df_o, df_c, window, age_min, age_max
+            merged, df_o, df_c, w_low, w_high, age_min, age_max
         )
         first_care_map = _first_care_demand_period_map(df_o)
         merged = _filter_merged_by_first_care_demand_to_death(
             merged, first_care_map, "<10"
         )
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
-            merged, window, "full_time_o", "full_time_c"
+            merged, w_low, "full_time_o", "full_time_c"
         )
         plot_employment_rate_by_distance(
             prof=prof,
@@ -1128,8 +1187,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=p3,
             prof_4_year=p4,
             prof_5_year=p5,
-            window_low=window,
-            window_high=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             outcome_baseline="full_time_o",
@@ -1400,6 +1459,7 @@ for age_min_val, age_max_val, age_label_val in (
     def task_plot_employment_rate_by_distance_to_mother_death_care_5_to_10(  # noqa: PLR0913
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params.pkl",
@@ -1417,7 +1477,9 @@ for age_min_val, age_max_val, age_label_val in (
         / f"employment_rate_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -1439,15 +1501,19 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         merged = _add_mother_death_distance_and_filter(
-            merged, df_o, df_c, window, age_min, age_max
+            merged, df_o, df_c, w_low, w_high, age_min, age_max
         )
         first_care_map = _first_care_demand_period_map(df_o)
         merged = _filter_merged_by_first_care_demand_to_death(
             merged, first_care_map, "5_to_10"
         )
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
-            merged, window, "work_o", "work_c"
+            merged, w_low, "work_o", "work_c"
         )
         plot_employment_rate_by_distance(
             prof=prof,
@@ -1456,8 +1522,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=p3,
             prof_4_year=p4,
             prof_5_year=p5,
-            window_low=window,
-            window_high=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             outcome_baseline="work_o",
@@ -1475,6 +1541,7 @@ for age_min_val, age_max_val, age_label_val in (
     def task_plot_full_time_by_distance_to_mother_death_care_5_to_10(  # noqa: PLR0913
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params.pkl",
@@ -1492,7 +1559,9 @@ for age_min_val, age_max_val, age_label_val in (
         / f"full_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -1514,15 +1583,19 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         merged = _add_mother_death_distance_and_filter(
-            merged, df_o, df_c, window, age_min, age_max
+            merged, df_o, df_c, w_low, w_high, age_min, age_max
         )
         first_care_map = _first_care_demand_period_map(df_o)
         merged = _filter_merged_by_first_care_demand_to_death(
             merged, first_care_map, "5_to_10"
         )
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
-            merged, window, "full_time_o", "full_time_c"
+            merged, w_low, "full_time_o", "full_time_c"
         )
         plot_employment_rate_by_distance(
             prof=prof,
@@ -1531,8 +1604,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=p3,
             prof_4_year=p4,
             prof_5_year=p5,
-            window_low=window,
-            window_high=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             outcome_baseline="full_time_o",
@@ -1803,6 +1876,7 @@ for age_min_val, age_max_val, age_label_val in (
     def task_plot_employment_rate_by_distance_to_mother_death_care_leq5(  # noqa: PLR0913
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params.pkl",
@@ -1820,7 +1894,9 @@ for age_min_val, age_max_val, age_label_val in (
         / f"employment_rate_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -1842,15 +1918,19 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         merged = _add_mother_death_distance_and_filter(
-            merged, df_o, df_c, window, age_min, age_max
+            merged, df_o, df_c, w_low, w_high, age_min, age_max
         )
         first_care_map = _first_care_demand_period_map(df_o)
         merged = _filter_merged_by_first_care_demand_to_death(
             merged, first_care_map, "<=5"
         )
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
-            merged, window, "work_o", "work_c"
+            merged, w_low, "work_o", "work_c"
         )
         plot_employment_rate_by_distance(
             prof=prof,
@@ -1859,8 +1939,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=p3,
             prof_4_year=p4,
             prof_5_year=p5,
-            window_low=window,
-            window_high=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             outcome_baseline="work_o",
@@ -1878,6 +1958,7 @@ for age_min_val, age_max_val, age_label_val in (
     def task_plot_full_time_by_distance_to_mother_death_care_leq5(  # noqa: PLR0913
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params.pkl",
@@ -1895,7 +1976,9 @@ for age_min_val, age_max_val, age_label_val in (
         / f"full_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -1917,15 +2000,19 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         merged = _add_mother_death_distance_and_filter(
-            merged, df_o, df_c, window, age_min, age_max
+            merged, df_o, df_c, w_low, w_high, age_min, age_max
         )
         first_care_map = _first_care_demand_period_map(df_o)
         merged = _filter_merged_by_first_care_demand_to_death(
             merged, first_care_map, "<=5"
         )
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
-            merged, window, "full_time_o", "full_time_c"
+            merged, w_low, "full_time_o", "full_time_c"
         )
         plot_employment_rate_by_distance(
             prof=prof,
@@ -1934,8 +2021,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=p3,
             prof_4_year=p4,
             prof_5_year=p5,
-            window_low=window,
-            window_high=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             outcome_baseline="full_time_o",
@@ -2227,7 +2314,9 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Employment rate by distance to mother's death, total care years 1–5+ before death. back_to_Jan7 data."""
         df_o, df_c = prepare_dataframes_simple(
@@ -2250,11 +2339,15 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         merged = _add_mother_death_distance_and_filter(
-            merged, df_o, df_c, window, age_min, age_max
+            merged, df_o, df_c, w_low, w_high, age_min, age_max
         )
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
-            merged, window, "work_o", "work_c"
+            merged, w_low, "work_o", "work_c"
         )
         plot_employment_rate_by_distance(
             prof=prof,
@@ -2263,8 +2356,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=p3,
             prof_4_year=p4,
             prof_5_year=p5,
-            window_low=window,
-            window_high=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             outcome_baseline="work_o",
@@ -2303,7 +2396,9 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Full-time share by distance to mother's death, total care years 1–5+ before death. back_to_Jan7 data."""
         df_o, df_c = prepare_dataframes_simple(
@@ -2326,11 +2421,15 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         merged = _add_mother_death_distance_and_filter(
-            merged, df_o, df_c, window, age_min, age_max
+            merged, df_o, df_c, w_low, w_high, age_min, age_max
         )
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
-            merged, window, "full_time_o", "full_time_c"
+            merged, w_low, "full_time_o", "full_time_c"
         )
         plot_employment_rate_by_distance(
             prof=prof,
@@ -2339,8 +2438,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=p3,
             prof_4_year=p4,
             prof_5_year=p5,
-            window_low=window,
-            window_high=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             outcome_baseline="full_time_o",
@@ -2614,6 +2713,7 @@ for age_min_val, age_max_val, age_label_val in (
     def task_plot_employment_rate_by_distance_to_mother_death_back_to_Jan7_care_geq10(  # noqa: PLR0913
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params_back_to_Jan7.pkl",
@@ -2631,7 +2731,9 @@ for age_min_val, age_max_val, age_label_val in (
         / f"back_to_Jan7_employment_rate_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -2653,15 +2755,19 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         merged = _add_mother_death_distance_and_filter(
-            merged, df_o, df_c, window, age_min, age_max
+            merged, df_o, df_c, w_low, w_high, age_min, age_max
         )
         first_care_map = _first_care_demand_period_map(df_o)
         merged = _filter_merged_by_first_care_demand_to_death(
             merged, first_care_map, ">=10"
         )
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
-            merged, window, "work_o", "work_c"
+            merged, w_low, "work_o", "work_c"
         )
         plot_employment_rate_by_distance(
             prof=prof,
@@ -2670,8 +2776,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=p3,
             prof_4_year=p4,
             prof_5_year=p5,
-            window_low=window,
-            window_high=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             outcome_baseline="work_o",
@@ -2691,6 +2797,7 @@ for age_min_val, age_max_val, age_label_val in (
     def task_plot_full_time_by_distance_to_mother_death_back_to_Jan7_care_geq10(  # noqa: PLR0913
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params_back_to_Jan7.pkl",
@@ -2708,7 +2815,9 @@ for age_min_val, age_max_val, age_label_val in (
         / f"back_to_Jan7_full_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -2730,15 +2839,19 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         merged = _add_mother_death_distance_and_filter(
-            merged, df_o, df_c, window, age_min, age_max
+            merged, df_o, df_c, w_low, w_high, age_min, age_max
         )
         first_care_map = _first_care_demand_period_map(df_o)
         merged = _filter_merged_by_first_care_demand_to_death(
             merged, first_care_map, ">=10"
         )
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
-            merged, window, "full_time_o", "full_time_c"
+            merged, w_low, "full_time_o", "full_time_c"
         )
         plot_employment_rate_by_distance(
             prof=prof,
@@ -2747,8 +2860,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=p3,
             prof_4_year=p4,
             prof_5_year=p5,
-            window_low=window,
-            window_high=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             outcome_baseline="full_time_o",
@@ -3026,6 +3139,7 @@ for age_min_val, age_max_val, age_label_val in (
     def task_plot_employment_rate_by_distance_to_mother_death_back_to_Jan7_care_less10(  # noqa: PLR0913
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params_back_to_Jan7.pkl",
@@ -3043,7 +3157,9 @@ for age_min_val, age_max_val, age_label_val in (
         / f"back_to_Jan7_employment_rate_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -3065,15 +3181,19 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         merged = _add_mother_death_distance_and_filter(
-            merged, df_o, df_c, window, age_min, age_max
+            merged, df_o, df_c, w_low, w_high, age_min, age_max
         )
         first_care_map = _first_care_demand_period_map(df_o)
         merged = _filter_merged_by_first_care_demand_to_death(
             merged, first_care_map, "<10"
         )
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
-            merged, window, "work_o", "work_c"
+            merged, w_low, "work_o", "work_c"
         )
         plot_employment_rate_by_distance(
             prof=prof,
@@ -3082,8 +3202,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=p3,
             prof_4_year=p4,
             prof_5_year=p5,
-            window_low=window,
-            window_high=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             outcome_baseline="work_o",
@@ -3103,6 +3223,7 @@ for age_min_val, age_max_val, age_label_val in (
     def task_plot_full_time_by_distance_to_mother_death_back_to_Jan7_care_less10(  # noqa: PLR0913
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params_back_to_Jan7.pkl",
@@ -3120,7 +3241,9 @@ for age_min_val, age_max_val, age_label_val in (
         / f"back_to_Jan7_full_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -3142,15 +3265,19 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         merged = _add_mother_death_distance_and_filter(
-            merged, df_o, df_c, window, age_min, age_max
+            merged, df_o, df_c, w_low, w_high, age_min, age_max
         )
         first_care_map = _first_care_demand_period_map(df_o)
         merged = _filter_merged_by_first_care_demand_to_death(
             merged, first_care_map, "<10"
         )
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
-            merged, window, "full_time_o", "full_time_c"
+            merged, w_low, "full_time_o", "full_time_c"
         )
         plot_employment_rate_by_distance(
             prof=prof,
@@ -3159,8 +3286,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=p3,
             prof_4_year=p4,
             prof_5_year=p5,
-            window_low=window,
-            window_high=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             outcome_baseline="full_time_o",
@@ -3284,6 +3411,7 @@ for age_min_val, age_max_val, age_label_val in (
     def task_plot_employment_rate_by_distance_to_mother_death_back_to_Jan7_care_5_to_10(  # noqa: PLR0913
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params_back_to_Jan7.pkl",
@@ -3301,7 +3429,9 @@ for age_min_val, age_max_val, age_label_val in (
         / f"back_to_Jan7_employment_rate_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -3323,15 +3453,19 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         merged = _add_mother_death_distance_and_filter(
-            merged, df_o, df_c, window, age_min, age_max
+            merged, df_o, df_c, w_low, w_high, age_min, age_max
         )
         first_care_map = _first_care_demand_period_map(df_o)
         merged = _filter_merged_by_first_care_demand_to_death(
             merged, first_care_map, "5_to_10"
         )
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
-            merged, window, "work_o", "work_c"
+            merged, w_low, "work_o", "work_c"
         )
         plot_employment_rate_by_distance(
             prof=prof,
@@ -3340,8 +3474,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=p3,
             prof_4_year=p4,
             prof_5_year=p5,
-            window_low=window,
-            window_high=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             outcome_baseline="work_o",
@@ -3361,6 +3495,7 @@ for age_min_val, age_max_val, age_label_val in (
     def task_plot_full_time_by_distance_to_mother_death_back_to_Jan7_care_5_to_10(  # noqa: PLR0913
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params_back_to_Jan7.pkl",
@@ -3378,7 +3513,9 @@ for age_min_val, age_max_val, age_label_val in (
         / f"back_to_Jan7_full_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -3400,15 +3537,19 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         merged = _add_mother_death_distance_and_filter(
-            merged, df_o, df_c, window, age_min, age_max
+            merged, df_o, df_c, w_low, w_high, age_min, age_max
         )
         first_care_map = _first_care_demand_period_map(df_o)
         merged = _filter_merged_by_first_care_demand_to_death(
             merged, first_care_map, "5_to_10"
         )
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
-            merged, window, "full_time_o", "full_time_c"
+            merged, w_low, "full_time_o", "full_time_c"
         )
         plot_employment_rate_by_distance(
             prof=prof,
@@ -3417,8 +3558,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=p3,
             prof_4_year=p4,
             prof_5_year=p5,
-            window_low=window,
-            window_high=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             outcome_baseline="full_time_o",
@@ -3696,6 +3837,7 @@ for age_min_val, age_max_val, age_label_val in (
     def task_plot_employment_rate_by_distance_to_mother_death_back_to_Jan7_care_leq5(  # noqa: PLR0913
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params_back_to_Jan7.pkl",
@@ -3713,7 +3855,9 @@ for age_min_val, age_max_val, age_label_val in (
         / f"back_to_Jan7_employment_rate_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -3735,15 +3879,19 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         merged = _add_mother_death_distance_and_filter(
-            merged, df_o, df_c, window, age_min, age_max
+            merged, df_o, df_c, w_low, w_high, age_min, age_max
         )
         first_care_map = _first_care_demand_period_map(df_o)
         merged = _filter_merged_by_first_care_demand_to_death(
             merged, first_care_map, "<=5"
         )
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
-            merged, window, "work_o", "work_c"
+            merged, w_low, "work_o", "work_c"
         )
         plot_employment_rate_by_distance(
             prof=prof,
@@ -3752,8 +3900,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=p3,
             prof_4_year=p4,
             prof_5_year=p5,
-            window_low=window,
-            window_high=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             outcome_baseline="work_o",
@@ -3773,6 +3921,7 @@ for age_min_val, age_max_val, age_label_val in (
     def task_plot_full_time_by_distance_to_mother_death_back_to_Jan7_care_leq5(  # noqa: PLR0913
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params_back_to_Jan7.pkl",
@@ -3790,7 +3939,9 @@ for age_min_val, age_max_val, age_label_val in (
         / f"back_to_Jan7_full_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -3812,15 +3963,19 @@ for age_min_val, age_max_val, age_label_val in (
             on=["agent", "period"],
             how="left",
         )
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         merged = _add_mother_death_distance_and_filter(
-            merged, df_o, df_c, window, age_min, age_max
+            merged, df_o, df_c, w_low, w_high, age_min, age_max
         )
         first_care_map = _first_care_demand_period_map(df_o)
         merged = _filter_merged_by_first_care_demand_to_death(
             merged, first_care_map, "<=5"
         )
         prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(
-            merged, window, "full_time_o", "full_time_c"
+            merged, w_low, "full_time_o", "full_time_c"
         )
         plot_employment_rate_by_distance(
             prof=prof,
@@ -3829,8 +3984,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year=p3,
             prof_4_year=p4,
             prof_5_year=p5,
-            window_low=window,
-            window_high=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             outcome_baseline="full_time_o",

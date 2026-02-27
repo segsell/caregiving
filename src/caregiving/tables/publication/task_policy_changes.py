@@ -69,7 +69,7 @@ AGE_GROUPS_CAREGIVING = [
     ("All (40--67)", 40, 67),
 ]
 
-_REQUIRED_COLUMNS = [
+REQUIRED_COLUMNS = [
     "agent",
     "period",
     "choice",
@@ -90,13 +90,13 @@ _REQUIRED_COLUMNS = [
     "job_before_caregiving",
 ]
 
-_CG_FT = [11, 15]
-_CG_PT = [10, 14]
-_CG_EMPLOYED = [10, 11, 14, 15]
-_CG_UNEMPLOYED = [9, 13]
-_CG_RETIRED = [8, 12]
+CG_FT = [11, 15]
+CG_PT = [10, 14]
+CG_EMPLOYED = [10, 11, 14, 15]
+CG_UNEMPLOYED = [9, 13]
+CG_RETIRED = [8, 12]
 
-_EMPLOYED = np.concatenate(
+EMPLOYED = np.concatenate(
     [np.asarray(FULL_TIME).ravel(), np.asarray(PART_TIME).ravel()]
 )
 
@@ -126,7 +126,7 @@ AGE_GROUPS_BROAD_HETERO = [
     ("All (30--67)", 30, 67),
 ]
 
-_RETIRED_AGE_BINS_K = [
+RETIRED_AGE_BINS_K = [
     ("63--67", 63, 67),
     ("All (30--67)", 30, 67),
 ]
@@ -141,9 +141,159 @@ CG_DURATION_GROUPS = [
 # ---------------------------------------------------------------------------
 # Main task
 # ---------------------------------------------------------------------------
+@pytask.mark.tables
+@pytask.mark.policy_changes
+@pytask.mark.publication
+def task_create_policy_changes_table(
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_baseline_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params.pkl",
+    path_to_normal_leave_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_caregiving_leave_with_job_retention_estimated_params.pkl",
+    path_to_full_leave_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params_no_pflegegeld.pkl",
+    path_to_save_table: Annotated[Path, Product] = BLD
+    / "tables"
+    / "publication"
+    / "policy_behavioral_changes.tex",
+) -> None:
+    """Create LaTeX table of behavioral changes from caregiving policies."""
+    build_policy_changes_table(
+        path_to_specs,
+        path_to_baseline_sim,
+        path_to_normal_leave_sim,
+        path_to_full_leave_sim,
+        path_to_save_table,
+    )
 
 
-def _build_policy_changes_table(
+# @pytask.mark.tables
+# @pytask.mark.policy_changes
+# @pytask.mark.publication
+def task_create_policy_changes_table_back_to_jan7(
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_baseline_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params_back_to_Jan7.pkl",
+    path_to_normal_leave_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_caregiving_leave_with_job_retention_estimated_params_back_to_Jan7.pkl",
+    path_to_full_leave_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params_no_pflegegeld_back_to_Jan7.pkl",
+    path_to_save_table: Annotated[Path, Product] = BLD
+    / "tables"
+    / "publication"
+    / "policy_behavioral_changes_back_to_Jan7.tex",
+) -> None:
+    """Same table as above but using back-to-Jan7 simulation data."""
+    build_policy_changes_table(
+        path_to_specs,
+        path_to_baseline_sim,
+        path_to_normal_leave_sim,
+        path_to_full_leave_sim,
+        path_to_save_table,
+        table_label="tab:policy_behavioral_changes_jan7",
+    )
+
+
+@pytask.mark.tables
+@pytask.mark.policy_changes
+@pytask.mark.policy_changes_new
+@pytask.mark.publication
+def task_create_policy_changes_table_full_beirat(
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_baseline_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params.pkl",
+    path_to_normal_leave_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_caregiving_leave_full_beirat_estimated_params.pkl",
+    path_to_full_leave_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params.pkl",
+    path_to_save_table: Annotated[Path, Product] = BLD
+    / "tables"
+    / "publication"
+    / "policy_behavioral_changes_full_beirat.tex",
+) -> None:
+    """Policy changes table: full Beirat leave vs full CG leave with job retention."""
+    build_policy_changes_table(
+        path_to_specs,
+        path_to_baseline_sim,
+        path_to_normal_leave_sim,
+        path_to_full_leave_sim,
+        path_to_save_table,
+        table_label="tab:policy_behavioral_changes_full_beirat",
+    )
+
+
+# @pytask.mark.tables
+# @pytask.mark.policy_changes
+# @pytask.mark.policy_changes_new
+# @pytask.mark.publication
+def task_create_policy_changes_table_full_beirat_parquet(
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_baseline_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params.pkl",
+    path_to_normal_leave_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_caregiving_leave_full_beirat_estimated_params.parquet",
+    path_to_full_leave_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params.pkl",
+    path_to_save_table: Annotated[Path, Product] = BLD
+    / "tables"
+    / "publication"
+    / "policy_behavioral_changes_full_beirat_parquet.tex",
+) -> None:
+    """Same as full_beirat but loading normal leave from parquet (integrity check)."""
+    build_policy_changes_table(
+        path_to_specs,
+        path_to_baseline_sim,
+        path_to_normal_leave_sim,
+        path_to_full_leave_sim,
+        path_to_save_table,
+        table_label="tab:policy_behavioral_changes_full_beirat_parquet",
+    )
+
+
+@pytask.mark.tables
+@pytask.mark.policy_changes
+@pytask.mark.policy_changes_new
+@pytask.mark.publication
+def task_create_policy_changes_table_full_leave_pflegegeld_comparison(
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_baseline_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params.pkl",
+    path_to_normal_leave_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params_no_pflegegeld.pkl",
+    path_to_full_leave_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params.pkl",
+    path_to_save_table: Annotated[Path, Product] = BLD
+    / "tables"
+    / "publication"
+    / "policy_behavioral_changes_full_leave_pflegegeld_comparison.tex",
+) -> None:
+    """Full CG leave without vs with Pflegegeld (both against baseline)."""
+    build_policy_changes_table(
+        path_to_specs,
+        path_to_baseline_sim,
+        path_to_normal_leave_sim,
+        path_to_full_leave_sim,
+        path_to_save_table,
+        table_label="tab:policy_behavioral_changes_full_leave_pflegegeld",
+    )
+
+
+def build_policy_changes_table(
     path_to_specs: Path,
     path_to_baseline_sim: Path,
     path_to_normal_leave_sim: Path,
@@ -159,55 +309,55 @@ def _build_policy_changes_table(
     end_age_cg = int(specs.get("end_age_caregiving", 70))
     max_exps = np.asarray(specs["max_exps_period_working"])
 
-    baseline_df = _load_sim_df(path_to_baseline_sim)
-    normal_df = _load_sim_df(path_to_normal_leave_sim)
-    full_df = _load_sim_df(path_to_full_leave_sim)
+    baseline_df = load_sim_df(path_to_baseline_sim)
+    normal_df = load_sim_df(path_to_normal_leave_sim)
+    full_df = load_sim_df(path_to_full_leave_sim)
 
     for df in (baseline_df, normal_df, full_df):
         if "age" not in df.columns and "period" in df.columns:
             df["age"] = start_age + df["period"]
-        _add_cg_metadata(df, end_age_cg)
+        add_cg_metadata(df, end_age_cg)
 
     panels = [
-        ("A: Labor supply", _panel_a_labor, {}),
-        ("B: Caregiving", _panel_b_caregiving, {}),
-        ("C: Caregiving (Low Edu)", _panel_caregiving_by_edu, {"edu_level": 0}),
-        ("D: Caregiving (High Edu)", _panel_caregiving_by_edu, {"edu_level": 1}),
-        ("E: CG labor composition", _panel_c_cg_labor, {}),
-        ("F: Ever-CG labor composition", _panel_d_ever_cg_labor, {}),
-        ("G: CG benefits/top-ups", _panel_e_cg_benefits, {"wealth_unit": wealth_unit}),
-        ("H: Economic (< 63)", _panel_f_economic, {"wealth_unit": wealth_unit}),
-        ("I: Retirement", _panel_g_retirement, {"wealth_unit": wealth_unit}),
+        ("A: Labor supply", panel_a_labor, {}),
+        ("B: Caregiving", panel_b_caregiving, {}),
+        ("C: Caregiving (Low Edu)", panel_caregiving_by_edu, {"edu_level": 0}),
+        ("D: Caregiving (High Edu)", panel_caregiving_by_edu, {"edu_level": 1}),
+        ("E: CG labor composition", panel_c_cg_labor, {}),
+        ("F: Ever-CG labor composition", panel_d_ever_cg_labor, {}),
+        ("G: CG benefits/top-ups", panel_e_cg_benefits, {"wealth_unit": wealth_unit}),
+        ("H: Economic (< 63)", panel_f_economic, {"wealth_unit": wealth_unit}),
+        ("I: Retirement", panel_g_retirement, {"wealth_unit": wealth_unit}),
         (
             "J: Experience at retirement",
-            _panel_h_experience_at_retirement,
+            panel_h_experience_at_retirement,
             {"max_exps_period_working": max_exps, "start_age": start_age},
         ),
-        ("K: Labor at first CG year", _panel_i_labor_at_first_cg, {}),
-        ("L: Ever-CG labor excl. 1st CG yr", _panel_j_ever_cg_excl_first, {}),
+        ("K: Labor at first CG year", panel_i_labor_at_first_cg, {}),
+        ("L: Ever-CG labor excl. 1st CG yr", panel_j_ever_cg_excl_first, {}),
         (
             "M: Ever-CG by CG duration",
-            _panel_k_ever_cg_by_duration,
+            panel_k_ever_cg_by_duration,
             {},
         ),
-        ("N: CG labor (Low Edu)", _panel_cg_labor_by_edu, {"edu_level": 0}),
-        ("O: CG labor (High Edu)", _panel_cg_labor_by_edu, {"edu_level": 1}),
+        ("N: CG labor (Low Edu)", panel_cg_labor_by_edu, {"edu_level": 0}),
+        ("O: CG labor (High Edu)", panel_cg_labor_by_edu, {"edu_level": 1}),
         (
             "P: CG benefits (Low Edu)",
-            _panel_cg_benefits_by_edu,
+            panel_cg_benefits_by_edu,
             {"edu_level": 0, "wealth_unit": wealth_unit},
         ),
         (
             "Q: CG benefits (High Edu)",
-            _panel_cg_benefits_by_edu,
+            panel_cg_benefits_by_edu,
             {"edu_level": 1, "wealth_unit": wealth_unit},
         ),
-        ("R: Leave eligibility by edu", _panel_leave_eligibility, {}),
-        ("S: Duration (Low Edu)", _panel_duration_by_edu, {"edu_level": 0}),
-        ("T: Duration (High Edu)", _panel_duration_by_edu, {"edu_level": 1}),
+        ("R: Leave eligibility by edu", panel_leave_eligibility, {}),
+        ("S: Duration (Low Edu)", panel_duration_by_edu, {"edu_level": 0}),
+        ("T: Duration (High Edu)", panel_duration_by_edu, {"edu_level": 1}),
         (
             "U: Pension/exp (Low Edu)",
-            _panel_pension_by_edu,
+            panel_pension_by_edu,
             {
                 "edu_level": 0,
                 "wealth_unit": wealth_unit,
@@ -217,7 +367,7 @@ def _build_policy_changes_table(
         ),
         (
             "V: Pension/exp (High Edu)",
-            _panel_pension_by_edu,
+            panel_pension_by_edu,
             {
                 "edu_level": 1,
                 "wealth_unit": wealth_unit,
@@ -227,12 +377,12 @@ def _build_policy_changes_table(
         ),
         (
             "W: Lifecycle (Low Edu)",
-            _panel_lifecycle_by_edu,
+            panel_lifecycle_by_edu,
             {"edu_level": 0, "wealth_unit": wealth_unit},
         ),
         (
             "X: Lifecycle (High Edu)",
-            _panel_lifecycle_by_edu,
+            panel_lifecycle_by_edu,
             {"edu_level": 1, "wealth_unit": wealth_unit},
         ),
     ]
@@ -273,8 +423,8 @@ def _build_policy_changes_table(
             pct_normal.append("")
             pct_full.append("")
         else:
-            pct_normal.append(_pct_change(bv, nv))
-            pct_full.append(_pct_change(bv, fv))
+            pct_normal.append(pct_change(bv, nv))
+            pct_full.append(pct_change(bv, fv))
 
     table_dict["Pct chg Normal"] = pct_normal
     table_dict["Pct chg Full"] = pct_full
@@ -296,98 +446,42 @@ def _build_policy_changes_table(
     path_to_save_table.write_text(latex_str)
 
 
-@pytask.mark.tables
-@pytask.mark.policy_changes
-@pytask.mark.publication
-def task_create_policy_changes_table(
-    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
-    path_to_baseline_sim: Path = BLD
-    / "solve_and_simulate"
-    / "simulated_data_estimated_params.pkl",
-    path_to_normal_leave_sim: Path = BLD
-    / "solve_and_simulate"
-    / "simulated_data_caregiving_leave_with_job_retention_estimated_params.pkl",
-    path_to_full_leave_sim: Path = BLD
-    / "solve_and_simulate"
-    / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params.pkl",
-    path_to_save_table: Annotated[Path, Product] = BLD
-    / "tables"
-    / "publication"
-    / "policy_behavioral_changes.tex",
-) -> None:
-    """Create LaTeX table of behavioral changes from caregiving policies."""
-    _build_policy_changes_table(
-        path_to_specs,
-        path_to_baseline_sim,
-        path_to_normal_leave_sim,
-        path_to_full_leave_sim,
-        path_to_save_table,
-    )
-
-
-@pytask.mark.tables
-@pytask.mark.policy_changes
-@pytask.mark.publication
-def task_create_policy_changes_table_back_to_jan7(
-    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
-    path_to_baseline_sim: Path = BLD
-    / "solve_and_simulate"
-    / "simulated_data_estimated_params_back_to_Jan7.pkl",
-    path_to_normal_leave_sim: Path = BLD
-    / "solve_and_simulate"
-    / "simulated_data_caregiving_leave_with_job_retention_estimated_params_back_to_Jan7.pkl",
-    path_to_full_leave_sim: Path = BLD
-    / "solve_and_simulate"
-    / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params_back_to_Jan7.pkl",
-    path_to_save_table: Annotated[Path, Product] = BLD
-    / "tables"
-    / "publication"
-    / "policy_behavioral_changes_back_to_Jan7.tex",
-) -> None:
-    """Same table as above but using back-to-Jan7 simulation data."""
-    _build_policy_changes_table(
-        path_to_specs,
-        path_to_baseline_sim,
-        path_to_normal_leave_sim,
-        path_to_full_leave_sim,
-        path_to_save_table,
-        table_label="tab:policy_behavioral_changes_jan7",
-    )
-
-
 # ---------------------------------------------------------------------------
 # I/O helpers
 # ---------------------------------------------------------------------------
 
 
-def _load_sim_df(path: Path) -> pd.DataFrame:
-    """Load simulation pickle keeping only columns needed for behavioral analysis."""
-    df = pd.read_pickle(path)
+def load_sim_df(path: Path) -> pd.DataFrame:
+    """Load simulation data (pickle or parquet) keeping only needed columns."""
+    if path.suffix == ".parquet":
+        df = pd.read_parquet(path)
+    else:
+        df = pd.read_pickle(path)
     if isinstance(df.index, pd.MultiIndex):
         df = df.reset_index()
-    keep = [c for c in _REQUIRED_COLUMNS if c in df.columns]
+    keep = [c for c in REQUIRED_COLUMNS if c in df.columns]
     return df[keep].copy()
 
 
-def _pct_change(baseline_val: float, leave_val: float) -> float:
+def pct_change(baseline_val: float, leave_val: float) -> float:
     if baseline_val == 0 or np.isnan(baseline_val) or np.isnan(leave_val):
         return np.nan
     return (leave_val - baseline_val) / abs(baseline_val) * 100.0
 
 
-def _share(df: pd.DataFrame, choices) -> float:
+def share(df: pd.DataFrame, choices) -> float:
     if df.empty:
         return np.nan
     return float(df["choice"].isin(np.asarray(choices).ravel()).mean())
 
 
-def _safe_mean(series: pd.Series) -> float:
+def safe_mean(series: pd.Series) -> float:
     if series.empty:
         return np.nan
     return float(series.mean())
 
 
-def _add_cg_metadata(df: pd.DataFrame, end_age_caregiving: int) -> pd.DataFrame:
+def add_cg_metadata(df: pd.DataFrame, end_age_caregiving: int) -> pd.DataFrame:
     """Add per-agent CG metadata columns: first_cg_age, total_cg_years."""
     informal = np.asarray(INFORMAL_CARE).ravel()
     is_cg = df["choice"].isin(informal)
@@ -407,24 +501,24 @@ def _add_cg_metadata(df: pd.DataFrame, end_age_caregiving: int) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 
 
-def _panel_a_labor(df: pd.DataFrame) -> dict[str, float]:
+def panel_a_labor(df: pd.DataFrame) -> dict[str, float]:
     """Share FT / PT / employed / unemployed / retired — outcome first, then age groups."""
     rows = {}
     outcomes = [
         ("Share FT", FULL_TIME),
         ("Share PT", PART_TIME),
-        ("Empl. rate", _EMPLOYED),
+        ("Empl. rate", EMPLOYED),
         ("Share unemp.", UNEMPLOYED),
         ("Share retired", RETIREMENT),
     ]
     for outcome_label, choice_set in outcomes:
         for age_label, lo, hi in AGE_GROUPS_LABOR:
             sub = df[(df["age"] >= lo) & (df["age"] <= hi)]
-            rows[f"{outcome_label} ({age_label})"] = _share(sub, choice_set)
+            rows[f"{outcome_label} ({age_label})"] = share(sub, choice_set)
     return rows
 
 
-def _panel_b_caregiving(df: pd.DataFrame) -> dict[str, float]:
+def panel_b_caregiving(df: pd.DataFrame) -> dict[str, float]:
     """Caregiving shares — outcome first, then age groups. Cond. on care_demand > 0."""
     informal = np.asarray(INFORMAL_CARE).ravel()
     light = np.asarray(LIGHT_INFORMAL_CARE).ravel()
@@ -474,26 +568,26 @@ def _panel_b_caregiving(df: pd.DataFrame) -> dict[str, float]:
     return rows
 
 
-_EDU_LABELS = {0: "Low Edu", 1: "High Edu"}
+EDU_LABELS = {0: "Low Edu", 1: "High Edu"}
 
 
-def _panel_caregiving_by_edu(df: pd.DataFrame, edu_level: int) -> dict[str, float]:
+def panel_caregiving_by_edu(df: pd.DataFrame, edu_level: int) -> dict[str, float]:
     """Caregiving shares for a specific education group (reuses Panel B logic)."""
-    raw = _panel_b_caregiving(df[df["education"] == edu_level])
-    label = _EDU_LABELS.get(edu_level, f"Edu {edu_level}")
+    raw = panel_b_caregiving(df[df["education"] == edu_level])
+    label = EDU_LABELS.get(edu_level, f"Edu {edu_level}")
     return {f"{k} [{label}]": v for k, v in raw.items()}
 
 
-def _panel_c_cg_labor(df: pd.DataFrame) -> dict[str, float]:
+def panel_c_cg_labor(df: pd.DataFrame) -> dict[str, float]:
     """Labor state distribution among current informal caregivers (working age)."""
     informal = np.asarray(INFORMAL_CARE).ravel()
 
     labor_states = [
-        ("Share FT among CG", _CG_FT),
-        ("Share PT among CG", _CG_PT),
-        ("Empl. rate among CG", _CG_EMPLOYED),
-        ("Share unemp. among CG", _CG_UNEMPLOYED),
-        ("Share retired among CG", _CG_RETIRED),
+        ("Share FT among CG", CG_FT),
+        ("Share PT among CG", CG_PT),
+        ("Empl. rate among CG", CG_EMPLOYED),
+        ("Share unemp. among CG", CG_UNEMPLOYED),
+        ("Share retired among CG", CG_RETIRED),
     ]
 
     rows: dict[str, float] = {}
@@ -510,7 +604,7 @@ def _panel_c_cg_labor(df: pd.DataFrame) -> dict[str, float]:
     return rows
 
 
-def _panel_d_ever_cg_labor(df: pd.DataFrame) -> dict[str, float]:
+def panel_d_ever_cg_labor(df: pd.DataFrame) -> dict[str, float]:
     """Labor state distribution among ever-caregivers (may or may not currently CG)."""
     informal = np.asarray(INFORMAL_CARE).ravel()
     ever_cg_agents = set(df.loc[df["choice"].isin(informal), "agent"].unique())
@@ -518,7 +612,7 @@ def _panel_d_ever_cg_labor(df: pd.DataFrame) -> dict[str, float]:
     labor_states = [
         ("Share FT (ever CG)", FULL_TIME),
         ("Share PT (ever CG)", PART_TIME),
-        ("Empl. rate (ever CG)", _EMPLOYED),
+        ("Empl. rate (ever CG)", EMPLOYED),
         ("Share unemp. (ever CG)", UNEMPLOYED),
         ("Share retired (ever CG)", RETIREMENT),
     ]
@@ -538,7 +632,7 @@ def _panel_d_ever_cg_labor(df: pd.DataFrame) -> dict[str, float]:
     return rows
 
 
-def _panel_e_cg_benefits(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]:
+def panel_e_cg_benefits(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]:
     """Average benefit/top-up while caregiving, conditional on labor state.
 
     Baseline sim data contains ``care_benefits_and_costs`` (Pflegegeld);
@@ -555,10 +649,10 @@ def _panel_e_cg_benefits(df: pd.DataFrame, wealth_unit: float) -> dict[str, floa
         benefit_col = None
 
     labor_states = [
-        ("Avg. benefit FT CG", _CG_FT),
-        ("Avg. benefit PT CG", _CG_PT),
-        ("Avg. benefit unemp. CG", _CG_UNEMPLOYED),
-        ("Avg. benefit retired CG", _CG_RETIRED),
+        ("Avg. benefit FT CG", CG_FT),
+        ("Avg. benefit PT CG", CG_PT),
+        ("Avg. benefit unemp. CG", CG_UNEMPLOYED),
+        ("Avg. benefit retired CG", CG_RETIRED),
         ("Avg. benefit all CG", list(informal)),
     ]
 
@@ -576,37 +670,37 @@ def _panel_e_cg_benefits(df: pd.DataFrame, wealth_unit: float) -> dict[str, floa
     return rows
 
 
-def _panel_f_economic(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]:
+def panel_f_economic(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]:
     """Economic outcomes for agents with age < 63."""
     sub = df[df["age"] < 63]
     rows = {}
 
     sav_col = "savings_dec" if "savings_dec" in sub.columns else "savings"
     rows["Avg. savings dec (< 63)"] = (
-        _safe_mean(sub[sav_col]) * wealth_unit if sav_col in sub.columns else np.nan
+        safe_mean(sub[sav_col]) * wealth_unit if sav_col in sub.columns else np.nan
     )
     rows["Avg. wealth (< 63)"] = (
-        _safe_mean(sub["assets_begin_of_period"]) * wealth_unit
+        safe_mean(sub["assets_begin_of_period"]) * wealth_unit
         if "assets_begin_of_period" in sub.columns
         else np.nan
     )
     rows["Avg. consumption (< 63)"] = (
-        _safe_mean(sub["consumption"]) * wealth_unit
+        safe_mean(sub["consumption"]) * wealth_unit
         if "consumption" in sub.columns
         else np.nan
     )
     rows["Avg. working hours (< 63)"] = (
-        _safe_mean(sub["working_hours"]) if "working_hours" in sub.columns else np.nan
+        safe_mean(sub["working_hours"]) if "working_hours" in sub.columns else np.nan
     )
     rows["Avg. gross labor income (< 63)"] = (
-        _safe_mean(sub["gross_labor_income"]) * wealth_unit
+        safe_mean(sub["gross_labor_income"]) * wealth_unit
         if "gross_labor_income" in sub.columns
         else np.nan
     )
     return rows
 
 
-def _panel_g_retirement(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]:
+def panel_g_retirement(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]:
     """Retirement outcomes, conditional on agent being retired (choice in RETIREMENT)."""
     retired = np.asarray(RETIREMENT).ravel()
     sub = df[df["choice"].isin(retired)]
@@ -614,22 +708,22 @@ def _panel_g_retirement(df: pd.DataFrame, wealth_unit: float) -> dict[str, float
 
     sav_col = "savings_dec" if "savings_dec" in sub.columns else "savings"
     rows["Avg. savings dec (ret)"] = (
-        _safe_mean(sub[sav_col]) * wealth_unit if sav_col in sub.columns else np.nan
+        safe_mean(sub[sav_col]) * wealth_unit if sav_col in sub.columns else np.nan
     )
     rows["Avg. wealth (ret)"] = (
-        _safe_mean(sub["assets_begin_of_period"]) * wealth_unit
+        safe_mean(sub["assets_begin_of_period"]) * wealth_unit
         if "assets_begin_of_period" in sub.columns
         else np.nan
     )
     rows["Avg. gross pension income"] = (
-        _safe_mean(sub["gross_retirement_income"]) * wealth_unit
+        safe_mean(sub["gross_retirement_income"]) * wealth_unit
         if "gross_retirement_income" in sub.columns
         else np.nan
     )
     return rows
 
 
-def _panel_h_experience_at_retirement(
+def panel_h_experience_at_retirement(
     df: pd.DataFrame,
     max_exps_period_working: np.ndarray,
     start_age: int,
@@ -696,7 +790,7 @@ def _panel_h_experience_at_retirement(
 # ---------------------------------------------------------------------------
 
 
-def _panel_i_labor_at_first_cg(df: pd.DataFrame) -> dict[str, float]:
+def panel_i_labor_at_first_cg(df: pd.DataFrame) -> dict[str, float]:
     """Labor state at the first caregiving period, binned by age at first CG.
 
     At the first CG period the agent IS caregiving (choice in INFORMAL_CARE),
@@ -712,9 +806,9 @@ def _panel_i_labor_at_first_cg(df: pd.DataFrame) -> dict[str, float]:
         return {}
 
     outcomes = [
-        ("Share FT at 1st CG", _CG_FT),
-        ("Share PT at 1st CG", _CG_PT),
-        ("Empl. rate at 1st CG", _CG_EMPLOYED),
+        ("Share FT at 1st CG", CG_FT),
+        ("Share PT at 1st CG", CG_PT),
+        ("Empl. rate at 1st CG", CG_EMPLOYED),
     ]
 
     rows: dict[str, float] = {}
@@ -732,7 +826,7 @@ def _panel_i_labor_at_first_cg(df: pd.DataFrame) -> dict[str, float]:
     return rows
 
 
-def _panel_j_ever_cg_excl_first(df: pd.DataFrame) -> dict[str, float]:
+def panel_j_ever_cg_excl_first(df: pd.DataFrame) -> dict[str, float]:
     """Labor supply for ever-CG agents, omitting the first caregiving year."""
     informal = np.asarray(INFORMAL_CARE).ravel()
     if "first_cg_period" not in df.columns:
@@ -748,7 +842,7 @@ def _panel_j_ever_cg_excl_first(df: pd.DataFrame) -> dict[str, float]:
     outcomes = [
         ("Share FT (ever CG, excl 1st)", FULL_TIME),
         ("Share PT (ever CG, excl 1st)", PART_TIME),
-        ("Empl. rate (ever CG, excl 1st)", _EMPLOYED),
+        ("Empl. rate (ever CG, excl 1st)", EMPLOYED),
         ("Share unemp. (ever CG, excl 1st)", UNEMPLOYED),
         ("Share retired (ever CG, excl 1st)", RETIREMENT),
     ]
@@ -767,7 +861,7 @@ def _panel_j_ever_cg_excl_first(df: pd.DataFrame) -> dict[str, float]:
     return rows
 
 
-def _panel_k_ever_cg_by_duration(df: pd.DataFrame) -> dict[str, float]:
+def panel_k_ever_cg_by_duration(df: pd.DataFrame) -> dict[str, float]:
     """Panel-D-style labour shares for ever-CG agents split by total CG years.
 
     Duration groups: 1 year, 2–3 years, >=4 years.
@@ -787,7 +881,7 @@ def _panel_k_ever_cg_by_duration(df: pd.DataFrame) -> dict[str, float]:
     outcomes = [
         ("Share FT", FULL_TIME),
         ("Share PT", PART_TIME),
-        ("Empl. rate", _EMPLOYED),
+        ("Empl. rate", EMPLOYED),
         ("Share unemp.", UNEMPLOYED),
         ("Share retired", RETIREMENT),
     ]
@@ -804,7 +898,7 @@ def _panel_k_ever_cg_by_duration(df: pd.DataFrame) -> dict[str, float]:
         for outcome_label, choice_set in outcomes:
             choices_arr = np.asarray(choice_set).ravel()
             is_retired = choice_set is RETIREMENT
-            age_bins = _RETIRED_AGE_BINS_K if is_retired else AGE_GROUPS_BROAD_HETERO
+            age_bins = RETIRED_AGE_BINS_K if is_retired else AGE_GROUPS_BROAD_HETERO
             for age_label, lo, hi in age_bins:
                 sub = dur_df[(dur_df["age"] >= lo) & (dur_df["age"] <= hi)]
                 key = f"{outcome_label} ({dur_label}, {age_label})"
@@ -820,25 +914,23 @@ def _panel_k_ever_cg_by_duration(df: pd.DataFrame) -> dict[str, float]:
 # ---------------------------------------------------------------------------
 
 
-def _panel_cg_labor_by_edu(df: pd.DataFrame, edu_level: int) -> dict[str, float]:
+def panel_cg_labor_by_edu(df: pd.DataFrame, edu_level: int) -> dict[str, float]:
     """CG labor composition for a specific education group (reuses Panel E)."""
-    raw = _panel_c_cg_labor(df[df["education"] == edu_level])
-    label = _EDU_LABELS.get(edu_level, f"Edu {edu_level}")
+    raw = panel_c_cg_labor(df[df["education"] == edu_level])
+    label = EDU_LABELS.get(edu_level, f"Edu {edu_level}")
     return {f"{k} [{label}]": v for k, v in raw.items()}
 
 
-def _panel_cg_benefits_by_edu(
+def panel_cg_benefits_by_edu(
     df: pd.DataFrame, edu_level: int, wealth_unit: float
 ) -> dict[str, float]:
     """CG benefits/top-ups for a specific education group (reuses Panel G)."""
-    raw = _panel_e_cg_benefits(
-        df[df["education"] == edu_level], wealth_unit=wealth_unit
-    )
-    label = _EDU_LABELS.get(edu_level, f"Edu {edu_level}")
+    raw = panel_e_cg_benefits(df[df["education"] == edu_level], wealth_unit=wealth_unit)
+    label = EDU_LABELS.get(edu_level, f"Edu {edu_level}")
     return {f"{k} [{label}]": v for k, v in raw.items()}
 
 
-def _panel_leave_eligibility(df: pd.DataFrame) -> dict[str, float]:
+def panel_leave_eligibility(df: pd.DataFrame) -> dict[str, float]:
     """Prior-job composition among caregivers, by education.
 
     job_before_caregiving: 0 = no prior job (leave-ineligible), 1 = PT, 2 = FT.
@@ -847,7 +939,7 @@ def _panel_leave_eligibility(df: pd.DataFrame) -> dict[str, float]:
     rows: dict[str, float] = {}
 
     if "job_before_caregiving" not in df.columns:
-        for label in _EDU_LABELS.values():
+        for label in EDU_LABELS.values():
             rows[f"Share no prior job (CG) [{label}]"] = np.nan
             rows[f"Share prior PT (CG) [{label}]"] = np.nan
             rows[f"Share prior FT (CG) [{label}]"] = np.nan
@@ -856,7 +948,7 @@ def _panel_leave_eligibility(df: pd.DataFrame) -> dict[str, float]:
 
     cg_df = df[df["choice"].isin(informal)]
 
-    for edu_level, label in _EDU_LABELS.items():
+    for edu_level, label in EDU_LABELS.items():
         edu_cg = cg_df[cg_df["education"] == edu_level]
         if edu_cg.empty:
             rows[f"Share no prior job (CG) [{label}]"] = np.nan
@@ -878,13 +970,13 @@ def _panel_leave_eligibility(df: pd.DataFrame) -> dict[str, float]:
     return rows
 
 
-def _panel_duration_by_edu(df: pd.DataFrame, edu_level: int) -> dict[str, float]:
+def panel_duration_by_edu(df: pd.DataFrame, edu_level: int) -> dict[str, float]:
     """Condensed duration heterogeneity for one education group.
 
     Focuses on empl. rate (All 30--67 and 60--67) and retirement (63--67)
     to show whether the job retention channel benefits this group.
     """
-    label = _EDU_LABELS.get(edu_level, f"Edu {edu_level}")
+    label = EDU_LABELS.get(edu_level, f"Edu {edu_level}")
     informal = np.asarray(INFORMAL_CARE).ravel()
 
     if "total_cg_years" not in df.columns:
@@ -899,7 +991,7 @@ def _panel_duration_by_edu(df: pd.DataFrame, edu_level: int) -> dict[str, float]
     agent_cg_years = ever_cg_df.groupby("agent")["total_cg_years"].first()
 
     outcomes = [
-        ("Empl. rate", _EMPLOYED, [("All (30--67)", 30, 67), ("60--67", 60, 67)]),
+        ("Empl. rate", EMPLOYED, [("All (30--67)", 30, 67), ("60--67", 60, 67)]),
         ("Share retired", RETIREMENT, [("63--67", 63, 67)]),
     ]
 
@@ -925,7 +1017,7 @@ def _panel_duration_by_edu(df: pd.DataFrame, edu_level: int) -> dict[str, float]
     return rows
 
 
-def _panel_pension_by_edu(
+def panel_pension_by_edu(
     df: pd.DataFrame,
     edu_level: int,
     wealth_unit: float,
@@ -933,11 +1025,11 @@ def _panel_pension_by_edu(
     start_age: int,
 ) -> dict[str, float]:
     """Pension and experience at retirement for one education group."""
-    label = _EDU_LABELS.get(edu_level, f"Edu {edu_level}")
+    label = EDU_LABELS.get(edu_level, f"Edu {edu_level}")
     edu_df = df[df["education"] == edu_level]
 
-    ret_raw = _panel_g_retirement(edu_df, wealth_unit=wealth_unit)
-    exp_raw = _panel_h_experience_at_retirement(
+    ret_raw = panel_g_retirement(edu_df, wealth_unit=wealth_unit)
+    exp_raw = panel_h_experience_at_retirement(
         edu_df,
         max_exps_period_working=max_exps_period_working,
         start_age=start_age,
@@ -951,7 +1043,7 @@ def _panel_pension_by_edu(
     return rows
 
 
-def _panel_lifecycle_by_edu(
+def panel_lifecycle_by_edu(
     df: pd.DataFrame, edu_level: int, wealth_unit: float
 ) -> dict[str, float]:
     """Lifecycle outcomes for ever-caregivers in one education group.
@@ -960,7 +1052,7 @@ def _panel_lifecycle_by_edu(
     (retired periods), and avg. benefit per CG period.  The pct-change
     columns then directly show the policy impact on each.
     """
-    label = _EDU_LABELS.get(edu_level, f"Edu {edu_level}")
+    label = EDU_LABELS.get(edu_level, f"Edu {edu_level}")
     informal = np.asarray(INFORMAL_CARE).ravel()
     retired_choices = np.asarray(RETIREMENT).ravel()
 
@@ -979,14 +1071,14 @@ def _panel_lifecycle_by_edu(
 
     working_age = ever_cg[(ever_cg["age"] >= 30) & (ever_cg["age"] <= 67)]
     rows[f"Avg. gross labor inc. (ever CG, 30--67) [{label}]"] = (
-        _safe_mean(working_age["gross_labor_income"]) * wealth_unit
+        safe_mean(working_age["gross_labor_income"]) * wealth_unit
         if "gross_labor_income" in working_age.columns
         else np.nan
     )
 
     ret_periods = ever_cg[ever_cg["choice"].isin(retired_choices)]
     rows[f"Avg. gross pension inc. (ever CG, ret) [{label}]"] = (
-        _safe_mean(ret_periods["gross_retirement_income"]) * wealth_unit
+        safe_mean(ret_periods["gross_retirement_income"]) * wealth_unit
         if "gross_retirement_income" in ret_periods.columns and not ret_periods.empty
         else np.nan
     )
@@ -1001,14 +1093,14 @@ def _panel_lifecycle_by_edu(
     cg_periods = ever_cg[ever_cg["lagged_choice"].isin(informal)]
     if benefit_col and not cg_periods.empty:
         rows[f"Avg. benefit per CG period [{label}]"] = (
-            _safe_mean(cg_periods[benefit_col]) * wealth_unit
+            safe_mean(cg_periods[benefit_col]) * wealth_unit
         )
     else:
         rows[f"Avg. benefit per CG period [{label}]"] = np.nan
 
     under63 = ever_cg[ever_cg["age"] < 63]
     rows[f"Avg. consumption (ever CG, <63) [{label}]"] = (
-        _safe_mean(under63["consumption"]) * wealth_unit
+        safe_mean(under63["consumption"]) * wealth_unit
         if "consumption" in under63.columns
         else np.nan
     )

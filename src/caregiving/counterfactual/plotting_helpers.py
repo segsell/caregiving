@@ -245,6 +245,7 @@ AGE_GROUPS_EVENT_STUDY = (
 # Shared publication figure style (figsize, fonts, lines, grid) for distance-by-outcome plots
 PUBLICATION_PLOT_STYLE = {
     "figsize": (14, 12),
+    "font_family": "Times New Roman",
     "label_fontsize": 28,
     "xtick_fontsize": 25,
     "ytick_fontsize": 25,
@@ -259,6 +260,9 @@ PUBLICATION_PLOT_STYLE = {
     "grid_linewidth": 1.15,
     "axvline_linewidth": 1.85,
     "axhline_linewidth": 1.6,
+    # Padding so lowest y-tick does not clash with x-axis: margin in data space and figure bottom
+    "y_axis_margin_factor": 0.03,  # margin = this * (2 * y_lim) added below -y_lim
+    "subplots_adjust_bottom": 0.11,
     "savefig_dpi": 1200,
     "savefig_pad_inches": 0.25,
 }
@@ -334,37 +338,35 @@ def _plot_outcome_difference_by_distance_total_caregiving_impl(  # noqa: PLR0913
     xlabel: str,
     ylabel: str,
     endogenous_ylim: bool,
-    label_fontsize: float,
-    xtick_fontsize: float,
-    ytick_fontsize: float,
-    tick_length: float,
-    tick_width: float,
     font_family: Optional[str] = None,
+    style: Optional[dict] = None,
 ) -> None:
     """Implementation: plot outcome difference by distance (total care years 1–5+)."""
-    if font_family is not None:
+    s = style if style is not None else PUBLICATION_PLOT_STYLE
+    font = font_family if font_family is not None else s["font_family"]
+    if font is not None:
         plt.rcParams["font.family"] = "serif"
-        plt.rcParams["font.serif"] = [font_family]
-    plt.figure(figsize=(14, 12))
+        plt.rcParams["font.serif"] = [font]
+    plt.figure(figsize=s["figsize"])
 
     plt.plot(
         prof_diff[EVENT_STUDY_DIST_COL],
         prof_diff["diff"],
         label="Baseline",
         color="black",
-        linewidth=3.7,
+        linewidth=s["linewidth"],
         linestyle="--",
         marker=None,
     )
-    plt.axhline(y=0, color="k", linestyle="-", linewidth=1.6)
+    plt.axhline(y=0, color="k", linestyle="-", linewidth=s["axhline_linewidth"])
 
     def _plot_prof(
         prof: pd.DataFrame,
         label: str,
         color: str,
         marker: str,
-        markersize: float = 9,
-        markeredgewidth: float = 3.0,
+        markersize: float,
+        markeredgewidth: float,
     ) -> None:
         if len(prof) > 0:
             plt.plot(
@@ -372,7 +374,7 @@ def _plot_outcome_difference_by_distance_total_caregiving_impl(  # noqa: PLR0913
                 prof["diff"],
                 label=label,
                 color=color,
-                linewidth=3.7,
+                linewidth=s["linewidth"],
                 linestyle="-",
                 marker=marker,
                 markersize=markersize,
@@ -381,27 +383,39 @@ def _plot_outcome_difference_by_distance_total_caregiving_impl(  # noqa: PLR0913
                 markeredgewidth=markeredgewidth,
             )
 
-    _plot_prof(prof_1_year_diff, "1 total care year", "0.85", "8")
-    _plot_prof(prof_2_year_diff, "2 total care years", "0.7", "^")
-    _plot_prof(prof_3_year_diff, "3 total care years", "0.5", "D")
-    _plot_prof(prof_4_year_diff, "4 total care years", "0.3", "s")
+    _plot_prof(
+        prof_1_year_diff, "1 total care year", "0.85", "8",
+        s["markersize"], s["markeredgewidth"],
+    )
+    _plot_prof(
+        prof_2_year_diff, "2 total care years", "0.7", "^",
+        s["markersize"], s["markeredgewidth"],
+    )
+    _plot_prof(
+        prof_3_year_diff, "3 total care years", "0.5", "D",
+        s["markersize"], s["markeredgewidth"],
+    )
+    _plot_prof(
+        prof_4_year_diff, "4 total care years", "0.3", "s",
+        s["markersize"], s["markeredgewidth"],
+    )
     _plot_prof(
         prof_5_year_diff,
         "5+ total care years",
         "0.1",
         "*",
-        markersize=12,
-        markeredgewidth=3.5,
+        s["markersize_star"],
+        s["markeredgewidth_star"],
     )
 
     plt.axvline(
         x=-0.5,
         color="k",
         linestyle=(0, (7, 7)),
-        linewidth=1.85,
+        linewidth=s["axvline_linewidth"],
     )
-    plt.xlabel(xlabel, fontsize=label_fontsize)
-    plt.ylabel(ylabel, fontsize=label_fontsize)
+    plt.xlabel(xlabel, fontsize=s["label_fontsize"])
+    plt.ylabel(ylabel, fontsize=s["label_fontsize"])
     plt.xlim(window_low - 0.5, window_high + 0.5)
 
     all_diffs = []
@@ -425,44 +439,43 @@ def _plot_outcome_difference_by_distance_total_caregiving_impl(  # noqa: PLR0913
             y_max = max(abs(min(finite_diffs)), abs(max(finite_diffs)))
             y_lim = (int(y_max * 1.1 / 0.05) + 1) * 0.05
             y_lim = max(y_lim, 0.05)
-            # Add small margin so bottom y-tick is not clamped to x-axis
-            y_margin = 0.03 * (2 * y_lim)
+            y_margin = s["y_axis_margin_factor"] * (2 * y_lim)
             plt.ylim(-y_lim - y_margin, y_lim + y_margin)
     else:
         plt.ylim(-0.1, 0.1)
 
     tick_step = 5
-    plt.grid(True, axis="y", alpha=0.18, linewidth=1.15)
-    plt.xticks(range(window_low, window_high + 1, tick_step), fontsize=xtick_fontsize)
-    plt.yticks(fontsize=ytick_fontsize)
+    plt.grid(True, axis="y", alpha=s["grid_alpha"], linewidth=s["grid_linewidth"])
+    plt.xticks(
+        range(window_low, window_high + 1, tick_step),
+        fontsize=s["xtick_fontsize"],
+    )
+    plt.yticks(fontsize=s["ytick_fontsize"])
     ax = plt.gca()
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-    ax.tick_params(axis="both", length=tick_length, width=tick_width)
-    # Explicitly set font on all text so Times New Roman (or requested font) is used
-    if font_family is not None:
-        ax.xaxis.get_label().set_fontfamily(font_family)
-        ax.yaxis.get_label().set_fontfamily(font_family)
+    ax.tick_params(axis="both", length=s["tick_length"], width=s["tick_width"])
+    if font is not None:
+        ax.xaxis.get_label().set_fontfamily(font)
+        ax.yaxis.get_label().set_fontfamily(font)
         for label in ax.get_xticklabels():
-            label.set_fontfamily(font_family)
+            label.set_fontfamily(font)
         for label in ax.get_yticklabels():
-            label.set_fontfamily(font_family)
+            label.set_fontfamily(font)
     plt.tight_layout()
-    # Ensure gap between bottom y-tick label and x-axis so layout is not clamped
-    plt.subplots_adjust(bottom=0.11)
+    plt.subplots_adjust(bottom=s["subplots_adjust_bottom"])
     if path_to_plot:
         path_to_plot.parent.mkdir(parents=True, exist_ok=True)
-        # Use pad_inches so labels/numbers are not cut off; embed fonts in PDF for crisp text
-        save_kwargs = {
-            "dpi": 1200,
-            "bbox_inches": "tight",
-            "pad_inches": 0.25,
-        }
         is_pdf = path_to_plot.suffix.lower() == ".pdf"
         if is_pdf:
             _pdf_fonttype = plt.rcParams["pdf.fonttype"]
             plt.rcParams["pdf.fonttype"] = 42  # TrueType fonts in PDF for sharp text
-        plt.savefig(path_to_plot, **save_kwargs)
+        plt.savefig(
+            path_to_plot,
+            dpi=s["savefig_dpi"],
+            bbox_inches="tight",
+            pad_inches=s["savefig_pad_inches"],
+        )
         if is_pdf:
             plt.rcParams["pdf.fonttype"] = _pdf_fonttype
     plt.close()
@@ -481,18 +494,16 @@ def plot_outcome_difference_by_distance_total_caregiving(  # noqa: PLR0913
     xlabel: str = "Year relative to start of first care spell",
     ylabel: str = "Difference in outcome",
     endogenous_ylim: bool = False,
-    font_family: Optional[str] = "Times New Roman",
-    label_fontsize: float = 28,
-    xtick_fontsize: float = 25,
-    ytick_fontsize: float = 25,
-    tick_length: float = 16,
-    tick_width: float = 1.85,
+    font_family: Optional[str] = None,
+    style: Optional[dict] = None,
 ) -> None:
     """Plot outcome difference by distance with 5 lines: total care years 1, 2, 3, 4, 5+.
 
     Same layout as event study consecutive: dashed black baseline, horizontal line at 0,
     vertical line at t=-0.5, five subgroup lines (1, 2, 3, 4, 5+ total care years).
     Profile DataFrames must have column EVENT_STUDY_DIST_COL and 'diff'.
+    All visual style (including font_family) is read from PUBLICATION_PLOT_STYLE unless
+    overridden via style or font_family.
 
     window_low and window_high are positive integers (years before/after t=0);
     internally window_low is negated for the axis range.
@@ -513,12 +524,8 @@ def plot_outcome_difference_by_distance_total_caregiving(  # noqa: PLR0913
                 xlabel,
                 ylabel,
                 endogenous_ylim,
-                label_fontsize,
-                xtick_fontsize,
-                ytick_fontsize,
-                tick_length,
-                tick_width,
                 font_family,
+                style,
             )
     else:
         _plot_outcome_difference_by_distance_total_caregiving_impl(
@@ -534,12 +541,8 @@ def plot_outcome_difference_by_distance_total_caregiving(  # noqa: PLR0913
             xlabel,
             ylabel,
             endogenous_ylim,
-            label_fontsize,
-            xtick_fontsize,
-            ytick_fontsize,
-            tick_length,
-            tick_width,
             None,
+            style,
         )
 
 
