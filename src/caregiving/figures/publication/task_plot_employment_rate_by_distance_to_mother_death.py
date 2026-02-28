@@ -1927,12 +1927,8 @@ def plot_employment_rate_by_distance_to_mother_death(  # noqa: PLR0912, PLR0913
     plt.ylabel("Employment Rate", fontsize=S["label_fontsize"])
     plt.xlim(-window_low - 0.5, window_high + 0.5)
     plt.ylim(-0.025, 1.0)
-    plt.grid(
-        True, axis="y", alpha=S["grid_alpha"], linewidth=S["grid_linewidth"]
-    )
-    plt.xticks(
-        range(-window_low, window_high + 1, 5), fontsize=S["xtick_fontsize"]
-    )
+    plt.grid(True, axis="y", alpha=S["grid_alpha"], linewidth=S["grid_linewidth"])
+    plt.xticks(range(-window_low, window_high + 1, 5), fontsize=S["xtick_fontsize"])
     plt.yticks(fontsize=S["ytick_fontsize"])
 
     ax = plt.gca()
@@ -2629,12 +2625,8 @@ def plot_employment_rate_by_distance_to_mother_death_care_demand(  # noqa: PLR09
     plt.ylabel("Employment Rate", fontsize=S["label_fontsize"])
     plt.xlim(-window_low - 0.5, window_high + 0.5)
     plt.ylim(-0.025, 1.0)
-    plt.grid(
-        True, axis="y", alpha=S["grid_alpha"], linewidth=S["grid_linewidth"]
-    )
-    plt.xticks(
-        range(-window_low, window_high + 1, 5), fontsize=S["xtick_fontsize"]
-    )
+    plt.grid(True, axis="y", alpha=S["grid_alpha"], linewidth=S["grid_linewidth"])
+    plt.xticks(range(-window_low, window_high + 1, 5), fontsize=S["xtick_fontsize"])
     plt.yticks(fontsize=S["ytick_fontsize"])
 
     ax = plt.gca()

@@ -1211,12 +1211,8 @@ def plot_employment_rate_difference_by_distance_to_mother_death(  # noqa: PLR091
     else:
         y_lim = 0.1  # Default range if no data
     plt.ylim(-y_lim, y_lim)
-    plt.grid(
-        True, axis="y", alpha=S["grid_alpha"], linewidth=S["grid_linewidth"]
-    )
-    plt.xticks(
-        range(-window_low, window_high + 1, 5), fontsize=S["xtick_fontsize"]
-    )
+    plt.grid(True, axis="y", alpha=S["grid_alpha"], linewidth=S["grid_linewidth"])
+    plt.xticks(range(-window_low, window_high + 1, 5), fontsize=S["xtick_fontsize"])
     plt.yticks(fontsize=S["ytick_fontsize"])
 
     # Remove top and right spines (box lines)
@@ -1395,12 +1391,8 @@ def plot_employment_rate_difference_by_distance_to_mother_death_consecutive(  # 
     else:
         y_lim = 0.1
     plt.ylim(-y_lim, y_lim)
-    plt.grid(
-        True, axis="y", alpha=S["grid_alpha"], linewidth=S["grid_linewidth"]
-    )
-    plt.xticks(
-        range(-window_low, window_high + 1, 5), fontsize=S["xtick_fontsize"]
-    )
+    plt.grid(True, axis="y", alpha=S["grid_alpha"], linewidth=S["grid_linewidth"])
+    plt.xticks(range(-window_low, window_high + 1, 5), fontsize=S["xtick_fontsize"])
     plt.yticks(fontsize=S["ytick_fontsize"])
 
     ax = plt.gca()
@@ -1577,12 +1569,8 @@ def plot_employment_rate_difference_by_distance_to_mother_death_care_demand(  # 
     else:
         y_lim = 0.1
     plt.ylim(-y_lim, y_lim)
-    plt.grid(
-        True, axis="y", alpha=S["grid_alpha"], linewidth=S["grid_linewidth"]
-    )
-    plt.xticks(
-        range(-window_low, window_high + 1, 5), fontsize=S["xtick_fontsize"]
-    )
+    plt.grid(True, axis="y", alpha=S["grid_alpha"], linewidth=S["grid_linewidth"])
+    plt.xticks(range(-window_low, window_high + 1, 5), fontsize=S["xtick_fontsize"])
     plt.yticks(fontsize=S["ytick_fontsize"])
 
     ax = plt.gca()

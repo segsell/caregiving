@@ -384,20 +384,36 @@ def _plot_outcome_difference_by_distance_total_caregiving_impl(  # noqa: PLR0913
             )
 
     _plot_prof(
-        prof_1_year_diff, "1 total care year", "0.85", "8",
-        s["markersize"], s["markeredgewidth"],
+        prof_1_year_diff,
+        "1 total care year",
+        "0.85",
+        "8",
+        s["markersize"],
+        s["markeredgewidth"],
     )
     _plot_prof(
-        prof_2_year_diff, "2 total care years", "0.7", "^",
-        s["markersize"], s["markeredgewidth"],
+        prof_2_year_diff,
+        "2 total care years",
+        "0.7",
+        "^",
+        s["markersize"],
+        s["markeredgewidth"],
     )
     _plot_prof(
-        prof_3_year_diff, "3 total care years", "0.5", "D",
-        s["markersize"], s["markeredgewidth"],
+        prof_3_year_diff,
+        "3 total care years",
+        "0.5",
+        "D",
+        s["markersize"],
+        s["markeredgewidth"],
     )
     _plot_prof(
-        prof_4_year_diff, "4 total care years", "0.3", "s",
-        s["markersize"], s["markeredgewidth"],
+        prof_4_year_diff,
+        "4 total care years",
+        "0.3",
+        "s",
+        s["markersize"],
+        s["markeredgewidth"],
     )
     _plot_prof(
         prof_5_year_diff,
