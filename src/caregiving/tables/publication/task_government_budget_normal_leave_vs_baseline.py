@@ -100,10 +100,12 @@ def task_income_tax_by_age_normal_leave_vs_baseline(
     path_to_save_plot_levels: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
+    / "budget_plots"
     / "government_budget_income_tax_by_age_normal_leave_vs_baseline_levels.pdf",
     path_to_save_plot_difference: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
+    / "budget_plots"
     / "government_budget_income_tax_by_age_normal_leave_vs_baseline_difference.pdf",
     only_caregivers: bool = False,
     restrict_same_agents: bool = True,
@@ -198,10 +200,12 @@ def task_working_share_by_age_full_normal_leave_vs_baseline(  # noqa: PLR0915
     path_to_save_levels: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
+    / "budget_plots"
     / "caregiving_leave_working_share_by_age_full_normal_vs_baseline_levels.pdf",
     path_to_save_difference: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
+    / "budget_plots"
     / "caregiving_leave_working_share_by_age_full_normal_vs_baseline_difference.pdf",
     only_caregivers: bool = False,
     restrict_same_agents: bool = True,
@@ -330,14 +334,17 @@ def task_net_caregiving_top_up_by_age_normal_full_leave_vs_baseline(  # noqa: PL
     path_to_save_levels_baseline_care_benefits: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
+    / "budget_plots"
     / "net_caregiving_top_up_by_age_leave_vs_baseline_levels_baseline_care_benefits.pdf",  # noqa: E501
     path_to_save_levels_baseline_zero: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
+    / "budget_plots"
     / "net_caregiving_top_up_by_age_leave_vs_baseline_levels_baseline_zero.pdf",
     path_to_save_difference: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
+    / "budget_plots"
     / "net_caregiving_top_up_by_age_leave_vs_baseline_difference.pdf",
     only_caregivers: bool = True,
     restrict_same_agents: bool = True,
@@ -519,10 +526,12 @@ def task_net_government_budget_by_age_full_normal_leave_vs_baseline(
     path_to_save_levels: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
+    / "budget_plots"
     / "net_government_budget_by_age_leave_vs_baseline_levels.pdf",
     path_to_save_difference: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
+    / "budget_plots"
     / "net_government_budget_by_age_leave_vs_baseline_difference.pdf",
     restrict_same_agents: bool = True,
     ever_care_demand: bool = True,

@@ -171,6 +171,281 @@ OUTCOME_COLUMN_LABELS = [
 ]
 
 
+# Policy scenario order: baseline, full Beirat, partial Beirat, Norwegian with PG, Norwegian no PG.
+FISCAL_POLICY_LABELS = [
+    "Baseline (cash benefits)",
+    r"Full Beirat (65\%, 1y full)",
+    r"Partial Beirat (65\%)",
+    r"Norwegian (100\%, with PG)",
+    r"Norwegian (100\%, no PG)",
+]
+
+
+@pytask.mark.tables
+@pytask.mark.fiscal_costs
+@pytask.mark.publication
+def task_create_fiscal_costs(
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_baseline_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params.pkl",
+    path_to_full_beirat_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_caregiving_leave_full_beirat_estimated_params.pkl",
+    path_to_partial_beirat_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_caregiving_leave_beirat_estimated_params.pkl",
+    path_to_norwegian_pg_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params.pkl",
+    path_to_norwegian_no_pg_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params_no_pflegegeld.pkl",
+    path_to_save_table: Annotated[Path, Product] = BLD
+    / "tables"
+    / "publication"
+    / "fiscal_costs_caregiving_policies.tex",
+) -> None:
+    """Create LaTeX table of fiscal costs of caregiving policies (five scenarios).
+
+    Policies: (1) Baseline (cash benefits); (2) Full Beirat; (3) Partial Beirat;
+    (4) Norwegian leave with Pflegegeld; (5) Norwegian leave without Pflegegeld.
+    Each leave scenario is compared to baseline via delta columns.
+
+    Life-cycle scope: The fiscal comparison covers the full model life cycle
+    (ages start_age to end_age).
+    """
+    specs = pickle.load(path_to_specs.open("rb"))
+    wealth_unit = float(specs["wealth_unit"])
+    start_age = int(specs.get("start_age", 30))
+    end_age = int(specs.get("end_age", 100))
+
+    # Load slim DataFrames: baseline + 4 leave scenarios
+    baseline_df = _load_sim_df(path_to_baseline_sim)
+    full_beirat_df = _load_sim_df(path_to_full_beirat_sim)
+    partial_beirat_df = _load_sim_df(path_to_partial_beirat_sim)
+    norwegian_pg_df = _load_sim_df(path_to_norwegian_pg_sim)
+    norwegian_no_pg_df = _load_sim_df(path_to_norwegian_no_pg_sim)
+    policy_dfs = [
+        baseline_df,
+        full_beirat_df,
+        partial_beirat_df,
+        norwegian_pg_df,
+        norwegian_no_pg_df,
+    ]
+
+    # Ensure age column exists
+    for df in policy_dfs:
+        if "age" not in df.columns and "period" in df.columns:
+            df["age"] = start_age + df["period"]
+
+    # Verify period and age
+    for i, (label, df) in enumerate(zip(FISCAL_POLICY_LABELS, policy_dfs, strict=True)):
+        if "period" in df.columns and "age" in df.columns:
+            assert (
+                df["age"] == start_age + df["period"]
+            ).all(), f"{label}: age != start_age + period"
+
+    # Compute lagged_care_demand
+    for i, df in enumerate(policy_dfs):
+        policy_dfs[i] = _add_lagged_care_demand(df)
+
+    baseline_df, full_beirat_df, partial_beirat_df, norwegian_pg_df, norwegian_no_pg_df = (
+        policy_dfs
+    )
+
+    def _safe_div(num, den):
+        return num / den if den else np.nan
+
+    # --- Costs and caregiver counts (per scenario) ---
+    cost_baseline, n_baseline, periods_baseline = _total_cost_baseline(
+        baseline_df, wealth_unit
+    )
+    cost_fb, n_fb, periods_fb = _total_cost_leave(full_beirat_df, specs)
+    cost_pb, n_pb, periods_pb = _total_cost_leave(partial_beirat_df, specs)
+    cost_npg, n_npg, periods_npg = _total_cost_leave(norwegian_pg_df, specs)
+    cost_nnpg, n_nnpg, periods_nnpg = _total_cost_leave(norwegian_no_pg_df, specs)
+    costs = [cost_baseline, cost_fb, cost_pb, cost_npg, cost_nnpg]
+    n_cgs = [n_baseline, n_fb, n_pb, n_npg, n_nnpg]
+    periods_list = [
+        periods_baseline,
+        periods_fb,
+        periods_pb,
+        periods_npg,
+        periods_nnpg,
+    ]
+
+    avg_costs = [
+        c / n if n else np.nan for c, n in zip(costs, n_cgs, strict=True)
+    ]
+    avg_years_list = [
+        p / n if n else np.nan for p, n in zip(periods_list, n_cgs, strict=True)
+    ]
+
+    def _avg_monthly_per_caregiving_month(avg_cost, avg_years):
+        if np.isnan(avg_years) or avg_years <= 0:
+            return np.nan
+        return avg_cost / 12.0 / avg_years
+
+    avg_monthly = [
+        _avg_monthly_per_caregiving_month(ac, ay)
+        for ac, ay in zip(avg_costs, avg_years_list, strict=True)
+    ]
+
+    # --- N total agents, share ever caregiving, per-capita cost ---
+    n_totals = [_n_total_agents(df) for df in policy_dfs]
+    share_cg = [_safe_div(n_cg, n_tot) for n_cg, n_tot in zip(n_cgs, n_totals, strict=True)]
+    percap = [_safe_div(c, n_tot) for c, n_tot in zip(costs, n_totals, strict=True)]
+
+    # --- Total gross benefit ---
+    gross_benefit_baseline = cost_baseline
+    gross_benefits_leave = [
+        _total_sum_column(df, "caregiving_leave_top_up", wealth_unit)
+        for df in (full_beirat_df, partial_beirat_df, norwegian_pg_df, norwegian_no_pg_df)
+    ]
+    gross_benefits = [gross_benefit_baseline] + gross_benefits_leave
+
+    # --- Total net cost from model aux ---
+    net_cost_aux_baseline = cost_baseline
+    net_cost_aux_leave = [
+        _total_leave_net_cost_aux(df, wealth_unit)
+        for df in (full_beirat_df, partial_beirat_df, norwegian_pg_df, norwegian_no_pg_df)
+    ]
+    net_costs_aux = [net_cost_aux_baseline] + net_cost_aux_leave
+
+    # --- Government formal care stats ---
+    fc_stats = [_formal_care_stats(df) for df in policy_dfs]
+    gov_fc_list = [s[0] for s in fc_stats]
+    n_fc_list = [s[1] for s in fc_stats]
+    avg_fc_yrs_list = [s[2] for s in fc_stats]
+
+    # --- Combination care ---
+    combo_list = [_combination_care_stats(df) for df in policy_dfs]
+    gov_total_care_list = [
+        gov_fc + combo["total_cost"]
+        for gov_fc, combo in zip(gov_fc_list, combo_list, strict=True)
+    ]
+
+    # --- Avg outcomes per caregiver ---
+    outcomes_list = [
+        _avg_outcomes_per_caregiver(df, wealth_unit, OUTCOME_COLUMNS_AVG_PER_CAREGIVER)
+        for df in policy_dfs
+    ]
+
+    # =====================================================================
+    # Build table (each key -> list of 5 values)
+    # =====================================================================
+    table_dict: dict[str, list] = {
+        "Policy": list(FISCAL_POLICY_LABELS),
+        "Total cost (net)": costs,
+        "Total gross benefit": gross_benefits,
+        "Total net cost (model)": net_costs_aux,
+        "Gov. formal care cost (total)": gov_fc_list,
+        "Avg. gov. formal care cost per caregiver": [
+            _safe_div(gov_fc, n_cg) for gov_fc, n_cg in zip(gov_fc_list, n_cgs, strict=True)
+        ],
+        "Avg. gov. formal care cost per FC user": [
+            _safe_div(gov_fc, n_fc) for gov_fc, n_fc in zip(gov_fc_list, n_fc_list, strict=True)
+        ],
+        "Avg. gov. FC cost per CG (pct of baseline)": [
+            np.nan,
+            *[
+                _safe_div(
+                    _safe_div(gov_fc, n_cg),
+                    _safe_div(gov_fc_list[0], n_cgs[0]),
+                )
+                * 100
+                for gov_fc, n_cg in zip(gov_fc_list[1:], n_cgs[1:], strict=True)
+            ],
+        ],
+        "Avg. gov. FC cost per FC user (pct of baseline)": [
+            np.nan,
+            *[
+                _safe_div(
+                    _safe_div(gov_fc, n_fc),
+                    _safe_div(gov_fc_list[0], n_fc_list[0]),
+                )
+                * 100
+                for gov_fc, n_fc in zip(gov_fc_list[1:], n_fc_list[1:], strict=True)
+            ],
+        ],
+        "Gov. formal care cost per capita": [
+            _safe_div(gov_fc, n_tot) for gov_fc, n_tot in zip(gov_fc_list, n_totals, strict=True)
+        ],
+        "Avg. formal care years": avg_fc_yrs_list,
+        "N formal care users": n_fc_list,
+        "Gov. combination care cost (total)": [c["total_cost"] for c in combo_list],
+        "Avg. gov. combo care cost per caregiver": [
+            _safe_div(c["total_cost"], n_cg) for c, n_cg in zip(combo_list, n_cgs, strict=True)
+        ],
+        "Avg. gov. combo care cost per eligible": [
+            c["avg_cost_per_eligible"] for c in combo_list
+        ],
+        "Avg. gov. combo care cost per combo user": [
+            c["avg_cost_per_combo_user"] for c in combo_list
+        ],
+        "Avg. combination care years (eligible)": [
+            c["avg_combo_years"] for c in combo_list
+        ],
+        "Avg. combination care years (per user)": [
+            c["avg_combo_years_per_user"] for c in combo_list
+        ],
+        "N eligible for combo care": [c["n_eligible_agents"] for c in combo_list],
+        "N combo care users (expected)": [
+            c["n_expected_combo_users"] for c in combo_list
+        ],
+        "Gov. total care cost": gov_total_care_list,
+        "Gov. total care cost per caregiver": [
+            _safe_div(gtc, n_cg) for gtc, n_cg in zip(gov_total_care_list, n_cgs, strict=True)
+        ],
+        "Gov. total care cost per capita": [
+            _safe_div(gtc, n_tot) for gtc, n_tot in zip(gov_total_care_list, n_totals, strict=True)
+        ],
+        "N caregivers": n_cgs,
+        "N total agents": n_totals,
+        "Share ever caregiving": share_cg,
+        "Avg. caregiving years": avg_years_list,
+        "Avg cost per caregiver": avg_costs,
+        "Per-capita cost (all agents)": percap,
+        "Avg. monthly cost per CG month": avg_monthly,
+    }
+    for col, label in zip(
+        OUTCOME_COLUMNS_AVG_PER_CAREGIVER, OUTCOME_COLUMN_LABELS, strict=True
+    ):
+        table_dict[label] = [outcomes_list[j].get(col, np.nan) for j in range(5)]
+
+    table_wide = pd.DataFrame(table_dict)
+    table = table_wide.set_index("Policy").T
+    table.index.name = "Metric"
+
+    # Delta columns: each leave scenario minus baseline
+    baseline_col = table.columns[0]
+    delta_labels = [
+        "Delta Full Beirat - Baseline",
+        "Delta Partial Beirat - Baseline",
+        "Delta Norwegian (PG) - Baseline",
+        "Delta Norwegian (no PG) - Baseline",
+    ]
+    for leave_col, delta_label in zip(table.columns[1:], delta_labels, strict=True):
+        table[delta_label] = pd.to_numeric(
+            table[leave_col], errors="coerce"
+        ) - pd.to_numeric(table[baseline_col], errors="coerce")
+
+    path_to_save_table.parent.mkdir(parents=True, exist_ok=True)
+    n_data_cols = len(table.columns)
+    latex_str = table.to_latex(
+        float_format="%.2f",
+        column_format="l" + "r" * n_data_cols,
+        caption=(
+            f"Fiscal costs of caregiving policies (life cycle ages {start_age}"
+            f"--{end_age})."
+        ),
+        label="tab:fiscal_costs_caregiving",
+        na_rep="--",
+    )
+    path_to_save_table.write_text(latex_str)
+
+
 def _load_sim_df(path: Path) -> pd.DataFrame:
     """Load a simulation pickle, keeping only the columns needed for fiscal analysis.
 
@@ -215,335 +490,13 @@ def _total_sum_column(df: pd.DataFrame, column: str, wealth_unit: float) -> floa
     return float((rows[column].values * wealth_unit).sum())
 
 
-@pytask.mark.tables
-@pytask.mark.fiscal_costs
-@pytask.mark.publication
-def task_create_fiscal_costs(
-    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
-    path_to_baseline_sim: Path = BLD
-    / "solve_and_simulate"
-    / "simulated_data_estimated_params.pkl",
-    path_to_normal_leave_sim: Path = BLD
-    / "solve_and_simulate"
-    / "simulated_data_caregiving_leave_with_job_retention_estimated_params.pkl",
-    path_to_full_leave_sim: Path = BLD
-    / "solve_and_simulate"
-    / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params.pkl",
-    path_to_save_table: Annotated[Path, Product] = BLD
-    / "tables"
-    / "publication"
-    / "fiscal_costs_caregiving_policies.tex",
-) -> None:
-    """Create LaTeX table of fiscal costs of caregiving policies.
-
-    Three policies:
-    1) Baseline: cash benefits for informal care (care_benefits_and_costs).
-    2) Normal caregiving leave with job retention.
-    3) Full caregiving leave with job retention.
-
-    Life-cycle scope: The fiscal comparison covers the full model life cycle
-    (ages start_age to end_age). This is important because retirement income
-    effects of caregiving policies persist well beyond the caregiving window
-    (end_age_caregiving, typically 70). The max statutory retirement age is 67,
-    but pension income accrues for all subsequent periods.
-    """
-    specs = pickle.load(path_to_specs.open("rb"))
-    wealth_unit = float(specs["wealth_unit"])
-    start_age = int(specs.get("start_age", 30))
-    end_age = int(specs.get("end_age", 100))
-
-    # Load slim DataFrames (only relevant columns)
-    baseline_df = _load_sim_df(path_to_baseline_sim)
-    normal_df = _load_sim_df(path_to_normal_leave_sim)
-    full_df = _load_sim_df(path_to_full_leave_sim)
-
-    # Ensure age column exists
-    for df in (baseline_df, normal_df, full_df):
-        if "age" not in df.columns and "period" in df.columns:
-            df["age"] = start_age + df["period"]
-
-    # Verify period and age evolve identically (age = start_age + period)
-    for label, df in [
-        ("baseline", baseline_df),
-        ("normal", normal_df),
-        ("full", full_df),
-    ]:
-        if "period" in df.columns and "age" in df.columns:
-            assert (
-                df["age"] == start_age + df["period"]
-            ).all(), f"{label}: age != start_age + period"
-
-    # Compute lagged_care_demand (care_demand from t-1, matching lagged_choice)
-    baseline_df = _add_lagged_care_demand(baseline_df)
-    normal_df = _add_lagged_care_demand(normal_df)
-    full_df = _add_lagged_care_demand(full_df)
-
-    cost_baseline, n_baseline, periods_baseline = _total_cost_baseline(
-        baseline_df, wealth_unit
-    )
-    cost_normal, n_normal, periods_normal = _total_cost_leave(normal_df, specs)
-    cost_full, n_full, periods_full = _total_cost_leave(full_df, specs)
-
-    avg_baseline = cost_baseline / n_baseline if n_baseline else np.nan
-    avg_normal = cost_normal / n_normal if n_normal else np.nan
-    avg_full = cost_full / n_full if n_full else np.nan
-
-    avg_years_baseline = periods_baseline / n_baseline if n_baseline else np.nan
-    avg_years_normal = periods_normal / n_normal if n_normal else np.nan
-    avg_years_full = periods_full / n_full if n_full else np.nan
-
-    def _avg_monthly_per_caregiving_month(avg_cost, avg_years):
-        if np.isnan(avg_years) or avg_years <= 0:
-            return np.nan
-        return avg_cost / 12.0 / avg_years
-
-    avg_monthly_baseline = _avg_monthly_per_caregiving_month(
-        avg_baseline, avg_years_baseline
-    )
-    avg_monthly_normal = _avg_monthly_per_caregiving_month(avg_normal, avg_years_normal)
-    avg_monthly_full = _avg_monthly_per_caregiving_month(avg_full, avg_years_full)
-
-    # --- N total agents, share ever caregiving, per-capita cost ---
-    n_total_baseline = _n_total_agents(baseline_df)
-    n_total_normal = _n_total_agents(normal_df)
-    n_total_full = _n_total_agents(full_df)
-
-    def _safe_div(num, den):
-        return num / den if den else np.nan
-
-    share_cg_baseline = _safe_div(n_baseline, n_total_baseline)
-    share_cg_normal = _safe_div(n_normal, n_total_normal)
-    share_cg_full = _safe_div(n_full, n_total_full)
-
-    percap_baseline = _safe_div(cost_baseline, n_total_baseline)
-    percap_normal = _safe_div(cost_normal, n_total_normal)
-    percap_full = _safe_div(cost_full, n_total_full)
-
-    # --- Total gross benefit (leave_top_up for leave; gross care_benefits for baseline)
-    gross_benefit_baseline = cost_baseline
-    gross_benefit_normal = _total_sum_column(
-        normal_df, "caregiving_leave_top_up", wealth_unit
-    )
-    gross_benefit_full = _total_sum_column(
-        full_df, "caregiving_leave_top_up", wealth_unit
-    )
-
-    # --- Total net cost from model aux (NaN if column missing in old sim data) ---
-    net_cost_aux_baseline = cost_baseline
-    net_cost_aux_normal = _total_sum_column(
-        normal_df, "normal_leave_net_cost", wealth_unit
-    )
-    net_cost_aux_full = _total_sum_column(full_df, "full_leave_net_cost", wealth_unit)
-    net_cost_incl_transfer_full = _total_sum_column(
-        full_df, "full_leave_net_cost_incl_transfer", wealth_unit
-    )
-
-    # --- Government cost of formal care (social planner perspective) ---
-    gov_fc_baseline, n_fc_baseline, avg_fc_yrs_baseline = _formal_care_stats(
-        baseline_df
-    )
-    gov_fc_normal, n_fc_normal, avg_fc_yrs_normal = _formal_care_stats(normal_df)
-    gov_fc_full, n_fc_full, avg_fc_yrs_full = _formal_care_stats(full_df)
-
-    # --- Combination care (intensive informal + formal home care services) ---
-    combo_baseline = _combination_care_stats(baseline_df)
-    combo_normal = _combination_care_stats(normal_df)
-    combo_full = _combination_care_stats(full_df)
-
-    # Total government care cost = formal care + combination care
-    gov_total_care_baseline = gov_fc_baseline + combo_baseline["total_cost"]
-    gov_total_care_normal = gov_fc_normal + combo_normal["total_cost"]
-    gov_total_care_full = gov_fc_full + combo_full["total_cost"]
-
-    # Avg per caregiver for outcomes (same rows as cost: lagged_choice in INFORMAL_CARE)
-    outcomes_baseline = _avg_outcomes_per_caregiver(
-        baseline_df, wealth_unit, OUTCOME_COLUMNS_AVG_PER_CAREGIVER
-    )
-    outcomes_normal = _avg_outcomes_per_caregiver(
-        normal_df, wealth_unit, OUTCOME_COLUMNS_AVG_PER_CAREGIVER
-    )
-    outcomes_full = _avg_outcomes_per_caregiver(
-        full_df, wealth_unit, OUTCOME_COLUMNS_AVG_PER_CAREGIVER
-    )
-
-    # =====================================================================
-    # Build table
-    # =====================================================================
-    table_dict = {
-        "Policy": [
-            "Baseline (cash benefits)",
-            r"Normal leave (65\%)",
-            r"Full leave (100\%)",
-        ],
-        "Total cost (net)": [cost_baseline, cost_normal, cost_full],
-        "Total gross benefit": [
-            gross_benefit_baseline,
-            gross_benefit_normal,
-            gross_benefit_full,
-        ],
-        "Total net cost (model)": [
-            net_cost_aux_baseline,
-            net_cost_aux_normal,
-            net_cost_aux_full,
-        ],
-        "Gov. formal care cost (total)": [gov_fc_baseline, gov_fc_normal, gov_fc_full],
-        "Avg. gov. formal care cost per caregiver": [
-            _safe_div(gov_fc_baseline, n_baseline),
-            _safe_div(gov_fc_normal, n_normal),
-            _safe_div(gov_fc_full, n_full),
-        ],
-        "Avg. gov. formal care cost per FC user": [
-            _safe_div(gov_fc_baseline, n_fc_baseline),
-            _safe_div(gov_fc_normal, n_fc_normal),
-            _safe_div(gov_fc_full, n_fc_full),
-        ],
-        "Avg. gov. FC cost per CG (pct of baseline)": [
-            np.nan,
-            _safe_div(
-                _safe_div(gov_fc_normal, n_normal),
-                _safe_div(gov_fc_baseline, n_baseline),
-            )
-            * 100,
-            _safe_div(
-                _safe_div(gov_fc_full, n_full),
-                _safe_div(gov_fc_baseline, n_baseline),
-            )
-            * 100,
-        ],
-        "Avg. gov. FC cost per FC user (pct of baseline)": [
-            np.nan,
-            _safe_div(
-                _safe_div(gov_fc_normal, n_fc_normal),
-                _safe_div(gov_fc_baseline, n_fc_baseline),
-            )
-            * 100,
-            _safe_div(
-                _safe_div(gov_fc_full, n_fc_full),
-                _safe_div(gov_fc_baseline, n_fc_baseline),
-            )
-            * 100,
-        ],
-        "Gov. formal care cost per capita": [
-            _safe_div(gov_fc_baseline, n_total_baseline),
-            _safe_div(gov_fc_normal, n_total_normal),
-            _safe_div(gov_fc_full, n_total_full),
-        ],
-        "Avg. formal care years": [
-            avg_fc_yrs_baseline,
-            avg_fc_yrs_normal,
-            avg_fc_yrs_full,
-        ],
-        "N formal care users": [n_fc_baseline, n_fc_normal, n_fc_full],
-        # --- Combination care ---
-        "Gov. combination care cost (total)": [
-            combo_baseline["total_cost"],
-            combo_normal["total_cost"],
-            combo_full["total_cost"],
-        ],
-        "Avg. gov. combo care cost per caregiver": [
-            _safe_div(combo_baseline["total_cost"], n_baseline),
-            _safe_div(combo_normal["total_cost"], n_normal),
-            _safe_div(combo_full["total_cost"], n_full),
-        ],
-        "Avg. gov. combo care cost per eligible": [
-            combo_baseline["avg_cost_per_eligible"],
-            combo_normal["avg_cost_per_eligible"],
-            combo_full["avg_cost_per_eligible"],
-        ],
-        "Avg. gov. combo care cost per combo user": [
-            combo_baseline["avg_cost_per_combo_user"],
-            combo_normal["avg_cost_per_combo_user"],
-            combo_full["avg_cost_per_combo_user"],
-        ],
-        "Avg. combination care years (eligible)": [
-            combo_baseline["avg_combo_years"],
-            combo_normal["avg_combo_years"],
-            combo_full["avg_combo_years"],
-        ],
-        "Avg. combination care years (per user)": [
-            combo_baseline["avg_combo_years_per_user"],
-            combo_normal["avg_combo_years_per_user"],
-            combo_full["avg_combo_years_per_user"],
-        ],
-        "N eligible for combo care": [
-            combo_baseline["n_eligible_agents"],
-            combo_normal["n_eligible_agents"],
-            combo_full["n_eligible_agents"],
-        ],
-        "N combo care users (expected)": [
-            combo_baseline["n_expected_combo_users"],
-            combo_normal["n_expected_combo_users"],
-            combo_full["n_expected_combo_users"],
-        ],
-        # --- Total government care cost (formal + combination) ---
-        "Gov. total care cost": [
-            gov_total_care_baseline,
-            gov_total_care_normal,
-            gov_total_care_full,
-        ],
-        "Gov. total care cost per caregiver": [
-            _safe_div(gov_total_care_baseline, n_baseline),
-            _safe_div(gov_total_care_normal, n_normal),
-            _safe_div(gov_total_care_full, n_full),
-        ],
-        "Gov. total care cost per capita": [
-            _safe_div(gov_total_care_baseline, n_total_baseline),
-            _safe_div(gov_total_care_normal, n_total_normal),
-            _safe_div(gov_total_care_full, n_total_full),
-        ],
-        "N caregivers": [n_baseline, n_normal, n_full],
-        "N total agents": [n_total_baseline, n_total_normal, n_total_full],
-        "Share ever caregiving": [share_cg_baseline, share_cg_normal, share_cg_full],
-        "Avg. caregiving years": [
-            avg_years_baseline,
-            avg_years_normal,
-            avg_years_full,
-        ],
-        "Avg cost per caregiver": [avg_baseline, avg_normal, avg_full],
-        "Per-capita cost (all agents)": [percap_baseline, percap_normal, percap_full],
-        "Avg. monthly cost per CG month": [
-            avg_monthly_baseline,
-            avg_monthly_normal,
-            avg_monthly_full,
-        ],
-    }
-    for col, label in zip(
-        OUTCOME_COLUMNS_AVG_PER_CAREGIVER, OUTCOME_COLUMN_LABELS, strict=True
-    ):
-        table_dict[label] = [
-            outcomes_baseline[col],
-            outcomes_normal[col],
-            outcomes_full[col],
-        ]
-    table_wide = pd.DataFrame(table_dict)
-
-    # Transpose: metrics as rows, policies as columns.
-    table = table_wide.set_index("Policy").T
-    table.index.name = "Metric"
-
-    # Compute delta columns
-    baseline_col = table.columns[0]
-    for leave_col, delta_label in [
-        (table.columns[1], "Delta Normal - Baseline"),
-        (table.columns[2], "Delta Full - Baseline"),
-    ]:
-        table[delta_label] = pd.to_numeric(
-            table[leave_col], errors="coerce"
-        ) - pd.to_numeric(table[baseline_col], errors="coerce")
-
-    path_to_save_table.parent.mkdir(parents=True, exist_ok=True)
-    n_data_cols = len(table.columns)
-    latex_str = table.to_latex(
-        float_format="%.2f",
-        column_format="l" + "r" * n_data_cols,
-        caption=(
-            f"Fiscal costs of caregiving policies (life cycle ages {start_age}"
-            f"--{end_age})."
-        ),
-        label="tab:fiscal_costs_caregiving",
-        na_rep="--",
-    )
-    path_to_save_table.write_text(latex_str)
+def _total_leave_net_cost_aux(df: pd.DataFrame, wealth_unit: float) -> float:
+    """Total net cost from model aux: full_leave_net_cost if present, else normal_leave_net_cost."""
+    for col in ("full_leave_net_cost", "normal_leave_net_cost"):
+        val = _total_sum_column(df, col, wealth_unit)
+        if val == val:  # false for NaN
+            return float(val)
+    return np.nan
 
 
 def _total_cost_baseline(

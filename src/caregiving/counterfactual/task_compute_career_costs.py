@@ -26,6 +26,12 @@ from caregiving.model.shared import (
 def task_compute_career_costs(
     # Baseline
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    # path_to_original_data: Path = BLD
+    # / "solve_and_simulate"
+    # / "simulated_data_estimated_params_career_costs.pkl",
+    # path_to_no_care_demand_data: Path = BLD
+    # / "solve_and_simulate"
+    # / "simulated_data_no_care_demand_career_costs.pkl",
     path_to_original_data: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_estimated_params_career_costs.pkl",

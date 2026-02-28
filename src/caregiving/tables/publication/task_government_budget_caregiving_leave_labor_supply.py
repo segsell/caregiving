@@ -51,26 +51,32 @@ def task_labor_supply_by_age_caregiving_leave_full_vs_normal(  # noqa: PLR0915
     path_to_save_ft_levels: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
+    / "budget_plots"
     / "caregiving_leave_full_time_share_by_age_levels.pdf",
     path_to_save_ft_difference: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
+    / "budget_plots"
     / "caregiving_leave_full_time_share_by_age_difference.pdf",
     path_to_save_pt_levels: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
+    / "budget_plots"
     / "caregiving_leave_part_time_share_by_age_levels.pdf",
     path_to_save_pt_difference: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
+    / "budget_plots"
     / "caregiving_leave_part_time_share_by_age_difference.pdf",
     path_to_save_unemp_levels: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
+    / "budget_plots"
     / "caregiving_leave_unemployed_share_by_age_levels.pdf",
     path_to_save_unemp_difference: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
+    / "budget_plots"
     / "caregiving_leave_unemployed_share_by_age_difference.pdf",
     restrict_same_agents: bool = True,
     ever_care_demand: bool = True,
@@ -234,10 +240,12 @@ def task_working_share_by_age_caregiving_leave_full_vs_normal(
     path_to_save_levels: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
+    / "budget_plots"
     / "caregiving_leave_working_share_by_age_levels.pdf",
     path_to_save_difference: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
+    / "budget_plots"
     / "caregiving_leave_working_share_by_age_difference.pdf",
     restrict_same_agents: bool = True,
     ever_care_demand: bool = True,

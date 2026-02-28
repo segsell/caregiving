@@ -65,10 +65,12 @@ def task_income_tax_by_age_caregiving_leave_policy_scenarios(
     path_to_save_plot_levels: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
+    / "budget_plots"
     / "government_budget_income_tax_by_age_caregiving_leave_levels.pdf",
     path_to_save_plot_difference: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
+    / "budget_plots"
     / "government_budget_income_tax_by_age_caregiving_leave_difference.pdf",
     monthly: bool = False,
     only_caregivers: bool = False,

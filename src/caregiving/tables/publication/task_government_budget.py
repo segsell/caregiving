@@ -28,10 +28,12 @@ def task_compute_government_budget_baseline_vs_no_care_demand(
     path_to_save_plot_levels: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
+    / "budget_plots"
     / "government_budget_income_tax_by_age_levels.pdf",
     path_to_save_plot_difference: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
+    / "budget_plots"
     / "government_budget_income_tax_by_age_difference.pdf",
     restrict_same_agents: bool = True,
     ever_care_demand: bool = True,
