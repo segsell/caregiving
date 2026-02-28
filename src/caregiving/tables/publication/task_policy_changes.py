@@ -1266,7 +1266,11 @@ def panel_lifecycle_by_edu(
         else np.nan
     )
 
-    for bin_label, lo, hi in [("30--39", 30, 39), ("40--49", 40, 49), ("50--59", 50, 59)]:
+    for bin_label, lo, hi in [
+        ("30--39", 30, 39),
+        ("40--49", 40, 49),
+        ("50--59", 50, 59),
+    ]:
         age_bin = ever_cg[(ever_cg["age"] >= lo) & (ever_cg["age"] <= hi)]
         rows[f"Avg. consumption (ever CG, {bin_label}) [{label}]"] = (
             safe_mean(age_bin["consumption"]) * wealth_unit
