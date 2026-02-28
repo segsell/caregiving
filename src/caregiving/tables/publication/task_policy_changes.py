@@ -231,6 +231,37 @@ def task_create_policy_changes_table_full_beirat(
     )
 
 
+@pytask.mark.tables
+@pytask.mark.policy_changes
+@pytask.mark.policy_changes_new
+@pytask.mark.publication
+def task_create_policy_changes_table_full_beirat_no_pflegegeld(
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_baseline_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params.pkl",
+    path_to_normal_leave_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_caregiving_leave_full_beirat_estimated_params.pkl",
+    path_to_full_leave_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params_no_pflegegeld.pkl",
+    path_to_save_table: Annotated[Path, Product] = BLD
+    / "tables"
+    / "publication"
+    / "policy_behavioral_changes_full_beirat_no_pflegegeld.tex",
+) -> None:
+    """Policy changes table: full Beirat leave vs full CG leave (without Pflegegeld)."""
+    build_policy_changes_table(
+        path_to_specs,
+        path_to_baseline_sim,
+        path_to_normal_leave_sim,
+        path_to_full_leave_sim,
+        path_to_save_table,
+        table_label="tab:policy_behavioral_changes_full_beirat_no_pflegegeld",
+    )
+
+
 # @pytask.mark.tables
 # @pytask.mark.policy_changes
 # @pytask.mark.policy_changes_new
@@ -290,6 +321,42 @@ def task_create_policy_changes_table_full_leave_pflegegeld_comparison(
         path_to_full_leave_sim,
         path_to_save_table,
         table_label="tab:policy_behavioral_changes_full_leave_pflegegeld",
+    )
+
+
+@pytask.mark.tables
+@pytask.mark.policy_changes
+@pytask.mark.policy_changes_neww
+@pytask.mark.publication
+def task_create_policy_changes_table_beirat_comparison(
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_baseline_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params.pkl",
+    path_to_normal_leave_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_caregiving_leave_beirat_estimated_params.pkl",
+    path_to_full_leave_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_caregiving_leave_full_beirat_estimated_params.pkl",
+    path_to_save_table: Annotated[Path, Product] = BLD
+    / "tables"
+    / "publication"
+    / "policy_behavioral_changes_beirat_comparison.tex",
+) -> None:
+    """Beirat partial-leave-only vs full Beirat (both against baseline).
+
+    Both variants retain baseline Pflegegeld; they differ in the leave
+    top-up: the partial-only variant pays 65% only to PT CG with prior FT,
+    while the full variant also covers up to 1 year for unemployed CG.
+    """
+    build_policy_changes_table(
+        path_to_specs,
+        path_to_baseline_sim,
+        path_to_normal_leave_sim,
+        path_to_full_leave_sim,
+        path_to_save_table,
+        table_label="tab:policy_behavioral_changes_beirat_comparison",
     )
 
 
@@ -406,19 +473,26 @@ def build_policy_changes_table(
         all_metrics_full.update(fl)
 
     metrics = list(all_metrics_baseline.keys())
+    for k in all_metrics_normal:
+        if k not in all_metrics_baseline:
+            metrics.append(k)
+    for k in all_metrics_full:
+        if k not in all_metrics_baseline and k not in all_metrics_normal:
+            metrics.append(k)
+
     table_dict = {
         "Metric": metrics,
-        "Baseline": [all_metrics_baseline[m] for m in metrics],
-        "Normal leave": [all_metrics_normal[m] for m in metrics],
-        "Full leave": [all_metrics_full[m] for m in metrics],
+        "Baseline": [all_metrics_baseline.get(m, np.nan) for m in metrics],
+        "Normal leave": [all_metrics_normal.get(m, np.nan) for m in metrics],
+        "Full leave": [all_metrics_full.get(m, np.nan) for m in metrics],
     }
 
     pct_normal = []
     pct_full = []
     for m in metrics:
-        bv = all_metrics_baseline[m]
-        nv = all_metrics_normal[m]
-        fv = all_metrics_full[m]
+        bv = all_metrics_baseline.get(m, np.nan)
+        nv = all_metrics_normal.get(m, np.nan)
+        fv = all_metrics_full.get(m, np.nan)
         if isinstance(bv, str) or isinstance(nv, str):
             pct_normal.append("")
             pct_full.append("")
@@ -635,15 +709,20 @@ def panel_d_ever_cg_labor(df: pd.DataFrame) -> dict[str, float]:
 def panel_e_cg_benefits(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]:
     """Average benefit/top-up while caregiving, conditional on labor state.
 
-    Baseline sim data contains ``care_benefits_and_costs`` (Pflegegeld);
-    leave sim data contains ``caregiving_leave_top_up`` instead.
+    For the baseline, reports ``care_benefits_and_costs`` (Pflegegeld).
+    For leave models, reports ``caregiving_leave_top_up`` as the primary
+    benefit. When a leave model also retains Pflegegeld (both columns
+    present), additional rows report Pflegegeld and total transfers.
     Benefits are stored divided by wealth_unit in the sim data.
     """
     informal = np.asarray(INFORMAL_CARE).ravel()
 
-    if "caregiving_leave_top_up" in df.columns:
+    has_leave = "caregiving_leave_top_up" in df.columns
+    has_pflegegeld = "care_benefits_and_costs" in df.columns
+
+    if has_leave:
         benefit_col = "caregiving_leave_top_up"
-    elif "care_benefits_and_costs" in df.columns:
+    elif has_pflegegeld:
         benefit_col = "care_benefits_and_costs"
     else:
         benefit_col = None
@@ -667,6 +746,52 @@ def panel_e_cg_benefits(df: pd.DataFrame, wealth_unit: float) -> dict[str, float
                 rows[f"{outcome_label} ({age_label})"] = (
                     float(cg[benefit_col].mean()) * wealth_unit
                 )
+
+    if has_leave and has_pflegegeld:
+        pflegegeld_states = [
+            ("Avg. Pflegegeld FT CG", CG_FT),
+            ("Avg. Pflegegeld PT CG", CG_PT),
+            ("Avg. Pflegegeld unemp. CG", CG_UNEMPLOYED),
+            ("Avg. Pflegegeld retired CG", CG_RETIRED),
+            ("Avg. Pflegegeld all CG", list(informal)),
+        ]
+        for outcome_label, lag_choices in pflegegeld_states:
+            for age_label, lo, hi in AGE_GROUPS_CAREGIVING:
+                sub = df[(df["age"] >= lo) & (df["age"] <= hi)]
+                cg = sub[sub["lagged_choice"].isin(lag_choices)]
+                if cg.empty or "care_benefits_and_costs" not in cg.columns:
+                    rows[f"{outcome_label} ({age_label})"] = np.nan
+                else:
+                    rows[f"{outcome_label} ({age_label})"] = (
+                        float(cg["care_benefits_and_costs"].mean()) * wealth_unit
+                    )
+
+        total_states = [
+            ("Avg. total transfer FT CG", CG_FT),
+            ("Avg. total transfer PT CG", CG_PT),
+            ("Avg. total transfer unemp. CG", CG_UNEMPLOYED),
+            ("Avg. total transfer retired CG", CG_RETIRED),
+            ("Avg. total transfer all CG", list(informal)),
+        ]
+        for outcome_label, lag_choices in total_states:
+            for age_label, lo, hi in AGE_GROUPS_CAREGIVING:
+                sub = df[(df["age"] >= lo) & (df["age"] <= hi)]
+                cg = sub[sub["lagged_choice"].isin(lag_choices)]
+                if cg.empty:
+                    rows[f"{outcome_label} ({age_label})"] = np.nan
+                else:
+                    leave_val = (
+                        float(cg["caregiving_leave_top_up"].mean()) * wealth_unit
+                        if "caregiving_leave_top_up" in cg.columns
+                        else 0.0
+                    )
+                    pg_val = (
+                        float(cg["care_benefits_and_costs"].mean()) * wealth_unit
+                        if "care_benefits_and_costs" in cg.columns
+                        else 0.0
+                    )
+                    rows[f"{outcome_label} ({age_label})"] = leave_val + pg_val
+
     return rows
 
 
@@ -689,6 +814,15 @@ def panel_f_economic(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]:
         if "consumption" in sub.columns
         else np.nan
     )
+
+    informal = np.asarray(INFORMAL_CARE).ravel()
+    active_cg = sub[sub["lagged_choice"].isin(informal)]
+    rows["Avg. consumption (active CG, < 63)"] = (
+        safe_mean(active_cg["consumption"]) * wealth_unit
+        if "consumption" in active_cg.columns and not active_cg.empty
+        else np.nan
+    )
+
     rows["Avg. working hours (< 63)"] = (
         safe_mean(sub["working_hours"]) if "working_hours" in sub.columns else np.nan
     )
@@ -1062,11 +1196,22 @@ def panel_lifecycle_by_edu(
 
     rows: dict[str, float] = {}
 
+    has_cons = "consumption" in df.columns
+
+    nan_keys = [
+        f"Avg. gross labor inc. (ever CG, 30--67) [{label}]",
+        f"Avg. gross pension inc. (ever CG, ret) [{label}]",
+        f"Avg. benefit per CG period [{label}]",
+        f"Avg. consumption (ever CG, <63) [{label}]",
+        f"Avg. consumption (ever CG, active CG) [{label}]",
+        f"Avg. consumption (ever CG, 30--39) [{label}]",
+        f"Avg. consumption (ever CG, 40--49) [{label}]",
+        f"Avg. consumption (ever CG, 50--59) [{label}]",
+        f"Avg. consumption (ever CG, retired) [{label}]",
+    ]
     if ever_cg.empty:
-        rows[f"Avg. gross labor inc. (ever CG, 30--67) [{label}]"] = np.nan
-        rows[f"Avg. gross pension inc. (ever CG, ret) [{label}]"] = np.nan
-        rows[f"Avg. benefit per CG period [{label}]"] = np.nan
-        rows[f"Avg. consumption (ever CG, <63) [{label}]"] = np.nan
+        for k in nan_keys:
+            rows[k] = np.nan
         return rows
 
     working_age = ever_cg[(ever_cg["age"] >= 30) & (ever_cg["age"] <= 67)]
@@ -1083,9 +1228,12 @@ def panel_lifecycle_by_edu(
         else np.nan
     )
 
-    if "caregiving_leave_top_up" in ever_cg.columns:
+    has_leave = "caregiving_leave_top_up" in ever_cg.columns
+    has_pflegegeld = "care_benefits_and_costs" in ever_cg.columns
+
+    if has_leave:
         benefit_col = "caregiving_leave_top_up"
-    elif "care_benefits_and_costs" in ever_cg.columns:
+    elif has_pflegegeld:
         benefit_col = "care_benefits_and_costs"
     else:
         benefit_col = None
@@ -1098,10 +1246,38 @@ def panel_lifecycle_by_edu(
     else:
         rows[f"Avg. benefit per CG period [{label}]"] = np.nan
 
+    if has_leave and has_pflegegeld and not cg_periods.empty:
+        pg_val = safe_mean(cg_periods["care_benefits_and_costs"]) * wealth_unit
+        leave_val = safe_mean(cg_periods["caregiving_leave_top_up"]) * wealth_unit
+        rows[f"Avg. Pflegegeld per CG period [{label}]"] = pg_val
+        rows[f"Avg. total transfer per CG period [{label}]"] = leave_val + pg_val
+    elif has_leave and has_pflegegeld:
+        rows[f"Avg. Pflegegeld per CG period [{label}]"] = np.nan
+        rows[f"Avg. total transfer per CG period [{label}]"] = np.nan
+
     under63 = ever_cg[ever_cg["age"] < 63]
     rows[f"Avg. consumption (ever CG, <63) [{label}]"] = (
-        safe_mean(under63["consumption"]) * wealth_unit
-        if "consumption" in under63.columns
+        safe_mean(under63["consumption"]) * wealth_unit if has_cons else np.nan
+    )
+
+    rows[f"Avg. consumption (ever CG, active CG) [{label}]"] = (
+        safe_mean(cg_periods["consumption"]) * wealth_unit
+        if has_cons and not cg_periods.empty
+        else np.nan
+    )
+
+    for bin_label, lo, hi in [("30--39", 30, 39), ("40--49", 40, 49), ("50--59", 50, 59)]:
+        age_bin = ever_cg[(ever_cg["age"] >= lo) & (ever_cg["age"] <= hi)]
+        rows[f"Avg. consumption (ever CG, {bin_label}) [{label}]"] = (
+            safe_mean(age_bin["consumption"]) * wealth_unit
+            if has_cons and not age_bin.empty
+            else np.nan
+        )
+
+    ret_ever_cg = ever_cg[ever_cg["choice"].isin(retired_choices)]
+    rows[f"Avg. consumption (ever CG, retired) [{label}]"] = (
+        safe_mean(ret_ever_cg["consumption"]) * wealth_unit
+        if has_cons and not ret_ever_cg.empty
         else np.nan
     )
 
