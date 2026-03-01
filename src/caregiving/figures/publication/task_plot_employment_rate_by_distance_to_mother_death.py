@@ -1923,8 +1923,14 @@ def plot_employment_rate_by_distance_to_mother_death(  # noqa: PLR0912, PLR0913
     )
 
     # Formatting
-    plt.xlabel("Year relative to mother's death", fontsize=S["label_fontsize"], labelpad=S.get("labelpad", 14))
-    plt.ylabel("Employment Rate", fontsize=S["label_fontsize"], labelpad=S.get("labelpad", 14))
+    plt.xlabel(
+        "Year relative to mother's death",
+        fontsize=S["label_fontsize"],
+        labelpad=S.get("labelpad", 14),
+    )
+    plt.ylabel(
+        "Employment Rate", fontsize=S["label_fontsize"], labelpad=S.get("labelpad", 14)
+    )
     plt.xlim(-window_low - 0.5, window_high + 0.5)
     plt.ylim(-0.025, 1.0)
     plt.grid(True, axis="y", alpha=S["grid_alpha"], linewidth=S["grid_linewidth"])
@@ -2621,8 +2627,14 @@ def plot_employment_rate_by_distance_to_mother_death_care_demand(  # noqa: PLR09
     )
 
     # Formatting
-    plt.xlabel("Year relative to mother's death", fontsize=S["label_fontsize"], labelpad=S.get("labelpad", 14))
-    plt.ylabel("Employment Rate", fontsize=S["label_fontsize"], labelpad=S.get("labelpad", 14))
+    plt.xlabel(
+        "Year relative to mother's death",
+        fontsize=S["label_fontsize"],
+        labelpad=S.get("labelpad", 14),
+    )
+    plt.ylabel(
+        "Employment Rate", fontsize=S["label_fontsize"], labelpad=S.get("labelpad", 14)
+    )
     plt.xlim(-window_low - 0.5, window_high + 0.5)
     plt.ylim(-0.025, 1.0)
     plt.grid(True, axis="y", alpha=S["grid_alpha"], linewidth=S["grid_linewidth"])
