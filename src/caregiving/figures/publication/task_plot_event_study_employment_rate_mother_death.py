@@ -1182,8 +1182,8 @@ def plot_employment_rate_difference_by_distance_to_mother_death(  # noqa: PLR091
     )
 
     # Formatting
-    plt.xlabel(xlabel, fontsize=S["label_fontsize"])
-    plt.ylabel("Difference in employment rate", fontsize=S["label_fontsize"])
+    plt.xlabel(xlabel, fontsize=S["label_fontsize"], labelpad=S.get("labelpad", 14))
+    plt.ylabel("Difference in employment rate", fontsize=S["label_fontsize"], labelpad=S.get("labelpad", 14))
     # Add padding: x-axis extends beyond -window_low and window_high
     plt.xlim(-window_low - 0.5, window_high + 0.5)
     # Y-axis range: adjust based on typical differences (can be negative or positive)
@@ -1366,8 +1366,8 @@ def plot_employment_rate_difference_by_distance_to_mother_death_consecutive(  # 
     )
 
     # Formatting
-    plt.xlabel(xlabel, fontsize=S["label_fontsize"])
-    plt.ylabel("Difference in employment rate", fontsize=S["label_fontsize"])
+    plt.xlabel(xlabel, fontsize=S["label_fontsize"], labelpad=S.get("labelpad", 14))
+    plt.ylabel("Difference in employment rate", fontsize=S["label_fontsize"], labelpad=S.get("labelpad", 14))
     plt.xlim(-window_low - 0.5, window_high + 0.5)
     # Collect all differences from all series
     all_diffs = []
@@ -1545,8 +1545,8 @@ def plot_employment_rate_difference_by_distance_to_mother_death_care_demand(  # 
     )
 
     # Formatting
-    plt.xlabel(xlabel, fontsize=S["label_fontsize"])
-    plt.ylabel("Difference in employment rate", fontsize=S["label_fontsize"])
+    plt.xlabel(xlabel, fontsize=S["label_fontsize"], labelpad=S.get("labelpad", 14))
+    plt.ylabel("Difference in employment rate", fontsize=S["label_fontsize"], labelpad=S.get("labelpad", 14))
     plt.xlim(-window_low - 0.5, window_high + 0.5)
     all_diffs = []
     if len(prof_diff) > 0:

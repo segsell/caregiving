@@ -29,6 +29,7 @@ from caregiving.counterfactual.plotting_helpers import (
     calculate_simple_outcomes,
     event_study_total_caregiving_merged_and_profiles,
     get_age_at_first_event,
+    get_publication_plot_style,
     identify_agents_by_total_caregiving_over_lifecycle,
     job_offer_outcome_series,
     plot_outcome_difference_by_distance_total_caregiving,
@@ -80,23 +81,27 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 
         window_by_age overrides window_low/window_high per age group; keys are AGE_GROUPS_EVENT_STUDY
         labels ("all_ages", "ages_40_49", "ages_50_59", "ages_60_70"); value is (window_low, window_high).
+
         """
 
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
         else:
             w_low, w_high = window_low, window_high
+
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
 
         start_age = int(specs["start_age"])
         end_age_caregiving = int(specs["end_age_caregiving"])
+
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
             pd.read_pickle(path_to_no_care_demand_data),
             ever_caregivers,
             ever_care_demand,
         )
+
         o_work, _, _ = calculate_simple_outcomes(df_o, "original")
         c_work, _, _ = calculate_simple_outcomes(df_c, "no_care_demand")
         _, prof_diff, p1, p2, p3, p4, p5 = (
@@ -127,6 +132,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             ylabel="Difference in employment rate",
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )
 
 
@@ -142,6 +149,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_employment_rate_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params_back_to_Jan7.pkl",
@@ -206,6 +214,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             ylabel="Difference in employment rate",
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )
 
 
@@ -223,6 +233,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_employment_rate_by_distance_to_first_caregiving_spell_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params.pkl",
@@ -287,6 +298,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             ylabel="Difference in employment rate",
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )
 
 
@@ -302,6 +315,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_employment_rate_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params_back_to_Jan7.pkl",
@@ -366,6 +380,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             ylabel="Difference in employment rate",
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )
 
 
@@ -381,6 +397,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_full_time_by_distance_to_first_care_demand_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params.pkl",
@@ -445,6 +462,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             ylabel="Difference in full-time rate",
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )
 
 
@@ -458,6 +477,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_full_time_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params_back_to_Jan7.pkl",
@@ -522,6 +542,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             ylabel="Difference in full-time rate",
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )
 
 
@@ -537,6 +559,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_full_time_by_distance_to_first_caregiving_spell_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params.pkl",
@@ -601,6 +624,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             ylabel="Difference in full-time rate",
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )
 
 
@@ -614,6 +639,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_full_time_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params_back_to_Jan7.pkl",
@@ -678,6 +704,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             ylabel="Difference in full-time rate",
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )
 
 
@@ -693,6 +721,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_part_time_by_distance_to_first_care_demand_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params.pkl",
@@ -757,6 +786,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             ylabel="Difference in part-time rate",
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )
 
 
@@ -769,6 +800,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_part_time_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params_back_to_Jan7.pkl",
@@ -833,6 +865,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             ylabel="Difference in part-time rate",
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )
 
 
@@ -847,6 +881,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_part_time_by_distance_to_first_caregiving_spell_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params.pkl",
@@ -911,6 +946,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             ylabel="Difference in part-time rate",
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )
 
 
@@ -923,6 +960,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_part_time_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params_back_to_Jan7.pkl",
@@ -987,6 +1025,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             ylabel="Difference in part-time rate",
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )
 
 
@@ -1002,6 +1042,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_working_hours_by_distance_to_first_care_demand_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params.pkl",
@@ -1075,6 +1116,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             xlabel="Year relative to start of first care demand",
             ylabel="Difference in weekly working hours",
             endogenous_ylim=True,
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )
 
 
@@ -1087,6 +1130,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_working_hours_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params_back_to_Jan7.pkl",
@@ -1160,6 +1204,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             xlabel="Year relative to start of first care demand",
             ylabel="Difference in weekly working hours",
             endogenous_ylim=True,
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )
 
 
@@ -1174,6 +1220,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_working_hours_by_distance_to_first_caregiving_spell_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params.pkl",
@@ -1247,6 +1294,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             xlabel="Year relative to start of first caregiving spell",
             ylabel="Difference in weekly working hours",
             endogenous_ylim=True,
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )
 
 
@@ -1261,6 +1310,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_working_hours_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params_back_to_Jan7.pkl",
@@ -1334,6 +1384,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             xlabel="Year relative to start of first caregiving spell",
             ylabel="Difference in weekly working hours",
             endogenous_ylim=True,
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )
 
 
@@ -1349,6 +1401,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_labor_income_by_distance_to_first_care_demand_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params.pkl",
@@ -1422,6 +1475,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             xlabel="Year relative to start of first care demand",
             ylabel="Difference in monthly gross labor income",
             endogenous_ylim=True,
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )
 
 
@@ -1434,6 +1489,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_labor_income_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params_back_to_Jan7.pkl",
@@ -1507,6 +1563,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             xlabel="Year relative to start of first care demand",
             ylabel="Difference in monthly gross labor income",
             endogenous_ylim=True,
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )
 
 
@@ -1521,6 +1579,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_labor_income_by_distance_to_first_caregiving_spell_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params.pkl",
@@ -1594,6 +1653,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             xlabel="Year relative to start of first caregiving spell",
             ylabel="Difference in monthly gross labor income",
             endogenous_ylim=True,
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )
 
 
@@ -1606,6 +1667,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_labor_income_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params_back_to_Jan7.pkl",
@@ -1679,6 +1741,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             xlabel="Year relative to start of first caregiving spell",
             ylabel="Difference in monthly gross labor income",
             endogenous_ylim=True,
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )
 
 
@@ -1695,6 +1759,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_job_finding_by_distance_to_first_care_demand_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params.pkl",
@@ -1759,6 +1824,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             ylabel="Difference in job finding rate",
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )
 
 
@@ -1772,6 +1839,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_job_finding_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params_back_to_Jan7.pkl",
@@ -1836,6 +1904,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             ylabel="Difference in job finding rate",
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )
 
 
@@ -1851,6 +1921,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_job_finding_by_distance_to_first_caregiving_spell_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params.pkl",
@@ -1915,6 +1986,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             ylabel="Difference in job finding rate",
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )
 
 
@@ -1928,6 +2001,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_job_finding_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params_back_to_Jan7.pkl",
@@ -1992,6 +2066,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             ylabel="Difference in job finding rate",
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )
 
 
@@ -2008,6 +2084,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_job_retention_by_distance_to_first_care_demand_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params.pkl",
@@ -2072,6 +2149,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             ylabel="Difference in job retention rate",
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )
 
 
@@ -2085,6 +2164,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_job_retention_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params_back_to_Jan7.pkl",
@@ -2149,6 +2229,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
             ylabel="Difference in job retention rate",
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )
 
 
@@ -2164,6 +2246,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_job_retention_by_distance_to_first_caregiving_spell_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params.pkl",
@@ -2228,6 +2311,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             ylabel="Difference in job retention rate",
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )
 
 
@@ -2243,6 +2328,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     def task_plot_event_study_job_retention_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
+        age_label: str = age_label_val,
         path_to_original_data: Path = BLD
         / "solve_and_simulate"
         / "simulated_data_estimated_params_back_to_Jan7.pkl",
@@ -2307,4 +2393,6 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first caregiving spell",
             ylabel="Difference in job retention rate",
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
         )

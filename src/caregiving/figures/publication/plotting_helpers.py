@@ -708,8 +708,8 @@ def plot_employment_rate_by_distance(  # noqa: PLR0913
                 linestyle=(0, (3, 3)),
                 linewidth=0.8,
             )
-    plt.xlabel(xlabel, fontsize=S["label_fontsize"])
-    plt.ylabel(ylabel, fontsize=S["label_fontsize"])
+    plt.xlabel(xlabel, fontsize=S["label_fontsize"], labelpad=S.get("labelpad", 14))
+    plt.ylabel(ylabel, fontsize=S["label_fontsize"], labelpad=S.get("labelpad", 14))
     plt.xlim(w_low - 0.5, window_high + 0.5)
     if ylim is not None:
         plt.ylim(ylim[0], ylim[1])

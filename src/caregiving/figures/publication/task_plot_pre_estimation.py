@@ -10,6 +10,7 @@ import pytask
 from pytask import Product
 
 from caregiving.config import BLD
+from caregiving.counterfactual.plotting_helpers import PUBLICATION_PLOT_STYLE
 from caregiving.model.stochastic_processes.adl_transition import (
     death_transition,
     limitations_with_adl_transition,
@@ -19,8 +20,6 @@ from caregiving.model.stochastic_processes.caregiving_transition import (
 )
 
 
-@pytask.mark.publication
-@pytask.mark.publication_pre_estimation
 def task_plot_care_demand_transition_adl_and_dead_state(  # noqa: PLR0912, PLR0915
     path_to_states: Path = BLD / "model" / "initial_conditions" / "initial_states.pkl",
     path_to_full_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
@@ -487,6 +486,9 @@ def task_plot_care_demand_transition_adl_shaded(  # noqa: PLR0912, PLR0915
     share_light_plot = share_light[mask]
     share_intensive_plot = share_intensive[mask]
 
+    style = PUBLICATION_PLOT_STYLE
+    plt.rcParams["font.family"] = style["font_family"]
+
     fig, ax = plt.subplots(figsize=(10, 8))
 
     linewidth = 2.0
@@ -534,6 +536,7 @@ def task_plot_care_demand_transition_adl_shaded(  # noqa: PLR0912, PLR0915
             fontsize=14,
             ha="center",
             va="center",
+            clip_on=False,
         )
 
     if share_intensive_area[intensive_idx] > 0:
@@ -545,6 +548,7 @@ def task_plot_care_demand_transition_adl_shaded(  # noqa: PLR0912, PLR0915
             fontsize=14,
             ha="center",
             va="center",
+            clip_on=False,
         )
 
     ax.set_xlim(age_min_plot - 0.5, age_max_plot + 0.5)
@@ -553,15 +557,21 @@ def task_plot_care_demand_transition_adl_shaded(  # noqa: PLR0912, PLR0915
 
     ax.set_xlabel("Age", fontsize=16)
     ax.set_ylabel("Share", fontsize=16)
-    ax.tick_params(axis="both", labelsize=14, length=8)
+    ax.tick_params(axis="both", labelsize=14, length=8, pad=6)
 
-    ax.grid(True, axis="y", alpha=0.3, linewidth=0.8)
+    ax.grid(True, axis="y", alpha=0.10, linewidth=0.8)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
 
-    plt.tight_layout()
+    plt.tight_layout(pad=1.2)
+    plt.subplots_adjust(left=0.14, bottom=0.12)
     path_to_save.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(path_to_save, dpi=1200, bbox_inches="tight")
+    plt.savefig(
+        path_to_save,
+        dpi=style["savefig_dpi"],
+        bbox_inches="tight",
+        pad_inches=style["savefig_pad_inches"],
+    )
     plt.close(fig)
 
     print(f"Shaded care demand plot saved to {path_to_save}")

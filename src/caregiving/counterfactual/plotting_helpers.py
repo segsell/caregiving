@@ -69,6 +69,21 @@ def calculate_simple_outcomes(
     return work, ft, pt
 
 
+# Minimal columns needed for event-study pipeline (prepare_dataframes_simple and
+# event_study_total_caregiving_merged_and_profiles). Optional cols (e.g. gross_labor_income)
+# are included when present so labor-income event studies keep working.
+_EVENT_STUDY_COLS_DF_O = [
+    "agent",
+    "period",
+    "health",
+    "choice",
+    "care_demand",
+    "age",
+]
+_EVENT_STUDY_COLS_DF_C = ["agent", "period", "health", "choice"]
+_EVENT_STUDY_OPTIONAL_COLS = ["gross_labor_income"]
+
+
 def prepare_dataframes_simple(
     df_o: pd.DataFrame,
     df_c: pd.DataFrame,
@@ -76,6 +91,9 @@ def prepare_dataframes_simple(
     ever_care_demand: bool = True,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Prepare DataFrames with simple outcome calculation pattern.
+
+    Keeps only columns needed for event-study tasks to reduce RAM. Then applies
+    alive / ever-caregiver / ever-care-demand filters.
 
     This is used by functions that calculate simple work/ft/pt outcomes
     rather than using the full outcome calculation utilities.
@@ -91,6 +109,20 @@ def prepare_dataframes_simple(
     Returns:
         Tuple of prepared DataFrames
     """
+    # Keep only columns needed downstream to reduce memory
+    cols_o = [
+        c
+        for c in _EVENT_STUDY_COLS_DF_O + _EVENT_STUDY_OPTIONAL_COLS
+        if c in df_o.columns
+    ]
+    cols_c = [
+        c
+        for c in _EVENT_STUDY_COLS_DF_C + _EVENT_STUDY_OPTIONAL_COLS
+        if c in df_c.columns
+    ]
+    df_o = df_o[cols_o].copy()
+    df_c = df_c[cols_c].copy()
+
     # Alive restriction
     df_o = df_o[df_o["health"] != DEAD].copy()
     df_c = df_c[df_c["health"] != DEAD].copy()
@@ -134,7 +166,8 @@ def get_age_at_first_event(
     event_mask: pd.Series,
     age_col_name: str = "age_at_first_care",
 ) -> pd.DataFrame:
-    """Get age at first event for each agent.
+    """Get age at first event for each agent.    return df_o, df_c
+
 
     Args:
         df: DataFrame with 'agent', 'period', and 'age' columns
@@ -256,16 +289,37 @@ PUBLICATION_PLOT_STYLE = {
     "markeredgewidth": 3.0,
     "markersize_star": 12,
     "markeredgewidth_star": 3.5,
-    "grid_alpha": 0.18,
+    "grid_alpha": 0.10,  # horizontal grid lines (paler = lower)
     "grid_linewidth": 1.15,
     "axvline_linewidth": 1.85,
     "axhline_linewidth": 1.6,
     # Padding so lowest y-tick does not clash with x-axis: margin in data space and figure bottom
     "y_axis_margin_factor": 0.03,  # margin = this * (2 * y_lim) added below -y_lim
     "subplots_adjust_bottom": 0.11,
+    "labelpad": 14,  # extra space between axis label and tick numbers
     "savefig_dpi": 1200,
     "savefig_pad_inches": 0.25,
 }
+
+# Overrides for age-subgroup panels (ages_40_49, ages_50_59, ages_60_70) when placed three in a row.
+# Only font/label/tick sizes; rest inherited from PUBLICATION_PLOT_STYLE.
+PUBLICATION_PLOT_STYLE_AGE_SUBGROUPS = {
+    "label_fontsize": 36,
+    "xtick_fontsize": 32,
+    "ytick_fontsize": 32,
+    # "tick_length": 18,
+    # "tick_width": 2.0,
+}
+
+# Age labels that use the subgroup style (three panels in a row).
+_AGE_SUBGROUP_LABELS = ("ages_40_49", "ages_50_59", "ages_60_70")
+
+
+def get_publication_plot_style(age_label: Optional[str] = None) -> dict:
+    """Return publication plot style; use smaller fonts/figsize for age-subgroup panels (three in a row)."""
+    if age_label in _AGE_SUBGROUP_LABELS:
+        return {**PUBLICATION_PLOT_STYLE, **PUBLICATION_PLOT_STYLE_AGE_SUBGROUPS}
+    return PUBLICATION_PLOT_STYLE.copy()
 
 
 def publication_savefig(path: Path) -> None:
@@ -340,8 +394,12 @@ def _plot_outcome_difference_by_distance_total_caregiving_impl(  # noqa: PLR0913
     endogenous_ylim: bool,
     font_family: Optional[str] = None,
     style: Optional[dict] = None,
+    age_label: Optional[str] = None,
 ) -> None:
-    """Implementation: plot outcome difference by distance (total care years 1–5+)."""
+    """Implementation: plot outcome difference by distance (total care years 1–5+).
+
+    When age_label is 'ages_60_70', the 5+ total care years line (stars) is not plotted.
+    """
     s = style if style is not None else PUBLICATION_PLOT_STYLE
     font = font_family if font_family is not None else s["font_family"]
     if font is not None:
@@ -415,14 +473,15 @@ def _plot_outcome_difference_by_distance_total_caregiving_impl(  # noqa: PLR0913
         s["markersize"],
         s["markeredgewidth"],
     )
-    _plot_prof(
-        prof_5_year_diff,
-        "5+ total care years",
-        "0.1",
-        "*",
-        s["markersize_star"],
-        s["markeredgewidth_star"],
-    )
+    if age_label != "ages_60_70":
+        _plot_prof(
+            prof_5_year_diff,
+            "5+ total care years",
+            "0.1",
+            "*",
+            s["markersize_star"],
+            s["markeredgewidth_star"],
+        )
 
     plt.axvline(
         x=-0.5,
@@ -430,8 +489,8 @@ def _plot_outcome_difference_by_distance_total_caregiving_impl(  # noqa: PLR0913
         linestyle=(0, (7, 7)),
         linewidth=s["axvline_linewidth"],
     )
-    plt.xlabel(xlabel, fontsize=s["label_fontsize"])
-    plt.ylabel(ylabel, fontsize=s["label_fontsize"])
+    plt.xlabel(xlabel, fontsize=s["label_fontsize"], labelpad=s.get("labelpad", 14))
+    plt.ylabel(ylabel, fontsize=s["label_fontsize"], labelpad=s.get("labelpad", 14))
     plt.xlim(window_low - 0.5, window_high + 0.5)
 
     all_diffs = []
@@ -512,11 +571,13 @@ def plot_outcome_difference_by_distance_total_caregiving(  # noqa: PLR0913
     endogenous_ylim: bool = False,
     font_family: Optional[str] = None,
     style: Optional[dict] = None,
+    age_label: Optional[str] = None,
 ) -> None:
     """Plot outcome difference by distance with 5 lines: total care years 1, 2, 3, 4, 5+.
 
     Same layout as event study consecutive: dashed black baseline, horizontal line at 0,
     vertical line at t=-0.5, five subgroup lines (1, 2, 3, 4, 5+ total care years).
+    When age_label is 'ages_60_70', the 5+ line (stars) is omitted.
     Profile DataFrames must have column EVENT_STUDY_DIST_COL and 'diff'.
     All visual style (including font_family) is read from PUBLICATION_PLOT_STYLE unless
     overridden via style or font_family.
@@ -542,6 +603,7 @@ def plot_outcome_difference_by_distance_total_caregiving(  # noqa: PLR0913
                 endogenous_ylim,
                 font_family,
                 style,
+                age_label,
             )
     else:
         _plot_outcome_difference_by_distance_total_caregiving_impl(
@@ -559,6 +621,7 @@ def plot_outcome_difference_by_distance_total_caregiving(  # noqa: PLR0913
             endogenous_ylim,
             None,
             style,
+            age_label,
         )
 
 
