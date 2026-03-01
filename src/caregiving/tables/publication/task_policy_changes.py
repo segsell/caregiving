@@ -1160,12 +1160,8 @@ def panel_leave_takeup(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]
     # -- A) Current labor state of all caregivers (choice) --
     rows["Share FT CG (all CG)"] = float(cg["choice"].isin(CG_FT).mean())
     rows["Share PT CG (all CG)"] = float(cg["choice"].isin(CG_PT).mean())
-    rows["Share Unemp CG (all CG)"] = float(
-        cg["choice"].isin(CG_UNEMPLOYED).mean()
-    )
-    rows["Share Retired CG (all CG)"] = float(
-        cg["choice"].isin(CG_RETIRED).mean()
-    )
+    rows["Share Unemp CG (all CG)"] = float(cg["choice"].isin(CG_UNEMPLOYED).mean())
+    rows["Share Retired CG (all CG)"] = float(cg["choice"].isin(CG_RETIRED).mean())
 
     # -- B) Prior-job eligibility structure --
     if has_jbc:
@@ -1184,9 +1180,7 @@ def panel_leave_takeup(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]
         n_pt_prior_ft = int((lag_pt & prior_ft).sum())
         n_unemp_prior_job = int((lag_unemp & prior_any).sum())
         rows["Share PT CG w/ prior FT (all CG)"] = n_pt_prior_ft / n_cg
-        rows["Share Unemp CG w/ prior job (all CG)"] = (
-            n_unemp_prior_job / n_cg
-        )
+        rows["Share Unemp CG w/ prior job (all CG)"] = n_unemp_prior_job / n_cg
         rows["Share leave-eligible (all CG)"] = (
             n_pt_prior_ft + n_unemp_prior_job
         ) / n_cg
@@ -1207,9 +1201,7 @@ def panel_leave_takeup(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]
             rows[f"Share prior FT [{label}]"] = float((ejbc == 2).mean())
             ept = edu_cg["lagged_choice"].isin(CG_PT) & (ejbc == 2)
             eun = edu_cg["lagged_choice"].isin(CG_UNEMPLOYED) & (ejbc > 0)
-            rows[f"Share leave-eligible [{label}]"] = float(
-                (ept | eun).sum() / ne
-            )
+            rows[f"Share leave-eligible [{label}]"] = float((ept | eun).sum() / ne)
 
     # -- C) Take-up rates --
     if has_leave:
@@ -1238,9 +1230,7 @@ def panel_leave_takeup(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]
             rows["Avg. top-up | receipt (EUR/yr)"] = (
                 float(recv_df["caregiving_leave_top_up"].mean()) * wealth_unit
             )
-            rows["Avg. top-up | all CG (EUR/yr)"] = (
-                float(topup.mean()) * wealth_unit
-            )
+            rows["Avg. top-up | all CG (EUR/yr)"] = float(topup.mean()) * wealth_unit
         else:
             rows["Avg. top-up | receipt (EUR/yr)"] = 0.0
             rows["Avg. top-up | all CG (EUR/yr)"] = 0.0
@@ -1259,8 +1249,7 @@ def panel_leave_takeup(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]
                 rows[f"Avg. top-up | receipt [{label}]"] = 0.0
             else:
                 rows[f"Avg. top-up | receipt [{label}]"] = (
-                    float(edu_receivers["caregiving_leave_top_up"].mean())
-                    * wealth_unit
+                    float(edu_receivers["caregiving_leave_top_up"].mean()) * wealth_unit
                 )
 
         # -- D) Composition of recipients (lagged_choice = triggering state) --
@@ -1280,12 +1269,8 @@ def panel_leave_takeup(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]
             )
 
             # Current choice of recipients (what they do this period)
-            rows["Recv: curr. FT CG"] = float(
-                recv_df["choice"].isin(CG_FT).mean()
-            )
-            rows["Recv: curr. PT CG"] = float(
-                recv_df["choice"].isin(CG_PT).mean()
-            )
+            rows["Recv: curr. FT CG"] = float(recv_df["choice"].isin(CG_FT).mean())
+            rows["Recv: curr. PT CG"] = float(recv_df["choice"].isin(CG_PT).mean())
             rows["Recv: curr. Unemp CG"] = float(
                 recv_df["choice"].isin(CG_UNEMPLOYED).mean()
             )
@@ -1310,9 +1295,7 @@ def panel_leave_takeup(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]
         rows["Share 0 leave years used"] = float((ylu == 0).mean())
         rows["Share 1 leave year used"] = float((ylu == 1).mean())
         rows["Share 2 leave years used"] = float((ylu == 2).mean())
-        rows["Share 3 leave years used (capped)"] = float(
-            (ylu >= 3).mean()
-        )
+        rows["Share 3 leave years used (capped)"] = float((ylu >= 3).mean())
 
     return rows
 
@@ -1343,15 +1326,20 @@ def panel_prior_state_at_cg_entry(df: pd.DataFrame) -> dict[str, float]:
         return rows
 
     first_cg_per = df.loc[cg_mask].groupby("agent")["period"].min()
-    df_first = df.set_index(["agent", "period"]).loc[
-        list(zip(first_cg_per.index, first_cg_per.values))
-    ].reset_index()
+    df_first = (
+        df.set_index(["agent", "period"])
+        .loc[list(zip(first_cg_per.index, first_cg_per.values))]
+        .reset_index()
+    )
 
     if df_first.empty:
         return rows
 
     def _entry_rows(
-        sub: pd.DataFrame, prefix: str, age_label: str, hi: int,
+        sub: pd.DataFrame,
+        prefix: str,
+        age_label: str,
+        hi: int,
     ) -> None:
         n = len(sub)
         if n == 0:
@@ -1367,12 +1355,8 @@ def panel_prior_state_at_cg_entry(df: pd.DataFrame) -> dict[str, float]:
 
         lag = sub["lagged_choice"]
         rows[f"{prefix}N entrants ({age_label})"] = float(n)
-        rows[f"{prefix}Share prior FT ({age_label})"] = float(
-            lag.isin(ft_arr).mean()
-        )
-        rows[f"{prefix}Share prior PT ({age_label})"] = float(
-            lag.isin(pt_arr).mean()
-        )
+        rows[f"{prefix}Share prior FT ({age_label})"] = float(lag.isin(ft_arr).mean())
+        rows[f"{prefix}Share prior PT ({age_label})"] = float(lag.isin(pt_arr).mean())
         rows[f"{prefix}Share prior unemp ({age_label})"] = float(
             lag.isin(unemp_arr).mean()
         )
@@ -1382,9 +1366,7 @@ def panel_prior_state_at_cg_entry(df: pd.DataFrame) -> dict[str, float]:
             )
         had_job = lag.isin(employed_arr)
         rows[f"{prefix}Share had job ({age_label})"] = float(had_job.mean())
-        rows[f"{prefix}Share no prior job ({age_label})"] = float(
-            (~had_job).mean()
-        )
+        rows[f"{prefix}Share no prior job ({age_label})"] = float((~had_job).mean())
 
     # -- Overall --
     for age_label, lo, hi in CG_ENTRY_AGE_BINS:
@@ -1633,7 +1615,10 @@ def panel_care_arrangements(df: pd.DataFrame) -> dict[str, float]:
         _care_shares(sub, f"BB [{label}]: ")
 
     for edu_level, edu_label in EDU_LABELS.items():
-        for label, agent_set in [("Had job", had_job_agents), ("No prior job", no_job_agents)]:
+        for label, agent_set in [
+            ("Had job", had_job_agents),
+            ("No prior job", no_job_agents),
+        ]:
             edu_sub = entrant_demand[
                 entrant_demand["agent"].isin(agent_set)
                 & (entrant_demand["education"] == edu_level)
@@ -1683,9 +1668,7 @@ def panel_care_demand_onset(df: pd.DataFrame) -> dict[str, float]:
         type1_became_cg = type1_demand & ever_cg
         n_type1 = len(type1_demand)
         if n_type1 > 0:
-            rows["CC: Type 1 — share became CG"] = float(
-                len(type1_became_cg) / n_type1
-            )
+            rows["CC: Type 1 — share became CG"] = float(len(type1_became_cg) / n_type1)
             rows["CC: Type 1 — share only formal"] = float(
                 1.0 - len(type1_became_cg) / n_type1
             )
@@ -1703,9 +1686,9 @@ def panel_care_demand_onset(df: pd.DataFrame) -> dict[str, float]:
     )
 
     for edu_level, label in EDU_LABELS.items():
-        edu_agents = set(
-            df.loc[df["education"] == edu_level, "agent"].unique()
-        ) & set(ever_demand)
+        edu_agents = set(df.loc[df["education"] == edu_level, "agent"].unique()) & set(
+            ever_demand
+        )
         n_edu = len(edu_agents)
         rows[f"CC [{label}]: N agents"] = float(n_edu)
         if n_edu > 0:
@@ -1714,9 +1697,7 @@ def panel_care_demand_onset(df: pd.DataFrame) -> dict[str, float]:
             )
             if has_cg_type:
                 edu_types = type_of.reindex(list(edu_agents))
-                rows[f"CC [{label}]: Share CG type 1"] = float(
-                    (edu_types == 1).mean()
-                )
+                rows[f"CC [{label}]: Share CG type 1"] = float((edu_types == 1).mean())
                 type1_edu = set(edu_types[edu_types == 1].index)
                 type1_edu_cg = type1_edu & ever_cg
                 if type1_edu:

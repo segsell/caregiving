@@ -250,9 +250,13 @@ def task_create_fiscal_costs(
     for i, df in enumerate(policy_dfs):
         policy_dfs[i] = _add_lagged_care_demand(df)
 
-    baseline_df, full_beirat_df, partial_beirat_df, norwegian_pg_df, norwegian_no_pg_df = (
-        policy_dfs
-    )
+    (
+        baseline_df,
+        full_beirat_df,
+        partial_beirat_df,
+        norwegian_pg_df,
+        norwegian_no_pg_df,
+    ) = policy_dfs
 
     def _safe_div(num, den):
         return num / den if den else np.nan
@@ -275,9 +279,7 @@ def task_create_fiscal_costs(
         periods_nnpg,
     ]
 
-    avg_costs = [
-        c / n if n else np.nan for c, n in zip(costs, n_cgs, strict=True)
-    ]
+    avg_costs = [c / n if n else np.nan for c, n in zip(costs, n_cgs, strict=True)]
     avg_years_list = [
         p / n if n else np.nan for p, n in zip(periods_list, n_cgs, strict=True)
     ]
@@ -294,14 +296,21 @@ def task_create_fiscal_costs(
 
     # --- N total agents, share ever caregiving, per-capita cost ---
     n_totals = [_n_total_agents(df) for df in policy_dfs]
-    share_cg = [_safe_div(n_cg, n_tot) for n_cg, n_tot in zip(n_cgs, n_totals, strict=True)]
+    share_cg = [
+        _safe_div(n_cg, n_tot) for n_cg, n_tot in zip(n_cgs, n_totals, strict=True)
+    ]
     percap = [_safe_div(c, n_tot) for c, n_tot in zip(costs, n_totals, strict=True)]
 
     # --- Total gross benefit ---
     gross_benefit_baseline = cost_baseline
     gross_benefits_leave = [
         _total_sum_column(df, "caregiving_leave_top_up", wealth_unit)
-        for df in (full_beirat_df, partial_beirat_df, norwegian_pg_df, norwegian_no_pg_df)
+        for df in (
+            full_beirat_df,
+            partial_beirat_df,
+            norwegian_pg_df,
+            norwegian_no_pg_df,
+        )
     ]
     gross_benefits = [gross_benefit_baseline] + gross_benefits_leave
 
@@ -309,7 +318,12 @@ def task_create_fiscal_costs(
     net_cost_aux_baseline = cost_baseline
     net_cost_aux_leave = [
         _total_leave_net_cost_aux(df, wealth_unit)
-        for df in (full_beirat_df, partial_beirat_df, norwegian_pg_df, norwegian_no_pg_df)
+        for df in (
+            full_beirat_df,
+            partial_beirat_df,
+            norwegian_pg_df,
+            norwegian_no_pg_df,
+        )
     ]
     net_costs_aux = [net_cost_aux_baseline] + net_cost_aux_leave
 
@@ -342,10 +356,12 @@ def task_create_fiscal_costs(
         "Total net cost (model)": net_costs_aux,
         "Gov. formal care cost (total)": gov_fc_list,
         "Avg. gov. formal care cost per caregiver": [
-            _safe_div(gov_fc, n_cg) for gov_fc, n_cg in zip(gov_fc_list, n_cgs, strict=True)
+            _safe_div(gov_fc, n_cg)
+            for gov_fc, n_cg in zip(gov_fc_list, n_cgs, strict=True)
         ],
         "Avg. gov. formal care cost per FC user": [
-            _safe_div(gov_fc, n_fc) for gov_fc, n_fc in zip(gov_fc_list, n_fc_list, strict=True)
+            _safe_div(gov_fc, n_fc)
+            for gov_fc, n_fc in zip(gov_fc_list, n_fc_list, strict=True)
         ],
         "Avg. gov. FC cost per CG (pct of baseline)": [
             np.nan,
@@ -370,13 +386,15 @@ def task_create_fiscal_costs(
             ],
         ],
         "Gov. formal care cost per capita": [
-            _safe_div(gov_fc, n_tot) for gov_fc, n_tot in zip(gov_fc_list, n_totals, strict=True)
+            _safe_div(gov_fc, n_tot)
+            for gov_fc, n_tot in zip(gov_fc_list, n_totals, strict=True)
         ],
         "Avg. formal care years": avg_fc_yrs_list,
         "N formal care users": n_fc_list,
         "Gov. combination care cost (total)": [c["total_cost"] for c in combo_list],
         "Avg. gov. combo care cost per caregiver": [
-            _safe_div(c["total_cost"], n_cg) for c, n_cg in zip(combo_list, n_cgs, strict=True)
+            _safe_div(c["total_cost"], n_cg)
+            for c, n_cg in zip(combo_list, n_cgs, strict=True)
         ],
         "Avg. gov. combo care cost per eligible": [
             c["avg_cost_per_eligible"] for c in combo_list
@@ -396,10 +414,12 @@ def task_create_fiscal_costs(
         ],
         "Gov. total care cost": gov_total_care_list,
         "Gov. total care cost per caregiver": [
-            _safe_div(gtc, n_cg) for gtc, n_cg in zip(gov_total_care_list, n_cgs, strict=True)
+            _safe_div(gtc, n_cg)
+            for gtc, n_cg in zip(gov_total_care_list, n_cgs, strict=True)
         ],
         "Gov. total care cost per capita": [
-            _safe_div(gtc, n_tot) for gtc, n_tot in zip(gov_total_care_list, n_totals, strict=True)
+            _safe_div(gtc, n_tot)
+            for gtc, n_tot in zip(gov_total_care_list, n_totals, strict=True)
         ],
         "N caregivers": n_cgs,
         "N total agents": n_totals,
