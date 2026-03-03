@@ -165,8 +165,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
-        ylim_all_ages: Optional[tuple[float, float]] = None,
-        ylim_age_bins: Optional[tuple[float, float]] = None,
+        ylim_all_ages: tuple[float, float] | None = None,
+        ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
         """Event study: employment rate difference by distance to first care demand (total care years 1–5+), back_to_Jan7 data."""
         with path_to_specs.open("rb") as f:
@@ -253,8 +253,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
-        ylim_all_ages: Optional[tuple[float, float]] = None,
-        ylim_age_bins: Optional[tuple[float, float]] = None,
+        ylim_all_ages: tuple[float, float] | None = None,
+        ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
         """Event study: employment rate difference by distance to first caregiving spell (total care years 1–5+)."""
         with path_to_specs.open("rb") as f:
@@ -339,8 +339,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
-        ylim_all_ages: Optional[tuple[float, float]] = None,
-        ylim_age_bins: Optional[tuple[float, float]] = None,
+        ylim_all_ages: tuple[float, float] | None = None,
+        ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
         """Event study: employment rate difference by distance to first caregiving spell (total care years 1–5+), back_to_Jan7 data."""
         with path_to_specs.open("rb") as f:
@@ -510,8 +510,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
-        ylim_all_ages: Optional[tuple[float, float]] = None,
-        ylim_age_bins: Optional[tuple[float, float]] = None,
+        ylim_all_ages: tuple[float, float] | None = None,
+        ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
         """Event study: full-time rate difference by distance to first care demand (total care years 1–5+), back_to_Jan7."""
         with path_to_specs.open("rb") as f:
@@ -596,8 +596,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
-        ylim_all_ages: Optional[tuple[float, float]] = None,
-        ylim_age_bins: Optional[tuple[float, float]] = None,
+        ylim_all_ages: tuple[float, float] | None = None,
+        ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
         """Event study: full-time rate difference by distance to first caregiving spell (total care years 1–5+)."""
         with path_to_specs.open("rb") as f:
@@ -680,8 +680,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
-        ylim_all_ages: Optional[tuple[float, float]] = None,
-        ylim_age_bins: Optional[tuple[float, float]] = None,
+        ylim_all_ages: tuple[float, float] | None = None,
+        ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
         """Event study: full-time rate difference by distance to first caregiving spell (total care years 1–5+), back_to_Jan7."""
         with path_to_specs.open("rb") as f:
@@ -850,8 +850,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
-        ylim_all_ages: Optional[tuple[float, float]] = None,
-        ylim_age_bins: Optional[tuple[float, float]] = None,
+        ylim_all_ages: tuple[float, float] | None = None,
+        ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
         """Event study: part-time rate difference by distance to first care demand (total care years 1–5+), back_to_Jan7."""
         with path_to_specs.open("rb") as f:
@@ -935,8 +935,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
-        ylim_all_ages: Optional[tuple[float, float]] = None,
-        ylim_age_bins: Optional[tuple[float, float]] = None,
+        ylim_all_ages: tuple[float, float] | None = None,
+        ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
         """Event study: part-time rate difference by distance to first caregiving spell (total care years 1–5+)."""
         with path_to_specs.open("rb") as f:
@@ -1018,8 +1018,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
-        ylim_all_ages: Optional[tuple[float, float]] = None,
-        ylim_age_bins: Optional[tuple[float, float]] = None,
+        ylim_all_ages: tuple[float, float] | None = None,
+        ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
         """Event study: part-time rate difference by distance to first caregiving spell (total care years 1–5+), back_to_Jan7."""
         with path_to_specs.open("rb") as f:
@@ -1104,8 +1104,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
-        ylim_all_ages: Optional[tuple[float, float]] = None,
-        ylim_age_bins: Optional[tuple[float, float]] = None,
+        ylim_all_ages: tuple[float, float] | None = None,
+        ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
         """Event study: weekly working hours difference by distance to first care demand (total care years 1–5+)."""
         with path_to_specs.open("rb") as f:
@@ -1196,8 +1196,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
-        ylim_all_ages: Optional[tuple[float, float]] = None,
-        ylim_age_bins: Optional[tuple[float, float]] = None,
+        ylim_all_ages: tuple[float, float] | None = None,
+        ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
         """Event study: weekly working hours difference by distance to first care demand (total care years 1–5+), back_to_Jan7."""
         with path_to_specs.open("rb") as f:
@@ -1290,8 +1290,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
-        ylim_all_ages: Optional[tuple[float, float]] = None,
-        ylim_age_bins: Optional[tuple[float, float]] = None,
+        ylim_all_ages: tuple[float, float] | None = None,
+        ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
         """Event study: weekly working hours difference by distance to first caregiving spell (total care years 1–5+)."""
         with path_to_specs.open("rb") as f:
@@ -1384,8 +1384,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
-        ylim_all_ages: Optional[tuple[float, float]] = None,
-        ylim_age_bins: Optional[tuple[float, float]] = None,
+        ylim_all_ages: tuple[float, float] | None = None,
+        ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
         """Event study: weekly working hours difference by distance to first caregiving spell (total care years 1–5+), back_to_Jan7."""
         with path_to_specs.open("rb") as f:
@@ -1572,8 +1572,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
-        ylim_all_ages: Optional[tuple[float, float]] = None,
-        ylim_age_bins: Optional[tuple[float, float]] = None,
+        ylim_all_ages: tuple[float, float] | None = None,
+        ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
         """Event study: monthly gross labor income difference by distance to first care demand (total care years 1–5+), back_to_Jan7."""
         with path_to_specs.open("rb") as f:
@@ -1666,8 +1666,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
-        ylim_all_ages: Optional[tuple[float, float]] = None,
-        ylim_age_bins: Optional[tuple[float, float]] = None,
+        ylim_all_ages: tuple[float, float] | None = None,
+        ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
         """Event study: monthly gross labor income difference by distance to first caregiving spell (total care years 1–5+)."""
         with path_to_specs.open("rb") as f:
@@ -1758,8 +1758,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
-        ylim_all_ages: Optional[tuple[float, float]] = None,
-        ylim_age_bins: Optional[tuple[float, float]] = None,
+        ylim_all_ages: tuple[float, float] | None = None,
+        ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
         """Event study: monthly gross labor income difference by distance to first caregiving spell (total care years 1–5+), back_to_Jan7."""
         with path_to_specs.open("rb") as f:
@@ -1854,8 +1854,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
-        ylim_all_ages: Optional[tuple[float, float]] = None,
-        ylim_age_bins: Optional[tuple[float, float]] = None,
+        ylim_all_ages: tuple[float, float] | None = None,
+        ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
         """Event study: job finding rate difference by distance to first care demand (total care years 1–5+). Conditional on previously not working, not retired."""
         with path_to_specs.open("rb") as f:
@@ -1938,8 +1938,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
-        ylim_all_ages: Optional[tuple[float, float]] = None,
-        ylim_age_bins: Optional[tuple[float, float]] = None,
+        ylim_all_ages: tuple[float, float] | None = None,
+        ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
         """Event study: job finding rate difference by distance to first care demand (total care years 1–5+), back_to_Jan7."""
         with path_to_specs.open("rb") as f:
@@ -2024,8 +2024,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
-        ylim_all_ages: Optional[tuple[float, float]] = None,
-        ylim_age_bins: Optional[tuple[float, float]] = None,
+        ylim_all_ages: tuple[float, float] | None = None,
+        ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
         """Event study: job finding rate difference by distance to first caregiving spell (total care years 1–5+)."""
         with path_to_specs.open("rb") as f:
@@ -2108,8 +2108,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
-        ylim_all_ages: Optional[tuple[float, float]] = None,
-        ylim_age_bins: Optional[tuple[float, float]] = None,
+        ylim_all_ages: tuple[float, float] | None = None,
+        ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
         """Event study: job finding rate difference by distance to first caregiving spell (total care years 1–5+), back_to_Jan7."""
         with path_to_specs.open("rb") as f:
@@ -2195,8 +2195,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
-        ylim_all_ages: Optional[tuple[float, float]] = None,
-        ylim_age_bins: Optional[tuple[float, float]] = None,
+        ylim_all_ages: tuple[float, float] | None = None,
+        ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
         """Event study: job retention rate (1 - separation) difference by distance to first care demand (total care years 1–5+). Conditional on previously working."""
         with path_to_specs.open("rb") as f:
@@ -2279,8 +2279,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
-        ylim_all_ages: Optional[tuple[float, float]] = None,
-        ylim_age_bins: Optional[tuple[float, float]] = None,
+        ylim_all_ages: tuple[float, float] | None = None,
+        ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
         """Event study: job retention rate difference by distance to first care demand (total care years 1–5+), back_to_Jan7."""
         with path_to_specs.open("rb") as f:
@@ -2365,8 +2365,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
-        ylim_all_ages: Optional[tuple[float, float]] = None,
-        ylim_age_bins: Optional[tuple[float, float]] = None,
+        ylim_all_ages: tuple[float, float] | None = None,
+        ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
         """Event study: job retention rate difference by distance to first caregiving spell (total care years 1–5+)."""
         with path_to_specs.open("rb") as f:
@@ -2451,8 +2451,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
-        ylim_all_ages: Optional[tuple[float, float]] = None,
-        ylim_age_bins: Optional[tuple[float, float]] = None,
+        ylim_all_ages: tuple[float, float] | None = None,
+        ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
         """Event study: job retention rate difference by distance to first caregiving spell (total care years 1–5+), back_to_Jan7."""
         with path_to_specs.open("rb") as f:

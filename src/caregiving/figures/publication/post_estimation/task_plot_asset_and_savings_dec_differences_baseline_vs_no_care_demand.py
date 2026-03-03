@@ -250,12 +250,18 @@ def task_plot_savings_rate_difference_baseline_vs_no_care_demand(  # noqa: PLR09
         if "total_income" not in df.columns:
             df["total_income"] = _extract_aux_variable(df, "total_income")
 
-    if "savings_dec" not in df_baseline.columns or "total_income" not in df_baseline.columns:
+    if (
+        "savings_dec" not in df_baseline.columns
+        or "total_income" not in df_baseline.columns
+    ):
         raise ValueError(
             "Columns 'savings_dec' and 'total_income' required in baseline data. "
             f"Available: {df_baseline.columns.tolist()}"
         )
-    if "savings_dec" not in df_no_care_demand.columns or "total_income" not in df_no_care_demand.columns:
+    if (
+        "savings_dec" not in df_no_care_demand.columns
+        or "total_income" not in df_no_care_demand.columns
+    ):
         raise ValueError(
             "Columns 'savings_dec' and 'total_income' required in no_care_demand data. "
             f"Available: {df_no_care_demand.columns.tolist()}"
@@ -616,12 +622,18 @@ def task_plot_consumption_rate_difference_baseline_vs_no_care_demand(  # noqa: P
         if "total_income" not in df.columns:
             df["total_income"] = _extract_aux_variable(df, "total_income")
 
-    if "consumption" not in df_baseline.columns or "total_income" not in df_baseline.columns:
+    if (
+        "consumption" not in df_baseline.columns
+        or "total_income" not in df_baseline.columns
+    ):
         raise ValueError(
             "Columns 'consumption' and 'total_income' required in baseline data. "
             f"Available: {df_baseline.columns.tolist()}"
         )
-    if "consumption" not in df_no_care_demand.columns or "total_income" not in df_no_care_demand.columns:
+    if (
+        "consumption" not in df_no_care_demand.columns
+        or "total_income" not in df_no_care_demand.columns
+    ):
         raise ValueError(
             "Columns 'consumption' and 'total_income' required in no_care_demand data. "
             f"Available: {df_no_care_demand.columns.tolist()}"
