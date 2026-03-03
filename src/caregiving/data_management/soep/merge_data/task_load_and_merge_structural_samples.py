@@ -1,5 +1,6 @@
 """Merge SOEP modules."""
 
+import re
 from pathlib import Path
 from typing import Annotated
 
@@ -710,3 +711,78 @@ def task_load_and_merge_formal_care_costs_sample(
     print(str(len(merged_data)) + " observations in SOEP C40 core.")
 
     merged_data.to_csv(path_to_save)
+
+
+# =====================================================================================
+# Sibling comparison sample (biosib: respondent + sibling info; merge on pid)
+# =====================================================================================
+
+
+@pytask.mark.sibling_comparison
+def task_load_and_merge_sibling_comparison_sample(
+    soep_c40_ppathl: Path = SRC / "data" / "soep_c40" / "ppathl.dta",
+    soep_c40_pgen: Path = SRC / "data" / "soep_c40" / "pgen.dta",
+    soep_c40_biosib: Path = SRC / "data" / "soep_c40" / "biosib.dta",
+    path_to_save: Annotated[Path, Product] = BLD
+    / "data"
+    / "soep_sibling_comparison_data_raw.csv",
+) -> None:
+    """Merge sibling comparison sample: ppathl + pgen + biosib (respondent and siblings).
+
+    Merges on pid (and pid, hid, syear for ppathl-pgen). Biosib is biographical
+    (one row per person); provides respondent sex/gebjahr and sibling gebsib*/sexsib*.
+    Sanity check: log count of pid where ppathl and biosib disagree on sex or gebjahr.
+    """
+    ppathl_data = pd.read_stata(
+        soep_c40_ppathl,
+        columns=["pid", "hid", "syear", "sex", "gebjahr"],
+        convert_categoricals=False,
+    )
+    pgen_data = pd.read_stata(
+        soep_c40_pgen,
+        columns=["pid", "hid", "syear", "pgpsbil"],
+        convert_categoricals=False,
+    )
+    merged_data = pd.merge(
+        ppathl_data, pgen_data, on=["pid", "hid", "syear"], how="inner"
+    )
+
+    biosib_cols = _get_biosib_columns()
+    biosib_all = pd.read_stata(soep_c40_biosib, convert_categoricals=False)
+    available = [c for c in biosib_cols if c in biosib_all.columns]
+    if len(available) < len(biosib_cols):
+        extra = [c for c in biosib_all.columns if re.match(r"^(gebsib|sexsib)\d+$", c)]
+        for c in extra:
+            if c not in available:
+                available.append(c)
+    biosib_data = biosib_all[available].copy()
+    del biosib_all
+    if "sex" in biosib_data.columns:
+        biosib_data = biosib_data.rename(columns={"sex": "sex_biosib"})
+    if "gebjahr" in biosib_data.columns:
+        biosib_data = biosib_data.rename(columns={"gebjahr": "gebjahr_biosib"})
+
+    merged_data = pd.merge(merged_data, biosib_data, on="pid", how="inner")
+
+    if "sex_biosib" in merged_data.columns and "gebjahr_biosib" in merged_data.columns:
+        sex_mismatch = (merged_data["sex"] != merged_data["sex_biosib"]).sum()
+        geb_mismatch = (merged_data["gebjahr"] != merged_data["gebjahr_biosib"]).sum()
+        if sex_mismatch > 0 or geb_mismatch > 0:
+            print(
+                f"Sibling sample sanity: {sex_mismatch} sex mismatches, "
+                f"{geb_mismatch} gebjahr mismatches (ppathl vs biosib)."
+            )
+        merged_data = merged_data.drop(columns=["sex_biosib", "gebjahr_biosib"])
+
+    merged_data["age"] = merged_data["syear"] - merged_data["gebjahr"]
+    merged_data.set_index(["pid", "syear"], inplace=True)
+    print(str(len(merged_data)) + " observations in sibling comparison sample.")
+    merged_data.to_csv(path_to_save)
+
+
+def _get_biosib_columns():
+    """Return column list for biosib: pid, sex, gebjahr, and sibling 1..11 (gebsib*, sexsib*)."""
+    cols = ["pid", "sex", "gebjahr"]
+    for i in range(1, 12):
+        cols.extend([f"gebsib{i}", f"sexsib{i}"])
+    return cols

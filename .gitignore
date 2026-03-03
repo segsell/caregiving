@@ -154,6 +154,7 @@ _version.py
 
 # Ignore specific subdirectories inside bld/
 bld/counterfactual/
+bld/counterfactual (Copy)/
 bld/data/
 bld/debugging/
 bld/descriptives/
