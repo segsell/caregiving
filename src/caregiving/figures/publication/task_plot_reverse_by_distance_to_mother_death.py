@@ -210,9 +210,7 @@ for age_min_val, age_max_val, age_label_val in (
         ever_care_demand: bool = False,
         window_low: int = 15,
         window_high: int = 15,
-        window_by_age: dict[str, tuple[int, int]] | None = (
-            {"ages_60_70": (15, 10)}
-        ),
+        window_by_age: dict[str, tuple[int, int]] | None = ({"ages_60_70": (15, 10)}),
         ylim: tuple[float, float] | None = (0, 1),
         yticks: list[float] | None = [0, 0.2, 0.4, 0.6, 0.8, 1.0],
         plot_caregivers_mean: bool = True,
@@ -291,9 +289,7 @@ for age_min_val, age_max_val, age_label_val in (
         ever_care_demand: bool = False,
         window_low: int = 15,
         window_high: int = 15,
-        window_by_age: dict[str, tuple[int, int]] | None = (
-            {"ages_60_70": (15, 10)}
-        ),
+        window_by_age: dict[str, tuple[int, int]] | None = ({"ages_60_70": (15, 10)}),
         ylim: tuple[float, float] | None = (0, 0.5),
         yticks: list[float] | None = [0, 0.1, 0.2, 0.3, 0.4, 0.5],
         plot_caregivers_mean: bool = True,
@@ -372,9 +368,7 @@ for age_min_val, age_max_val, age_label_val in (
         ever_care_demand: bool = False,
         window_low: int = 15,
         window_high: int = 15,
-        window_by_age: dict[str, tuple[int, int]] | None = (
-            {"ages_60_70": (15, 10)}
-        ),
+        window_by_age: dict[str, tuple[int, int]] | None = ({"ages_60_70": (15, 10)}),
         ylim: tuple[float, float] | None = (0, 0.5),
         yticks: list[float] | None = [0, 0.1, 0.2, 0.3, 0.4, 0.5],
         plot_caregivers_mean: bool = True,
@@ -541,9 +535,7 @@ for age_min_val, age_max_val, age_label_val in (
         ever_care_demand: bool = False,
         window_low: int = 15,
         window_high: int = 15,
-        window_by_age: dict[str, tuple[int, int]] | None = (
-            {"ages_60_70": (15, 10)}
-        ),
+        window_by_age: dict[str, tuple[int, int]] | None = ({"ages_60_70": (15, 10)}),
         ylim: tuple[float, float] | None = (0, 1.8),
         yticks: list[float] | None = [0, 0.25, 0.50, 0.75, 1.00, 1.25, 1.50, 1.75],
         plot_caregivers_mean: bool = True,

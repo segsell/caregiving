@@ -656,7 +656,11 @@ def task_plot_ever_care_demand_by_age_shaded(  # noqa: PLR0912, PLR0915
             share_any += count if (e_l or e_i) else 0.0
             share_light_only += count if (e_l and not e_i) else 0.0
             share_intensive += count if e_i else 0.0
-        return share_any / n_agents, share_light_only / n_agents, share_intensive / n_agents
+        return (
+            share_any / n_agents,
+            share_light_only / n_agents,
+            share_intensive / n_agents,
+        )
 
     # Period 0: apply care demand to get initial ever_light / ever_intensive
     sbg_new = {}
@@ -705,7 +709,11 @@ def task_plot_ever_care_demand_by_age_shaded(  # noqa: PLR0912, PLR0915
                 adl, period - 1, edu, specs
             )
             for adl_next, w in enumerate(
-                (float(adl_prob_vector[0]), float(adl_prob_vector[1]), float(adl_prob_vector[2]))
+                (
+                    float(adl_prob_vector[0]),
+                    float(adl_prob_vector[1]),
+                    float(adl_prob_vector[2]),
+                )
             ):
                 if w > 0:
                     state_after_transition[(edu, adl_next, 0, e_l, e_i)] = (
@@ -791,7 +799,9 @@ def task_plot_ever_care_demand_by_age_shaded(  # noqa: PLR0912, PLR0915
     ax.set_ylim(-0.005, y_max)
     ax.set_yticks(np.arange(0, y_max + 0.01, 0.1 if y_max > 0.5 else 0.05))
 
-    light_idx = int(np.argmax(share_light_only_plot)) if share_light_only_plot.max() > 0 else 0
+    light_idx = (
+        int(np.argmax(share_light_only_plot)) if share_light_only_plot.max() > 0 else 0
+    )
     intensive_idx = (
         int(np.argmax(share_intensive_plot)) if share_intensive_plot.max() > 0 else 0
     )
@@ -812,8 +822,7 @@ def task_plot_ever_care_demand_by_age_shaded(  # noqa: PLR0912, PLR0915
         mid_idx = len(ages_plot) // 2
         fig.text(
             ages_plot[mid_idx],
-            share_light_only_plot[mid_idx]
-            + share_intensive_plot[mid_idx] / 2,
+            share_light_only_plot[mid_idx] + share_intensive_plot[mid_idx] / 2,
             "Intensive",
             color="0.1",
             fontsize=14,
