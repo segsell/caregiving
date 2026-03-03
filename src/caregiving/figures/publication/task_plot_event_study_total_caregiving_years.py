@@ -24,6 +24,8 @@ from pytask import Product
 from caregiving.config import BLD
 from caregiving.counterfactual.plotting_helpers import (
     AGE_GROUPS_EVENT_STUDY,
+    PATH_TO_BASELINE,
+    PATH_TO_NO_CARE_DEMAND,
     add_distance_to_first_care,
     add_distance_to_first_care_demand,
     calculate_simple_outcomes,
@@ -38,7 +40,6 @@ from caregiving.counterfactual.plotting_helpers import (
 
 # ---------------------------------------------------------------------------
 # Employment event study: first care demand, standard data
-# One loop over age groups; path_to_plot and args written in the function signature.
 # ---------------------------------------------------------------------------
 for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 
@@ -46,29 +47,21 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     @pytask.mark.publication_event_study
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
+    @pytask.mark.publication_selection
     @pytask.task(id=f"{age_label_val}_employment_first_care_demand_estimated_params")
     def task_plot_event_study_employment_rate_by_distance_to_first_care_demand_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
-        path_to_original_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_estimated_params_Feb16.pkl",
-        path_to_no_care_demand_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_no_care_demand_Feb16.pkl",
+        path_to_original_data: Path = PATH_TO_BASELINE,
+        path_to_no_care_demand_data: Path = PATH_TO_NO_CARE_DEMAND,
         path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
-        / "counterfactual"
-        / "event_study"
-        / "employment"
-        / "total_caregiving_years"
-        / (
-            f"event_study_employment_rate_by_distance_to_first_care_demand_"
-            f"total_caregiving_{age_label_val}.pdf"
-        ),
+        / "selection"
+        / "event_study_care_demand"
+        / f"diff_employment_rate_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window_low: int = 15,
@@ -76,13 +69,11 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         window_by_age: dict[str, tuple[int, int]] | None = (
             {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
         ),
+        ylim: tuple[float, float] | None = (-0.25, 0.15),
+        yticks: list[float] | None = [-0.2, -0.1, 0, 0.1],
+        plot_caregivers_mean: bool = True,
     ) -> None:
-        """Event study: employment rate difference by distance to first care demand (total care years 1–5+).
-
-        window_by_age overrides window_low/window_high per age group; keys are AGE_GROUPS_EVENT_STUDY
-        labels ("all_ages", "ages_40_49", "ages_50_59", "ages_60_70"); value is (window_low, window_high).
-
-        """
+        """Event study: employment rate difference by distance to first care demand (total care years 1–5+)."""
 
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
@@ -94,7 +85,6 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 
         start_age = int(specs["start_age"])
         end_age_caregiving = int(specs["end_age_caregiving"])
-
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
             pd.read_pickle(path_to_no_care_demand_data),
@@ -134,6 +124,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             ylabel="Difference in employment rate",
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
+            yticks=yticks,
+            plot_caregivers_mean=plot_caregivers_mean,
         )
 
 
@@ -172,6 +165,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        ylim_all_ages: Optional[tuple[float, float]] = None,
+        ylim_age_bins: Optional[tuple[float, float]] = None,
     ) -> None:
         """Event study: employment rate difference by distance to first care demand (total care years 1–5+), back_to_Jan7 data."""
         with path_to_specs.open("rb") as f:
@@ -202,6 +197,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 compare_against_baseline=False,
             )
         )
+        ylim = ylim_all_ages if age_label == "all_ages" else ylim_age_bins
         plot_outcome_difference_by_distance_total_caregiving(
             prof_diff=prof_diff,
             prof_1_year_diff=p1,
@@ -216,6 +212,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             ylabel="Difference in employment rate",
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
         )
 
 
@@ -256,6 +253,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        ylim_all_ages: Optional[tuple[float, float]] = None,
+        ylim_age_bins: Optional[tuple[float, float]] = None,
     ) -> None:
         """Event study: employment rate difference by distance to first caregiving spell (total care years 1–5+)."""
         with path_to_specs.open("rb") as f:
@@ -286,6 +285,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 compare_against_baseline=False,
             )
         )
+        ylim = ylim_all_ages if age_label == "all_ages" else ylim_age_bins
         plot_outcome_difference_by_distance_total_caregiving(
             prof_diff=prof_diff,
             prof_1_year_diff=p1,
@@ -300,6 +300,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             ylabel="Difference in employment rate",
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
         )
 
 
@@ -338,6 +339,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        ylim_all_ages: Optional[tuple[float, float]] = None,
+        ylim_age_bins: Optional[tuple[float, float]] = None,
     ) -> None:
         """Event study: employment rate difference by distance to first caregiving spell (total care years 1–5+), back_to_Jan7 data."""
         with path_to_specs.open("rb") as f:
@@ -368,6 +371,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 compare_against_baseline=False,
             )
         )
+        ylim = ylim_all_ages if age_label == "all_ages" else ylim_age_bins
         plot_outcome_difference_by_distance_total_caregiving(
             prof_diff=prof_diff,
             prof_1_year_diff=p1,
@@ -382,6 +386,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             ylabel="Difference in employment rate",
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
         )
 
 
@@ -393,35 +398,37 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     @pytask.mark.publication_event_study
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
+    @pytask.mark.publication_selection
     @pytask.task(id=f"{age_label_val}_full_time_first_care_demand_estimated_params")
     def task_plot_event_study_full_time_by_distance_to_first_care_demand_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
-        path_to_original_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_estimated_params.pkl",
-        path_to_no_care_demand_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_no_care_demand.pkl",
+        path_to_original_data: Path = PATH_TO_BASELINE,
+        path_to_no_care_demand_data: Path = PATH_TO_NO_CARE_DEMAND,
         path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
-        / "counterfactual"
-        / "event_study"
-        / "full_time"
-        / "total_caregiving_years"
-        / (
-            f"event_study_full_time_by_distance_to_first_care_demand_"
-            f"total_caregiving_{age_label_val}.pdf"
-        ),
+        / "selection"
+        / "event_study_care_demand"
+        / f"diff_full_time_share_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window_low: int = 20,
-        window_high: int = 20,
+        window_low: int = 15,
+        window_high: int = 15,
+        window_by_age: dict[str, tuple[int, int]] | None = (
+            {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
+        ),
+        ylim: tuple[float, float] | None = (-0.25, 0.15),
+        yticks: list[float] | None = [-0.2, -0.1, 0, 0.1],
+        plot_caregivers_mean: bool = True,
     ) -> None:
         """Event study: full-time rate difference by distance to first care demand (total care years 1–5+)."""
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -440,8 +447,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 df_c,
                 o_out,
                 c_out,
-                window_low,
-                window_high,
+                w_low,
+                w_high,
                 age_min,
                 age_max,
                 "care_demand",
@@ -457,13 +464,16 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             prof_3_year_diff=p3,
             prof_4_year_diff=p4,
             prof_5_year_diff=p5,
-            window_low=window_low,
-            window_high=window_high,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
-            ylabel="Difference in full-time rate",
+            ylabel="Difference in full-time share",
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
+            yticks=yticks,
+            plot_caregivers_mean=plot_caregivers_mean,
         )
 
 
@@ -500,6 +510,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        ylim_all_ages: Optional[tuple[float, float]] = None,
+        ylim_age_bins: Optional[tuple[float, float]] = None,
     ) -> None:
         """Event study: full-time rate difference by distance to first care demand (total care years 1–5+), back_to_Jan7."""
         with path_to_specs.open("rb") as f:
@@ -530,6 +542,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 compare_against_baseline=False,
             )
         )
+        ylim = ylim_all_ages if age_label == "all_ages" else ylim_age_bins
         plot_outcome_difference_by_distance_total_caregiving(
             prof_diff=prof_diff,
             prof_1_year_diff=p1,
@@ -544,6 +557,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             ylabel="Difference in full-time rate",
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
         )
 
 
@@ -582,6 +596,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        ylim_all_ages: Optional[tuple[float, float]] = None,
+        ylim_age_bins: Optional[tuple[float, float]] = None,
     ) -> None:
         """Event study: full-time rate difference by distance to first caregiving spell (total care years 1–5+)."""
         with path_to_specs.open("rb") as f:
@@ -612,6 +628,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 compare_against_baseline=False,
             )
         )
+        ylim = ylim_all_ages if age_label == "all_ages" else ylim_age_bins
         plot_outcome_difference_by_distance_total_caregiving(
             prof_diff=prof_diff,
             prof_1_year_diff=p1,
@@ -626,6 +643,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             ylabel="Difference in full-time rate",
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
         )
 
 
@@ -662,6 +680,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        ylim_all_ages: Optional[tuple[float, float]] = None,
+        ylim_age_bins: Optional[tuple[float, float]] = None,
     ) -> None:
         """Event study: full-time rate difference by distance to first caregiving spell (total care years 1–5+), back_to_Jan7."""
         with path_to_specs.open("rb") as f:
@@ -692,6 +712,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 compare_against_baseline=False,
             )
         )
+        ylim = ylim_all_ages if age_label == "all_ages" else ylim_age_bins
         plot_outcome_difference_by_distance_total_caregiving(
             prof_diff=prof_diff,
             prof_1_year_diff=p1,
@@ -706,6 +727,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             ylabel="Difference in full-time rate",
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
         )
 
 
@@ -717,35 +739,37 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     @pytask.mark.publication_event_study
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
+    @pytask.mark.publication_selection
     @pytask.task(id=f"{age_label_val}_part_time_first_care_demand_estimated_params")
     def task_plot_event_study_part_time_by_distance_to_first_care_demand_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
-        path_to_original_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_estimated_params.pkl",
-        path_to_no_care_demand_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_no_care_demand.pkl",
+        path_to_original_data: Path = PATH_TO_BASELINE,
+        path_to_no_care_demand_data: Path = PATH_TO_NO_CARE_DEMAND,
         path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
-        / "counterfactual"
-        / "event_study"
-        / "part_time"
-        / "total_caregiving_years"
-        / (
-            f"event_study_part_time_by_distance_to_first_care_demand_"
-            f"total_caregiving_{age_label_val}.pdf"
-        ),
+        / "selection"
+        / "event_study_care_demand"
+        / f"diff_part_time_share_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window_low: int = 20,
-        window_high: int = 20,
+        window_low: int = 15,
+        window_high: int = 15,
+        window_by_age: dict[str, tuple[int, int]] | None = (
+            {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
+        ),
+        ylim: tuple[float, float] | None = (-0.25, 0.15),
+        yticks: list[float] | None = [-0.2, -0.1, 0, 0.1],
+        plot_caregivers_mean: bool = True,
     ) -> None:
         """Event study: part-time rate difference by distance to first care demand (total care years 1–5+)."""
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -764,8 +788,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 df_c,
                 o_out,
                 c_out,
-                window_low,
-                window_high,
+                w_low,
+                w_high,
                 age_min,
                 age_max,
                 "care_demand",
@@ -781,13 +805,16 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             prof_3_year_diff=p3,
             prof_4_year_diff=p4,
             prof_5_year_diff=p5,
-            window_low=window_low,
-            window_high=window_high,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
-            ylabel="Difference in part-time rate",
+            ylabel="Difference in part-time share",
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
+            yticks=yticks,
+            plot_caregivers_mean=plot_caregivers_mean,
         )
 
 
@@ -823,6 +850,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        ylim_all_ages: Optional[tuple[float, float]] = None,
+        ylim_age_bins: Optional[tuple[float, float]] = None,
     ) -> None:
         """Event study: part-time rate difference by distance to first care demand (total care years 1–5+), back_to_Jan7."""
         with path_to_specs.open("rb") as f:
@@ -853,6 +882,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 compare_against_baseline=False,
             )
         )
+        ylim = ylim_all_ages if age_label == "all_ages" else ylim_age_bins
         plot_outcome_difference_by_distance_total_caregiving(
             prof_diff=prof_diff,
             prof_1_year_diff=p1,
@@ -867,6 +897,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             ylabel="Difference in part-time rate",
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
         )
 
 
@@ -904,6 +935,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        ylim_all_ages: Optional[tuple[float, float]] = None,
+        ylim_age_bins: Optional[tuple[float, float]] = None,
     ) -> None:
         """Event study: part-time rate difference by distance to first caregiving spell (total care years 1–5+)."""
         with path_to_specs.open("rb") as f:
@@ -934,6 +967,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 compare_against_baseline=False,
             )
         )
+        ylim = ylim_all_ages if age_label == "all_ages" else ylim_age_bins
         plot_outcome_difference_by_distance_total_caregiving(
             prof_diff=prof_diff,
             prof_1_year_diff=p1,
@@ -948,6 +982,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             ylabel="Difference in part-time rate",
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
         )
 
 
@@ -983,6 +1018,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        ylim_all_ages: Optional[tuple[float, float]] = None,
+        ylim_age_bins: Optional[tuple[float, float]] = None,
     ) -> None:
         """Event study: part-time rate difference by distance to first caregiving spell (total care years 1–5+), back_to_Jan7."""
         with path_to_specs.open("rb") as f:
@@ -1013,6 +1050,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 compare_against_baseline=False,
             )
         )
+        ylim = ylim_all_ages if age_label == "all_ages" else ylim_age_bins
         plot_outcome_difference_by_distance_total_caregiving(
             prof_diff=prof_diff,
             prof_1_year_diff=p1,
@@ -1027,6 +1065,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             ylabel="Difference in part-time rate",
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
         )
 
 
@@ -1065,6 +1104,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        ylim_all_ages: Optional[tuple[float, float]] = None,
+        ylim_age_bins: Optional[tuple[float, float]] = None,
     ) -> None:
         """Event study: weekly working hours difference by distance to first care demand (total care years 1–5+)."""
         with path_to_specs.open("rb") as f:
@@ -1103,6 +1144,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 compare_against_baseline=False,
             )
         )
+        ylim = ylim_all_ages if age_label == "all_ages" else ylim_age_bins
         plot_outcome_difference_by_distance_total_caregiving(
             prof_diff=prof_diff,
             prof_1_year_diff=p1,
@@ -1118,6 +1160,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             endogenous_ylim=True,
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
         )
 
 
@@ -1153,6 +1196,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        ylim_all_ages: Optional[tuple[float, float]] = None,
+        ylim_age_bins: Optional[tuple[float, float]] = None,
     ) -> None:
         """Event study: weekly working hours difference by distance to first care demand (total care years 1–5+), back_to_Jan7."""
         with path_to_specs.open("rb") as f:
@@ -1191,6 +1236,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 compare_against_baseline=False,
             )
         )
+        ylim = ylim_all_ages if age_label == "all_ages" else ylim_age_bins
         plot_outcome_difference_by_distance_total_caregiving(
             prof_diff=prof_diff,
             prof_1_year_diff=p1,
@@ -1206,6 +1252,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             endogenous_ylim=True,
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
         )
 
 
@@ -1243,6 +1290,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        ylim_all_ages: Optional[tuple[float, float]] = None,
+        ylim_age_bins: Optional[tuple[float, float]] = None,
     ) -> None:
         """Event study: weekly working hours difference by distance to first caregiving spell (total care years 1–5+)."""
         with path_to_specs.open("rb") as f:
@@ -1281,6 +1330,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 compare_against_baseline=False,
             )
         )
+        ylim = ylim_all_ages if age_label == "all_ages" else ylim_age_bins
         plot_outcome_difference_by_distance_total_caregiving(
             prof_diff=prof_diff,
             prof_1_year_diff=p1,
@@ -1296,6 +1346,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             endogenous_ylim=True,
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
         )
 
 
@@ -1333,6 +1384,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        ylim_all_ages: Optional[tuple[float, float]] = None,
+        ylim_age_bins: Optional[tuple[float, float]] = None,
     ) -> None:
         """Event study: weekly working hours difference by distance to first caregiving spell (total care years 1–5+), back_to_Jan7."""
         with path_to_specs.open("rb") as f:
@@ -1371,6 +1424,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 compare_against_baseline=False,
             )
         )
+        ylim = ylim_all_ages if age_label == "all_ages" else ylim_age_bins
         plot_outcome_difference_by_distance_total_caregiving(
             prof_diff=prof_diff,
             prof_1_year_diff=p1,
@@ -1386,6 +1440,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             endogenous_ylim=True,
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
         )
 
 
@@ -1397,35 +1452,37 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
     @pytask.mark.publication_event_study
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
+    @pytask.mark.publication_selection
     @pytask.task(id=f"{age_label_val}_labor_income_first_care_demand_estimated_params")
     def task_plot_event_study_labor_income_by_distance_to_first_care_demand_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
-        path_to_original_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_estimated_params.pkl",
-        path_to_no_care_demand_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_no_care_demand.pkl",
+        path_to_original_data: Path = PATH_TO_BASELINE,
+        path_to_no_care_demand_data: Path = PATH_TO_NO_CARE_DEMAND,
         path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
-        / "counterfactual"
-        / "event_study"
-        / "labor_income"
-        / "total_caregiving_years"
-        / (
-            f"event_study_monthly_gross_labor_income_by_distance_to_first_care_demand_"
-            f"total_caregiving_{age_label_val}.pdf"
-        ),
+        / "selection"
+        / "event_study_care_demand"
+        / f"diff_monthly_gross_earnings_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window_low: int = 20,
-        window_high: int = 20,
+        window_low: int = 15,
+        window_high: int = 15,
+        window_by_age: dict[str, tuple[int, int]] | None = (
+            {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
+        ),
+        ylim: tuple[float, float] | None = (-0.5, 0.2),
+        yticks: list[float] | None = [-0.5, -0.4, -0.3, -0.2, -0.1, 0, 0.1, 0.2],
+        plot_caregivers_mean: bool = True,
     ) -> None:
         """Event study: monthly gross labor income difference by distance to first care demand (total care years 1–5+)."""
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -1452,8 +1509,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 df_c,
                 o_out,
                 c_out,
-                window_low,
-                window_high,
+                w_low,
+                w_high,
                 age_min,
                 age_max,
                 "care_demand",
@@ -1469,14 +1526,17 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             prof_3_year_diff=p3,
             prof_4_year_diff=p4,
             prof_5_year_diff=p5,
-            window_low=window_low,
-            window_high=window_high,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
-            ylabel="Difference in monthly gross labor income",
+            ylabel="Difference in monthly gross earnings (1,000 euros)",
             endogenous_ylim=True,
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
+            yticks=yticks,
+            plot_caregivers_mean=plot_caregivers_mean,
         )
 
 
@@ -1512,6 +1572,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        ylim_all_ages: Optional[tuple[float, float]] = None,
+        ylim_age_bins: Optional[tuple[float, float]] = None,
     ) -> None:
         """Event study: monthly gross labor income difference by distance to first care demand (total care years 1–5+), back_to_Jan7."""
         with path_to_specs.open("rb") as f:
@@ -1550,6 +1612,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 compare_against_baseline=False,
             )
         )
+        ylim = ylim_all_ages if age_label == "all_ages" else ylim_age_bins
         plot_outcome_difference_by_distance_total_caregiving(
             prof_diff=prof_diff,
             prof_1_year_diff=p1,
@@ -1565,6 +1628,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             endogenous_ylim=True,
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
         )
 
 
@@ -1602,6 +1666,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        ylim_all_ages: Optional[tuple[float, float]] = None,
+        ylim_age_bins: Optional[tuple[float, float]] = None,
     ) -> None:
         """Event study: monthly gross labor income difference by distance to first caregiving spell (total care years 1–5+)."""
         with path_to_specs.open("rb") as f:
@@ -1640,6 +1706,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 compare_against_baseline=False,
             )
         )
+        ylim = ylim_all_ages if age_label == "all_ages" else ylim_age_bins
         plot_outcome_difference_by_distance_total_caregiving(
             prof_diff=prof_diff,
             prof_1_year_diff=p1,
@@ -1655,6 +1722,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             endogenous_ylim=True,
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
         )
 
 
@@ -1690,6 +1758,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        ylim_all_ages: Optional[tuple[float, float]] = None,
+        ylim_age_bins: Optional[tuple[float, float]] = None,
     ) -> None:
         """Event study: monthly gross labor income difference by distance to first caregiving spell (total care years 1–5+), back_to_Jan7."""
         with path_to_specs.open("rb") as f:
@@ -1728,6 +1798,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 compare_against_baseline=False,
             )
         )
+        ylim = ylim_all_ages if age_label == "all_ages" else ylim_age_bins
         plot_outcome_difference_by_distance_total_caregiving(
             prof_diff=prof_diff,
             prof_1_year_diff=p1,
@@ -1743,6 +1814,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             endogenous_ylim=True,
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
         )
 
 
@@ -1782,6 +1854,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        ylim_all_ages: Optional[tuple[float, float]] = None,
+        ylim_age_bins: Optional[tuple[float, float]] = None,
     ) -> None:
         """Event study: job finding rate difference by distance to first care demand (total care years 1–5+). Conditional on previously not working, not retired."""
         with path_to_specs.open("rb") as f:
@@ -1812,6 +1886,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 compare_against_baseline=False,
             )
         )
+        ylim = ylim_all_ages if age_label == "all_ages" else ylim_age_bins
         plot_outcome_difference_by_distance_total_caregiving(
             prof_diff=prof_diff,
             prof_1_year_diff=p1,
@@ -1826,6 +1901,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             ylabel="Difference in job finding rate",
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
         )
 
 
@@ -1862,6 +1938,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        ylim_all_ages: Optional[tuple[float, float]] = None,
+        ylim_age_bins: Optional[tuple[float, float]] = None,
     ) -> None:
         """Event study: job finding rate difference by distance to first care demand (total care years 1–5+), back_to_Jan7."""
         with path_to_specs.open("rb") as f:
@@ -1892,6 +1970,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 compare_against_baseline=False,
             )
         )
+        ylim = ylim_all_ages if age_label == "all_ages" else ylim_age_bins
         plot_outcome_difference_by_distance_total_caregiving(
             prof_diff=prof_diff,
             prof_1_year_diff=p1,
@@ -1906,6 +1985,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             ylabel="Difference in job finding rate",
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
         )
 
 
@@ -1944,6 +2024,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        ylim_all_ages: Optional[tuple[float, float]] = None,
+        ylim_age_bins: Optional[tuple[float, float]] = None,
     ) -> None:
         """Event study: job finding rate difference by distance to first caregiving spell (total care years 1–5+)."""
         with path_to_specs.open("rb") as f:
@@ -1974,6 +2056,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 compare_against_baseline=False,
             )
         )
+        ylim = ylim_all_ages if age_label == "all_ages" else ylim_age_bins
         plot_outcome_difference_by_distance_total_caregiving(
             prof_diff=prof_diff,
             prof_1_year_diff=p1,
@@ -1988,6 +2071,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             ylabel="Difference in job finding rate",
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
         )
 
 
@@ -2024,6 +2108,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        ylim_all_ages: Optional[tuple[float, float]] = None,
+        ylim_age_bins: Optional[tuple[float, float]] = None,
     ) -> None:
         """Event study: job finding rate difference by distance to first caregiving spell (total care years 1–5+), back_to_Jan7."""
         with path_to_specs.open("rb") as f:
@@ -2054,6 +2140,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 compare_against_baseline=False,
             )
         )
+        ylim = ylim_all_ages if age_label == "all_ages" else ylim_age_bins
         plot_outcome_difference_by_distance_total_caregiving(
             prof_diff=prof_diff,
             prof_1_year_diff=p1,
@@ -2068,6 +2155,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             ylabel="Difference in job finding rate",
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
         )
 
 
@@ -2107,6 +2195,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        ylim_all_ages: Optional[tuple[float, float]] = None,
+        ylim_age_bins: Optional[tuple[float, float]] = None,
     ) -> None:
         """Event study: job retention rate (1 - separation) difference by distance to first care demand (total care years 1–5+). Conditional on previously working."""
         with path_to_specs.open("rb") as f:
@@ -2137,6 +2227,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 compare_against_baseline=False,
             )
         )
+        ylim = ylim_all_ages if age_label == "all_ages" else ylim_age_bins
         plot_outcome_difference_by_distance_total_caregiving(
             prof_diff=prof_diff,
             prof_1_year_diff=p1,
@@ -2151,6 +2242,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             ylabel="Difference in job retention rate",
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
         )
 
 
@@ -2187,6 +2279,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        ylim_all_ages: Optional[tuple[float, float]] = None,
+        ylim_age_bins: Optional[tuple[float, float]] = None,
     ) -> None:
         """Event study: job retention rate difference by distance to first care demand (total care years 1–5+), back_to_Jan7."""
         with path_to_specs.open("rb") as f:
@@ -2217,6 +2311,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 compare_against_baseline=False,
             )
         )
+        ylim = ylim_all_ages if age_label == "all_ages" else ylim_age_bins
         plot_outcome_difference_by_distance_total_caregiving(
             prof_diff=prof_diff,
             prof_1_year_diff=p1,
@@ -2231,6 +2326,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             ylabel="Difference in job retention rate",
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
         )
 
 
@@ -2269,6 +2365,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        ylim_all_ages: Optional[tuple[float, float]] = None,
+        ylim_age_bins: Optional[tuple[float, float]] = None,
     ) -> None:
         """Event study: job retention rate difference by distance to first caregiving spell (total care years 1–5+)."""
         with path_to_specs.open("rb") as f:
@@ -2299,6 +2397,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 compare_against_baseline=False,
             )
         )
+        ylim = ylim_all_ages if age_label == "all_ages" else ylim_age_bins
         plot_outcome_difference_by_distance_total_caregiving(
             prof_diff=prof_diff,
             prof_1_year_diff=p1,
@@ -2313,6 +2412,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             ylabel="Difference in job retention rate",
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
         )
 
 
@@ -2351,6 +2451,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 20,
         window_high: int = 20,
+        ylim_all_ages: Optional[tuple[float, float]] = None,
+        ylim_age_bins: Optional[tuple[float, float]] = None,
     ) -> None:
         """Event study: job retention rate difference by distance to first caregiving spell (total care years 1–5+), back_to_Jan7."""
         with path_to_specs.open("rb") as f:
@@ -2381,6 +2483,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
                 compare_against_baseline=False,
             )
         )
+        ylim = ylim_all_ages if age_label == "all_ages" else ylim_age_bins
         plot_outcome_difference_by_distance_total_caregiving(
             prof_diff=prof_diff,
             prof_1_year_diff=p1,
@@ -2395,4 +2498,5 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             ylabel="Difference in job retention rate",
             style=get_publication_plot_style(age_label),
             age_label=age_label,
+            ylim=ylim,
         )

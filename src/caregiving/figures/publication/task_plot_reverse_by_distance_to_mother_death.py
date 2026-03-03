@@ -20,7 +20,10 @@ from pytask import Product
 
 from caregiving.config import BLD
 from caregiving.counterfactual.plotting_helpers import (
+    PATH_TO_BASELINE,
+    PATH_TO_NO_CARE_DEMAND,
     calculate_simple_outcomes,
+    get_publication_plot_style,
     prepare_dataframes_simple,
 )
 from caregiving.figures.publication.plotting_helpers import (
@@ -182,7 +185,6 @@ def _filter_merged_by_first_care_demand_to_death(
 # ---------------------------------------------------------------------------
 for age_min_val, age_max_val, age_label_val in (
     (None, None, "all_ages"),
-    # (40, 49, "ages_40_49"),
     (50, 59, "ages_50_59"),
     (60, 70, "ages_60_70"),
 ):
@@ -190,33 +192,30 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_reverse
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
+    @pytask.mark.publication_selection
     @pytask.task(id=f"{age_label_val}_mother_death_total_caregiving_employment")
     def task_plot_employment_rate_by_distance_to_mother_death_total_caregiving(  # noqa: PLR0913
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
-        path_to_original_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_estimated_params.pkl",
-        path_to_no_care_demand_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_no_care_demand.pkl",
+        path_to_original_data: Path = PATH_TO_BASELINE,
+        path_to_no_care_demand_data: Path = PATH_TO_NO_CARE_DEMAND,
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
-        / "counterfactual"
-        / "reverse_employment"
-        / "employment"
-        / "total_caregiving_years"
-        / (
-            f"employment_rate_by_distance_to_mother_death_"
-            f"total_caregiving_{age_label_val}.pdf"
-        ),
+        / "selection"
+        / "conditional_means_mother_death"
+        / f"employment_rate_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window_low: int = 20,
-        window_high: int = 20,
-        window_by_age: dict[str, tuple[int, int]] | None = None,
+        window_low: int = 15,
+        window_high: int = 15,
+        window_by_age: dict[str, tuple[int, int]] | None = (
+            {"ages_60_70": (15, 10)}
+        ),
+        ylim: tuple[float, float] | None = (0, 1),
+        yticks: list[float] | None = [0, 0.2, 0.4, 0.6, 0.8, 1.0],
+        plot_caregivers_mean: bool = True,
     ) -> None:
         """Employment rate by distance to mother's death, total care years 1–5+ before death. Standard data."""
         df_o, df_c = prepare_dataframes_simple(
@@ -262,41 +261,42 @@ for age_min_val, age_max_val, age_label_val in (
             xlabel="Year relative to mother's death",
             outcome_baseline="work_o",
             outcome_counterfactual="work_c",
-            ylabel="Employment Rate",
-            ylim=(-0.025, 1.0),
+            ylabel="Employment rate",
+            ylim=ylim,
+            yticks=yticks,
+            plot_caregivers_mean=plot_caregivers_mean,
             subgroup_labels=TOTAL_LABELS_BEFORE_DEATH,
+            style=get_publication_plot_style(age_label, use_subgroup_overrides=False),
+            age_label=age_label,
         )
 
     @pytask.mark.publication_reverse
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
+    @pytask.mark.publication_selection
     @pytask.task(id=f"{age_label_val}_mother_death_total_caregiving_full_time")
     def task_plot_full_time_share_by_distance_to_mother_death_total_caregiving(  # noqa: PLR0913
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
-        path_to_original_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_estimated_params.pkl",
-        path_to_no_care_demand_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_no_care_demand.pkl",
+        path_to_original_data: Path = PATH_TO_BASELINE,
+        path_to_no_care_demand_data: Path = PATH_TO_NO_CARE_DEMAND,
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
-        / "counterfactual"
-        / "reverse_employment"
-        / "full_time"
-        / "total_caregiving_years"
-        / (
-            f"full_time_share_by_distance_to_mother_death_"
-            f"total_caregiving_{age_label_val}.pdf"
-        ),
+        / "selection"
+        / "conditional_means_mother_death"
+        / f"full_time_share_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window_low: int = 20,
-        window_high: int = 20,
-        window_by_age: dict[str, tuple[int, int]] | None = None,
+        window_low: int = 15,
+        window_high: int = 15,
+        window_by_age: dict[str, tuple[int, int]] | None = (
+            {"ages_60_70": (15, 10)}
+        ),
+        ylim: tuple[float, float] | None = (0, 0.5),
+        yticks: list[float] | None = [0, 0.1, 0.2, 0.3, 0.4, 0.5],
+        plot_caregivers_mean: bool = True,
     ) -> None:
         """Full-time share by distance to mother's death, total care years 1–5+ before death. Standard data."""
         df_o, df_c = prepare_dataframes_simple(
@@ -342,41 +342,42 @@ for age_min_val, age_max_val, age_label_val in (
             xlabel="Year relative to mother's death",
             outcome_baseline="full_time_o",
             outcome_counterfactual="full_time_c",
-            ylabel="Full-Time Share",
-            ylim=(-0.025, 1.0),
+            ylabel="Full-time share",
+            ylim=ylim,
+            yticks=yticks,
+            plot_caregivers_mean=plot_caregivers_mean,
             subgroup_labels=TOTAL_LABELS_BEFORE_DEATH,
+            style=get_publication_plot_style(age_label, use_subgroup_overrides=False),
+            age_label=age_label,
         )
 
     @pytask.mark.publication_reverse
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
+    @pytask.mark.publication_selection
     @pytask.task(id=f"{age_label_val}_mother_death_total_caregiving_part_time")
     def task_plot_part_time_share_by_distance_to_mother_death_total_caregiving(  # noqa: PLR0913
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
-        path_to_original_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_estimated_params.pkl",
-        path_to_no_care_demand_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_no_care_demand.pkl",
+        path_to_original_data: Path = PATH_TO_BASELINE,
+        path_to_no_care_demand_data: Path = PATH_TO_NO_CARE_DEMAND,
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
-        / "counterfactual"
-        / "reverse_employment"
-        / "part_time"
-        / "total_caregiving_years"
-        / (
-            f"part_time_share_by_distance_to_mother_death_"
-            f"total_caregiving_{age_label_val}.pdf"
-        ),
+        / "selection"
+        / "conditional_means_mother_death"
+        / f"part_time_share_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window_low: int = 20,
-        window_high: int = 20,
-        window_by_age: dict[str, tuple[int, int]] | None = None,
+        window_low: int = 15,
+        window_high: int = 15,
+        window_by_age: dict[str, tuple[int, int]] | None = (
+            {"ages_60_70": (15, 10)}
+        ),
+        ylim: tuple[float, float] | None = (0, 0.5),
+        yticks: list[float] | None = [0, 0.1, 0.2, 0.3, 0.4, 0.5],
+        plot_caregivers_mean: bool = True,
     ) -> None:
         """Part-time share by distance to mother's death, total care years 1–5+ before death. Standard data."""
         df_o, df_c = prepare_dataframes_simple(
@@ -422,9 +423,13 @@ for age_min_val, age_max_val, age_label_val in (
             xlabel="Year relative to mother's death",
             outcome_baseline="part_time_o",
             outcome_counterfactual="part_time_c",
-            ylabel="Part-Time Share",
-            ylim=(-0.025, 1.0),
+            ylabel="Part-time share",
+            ylim=ylim,
+            yticks=yticks,
+            plot_caregivers_mean=plot_caregivers_mean,
             subgroup_labels=TOTAL_LABELS_BEFORE_DEATH,
+            style=get_publication_plot_style(age_label, use_subgroup_overrides=False),
+            age_label=age_label,
         )
 
     @pytask.mark.publication_reverse
@@ -518,33 +523,30 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_reverse
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
+    @pytask.mark.publication_selection
     @pytask.task(id=f"{age_label_val}_mother_death_total_caregiving_labor_income")
     def task_plot_labor_income_by_distance_to_mother_death_total_caregiving(  # noqa: PLR0913
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
-        path_to_original_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_estimated_params.pkl",
-        path_to_no_care_demand_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_no_care_demand.pkl",
+        path_to_original_data: Path = PATH_TO_BASELINE,
+        path_to_no_care_demand_data: Path = PATH_TO_NO_CARE_DEMAND,
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
-        / "counterfactual"
-        / "reverse_employment"
-        / "labor_income"
-        / "total_caregiving_years"
-        / (
-            f"monthly_gross_labor_income_by_distance_to_mother_death_"
-            f"total_caregiving_{age_label_val}.pdf"
-        ),
+        / "selection"
+        / "conditional_means_mother_death"
+        / f"monthly_gross_earnings_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window_low: int = 20,
-        window_high: int = 20,
-        window_by_age: dict[str, tuple[int, int]] | None = None,
+        window_low: int = 15,
+        window_high: int = 15,
+        window_by_age: dict[str, tuple[int, int]] | None = (
+            {"ages_60_70": (15, 10)}
+        ),
+        ylim: tuple[float, float] | None = (0, 1.8),
+        yticks: list[float] | None = [0, 0.25, 0.50, 0.75, 1.00, 1.25, 1.50, 1.75],
+        plot_caregivers_mean: bool = True,
     ) -> None:
         """Monthly gross labor income by distance to mother's death, total care years 1–5+ before death. Standard data."""
         df_o, df_c = prepare_dataframes_simple(
@@ -601,9 +603,13 @@ for age_min_val, age_max_val, age_label_val in (
             xlabel="Year relative to mother's death",
             outcome_baseline="monthly_gross_labor_income_o",
             outcome_counterfactual="monthly_gross_labor_income_c",
-            ylabel="Monthly Gross Labor Income",
-            ylim=None,
+            ylabel="Monthly gross earnings (1,000 euros)",
+            ylim=ylim,
+            yticks=yticks,
+            plot_caregivers_mean=plot_caregivers_mean,
             subgroup_labels=TOTAL_LABELS_BEFORE_DEATH,
+            style=get_publication_plot_style(age_label, use_subgroup_overrides=False),
+            age_label=age_label,
         )
 
 

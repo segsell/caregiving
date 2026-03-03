@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import pickle
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Optional
 
 import numpy as np
 import pandas as pd
@@ -32,7 +32,10 @@ from pytask import Product
 
 from caregiving.config import BLD
 from caregiving.counterfactual.plotting_helpers import (
+    PATH_TO_BASELINE,
+    PATH_TO_NO_CARE_DEMAND,
     calculate_simple_outcomes,
+    get_publication_plot_style,
     identify_agents_by_total_caregiving_over_lifecycle,
     prepare_dataframes_simple,
 )
@@ -56,7 +59,6 @@ _DIST_COL = "distance_to_first_care"
 
 _AGE_GROUPS = (
     (None, None, "all_ages"),
-    (40, 49, "ages_40_49"),
     (50, 59, "ages_50_59"),
     (60, 70, "ages_60_70"),
 )
@@ -67,7 +69,8 @@ def reverse_event_study_total_caregiving_merged_and_profiles(
     df_c: pd.DataFrame,
     outcome_o_series: pd.Series,
     outcome_c_series: pd.Series,
-    window: int,
+    window_low: int,
+    window_high: int,
     age_min: int | None,
     age_max: int | None,
     start_age: int,
@@ -99,26 +102,6 @@ def reverse_event_study_total_caregiving_merged_and_profiles(
         .reset_index()
     )
     merged = merged.merge(dist_map, on="agent", how="left")
-    # Safeguard: ensure mother's death occurs in the same period in no-care-demand
-    df_c_dist = add_distance_to_mother_death(df_c)
-    first_death_c = (
-        df_c_dist.groupby("agent", observed=False)["first_death_period"]
-        .first()
-        .reset_index()
-        .rename(columns={"first_death_period": "first_death_period_c"})
-    )
-    merged = merged.merge(first_death_c, on="agent", how="left")
-    both = merged["first_death_period"].notna() & merged["first_death_period_c"].notna()
-    mismatch = both & (merged["first_death_period"] != merged["first_death_period_c"])
-    if mismatch.any():
-        n = mismatch.sum()
-        agents_bad = merged.loc[mismatch, "agent"].unique()
-        raise AssertionError(
-            f"Mother's death period must match in baseline and no-care-demand (same "
-            f"initial states, exogenous death). Found {n} (agent, period) rows with "
-            f"mismatch across {len(agents_bad)} agents. Example agents: {agents_bad[:5].tolist()}"
-        )
-    merged = merged.drop(columns=["first_death_period_c"])
     merged["distance_to_mother_death"] = merged["period"] - merged["first_death_period"]
     death_mask = df_o["mother_dead"] == PARENT_RECENTLY_DEAD
     first_death_with_age = (
@@ -132,8 +115,8 @@ def reverse_event_study_total_caregiving_merged_and_profiles(
     )
     merged = merged[
         merged["first_death_period"].notna()
-        & (merged["distance_to_mother_death"] >= -window)
-        & (merged["distance_to_mother_death"] <= window)
+        & (merged["distance_to_mother_death"] >= -window_low)
+        & (merged["distance_to_mother_death"] <= window_high)
     ]
     if age_min is not None:
         merged = merged[merged["age_at_death"] >= age_min].copy()
@@ -187,35 +170,39 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
     @pytask.mark.publication_event_study_reverse
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
+    @pytask.mark.publication_selection
     @pytask.task(
         id=f"{age_label_val}_reverse_event_study_mother_death_employment_total_caregiving_estimated_params"
     )
     def task_plot_event_study_employment_rate_by_distance_to_mother_death_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
-        path_to_original_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_estimated_params.pkl",
-        path_to_no_care_demand_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_no_care_demand.pkl",
+        age_label: str = age_label_val,
+        path_to_original_data: Path = PATH_TO_BASELINE,
+        path_to_no_care_demand_data: Path = PATH_TO_NO_CARE_DEMAND,
         path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
-        / "counterfactual"
-        / "event_study_reverse"
-        / "employment"
-        / "total_caregiving_years"
-        / (
-            f"event_study_employment_rate_by_distance_to_mother_death_"
-            f"total_caregiving_{age_label_val}.pdf"
-        ),
+        / "selection"
+        / "event_study_mother_death"
+        / f"diff_employment_rate_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 15,
+        window_high: int = 15,
+        window_by_age: dict[str, tuple[int, int]] | None = (
+            {"ages_60_70": (15, 10)}
+        ),
+        ylim: tuple[float, float] | None = (-0.25, 0.15),
+        yticks: list[float] | None = [-0.2, -0.1, 0, 0.1],
+        plot_caregivers_mean: bool = True,
     ) -> None:
         """Event study: employment rate difference by distance to mother's death (total care years 1–5+)."""
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -234,7 +221,8 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
                 df_c,
                 o_work,
                 c_work,
-                window,
+                w_low,
+                w_high,
                 age_min,
                 age_max,
                 start_age,
@@ -248,11 +236,16 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
             prof_3_year_diff=p3,
             prof_4_year_diff=p4,
             prof_5_year_diff=p5,
-            window_low=window,
-            window_high=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
             ylabel="Difference in employment rate",
+            style=get_publication_plot_style(age_label, use_subgroup_overrides=False),
+            age_label=age_label,
+            ylim=ylim,
+            yticks=yticks,
+            plot_caregivers_mean=plot_caregivers_mean,
         )
 
 
@@ -312,6 +305,7 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
                 o_work,
                 c_work,
                 window,
+                window,
                 age_min,
                 age_max,
                 start_age,
@@ -341,35 +335,39 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
     @pytask.mark.publication_event_study_reverse
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
+    @pytask.mark.publication_selection
     @pytask.task(
         id=f"{age_label_val}_reverse_event_study_mother_death_full_time_total_caregiving_estimated_params"
     )
     def task_plot_event_study_full_time_by_distance_to_mother_death_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
-        path_to_original_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_estimated_params.pkl",
-        path_to_no_care_demand_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_no_care_demand.pkl",
+        age_label: str = age_label_val,
+        path_to_original_data: Path = PATH_TO_BASELINE,
+        path_to_no_care_demand_data: Path = PATH_TO_NO_CARE_DEMAND,
         path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
-        / "counterfactual"
-        / "event_study_reverse"
-        / "full_time"
-        / "total_caregiving_years"
-        / (
-            f"event_study_full_time_by_distance_to_mother_death_"
-            f"total_caregiving_{age_label_val}.pdf"
-        ),
+        / "selection"
+        / "event_study_mother_death"
+        / f"diff_full_time_share_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 15,
+        window_high: int = 15,
+        window_by_age: dict[str, tuple[int, int]] | None = (
+            {"ages_60_70": (15, 10)}
+        ),
+        ylim: tuple[float, float] | None = (-0.25, 0.15),
+        yticks: list[float] | None = [-0.2, -0.1, 0, 0.1],
+        plot_caregivers_mean: bool = True,
     ) -> None:
         """Event study: full-time rate difference by distance to mother's death (total care years 1–5+)."""
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -388,7 +386,8 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
                 df_c,
                 o_out,
                 c_out,
-                window,
+                w_low,
+                w_high,
                 age_min,
                 age_max,
                 start_age,
@@ -402,11 +401,16 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
             prof_3_year_diff=p3,
             prof_4_year_diff=p4,
             prof_5_year_diff=p5,
-            window_low=window,
-            window_high=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
-            ylabel="Difference in full-time rate",
+            ylabel="Difference in full-time share",
+            style=get_publication_plot_style(age_label, use_subgroup_overrides=False),
+            age_label=age_label,
+            ylim=ylim,
+            yticks=yticks,
+            plot_caregivers_mean=plot_caregivers_mean,
         )
 
 
@@ -463,6 +467,7 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
                 o_out,
                 c_out,
                 window,
+                window,
                 age_min,
                 age_max,
                 start_age,
@@ -492,35 +497,39 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
     @pytask.mark.publication_event_study_reverse
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
+    @pytask.mark.publication_selection
     @pytask.task(
         id=f"{age_label_val}_reverse_event_study_mother_death_part_time_total_caregiving_estimated_params"
     )
     def task_plot_event_study_part_time_by_distance_to_mother_death_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
-        path_to_original_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_estimated_params.pkl",
-        path_to_no_care_demand_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_no_care_demand.pkl",
+        age_label: str = age_label_val,
+        path_to_original_data: Path = PATH_TO_BASELINE,
+        path_to_no_care_demand_data: Path = PATH_TO_NO_CARE_DEMAND,
         path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
-        / "counterfactual"
-        / "event_study_reverse"
-        / "part_time"
-        / "total_caregiving_years"
-        / (
-            f"event_study_part_time_by_distance_to_mother_death_"
-            f"total_caregiving_{age_label_val}.pdf"
-        ),
+        / "selection"
+        / "event_study_mother_death"
+        / f"diff_part_time_share_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 15,
+        window_high: int = 15,
+        window_by_age: dict[str, tuple[int, int]] | None = (
+            {"ages_60_70": (15, 10)}
+        ),
+        ylim: tuple[float, float] | None = (-0.25, 0.15),
+        yticks: list[float] | None = [-0.2, -0.1, 0, 0.1],
+        plot_caregivers_mean: bool = True,
     ) -> None:
         """Event study: part-time rate difference by distance to mother's death (total care years 1–5+)."""
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -539,7 +548,8 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
                 df_c,
                 o_out,
                 c_out,
-                window,
+                w_low,
+                w_high,
                 age_min,
                 age_max,
                 start_age,
@@ -553,11 +563,16 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
             prof_3_year_diff=p3,
             prof_4_year_diff=p4,
             prof_5_year_diff=p5,
-            window_low=window,
-            window_high=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
-            ylabel="Difference in part-time rate",
+            ylabel="Difference in part-time share",
+            style=get_publication_plot_style(age_label, use_subgroup_overrides=False),
+            age_label=age_label,
+            ylim=ylim,
+            yticks=yticks,
+            plot_caregivers_mean=plot_caregivers_mean,
         )
 
 
@@ -613,6 +628,7 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
                 df_c,
                 o_out,
                 c_out,
+                window,
                 window,
                 age_min,
                 age_max,
@@ -699,6 +715,7 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
                 o_out,
                 c_out,
                 window,
+                window,
                 age_min,
                 age_max,
                 start_age,
@@ -782,6 +799,7 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
                 o_out,
                 c_out,
                 window,
+                window,
                 age_min,
                 age_max,
                 start_age,
@@ -812,35 +830,39 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
     @pytask.mark.publication_event_study_reverse
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
+    @pytask.mark.publication_selection
     @pytask.task(
         id=f"{age_label_val}_reverse_event_study_mother_death_labor_income_total_caregiving_estimated_params"
     )
     def task_plot_event_study_labor_income_by_distance_to_mother_death_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
-        path_to_original_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_estimated_params.pkl",
-        path_to_no_care_demand_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_no_care_demand.pkl",
+        age_label: str = age_label_val,
+        path_to_original_data: Path = PATH_TO_BASELINE,
+        path_to_no_care_demand_data: Path = PATH_TO_NO_CARE_DEMAND,
         path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
-        / "counterfactual"
-        / "event_study_reverse"
-        / "labor_income"
-        / "total_caregiving_years"
-        / (
-            f"event_study_monthly_gross_labor_income_by_distance_to_mother_death_"
-            f"total_caregiving_{age_label_val}.pdf"
-        ),
+        / "selection"
+        / "event_study_mother_death"
+        / f"diff_monthly_gross_earnings_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 15,
+        window_high: int = 15,
+        window_by_age: dict[str, tuple[int, int]] | None = (
+            {"ages_60_70": (15, 10)}
+        ),
+        ylim: tuple[float, float] | None = (-0.5, 0.2),
+        yticks: list[float] | None = [-0.5, -0.4, -0.3, -0.2, -0.1, 0, 0.1, 0.2],
+        plot_caregivers_mean: bool = True,
     ) -> None:
         """Event study: monthly gross labor income difference by distance to mother's death (total care years 1–5+)."""
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -867,7 +889,8 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
                 df_c,
                 o_out,
                 c_out,
-                window,
+                w_low,
+                w_high,
                 age_min,
                 age_max,
                 start_age,
@@ -881,12 +904,16 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
             prof_3_year_diff=p3,
             prof_4_year_diff=p4,
             prof_5_year_diff=p5,
-            window_low=window,
-            window_high=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to mother's death",
-            ylabel="Difference in monthly gross labor income",
-            endogenous_ylim=True,
+            ylabel="Difference in monthly gross earnings (1,000 euros)",
+            style=get_publication_plot_style(age_label, use_subgroup_overrides=False),
+            age_label=age_label,
+            ylim=ylim,
+            yticks=yticks,
+            plot_caregivers_mean=plot_caregivers_mean,
         )
 
 
@@ -950,6 +977,7 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
                 df_c,
                 o_out,
                 c_out,
+                window,
                 window,
                 age_min,
                 age_max,

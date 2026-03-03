@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from caregiving.config import JET_COLOR_MAP
+from caregiving.config import BLD, JET_COLOR_MAP
 from caregiving.counterfactual.plotting_utils import ensure_agent_period
 from caregiving.model.shared import (
     DEAD,
@@ -24,6 +24,16 @@ from caregiving.model.shared_no_care_demand import (
     FULL_TIME_NO_CARE_DEMAND,
     PART_TIME_NO_CARE_DEMAND,
     WORK_NO_CARE_DEMAND,
+)
+
+# ============================================================================
+# Default simulation data paths (Feb16 estimated params / no care demand)
+# ============================================================================
+PATH_TO_BASELINE = (
+    BLD / "solve_and_simulate" / "simulated_data_estimated_params_Feb16.pkl"
+)
+PATH_TO_NO_CARE_DEMAND = (
+    BLD / "solve_and_simulate" / "simulated_data_no_care_demand_Feb16.pkl"
 )
 
 # ============================================================================
@@ -79,8 +89,9 @@ _EVENT_STUDY_COLS_DF_O = [
     "choice",
     "care_demand",
     "age",
+    "mother_dead",
 ]
-_EVENT_STUDY_COLS_DF_C = ["agent", "period", "health", "choice"]
+_EVENT_STUDY_COLS_DF_C = ["agent", "period", "health", "choice", "mother_dead"]
 _EVENT_STUDY_OPTIONAL_COLS = ["gross_labor_income"]
 
 
@@ -267,6 +278,70 @@ def identify_agents_by_total_caregiving_over_lifecycle(
 # Distance column name used in event-study profile DataFrames
 EVENT_STUDY_DIST_COL = "distance_to_first_care"
 
+
+def _collect_diffs_from_profiles(
+    prof_diff: pd.DataFrame,
+    prof_1: pd.DataFrame,
+    prof_2: pd.DataFrame,
+    prof_3: pd.DataFrame,
+    prof_4: pd.DataFrame,
+    prof_5: pd.DataFrame,
+) -> list[float]:
+    """Collect all finite 'diff' values from the six profile DataFrames."""
+    all_diffs = []
+    for p in (prof_diff, prof_1, prof_2, prof_3, prof_4, prof_5):
+        if len(p) > 0 and "diff" in p.columns:
+            all_diffs.extend(p["diff"].tolist())
+    return [x for x in all_diffs if np.isfinite(x)]
+
+
+def _compute_ylim_from_finite_diffs(
+    finite_diffs: list[float],
+    endogenous_ylim: bool,
+    style: dict,
+) -> tuple[float, float]:
+    """Compute (y_min, y_max) from list of diff values; same logic as plot impl."""
+    if not finite_diffs:
+        return (-0.1, 0.1)
+    if endogenous_ylim:
+        y_min, y_max = min(finite_diffs), max(finite_diffs)
+        pad = (y_max - y_min) * 0.1 if y_max > y_min else 0.1
+        return (y_min - pad, y_max + pad)
+    y_max = max(abs(min(finite_diffs)), abs(max(finite_diffs)))
+    y_lim = (int(y_max * 1.1 / 0.05) + 1) * 0.05
+    y_lim = max(y_lim, 0.05)
+    y_margin = style["y_axis_margin_factor"] * (2 * y_lim)
+    return (-y_lim - y_margin, y_lim + y_margin)
+
+
+def compute_shared_ylim_from_profile_sets(
+    profile_sets: list[
+        tuple[
+            pd.DataFrame,
+            pd.DataFrame,
+            pd.DataFrame,
+            pd.DataFrame,
+            pd.DataFrame,
+            pd.DataFrame,
+        ]
+    ],
+    endogenous_ylim: bool,
+    style: Optional[dict] = None,
+) -> tuple[float, float]:
+    """Compute a single y-axis limit (y_min, y_max) from multiple profile sets.
+
+    Use when plotting the same outcome for several age groups side by side so
+    all panels share the same scale. Pass the same style dict as for plotting.
+    """
+    s = style if style is not None else PUBLICATION_PLOT_STYLE
+    all_finite_diffs = []
+    for prof_diff, p1, p2, p3, p4, p5 in profile_sets:
+        all_finite_diffs.extend(
+            _collect_diffs_from_profiles(prof_diff, p1, p2, p3, p4, p5),
+        )
+    return _compute_ylim_from_finite_diffs(all_finite_diffs, endogenous_ylim, s)
+
+
 # Age groups for event-study tasks: (age_min, age_max, age_label)
 AGE_GROUPS_EVENT_STUDY = (
     (None, None, "all_ages"),
@@ -275,10 +350,13 @@ AGE_GROUPS_EVENT_STUDY = (
     (60, 70, "ages_60_70"),
 )
 
+# Sans-serif fonts used in task_plot_pre_estimation (same standard)
+_SANS_SERIF_FONTS = ("DejaVu Sans", "Liberation Sans", "Arial")
+
 # Shared publication figure style (figsize, fonts, lines, grid) for distance-by-outcome plots
 PUBLICATION_PLOT_STYLE = {
     "figsize": (14, 12),
-    "font_family": "Times New Roman",
+    "font_family": "DejaVu Sans",
     "label_fontsize": 28,
     "xtick_fontsize": 25,
     "ytick_fontsize": 25,
@@ -315,9 +393,16 @@ PUBLICATION_PLOT_STYLE_AGE_SUBGROUPS = {
 _AGE_SUBGROUP_LABELS = ("ages_40_49", "ages_50_59", "ages_60_70")
 
 
-def get_publication_plot_style(age_label: Optional[str] = None) -> dict:
-    """Return publication plot style; use smaller fonts/figsize for age-subgroup panels (three in a row)."""
-    if age_label in _AGE_SUBGROUP_LABELS:
+def get_publication_plot_style(
+    age_label: Optional[str] = None,
+    use_subgroup_overrides: bool = True,
+) -> dict:
+    """Return publication plot style; optionally enlarge fonts for age-subgroup panels.
+
+    When *use_subgroup_overrides* is False the base style is returned regardless
+    of *age_label* (useful for mother-death plots that show only two panels).
+    """
+    if use_subgroup_overrides and age_label in _AGE_SUBGROUP_LABELS:
         return {**PUBLICATION_PLOT_STYLE, **PUBLICATION_PLOT_STYLE_AGE_SUBGROUPS}
     return PUBLICATION_PLOT_STYLE.copy()
 
@@ -395,6 +480,9 @@ def _plot_outcome_difference_by_distance_total_caregiving_impl(  # noqa: PLR0913
     font_family: Optional[str] = None,
     style: Optional[dict] = None,
     age_label: Optional[str] = None,
+    ylim: Optional[tuple[float, float]] = None,
+    yticks: Optional[list[float]] = None,
+    plot_caregivers_mean: bool = True,
 ) -> None:
     """Implementation: plot outcome difference by distance (total care years 1–5+).
 
@@ -403,19 +491,24 @@ def _plot_outcome_difference_by_distance_total_caregiving_impl(  # noqa: PLR0913
     s = style if style is not None else PUBLICATION_PLOT_STYLE
     font = font_family if font_family is not None else s["font_family"]
     if font is not None:
-        plt.rcParams["font.family"] = "serif"
-        plt.rcParams["font.serif"] = [font]
+        if font in _SANS_SERIF_FONTS:
+            plt.rcParams["font.family"] = "sans-serif"
+            plt.rcParams["font.sans-serif"] = list(_SANS_SERIF_FONTS)
+        else:
+            plt.rcParams["font.family"] = "serif"
+            plt.rcParams["font.serif"] = [font]
     plt.figure(figsize=s["figsize"])
 
-    plt.plot(
-        prof_diff[EVENT_STUDY_DIST_COL],
-        prof_diff["diff"],
-        label="Baseline",
-        color="black",
-        linewidth=s["linewidth"],
-        linestyle="--",
-        marker=None,
-    )
+    if plot_caregivers_mean:
+        plt.plot(
+            prof_diff[EVENT_STUDY_DIST_COL],
+            prof_diff["diff"],
+            label="Baseline",
+            color="black",
+            linewidth=s["linewidth"],
+            linestyle="--",
+            marker=None,
+        )
     plt.axhline(y=0, color="k", linestyle="-", linewidth=s["axhline_linewidth"])
 
     def _plot_prof(
@@ -493,31 +586,20 @@ def _plot_outcome_difference_by_distance_total_caregiving_impl(  # noqa: PLR0913
     plt.ylabel(ylabel, fontsize=s["label_fontsize"], labelpad=s.get("labelpad", 14))
     plt.xlim(window_low - 0.5, window_high + 0.5)
 
-    all_diffs = []
-    for p in (
-        prof_diff,
-        prof_1_year_diff,
-        prof_2_year_diff,
-        prof_3_year_diff,
-        prof_4_year_diff,
-        prof_5_year_diff,
-    ):
-        if len(p) > 0 and "diff" in p.columns:
-            all_diffs.extend(p["diff"].tolist())
-    finite_diffs = [x for x in all_diffs if np.isfinite(x)]
-    if finite_diffs:
-        if endogenous_ylim:
-            y_min, y_max = min(finite_diffs), max(finite_diffs)
-            pad = (y_max - y_min) * 0.1 if y_max > y_min else 0.1
-            plt.ylim(y_min - pad, y_max + pad)
-        else:
-            y_max = max(abs(min(finite_diffs)), abs(max(finite_diffs)))
-            y_lim = (int(y_max * 1.1 / 0.05) + 1) * 0.05
-            y_lim = max(y_lim, 0.05)
-            y_margin = s["y_axis_margin_factor"] * (2 * y_lim)
-            plt.ylim(-y_lim - y_margin, y_lim + y_margin)
+    if ylim is not None:
+        pad = s["y_axis_margin_factor"] * (ylim[1] - ylim[0])
+        plt.ylim(ylim[0] - pad, ylim[1])
     else:
-        plt.ylim(-0.1, 0.1)
+        finite_diffs = _collect_diffs_from_profiles(
+            prof_diff,
+            prof_1_year_diff,
+            prof_2_year_diff,
+            prof_3_year_diff,
+            prof_4_year_diff,
+            prof_5_year_diff,
+        )
+        y_min, y_max = _compute_ylim_from_finite_diffs(finite_diffs, endogenous_ylim, s)
+        plt.ylim(y_min, y_max)
 
     tick_step = 5
     plt.grid(True, axis="y", alpha=s["grid_alpha"], linewidth=s["grid_linewidth"])
@@ -525,7 +607,10 @@ def _plot_outcome_difference_by_distance_total_caregiving_impl(  # noqa: PLR0913
         range(window_low, window_high + 1, tick_step),
         fontsize=s["xtick_fontsize"],
     )
-    plt.yticks(fontsize=s["ytick_fontsize"])
+    if yticks is not None:
+        plt.yticks(yticks, fontsize=s["ytick_fontsize"])
+    else:
+        plt.yticks(fontsize=s["ytick_fontsize"])
     ax = plt.gca()
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
@@ -572,12 +657,17 @@ def plot_outcome_difference_by_distance_total_caregiving(  # noqa: PLR0913
     font_family: Optional[str] = None,
     style: Optional[dict] = None,
     age_label: Optional[str] = None,
+    ylim: Optional[tuple[float, float]] = None,
+    yticks: Optional[list[float]] = None,
+    plot_caregivers_mean: bool = True,
 ) -> None:
     """Plot outcome difference by distance with 5 lines: total care years 1, 2, 3, 4, 5+.
 
     Same layout as event study consecutive: dashed black baseline, horizontal line at 0,
     vertical line at t=-0.5, five subgroup lines (1, 2, 3, 4, 5+ total care years).
     When age_label is 'ages_60_70', the 5+ line (stars) is omitted.
+    If ylim is provided, that (y_min, y_max) is used for the y-axis (e.g. for shared
+    scale across age-group panels). Otherwise limits are computed from the profile data.
     Profile DataFrames must have column EVENT_STUDY_DIST_COL and 'diff'.
     All visual style (including font_family) is read from PUBLICATION_PLOT_STYLE unless
     overridden via style or font_family.
@@ -587,7 +677,14 @@ def plot_outcome_difference_by_distance_total_caregiving(  # noqa: PLR0913
     """
     w_low = -window_low
     if font_family is not None:
-        with plt.rc_context({"font.family": "serif", "font.serif": [font_family]}):
+        if font_family in _SANS_SERIF_FONTS:
+            rc = {
+                "font.family": "sans-serif",
+                "font.sans-serif": list(_SANS_SERIF_FONTS),
+            }
+        else:
+            rc = {"font.family": "serif", "font.serif": [font_family]}
+        with plt.rc_context(rc):
             _plot_outcome_difference_by_distance_total_caregiving_impl(
                 prof_diff,
                 prof_1_year_diff,
@@ -604,6 +701,9 @@ def plot_outcome_difference_by_distance_total_caregiving(  # noqa: PLR0913
                 font_family,
                 style,
                 age_label,
+                ylim,
+                yticks,
+                plot_caregivers_mean,
             )
     else:
         _plot_outcome_difference_by_distance_total_caregiving_impl(
@@ -622,6 +722,9 @@ def plot_outcome_difference_by_distance_total_caregiving(  # noqa: PLR0913
             None,
             style,
             age_label,
+            ylim,
+            yticks,
+            plot_caregivers_mean,
         )
 
 

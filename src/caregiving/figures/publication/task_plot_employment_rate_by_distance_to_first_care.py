@@ -17,11 +17,14 @@ from pytask import Product
 
 from caregiving.config import BLD
 from caregiving.counterfactual.plotting_helpers import (
+    PATH_TO_BASELINE,
+    PATH_TO_NO_CARE_DEMAND,
     add_distance_to_first_care,
     add_distance_to_first_care_demand,
     calculate_simple_outcomes,
     ensure_agent_period,
     get_age_at_first_event,
+    get_publication_plot_style,
     identify_agents_by_total_caregiving_over_lifecycle,
     prepare_dataframes_simple,
 )
@@ -1326,33 +1329,31 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication_full_time
     @pytask.mark.publication
+    @pytask.mark.publication_selection
     @pytask.task(id=f"{age_label_val}_care_demand_total_caregiving_full_time")
     def task_plot_full_time_share_by_distance_to_first_care_demand_total_caregiving(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
-        path_to_original_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_estimated_params.pkl",
-        path_to_no_care_demand_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_no_care_demand.pkl",
+        path_to_original_data: Path = PATH_TO_BASELINE,
+        path_to_no_care_demand_data: Path = PATH_TO_NO_CARE_DEMAND,
         path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
-        / "counterfactual"
-        / "full_time"
-        / "total_caregiving_years"
-        / (
-            f"full_time_share_by_distance_to_first_care_demand_"
-            f"total_caregiving_{age_label_val}.pdf"
-        ),
+        / "selection"
+        / "conditional_means_care_demand"
+        / f"full_time_share_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window_low: int = 20,
-        window_high: int = 20,
-        window_by_age: dict[str, tuple[int, int]] | None = None,
+        window_low: int = 15,
+        window_high: int = 15,
+        window_by_age: dict[str, tuple[int, int]] | None = (
+            {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
+        ),
+        ylim: tuple[float, float] | None = (0, 0.5),
+        yticks: list[float] | None = [0, 0.1, 0.2, 0.3, 0.4, 0.5],
+        plot_caregivers_mean: bool = True,
     ) -> None:
         """Plot full-time share by distance to first care demand (ever caregivers, total care years 1–5+).
 
@@ -1476,8 +1477,13 @@ for age_min_val, age_max_val, age_label_val in (
             xlabel="Year relative to start of first care demand",
             outcome_baseline="full_time_o",
             outcome_counterfactual="full_time_c",
-            ylabel="Full-Time Rate",
+            ylabel="Full-time share",
             subgroup_labels=total_labels,
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
+            ylim=ylim,
+            yticks=yticks,
+            plot_caregivers_mean=plot_caregivers_mean,
         )
 
 
@@ -1493,33 +1499,31 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication_part_time
     @pytask.mark.publication
+    @pytask.mark.publication_selection
     @pytask.task(id=f"{age_label_val}_care_demand_total_caregiving_part_time")
     def task_plot_part_time_share_by_distance_to_first_care_demand_total_caregiving(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
-        path_to_original_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_estimated_params.pkl",
-        path_to_no_care_demand_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_no_care_demand.pkl",
+        path_to_original_data: Path = PATH_TO_BASELINE,
+        path_to_no_care_demand_data: Path = PATH_TO_NO_CARE_DEMAND,
         path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
-        / "counterfactual"
-        / "part_time"
-        / "total_caregiving_years"
-        / (
-            f"part_time_share_by_distance_to_first_care_demand_"
-            f"total_caregiving_{age_label_val}.pdf"
-        ),
+        / "selection"
+        / "conditional_means_care_demand"
+        / f"part_time_share_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window_low: int = 20,
-        window_high: int = 20,
-        window_by_age: dict[str, tuple[int, int]] | None = None,
+        window_low: int = 15,
+        window_high: int = 15,
+        window_by_age: dict[str, tuple[int, int]] | None = (
+            {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
+        ),
+        ylim: tuple[float, float] | None = (0, 0.5),
+        yticks: list[float] | None = [0, 0.1, 0.2, 0.3, 0.4, 0.5],
+        plot_caregivers_mean: bool = True,
     ) -> None:
         """Plot part-time share by distance to first care demand (ever caregivers, total care years 1–5+).
 
@@ -1642,8 +1646,13 @@ for age_min_val, age_max_val, age_label_val in (
             xlabel="Year relative to start of first care demand",
             outcome_baseline="part_time_o",
             outcome_counterfactual="part_time_c",
-            ylabel="Part-Time Rate",
+            ylabel="Part-time share",
             subgroup_labels=total_labels,
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
+            ylim=ylim,
+            yticks=yticks,
+            plot_caregivers_mean=plot_caregivers_mean,
         )
 
 
@@ -1834,33 +1843,31 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication_labor_income
     @pytask.mark.publication
+    @pytask.mark.publication_selection
     @pytask.task(id=f"{age_label_val}_care_demand_total_caregiving_labor_income")
     def task_plot_labor_income_by_distance_to_first_care_demand_total_caregiving(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
-        path_to_original_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_estimated_params.pkl",
-        path_to_no_care_demand_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_no_care_demand.pkl",
+        path_to_original_data: Path = PATH_TO_BASELINE,
+        path_to_no_care_demand_data: Path = PATH_TO_NO_CARE_DEMAND,
         path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
-        / "counterfactual"
-        / "labor_income"
-        / "total_caregiving_years"
-        / (
-            f"monthly_gross_labor_income_by_distance_to_first_care_demand_"
-            f"total_caregiving_{age_label_val}.pdf"
-        ),
+        / "selection"
+        / "conditional_means_care_demand"
+        / f"monthly_gross_earnings_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window_low: int = 20,
-        window_high: int = 20,
-        window_by_age: dict[str, tuple[int, int]] | None = None,
+        window_low: int = 15,
+        window_high: int = 15,
+        window_by_age: dict[str, tuple[int, int]] | None = (
+            {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
+        ),
+        ylim: tuple[float, float] | None = (0, 1.8),
+        yticks: list[float] | None = [0, 0.25, 0.50, 0.75, 1.00, 1.25, 1.50, 1.75],
+        plot_caregivers_mean: bool = True,
     ) -> None:
         """Plot monthly gross labor income by distance to first care demand (ever caregivers, total care years 1–5+).
 
@@ -1991,9 +1998,13 @@ for age_min_val, age_max_val, age_label_val in (
             xlabel="Year relative to start of first care demand",
             outcome_baseline="monthly_gross_labor_income_o",
             outcome_counterfactual="monthly_gross_labor_income_c",
-            ylabel="Monthly Gross Labor Income",
-            ylim=None,
+            ylabel="Monthly gross earnings (1,000 euros)",
+            ylim=ylim,
+            yticks=yticks,
             subgroup_labels=total_labels,
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
+            plot_caregivers_mean=plot_caregivers_mean,
         )
 
 
@@ -4676,33 +4687,31 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_employment
     @pytask.mark.publication_employment_check
     @pytask.mark.publication
+    @pytask.mark.publication_selection
     @pytask.task(id=f"{age_label_val}_care_demand_total_caregiving")
     def task_plot_employment_rate_by_distance_to_first_care_demand_total_caregiving(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
-        path_to_original_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_estimated_params.pkl",
-        path_to_no_care_demand_data: Path = BLD
-        / "solve_and_simulate"
-        / "simulated_data_no_care_demand.pkl",
+        path_to_original_data: Path = PATH_TO_BASELINE,
+        path_to_no_care_demand_data: Path = PATH_TO_NO_CARE_DEMAND,
         path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
-        / "counterfactual"
-        / "employment"
-        / "total_caregiving_years"
-        / (
-            f"employment_rate_by_distance_to_first_care_demand_"
-            f"total_caregiving_{age_label_val}.pdf"
-        ),
+        / "selection"
+        / "conditional_means_care_demand"
+        / f"employment_rate_{age_label_val}.pdf",
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
-        window_low: int = 20,
-        window_high: int = 20,
-        window_by_age: dict[str, tuple[int, int]] | None = None,
+        window_low: int = 15,
+        window_high: int = 15,
+        window_by_age: dict[str, tuple[int, int]] | None = (
+            {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
+        ),
+        ylim: tuple[float, float] | None = (0, 1),
+        yticks: list[float] | None = [0, 0.2, 0.4, 0.6, 0.8, 1.0],
+        plot_caregivers_mean: bool = True,
     ) -> None:
         """Plot employment rate by distance to first care demand, grouped by total caregiving years.
 
@@ -4822,7 +4831,13 @@ for age_min_val, age_max_val, age_label_val in (
             window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
+            ylabel="Employment rate",
             subgroup_labels=total_labels,
+            style=get_publication_plot_style(age_label),
+            age_label=age_label,
+            ylim=ylim,
+            yticks=yticks,
+            plot_caregivers_mean=plot_caregivers_mean,
         )
 
 
