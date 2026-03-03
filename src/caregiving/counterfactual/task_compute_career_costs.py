@@ -46,9 +46,13 @@ REQUIRED_COLUMNS_NPV = [
 # only_own_income=True => model's own_income_after_ssc (in leave models this includes top-up)
 # only_own_income=False => full income (own + unemployment + child + care benefits + top-up)
 NPV_SPECS = [
-    (True, True, True),   # labor and pension only, incl. bequest
+    (True, True, True),  # labor and pension only, incl. bequest
     (True, True, False),  # labor and pension only, no bequest
-    (False, True, True),  # own income only (may include top-up in leave models) + bequest
+    (
+        False,
+        True,
+        True,
+    ),  # own income only (may include top-up in leave models) + bequest
     (False, True, False),  # own income only, no bequest
     (False, False, True),  # full income + bequest
 ]

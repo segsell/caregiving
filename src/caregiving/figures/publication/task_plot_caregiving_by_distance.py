@@ -1615,7 +1615,9 @@ def plot_caregiving_rate_by_distance(  # noqa: PLR0913
         linewidth=S["axvline_linewidth"],
     )
     plt.xlabel(xlabel, fontsize=S["label_fontsize"], labelpad=S.get("labelpad", 14))
-    plt.ylabel("Caregiving Rate", fontsize=S["label_fontsize"], labelpad=S.get("labelpad", 14))
+    plt.ylabel(
+        "Caregiving Rate", fontsize=S["label_fontsize"], labelpad=S.get("labelpad", 14)
+    )
     plt.xlim(w_low - 0.5, window_high + 0.5)
     plt.ylim(-0.025, 1.0)
     plt.grid(True, axis="y", alpha=S["grid_alpha"], linewidth=S["grid_linewidth"])
