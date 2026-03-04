@@ -299,7 +299,9 @@ def _stars(p: float) -> str:
     return "*"
 
 
-def _get_caregiving_sibling_regression_data(path_to_sibling_sample: Path) -> pd.DataFrame:
+def _get_caregiving_sibling_regression_data(
+    path_to_sibling_sample: Path,
+) -> pd.DataFrame:
     """Load and prepare sibling sample for caregiving regressions (women 30--70, all vars)."""
     df = pd.read_csv(path_to_sibling_sample)
     if "pid" not in df.columns and df.index.names and "pid" in (df.index.names or []):
@@ -343,20 +345,21 @@ def _get_caregiving_sibling_regression_data(path_to_sibling_sample: Path) -> pd.
     more_daughters = (df["n_sisters"] >= 1).astype(float)
     oldest_daughter = (df["birth_order_daughters"] == 1).astype(float)
     second_youngest_daughter = (
-        (df["birth_order_daughters"] == df["n_daughters"] - 1) & (df["n_daughters"] >= 2)
+        (df["birth_order_daughters"] == df["n_daughters"] - 1)
+        & (df["n_daughters"] >= 2)
     ).astype(float)
     df["youngest_only_daughter"] = only_daughter
     df["youngest_more_daughters"] = (
-        (more_daughters.astype(bool) & (df["youngest_daughter"] == 1)).astype(float)
-    )
+        more_daughters.astype(bool) & (df["youngest_daughter"] == 1)
+    ).astype(float)
     df["second_youngest_only_daughter"] = 0.0
     df["second_youngest_more_daughters"] = (
-        (more_daughters.astype(bool) & (second_youngest_daughter == 1)).astype(float)
-    )
+        more_daughters.astype(bool) & (second_youngest_daughter == 1)
+    ).astype(float)
     df["oldest_only_daughter"] = 0.0
     df["oldest_more_daughters"] = (
-        (more_daughters.astype(bool) & (oldest_daughter == 1)).astype(float)
-    )
+        more_daughters.astype(bool) & (oldest_daughter == 1)
+    ).astype(float)
     df["age_sq"] = df["age"].astype(float) ** 2
     return df
 
@@ -364,7 +367,9 @@ def _get_caregiving_sibling_regression_data(path_to_sibling_sample: Path) -> pd.
 @pytask.mark.descriptives
 @pytask.mark.sibling_comparison
 def task_logit_caregiving_youngest_daughter(
-    path_to_sibling_sample: Path = BLD / "data" / "soep_sibling_comparison_data_raw.csv",
+    path_to_sibling_sample: Path = BLD
+    / "data"
+    / "soep_sibling_comparison_data_raw.csv",
     path_to_save: Annotated[Path, Product] = BLD
     / "descriptives"
     / "logit_caregiving_youngest_daughter.tex",
@@ -481,16 +486,15 @@ def task_logit_caregiving_youngest_daughter(
         "\\toprule",
     ]
     # Header: Outcome blocks (4 cols each)
-    header = " & ".join(
-        [" & \\multicolumn{4}{c}{" + label + "}" for label, _ in outcomes]
-    ) + " \\\\"
-    lines.append(header)
-    lines.append(
-        "\\cmidrule(lr){2-5} \\cmidrule(lr){6-9} \\cmidrule(lr){10-13}"
+    header = (
+        " & ".join([" & \\multicolumn{4}{c}{" + label + "}" for label, _ in outcomes])
+        + " \\\\"
     )
-    spec_headers = " & ".join(
-        ["Spec 1 & Spec 2 & Spec 3 & Spec 4"] * n_outcomes
-    ) + " \\\\"
+    lines.append(header)
+    lines.append("\\cmidrule(lr){2-5} \\cmidrule(lr){6-9} \\cmidrule(lr){10-13}")
+    spec_headers = (
+        " & ".join(["Spec 1 & Spec 2 & Spec 3 & Spec 4"] * n_outcomes) + " \\\\"
+    )
     lines.append(spec_headers)
     lines.append("\\midrule")
 
@@ -526,9 +530,7 @@ def task_logit_caregiving_youngest_daughter(
                     if np.isnan(coef) or np.isnan(se):
                         cells.append("")
                     else:
-                        cells.append(
-                            f"{coef:.3f}{_stars(p)} ({se:.3f})"
-                        )
+                        cells.append(f"{coef:.3f}{_stars(p)} ({se:.3f})")
         lines.append(" & ".join([label] + cells) + " \\\\")
 
     # N observations row (stored in all_results)
@@ -557,18 +559,29 @@ _CAREGIVING_TABLE_VAR_LABELS = {
     "age_sq": "Age squared",
 }
 _CAREGIVING_TABLE_ROW_ORDER = [
-    "const", "youngest_daughter", "firstborn", "n_sisters", "n_brothers",
-    "youngest_only_daughter", "youngest_more_daughters",
-    "second_youngest_only_daughter", "second_youngest_more_daughters",
-    "oldest_only_daughter", "oldest_more_daughters",
-    "education", "age", "age_sq",
+    "const",
+    "youngest_daughter",
+    "firstborn",
+    "n_sisters",
+    "n_brothers",
+    "youngest_only_daughter",
+    "youngest_more_daughters",
+    "second_youngest_only_daughter",
+    "second_youngest_more_daughters",
+    "oldest_only_daughter",
+    "oldest_more_daughters",
+    "education",
+    "age",
+    "age_sq",
 ]
 
 
 @pytask.mark.descriptives
 @pytask.mark.sibling_comparison
 def task_caregiving_sibling_composition_lpm(
-    path_to_sibling_sample: Path = BLD / "data" / "soep_sibling_comparison_data_raw.csv",
+    path_to_sibling_sample: Path = BLD
+    / "data"
+    / "soep_sibling_comparison_data_raw.csv",
     path_to_save: Annotated[Path, Product] = BLD
     / "descriptives"
     / "caregiving_sibling_composition_lpm.tex",
@@ -583,8 +596,10 @@ def task_caregiving_sibling_composition_lpm(
     df = _get_caregiving_sibling_regression_data(path_to_sibling_sample)
     sibling_battery = ["youngest_daughter", "firstborn", "n_sisters", "n_brothers"]
     position_type_dummies = [
-        "youngest_only_daughter", "youngest_more_daughters",
-        "second_youngest_more_daughters", "oldest_more_daughters",
+        "youngest_only_daughter",
+        "youngest_more_daughters",
+        "second_youngest_more_daughters",
+        "oldest_more_daughters",
     ]
     outcomes = [
         ("Any care", "any_care"),
@@ -599,11 +614,20 @@ def task_caregiving_sibling_composition_lpm(
     ]
     path_to_save.parent.mkdir(parents=True, exist_ok=True)
     table_vars = [
-        "const", "youngest_daughter", "firstborn", "n_sisters", "n_brothers",
-        "youngest_only_daughter", "youngest_more_daughters",
-        "second_youngest_only_daughter", "second_youngest_more_daughters",
-        "oldest_only_daughter", "oldest_more_daughters",
-        "education", "age", "age_sq",
+        "const",
+        "youngest_daughter",
+        "firstborn",
+        "n_sisters",
+        "n_brothers",
+        "youngest_only_daughter",
+        "youngest_more_daughters",
+        "second_youngest_only_daughter",
+        "second_youngest_more_daughters",
+        "oldest_only_daughter",
+        "oldest_more_daughters",
+        "education",
+        "age",
+        "age_sq",
     ]
     all_results: list[tuple[str, str, list[tuple[str, float, float, float]], int]] = []
     for out_label, out_col in outcomes:
@@ -629,7 +653,9 @@ def task_caregiving_sibling_composition_lpm(
             for var in table_vars:
                 if var not in params.index:
                     continue
-                row_list.append((var, float(params[var]), float(bse[var]), float(pvalues[var])))
+                row_list.append(
+                    (var, float(params[var]), float(bse[var]), float(pvalues[var]))
+                )
             all_results.append((out_label, spec_label, row_list, n_obs))
     n_specs, n_outcomes = 4, 3
     lines = [
@@ -643,12 +669,15 @@ def task_caregiving_sibling_composition_lpm(
         "\\begin{tabular}{l" + " c c c c" * n_outcomes + "}",
         "\\toprule",
     ]
-    header = " & ".join(
-        [" & \\multicolumn{4}{c}{" + label + "}" for label, _ in outcomes]
-    ) + " \\\\"
+    header = (
+        " & ".join([" & \\multicolumn{4}{c}{" + label + "}" for label, _ in outcomes])
+        + " \\\\"
+    )
     lines.append(header)
     lines.append("\\cmidrule(lr){2-5} \\cmidrule(lr){6-9} \\cmidrule(lr){10-13}")
-    lines.append(" & ".join(["Spec 1 & Spec 2 & Spec 3 & Spec 4"] * n_outcomes) + " \\\\")
+    lines.append(
+        " & ".join(["Spec 1 & Spec 2 & Spec 3 & Spec 4"] * n_outcomes) + " \\\\"
+    )
     lines.append("\\midrule")
     for var in _CAREGIVING_TABLE_ROW_ORDER:
         label = _CAREGIVING_TABLE_VAR_LABELS[var]
@@ -677,7 +706,9 @@ def task_caregiving_sibling_composition_lpm(
 @pytask.mark.descriptives
 @pytask.mark.sibling_comparison
 def task_caregiving_by_sibling_position_descriptives(
-    path_to_sibling_sample: Path = BLD / "data" / "soep_sibling_comparison_data_raw.csv",
+    path_to_sibling_sample: Path = BLD
+    / "data"
+    / "soep_sibling_comparison_data_raw.csv",
     path_to_save: Annotated[Path, Product] = BLD
     / "descriptives"
     / "caregiving_by_sibling_position_descriptives.tex",
@@ -687,6 +718,7 @@ def task_caregiving_by_sibling_position_descriptives(
     Sample: women 30--70. Rows = position type. Complements regression with raw rates.
     """
     df = _get_caregiving_sibling_regression_data(path_to_sibling_sample)
+
     def _position_type(row: pd.Series) -> str:
         if row["youngest_only_daughter"] == 1:
             return "Youngest, only daughter"
@@ -697,24 +729,35 @@ def task_caregiving_by_sibling_position_descriptives(
         if row["oldest_more_daughters"] == 1:
             return "Oldest, more daughters"
         return "Middle"
+
     df["position_type"] = df.apply(_position_type, axis=1)
     order = [
-        "Youngest, only daughter", "Youngest, more daughters",
-        "Second-youngest, more daughters", "Oldest, more daughters", "Middle",
+        "Youngest, only daughter",
+        "Youngest, more daughters",
+        "Second-youngest, more daughters",
+        "Oldest, more daughters",
+        "Middle",
     ]
-    agg = df.groupby("position_type", observed=True).agg(
-        any_care=("any_care", "mean"),
-        light_care=("light_care", "mean"),
-        intensive_care=("intensive_care", "mean"),
-        N=("any_care", "count"),
-    ).reindex(order)
+    agg = (
+        df.groupby("position_type", observed=True)
+        .agg(
+            any_care=("any_care", "mean"),
+            light_care=("light_care", "mean"),
+            intensive_care=("intensive_care", "mean"),
+            N=("any_care", "count"),
+        )
+        .reindex(order)
+    )
     path_to_save.parent.mkdir(parents=True, exist_ok=True)
     lines = [
-        "\\begin{table}[htbp]", "\\centering",
+        "\\begin{table}[htbp]",
+        "\\centering",
         "\\caption{Mean caregiving by sibling position (women, age 30--70, person-year).}",
         "\\label{tab:caregiving_by_sibling_position_descriptives}",
-        "\\begin{tabular}{l c c c c}", "\\toprule",
-        "Position & Any care & Light care & Intensive care & N \\\\", "\\midrule",
+        "\\begin{tabular}{l c c c c}",
+        "\\toprule",
+        "Position & Any care & Light care & Intensive care & N \\\\",
+        "\\midrule",
     ]
     for idx in order:
         if idx not in agg.index:
@@ -730,7 +773,9 @@ def task_caregiving_by_sibling_position_descriptives(
 @pytask.mark.descriptives
 @pytask.mark.sibling_comparison
 def task_caregiving_sibling_multinomial_logit(
-    path_to_sibling_sample: Path = BLD / "data" / "soep_sibling_comparison_data_raw.csv",
+    path_to_sibling_sample: Path = BLD
+    / "data"
+    / "soep_sibling_comparison_data_raw.csv",
     path_to_save: Annotated[Path, Product] = BLD
     / "descriptives"
     / "caregiving_sibling_multinomial_logit.tex",
@@ -740,23 +785,30 @@ def task_caregiving_sibling_multinomial_logit(
         raise RuntimeError("statsmodels MNLogit required")
     df = _get_caregiving_sibling_regression_data(path_to_sibling_sample)
     df["care_level"] = np.where(
-        df["intensive_care"].astype(bool), 2,
+        df["intensive_care"].astype(bool),
+        2,
         np.where(df["light_care"].astype(bool), 1, 0),
     )
     sibling_battery = ["youngest_daughter", "firstborn", "n_sisters", "n_brothers"]
     position_type_dummies = [
-        "youngest_only_daughter", "youngest_more_daughters",
-        "second_youngest_more_daughters", "oldest_more_daughters",
+        "youngest_only_daughter",
+        "youngest_more_daughters",
+        "second_youngest_more_daughters",
+        "oldest_more_daughters",
     ]
     spec_cols_list = [
-        sibling_battery, sibling_battery + ["education"],
-        sibling_battery + ["education", "age", "age_sq"], position_type_dummies,
+        sibling_battery,
+        sibling_battery + ["education"],
+        sibling_battery + ["education", "age", "age_sq"],
+        position_type_dummies,
     ]
     path_to_save.parent.mkdir(parents=True, exist_ok=True)
     all_results: list[tuple[str, dict, int]] = []
     for spec_label, cols in [
-        ("Spec 1", spec_cols_list[0]), ("Spec 2", spec_cols_list[1]),
-        ("Spec 3", spec_cols_list[2]), ("Spec 4", spec_cols_list[3]),
+        ("Spec 1", spec_cols_list[0]),
+        ("Spec 2", spec_cols_list[1]),
+        ("Spec 3", spec_cols_list[2]),
+        ("Spec 4", spec_cols_list[3]),
     ]:
         use = df[["care_level"] + cols].dropna()
         use = use[use["care_level"].isin([0, 1, 2])]
@@ -777,7 +829,7 @@ def task_caregiving_sibling_multinomial_logit(
             col_list = list(params.columns)
             for var in params.index:
                 for j, col in enumerate(col_list):
-                    outcome = (j + 1)  # 1 = light vs no care, 2 = intensive vs no care
+                    outcome = j + 1  # 1 = light vs no care, 2 = intensive vs no care
                     coefs[(var, outcome)] = (
                         float(params.loc[var, col]),
                         float(bse.loc[var, col]),
@@ -787,20 +839,34 @@ def task_caregiving_sibling_multinomial_logit(
             for idx in params.index:
                 if isinstance(idx, tuple) and len(idx) >= 2:
                     var, cat = idx[0], idx[1]
-                    c = int(cat) if cat in (1, 2) else (int(cat) + 1 if int(cat) == 0 else int(cat))
-                    coefs[(var, c)] = (float(params[idx]), float(bse[idx]), float(pvalues[idx]))
+                    c = (
+                        int(cat)
+                        if cat in (1, 2)
+                        else (int(cat) + 1 if int(cat) == 0 else int(cat))
+                    )
+                    coefs[(var, c)] = (
+                        float(params[idx]),
+                        float(bse[idx]),
+                        float(pvalues[idx]),
+                    )
                 else:
                     s = str(idx)
                     if s.endswith("_1") or s.endswith("_2"):
                         parts = s.rsplit("_", 1)
                         var_base, cat = parts[0], int(parts[1])
-                        coefs[(var_base, cat)] = (float(params[idx]), float(bse[idx]), float(pvalues[idx]))
+                        coefs[(var_base, cat)] = (
+                            float(params[idx]),
+                            float(bse[idx]),
+                            float(pvalues[idx]),
+                        )
         all_results.append((spec_label, coefs, n_obs))
     # Binary logit any_care (any vs no care) with same specs for the third block
     any_results: list[tuple[str, dict[str, tuple[float, float, float]], int]] = []
     for spec_label, cols in [
-        ("Spec 1", spec_cols_list[0]), ("Spec 2", spec_cols_list[1]),
-        ("Spec 3", spec_cols_list[2]), ("Spec 4", spec_cols_list[3]),
+        ("Spec 1", spec_cols_list[0]),
+        ("Spec 2", spec_cols_list[1]),
+        ("Spec 3", spec_cols_list[2]),
+        ("Spec 4", spec_cols_list[3]),
     ]:
         use = df[["any_care"] + cols].dropna()
         use = use[use["any_care"].isin([0, 1])]
@@ -821,13 +887,20 @@ def task_caregiving_sibling_multinomial_logit(
         any_results.append((spec_label, coefs_any, n_obs))
     var_order = [v for v in _CAREGIVING_TABLE_ROW_ORDER if v != "const"]
     lines = [
-        "\\begin{table}[htbp]", "\\centering",
+        "\\begin{table}[htbp]",
+        "\\centering",
         "\\caption{Multinomial logit: care level (no/light/intensive) on sibling composition; Any vs no care from binary logit. Base: no care. Women 30--70.}",
         "\\label{tab:caregiving_sibling_multinomial_logit}",
-        "\\begin{tabular}{l l c c c c}", "\\toprule",
-        "Variable & Contrast & Spec 1 & Spec 2 & Spec 3 & Spec 4 \\\\", "\\midrule",
+        "\\begin{tabular}{l l c c c c}",
+        "\\toprule",
+        "Variable & Contrast & Spec 1 & Spec 2 & Spec 3 & Spec 4 \\\\",
+        "\\midrule",
     ]
-    contrasts = [(1, "Light vs no care"), (2, "Intensive vs no care"), (0, "Any vs no care")]
+    contrasts = [
+        (1, "Light vs no care"),
+        (2, "Intensive vs no care"),
+        (0, "Any vs no care"),
+    ]
     for var in var_order:
         for cat_val, cat_label in contrasts:
             label = _CAREGIVING_TABLE_VAR_LABELS.get(var, var)
@@ -837,33 +910,70 @@ def task_caregiving_sibling_multinomial_logit(
                     _, coefs_any, _ = any_results[spec_idx]
                     if var in coefs_any:
                         coef, se, p = coefs_any[var]
-                        cells.append(f"{coef:.3f}{_stars(p)} ({se:.3f})" if not (np.isnan(coef) or np.isnan(se)) else "")
+                        cells.append(
+                            f"{coef:.3f}{_stars(p)} ({se:.3f})"
+                            if not (np.isnan(coef) or np.isnan(se))
+                            else ""
+                        )
                     else:
                         cells.append("")
                 else:
                     _, coefs, _ = all_results[spec_idx]
                     key = (var, cat_val)
                     if key not in coefs:
-                        key = next((k for k in coefs if k[0] == var and k[1] == cat_val), None)
+                        key = next(
+                            (k for k in coefs if k[0] == var and k[1] == cat_val), None
+                        )
                     if key is not None and key in coefs:
                         coef, se, p = coefs[key]
-                        cells.append(f"{coef:.3f}{_stars(p)} ({se:.3f})" if not (np.isnan(coef) or np.isnan(se)) else "")
+                        cells.append(
+                            f"{coef:.3f}{_stars(p)} ({se:.3f})"
+                            if not (np.isnan(coef) or np.isnan(se))
+                            else ""
+                        )
                     else:
                         cells.append("")
             lines.append(" & ".join([label, cat_label] + cells) + " \\\\")
     lines.append("\\midrule")
-    lines.append("N & & " + " & ".join(str(all_results[i][2]) for i in range(4)) + " \\\\")
+    lines.append(
+        "N & & " + " & ".join(str(all_results[i][2]) for i in range(4)) + " \\\\"
+    )
     lines.extend(["\\bottomrule", "\\end{tabular}", "\\end{table}"])
     path_to_save.write_text("\n".join(lines), encoding="utf-8")
 
 
 # Sibling composition subsamples for youngest-daughter effect (see task below)
 _COMPOSITION_SPECS = [
-    ("Two siblings, other female", lambda df: (df["n_siblings"] == 1) & (df["n_sisters"] == 1) & (df["n_brothers"] == 0)),
-    ("Two siblings, other male", lambda df: (df["n_siblings"] == 1) & (df["n_brothers"] == 1) & (df["n_sisters"] == 0)),
-    ("Three siblings, 1M 1F", lambda df: (df["n_siblings"] == 2) & (df["n_sisters"] == 1) & (df["n_brothers"] == 1)),
-    ("Three siblings, 2M", lambda df: (df["n_siblings"] == 2) & (df["n_brothers"] == 2) & (df["n_sisters"] == 0)),
-    ("Three siblings, 2F", lambda df: (df["n_siblings"] == 2) & (df["n_sisters"] == 2) & (df["n_brothers"] == 0)),
+    (
+        "Two siblings, other female",
+        lambda df: (df["n_siblings"] == 1)
+        & (df["n_sisters"] == 1)
+        & (df["n_brothers"] == 0),
+    ),
+    (
+        "Two siblings, other male",
+        lambda df: (df["n_siblings"] == 1)
+        & (df["n_brothers"] == 1)
+        & (df["n_sisters"] == 0),
+    ),
+    (
+        "Three siblings, 1M 1F",
+        lambda df: (df["n_siblings"] == 2)
+        & (df["n_sisters"] == 1)
+        & (df["n_brothers"] == 1),
+    ),
+    (
+        "Three siblings, 2M",
+        lambda df: (df["n_siblings"] == 2)
+        & (df["n_brothers"] == 2)
+        & (df["n_sisters"] == 0),
+    ),
+    (
+        "Three siblings, 2F",
+        lambda df: (df["n_siblings"] == 2)
+        & (df["n_sisters"] == 2)
+        & (df["n_brothers"] == 0),
+    ),
     ("Four or more siblings", lambda df: df["n_siblings"] >= 3),
 ]
 
@@ -871,7 +981,9 @@ _COMPOSITION_SPECS = [
 @pytask.mark.descriptives
 @pytask.mark.sibling_comparison
 def task_youngest_daughter_by_sibling_composition(
-    path_to_sibling_sample: Path = BLD / "data" / "soep_sibling_comparison_data_raw.csv",
+    path_to_sibling_sample: Path = BLD
+    / "data"
+    / "soep_sibling_comparison_data_raw.csv",
     path_to_save: Annotated[Path, Product] = BLD
     / "descriptives"
     / "youngest_daughter_by_sibling_composition.tex",
@@ -887,12 +999,18 @@ def task_youngest_daughter_by_sibling_composition(
     # Mean and median sibship size (person-year level)
     mean_sibship = float(df["total_children"].mean())
     median_sibship = float(df["total_children"].median())
-    outcomes = [("Any care", "any_care"), ("Light care", "light_care"), ("Intensive care", "intensive_care")]
+    outcomes = [
+        ("Any care", "any_care"),
+        ("Light care", "light_care"),
+        ("Intensive care", "intensive_care"),
+    ]
     path_to_save.parent.mkdir(parents=True, exist_ok=True)
     rows: list[tuple[str, list[tuple[float, float, float, int]]]] = []
     for label, mask_fn in _COMPOSITION_SPECS:
         sub = df.loc[mask_fn(df)].copy()
-        sub = sub.dropna(subset=["youngest_daughter", "any_care", "light_care", "intensive_care"])
+        sub = sub.dropna(
+            subset=["youngest_daughter", "any_care", "light_care", "intensive_care"]
+        )
         cell_list: list[tuple[float, float, float, int]] = []
         for _out_label, out_col in outcomes:
             use = sub[[out_col, "youngest_daughter"]].dropna()

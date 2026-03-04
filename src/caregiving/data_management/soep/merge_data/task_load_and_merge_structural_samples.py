@@ -791,18 +791,14 @@ def task_load_and_merge_sibling_comparison_sample(
     pl_data = pd.DataFrame()
     for itm in pl_data_reader:
         pl_data = pd.concat([pl_data, itm])
-    merged_data = pd.merge(
-        merged_data, pl_data, on=["pid", "hid", "syear"], how="left"
-    )
+    merged_data = pd.merge(merged_data, pl_data, on=["pid", "hid", "syear"], how="left")
 
     hl_data = pd.read_stata(
         soep_c40_hl,
         columns=["hid", "syear", "hlf0291"],
         convert_categoricals=False,
     )
-    merged_data = pd.merge(
-        merged_data, hl_data, on=["hid", "syear"], how="left"
-    )
+    merged_data = pd.merge(merged_data, hl_data, on=["hid", "syear"], how="left")
 
     create_caregiving(merged_data, filter_missing=False)
 

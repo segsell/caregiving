@@ -138,7 +138,10 @@ def get_next_period_experience_care_pension_credit(
     exp_update = jnp.minimum(
         is_full_time(lagged_choice)
         + is_part_time(lagged_choice)
-        * (model_specs["exp_increase_part_time"] * (1 - intensive_care) + intensive_care)
+        * (
+            model_specs["exp_increase_part_time"] * (1 - intensive_care)
+            + intensive_care
+        )
         + is_unemployed(lagged_choice) * intensive_care * 0.5,
         1.0,
     )
