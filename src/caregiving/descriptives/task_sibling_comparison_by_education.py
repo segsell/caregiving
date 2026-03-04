@@ -141,7 +141,9 @@ def _is_youngest_daughter(
 @pytask.mark.descriptives
 @pytask.mark.sibling_comparison
 def task_sibling_comparison_by_education(
-    path_to_sibling_sample: Path = BLD / "data" / "soep_sibling_comparison_data_raw.csv",
+    path_to_sibling_sample: Path = BLD
+    / "data"
+    / "soep_sibling_comparison_data_raw.csv",
     path_to_save: Annotated[Path, Product] = BLD
     / "descriptives"
     / "sibling_comparison_by_education.tex",
@@ -262,14 +264,16 @@ def task_sibling_comparison_by_education(
         lines.append(
             f"{label} & {mean_low:.2f} & {sd_low:.2f} & {n_low} & {mean_high:.2f} & {sd_high:.2f} & {n_high} \\\\"
         )
-    lines.extend([
-        "\\addlinespace[1em]",
-        "\\midrule",
-        "\\multicolumn{7}{l}{\\textit{Panel B: Difference (High $-$ Low) and significance}} \\\\",
-        "\\addlinespace[0.5em]",
-        "Outcome & Difference & $p$-value & & & & \\\\",
-        "\\midrule",
-    ])
+    lines.extend(
+        [
+            "\\addlinespace[1em]",
+            "\\midrule",
+            "\\multicolumn{7}{l}{\\textit{Panel B: Difference (High $-$ Low) and significance}} \\\\",
+            "\\addlinespace[0.5em]",
+            "Outcome & Difference & $p$-value & & & & \\\\",
+            "\\midrule",
+        ]
+    )
     for i in range(len(outcomes_panel_a)):
         diff, pval = rows_b[i]
         if np.isnan(pval):
@@ -279,9 +283,7 @@ def task_sibling_comparison_by_education(
         else:
             p_str = "<0.001"
         diff_str = f"{diff:+.2f}" if not np.isnan(diff) else "n.a."
-        lines.append(
-            f"{outcomes_panel_a[i][0]} & {diff_str} & {p_str} & & & & \\\\"
-        )
+        lines.append(f"{outcomes_panel_a[i][0]} & {diff_str} & {p_str} & & & & \\\\")
     lines.extend(["\\bottomrule", "\\end{tabular}", "\\end{table}"])
     path_to_save.write_text("\n".join(lines), encoding="utf-8")
 
