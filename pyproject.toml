@@ -41,6 +41,7 @@ caregiving_leave_with_job_retention_model = "Caregiving leave with job retention
 caregiving_leave_beirat_model = "Caregiving leave Beirat model specification tasks"
 caregiving_leave_full_beirat_model = "Full caregiving leave Beirat model specification tasks"
 full_caregiving_leave_with_job_retention_model = "Full caregiving leave with job retention counterfactual model tasks"
+care_pension_credit_model = "Care pension credit model specification tasks"
 specs = "Specs tasks"
 inheritance_specs = "Inheritance specification tasks"
 # Simulation
@@ -198,6 +199,8 @@ publication_post_estimation = "Publication post-estimation plotting tasks"
 publication_assets_and_savings = "Publication asset and savings decile difference plots (baseline vs no care demand)"
 publication_pre_estimation = "Publication pre-estimation plotting tasks"
 fiscal_costs = "Publication fiscal costs table tasks"
+stochastic_processes = "Stochastic processes estimation and plotting tasks"
+publication_stochastic_processes = "Publication stochastic processes figures and tables"
 
 
 [tool.interrogate]

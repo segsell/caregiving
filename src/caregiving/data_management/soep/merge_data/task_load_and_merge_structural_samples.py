@@ -9,6 +9,9 @@ import pytask
 from pytask import Product
 
 from caregiving.config import BLD, SRC
+from caregiving.data_management.soep.task_create_event_study_sample import (
+    create_caregiving,
+)
 
 
 def table(df_col):
@@ -723,15 +726,19 @@ def task_load_and_merge_sibling_comparison_sample(
     soep_c40_ppathl: Path = SRC / "data" / "soep_c40" / "ppathl.dta",
     soep_c40_pgen: Path = SRC / "data" / "soep_c40" / "pgen.dta",
     soep_c40_biosib: Path = SRC / "data" / "soep_c40" / "biosib.dta",
+    soep_c40_pl: Path = SRC / "data" / "soep_c40" / "pl.dta",
+    soep_c40_hl: Path = SRC / "data" / "soep_c40" / "hl.dta",
     path_to_save: Annotated[Path, Product] = BLD
     / "data"
     / "soep_sibling_comparison_data_raw.csv",
 ) -> None:
-    """Merge sibling comparison sample: ppathl + pgen + biosib (respondent and siblings).
+    """Merge sibling comparison sample: ppathl + pgen + biosib + pl + hl (caregiving).
 
     Merges on pid (and pid, hid, syear for ppathl-pgen). Biosib is biographical
     (one row per person); provides respondent sex/gebjahr and sibling gebsib*/sexsib*.
-    Sanity check: log count of pid where ppathl and biosib disagree on sex or gebjahr.
+    Adds pl (pli0046) and hl (hlf0291) for create_caregiving (any_care, light_care,
+    intensive_care). Sanity check: log count of pid where ppathl and biosib disagree
+    on sex or gebjahr.
     """
     ppathl_data = pd.read_stata(
         soep_c40_ppathl,
@@ -773,6 +780,31 @@ def task_load_and_merge_sibling_comparison_sample(
                 f"{geb_mismatch} gebjahr mismatches (ppathl vs biosib)."
             )
         merged_data = merged_data.drop(columns=["sex_biosib", "gebjahr_biosib"])
+
+    # Add caregiving: pl (pli0046) and hl (hlf0291)
+    pl_data_reader = pd.read_stata(
+        soep_c40_pl,
+        columns=["pid", "hid", "syear", "pli0046"],
+        chunksize=100000,
+        convert_categoricals=False,
+    )
+    pl_data = pd.DataFrame()
+    for itm in pl_data_reader:
+        pl_data = pd.concat([pl_data, itm])
+    merged_data = pd.merge(
+        merged_data, pl_data, on=["pid", "hid", "syear"], how="left"
+    )
+
+    hl_data = pd.read_stata(
+        soep_c40_hl,
+        columns=["hid", "syear", "hlf0291"],
+        convert_categoricals=False,
+    )
+    merged_data = pd.merge(
+        merged_data, hl_data, on=["hid", "syear"], how="left"
+    )
+
+    create_caregiving(merged_data, filter_missing=False)
 
     merged_data["age"] = merged_data["syear"] - merged_data["gebjahr"]
     merged_data.set_index(["pid", "syear"], inplace=True)

@@ -46,7 +46,8 @@ def get_next_period_experience_caregiving_leave(
     Used by both full (100%) and normal (65%) caregiving leave models. Caregiving
     leave = currently in informal care and (unemployed, or part-time with prior
     full-time job). In those periods, experience credit equals what the agent
-    would have received in job_before_caregiving:
+    would have received in job_before_caregiving, **plus** 0.5 for unemployed
+    intensive caregivers (separate care pension credit), capped at 1.0:
     - job_before_caregiving=0 (none): 0
     - job_before_caregiving=1 (PT): exp_increase_part_time
     - job_before_caregiving=2 (FT): 1.0
@@ -134,7 +135,18 @@ def get_next_period_experience_caregiving_leave(
         model_specs["exp_increase_part_time"] * (1 - intensive_care) + intensive_care
     )
 
-    exp_update = jnp.where(on_caregiving_leave, exp_update_frozen, exp_update_baseline)
+    # Intensive care pension credit (separate from leave): unemployed intensive
+    # caregivers get +0.5 added to their leave/baseline credit, capped at 1.0.
+    intensive_care_credit = currently_unemployed * intensive_care * 0.5
+    exp_update_when_on_leave = jnp.minimum(
+        exp_update_frozen + intensive_care_credit, 1.0
+    )
+    exp_update_when_not_on_leave = jnp.minimum(
+        exp_update_baseline + intensive_care_credit, 1.0
+    )
+    exp_update = jnp.where(
+        on_caregiving_leave, exp_update_when_on_leave, exp_update_when_not_on_leave
+    )
     exp_years_this_period = exp_years_last_period + exp_update
 
     pension_points = calc_pension_points_for_experience(
@@ -172,7 +184,9 @@ def get_next_period_experience_caregiving_leave_beirat(
     model_specs,
 ):
     """Experience for Beirat model (partial leave only):
-    freeze only when on partial leave and total < 3."""
+    freeze only when on partial leave and total < 3.
+    Unemployed intensive caregivers receive +0.5 care pension credit (added to
+    baseline, capped at 1.0) even when not on (partial) leave."""
     sex = SEX
 
     retired_this_period = is_retired(lagged_choice)
@@ -190,6 +204,7 @@ def get_next_period_experience_caregiving_leave_beirat(
 
     currently_caregiver = is_informal_care(lagged_choice)
     currently_pt = is_part_time(lagged_choice)
+    currently_unemployed = is_unemployed(lagged_choice)
     prior_ft = job_before_caregiving == JOB_RETENTION_FULL_TIME
     prior_pt = job_before_caregiving == JOB_RETENTION_PART_TIME
     prior_none = job_before_caregiving == 0
@@ -210,7 +225,17 @@ def get_next_period_experience_caregiving_leave_beirat(
         model_specs["exp_increase_part_time"] * (1 - intensive_care) + intensive_care
     )
 
-    exp_update = jnp.where(on_caregiving_leave, exp_update_frozen, exp_update_baseline)
+    # Intensive care pension credit (separate from leave): unemployed intensive
+    # caregivers get +0.5 added to their baseline credit, capped at 1.0.
+    # In Beirat partial, unemployed are never on leave (only PT+prior FT is),
+    # so the care credit only applies in the not-on-leave branch.
+    intensive_care_credit = currently_unemployed * intensive_care * 0.5
+    exp_update_when_not_on_leave = jnp.minimum(
+        exp_update_baseline + intensive_care_credit, 1.0
+    )
+    exp_update = jnp.where(
+        on_caregiving_leave, exp_update_frozen, exp_update_when_not_on_leave
+    )
     exp_years_this_period = exp_years_last_period + exp_update
 
     pension_points = calc_pension_points_for_experience(
@@ -251,7 +276,9 @@ def get_next_period_experience_caregiving_leave_full_beirat(
     """Experience for full Beirat model (max 3 years, max 1 full leave).
 
     Freeze only when on leave (full or partial) and under caps: full leave only if
-    full_leave_year_used == 0 and total < 3; partial only if total < 3. Matches
+    full_leave_year_used == 0 and total < 3; partial only if total < 3. Unemployed
+    intensive caregivers receive +0.5 care pension credit (added to frozen/baseline
+    credit, capped at 1.0) both on and off leave. Matches
     calc_caregiving_leave_top_up_full_beirat eligibility.
     """
     sex = SEX
@@ -303,7 +330,19 @@ def get_next_period_experience_caregiving_leave_full_beirat(
         model_specs["exp_increase_part_time"] * (1 - intensive_care) + intensive_care
     )
 
-    exp_update = jnp.where(on_caregiving_leave, exp_update_frozen, exp_update_baseline)
+    # Intensive care pension credit (separate from leave): unemployed intensive
+    # caregivers get +0.5 added to their leave/baseline credit, capped at 1.0.
+    # When quota exhausted (not on leave), they still get 0 (baseline) + 0.5 = 0.5.
+    intensive_care_credit = currently_unemployed * intensive_care * 0.5
+    exp_update_when_on_leave = jnp.minimum(
+        exp_update_frozen + intensive_care_credit, 1.0
+    )
+    exp_update_when_not_on_leave = jnp.minimum(
+        exp_update_baseline + intensive_care_credit, 1.0
+    )
+    exp_update = jnp.where(
+        on_caregiving_leave, exp_update_when_on_leave, exp_update_when_not_on_leave
+    )
     exp_years_this_period = exp_years_last_period + exp_update
 
     pension_points = calc_pension_points_for_experience(

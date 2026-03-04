@@ -36,8 +36,8 @@ from caregiving.moments.task_create_soep_moments import (
 )
 
 
-@pytask.mark.publication
-@pytask.mark.publication_model_fit
+# @pytask.mark.publication
+# @pytask.mark.publication_model_fit
 def task_plot_model_fit_labor_supply(
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_simulated_data: Path = BLD
@@ -166,8 +166,8 @@ def task_plot_model_fit_labor_supply(
     # )
 
 
-@pytask.mark.publication
-@pytask.mark.publication_model_fit
+# @pytask.mark.publication
+# @pytask.mark.publication_model_fit
 def task_plot_model_fit_employment_rate(
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_simulated_data: Path = BLD
@@ -212,8 +212,8 @@ def task_plot_model_fit_employment_rate(
     )
 
 
-@pytask.mark.publication
-@pytask.mark.publication_model_fit
+# @pytask.mark.publication
+# @pytask.mark.publication_model_fit
 def task_plot_model_fit_non_work(
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_simulated_data: Path = BLD
