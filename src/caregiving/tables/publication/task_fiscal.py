@@ -171,11 +171,12 @@ OUTCOME_COLUMN_LABELS = [
 ]
 
 
-# Policy scenario order: baseline, full Beirat, partial Beirat, Norwegian with PG, Norwegian no PG.
+# Policy scenario order: baseline, full Beirat, partial Beirat, normal leave, Norwegian with PG, Norwegian no PG.
 FISCAL_POLICY_LABELS = [
     "Baseline (cash benefits)",
     r"Full Beirat (65\%, 1y full)",
     r"Partial Beirat (65\%)",
+    r"Normal leave (65\%, no cap)",
     r"Norwegian (100\%, with PG)",
     r"Norwegian (100\%, no PG)",
 ]
@@ -195,6 +196,9 @@ def task_create_fiscal_costs(
     path_to_partial_beirat_sim: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_caregiving_leave_beirat_estimated_params.pkl",
+    path_to_normal_leave_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_caregiving_leave_with_job_retention_estimated_params.pkl",
     path_to_norwegian_pg_sim: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params.pkl",
@@ -206,10 +210,11 @@ def task_create_fiscal_costs(
     / "publication"
     / "fiscal_costs_caregiving_policies.tex",
 ) -> None:
-    """Create LaTeX table of fiscal costs of caregiving policies (five scenarios).
+    """Create LaTeX table of fiscal costs of caregiving policies (six scenarios).
 
     Policies: (1) Baseline (cash benefits); (2) Full Beirat; (3) Partial Beirat;
-    (4) Norwegian leave with Pflegegeld; (5) Norwegian leave without Pflegegeld.
+    (4) Normal leave (65%, no cap); (5) Norwegian leave with Pflegegeld;
+    (6) Norwegian leave without Pflegegeld.
     Each leave scenario is compared to baseline via delta columns.
 
     Life-cycle scope: The fiscal comparison covers the full model life cycle
@@ -220,16 +225,18 @@ def task_create_fiscal_costs(
     start_age = int(specs.get("start_age", 30))
     end_age = int(specs.get("end_age", 100))
 
-    # Load slim DataFrames: baseline + 4 leave scenarios
+    # Load slim DataFrames: baseline + 5 leave scenarios
     baseline_df = _load_sim_df(path_to_baseline_sim)
     full_beirat_df = _load_sim_df(path_to_full_beirat_sim)
     partial_beirat_df = _load_sim_df(path_to_partial_beirat_sim)
+    normal_leave_df = _load_sim_df(path_to_normal_leave_sim)
     norwegian_pg_df = _load_sim_df(path_to_norwegian_pg_sim)
     norwegian_no_pg_df = _load_sim_df(path_to_norwegian_no_pg_sim)
     policy_dfs = [
         baseline_df,
         full_beirat_df,
         partial_beirat_df,
+        normal_leave_df,
         norwegian_pg_df,
         norwegian_no_pg_df,
     ]
@@ -254,6 +261,7 @@ def task_create_fiscal_costs(
         baseline_df,
         full_beirat_df,
         partial_beirat_df,
+        normal_leave_df,
         norwegian_pg_df,
         norwegian_no_pg_df,
     ) = policy_dfs
@@ -267,14 +275,16 @@ def task_create_fiscal_costs(
     )
     cost_fb, n_fb, periods_fb = _total_cost_leave(full_beirat_df, specs)
     cost_pb, n_pb, periods_pb = _total_cost_leave(partial_beirat_df, specs)
+    cost_nl, n_nl, periods_nl = _total_cost_leave(normal_leave_df, specs)
     cost_npg, n_npg, periods_npg = _total_cost_leave(norwegian_pg_df, specs)
     cost_nnpg, n_nnpg, periods_nnpg = _total_cost_leave(norwegian_no_pg_df, specs)
-    costs = [cost_baseline, cost_fb, cost_pb, cost_npg, cost_nnpg]
-    n_cgs = [n_baseline, n_fb, n_pb, n_npg, n_nnpg]
+    costs = [cost_baseline, cost_fb, cost_pb, cost_nl, cost_npg, cost_nnpg]
+    n_cgs = [n_baseline, n_fb, n_pb, n_nl, n_npg, n_nnpg]
     periods_list = [
         periods_baseline,
         periods_fb,
         periods_pb,
+        periods_nl,
         periods_npg,
         periods_nnpg,
     ]
@@ -308,6 +318,7 @@ def task_create_fiscal_costs(
         for df in (
             full_beirat_df,
             partial_beirat_df,
+            normal_leave_df,
             norwegian_pg_df,
             norwegian_no_pg_df,
         )
@@ -321,6 +332,7 @@ def task_create_fiscal_costs(
         for df in (
             full_beirat_df,
             partial_beirat_df,
+            normal_leave_df,
             norwegian_pg_df,
             norwegian_no_pg_df,
         )
@@ -347,7 +359,7 @@ def task_create_fiscal_costs(
     ]
 
     # =====================================================================
-    # Build table (each key -> list of 5 values)
+    # Build table (each key -> list of 6 values)
     # =====================================================================
     table_dict: dict[str, list] = {
         "Policy": list(FISCAL_POLICY_LABELS),
@@ -432,7 +444,7 @@ def task_create_fiscal_costs(
     for col, label in zip(
         OUTCOME_COLUMNS_AVG_PER_CAREGIVER, OUTCOME_COLUMN_LABELS, strict=True
     ):
-        table_dict[label] = [outcomes_list[j].get(col, np.nan) for j in range(5)]
+        table_dict[label] = [outcomes_list[j].get(col, np.nan) for j in range(len(FISCAL_POLICY_LABELS))]
 
     table_wide = pd.DataFrame(table_dict)
     table = table_wide.set_index("Policy").T
@@ -443,6 +455,7 @@ def task_create_fiscal_costs(
     delta_labels = [
         "Delta Full Beirat - Baseline",
         "Delta Partial Beirat - Baseline",
+        "Delta Normal leave - Baseline",
         "Delta Norwegian (PG) - Baseline",
         "Delta Norwegian (no PG) - Baseline",
     ]

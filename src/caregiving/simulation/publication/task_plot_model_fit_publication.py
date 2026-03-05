@@ -1,4 +1,4 @@
-"""Publication-style model fit plots: one PDF per labor outcome per sample (12 plots)."""
+"""Publication-style model fit plots: one PDF per labor outcome per sample per education."""
 
 from __future__ import annotations
 
@@ -6,6 +6,9 @@ import pickle
 from pathlib import Path
 from typing import Annotated
 
+import matplotlib
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -13,7 +16,10 @@ import pytask
 from pytask import Product
 
 from caregiving.config import BLD
-from caregiving.counterfactual.plotting_helpers import PUBLICATION_PLOT_STYLE
+from caregiving.counterfactual.plotting_helpers import (
+    PUBLICATION_PLOT_STYLE,
+    publication_savefig,
+)
 from caregiving.model.shared import (
     DEAD,
     INFORMAL_CARE,
@@ -33,7 +39,6 @@ from caregiving.moments.task_create_soep_moments import (
     create_df_with_caregivers,
 )
 
-# Outcome index → y-axis label for publication
 _Y_LABELS = {
     0: "Share retired",
     1: "Share non-employed",
@@ -43,16 +48,14 @@ _Y_LABELS = {
 
 _OUTCOMES = ["retired", "non_employed", "part_time", "full_time"]
 _SAMPLES = ["all", "non_caregiver", "caregiver"]
+_EDUCATIONS = ["low", "high"]
+
+_S = PUBLICATION_PLOT_STYLE
+_X_PAD = 1
 
 
 def _add_choice_group(data_sim: pd.DataFrame, data_emp: pd.DataFrame) -> None:
-    """Map raw choice codes to 4-way choice_group (0=retirement, 1=unemployed, 2=part-time, 3=full-time). Modifies dataframes in place."""
-    choice_groups_sim = {
-        0: RETIREMENT,
-        1: UNEMPLOYED,
-        2: PART_TIME,
-        3: FULL_TIME,
-    }
+    choice_groups_sim = {0: RETIREMENT, 1: UNEMPLOYED, 2: PART_TIME, 3: FULL_TIME}
     choice_groups_emp = {
         0: RETIREMENT_CHOICES,
         1: UNEMPLOYED_CHOICES,
@@ -79,12 +82,19 @@ def _shares_by_age(
     choice_var: int,
     age_min: int,
     age_max: int,
+    education: int | None = None,
 ):
-    """Return ages, simulated share, empirical share for one outcome (choice_var 0–3)."""
     ages = list(range(age_min, age_max + 1))
     emp_sex = data_emp[data_emp["sex"] == SEX]
+
+    if education is not None:
+        emp_sex = emp_sex[emp_sex["education"] == education]
+        sim_edu = data_sim[data_sim["education"] == education]
+    else:
+        sim_edu = data_sim
+
     sim_shares = (
-        data_sim.groupby("age", observed=False)["choice_group"]
+        sim_edu.groupby("age", observed=False)["choice_group"]
         .value_counts(normalize=True)
         .unstack(fill_value=0)
     )
@@ -93,7 +103,6 @@ def _shares_by_age(
         .value_counts(normalize=True)
         .unstack(fill_value=0)
     )
-    # Ensure all choice groups 0-3 exist (some samples may have no retirees etc.)
     sim_shares = sim_shares.reindex(columns=[0, 1, 2, 3], fill_value=0)
     emp_shares = emp_shares.reindex(columns=[0, 1, 2, 3], fill_value=0)
     vals_sim = sim_shares.reindex(ages, fill_value=0)[choice_var]
@@ -101,8 +110,63 @@ def _shares_by_age(
     return ages, vals_sim, vals_emp
 
 
+def _apply_style(ax):
+    ax.grid(True, axis="y", alpha=_S["grid_alpha"], linewidth=_S["grid_linewidth"])
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.tick_params(axis="both", length=_S["tick_length"], width=_S["tick_width"])
+    for label in ax.get_xticklabels():
+        label.set_fontsize(_S["xtick_fontsize"])
+        label.set_fontfamily(_S["font_family"])
+    for label in ax.get_yticklabels():
+        label.set_fontsize(_S["ytick_fontsize"])
+        label.set_fontfamily(_S["font_family"])
+    ax.xaxis.get_label().set_fontsize(_S["label_fontsize"])
+    ax.xaxis.get_label().set_fontfamily(_S["font_family"])
+    ax.yaxis.get_label().set_fontsize(_S["label_fontsize"])
+    ax.yaxis.get_label().set_fontfamily(_S["font_family"])
+    legend = ax.get_legend()
+    if legend is not None:
+        for text in legend.get_texts():
+            text.set_fontsize(_S["label_fontsize"])
+            text.set_fontfamily(_S["font_family"])
+
+
+def _finalize(ax, path, ymin=None, ymax=None, xmin=None, xmax=None):
+    _apply_style(ax)
+    if xmin is not None and xmax is not None:
+        ax.set_xlim(xmin - _X_PAD, xmax + _X_PAD)
+    if ymin is None or ymax is None:
+        ymin, ymax = ax.get_ylim()
+    pad = _S["y_axis_margin_factor"] * (ymax - ymin)
+    ax.set_ylim(ymin - pad, ymax)
+    plt.tight_layout()
+    plt.subplots_adjust(bottom=_S["subplots_adjust_bottom"])
+    publication_savefig(path)
+    plt.close()
+
+
+# ---------------------------------------------------------------------------
+# Build product paths: 4 outcomes x 3 samples x 2 educations = 24 plots
+# ---------------------------------------------------------------------------
+
+_MODEL_FIT_DIR = BLD / "figures" / "publication" / "model_fit"
+
+_PRODUCT_KEYS: list[tuple[int, str, str, str]] = []
+_PRODUCT_PATHS: dict[str, Path] = {}
+
+for _oc_idx, _oc_name in enumerate(_OUTCOMES):
+    for _sample in _SAMPLES:
+        for _edu in _EDUCATIONS:
+            _key = f"path_to_share_{_oc_name}_{_sample}_{_edu}"
+            _PRODUCT_KEYS.append((_oc_idx, _oc_name, _sample, _edu))
+            _PRODUCT_PATHS[_key] = (
+                _MODEL_FIT_DIR / f"share_{_oc_name}_{_sample}_{_edu}.pdf"
+            )
+
+
 @pytask.mark.publication_model_fit
-def task_plot_model_fit_publication(  # noqa: PLR0915
+def task_plot_model_fit_publication(
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_simulated_data: Path = BLD
     / "solve_and_simulate"
@@ -113,68 +177,9 @@ def task_plot_model_fit_publication(  # noqa: PLR0915
     path_to_caregivers_sample: Path = BLD
     / "data"
     / "soep_structural_caregivers_sample.csv",
-    path_to_share_retired_all: Annotated[Path, Product] = BLD
-    / "figures"
-    / "publication"
-    / "model_fit"
-    / "share_retired_all.pdf",
-    path_to_share_retired_non_caregiver: Annotated[Path, Product] = BLD
-    / "figures"
-    / "publication"
-    / "model_fit"
-    / "share_retired_non_caregiver.pdf",
-    path_to_share_retired_caregiver: Annotated[Path, Product] = BLD
-    / "figures"
-    / "publication"
-    / "model_fit"
-    / "share_retired_caregiver.pdf",
-    path_to_share_non_employed_all: Annotated[Path, Product] = BLD
-    / "figures"
-    / "publication"
-    / "model_fit"
-    / "share_non_employed_all.pdf",
-    path_to_share_non_employed_non_caregiver: Annotated[Path, Product] = BLD
-    / "figures"
-    / "publication"
-    / "model_fit"
-    / "share_non_employed_non_caregiver.pdf",
-    path_to_share_non_employed_caregiver: Annotated[Path, Product] = BLD
-    / "figures"
-    / "publication"
-    / "model_fit"
-    / "share_non_employed_caregiver.pdf",
-    path_to_share_part_time_all: Annotated[Path, Product] = BLD
-    / "figures"
-    / "publication"
-    / "model_fit"
-    / "share_part_time_all.pdf",
-    path_to_share_part_time_non_caregiver: Annotated[Path, Product] = BLD
-    / "figures"
-    / "publication"
-    / "model_fit"
-    / "share_part_time_non_caregiver.pdf",
-    path_to_share_part_time_caregiver: Annotated[Path, Product] = BLD
-    / "figures"
-    / "publication"
-    / "model_fit"
-    / "share_part_time_caregiver.pdf",
-    path_to_share_full_time_all: Annotated[Path, Product] = BLD
-    / "figures"
-    / "publication"
-    / "model_fit"
-    / "share_full_time_all.pdf",
-    path_to_share_full_time_non_caregiver: Annotated[Path, Product] = BLD
-    / "figures"
-    / "publication"
-    / "model_fit"
-    / "share_full_time_non_caregiver.pdf",
-    path_to_share_full_time_caregiver: Annotated[Path, Product] = BLD
-    / "figures"
-    / "publication"
-    / "model_fit"
-    / "share_full_time_caregiver.pdf",
+    products: Annotated[dict[str, Path], Product] = _PRODUCT_PATHS,
 ) -> None:
-    """Produce 12 publication PDFs: one per (outcome, sample) with thesis-style formatting."""
+    """Produce 24 publication PDFs: one per (outcome, sample, education)."""
     with open(path_to_specs, "rb") as f:
         specs = pickle.load(f)
 
@@ -184,6 +189,9 @@ def task_plot_model_fit_publication(  # noqa: PLR0915
     start_age = specs["start_age"]
     start_age_caregivers = specs["start_age_caregiving"]
     end_age_caregiver = 69
+
+    plt.rcParams["font.family"] = "sans-serif"
+    plt.rcParams["font.sans-serif"] = ["DejaVu Sans", "Liberation Sans", "Arial"]
 
     df_emp_full = pd.read_csv(path_to_empirical_data, index_col=[0])
     df_caregivers_full = pd.read_csv(path_to_caregivers_sample, index_col=[0])
@@ -243,74 +251,106 @@ def task_plot_model_fit_publication(  # noqa: PLR0915
         "caregiver": (start_age_caregivers, end_age_caregiver),
     }
 
-    style = PUBLICATION_PLOT_STYLE
-    plt.rcParams["font.family"] = "sans-serif"
-    plt.rcParams["font.sans-serif"] = ["DejaVu Sans", "Liberation Sans", "Arial"]
+    edu_map = {"low": 0, "high": 1}
 
-    products = [
-        (0, "retired", "all", path_to_share_retired_all),
-        (0, "retired", "non_caregiver", path_to_share_retired_non_caregiver),
-        (0, "retired", "caregiver", path_to_share_retired_caregiver),
-        (1, "non_employed", "all", path_to_share_non_employed_all),
-        (1, "non_employed", "non_caregiver", path_to_share_non_employed_non_caregiver),
-        (1, "non_employed", "caregiver", path_to_share_non_employed_caregiver),
-        (2, "part_time", "all", path_to_share_part_time_all),
-        (2, "part_time", "non_caregiver", path_to_share_part_time_non_caregiver),
-        (2, "part_time", "caregiver", path_to_share_part_time_caregiver),
-        (3, "full_time", "all", path_to_share_full_time_all),
-        (3, "full_time", "non_caregiver", path_to_share_full_time_non_caregiver),
-        (3, "full_time", "caregiver", path_to_share_full_time_caregiver),
-    ]
-
-    for choice_var, _outcome_name, sample_name, path_to_save in products:
+    for choice_var, outcome_name, sample_name, edu_label in _PRODUCT_KEYS:
         age_min, age_max = age_range_by_sample[sample_name]
         data_emp = emp_by_sample[sample_name]
         data_sim = sim_by_sample[sample_name]
+        edu_idx = edu_map[edu_label]
+
         ages, vals_sim, vals_emp = _shares_by_age(
-            data_emp, data_sim, choice_var, age_min, age_max
+            data_emp, data_sim, choice_var, age_min, age_max, education=edu_idx
         )
 
-        fig, ax = plt.subplots(figsize=(10, 8))
+        fig, ax = plt.subplots(figsize=(_S["figsize"][0], _S["figsize"][1]))
+        ax.plot(ages, vals_sim, color="0", linestyle="-", linewidth=_S["linewidth"])
+        ax.plot(ages, vals_emp, color="0.5", linestyle="--", linewidth=_S["linewidth"])
+        ax.set_xlabel("Age", labelpad=_S["labelpad"])
+        ax.set_ylabel(_Y_LABELS[choice_var], labelpad=_S["labelpad"])
+
+        key = f"path_to_share_{outcome_name}_{sample_name}_{edu_label}"
+        _finalize(ax, products[key], ymin=0, ymax=1, xmin=age_min, xmax=age_max)
+
+
+# ---------------------------------------------------------------------------
+# Mean wealth model fit (by 5-year age bins and education)
+# ---------------------------------------------------------------------------
+
+
+@pytask.mark.publication_model_fit
+def task_plot_mean_wealth_model_fit(
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_simulated_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params.pkl",
+    path_to_moments: Path = BLD / "moments" / "moments_full_with_mean_wealth.csv",
+    path_to_save_low: Annotated[Path, Product] = _MODEL_FIT_DIR
+    / "mean_wealth_low.pdf",
+    path_to_save_high: Annotated[Path, Product] = _MODEL_FIT_DIR
+    / "mean_wealth_high.pdf",
+) -> None:
+    """Mean wealth model fit: simulated vs empirical, by 5-year age bins, per education."""
+    from caregiving.model.shared import WEALTH_MOMENTS_SCALE
+
+    with open(path_to_specs, "rb") as f:
+        specs = pickle.load(f)
+
+    start_age = specs["start_age"]
+
+    plt.rcParams["font.family"] = "sans-serif"
+    plt.rcParams["font.sans-serif"] = ["DejaVu Sans", "Liberation Sans", "Arial"]
+
+    moments_df = pd.read_csv(path_to_moments)
+    emp_moments = dict(zip(moments_df["moment"], moments_df["value"]))
+
+    df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
+    df_sim["age"] = df_sim["period"] + start_age
+    df_sim = df_sim[df_sim["health"] != DEAD].copy()
+
+    edu_configs = [
+        (0, "low", path_to_save_low),
+        (1, "high", path_to_save_high),
+    ]
+
+    for edu_idx, edu_str, path_to_save in edu_configs:
+        prefix = f"mean_wealth_{edu_str}_education_adjusted_wealth_age_bin_"
+        emp_bins = {}
+        for key, val in emp_moments.items():
+            if key.startswith(prefix):
+                rest = key[len(prefix) :]
+                parts = rest.split("_")
+                lo, hi = int(parts[0]), int(parts[1])
+                emp_bins[lo] = val / WEALTH_MOMENTS_SCALE
+
+        bin_starts = sorted(emp_bins.keys())
+        emp_vals = [emp_bins[b] for b in bin_starts]
+
+        sim_edu = df_sim[df_sim["education"] == edu_idx]
+        sim_vals = []
+        for b in bin_starts:
+            hi = b + 5
+            mask = (sim_edu["age"] >= b) & (sim_edu["age"] < hi)
+            sub = sim_edu.loc[mask, "assets_begin_of_period"]
+            sim_vals.append(sub.mean() if len(sub) > 0 else np.nan)
+
+        fig, ax = plt.subplots(figsize=(_S["figsize"][0], _S["figsize"][1]))
         ax.plot(
-            ages,
-            vals_sim,
-            color="0",
-            linestyle="-",
-            linewidth=style["linewidth"],
+            bin_starts, sim_vals, color="0", linestyle="-", linewidth=_S["linewidth"]
         )
         ax.plot(
-            ages,
-            vals_emp,
+            bin_starts,
+            emp_vals,
             color="0.5",
             linestyle="--",
-            linewidth=style["linewidth"],
+            linewidth=_S["linewidth"],
         )
-        ax.set_xlim(age_min, age_max)
-        ax.set_ylim(0, 1)
-        ax.set_xlabel("Age", fontsize=style["label_fontsize"])
-        ax.set_ylabel(_Y_LABELS[choice_var], fontsize=style["label_fontsize"])
-        ax.tick_params(
-            axis="both",
-            labelsize=style["xtick_fontsize"],
-            length=style["tick_length"],
-            width=style["tick_width"],
-        )
-        ax.grid(
-            True, axis="y", alpha=style["grid_alpha"], linewidth=style["grid_linewidth"]
-        )
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
+        ax.set_xlabel("Age", labelpad=_S["labelpad"])
+        ax.set_ylabel("Mean wealth (1000 EUR)", labelpad=_S["labelpad"])
 
-        path_to_save.parent.mkdir(parents=True, exist_ok=True)
-        if path_to_save.suffix.lower() == ".pdf":
-            _pdf_fonttype = plt.rcParams["pdf.fonttype"]
-            plt.rcParams["pdf.fonttype"] = 42
-        plt.savefig(
-            path_to_save,
-            dpi=style["savefig_dpi"],
-            bbox_inches="tight",
-            pad_inches=style["savefig_pad_inches"],
-        )
-        if path_to_save.suffix.lower() == ".pdf":
-            plt.rcParams["pdf.fonttype"] = _pdf_fonttype
-        plt.close(fig)
+        ymin = min(min(v for v in sim_vals if not np.isnan(v)), min(emp_vals))
+        ymax = max(max(v for v in sim_vals if not np.isnan(v)), max(emp_vals))
+        xmin = bin_starts[0]
+        xmax = bin_starts[-1]
+
+        _finalize(ax, path_to_save, ymin=ymin, ymax=ymax, xmin=xmin, xmax=xmax)
