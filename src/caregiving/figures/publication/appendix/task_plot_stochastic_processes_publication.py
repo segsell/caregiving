@@ -118,9 +118,9 @@ def _plot_partner_state_one_panel(specs, df, partner_state_idx, path_to_save):
     n_periods = min(len(ages), trans_mat.shape[2])
     ages = ages[:n_periods]
     initial_dist = np.zeros(n_partner_states)
-    grouped = df.groupby(["sex", "education", "age"])[
-        "partner_state"
-    ].value_counts(normalize=True)
+    grouped = df.groupby(["sex", "education", "age"])["partner_state"].value_counts(
+        normalize=True
+    )
     fig, ax = plt.subplots(figsize=_S["figsize"])
     for edu, edu_label in enumerate(specs["education_labels"]):
         try:
@@ -159,8 +159,12 @@ def _plot_partner_state_one_panel(specs, df, partner_state_idx, path_to_save):
     ax.set_ylabel("Share", fontsize=_S["label_fontsize"], labelpad=_S["labelpad"])
     ax.legend(fontsize=_S["label_fontsize"], frameon=False, loc="best")
     _finalize(
-        ax, path_to_save, ymin=0, ymax=1,
-        xmin=start_age, xmax=_PARTNER_STATE_MAX_AGE,
+        ax,
+        path_to_save,
+        ymin=0,
+        ymax=1,
+        xmin=start_age,
+        xmax=_PARTNER_STATE_MAX_AGE,
     )
 
 
@@ -214,6 +218,7 @@ def task_plot_partner_state_retired_partner_publication(
 # Uses partner_wage_eq_params_women.csv (sex==1 in data = women agents)
 # Reference plot: wages_partner_women.png
 # ---------------------------------------------------------------------------
+
 
 @pytask.mark.figures
 @pytask.mark.stochastic_processes
@@ -269,7 +274,9 @@ def task_plot_partner_wage_publication(
             linewidth=_S["linewidth"],
         )
     ax.set_xlabel("Age", fontsize=_S["label_fontsize"], labelpad=_S["labelpad"])
-    ax.set_ylabel("Monthly gross income", fontsize=_S["label_fontsize"], labelpad=_S["labelpad"])
+    ax.set_ylabel(
+        "Monthly gross income", fontsize=_S["label_fontsize"], labelpad=_S["labelpad"]
+    )
     ax.legend(fontsize=_S["label_fontsize"], frameon=False, loc="best")
     _finalize(ax, path_to_save, ymin=1000, xmin=start_age, xmax=x_max)
 
@@ -317,12 +324,19 @@ def _plot_children_one_panel(specs, df, has_partner, path_to_save):
             linewidth=_S["linewidth"],
         )
     ax.set_xlabel("Age", fontsize=_S["label_fontsize"], labelpad=_S["labelpad"])
-    ax.set_ylabel("Number of children in household", fontsize=_S["label_fontsize"], labelpad=_S["labelpad"])
+    ax.set_ylabel(
+        "Number of children in household",
+        fontsize=_S["label_fontsize"],
+        labelpad=_S["labelpad"],
+    )
     ax.legend(fontsize=_S["label_fontsize"], frameon=False, loc="best")
     _finalize(
-        ax, path_to_save,
-        ymin=_CHILDREN_YLIM[0], ymax=_CHILDREN_YLIM[1],
-        xmin=start_age, xmax=_CHILDREN_XMAX,
+        ax,
+        path_to_save,
+        ymin=_CHILDREN_YLIM[0],
+        ymax=_CHILDREN_YLIM[1],
+        xmin=start_age,
+        xmax=_CHILDREN_XMAX,
     )
 
 
@@ -363,6 +377,7 @@ def task_plot_children_partnered_publication(
 # ---------------------------------------------------------------------------
 # Job separation
 # ---------------------------------------------------------------------------
+
 
 @pytask.mark.figures
 @pytask.mark.stochastic_processes
@@ -412,7 +427,11 @@ def task_plot_job_separation_publication(
             linewidth=_S["linewidth"],
         )
     ax.set_xlabel("Age", fontsize=_S["label_fontsize"], labelpad=_S["labelpad"])
-    ax.set_ylabel("Job separation probability", fontsize=_S["label_fontsize"], labelpad=_S["labelpad"])
+    ax.set_ylabel(
+        "Job separation probability",
+        fontsize=_S["label_fontsize"],
+        labelpad=_S["labelpad"],
+    )
     ax.legend(fontsize=_S["label_fontsize"], frameon=False, loc="best")
     _finalize(ax, path_to_save, ymin=0, ymax=0.1, xmin=start_age, xmax=x_max)
 
@@ -421,14 +440,14 @@ def task_plot_job_separation_publication(
 # Survival probability (women only)
 # ---------------------------------------------------------------------------
 
+
 @pytask.mark.figures
 @pytask.mark.stochastic_processes
 @pytask.mark.publication_stochastic_processes
 def task_plot_survival_women_publication(
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_mortality: Path = _EST / "mortality_transition_matrix_logit.csv",
-    path_to_save: Annotated[Path, Product] = _OUT
-    / "survival_probabilities_women.pdf",
+    path_to_save: Annotated[Path, Product] = _OUT / "survival_probabilities_women.pdf",
 ) -> None:
     with path_to_specs.open("rb") as f:
         specs = pkl.load(f)
@@ -474,6 +493,7 @@ def task_plot_survival_women_publication(
 # Health: P(healthy | alive)
 # ---------------------------------------------------------------------------
 
+
 @pytask.mark.figures
 @pytask.mark.stochastic_processes
 @pytask.mark.publication_stochastic_processes
@@ -506,7 +526,13 @@ def task_plot_health_probability_healthy_publication(
         shares = _markov_simulator(initial_dist, trans, max_period)
         alive = 1 - shares[:, 2]
         healthy_cond = np.where(alive > 1e-10, shares[:, 1] / alive, np.nan)
-        obs = df.loc[(df["education"] == edu) & (df["age"] >= start_age) & (df["age"] < 90)].groupby("age")["health"].mean()
+        obs = (
+            df.loc[
+                (df["education"] == edu) & (df["age"] >= start_age) & (df["age"] < 90)
+            ]
+            .groupby("age")["health"]
+            .mean()
+        )
         ax.plot(
             obs.index,
             obs.values,
@@ -523,7 +549,9 @@ def task_plot_health_probability_healthy_publication(
             linewidth=_S["linewidth"],
         )
     ax.set_xlabel("Age", fontsize=_S["label_fontsize"], labelpad=_S["labelpad"])
-    ax.set_ylabel("Share good health", fontsize=_S["label_fontsize"], labelpad=_S["labelpad"])
+    ax.set_ylabel(
+        "Share good health", fontsize=_S["label_fontsize"], labelpad=_S["labelpad"]
+    )
     ax.legend(fontsize=_S["label_fontsize"], frameon=False, loc="best")
     _finalize(ax, path_to_save, ymin=0, ymax=1, xmin=start_age, xmax=89)
 
@@ -531,6 +559,7 @@ def task_plot_health_probability_healthy_publication(
 # ---------------------------------------------------------------------------
 # Health: P(bad health | alive)
 # ---------------------------------------------------------------------------
+
 
 @pytask.mark.figures
 @pytask.mark.stochastic_processes
@@ -567,7 +596,14 @@ def task_plot_health_probability_bad_publication(
         shares = _markov_simulator(initial_dist, trans, max_period)
         alive = 1 - shares[:, 2]
         bad_cond = np.where(alive > 1e-10, shares[:, 0] / alive, np.nan)
-        obs_bad = 1 - df.loc[(df["education"] == edu) & (df["age"] >= start_age) & (df["age"] < 90)].groupby("age")["health"].mean()
+        obs_bad = (
+            1
+            - df.loc[
+                (df["education"] == edu) & (df["age"] >= start_age) & (df["age"] < 90)
+            ]
+            .groupby("age")["health"]
+            .mean()
+        )
         ax.plot(
             obs_bad.index,
             obs_bad.values,
@@ -584,7 +620,9 @@ def task_plot_health_probability_bad_publication(
             linewidth=_S["linewidth"],
         )
     ax.set_xlabel("Age", fontsize=_S["label_fontsize"], labelpad=_S["labelpad"])
-    ax.set_ylabel("Share bad health", fontsize=_S["label_fontsize"], labelpad=_S["labelpad"])
+    ax.set_ylabel(
+        "Share bad health", fontsize=_S["label_fontsize"], labelpad=_S["labelpad"]
+    )
     ax.legend(fontsize=_S["label_fontsize"], frameon=False, loc="best")
     _finalize(ax, path_to_save, ymin=0, ymax=1, xmin=start_age, xmax=89)
 
@@ -592,6 +630,7 @@ def task_plot_health_probability_bad_publication(
 # ---------------------------------------------------------------------------
 # Own wage — uses PanelOLS in-sample prediction (matches original)
 # ---------------------------------------------------------------------------
+
 
 @pytask.mark.figures
 @pytask.mark.stochastic_processes
@@ -647,7 +686,9 @@ def task_plot_own_wage_publication(
             linewidth=_S["linewidth"],
         )
     ax.set_xlabel("Age", fontsize=_S["label_fontsize"], labelpad=_S["labelpad"])
-    ax.set_ylabel("Log hourly wage", fontsize=_S["label_fontsize"], labelpad=_S["labelpad"])
+    ax.set_ylabel(
+        "Log hourly wage", fontsize=_S["label_fontsize"], labelpad=_S["labelpad"]
+    )
     ax.set_yticks(np.arange(1.5, 4.0, 0.5))
     ax.legend(fontsize=_S["label_fontsize"], frameon=False, loc="best")
     _finalize(ax, path_to_save, ymin=1.5, ymax=3.5, xmin=start_age, xmax=x_max)
@@ -656,6 +697,7 @@ def task_plot_own_wage_publication(
 # ---------------------------------------------------------------------------
 # Formal care costs (pooled)
 # ---------------------------------------------------------------------------
+
 
 @pytask.mark.figures
 @pytask.mark.stochastic_processes
@@ -705,6 +747,8 @@ def task_plot_formal_care_costs_publication(
         linewidth=_S["linewidth"],
     )
     ax.set_xlabel("Age", fontsize=_S["label_fontsize"], labelpad=_S["labelpad"])
-    ax.set_ylabel("Formal care costs", fontsize=_S["label_fontsize"], labelpad=_S["labelpad"])
+    ax.set_ylabel(
+        "Formal care costs", fontsize=_S["label_fontsize"], labelpad=_S["labelpad"]
+    )
     ax.legend(fontsize=_S["label_fontsize"], frameon=False, loc="best")
     _finalize(ax, path_to_save, xmin=start_age, xmax=end_age)

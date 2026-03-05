@@ -22,16 +22,16 @@ from caregiving.counterfactual.plotting_helpers import (
 )
 from caregiving.model.shared import (
     DEAD,
-    INFORMAL_CARE,
-    RETIREMENT,
-    UNEMPLOYED,
-    PART_TIME,
     FULL_TIME,
-    RETIREMENT_CHOICES,
-    UNEMPLOYED_CHOICES,
-    PART_TIME_CHOICES,
     FULL_TIME_CHOICES,
+    INFORMAL_CARE,
+    PART_TIME,
+    PART_TIME_CHOICES,
+    RETIREMENT,
+    RETIREMENT_CHOICES,
     SEX,
+    UNEMPLOYED,
+    UNEMPLOYED_CHOICES,
 )
 from caregiving.moments.task_create_soep_moments import (
     create_df_caregivers,

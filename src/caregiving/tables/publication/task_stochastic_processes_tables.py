@@ -64,13 +64,26 @@ def task_table_partner_transition_women(
     # CSV may have index columns: sex, education, age_bin, lagged_partner_state, lead_partner_state
     # and column proportion (or last column)
     if "sex" not in df.columns and len(df.columns) >= 6:
-        df.columns = ["sex", "education", "age_bin", "lagged_partner_state", "lead_partner_state", "proportion"]
+        df.columns = [
+            "sex",
+            "education",
+            "age_bin",
+            "lagged_partner_state",
+            "lead_partner_state",
+            "proportion",
+        ]
     if "sex" in df.columns:
         df = df.loc[df["sex"] == 1].copy()
     pivot_col = "proportion" if "proportion" in df.columns else df.columns[-1]
-    lead_col = "lead_partner_state" if "lead_partner_state" in df.columns else "partner_state"
+    lead_col = (
+        "lead_partner_state" if "lead_partner_state" in df.columns else "partner_state"
+    )
     if lead_col not in df.columns:
-        lead_col = [c for c in df.columns if c not in ["education", "age_bin", "lagged_partner_state", pivot_col]]
+        lead_col = [
+            c
+            for c in df.columns
+            if c not in ["education", "age_bin", "lagged_partner_state", pivot_col]
+        ]
         lead_col = lead_col[0] if lead_col else "lead_partner_state"
     df_wide = df.pivot_table(
         index=["education", "age_bin", "lagged_partner_state"],
@@ -82,7 +95,11 @@ def task_table_partner_transition_women(
     df_wide["lagged_partner_state"] = df_wide["lagged_partner_state"].map(
         {0: "No partner", 1: "Working", 2: "Retired"}
     )
-    to_cols = [c for c in df_wide.columns if c not in ["education", "age_bin", "lagged_partner_state"]]
+    to_cols = [
+        c
+        for c in df_wide.columns
+        if c not in ["education", "age_bin", "lagged_partner_state"]
+    ]
     n_to = len(to_cols)
     header = (
         "\\begin{tabular}{lll" + "c" * n_to + "}\n\\toprule\n"
@@ -92,7 +109,11 @@ def task_table_partner_transition_women(
     )
     rows = []
     for _, r in df_wide.iterrows():
-        vals = [str(r["education"]), str(int(r["age_bin"])), str(r["lagged_partner_state"])]
+        vals = [
+            str(r["education"]),
+            str(int(r["age_bin"])),
+            str(r["lagged_partner_state"]),
+        ]
         for c in to_cols:
             v = r[c]
             vals.append(f"{v:.3f}" if pd.notna(v) else "--")
@@ -117,10 +138,14 @@ def task_table_partner_wage_women(
     path_to_save.parent.mkdir(parents=True, exist_ok=True)
     df = pd.read_csv(path_to_params, index_col=0)
     df.index = df.index.map(lambda x: _latex_escape(str(x)))
-    coef_cols = [c for c in df.columns if c in ["constant", "period", "period_sq", "const"]]
+    coef_cols = [
+        c for c in df.columns if c in ["constant", "period", "period_sq", "const"]
+    ]
     if not coef_cols:
         coef_cols = list(df.columns)
-    header = "\\begin{tabular}{lc}\n\\toprule\nParameter & Coefficient \\\\\n\\midrule\n"
+    header = (
+        "\\begin{tabular}{lc}\n\\toprule\nParameter & Coefficient \\\\\n\\midrule\n"
+    )
     rows = []
     for edu in df.index:
         rows.append(f"\\multicolumn{{2}}{{l}}{{\\textit{{{edu}}}}} \\\\")
@@ -215,7 +240,9 @@ def task_table_health_transition_women(
     df = pd.read_csv(path_to_health)
     # Filter women (sex == 1 or "Women")
     if "sex" in df.columns:
-        df = df.loc[df["sex"].astype(str).str.contains("Women|1", na=False, regex=True)].copy()
+        df = df.loc[
+            df["sex"].astype(str).str.contains("Women|1", na=False, regex=True)
+        ].copy()
     # Select key columns: education, period/age, health, lead_health, transition_prob
     prob_col = "transition_prob" if "transition_prob" in df.columns else df.columns[-1]
     header = "\\begin{tabular}{lllcc}\n\\toprule\nEducation & Age & From health & To health & Probability \\\\\n\\midrule\n"
@@ -250,7 +277,9 @@ def task_table_mortality_women(
     if df.shape[1] == 0:
         df = pd.read_csv(path_to_params)
     col = df.columns[0]
-    header = "\\begin{tabular}{lc}\n\\toprule\nParameter & Coefficient \\\\\n\\midrule\n"
+    header = (
+        "\\begin{tabular}{lc}\n\\toprule\nParameter & Coefficient \\\\\n\\midrule\n"
+    )
     rows = [f"{_latex_escape(str(i))} & {v:.4f} \\\\" for i, v in df[col].items()]
     body = "\n".join(rows)
     notes = (
@@ -272,7 +301,11 @@ def task_table_own_wage_women(
     path_to_save.parent.mkdir(parents=True, exist_ok=True)
     df = pd.read_csv(path_to_params)
     # Columns may be: education, sex, parameter, value (or index 0,1,2, value)
-    if df.shape[1] == 2 and df.columns[0] in ["0", "1", "2"] or "Unnamed" in str(df.columns[0]):
+    if (
+        df.shape[1] == 2
+        and df.columns[0] in ["0", "1", "2"]
+        or "Unnamed" in str(df.columns[0])
+    ):
         df = pd.read_csv(path_to_params, index_col=[0, 1, 2])
         df = df.reset_index()
         df.columns = ["education", "sex", "parameter", "value"]
@@ -284,15 +317,23 @@ def task_table_own_wage_women(
     rows = []
     for edu in df["education"].unique():
         sub = df.loc[df["education"] == edu]
-        edu_lab = "Low" if "Low" in str(edu) else "High" if "High" in str(edu) else str(edu)
-        params = [p for p in sub[param_col].unique() if p and "_ser" not in str(p) and "ser" != str(p)]
+        edu_lab = (
+            "Low" if "Low" in str(edu) else "High" if "High" in str(edu) else str(edu)
+        )
+        params = [
+            p
+            for p in sub[param_col].unique()
+            if p and "_ser" not in str(p) and "ser" != str(p)
+        ]
         for pname in params:
             r = sub.loc[sub[param_col] == pname]
             val = r[val_col].iloc[0] if len(r) else np.nan
             ser_r = sub.loc[sub[param_col] == str(pname) + "_ser", val_col]
             se_val = ser_r.iloc[0] if len(ser_r) else np.nan
             se_str = f"{se_val:.4f}" if pd.notna(se_val) else "--"
-            rows.append(f"{edu_lab} & {_latex_escape(str(pname))} & {val:.4f} & {se_str} \\\\")
+            rows.append(
+                f"{edu_lab} & {_latex_escape(str(pname))} & {val:.4f} & {se_str} \\\\"
+            )
     body = "\n".join(rows) if rows else "\\multicolumn{4}{l}{(no data)} \\\\"
     notes = (
         "\\\\\n\\bottomrule\n\\end{tabular}\n"
@@ -323,7 +364,11 @@ def task_table_formal_care_costs(
     se_row = df.loc["coefficient_se"] if "coefficient_se" in df.index else None
     r2_val = None
     if "rsquared" in df.index:
-        r2_val = df.loc["rsquared", "const"] if pd.notna(df.loc["rsquared", "const"]) else None
+        r2_val = (
+            df.loc["rsquared", "const"]
+            if pd.notna(df.loc["rsquared", "const"])
+            else None
+        )
     param_cols = [c for c in coef_row.index if c != "N" and pd.notna(coef_row.get(c))]
     param_labels = {"const": "Const", "age": "Age", "age_sq": "Age\\textsuperscript{2}"}
     header = "\\begin{tabular}{lcc}\n\\toprule\nParameter & Coefficient & (s.e.) \\\\\n\\midrule\n"
@@ -338,7 +383,9 @@ def task_table_formal_care_costs(
     if pd.notna(n_val):
         rows.append(f"N & \\multicolumn{{2}}{{c}}{{ {int(n_val)} }} \\\\")
     if r2_val is not None:
-        rows.append(f"R\\textsuperscript{{2}} & \\multicolumn{{2}}{{c}}{{ {r2_val:.4f} }} \\\\")
+        rows.append(
+            f"R\\textsuperscript{{2}} & \\multicolumn{{2}}{{c}}{{ {r2_val:.4f} }} \\\\"
+        )
     body = "\n".join(rows)
     notes = (
         "\\\\\n\\bottomrule\n\\end{tabular}\n"
@@ -349,7 +396,9 @@ def task_table_formal_care_costs(
     path_to_save.write_text(header + body + notes, encoding="utf-8")
 
 
-def _table_from_inheritance_spec(path_csv: Path, path_save: Path, title: str, spec_type: str) -> None:
+def _table_from_inheritance_spec(
+    path_csv: Path, path_save: Path, title: str, spec_type: str
+) -> None:
     """Build LaTeX table from inheritance spec CSV (params + _se + _rsq rows). Women only."""
     path_save.parent.mkdir(parents=True, exist_ok=True)
     if not path_csv.exists():
@@ -374,7 +423,11 @@ def _table_from_inheritance_spec(path_csv: Path, path_save: Path, title: str, sp
             women_rsq = df.iloc[i].dropna()
     if women_row is None:
         women_row = df.iloc[0]
-    param_cols = [c for c in women_row.index if c != "N" and pd.notna(women_row.get(c)) and str(c) != "nan"]
+    param_cols = [
+        c
+        for c in women_row.index
+        if c != "N" and pd.notna(women_row.get(c)) and str(c) != "nan"
+    ]
     header = "\\begin{tabular}{lcc}\n\\toprule\nParameter & Coefficient & (s.e.) \\\\\n\\midrule\n"
     rows = []
     for c in param_cols:
@@ -386,7 +439,9 @@ def _table_from_inheritance_spec(path_csv: Path, path_save: Path, title: str, sp
         rows.append(f"{_latex_escape(str(c))} & {coef:.4f} & {se_str} \\\\")
     if women_rsq is not None and len(women_rsq):
         r2 = women_rsq.iloc[0]
-        rows.append(f"Pseudo R\\textsuperscript{2} & \\multicolumn{{2}}{{c}}{{ {r2:.4f} }} \\\\")
+        rows.append(
+            f"Pseudo R\\textsuperscript{2} & \\multicolumn{{2}}{{c}}{{ {r2:.4f} }} \\\\"
+        )
     body = "\n".join(rows)
     notes = (
         "\\\\\n\\bottomrule\n\\end{tabular}\n"
