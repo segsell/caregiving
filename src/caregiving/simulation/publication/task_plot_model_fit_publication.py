@@ -285,8 +285,7 @@ def task_plot_mean_wealth_model_fit(
     / "solve_and_simulate"
     / "simulated_data_estimated_params.pkl",
     path_to_moments: Path = BLD / "moments" / "moments_full_with_mean_wealth.csv",
-    path_to_save_low: Annotated[Path, Product] = _MODEL_FIT_DIR
-    / "mean_wealth_low.pdf",
+    path_to_save_low: Annotated[Path, Product] = _MODEL_FIT_DIR / "mean_wealth_low.pdf",
     path_to_save_high: Annotated[Path, Product] = _MODEL_FIT_DIR
     / "mean_wealth_high.pdf",
 ) -> None:
