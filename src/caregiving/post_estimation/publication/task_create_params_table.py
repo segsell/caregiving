@@ -1,12 +1,13 @@
 """Create LaTeX table of estimated disutility parameters with standard errors.
 
 Produces one table float with two tabular environments:
-- Panels A & B (4 columns): Non-caregiver work/unemployment and children disutilities
+- Panels A & B (4 columns): Non-caregiver work/unemployment and children
 - Panels C & D (8 columns): Caregiver disutilities with care-intensity splits
 
-For the caregiver panel, the reported disutility combines the base informal-care
-param and the light/intensive increment:  reported = base_informal_care - increment
-(negative increments add to disutility; positive increments reduce it).
+For the caregiver panel, the reported disutility for full-time work and
+unemployment combines the base informal-care param with the light/intensive
+level shift:  reported = base_informal_care - level_shift
+(negative shifts add to disutility; positive shifts reduce it).
 """
 
 from __future__ import annotations
@@ -23,7 +24,7 @@ from pytask import Product
 from caregiving.config import BLD
 
 # ---------------------------------------------------------------------------
-# Task
+# Tasks
 # ---------------------------------------------------------------------------
 
 
@@ -35,10 +36,23 @@ def task_create_params_table(
     / "publication"
     / "disutility_of_work_params.tex",
 ):
+    _build_and_save(path_to_params, path_to_save, se_dict=_load_latest_se())
+
+
+@pytask.mark.publication_params_table
+def task_create_params_table_model_fit(
+    path_to_params: Path = BLD / "model" / "params" / "estimated_params_model_fit.yaml",
+    path_to_save: Annotated[Path, Product] = BLD
+    / "tables"
+    / "publication"
+    / "disutility_of_work_params_model_fit.tex",
+):
+    _build_and_save(path_to_params, path_to_save, se_dict={})
+
+
+def _build_and_save(path_to_params: Path, path_to_save: Path, se_dict: dict):
     with open(path_to_params) as f:
         params = yaml.safe_load(f)
-
-    se_dict = _load_latest_se()
 
     lines: list[str] = []
     lines.append(r"\begin{table}[htbp]")
@@ -152,7 +166,7 @@ def _non_caregiver_tabular(p: dict, se: dict) -> list[str]:
     G = _get_se
     L: list[str] = list(_HEADER_4COL)
 
-    # --- Panel A ---
+    # --- Panel A: Work and Unemployment ---
     L.append(
         r"\multicolumn{5}{l}{\textit{Panel A:"
         r" Disutility of Work and Unemployment}} \\",
@@ -179,12 +193,43 @@ def _non_caregiver_tabular(p: dict, se: dict) -> list[str]:
     L.append(_val_row("Part-time work", [p[k] for k in keys]))
     L.append(_se_row([G(se, k) for k in keys]))
 
-    # Unemployed (no health split → center between cols 1-2 and 3-4)
+    # Unemployed (no health split)
     vl = p["disutil_unemployed_low_women"]
     vh = p["disutil_unemployed_high_women"]
     sl = G(se, "disutil_unemployed_low_women")
     sh = G(se, "disutil_unemployed_high_women")
     L.append(f"Unemployed & {_mc(2, _v(vl))} & {_mc(2, _v(vh))} \\\\")
+    L.append(f" & {_mc(2, _s(sl))} & {_mc(2, _s(sh))} \\\\")
+
+    L.append(r"\midrule")
+
+    # --- Panel B: Children (non-caregiver, sign-flipped, no health split) ---
+    L.append(
+        r"\multicolumn{5}{l}{\textit{Panel B:"
+        r" Interaction with Number of Children}} \\",
+    )
+    L.append(r"\midrule")
+
+    # FT × children
+    vl = -p["disutil_children_ft_work_low"]
+    vh = -p["disutil_children_ft_work_high"]
+    sl = G(se, "disutil_children_ft_work_low")
+    sh = G(se, "disutil_children_ft_work_high")
+    L.append(
+        f"Full-time work $\\times$ children"
+        f" & {_mc(2, _v(vl))} & {_mc(2, _v(vh))} \\\\",
+    )
+    L.append(f" & {_mc(2, _s(sl))} & {_mc(2, _s(sh))} \\\\[2pt]")
+
+    # PT × children
+    vl = -p["disutil_children_pt_work_low"]
+    vh = -p["disutil_children_pt_work_high"]
+    sl = G(se, "disutil_children_pt_work_low")
+    sh = G(se, "disutil_children_pt_work_high")
+    L.append(
+        f"Part-time work $\\times$ children"
+        f" & {_mc(2, _v(vl))} & {_mc(2, _v(vh))} \\\\",
+    )
     L.append(f" & {_mc(2, _s(sl))} & {_mc(2, _s(sh))} \\\\")
 
     L.append(r"\bottomrule")
@@ -231,14 +276,14 @@ def _caregiver_tabular(p: dict, se: dict) -> list[str]:  # noqa: PLR0914
     G = _get_se
     L: list[str] = list(_HEADER_8COL)
 
-    # --- Panel C ---
+    # --- Panel C: Work and Unemployment While Caregiving ---
     L.append(
         r"\multicolumn{9}{l}{\textit{Panel C:"
         r" Disutility of Work and Unemployment While Caregiving}} \\",
     )
     L.append(r"\midrule")
 
-    # -- Full-time work: combined = base(educ,health) - increment(educ,intensity) --
+    # -- Full-time work: combined = base(educ,health) - shift(educ,intensity) --
     ft_base = {
         ("low", "bad"): "disutil_ft_work_low_bad_informal_care",
         ("low", "good"): "disutil_ft_work_low_good_informal_care",
@@ -259,7 +304,7 @@ def _caregiver_tabular(p: dict, se: dict) -> list[str]:  # noqa: PLR0914
     L.append(_val_row("Full-time work", vals))
     L.append(_se_row(ses))
 
-    # -- Part-time work: no light/intensive split → center between Light & Intensive --
+    # -- Part-time work: no light/intensive split --
     pt_keys = [
         ("low", "bad", "disutil_pt_work_low_bad_informal_care"),
         ("low", "good", "disutil_pt_work_low_good_informal_care"),
@@ -271,39 +316,53 @@ def _caregiver_tabular(p: dict, se: dict) -> list[str]:  # noqa: PLR0914
     L.append(f"Part-time work & {v_cells} \\\\")
     L.append(f" & {s_cells} \\\\[2pt]")
 
-    # -- Unemployed: no health split → center across 4 cols per education --
-    vl = p["disutil_unemployed_low_women_informal_care"]
-    vh = p["disutil_unemployed_high_women_informal_care"]
-    sl = G(se, "disutil_unemployed_low_women_informal_care")
-    sh = G(se, "disutil_unemployed_high_women_informal_care")
-    L.append(f"Unemployed & {_mc(4, _v(vl))} & {_mc(4, _v(vh))} \\\\")
-    L.append(f" & {_mc(4, _s(sl))} & {_mc(4, _s(sh))} \\\\")
+    # -- Unemployed: combined = base(educ) - shift(educ, intensity) --
+    # No health split, so bad/good columns within each (educ, intensity) pair
+    # show identical values.
+    ue_base = {
+        "low": "disutil_unemployed_low_women_informal_care",
+        "high": "disutil_unemployed_high_women_informal_care",
+    }
+    ue_shift = {
+        ("low", "light"): "disutil_unemployed_light_informal_care_low",
+        ("low", "intensive"): "disutil_unemployed_intensive_informal_care_low",
+        ("high", "light"): "disutil_unemployed_light_informal_care_high",
+        ("high", "intensive"): "disutil_unemployed_intensive_informal_care_high",
+    }
+    ue_vals, ue_ses = [], []
+    for educ, _health, intensity in _COL:
+        bk = ue_base[educ]
+        sk = ue_shift[(educ, intensity)]
+        ue_vals.append(p[bk] - p[sk])
+        ue_ses.append(_combined_se(G(se, bk), G(se, sk)))
+    L.append(_val_row("Unemployed", ue_vals))
+    L.append(_se_row(ue_ses, last=True))
 
     L.append(r"\midrule")
 
-    # --- Panel D: Children (signs flipped: report -param as utility) ---
+    # --- Panel D: Children while caregiving (sign-flipped, no health/intensity split) ---
     L.append(
         r"\multicolumn{9}{l}{\textit{Panel D:"
-        r" Utility from Number of Children in Household}} \\",
+        r" Interaction with Number of Children While Caregiving}} \\",
     )
     L.append(r"\midrule")
 
-    # FT + children (education only → center across 4 cols per educ, sign flipped)
-    vl = -p["disutil_children_ft_work_low"]
-    vh = -p["disutil_children_ft_work_high"]
-    sl = G(se, "disutil_children_ft_work_low")
-    sh = G(se, "disutil_children_ft_work_high")
+    # FT × children (caregiver variant)
+    vl = -p["disutil_children_ft_work_low_informal_care"]
+    vh = -p["disutil_children_ft_work_high_informal_care"]
+    sl = G(se, "disutil_children_ft_work_low_informal_care")
+    sh = G(se, "disutil_children_ft_work_high_informal_care")
     L.append(
         f"Full-time work $\\times$ children"
         f" & {_mc(4, _v(vl))} & {_mc(4, _v(vh))} \\\\",
     )
     L.append(f" & {_mc(4, _s(sl))} & {_mc(4, _s(sh))} \\\\[2pt]")
 
-    # PT + children (education only → center across 4 cols per educ, sign flipped)
-    vl = -p["disutil_children_pt_work_low"]
-    vh = -p["disutil_children_pt_work_high"]
-    sl = G(se, "disutil_children_pt_work_low")
-    sh = G(se, "disutil_children_pt_work_high")
+    # PT × children (caregiver variant)
+    vl = -p["disutil_children_pt_work_low_informal_care"]
+    vh = -p["disutil_children_pt_work_high_informal_care"]
+    sl = G(se, "disutil_children_pt_work_low_informal_care")
+    sh = G(se, "disutil_children_pt_work_high_informal_care")
     L.append(
         f"Part-time work $\\times$ children"
         f" & {_mc(4, _v(vl))} & {_mc(4, _v(vh))} \\\\",

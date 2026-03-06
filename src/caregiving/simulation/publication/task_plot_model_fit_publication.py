@@ -334,6 +334,8 @@ def task_plot_mean_wealth_model_fit(
             sub = sim_edu.loc[mask, "assets_begin_of_period"]
             sim_vals.append(sub.mean() if len(sub) > 0 else np.nan)
 
+        bin_labels = [f"{b}\u2013{b + 4}" for b in bin_starts]
+
         fig, ax = plt.subplots(figsize=(_S["figsize"][0], _S["figsize"][1]))
         ax.plot(
             bin_starts, sim_vals, color="0", linestyle="-", linewidth=_S["linewidth"]
@@ -345,12 +347,12 @@ def task_plot_mean_wealth_model_fit(
             linestyle="--",
             linewidth=_S["linewidth"],
         )
-        ax.set_xlabel("Age", labelpad=_S["labelpad"])
+        ax.set_xticks(bin_starts)
+        ax.set_xticklabels(bin_labels, rotation=25, ha="right")
+        ax.set_xlabel("Age bin", labelpad=_S["labelpad"])
         ax.set_ylabel("Mean wealth (1000 EUR)", labelpad=_S["labelpad"])
 
-        ymin = min(min(v for v in sim_vals if not np.isnan(v)), min(emp_vals))
-        ymax = max(max(v for v in sim_vals if not np.isnan(v)), max(emp_vals))
         xmin = bin_starts[0]
         xmax = bin_starts[-1]
 
-        _finalize(ax, path_to_save, ymin=ymin, ymax=ymax, xmin=xmin, xmax=xmax)
+        _finalize(ax, path_to_save, ymin=0, ymax=400, xmin=xmin, xmax=xmax)

@@ -59,19 +59,7 @@ def _get_se(se_dict: dict, key: str) -> float:
         return _NAN
 
 
-@pytask.mark.publication_params_table
-def task_create_job_offer_params_table(
-    path_to_params: Path = BLD / "model" / "params" / "estimated_params_model.yaml",
-    path_to_save: Annotated[Path, Product] = BLD
-    / "tables"
-    / "publication"
-    / "job_offer_params.tex",
-):
-    with open(path_to_params) as f:
-        params = yaml.safe_load(f)
-
-    se_dict = _load_latest_se()
-
+def _build_job_offer_table(params: dict, se_dict: dict) -> str:
     L: list[str] = []
     L.append(r"\begin{table}[htbp]")
     L.append(r"\centering")
@@ -94,6 +82,32 @@ def task_create_job_offer_params_table(
     L.append(r"\end{tabular}")
     L.append(r"\end{table}")
     L.append("")
+    return "\n".join(L)
 
+
+@pytask.mark.publication_params_table
+def task_create_job_offer_params_table(
+    path_to_params: Path = BLD / "model" / "params" / "estimated_params_model.yaml",
+    path_to_save: Annotated[Path, Product] = BLD
+    / "tables"
+    / "publication"
+    / "job_offer_params.tex",
+):
+    with open(path_to_params) as f:
+        params = yaml.safe_load(f)
     path_to_save.parent.mkdir(parents=True, exist_ok=True)
-    path_to_save.write_text("\n".join(L))
+    path_to_save.write_text(_build_job_offer_table(params, _load_latest_se()))
+
+
+@pytask.mark.publication_params_table
+def task_create_job_offer_params_table_model_fit(
+    path_to_params: Path = BLD / "model" / "params" / "estimated_params_model_fit.yaml",
+    path_to_save: Annotated[Path, Product] = BLD
+    / "tables"
+    / "publication"
+    / "job_offer_params_model_fit.tex",
+):
+    with open(path_to_params) as f:
+        params = yaml.safe_load(f)
+    path_to_save.parent.mkdir(parents=True, exist_ok=True)
+    path_to_save.write_text(_build_job_offer_table(params, {}))

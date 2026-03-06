@@ -380,6 +380,37 @@ def task_create_policy_changes_table_beirat_comparison(
     )
 
 
+@pytask.mark.tables
+@pytask.mark.policy_changes
+@pytask.mark.publication
+def task_create_baseline_vs_ncd_table(
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_baseline_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params.pkl",
+    path_to_ncd_sim: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_no_care_demand.pkl",
+    path_to_save_table: Annotated[Path, Product] = BLD
+    / "tables"
+    / "publication"
+    / "baseline_vs_ncd_behavioral_changes.tex",
+) -> None:
+    """Baseline versus no-care-demand counterfactual comparison.
+
+    The NCD sim is passed as both "normal leave" and "full leave" columns
+    so the output table shows Baseline | NCD | Pct chg columns.
+    """
+    build_policy_changes_table(
+        path_to_specs,
+        path_to_baseline_sim,
+        path_to_ncd_sim,
+        path_to_ncd_sim,
+        path_to_save_table,
+        table_label="tab:baseline_vs_ncd_behavioral_changes",
+    )
+
+
 def build_policy_changes_table(
     path_to_specs: Path,
     path_to_baseline_sim: Path,

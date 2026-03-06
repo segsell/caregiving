@@ -181,7 +181,7 @@ def task_plot_asset_and_accumulated_savings_dec_differences_combined(  # noqa: P
     ax.axhline(y=0, color="k", linestyle="-", linewidth=1.0, alpha=0.5)
 
     ax.set_xlabel("Age", fontsize=16)
-    ax.set_ylabel("Difference (baseline − no care demand)", fontsize=16)
+    ax.set_ylabel("Difference (1000 EUR)", fontsize=16)
     ax.tick_params(axis="both", labelsize=14, length=8, pad=6)
 
     ax.grid(True, axis="y", alpha=0.10, linewidth=0.8)
@@ -555,7 +555,7 @@ def task_plot_accumulated_consumption_difference_baseline_vs_no_care_demand(  # 
     ax.axhline(y=0, color="k", linestyle="-", linewidth=1.0, alpha=0.5)
 
     ax.set_xlabel("Age", fontsize=16)
-    ax.set_ylabel("Difference (baseline − no care demand)", fontsize=16)
+    ax.set_ylabel("Difference (1000 EUR)", fontsize=16)
     ax.tick_params(axis="both", labelsize=14, length=8, pad=6)
 
     ax.grid(True, axis="y", alpha=0.10, linewidth=0.8)
@@ -950,3 +950,221 @@ def task_plot_consumption_difference_baseline_vs_no_care_demand(  # noqa: PLR091
     plt.close(fig)
 
     print(f"Consumption (current) difference plot saved to {path_to_plot}")
+
+
+@pytask.mark.publication
+@pytask.mark.publication_post_estimation
+@pytask.mark.publication_assets_and_savings
+def task_plot_accumulated_total_income_difference_baseline_vs_no_care_demand(  # noqa: PLR0915
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_baseline_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params.pkl",
+    path_to_no_care_demand_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_no_care_demand.pkl",
+    path_to_plot: Annotated[Path, Product] = BLD
+    / "figures"
+    / "publication"
+    / "post_estimation"
+    / "accumulated_total_income_difference_baseline_vs_no_care_demand.pdf",
+) -> None:
+    """Plot accumulated total income difference by age (baseline - no care demand).
+
+    total_income is comprehensive household income (own + partner + transfers,
+    after tax, with UB floor and child benefits).
+    """
+    specs = pickle.load(path_to_specs.open("rb"))
+
+    df_baseline = pd.read_pickle(path_to_baseline_data)
+    df_no_care_demand = pd.read_pickle(path_to_no_care_demand_data)
+
+    df_baseline = df_baseline[df_baseline["health"] != DEAD].copy()
+    df_no_care_demand = df_no_care_demand[df_no_care_demand["health"] != DEAD].copy()
+
+    if "age" not in df_baseline.columns:
+        df_baseline["age"] = df_baseline["period"] + specs["start_age"]
+    if "age" not in df_no_care_demand.columns:
+        df_no_care_demand["age"] = df_no_care_demand["period"] + specs["start_age"]
+
+    for df in (df_baseline, df_no_care_demand):
+        if "total_income" not in df.columns:
+            df["total_income"] = _extract_aux_variable(df, "total_income")
+
+    avg_inc_baseline = (
+        df_baseline.groupby("age", observed=False)["total_income"]
+        .mean()
+        .reset_index()
+        .sort_values("age")
+    )
+    avg_inc_baseline.columns = ["age", "avg_total_income_baseline"]
+
+    avg_inc_no_care_demand = (
+        df_no_care_demand.groupby("age", observed=False)["total_income"]
+        .mean()
+        .reset_index()
+        .sort_values("age")
+    )
+    avg_inc_no_care_demand.columns = ["age", "avg_total_income_no_care_demand"]
+
+    merged = avg_inc_baseline.merge(avg_inc_no_care_demand, on="age", how="inner")
+    merged["diff_total_income"] = (
+        merged["avg_total_income_baseline"]
+        - merged["avg_total_income_no_care_demand"]
+    )
+    merged = merged.sort_values("age").reset_index(drop=True)
+    merged["accumulated_diff_total_income"] = merged["diff_total_income"].cumsum()
+    merged = merged[merged["age"] <= 89]
+
+    style = PUBLICATION_PLOT_STYLE
+    plt.rcParams["font.family"] = "sans-serif"
+    plt.rcParams["font.sans-serif"] = ["DejaVu Sans", "Liberation Sans", "Arial"]
+
+    fig, ax = plt.subplots(figsize=(10, 8))
+
+    linewidth = 2.0
+    ax.plot(
+        merged["age"],
+        merged["accumulated_diff_total_income"],
+        color="0",
+        linewidth=linewidth,
+        linestyle="-",
+    )
+
+    ax.axhline(y=0, color="k", linestyle="-", linewidth=1.0, alpha=0.5)
+
+    ax.set_xlabel("Age", fontsize=16)
+    ax.set_ylabel("Difference (1000 EUR)", fontsize=16)
+    ax.tick_params(axis="both", labelsize=14, length=8, pad=6)
+
+    ax.grid(True, axis="y", alpha=0.10, linewidth=0.8)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    plt.tight_layout(pad=1.2)
+    plt.subplots_adjust(left=0.14, bottom=0.12)
+    path_to_plot.parent.mkdir(parents=True, exist_ok=True)
+    if path_to_plot.suffix.lower() == ".pdf":
+        _pdf_fonttype = plt.rcParams["pdf.fonttype"]
+        plt.rcParams["pdf.fonttype"] = 42
+    plt.savefig(
+        path_to_plot,
+        dpi=style["savefig_dpi"],
+        bbox_inches="tight",
+        pad_inches=style["savefig_pad_inches"],
+    )
+    if path_to_plot.suffix.lower() == ".pdf":
+        plt.rcParams["pdf.fonttype"] = _pdf_fonttype
+    plt.close(fig)
+
+    print(f"Accumulated total income difference plot saved to {path_to_plot}")
+
+
+@pytask.mark.publication
+@pytask.mark.publication_post_estimation
+@pytask.mark.publication_assets_and_savings
+def task_plot_accumulated_own_income_difference_baseline_vs_no_care_demand(  # noqa: PLR0915
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_baseline_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_estimated_params.pkl",
+    path_to_no_care_demand_data: Path = BLD
+    / "solve_and_simulate"
+    / "simulated_data_no_care_demand.pkl",
+    path_to_plot: Annotated[Path, Product] = BLD
+    / "figures"
+    / "publication"
+    / "post_estimation"
+    / "accumulated_own_income_difference_baseline_vs_no_care_demand.pdf",
+) -> None:
+    """Plot accumulated own income difference by age (baseline - no care demand).
+
+    own_income_after_ssc = labor income + pension income (after social security
+    contributions, before income tax). Isolates the direct labor-supply channel.
+    """
+    specs = pickle.load(path_to_specs.open("rb"))
+
+    df_baseline = pd.read_pickle(path_to_baseline_data)
+    df_no_care_demand = pd.read_pickle(path_to_no_care_demand_data)
+
+    df_baseline = df_baseline[df_baseline["health"] != DEAD].copy()
+    df_no_care_demand = df_no_care_demand[df_no_care_demand["health"] != DEAD].copy()
+
+    if "age" not in df_baseline.columns:
+        df_baseline["age"] = df_baseline["period"] + specs["start_age"]
+    if "age" not in df_no_care_demand.columns:
+        df_no_care_demand["age"] = df_no_care_demand["period"] + specs["start_age"]
+
+    for df in (df_baseline, df_no_care_demand):
+        if "own_income_after_ssc" not in df.columns:
+            df["own_income_after_ssc"] = _extract_aux_variable(
+                df, "own_income_after_ssc"
+            )
+
+    avg_inc_baseline = (
+        df_baseline.groupby("age", observed=False)["own_income_after_ssc"]
+        .mean()
+        .reset_index()
+        .sort_values("age")
+    )
+    avg_inc_baseline.columns = ["age", "avg_own_income_baseline"]
+
+    avg_inc_no_care_demand = (
+        df_no_care_demand.groupby("age", observed=False)["own_income_after_ssc"]
+        .mean()
+        .reset_index()
+        .sort_values("age")
+    )
+    avg_inc_no_care_demand.columns = ["age", "avg_own_income_no_care_demand"]
+
+    merged = avg_inc_baseline.merge(avg_inc_no_care_demand, on="age", how="inner")
+    merged["diff_own_income"] = (
+        merged["avg_own_income_baseline"]
+        - merged["avg_own_income_no_care_demand"]
+    )
+    merged = merged.sort_values("age").reset_index(drop=True)
+    merged["accumulated_diff_own_income"] = merged["diff_own_income"].cumsum()
+    merged = merged[merged["age"] <= 89]
+
+    style = PUBLICATION_PLOT_STYLE
+    plt.rcParams["font.family"] = "sans-serif"
+    plt.rcParams["font.sans-serif"] = ["DejaVu Sans", "Liberation Sans", "Arial"]
+
+    fig, ax = plt.subplots(figsize=(10, 8))
+
+    linewidth = 2.0
+    ax.plot(
+        merged["age"],
+        merged["accumulated_diff_own_income"],
+        color="0",
+        linewidth=linewidth,
+        linestyle="-",
+    )
+
+    ax.axhline(y=0, color="k", linestyle="-", linewidth=1.0, alpha=0.5)
+
+    ax.set_xlabel("Age", fontsize=16)
+    ax.set_ylabel("Difference (1000 EUR)", fontsize=16)
+    ax.tick_params(axis="both", labelsize=14, length=8, pad=6)
+
+    ax.grid(True, axis="y", alpha=0.10, linewidth=0.8)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    plt.tight_layout(pad=1.2)
+    plt.subplots_adjust(left=0.14, bottom=0.12)
+    path_to_plot.parent.mkdir(parents=True, exist_ok=True)
+    if path_to_plot.suffix.lower() == ".pdf":
+        _pdf_fonttype = plt.rcParams["pdf.fonttype"]
+        plt.rcParams["pdf.fonttype"] = 42
+    plt.savefig(
+        path_to_plot,
+        dpi=style["savefig_dpi"],
+        bbox_inches="tight",
+        pad_inches=style["savefig_pad_inches"],
+    )
+    if path_to_plot.suffix.lower() == ".pdf":
+        plt.rcParams["pdf.fonttype"] = _pdf_fonttype
+    plt.close(fig)
+
+    print(f"Accumulated own income difference plot saved to {path_to_plot}")
