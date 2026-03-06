@@ -444,7 +444,9 @@ def task_create_fiscal_costs(
     for col, label in zip(
         OUTCOME_COLUMNS_AVG_PER_CAREGIVER, OUTCOME_COLUMN_LABELS, strict=True
     ):
-        table_dict[label] = [outcomes_list[j].get(col, np.nan) for j in range(len(FISCAL_POLICY_LABELS))]
+        table_dict[label] = [
+            outcomes_list[j].get(col, np.nan) for j in range(len(FISCAL_POLICY_LABELS))
+        ]
 
     table_wide = pd.DataFrame(table_dict)
     table = table_wide.set_index("Policy").T
