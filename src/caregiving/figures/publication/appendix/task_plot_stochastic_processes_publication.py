@@ -748,7 +748,9 @@ def task_plot_formal_care_costs_publication(
     )
     ax.set_xlabel("Age", fontsize=_S["label_fontsize"], labelpad=_S["labelpad"])
     ax.set_ylabel(
-        "Formal care costs (in euros)", fontsize=_S["label_fontsize"], labelpad=_S["labelpad"]
+        "Formal care costs (in euros)",
+        fontsize=_S["label_fontsize"],
+        labelpad=_S["labelpad"],
     )
     ax.legend(fontsize=_S["label_fontsize"], frameon=False, loc="best")
     _finalize(ax, path_to_save, xmin=start_age, xmax=end_age)

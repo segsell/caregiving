@@ -6,6 +6,7 @@ standard errors where available, R²/pseudo R² where available, and notes.
 All tables are women-only where the process is estimated by sex.
 """
 
+import json
 from pathlib import Path
 from typing import Annotated
 
@@ -13,8 +14,6 @@ import numpy as np
 import pandas as pd
 import pytask
 from pytask import Product
-
-import json
 
 from caregiving.config import BLD
 
@@ -610,8 +609,15 @@ def task_table_mother_adl_transition_women(
         "adl_cat_2": "Lagged ADL = 2",
         "adl_cat_3": "Lagged ADL = 3",
     }
-    param_order = ["const", "age", "age_sq", "age_cubed",
-                   "adl_cat_1", "adl_cat_2", "adl_cat_3"]
+    param_order = [
+        "const",
+        "age",
+        "age_sq",
+        "age_cubed",
+        "adl_cat_1",
+        "adl_cat_2",
+        "adl_cat_3",
+    ]
 
     n_cats = len(df)
     col_spec = "l" + "c" * n_cats
