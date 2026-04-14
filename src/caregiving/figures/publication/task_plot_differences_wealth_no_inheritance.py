@@ -1211,8 +1211,9 @@ def _plot_pct_deviation_by_age(
     ax.spines["right"].set_visible(False)
 
     plt.tight_layout()
+    plt.subplots_adjust(left=0.14, bottom=0.11)
     path_to_save.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(path_to_save, dpi=1200, bbox_inches="tight")
+    plt.savefig(path_to_save, dpi=1200, bbox_inches="tight", pad_inches=0.25)
     plt.close(fig)
 
     print(f"Plot saved to {path_to_save}")
@@ -1249,8 +1250,9 @@ def _plot_difference_by_age(
     ax.spines["right"].set_visible(False)
 
     plt.tight_layout()
+    plt.subplots_adjust(left=0.14, bottom=0.11)
     path_to_save.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(path_to_save, dpi=1200, bbox_inches="tight")
+    plt.savefig(path_to_save, dpi=1200, bbox_inches="tight", pad_inches=0.25)
     plt.close(fig)
 
     print(f"Plot saved to {path_to_save}")
@@ -1300,8 +1302,9 @@ def _plot_two_differences_by_age(
     ax.spines["right"].set_visible(False)
 
     plt.tight_layout()
+    plt.subplots_adjust(left=0.14, bottom=0.11)
     path_to_save.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(path_to_save, dpi=1200, bbox_inches="tight")
+    plt.savefig(path_to_save, dpi=1200, bbox_inches="tight", pad_inches=0.25)
     plt.close(fig)
 
     print(f"Plot saved to {path_to_save}")
@@ -1347,8 +1350,9 @@ def _plot_two_levels_by_age(
     ax.spines["right"].set_visible(False)
 
     plt.tight_layout()
+    plt.subplots_adjust(left=0.14, bottom=0.11)
     path_to_save.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(path_to_save, dpi=1200, bbox_inches="tight")
+    plt.savefig(path_to_save, dpi=1200, bbox_inches="tight", pad_inches=0.25)
     plt.close(fig)
 
     print(f"Plot saved to {path_to_save}")

@@ -723,7 +723,10 @@ def plot_employment_rate_by_distance(  # noqa: PLR0913
     ax.spines["right"].set_visible(False)
     ax.tick_params(axis="both", length=S["tick_length"], width=S["tick_width"])
     plt.tight_layout()
-    plt.subplots_adjust(bottom=S.get("subplots_adjust_bottom", 0.11))
+    plt.subplots_adjust(
+        bottom=S.get("subplots_adjust_bottom", 0.11),
+        left=S.get("subplots_adjust_left", 0.14),
+    )
     if path_to_plot:
         publication_savefig(path_to_plot)
     plt.close()

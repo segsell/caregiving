@@ -974,8 +974,9 @@ def plot_employment_rate_difference_by_distance(  # noqa: PLR0913
     ax.tick_params(axis="both", length=8)
 
     plt.tight_layout()
+    plt.subplots_adjust(left=0.14, bottom=0.11)
     if path_to_plot:
-        plt.savefig(path_to_plot, dpi=1200, bbox_inches="tight")
+        plt.savefig(path_to_plot, dpi=1200, bbox_inches="tight", pad_inches=0.25)
     plt.close()
 
 
@@ -1145,8 +1146,9 @@ def plot_employment_rate_difference_by_distance_consecutive(  # noqa: PLR0913
     ax.tick_params(axis="both", length=8)
 
     plt.tight_layout()
+    plt.subplots_adjust(left=0.14, bottom=0.11)
     if path_to_plot:
-        plt.savefig(path_to_plot, dpi=1200, bbox_inches="tight")
+        plt.savefig(path_to_plot, dpi=1200, bbox_inches="tight", pad_inches=0.25)
     plt.close()
 
 
@@ -1283,6 +1285,7 @@ def plot_outcome_difference_by_distance_consecutive(  # noqa: PLR0913
     ax.spines["right"].set_visible(False)
     ax.tick_params(axis="both", length=8)
     plt.tight_layout()
+    plt.subplots_adjust(left=0.14, bottom=0.11)
     if path_to_plot:
-        plt.savefig(path_to_plot, dpi=1200, bbox_inches="tight")
+        plt.savefig(path_to_plot, dpi=1200, bbox_inches="tight", pad_inches=0.25)
     plt.close()

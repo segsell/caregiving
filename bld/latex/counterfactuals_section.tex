@@ -1,0 +1,925 @@
+% Counterfactual Analysis Section
+% For inclusion in main thesis: \input{bld/latex/counterfactuals_section}
+% Compile from project root. Required packages: booktabs, graphicx, amsmath.
+% If graphics not found, add: \graphicspath{{CareerCosts/figures/selection/}}
+
+\section{Counterfactual Analysis}
+\label{sec:counterfactuals}
+
+This section presents four counterfactual exercises: (i) the career costs of caregiving, measured by comparing the baseline economy to a world without parental care demand; (ii) the within-baseline heterogeneity of caregivers---who selects into informal care, how care arrangements differ across education and employment groups, and why caregiving duration drives the most consequential labor market damage; (iii) the labor-market dynamics around caregiving onset and resolution, visualized through conditional means and event studies; and (iv) the behavioral and fiscal effects of five caregiving leave policies, organized around a main comparison of the Caregiving Leave and Full Insurance with \textit{Pflegegeld}.
+
+%==============================================================================
+\subsection{Career Costs of Caregiving: Baseline versus No-Care-Demand}
+\label{subsec:career_costs_methodology}
+%==============================================================================
+
+\subsubsection{The No-Care-Demand Counterfactual}
+
+The no-care-demand counterfactual is a second simulation of the same 100,000 agents under identical stochastic draws for income, health, job offers, and all other exogenous processes---with one exception: care demand is set to zero in every period. Agents never face a choice between formal and informal care because parental care needs do not arise. This counterfactual provides an ideal control group: each agent is matched to herself across the two simulation regimes, so that any difference between her baseline outcome and her no-care-demand outcome is attributable solely to care demand. Selection on unobservables, compositional differences, and confounding from other lifecycle shocks are eliminated by construction.
+
+The comparison is restricted to the 41,155 agents who become informal caregivers in the baseline (i.e., who choose light or intensive informal care, choices 8--15, at least once). These ``ever-caregivers'' are tracked in both simulations. Because the same stochastic draws govern both runs, I compare each agent's realized lifetime under care demand to her realized lifetime without it---an agent-level matched design that isolates the model-implied effect of caregiving with no residual selection bias. Restricting to this group ensures that I measure the career cost for those who actually provide care, rather than diluting the estimate with agents who never face the caregiving margin.
+
+\subsubsection{Net Present Value Computation}
+
+Following \citet{adda_career_2017}, I measure career costs through the net present value (NPV) of lifetime income. Career costs are computed as the mean over ever-caregivers of
+\begin{equation}
+  \text{NPV care} = 1 - \frac{\text{NPV}_{\text{no care demand}}}{\text{NPV}_{\text{baseline}}},
+\end{equation}
+where each agent's NPV is the discounted sum of income from age 40 to 100:
+\begin{equation}
+  \text{NPV}_i = \sum_{a=40}^{100} \beta^{a-40} \cdot \max(\text{income}_a, 0),
+\end{equation}
+with $\beta = 0.97$. Negative values indicate a career cost: lifetime income is lower with care demand than without.
+
+I report two income measures (start age 40, including bequest):
+
+\textbf{Earned income.} Gross labor earnings (when working) plus pension income (when retired), net of social security contributions, minus any policy-specific leave top-up. For the baseline, where no leave policy exists, this equals own income after social security contributions. It captures the direct labor-supply effect on own earnings and pension accumulation, excluding all government transfers.
+
+\textbf{Comprehensive income.} Earned income plus all household transfers: unemployment benefits (halved for partnered agents), child benefits, and net care benefits (\textit{Pflegegeld} minus out-of-pocket formal care costs). This measure captures the full resource position of the caregiver, reflecting both own earnings and the transfer system that cushions the career cost of caregiving.
+
+\subsubsection{Headline Results}
+
+Table~\ref{tab:career_costs_baseline_ncd} reports the career cost for the baseline versus no-care-demand comparison.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Career costs of caregiving: baseline versus no-care-demand counterfactual (ever-caregivers, start age 40, incl.\ bequest). NPV care mean = mean over agents of $1 - (\text{NPV}_{\text{no care}} / \text{NPV}_{\text{baseline}})$; negative = career cost.}
+  \label{tab:career_costs_baseline_ncd}
+  \begin{tabular}{lcc}
+    \toprule
+    Income measure & NPV care mean & Interpretation \\
+    \midrule
+    Earned income & $-37.1\%$ & Own earnings and pension effect \\
+    Comprehensive income & $-15.2\%$ & Including all government transfers \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The 22 percentage-point gap between the two measures reflects the transfer cushion: unemployment benefits, child benefits, and \textit{Pflegegeld} partially compensate for the earned income loss. The remainder of this subsection decomposes the flow-level mechanisms driving the NPV career cost.
+
+\subsubsection{Counterfactual Employment Effect}
+
+The proper counterfactual identifies the same 41,155 ever-caregivers in both simulations. Because care demand is the only difference between the two runs and the same stochastic draws govern all other transitions, any gap is a clean model-implied effect of caregiving. Table~\ref{tab:counterfactual_effects_ncd} reports the main results.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Counterfactual effects of caregiving: baseline vs.\ no-care-demand (41,155 ever-caregivers).}
+  \label{tab:counterfactual_effects_ncd}
+  \small
+  \begin{tabular}{lrrr}
+    \toprule
+    Metric & Ever-CG (BL) & Ever-CG (NCD) & CF gap \\
+    \midrule
+    Employment rate (30--67) & 67.12\% & 69.60\% & $-2.48$ pp \\
+    \quad FT rate (30--67) & 35.63\% & 37.52\% & $-1.89$ pp \\
+    \quad PT rate (30--67) & 31.49\% & 32.08\% & $-0.59$ pp \\
+    \quad Unemployment rate (30--67) & 24.23\% & 22.33\% & $+1.91$ pp \\
+    \addlinespace
+    Exp.\ years at retirement & 24.49 & 25.13 & $-0.64$ yrs \\
+    Retirement age & 64.57 & 64.74 & $-0.17$ yrs \\
+    \addlinespace
+    Gross labor income (EUR/yr, 30--67) & 16,352 & 17,031 & $-679$ ($-4.0\%$) \\
+    Gross pension income (EUR/yr) & 10,153 & 10,436 & $-283$ ($-2.7\%$) \\
+    Consumption (EUR/yr, 30--67) & 33,021 & 33,246 & $-224$ ($-0.67\%$) \\
+    Wealth (EUR, 30--67) & 198,908 & 197,475 & $+1{,}433$ ($+0.73\%$) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The counterfactual employment gap of $-2.48$ percentage points is 1.7 times larger than the within-baseline comparison ($-1.43$ pp, which merely compares ever-caregivers to all agents in the same simulation). Two channels explain the discrepancy. First, the ``all agents'' reference group in the within-baseline comparison is contaminated: it includes permanently unemployed agents and agents whose mother died early, pulling down the average and narrowing the apparent gap. Second, ever-caregivers are positively selected on labor market attributes: absent care demand, they would have 1.05~pp higher employment, 0.29 more experience years, and EUR\,320/year higher labor income than the population average. At ages 30--39---before care demand can arise---the counterfactual gap is essentially zero ($+0.05$ pp), confirming that the identification is clean.
+
+Three quarters of the counterfactual employment loss operates through the full-time margin. The FT gap ($-1.89$ pp) accounts for 76\% of the total employment reduction; the PT gap ($-0.59$ pp) contributes only 24\%. Caregiving disproportionately pulls agents out of full-time work into unemployment rather than inducing a symmetric FT-to-PT downshift.
+
+\subsubsection{Age Profile of the Employment Penalty}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Counterfactual employment gap by age (ever-caregivers, baseline minus no-care-demand).}
+  \label{tab:age_profile_ncd}
+  \small
+  \begin{tabular}{lrrrrrr}
+    \toprule
+    Age & Empl (BL) & Empl (NCD) & Gap (pp) & FT gap & PT gap & Unemp gap \\
+    \midrule
+    30--39 & 68.45\% & 68.40\% & $+0.05$ & $-0.00$ & $+0.05$ & $-0.05$ \\
+    40--49 & 77.46\% & 79.30\% & $-1.84$ & $-1.35$ & $-0.49$ & $+1.84$ \\
+    50--54 & 80.02\% & 82.55\% & $-2.53$ & $-2.37$ & $-0.16$ & $+2.53$ \\
+    55--59 & 75.47\% & 79.44\% & $-3.97$ & $-3.64$ & $-0.34$ & $+3.97$ \\
+    60--64 & 53.53\% & 60.20\% & $\mathbf{-6.67}$ & $-4.51$ & $-2.17$ & $+4.76$ \\
+    65--67 & 12.34\% & 15.32\% & $-2.97$ & $-1.77$ & $-1.21$ & $+0.00$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The counterfactual employment penalty peaks at ages 60--64 at $-6.67$ percentage points (Table~\ref{tab:age_profile_ncd}). This is the age range where the accumulated effects of caregiving spells---reduced experience, depleted savings, interrupted human capital---converge with the early retirement decision. Agents who have provided years of informal care face a lower opportunity cost of retirement, pushing them out of the labor force at higher rates. At ages 55--59, the gap is $-3.97$ pp, nearly all from the FT margin ($-3.64$ pp)---the ``active caregiving window'' where care demand peaks and agents simultaneously manage employment and parental care.
+
+\subsubsection{Experience, Pensions, and Consumption Smoothing}
+
+The model implies that caregiving reduces experience at retirement by 0.64 years---1.8 times the within-baseline gap of 0.36---and accelerates retirement by 0.17 years (roughly 2 months). The experience loss translates directly into lower pension accumulation: gross pension income falls by EUR\,283/year ($-2.7\%$). Gross labor income falls by EUR\,679/year ($-4.0\%$); these annual flow losses cumulate over a lifetime into the $-37.1\%$ earned-income NPV career cost.
+
+The consumption gap ($-0.67\%$) is strikingly small relative to the income gap ($-4.0\%$), revealing effective consumption smoothing through three channels: (i) drawing down assets during the caregiving spell, (ii) receiving \textit{Pflegegeld} transfers averaging EUR\,$\sim$4,500/year, and (iii) adjusting savings behavior. The slightly positive wealth differential ($+$EUR\,1,433) in the baseline likely reflects \textit{Pflegegeld} accumulation and reduced consumption opportunities during intensive caregiving spells.
+
+\subsubsection{Education Heterogeneity}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Education-specific counterfactual effects of caregiving (ever-caregivers, baseline vs.\ no-care-demand).}
+  \label{tab:education_ncd}
+  \small
+  \begin{tabular}{lrrrrrr}
+    \toprule
+    & \multicolumn{3}{c}{Low education ($N = 28{,}558$)} & \multicolumn{3}{c}{High education ($N = 12{,}597$)} \\
+    \cmidrule(lr){2-4} \cmidrule(lr){5-7}
+    Metric & BL & NCD & Gap & BL & NCD & Gap \\
+    \midrule
+    Empl.\ rate (30--67) & 63.53\% & 66.39\% & $-2.86$ pp & 75.26\% & 76.84\% & $-1.59$ pp \\
+    FT rate (30--67) & 32.19\% & 34.07\% & $-1.88$ pp & 43.44\% & 45.32\% & $-1.88$ pp \\
+    PT rate (30--67) & 31.34\% & 32.32\% & $-0.98$ pp & 31.82\% & 31.53\% & $+0.30$ pp \\
+    Unemp.\ rate (30--67) & 27.52\% & 25.23\% & $+2.30$ pp & 16.77\% & 15.79\% & $+0.99$ pp \\
+    \addlinespace
+    Exp.\ years at ret. & 23.49 & 24.20 & $-0.71$ yrs & 26.68 & 27.17 & $-0.49$ yrs \\
+    Retirement age & 64.44 & 64.60 & $-0.16$ yrs & 64.85 & 65.05 & $-0.21$ yrs \\
+    Gross pension (EUR/yr) & 8,495 & 8,748 & $-254$ & 13,668 & 13,974 & $-307$ \\
+    Gross labor inc.\ (EUR/yr) & 12,548 & 13,189 & $-641$ & 24,971 & 25,693 & $-722$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Table~\ref{tab:education_ncd} reveals a striking asymmetry. Low-education caregivers bear larger employment and experience losses: their employment gap ($-2.86$ pp) is nearly double that of high-education caregivers ($-1.59$ pp), and their experience loss at retirement is 45\% larger ($-0.71$ vs.\ $-0.49$ years). However, high-education caregivers bear larger absolute income and pension losses (EUR\,$-722$ vs.\ EUR\,$-641$ in labor income; EUR\,$-307$ vs.\ EUR\,$-254$ in pension income), because each lost experience year translates into a larger income reduction at higher wage levels.
+
+The mechanism is education-dependent. The FT exit margin is identical across education groups ($-1.88$ pp), confirming that the extensive margin of full-time exit is invariant to education. The adjustment margin, however, diverges: low-education caregivers lose 0.98~pp in PT work as they exit the labor force entirely, whereas high-education caregivers actually see a slight PT \textit{increase} ($+0.30$ pp), substituting from FT to PT rather than from employment to non-employment. This pattern---where high-education agents downshift while low-education agents exit---is a direct consequence of the opportunity cost structure and foreshadows the education gradient in the policy experiments (Subsection~\ref{subsec:main_comparison}).
+
+\subsubsection{Positive Selection and the 27 Percentage-Point Gap}
+
+Ever-caregivers are positively selected on labor market attributes. Absent care demand, they would have 1.05~pp higher employment, 0.29 more experience years, and EUR\,320/year higher labor income than the population average. This positive selection means that the within-baseline comparison understates the true counterfactual effect by exactly the selection premium: $-2.48 = -1.43 - 1.05$.
+
+The counterfactual employment effect ($-2.48$ pp) is an order of magnitude smaller than the 27 percentage-point gap in intensive informal care between high-education employed and low-education jobless caregiving entrants---the single largest behavioral heterogeneity in the model. That cross-group gap is driven overwhelmingly by pre-existing labor market status, not by the effect of caregiving itself. Who the agent was before caregiving matters far more for her care arrangement choices than what caregiving does to her employment.
+
+%==============================================================================
+\subsection{Selection into Caregiving and Within-Baseline Heterogeneity}
+\label{subsec:within_baseline_heterogeneity}
+%==============================================================================
+
+The preceding subsection established that care demand reduces lifetime employment by 2.48~pp and experience at retirement by 0.64 years. These are the model-implied effects of caregiving on the \textit{average} ever-caregiver. This subsection turns to a different question: \textit{who} selects into caregiving, and how do caregivers differ from one another? The analysis uses within-baseline comparisons---contrasting subgroups of agents within the same simulation---to characterize the heterogeneity that shapes both the costs of caregiving and the scope for policy intervention.
+
+\subsubsection{Who Enters Caregiving? Prior Labor Market Status}
+
+Table~\ref{tab:entrant_composition} reports the labor market status of first-time informal caregivers at the moment they begin providing care, by age bin.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Composition of caregiving entrants by prior labor market status and age (baseline, type-1 agents).}
+  \label{tab:entrant_composition}
+  \small
+  \begin{tabular}{lrrrrr}
+    \toprule
+    Age bin & $N$ entrants & Prior FT & Prior PT & Prior unemp. & Prior retired \\
+    \midrule
+    40--49 & 17,663 & 39.3\% & 36.6\% & 24.1\% & -- \\
+    50--54 & 11,173 & 42.6\% & 36.1\% & 21.3\% & -- \\
+    55--59 & 8,583 & 43.2\% & 34.6\% & 22.3\% & -- \\
+    60--62 & 2,632 & 37.8\% & 31.2\% & 30.9\% & -- \\
+    63+ & 1,104 & 7.6\% & 7.4\% & 9.1\% & 76.0\% \\
+    \addlinespace
+    All (40--67) & 41,155 & 39.7\% & 36.1\% & 24.2\% & 0.6\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Of 41,155 first-time informal caregivers, 75.8\% had a job (FT or PT) immediately before beginning to care; 24.2\% did not. Three distinct phases emerge. At ages 40--59---the core caregiving window---roughly 76--79\% of entrants were employed, with the FT share rising from 39.3\% to 43.2\% as PT workers exit faster. At ages 60--62, the jobless share jumps to 30.9\%, reflecting agents who have left the labor force but not yet reached retirement age. At 63+, 76.0\% are already retired, and the labor-market dimension of prior status is largely irrelevant.
+
+\subsubsection{Care Demand Is Orthogonal to Prior Employment}
+
+A central structural feature of the model is that care demand is an exogenous stochastic process, invariant to the agent's own characteristics. Table~\ref{tab:demand_by_prior_job} confirms this empirically: the two groups face nearly identical total demand, yet their care \textit{composition} diverges sharply.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Care demand and caregiving profile by prior job status (type-1 entrants, baseline).}
+  \label{tab:demand_by_prior_job}
+  \small
+  \begin{tabular}{lrrr}
+    \toprule
+    Metric & Had job ($N{=}31{,}176$) & No prior job ($N{=}9{,}979$) & Difference \\
+    \midrule
+    Mean total care demand (yrs) & 4.93 & 4.86 & $-0.08$ \\
+    Mean informal CG years & 3.03 & 3.07 & $+0.04$ \\
+    Mean formal care years & 1.43 & 1.30 & $-0.13$ \\
+    Mean combination care years & 0.90 & 0.65 & $-0.25$ \\
+    Informal CG / demand (coverage) & 65.6\% & 67.1\% & $+1.6$ pp \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Both groups face approximately 4.9 years of care demand. Informal caregiving years are virtually identical (3.03 vs.\ 3.07)---economically zero. Where the groups diverge is in the \textit{type} of care they provide. Agents who had a job use 0.90 years of combination care (light informal care supplemented by professional services under intensive demand), compared to only 0.65 years for the jobless---a 38\% gap. Employed entrants also use more formal care (1.43 vs.\ 1.30 years). The key insight is that opportunity costs shape \textit{how} agents organize care, not \textit{whether} they caregive.
+
+\subsubsection{Education and Prior-Job Status: The Four Subgroups}
+
+Crossing education with prior-job status reveals four subgroups with dramatically different caregiving profiles (Table~\ref{tab:four_subgroups}).
+
+\begin{table}[htbp]
+  \centering
+  \caption{Caregiving profiles by education and prior-job status (type-1 entrants, baseline).}
+  \label{tab:four_subgroups}
+  \small
+  \begin{tabular}{lrrrr}
+    \toprule
+    Metric & Low edu, job & Low edu, no job & High edu, job & High edu, no job \\
+    \midrule
+    $N$ entrants & 20,625 & 7,933 & 10,551 & 2,046 \\
+    Mean informal CG yrs & 3.05 & 3.07 & 3.00 & 3.07 \\
+    Mean combination care yrs & 0.75 & 0.56 & 1.19 & 0.99 \\
+    Mean formal care yrs & 1.42 & 1.33 & 1.45 & 1.20 \\
+    Gap: demand to CG entry & 1.84 yrs & 2.13 yrs & 1.42 yrs & 1.21 yrs \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+High-education employed agents are the most distinctive group: they enter caregiving 23\% faster than their low-education counterparts (gap 1.42 vs.\ 1.84 years), spend the most time in combination care (1.19 years---59\% more than low-education employed agents), and use the most formal care (1.45 years). This pattern reflects their higher wealth, which permits earlier entry without financial distress, and their higher wages, which make delegation of the time-intensive component to professionals the efficient response. Low-education jobless agents occupy the opposite extreme: the most intensive informal care, the least combination care (0.56 years), and the longest delay to entry (2.13 years).
+
+\subsubsection{Care Arrangements under Intensive Demand: The 27 Percentage-Point Gap}
+
+The sharpest behavioral heterogeneity emerges under intensive care demand, where type-1 agents choose between intensive informal care, combination care, and formal care. Table~\ref{tab:intensive_demand_arrangements} reports these choices by education and prior-job status.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Care arrangement choices under intensive demand (type-1 entrants with care demand $= 2$, baseline).}
+  \label{tab:intensive_demand_arrangements}
+  \small
+  \begin{tabular}{lrrrr}
+    \toprule
+    Care arrangement & Low edu, job & Low edu, no job & High edu, job & High edu, no job \\
+    \midrule
+    Intensive informal & 45.2\% & 53.8\% & 26.6\% & 35.7\% \\
+    Combination care & 23.3\% & 17.7\% & 37.1\% & 28.7\% \\
+    Formal care & 21.7\% & 18.5\% & 26.1\% & 23.4\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Low-education jobless agents choose intensive informal care at 53.8\%; high-education employed agents at 26.6\%. This 27 percentage-point gap is the single largest behavioral heterogeneity in the model. High-education employed agents substitute toward combination care (37.1\%---nearly 60\% more than the 23.3\% among low-education employed) and formal care (26.1\% vs.\ 18.5\%), delegating the most time-intensive care component to professionals while maintaining partial informal provision. The 27~pp gap reflects the full interaction of education, wages, and prior employment status with care arrangement choices.
+
+\subsubsection{The 27~pp Gap: Mid-Career Divergence, Not Lifelong Selection}
+
+The ``no prior job'' classification at caregiving entry is not a lifelong trait. At ages 30--35---a decade before care demand can arise---future ``had job'' and ``no prior job'' entrants differ by only 2--3~pp in employment within each education group (Table~\ref{tab:early_employment}).
+
+\begin{table}[htbp]
+  \centering
+  \caption{Employment rates before care demand: early career (ages 30--35) and divergence (ages 36--39).}
+  \label{tab:early_employment}
+  \small
+  \begin{tabular}{lrrrr}
+    \toprule
+    & \multicolumn{2}{c}{Employment (ages 30--35)} & \multicolumn{2}{c}{Employment (ages 36--39)} \\
+    \cmidrule(lr){2-3} \cmidrule(lr){4-5}
+    Group & Had job & No prior job & Had job & No prior job \\
+    \midrule
+    Low education & 63.7\% & 61.6\% & 73.0\% & 62.0\% \\
+    High education & 73.8\% & 70.6\% & 78.7\% & 61.1\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Between ages 36 and 39---still before any care demand---the gap widens to 11~pp (low education) and 18~pp (high education). The ``had job'' group's employment rises along the normal age-earnings profile; the ``no prior job'' group stagnates or declines. This divergence occurs years before caregiving and is therefore not caused by care demand anticipation.
+
+The mechanism is a gradual mid-career labor market exit. Of 9,979 ``no prior job'' entrants, 97.7\% were employed at some point---but half last worked more than five years before caregiving onset. The mean gap between last employment and first caregiving is 6.8 years. At caregiving entry, the ``no prior job'' group has accumulated approximately 4 fewer years of employment experience (12.0 vs.\ 16.3 for low-education agents), translating into lower human capital, lower wealth ($\sim$EUR\,183K vs.\ $\sim$EUR\,227K), and zero forgone wages. These compounding disadvantages---not an intrinsic ``type''---produce the 27~pp gap in intensive informal care.
+
+\subsubsection{Duration-Dependent Labor Market Effects}
+
+Table~\ref{tab:duration_baseline} classifies ever-caregivers by total years of informal care and reports within-baseline employment outcomes. One-third of all caregivers (31.6\%) provide care for four or more years.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Within-baseline labor market outcomes by caregiving duration (ever-caregivers).}
+  \label{tab:duration_baseline}
+  \small
+  \begin{tabular}{lrrrr}
+    \toprule
+    Spell length & Empl.\ rate (30--67) & Share FT & Share unemp. & Retired (63--67) \\
+    \midrule
+    1 CG year & 68.8\% & 36.8\% & 23.1\% & 65.0\% \\
+    2--3 CG years & 67.5\% & 35.8\% & 24.0\% & 67.3\% \\
+    4+ CG years & 65.0\% & 34.2\% & 25.7\% & 72.3\% \\
+    \addlinespace
+    General population & 68.6\% & 36.6\% & 23.1\% & 66.0\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The employment penalty is duration-dependent. Agents with one year of caregiving are indistinguishable from the general population (68.8\% vs.\ 68.6\%). At four or more years, employment falls to 65.0\%---a 3.8~pp gap---and the retirement share at ages 63--67 rises to 72.3\% (vs.\ 65.0\% for one-year caregivers). The most severe labor market damage is concentrated among the one-third of caregivers whose spells extend beyond three years.
+
+\subsubsection{``Only-Formal'' Agents: Demand Duration, Not Opportunity Cost}
+
+Among type-1 agents who experience care demand, 6,451 (13\%) never provide informal care despite having the capacity to do so. These ``only-formal'' agents are not distinguished by their wages or education---the conditional rate of being only-formal is 13.6\% for low-education and 11.6\% for high-education agents, a negligible difference. What distinguishes them is care demand duration: their mean demand is 1.6 years (median 1), with 58.7\% experiencing exactly one year. Ever-informal agents, by contrast, face 4.9 years of demand on average. The only-formal agents' mothers draw milder health trajectories (83.9\% start at the lowest ADL score vs.\ 67.3\% for ever-informal), die earlier (mean age 55.9 vs.\ 60.9), and generate lighter demand throughout the spell. For demand episodes this brief, the fixed cost of transitioning from employment to informal care provision exceeds the benefit---formal care is the efficient solution regardless of the agent's wages.
+
+\subsubsection{Positive Selection Confirms the Counterfactual Design}
+
+The within-baseline comparison---contrasting ever-caregivers to the general population---understates the model-implied effect of caregiving by a factor of 1.7. The proper counterfactual reveals that ever-caregivers are \textit{positively} selected on labor market attributes: absent care demand, they would have 1.05~pp higher employment, 0.29 more experience years, and EUR\,320/year higher labor income than the population average. The ``all agents'' reference group in the within-baseline comparison is contaminated by permanently unemployed agents and agents whose mothers died before care demand could arise, pulling down the average and narrowing the apparent gap. The counterfactual relationship holds exactly: the model-implied effect ($-2.48$ pp) equals the within-baseline gap ($-1.43$ pp) plus the selection premium ($-1.05$ pp). This decomposition underscores why the agent-matched counterfactual---not the within-baseline cross-group comparison---is the appropriate benchmark for measuring the career cost of caregiving.
+
+%==============================================================================
+\subsection{Conditional Means and Event Studies: Baseline versus No-Care-Demand}
+\label{subsec:conditional_means_event_studies}
+%==============================================================================
+
+I visualize the labor-market dynamics of caregiving using two event definitions: distance to first care demand (onset) and distance to mother death (resolution). Together they bracket the caregiving spell. Conditional means plot outcome levels in the baseline and no-care-demand simulations; event studies plot the difference (baseline minus no-care-demand), isolating the model-implied effect by distance to the event.
+
+\subsubsection{Distance to First Care Demand}
+
+Figures~\ref{fig:cond_means_cd} and~\ref{fig:event_study_cd_all} present monthly gross earnings and employment rate---first as levels (conditional means), then as the baseline--no-care-demand difference (event study)---for all ages. The onset of care demand induces a sharp dip in both outcomes: earnings and employment fall as agents adjust labor supply to accommodate caregiving. The event study confirms that the gap is negligible before care demand arises and widens at and after onset.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/conditional_means_care_demand/monthly_gross_earnings_all_ages}
+    \caption*{Monthly gross earnings}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/conditional_means_care_demand/employment_rate_all_ages}
+    \caption*{Employment rate}
+  \end{minipage}
+  \caption{Conditional means by distance to first care demand (all ages). Baseline (solid) vs.\ no-care-demand (dashed).}
+  \label{fig:cond_means_cd}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/event_study_care_demand/diff_monthly_gross_earnings_all_ages}
+    \caption*{Monthly gross earnings (difference)}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/event_study_care_demand/diff_employment_rate_all_ages}
+    \caption*{Employment rate (difference)}
+  \end{minipage}
+  \caption{Event study: baseline minus no-care-demand by distance to first care demand (all ages).}
+  \label{fig:event_study_cd_all}
+\end{figure}
+
+Figures~\ref{fig:event_study_cd_earnings}--\ref{fig:event_study_cd_pt} decompose the event study by age group (40--49, 50--59, 60--70) for the four outcomes. The career cost of caregiving is concentrated in the peak caregiving ages (50--59), where both earnings and employment show the largest negative gaps. The full-time share declines more sharply than the part-time share, consistent with the finding that caregiving pulls agents out of full-time work into unemployment rather than inducing a symmetric FT-to-PT downshift.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/event_study_care_demand/diff_monthly_gross_earnings_ages_40_49}
+    \caption*{Ages 40--49}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/event_study_care_demand/diff_monthly_gross_earnings_ages_50_59}
+    \caption*{Ages 50--59}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/event_study_care_demand/diff_monthly_gross_earnings_ages_60_70}
+    \caption*{Ages 60--70}
+  \end{minipage}
+  \caption{Event study: monthly gross earnings by age group (distance to first care demand).}
+  \label{fig:event_study_cd_earnings}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/event_study_care_demand/diff_employment_rate_ages_40_49}
+    \caption*{Ages 40--49}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/event_study_care_demand/diff_employment_rate_ages_50_59}
+    \caption*{Ages 50--59}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/event_study_care_demand/diff_employment_rate_ages_60_70}
+    \caption*{Ages 60--70}
+  \end{minipage}
+  \caption{Event study: employment rate by age group (distance to first care demand).}
+  \label{fig:event_study_cd_empl}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/event_study_care_demand/diff_full_time_share_ages_40_49}
+    \caption*{Ages 40--49}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/event_study_care_demand/diff_full_time_share_ages_50_59}
+    \caption*{Ages 50--59}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/event_study_care_demand/diff_full_time_share_ages_60_70}
+    \caption*{Ages 60--70}
+  \end{minipage}
+  \caption{Event study: full-time share by age group (distance to first care demand).}
+  \label{fig:event_study_cd_ft}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/event_study_care_demand/diff_part_time_share_ages_40_49}
+    \caption*{Ages 40--49}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/event_study_care_demand/diff_part_time_share_ages_50_59}
+    \caption*{Ages 50--59}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/event_study_care_demand/diff_part_time_share_ages_60_70}
+    \caption*{Ages 60--70}
+  \end{minipage}
+  \caption{Event study: part-time share by age group (distance to first care demand).}
+  \label{fig:event_study_cd_pt}
+\end{figure}
+
+\subsubsection{Distance to Mother Death}
+
+Mother death marks the resolution of the caregiving spell. Few agents experience mother death before age 50, so I present conditional means and event studies for all ages and for the 50--59 and 60--70 age groups only. The pattern mirrors the care-demand onset: earnings and employment dip during the spell and show a partial recovery after mother death, as the time constraint is lifted.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/conditional_means_mother_death/monthly_gross_earnings_all_ages}
+    \caption*{Monthly gross earnings}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/conditional_means_mother_death/employment_rate_all_ages}
+    \caption*{Employment rate}
+  \end{minipage}
+  \caption{Conditional means by distance to mother death (all ages). Baseline vs.\ no-care-demand.}
+  \label{fig:cond_means_md}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/event_study_mother_death/diff_monthly_gross_earnings_all_ages}
+    \caption*{Monthly gross earnings (difference)}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/event_study_mother_death/diff_employment_rate_all_ages}
+    \caption*{Employment rate (difference)}
+  \end{minipage}
+  \caption{Event study: baseline minus no-care-demand by distance to mother death (all ages).}
+  \label{fig:event_study_md_all}
+\end{figure}
+
+Figures~\ref{fig:event_study_md_earnings}--\ref{fig:event_study_md_pt} present the event study by age group (50--59, 60--70) for the four outcomes. The 60--70 group shows the largest effects, as this is when caregiving spells overlap with the retirement transition and accumulated experience losses are most salient.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/event_study_mother_death/diff_monthly_gross_earnings_ages_50_59}
+    \caption*{Ages 50--59}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/event_study_mother_death/diff_monthly_gross_earnings_ages_60_70}
+    \caption*{Ages 60--70}
+  \end{minipage}
+  \caption{Event study: monthly gross earnings by age group (distance to mother death).}
+  \label{fig:event_study_md_earnings}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/event_study_mother_death/diff_employment_rate_ages_50_59}
+    \caption*{Ages 50--59}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/event_study_mother_death/diff_employment_rate_ages_60_70}
+    \caption*{Ages 60--70}
+  \end{minipage}
+  \caption{Event study: employment rate by age group (distance to mother death).}
+  \label{fig:event_study_md_empl}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/event_study_mother_death/diff_full_time_share_ages_50_59}
+    \caption*{Ages 50--59}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/event_study_mother_death/diff_full_time_share_ages_60_70}
+    \caption*{Ages 60--70}
+  \end{minipage}
+  \caption{Event study: full-time share by age group (distance to mother death).}
+  \label{fig:event_study_md_ft}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/event_study_mother_death/diff_part_time_share_ages_50_59}
+    \caption*{Ages 50--59}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/selection/event_study_mother_death/diff_part_time_share_ages_60_70}
+    \caption*{Ages 60--70}
+  \end{minipage}
+  \caption{Event study: part-time share by age group (distance to mother death).}
+  \label{fig:event_study_md_pt}
+\end{figure}
+
+\subsubsection{Precautionary Savings, Consumption, and Income}
+\label{subsubsec:precautionary_savings}
+
+The event studies above document the labor market costs of caregiving. I now turn to the resource-flow implications: how do agents adjust savings, consumption, and income over the lifecycle in a world with care demand risk relative to a world without it?
+
+Figure~\ref{fig:wealth_consumption_diff} plots the accumulated differences between baseline and no-care-demand agents. The left panel shows two series: the difference in mean assets at the beginning of each period (solid line) and the accumulated difference in savings decisions (dashed line). Both are positive and increasing through the working years, indicating that baseline agents---who face the risk of future care demand---build up a precautionary wealth buffer relative to their no-care-demand counterparts. The right panel shows that this additional saving is financed by reduced consumption: the accumulated consumption difference is negative and growing in magnitude, confirming that agents smooth the anticipated income loss from potential caregiving by lowering consumption throughout the lifecycle, well before any care demand materializes.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/post_estimation/asset_and_accumulated_savings_dec_differences_baseline_vs_no_care_demand}
+    \caption*{Assets and accumulated savings}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/post_estimation/accumulated_consumption_difference_baseline_vs_no_care_demand}
+    \caption*{Accumulated consumption}
+  \end{minipage}
+  \caption{Accumulated differences in wealth, savings, and consumption (baseline minus no-care-demand, all agents).}
+  \label{fig:wealth_consumption_diff}
+\end{figure}
+
+Figure~\ref{fig:income_diff} completes the picture by documenting the income channel. The left panel plots the accumulated difference in comprehensive household income (own earnings, pension, partner income, unemployment benefits, child benefits, and care transfers), while the right panel isolates the accumulated difference in earned income (labor income and pension only, after social security contributions). Both series are negative and widen with age, reflecting the cumulative toll of reduced labor supply during and after caregiving spells. The earned-income gap captures the direct labor-supply channel---forgone wages and lower pension accumulation---while the smaller magnitude of the comprehensive-income gap shows that transfer programs (unemployment benefits, \textit{Pflegegeld}) partially offset, but do not eliminate, the lifetime income loss.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/post_estimation/accumulated_total_income_difference_baseline_vs_no_care_demand}
+    \caption*{Accumulated comprehensive income}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{CareerCosts/figures/post_estimation/accumulated_own_income_difference_baseline_vs_no_care_demand}
+    \caption*{Accumulated earned income}
+  \end{minipage}
+  \caption{Accumulated income differences (baseline minus no-care-demand, all agents).}
+  \label{fig:income_diff}
+\end{figure}
+
+Taken together, these four panels reveal the lifecycle resource-flow logic of care demand risk. Agents who face potential caregiving needs (i) save more and consume less throughout their working lives as a precautionary response; (ii) experience a cumulative earned-income shortfall as caregiving reduces labor supply; and (iii) receive partial compensation through the transfer system, narrowing the comprehensive-income gap relative to the earned-income gap. The precautionary savings motive operates well before any care demand materializes, highlighting that the welfare cost of caregiving extends beyond realized caregivers to all agents exposed to the risk.
+
+%==============================================================================
+\subsection{Caregiving Leave Policies: Design and Structure}
+\label{subsec:policy_design}
+%==============================================================================
+
+I evaluate five counterfactual caregiving leave policies against the baseline. All five introduce an earnings-related wage replacement benefit with a job retention guarantee: caregivers who had a job before caregiving onset retain the right to return to employment, and experience accumulation continues during leave. Three variants share a 65\% net replacement rate---the standard Caregiving Leave (CL), a restricted variant without leave for the unemployed (CL Partial), and an uncapped variant that replaces \textit{Pflegegeld} (CL Uncapped)---while two Full Insurance variants (FI, FI+PG) provide 100\% gross replacement as an upper-bound benchmark. The policies differ in the replacement rate, duration caps, eligibility rules, and whether the existing unconditional care cash benefit (\textit{Pflegegeld}) is retained.
+
+\subsubsection{The Caregiving Leave (\textit{Familienpflegegeld})}
+
+The proposed German caregiving leave policy (\textit{Familienpflegegeld}) is modelled after the country's parental leave system (\textit{Elterngeld}). Like its parental counterpart, it provides an income-dependent wage replacement benefit, a job retention guarantee, and continued pension point accumulation during leave. The policy grants employed individuals up to 36 months of leave per care-dependent person. It mandates a split design: a maximum of six months can be utilized as full leave of absence (working fewer than 15 hours per week); the remaining 30 months must be taken as partial leave requiring at least 15 working hours per week.\footnote{The minimum weekly working hours during partial leave is 15 hours under the \textit{Familienpflegezeitgesetz} (\S\,2 FPfZG). During full leave, the caregiver may work up to 15 hours or cease market work entirely. These thresholds parallel the \textit{Elterngeld} design, where partial parental leave requires at least 15 and at most 32 weekly working hours.} In my annual model, I map the 36-month total leave entitlement to three annual periods: the six-month full-leave cap becomes one year (the caregiver stops market work), and the remaining 30 months of partial leave become two years (the caregiver works part-time at 20 hours per week). The wage replacement is calculated as 65\% of prior net income (tax-free, subject to \textit{Progressionsvorbehalt}), with monthly lower and upper bounds of EUR\,300 and EUR\,1,800. All variants are conditional on the caregiver choosing to provide informal care; the benefit amount depends on the caregiver's prior earnings, not on the care recipient's care need intensity.
+
+I consider three variants. The standard \textbf{Caregiving Leave} allows up to one year of full leave for unemployed caregivers with a prior job, plus up to two additional years of partial leave for part-time caregivers with a prior full-time job; it retains baseline \textit{Pflegegeld} alongside the leave top-up and imposes a 3-year total leave cap. \textbf{Caregiving Leave (Partial)} restricts eligibility to part-time caregivers with a prior full-time job---unemployed caregivers receive no earnings-related benefit---but is otherwise identical. \textbf{Caregiving Leave (Uncapped, no Pflegegeld)} removes the duration cap and broadens eligibility to all caregivers with a prior job (PT or FT, employed or unemployed), but \textit{replaces} \textit{Pflegegeld} with the leave benefit: informal caregivers receive the wage replacement instead of the flat care cash benefit. Job retention is unlimited.
+
+\subsubsection{Full Insurance (100\% Wage Replacement)}
+
+The full insurance policy provides 100\% gross wage replacement, subject to an annual cap of six times the Norwegian basic amount ($6G$).\footnote{The \textit{Grunnbeløpet} ($G$) is the basic amount in the Norwegian National Insurance Scheme (\textit{folketrygden}), used to compute contribution thresholds and benefit ceilings across sickness, parental leave, and care-related allowances. In 2010, $1G = \text{NOK}\,75{,}641$, so $6G = \text{NOK}\,453{,}846 \approx \text{EUR}\,56{,}700$ per year. I adopt 6G as the annual income cap following Norwegian practice.} The benefit is taxable and not subject to social security contributions; when the caregiver is on leave and not working, it replaces unemployment benefits. Eligibility mirrors the uncapped caregiving leave: all caregivers with a prior job. This design serves as an upper-bound benchmark on policy generosity, identifying the price elasticity of informal care provision at full earnings replacement. It is inspired by Nordic care allowance models---in particular the Norwegian municipal care allowance (\textit{omsorgsstønad}), which provides compensation for private caregiving, and the attendance benefit (\textit{pleiepenger}), which grants full wage replacement for caregivers of severely ill family members---but is substantially more generous: the model's full insurance is not restricted to the most demanding care situations, is not means-tested, and provides complete earnings replacement up to the $6G$ cap. I consider two variants: \textbf{Full Insurance} (the leave benefit is the sole transfer, replacing \textit{Pflegegeld}) and \textbf{Full Insurance with Pflegegeld} (the flat care cash benefit is retained alongside the 100\% replacement). Both have no duration cap and unlimited job retention.
+
+Table~\ref{tab:policy_design} summarizes the five policies.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Policy design summary}
+  \label{tab:policy_design}
+  \small
+  \begin{tabular}{llllll}
+    \toprule
+    Dimension & CL (Partial) & CL & CL Uncapped & FI & FI + PG \\
+    \midrule
+    Replacement rate & 65\% net & 65\% net & 65\% net & 100\% gross & 100\% gross \\
+    Tax treatment & Tax-free & Tax-free & Tax-free & Taxable & Taxable \\
+    Pflegegeld & Yes & Yes & No & No & Yes \\
+    Duration cap & 3 yr total & 3 yr total & None & None & None \\
+    Full leave & No & 1 yr max & Yes & Yes & Yes \\
+    Eligibility & PT w/ prior FT & PT or unemp.\ w/ prior job & Prior job & Prior job & Prior job \\
+    Job retention & 3 yr & 3 yr & Unlimited & Unlimited & Unlimited \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+%==============================================================================
+\subsection{Main Comparison: Caregiving Leave versus Full Insurance with Pflegegeld}
+\label{subsec:main_comparison}
+%==============================================================================
+
+I now turn to the policy experiments. Among the five designs defined above, the Caregiving Leave (CL) and Full Insurance with \textit{Pflegegeld} (FI+PG) form the most informative pairing. CL is the policy-relevant German reform proposal; FI+PG serves as an upper-bound benchmark. Both retain baseline \textit{Pflegegeld} and provide job retention, so every difference in outcomes is attributable to the replacement rate (65\% net vs.\ 100\% gross) and the duration cap (3 years vs.\ unlimited). The central finding---established below---is that the job retention guarantee, shared by both designs, is the dominant driver of long-run labor market improvements. The replacement rate governs short-run leave take-up and consumption during the caregiving spell but has surprisingly modest effects on experience accumulation, pension income, and retirement timing. I organize the comparison along six margins: transfers, care provision, labor supply, the duration gradient, lifecycle outcomes, and fiscal costs. The remaining three designs are analyzed in Subsection~\ref{subsec:design_variants} to decompose specific mechanisms.
+
+\subsubsection{Transfer Generosity}
+
+Table~\ref{tab:main_transfers} compares transfer levels. The baseline provides \textit{Pflegegeld} averaging EUR\,4,469/year. CL adds a modest earnings-related top-up of EUR\,883/year, yielding EUR\,5,405 in total---a 21\% increase. FI+PG adds EUR\,9,173/year in leave benefit while retaining the full \textit{Pflegegeld}, reaching EUR\,13,710/year---more than triple the baseline.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Transfer generosity: CL vs.\ FI+PG (EUR/year, avg.\ per caregiver, ages 40--67)}
+  \label{tab:main_transfers}
+  \small
+  \begin{tabular}{lrrr}
+    \toprule
+    & Baseline & CL & FI + PG \\
+    \midrule
+    Avg.\ total transfer (all CG) & 4,469 & 5,405 & 13,710 \\
+    Avg.\ leave top-up (all CG) & 0 & 883 & 9,173 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The 10-fold difference in leave top-up (EUR\,883 vs.\ EUR\,9,173) reflects the combined effect of the higher replacement rate and the broader base of eligible caregivers under FI+PG (no duration cap, all prior-job holders). Both policies retain \textit{Pflegegeld}, so no caregiver group loses baseline support.
+
+\subsubsection{Care Provision and the Opportunity Cost Mechanism}
+
+Both policies induce a reallocation from formal to informal care, but the magnitude differs. CL raises the informal care share by 7.6\% (+3.3~pp); FI+PG by 11.9\% (+5.1~pp). The substitution is approximately one-for-one: formal care falls by 9.8\% under CL and 15.2\% under FI+PG.
+
+The education gradient reveals the opportunity cost mechanism. Under CL, high-education agents increase informal care by 8.8\%---1.2 times the low-education response (7.1\%). Under FI+PG, the disparity widens: 18.8\% versus 8.8\%. The education gradient is sharpest at ages 55--59, where high-education agents increase informal care by 25.7\% under FI+PG---more than double the 11.6\% response of low-education agents. The leave policies compensate higher earners more generously in absolute terms, reducing their effective opportunity cost of informal care and inducing them to substitute away from formal care. Low-education agents---who already provide informal care at high rates in the baseline (intensive care: 21.6\% vs.\ 12.6\% for high-education)---are largely inframarginal.
+
+\subsubsection{Labor Supply: Short-Run Disruption, Long-Run Neutrality}
+
+The leave policies produce two distinct labor supply effects with different time horizons. Table~\ref{tab:main_labor} reports within-caregiving labor supply.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Within-caregiving labor supply: CL vs.\ FI+PG (\% of active informal caregivers, ages 40--67)}
+  \label{tab:main_labor}
+  \small
+  \begin{tabular}{lrrr}
+    \toprule
+    & Baseline & CL & FI + PG \\
+    \midrule
+    Employment rate & 57.9 & 51.6 & 48.4 \\
+    $\Delta$ vs.\ baseline (\%) & -- & $-11.0$ & $-16.4$ \\
+    Share FT & 26.3 & 23.2 & 20.3 \\
+    $\Delta$ vs.\ baseline (\%) & -- & $-11.8$ & $-22.6$ \\
+    Share unemp.\ (on leave) & 28.8 & 37.2 & 41.2 \\
+    $\Delta$ vs.\ baseline (\%) & -- & $+29.2$ & $+43.3$ \\
+    Share retired & 13.3 & 11.3 & 10.4 \\
+    $\Delta$ vs.\ baseline (\%) & -- & $-15.4$ & $-22.1$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Short run.} During active caregiving, employment falls by 11.0\% (CL) to 16.4\% (FI+PG). Leave take-up---captured by the rise in the unemployed share---surges by 29.2\% and 43.3\%, respectively. Full-time work drops by 11.8\% under CL and 22.6\% under FI+PG. At ages 60--67, the retirement share falls by 15.4\% (CL) and 22.1\% (FI+PG): the leave policy keeps older caregivers in the labor market rather than pushing them into early retirement.
+
+\paragraph{Long run.} Despite this substantial within-caregiving disruption, aggregate lifetime employment of ever-caregivers is virtually unchanged ($<0.2\%$) under both policies. Employment falls during the peak caregiving window (ages 50--59: $-1.8$ to $-2.4\%$) but rises at ages 60--67 (+4.2\%), driven by delayed retirement. The leave policies redistribute the \textit{timing} of labor supply across the lifecycle without altering its total quantity. The job retention guarantee---not the replacement rate---enables this temporal reallocation: it ensures that the short-run labor supply reduction during caregiving does not become a permanent exit from the labor force. The near-identical long-run employment trajectories under CL (65\% net, 3-year cap) and FI+PG (100\% gross, unlimited) demonstrate that the replacement rate is a second-order determinant of the long-run labor market path.
+
+\subsubsection{The Duration Gradient}
+
+Subsection~\ref{subsec:within_baseline_heterogeneity} documented that the most severe within-baseline labor market damage is concentrated among the one-third of caregivers who provide care for four or more years: their employment rate falls to 65.0\% (3.8~pp below the general population) and their retirement share at ages 63--67 rises to 72.3\%. The policy experiments reinforce this pattern. Table~\ref{tab:main_duration} classifies ever-caregivers by total years of informal care and reports lifecycle outcomes.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Lifecycle outcomes by caregiving duration: CL vs.\ FI+PG (ever-caregivers, \% change vs.\ baseline).}
+  \label{tab:main_duration}
+  \small
+  \begin{tabular}{llrrr}
+    \toprule
+    Duration & Metric & Baseline & $\Delta$ CL & $\Delta$ FI+PG \\
+    \midrule
+    \multicolumn{5}{l}{\textit{1 year of caregiving}} \\
+    & Empl.\ rate (30--67) & 68.8\% & $0.0$ & $-0.4$ \\
+    & Retired (63--67) & 65.0\% & $+0.0$ & $+0.5$ \\
+    \addlinespace
+    \multicolumn{5}{l}{\textit{2--3 years of caregiving}} \\
+    & Empl.\ rate (30--67) & 67.5\% & $+0.3$ & $0.0$ \\
+    & Retired (63--67) & 67.1\% & $-2.0$ & $-1.8$ \\
+    \addlinespace
+    \multicolumn{5}{l}{\textit{4+ years of caregiving}} \\
+    & Empl.\ rate (30--67) & 65.0\% & $+1.8$ & $+1.1$ \\
+    & Retired (63--67) & 72.3\% & $-8.9$ & $-10.6$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Short-duration caregivers (one year) are barely affected under either policy. The most consequential effects emerge among the one-third of ever-caregivers who provide care for four or more years---the same group identified in Subsection~\ref{subsec:within_baseline_heterogeneity} as bearing the heaviest within-baseline labor market damage. For this group, both policies \textit{increase} lifetime employment (+1.8\% CL, +1.1\% FI+PG) and dramatically reduce early retirement ($-8.9\%$ CL, $-10.6\%$ FI+PG). The sign reversal reflects the job retention mechanism: agents who would have retired permanently to provide care instead take temporary leave and return to work.
+
+CL's 3-year cap is the binding constraint for this group. Under CL, both the wage replacement benefit and the job retention guarantee expire after three cumulative leave years. Caregivers whose spells extend beyond three years lose job protection precisely when the within-baseline evidence shows the labor market damage is most severe. FI+PG, with its unlimited job retention, avoids this cliff---yet CL still achieves a qualitatively similar pattern overall, because the majority of caregivers (68.4\%) have spells of three years or fewer.
+
+\subsubsection{Experience, Pensions, and Consumption}
+
+Table~\ref{tab:main_outcomes} reports lifecycle outcomes.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Lifecycle outcomes: CL vs.\ FI+PG (ever-caregivers and active caregivers)}
+  \label{tab:main_outcomes}
+  \small
+  \begin{tabular}{lrrr}
+    \toprule
+    & Baseline & CL & FI + PG \\
+    \midrule
+    Exp.\ years at ret.\ (ever CG) & 24.49 & 24.83 & 25.32 \\
+    $\Delta$ vs.\ baseline (\%) & -- & +1.4 & +3.4 \\
+    Gross pension income (ever CG, EUR/yr) & 10,153 & 10,369 & 10,453 \\
+    $\Delta$ vs.\ baseline (\%) & -- & +0.6 & +1.4 \\
+    Retirement age (ever CG) & 64.57 & 64.72 & 64.74 \\
+    $\Delta$ vs.\ baseline (yrs) & -- & +0.15 & +0.17 \\
+    Consumption (active CG, EUR/yr) & 33,466 & 33,866 & 35,049 \\
+    $\Delta$ vs.\ baseline (\%) & -- & +1.2 & +4.7 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The headline finding: long-run outcomes are surprisingly similar despite a 10-fold difference in fiscal cost. CL achieves +1.4\% more experience at retirement; FI+PG achieves +3.4\%. Pension income rises by +0.6\% (CL) versus +1.4\% (FI+PG). Retirement age increases by 0.15 and 0.17 years, respectively---a difference of less than one week. These long-run improvements are driven almost entirely by the job retention guarantee, which is common to both policies and ensures that caregivers who temporarily exit the labor force can return. The replacement rate matters for the short-run: it governs the intensity of leave take-up and consumption during caregiving (CL: +1.2\%, FI+PG: +4.7\%). But the long-run labor market trajectory---experience, pensions, retirement timing---converges, implying that a substantially lower replacement rate, paired with the same job retention structure, would preserve these structural gains.
+
+\subsubsection{NPV Career Costs}
+
+Table~\ref{tab:main_npv} reports the NPV career costs for the two focal policies.
+
+\begin{table}[htbp]
+  \centering
+  \caption{NPV career costs: CL vs.\ FI+PG}
+  \label{tab:main_npv}
+  \small
+  \begin{tabular}{lrrr}
+    \toprule
+    & Baseline & CL & FI + PG \\
+    \midrule
+    \multicolumn{4}{l}{\textit{NPV career cost (ever-CG, start age 40, incl.\ bequest)}} \\
+    Earned income & $-37.1\%$ & $-35.2\%$ & $-33.6\%$ \\
+    \quad $\Delta$ vs.\ baseline (pp) & -- & +1.9 & +3.5 \\
+    Comprehensive income & $-15.2\%$ & $-13.4\%$ & $-9.3\%$ \\
+    \quad $\Delta$ vs.\ baseline (pp) & -- & +1.9 & +5.9 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+CL reduces the earned-income career cost by 1.9~pp (from $-37.1\%$ to $-35.2\%$) and the comprehensive-income cost by 1.9~pp (to $-13.4\%$) at a fiscal cost of EUR\,983 per capita. FI+PG achieves larger reductions---3.5~pp (earned) and 5.9~pp (comprehensive, to $-9.3\%$)---but at EUR\,9,326 per capita, nearly ten times the cost. The comprehensive-income improvement under FI+PG is disproportionately large relative to its earned-income improvement because the retained \textit{Pflegegeld} plus the generous leave top-up jointly cushion the career cost through both the labor and transfer channels. The cost-effectiveness ratio (pp career cost reduction per EUR\,1,000 fiscal cost) is 1.9 for CL versus 0.6 for FI+PG: the Caregiving Leave delivers three times more career cost reduction per euro of public expenditure.
+
+\subsubsection{Fiscal Costs: Government Budget Decomposition}
+\label{subsubsec:fiscal_decomposition}
+
+Table~\ref{tab:fiscal_decomposition} decomposes the government budget into its revenue, expenditure, and formal care cost components. All figures are lifecycle averages per ever-caregiver (ages 30--100, in EUR), unless otherwise noted.\footnote{The ``formal care'' choice in the model encompasses three real-world care types, with shares calibrated to 2021 data: (i) nursing home care (\textit{station\"are Pflege}), representing 71.1\% of formal care periods, at a government cost of EUR\,1,023/month (light care demand) or EUR\,1,395/month (intensive); (ii) pure formal home care (\textit{ambulante Sachleistungen}), representing 16.2\%; and (iii) 24-hour live-in care (\textit{24-Stunden-Pflege}), representing 12.8\%. Live-in care refers to professional caregivers---predominantly from Central and Eastern Europe---who reside in the care recipient's household and provide round-the-clock assistance with daily living; an estimated 160,000+ German households use this arrangement. Since live-in care is privately financed, it carries zero government cost. Pure formal home care costs the government EUR\,440/month (light demand) or EUR\,1,275/month (intensive). The nursing home and home care shares are from the Federal Ministry of Health's long-term care insurance statistics (\url{https://www.bundesgesundheitsministerium.de/themen/pflege/pflegeversicherung-zahlen-und-fakten}); the live-in share is from Rossow (2021, \url{https://koerber-stiftung.de/projekte/deutscher-studienpreis/alle-preistraeger-innen/2021/der-preis-der-24-stunden-pflege/}). The derived annual government cost per formal-care period is EUR\,9,575 (light demand) and EUR\,14,380 (intensive demand). ``Combination care'' arises when intensive informal caregivers also use in-kind formal home services: 70\% of eligible caregivers take up these services at a government cost equal to 50\% of the \textit{Sachleistungen} rate, or EUR\,637.50/month.}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Government budget decomposition: CL vs.\ FI+PG (per caregiver, EUR)}
+  \label{tab:fiscal_decomposition}
+  \small
+  \begin{tabular}{lrrrr}
+    \toprule
+    & Baseline & CL & FI + PG & $\Delta$\,(FI+PG$-$BL) \\
+    \midrule
+    \multicolumn{5}{l}{\textit{Revenue (per caregiver)}} \\
+    Income tax & 17,055 & 17,361 & 25,538 & +8,483 \\
+    Own SSC & 9,037 & 8,523 & 8,082 & $-$955 \\
+    Partner SSC & 14,994 & 16,153 & 16,676 & +1,682 \\
+    Total tax revenue & 41,086 & 42,037 & 50,296 & +9,210 \\
+    \addlinespace
+    \multicolumn{5}{l}{\textit{Expenditure (per caregiver)}} \\
+    Leave top-up (gross) & -- & 2,695 & 28,938 & +28,938 \\
+    Care benefits (\textit{Pflegegeld}) & 13,490 & 14,512 & 15,019 & +1,529 \\
+    Unemployment transfer paid & 356 & 332 & 317 & $-$39 \\
+    Total gov.\ expenditures & 16,586 & 19,965 & 46,757 & +30,171 \\
+    \addlinespace
+    \multicolumn{5}{l}{\textit{Net budget (per caregiver)}} \\
+    Net gov.\ budget & 24,500 & 22,071 & 3,539 & $-$20,961 \\
+    \quad $\Delta$ vs.\ baseline & -- & $-$2,429 & $-$20,961 & -- \\
+    \addlinespace
+    \multicolumn{5}{l}{\textit{Policy cost}} \\
+    Total net cost (EUR M) & 555 & 98.3 & 933 & -- \\
+    Per-capita cost (EUR) & 5,552 & 983 & 9,326 & -- \\
+    \addlinespace
+    \multicolumn{5}{l}{\textit{Formal care (social planner, total EUR M)}} \\
+    Gov.\ formal care cost & 1,178 & 1,059 & 995 & $-$184 \\
+    Gov.\ combination care cost & 293 & 324 & 339 & +46 \\
+    Gov.\ total care cost & 1,471 & 1,383 & 1,334 & $-$138 \\
+    Formal care cost (\% of baseline) & 100\% & 89.1\% & 83.1\% & -- \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Tax revenue.} The two policies generate sharply different tax revenue dynamics. Under FI+PG, income tax per caregiver rises by EUR\,8,483 because the 100\% benefit is taxable income that enters the household tax base directly. Under CL, the 65\% benefit is tax-free but subject to \textit{Progressionsvorbehalt}: it raises the applicable average tax rate on other income without being taxed itself, generating only EUR\,306 in additional income tax. Own social security contributions \textit{fall} under both policies (EUR\,$-$513 for CL, EUR\,$-$955 for FI+PG) because agents work fewer hours during leave and SSC are levied on gross labor income. Partner SSC, by contrast, \textit{rise} (EUR\,+1,159 for CL, EUR\,+1,682 for FI+PG): the partner's employment is unaffected while household resources improve, and more caregivers at ages 60--67 delay retirement (which preserves the partner's SSC-liable income stream longer). On net, total tax revenue increases by EUR\,951 per caregiver under CL and EUR\,9,210 under FI+PG.
+
+\paragraph{Formal care savings.} All policies reduce government formal care expenditure by shifting care demand from formal to informal provision. Per caregiver, government formal care costs fall to 89.1\% of the baseline under CL and to 83.1\% under FI+PG, yielding total savings of EUR\,119\,M and EUR\,184\,M, respectively. These savings are partially offset by \textit{increased} combination care costs: as more agents enter informal caregiving, a share of them supplement with professional home services, raising government combination care expenditure by EUR\,31\,M (CL) and EUR\,46\,M (FI+PG). Net government care cost savings are EUR\,88\,M (CL) and EUR\,138\,M (FI+PG). The net savings arise because the government cost of a formal care period (EUR\,9,575--14,380/year, depending on care demand intensity) substantially exceeds the combination care supplement (EUR\,7,650/year for the 70\% who take up in-kind services).
+
+\paragraph{Transfer expenditure and leave cost.} The leave top-up is the dominant expenditure item under both policies: EUR\,2,695 per caregiver (CL) versus EUR\,28,938 (FI+PG). The net fiscal cost---after the government recoups revenue through taxation and reduces other transfers---is substantially lower than the gross outlay. For CL, the average net leave cost is EUR\,2,405 per caregiver (gross EUR\,2,695 minus EUR\,290 in \textit{Progressionsvorbehalt} tax recovery). For FI+PG, the net cost including transfer savings is EUR\,20,283 per caregiver (gross EUR\,28,938 minus EUR\,8,623 in income tax clawback minus EUR\,33 in reduced unemployment transfers). Unemployment transfers fall slightly under both policies (EUR\,$-$23 for CL, EUR\,$-$39 for FI+PG) because the leave benefit pushes some caregivers above the means-tested unemployment floor.
+
+\paragraph{Net budget.} CL is approximately budget-neutral: the net government budget falls by EUR\,2,429 per caregiver relative to the baseline---a reduction of less than 10\%. CL (Partial), which restricts leave to part-time caregivers, is fully budget-neutral (EUR\,+76 per caregiver). FI+PG creates a substantial fiscal deficit of EUR\,20,961 per caregiver, driven by the ten-fold higher gross leave outlay that the income tax clawback only partially offsets. The per-capita cost across all 100,000 simulated agents is EUR\,983 (CL) versus EUR\,9,326 (FI+PG)---a near-tenfold difference that delivers only modestly different long-run labor market outcomes (Subsection~\ref{subsec:main_comparison}).
+
+%==============================================================================
+\subsection{Design Variants: Decomposing the Policy Mechanisms}
+\label{subsec:design_variants}
+%==============================================================================
+
+The main comparison established that job retention, not the replacement rate, drives long-run labor market outcomes. I now use the remaining three policy designs to isolate specific mechanisms: unemployed eligibility (CL vs.\ CL Partial), the duration cap and \textit{Pflegegeld} trade-off (CL vs.\ CL Uncapped), and the pure \textit{Pflegegeld} effect (FI vs.\ FI+PG). Table~\ref{tab:fiscal_all_policies} extends the fiscal decomposition from Table~\ref{tab:fiscal_decomposition} to all five policies, providing a unified view of the revenue, expenditure, and net budget structure.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Government budget decomposition: all policies (per caregiver, EUR)}
+  \label{tab:fiscal_all_policies}
+  \footnotesize
+  \begin{tabular}{lrrrrrr}
+    \toprule
+    & Baseline & CL Part. & CL & CL Uncap. & FI & FI + PG \\
+    \midrule
+    \multicolumn{7}{l}{\textit{Revenue}} \\
+    Income tax & 17,055 & 17,354 & 17,361 & 17,753 & 25,126 & 25,538 \\
+    Own SSC & 9,037 & 8,723 & 8,523 & 8,151 & 8,004 & 8,082 \\
+    Partner SSC & 14,994 & 16,161 & 16,153 & 16,250 & 16,430 & 16,676 \\
+    Total tax revenue & 41,086 & 42,238 & 42,037 & 42,154 & 49,560 & 50,296 \\
+    \addlinespace
+    \multicolumn{7}{l}{\textit{Expenditure}} \\
+    Leave top-up (gross) & -- & 394 & 2,695 & 10,273 & 28,309 & 28,938 \\
+    Unemployment transfer & 356 & 354 & 332 & 361 & 355 & 317 \\
+    \addlinespace
+    \multicolumn{7}{l}{\textit{Net budget}} \\
+    Net gov.\ budget & 24,500 & 24,576 & 22,071 & 29,101 & 18,451 & 3,539 \\
+    $\Delta$ vs.\ baseline & -- & +76 & $-$2,429 & +4,601 & $-$6,049 & $-$20,961 \\
+    Per-capita cost & 5,552 & 20 & 983 & 4,117 & 9,074 & 9,326 \\
+    \addlinespace
+    \multicolumn{7}{l}{\textit{Formal care (total EUR M)}} \\
+    Formal care cost (\% BL) & 100\% & 89.1\% & 89.1\% & 89.0\% & 86.2\% & 83.1\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsubsection{CL versus CL (Partial): Does Extending Leave to the Unemployed Matter?}
+
+CL and CL (Partial) differ in one dimension: CL extends up to one year of full leave to unemployed caregivers with a prior job; CL (Partial) restricts eligibility to part-time caregivers with a prior full-time job. Their outcomes are virtually identical. Both produce a 7.6\% increase in informal care, a 9.8\% decrease in formal care, +1.4\% more experience at retirement, and +0.6\% higher pension income. Leave take-up rises by 29.2\% (CL) versus 25.5\% (CL Partial)---a modest difference concentrated in the unemployed-caregiver channel.
+
+The mechanism underlying this null result is structural: the leave benefit is 65\% of prior net earnings, and agents who were unemployed before caregiving onset have zero or near-zero prior earnings. The benefit for this group is close to the floor (EUR\,300/month), insufficient to shift the care provision margin. The job retention guarantee---common to both variants---is the binding incentive for entering informal care. Extending earnings-related benefits to agents without prior earnings is fiscally costless (CL Partial: EUR\,20 per capita; CL: EUR\,983) but also behaviorally inert on the caregiving margin. The fiscal cost difference between CL and CL (Partial) reflects the leave payments to unemployed caregivers, not a change in behavior.
+
+The fiscal decomposition confirms the behavioral null. CL (Partial) has a net government budget of EUR\,24,576 per caregiver---essentially identical to the baseline (EUR\,24,500, $\Delta = +$EUR\,76). Its gross leave top-up averages only EUR\,394 per caregiver, compared to EUR\,2,695 under CL. Income tax and SSC are virtually unchanged (EUR\,17,354 and EUR\,8,723 vs.\ EUR\,17,361 and EUR\,8,523 under CL). Formal care costs fall to 89.1\% of baseline under both variants. CL (Partial) is thus the only design that achieves the full labor market benefit of CL at near-zero fiscal cost: a pure job retention policy.
+
+\subsubsection{CL versus CL Uncapped: Duration Cap and the Pflegegeld Trade-Off}
+
+CL Uncapped removes the 3-year duration cap and broadens eligibility but \textit{replaces} \textit{Pflegegeld} with the leave benefit. This design confounds two changes: removing the cap and removing the flat transfer. The comparison with CL isolates their joint effect.
+
+CL Uncapped achieves superior labor and pension outcomes: +3.0\% more experience at retirement (vs.\ +1.4\% for CL), +1.3\% higher pension income (vs.\ +0.6\%), and stronger effects for long-duration caregivers---employment at ages 60--67 rises by 15.5\% for 4+ year caregivers. These gains reflect the uncapped job retention guarantee, which protects caregivers whose spells exceed three years.
+
+The comprehensive-income career cost, however, tells the opposite story. CL Uncapped's comprehensive-income cost ($-15.6\%$) is marginally \textit{worse} than the baseline ($-15.2\%$), because the loss of universal \textit{Pflegegeld} is not fully offset by the targeted leave top-up. Under CL Uncapped, only the 28.8\% of caregivers who stop working entirely receive more than under the baseline; the remaining 71.2\%---including full-time working caregivers (26.3\%) and retired caregivers (13.3\%)---lose their \textit{Pflegegeld} without qualifying for the leave benefit. The average caregiver receives EUR\,1,128 less per year in direct transfers than under the baseline.
+
+This trade-off crystallizes a design tension: removing the duration cap improves the earned-income trajectory (job retention, experience, pension), while removing \textit{Pflegegeld} worsens the direct transfer position. Whether CL Uncapped dominates CL depends on whether one values long-run labor market attachment or short-run consumption insurance.
+
+Fiscally, CL Uncapped occupies a paradoxical position: it is the only policy that \textit{improves} the net government budget. The net budget per caregiver is EUR\,29,101---EUR\,4,601 above the baseline---because the elimination of universal \textit{Pflegegeld} saves more than the leave top-up costs. The gross leave top-up averages EUR\,10,273 per caregiver, but this is more than offset by the elimination of \textit{Pflegegeld} payments (EUR\,13,490 in the baseline) for the majority of caregivers who do not take leave. Income tax rises by EUR\,698 (to EUR\,17,753), own SSC falls by EUR\,886 (to EUR\,8,151), and partner SSC rises by EUR\,1,256 (to EUR\,16,250). Unemployment transfers are unchanged (EUR\,361 vs.\ EUR\,356). Formal care costs fall to 89.0\% of baseline, identical to CL. The per-capita cost is EUR\,4,117---higher than CL (EUR\,983) but lower than FI+PG (EUR\,9,326)---placing it in the middle of the fiscal spectrum despite delivering the strongest labor market outcomes among the 65\%-replacement variants.
+
+\subsubsection{FI versus FI+PG: The Pure Pflegegeld Effect}
+
+Comparing Full Insurance with and without \textit{Pflegegeld} isolates the behavioral effect of the flat care cash benefit at the 100\% replacement level. Labor supply effects are nearly identical: within-caregiving employment falls by 16.1\% (FI) and 16.4\% (FI+PG); experience at retirement rises by 3.4\% under both. \textit{Pflegegeld} does not operate on the work-leisure margin---it is an unconditional transfer that does not depend on the caregiver's employment status.
+
+Where \textit{Pflegegeld} matters is on the care provision margin. FI+PG raises the informal care share by 11.9\% (vs.\ 9.9\% for FI)---a 2~pp differential driven primarily by intensive caregiving (+16.1\% vs.\ +11.1\%). The flat transfer tips the decision for agents on the margin of taking on more demanding care responsibilities, reducing the net out-of-pocket cost of intensive informal provision.
+
+The fiscal difference is modest in per-capita terms: FI+PG costs EUR\,9,326 per capita versus EUR\,9,074 for FI. But the per-caregiver budget decomposition reveals sharply different structures. FI has a net government budget of EUR\,18,451 per caregiver, with income tax of EUR\,25,126 (slightly below FI+PG's EUR\,25,538 because agents provide less informal care and thus work marginally more). The gross leave top-up under FI is EUR\,28,309 per caregiver---close to FI+PG's EUR\,28,938---but the absence of \textit{Pflegegeld} reduces total government expenditures. Formal care costs fall to 86.2\% of baseline under FI versus 83.1\% under FI+PG: the \textit{Pflegegeld} retention tips an additional 2~pp of formal care demand toward informal provision. The comprehensive-income career cost falls from $-12.9\%$ (FI) to $-9.3\%$ (FI+PG)---a 3.6~pp improvement attributable entirely to the \textit{Pflegegeld} transfer channel, which flows to the 39.6\% of caregivers (full-time workers and retirees) who receive no leave benefit under either design.
+
+%==============================================================================
+\subsection{Synthesis and Policy Design Implications}
+\label{subsec:synthesis}
+%==============================================================================
+
+The five policy experiments reveal that caregiving leave policies operate through two distinct channels with different time horizons, distributional properties, and design implications.
+
+\paragraph{Job retention---not the replacement rate---is the dominant design element.}
+
+The main comparison (CL vs.\ FI+PG) shows that long-run outcomes---experience accumulation, pension income, retirement timing---are surprisingly similar across policies that share the job retention guarantee but differ tenfold in fiscal cost and replacement generosity. CL achieves +1.4\% more experience at retirement; FI+PG achieves +3.4\%. Retirement ages differ by less than one week. The replacement rate governs the short-run intensity of leave take-up and the composition of care during the spell; the \textit{job retention guarantee} determines whether caregivers return to employment after the spell concludes. This convergence of long-run outcomes across a 65\% net and a 100\% gross replacement rate implies that the replacement rate could be set substantially lower---or even to zero---without sacrificing the structural labor market benefits, provided the job retention guarantee and experience accumulation remain in place.
+
+\paragraph{The distributional tension.}
+
+The earnings-related benefit structure concentrates transfers on agents who reduce labor supply---and among those, on agents with higher prior wages. High-education agents are the primary behavioral respondents: they increase informal care by nearly twice as much as low-education agents under CL Uncapped (11.4\% vs.\ 6.6\%) and reduce formal care by 14.5\% versus 8.4\%. The policy's primary fiscal expenditure flows to high-education agents transitioning from formal to informal care, while low-education agents---who already bear the heavier caregiving burden (intensive care: 21.6\% vs.\ 12.6\%)---see smaller behavioral changes and smaller absolute transfers.
+
+\paragraph{The structural unreachability of the unemployed.}
+
+CL and CL (Partial) produce identical care provision responses despite CL extending coverage to unemployed caregivers. The mechanism is arithmetic: 65\% of zero prior earnings is zero. The 24.2\% of caregiving entrants without prior employment are structurally unreachable by earnings-related leave. This group provides the most intensive informal care in the baseline, yet no wage replacement design can alter their behavior. Reaching them requires instruments not conditioned on prior earnings: higher \textit{Pflegegeld}, flat-rate caregiving allowances, or pension point credits analogous to child-rearing credits in the German system.
+
+\paragraph{Unlimited job retention matters most for the most vulnerable caregivers.}
+
+Subsection~\ref{subsec:within_baseline_heterogeneity} documented that the most severe within-baseline labor market damage occurs among the one-third of caregivers whose spells exceed three years: employment drops to 65.0\% and the retirement share at ages 63--67 rises to 72.3\%. The policy experiments confirm that this is precisely the group for which job retention is most consequential. Both CL and FI+PG dramatically reduce early retirement among 4+ year caregivers ($-8.9\%$ and $-10.6\%$), and employment at ages 60--67 rises by up to 15.5\%. CL's 3-year cap means that both the wage replacement and the job retention guarantee expire after three cumulative leave years---cutting off protection precisely when the within-baseline evidence shows it is most needed. An uncapped design preserves job retention throughout the entire caregiving spell; the variant comparison (Subsection~\ref{subsec:design_variants}) shows that removing the cap yields +3.0\% more experience at retirement (vs.\ +1.4\% under the capped CL).
+
+\paragraph{Policy design implication.}
+
+The central lesson is that \textit{job retention and its duration}---not the replacement rate---is the binding policy instrument for long-run labor market outcomes. The five experiments isolate three design elements that matter, in descending order of importance:
+\begin{enumerate}
+  \item \textbf{Unlimited job retention with experience accumulation.} This is the primary driver of experience preservation, pension gains, and delayed retirement. The convergence of long-run outcomes under CL (65\% net) and FI+PG (100\% gross) implies that the replacement rate could be set to zero without sacrificing these structural gains, as long as job protection persists.
+  \item \textbf{Retention of \textit{Pflegegeld}.} The flat, unconditional care cash benefit provides equitable support across the earnings distribution, covering full-time working caregivers (26.3\% of baseline caregivers, who receive no leave benefit under any design) and retired caregivers (13.3\%). Removing \textit{Pflegegeld} worsens the comprehensive-income position even when the leave benefit is more generous (CL Uncapped).
+  \item \textbf{A moderate earnings-related top-up.} The wage replacement governs short-run consumption and the intensity of formal-to-informal care substitution, but is the least important determinant of the long-run career cost.
+\end{enumerate}
+
+Among the designs studied, the Caregiving Leave (CL) at EUR\,983 per capita comes closest to the optimal structure. It retains \textit{Pflegegeld}, provides job retention with experience accumulation, and delivers three times more career cost reduction per euro of public expenditure than FI+PG. Its principal limitation is the 3-year duration cap: both the wage replacement and the job retention guarantee expire after three cumulative leave years, cutting off protection for the one-third of caregivers whose spells exceed three years---precisely the group for whom permanent labor force exit is most consequential (Subsection~\ref{subsec:within_baseline_heterogeneity}). An uncapped variant of CL that retains \textit{Pflegegeld}---combining the unlimited job retention of CL Uncapped with the flat transfer preservation of CL---would dominate all five designs analyzed here.

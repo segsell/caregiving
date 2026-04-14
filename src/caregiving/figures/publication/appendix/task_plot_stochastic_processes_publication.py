@@ -27,7 +27,7 @@ from caregiving.counterfactual.plotting_helpers import (
     PUBLICATION_PLOT_STYLE,
     publication_savefig,
 )
-from caregiving.model.shared import FEMALE, MAX_AGE_SIM
+from caregiving.model.shared import MAX_AGE_SIM
 
 _OUT = BLD / "figures" / "publication" / "stochastic_processes"
 _EST = BLD / "estimation" / "stochastic_processes"
@@ -715,7 +715,7 @@ def task_plot_formal_care_costs_publication(
     if isinstance(df_raw.index, pd.MultiIndex):
         df_raw = df_raw.reset_index()
     if "sex" in df_raw.columns:
-        df_raw = df_raw.loc[df_raw["sex"] == FEMALE].copy()
+        df_raw = df_raw.loc[df_raw["sex"] == 1].copy()
     df_raw = df_raw.loc[df_raw["age"] <= MAX_AGE_SIM].copy()
 
     obs_by_age = df_raw.groupby("age")["formal_care_costs"].mean()
@@ -731,24 +731,24 @@ def task_plot_formal_care_costs_publication(
 
     fig, ax = plt.subplots(figsize=_S["figsize"])
     if len(obs_by_age) > 0:
-        ax.plot(
+        ax.scatter(
             obs_by_age.index,
             obs_by_age.values,
             color=EDU_COLOR_LOW,
-            linestyle="--",
-            label="Obs.",
-            linewidth=_S["linewidth"],
+            label="Raw data (obs.)",
+            s=20,
+            zorder=3,
         )
     ax.plot(
         ages,
         pred,
         color=EDU_COLOR_HIGH,
-        label="Est.",
+        label="OLS fit (est.)",
         linewidth=_S["linewidth"],
     )
     ax.set_xlabel("Age", fontsize=_S["label_fontsize"], labelpad=_S["labelpad"])
     ax.set_ylabel(
-        "Formal care costs", fontsize=_S["label_fontsize"], labelpad=_S["labelpad"]
+        "Formal care costs (in euros)", fontsize=_S["label_fontsize"], labelpad=_S["labelpad"]
     )
     ax.legend(fontsize=_S["label_fontsize"], frameon=False, loc="best")
     _finalize(ax, path_to_save, xmin=start_age, xmax=end_age)

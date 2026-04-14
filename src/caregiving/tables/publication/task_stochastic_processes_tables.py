@@ -14,10 +14,13 @@ import pandas as pd
 import pytask
 from pytask import Product
 
+import json
+
 from caregiving.config import BLD
 
 _EST = BLD / "estimation" / "stochastic_processes"
 _OUT = BLD / "tables" / "publication" / "stochastic_processes"
+_SAMPLE_SIZES_PATH = _EST / "sample_sizes.json"
 
 # Paths used in task_write_specs (inheritance)
 _PATH_INHERITANCE_PROB_SPEC7 = (
@@ -32,6 +35,13 @@ _PATH_INHERITANCE_AMOUNT_SPEC12 = (
 )
 
 
+def _load_sample_sizes() -> dict:
+    if _SAMPLE_SIZES_PATH.exists():
+        with open(_SAMPLE_SIZES_PATH) as f:
+            return json.load(f)
+    return {}
+
+
 def _latex_escape(s: str) -> str:
     """Escape special LaTeX characters in table content."""
     for c, r in [
@@ -42,6 +52,13 @@ def _latex_escape(s: str) -> str:
     ]:
         s = str(s).replace(c, r)
     return s
+
+
+def _format_n(n: int | None, n_cols: int = 2) -> str:
+    """Format a sample size row for LaTeX, spanning n_cols data columns."""
+    if n is None:
+        return ""
+    return f"$N$ & \\multicolumn{{{n_cols}}}{{c}}{{{n:,}}} \\\\"
 
 
 def _notes_common():
@@ -119,8 +136,13 @@ def task_table_partner_transition_women(
             vals.append(f"{v:.3f}" if pd.notna(v) else "--")
         rows.append(" & ".join(vals) + " \\\\")
     body = "\n".join(rows)
+    ss = _load_sample_sizes()
+    n_val = ss.get("partner_transition_women_total")
+    n_row = ""
+    if n_val:
+        n_row = f"\n\\midrule\n$N$ & \\multicolumn{{{2 + n_to}}}{{c}}{{{n_val:,}}} \\\\"
     notes = (
-        "\\\\\n\\bottomrule\n\\end{tabular}\n"
+        f"{n_row}\n\\bottomrule\n\\end{{tabular}}\n"
         f"\\\\\n\\multicolumn{{{3 + n_to}}}{{l}}{{\\footnotesize Notes: Non-parametric transition P(partner state next year | lagged state). "
         "Age bins in 10-year intervals. Women only. SOEP.}}"
     )
@@ -154,11 +176,16 @@ def task_table_partner_wage_women(
             rows.append(f"\\quad {_latex_escape(c)} & {v:.4f} \\\\")
         rows.append("\\addlinespace")
     body = "\n".join(rows[:-1])  # drop last addlinespace
+    ss = _load_sample_sizes()
+    n_val = ss.get("partner_wage_women_total")
+    n_row = ""
+    if n_val:
+        n_row = f"\n\\midrule\n$N$ & {n_val:,} \\\\"
     notes = (
-        "\\\\\n\\bottomrule\n\\end{tabular}\n"
+        f"{n_row}\n\\bottomrule\n\\end{{tabular}}\n"
         "\\\\\n\\multicolumn{2}{l}{\\footnotesize Notes: OLS monthly gross wage (partner). "
         "Agents are women; coefficients for male partners. By education. "
-        "Specification: wage = const + period + period_sq. SOEP.}"
+        "Specification: wage = const + period + period\\_sq. SOEP.}"
     )
     path_to_save.write_text(header + body + notes, encoding="utf-8")
 
@@ -187,9 +214,18 @@ def task_table_number_of_children_women(
             f"{r.get('period', r.iloc[1]):.4f} & {r.get('period_sq', r.iloc[2]):.4f} \\\\"
         )
     body = "\n".join(rows)
+    ss = _load_sample_sizes()
+    n_total = sum(
+        ss.get(f"children_women_{e}_{p}", 0)
+        for e in ("low", "high")
+        for p in ("single", "partnered")
+    )
+    n_row = ""
+    if n_total > 0:
+        n_row = f"\n\\midrule\n$N$ & \\multicolumn{{4}}{{c}}{{{n_total:,}}} \\\\"
     notes = (
-        "\\\\\n\\bottomrule\n\\end{tabular}\n"
-        "\\\\\n\\multicolumn{5}{l}{\\footnotesize Notes: OLS: children = const + period + period². "
+        f"{n_row}\n\\bottomrule\n\\end{{tabular}}\n"
+        "\\\\\n\\multicolumn{5}{l}{\\footnotesize Notes: OLS: children = const + period + period\\textsuperscript{2}. "
         "By education and partner status. Women only. SOEP.}"
     )
     path_to_save.write_text(header + body + notes, encoding="utf-8")
@@ -214,8 +250,13 @@ def task_table_job_separation_women(
             f"{r.get('age', r.iloc[1]):.4f} & {r.get('age_sq', r.iloc[2]):.4f} \\\\"
         )
     body = "\n".join(rows)
+    ss = _load_sample_sizes()
+    n_val = ss.get("job_sep_women_total")
+    n_row = ""
+    if n_val:
+        n_row = f"\n\\midrule\n$N$ & \\multicolumn{{3}}{{c}}{{{n_val:,}}} \\\\"
     notes = (
-        "\\\\\n\\bottomrule\n\\end{tabular}\n"
+        f"{n_row}\n\\bottomrule\n\\end{{tabular}}\n"
         "\\\\\n\\multicolumn{4}{l}{\\footnotesize Notes: Logit P(job separation). "
         "Women only. SOEP. Standard errors from estimation.}"
     )
@@ -256,8 +297,13 @@ def task_table_health_transition_women(
         if pd.notna(p):
             rows.append(f"{edu} & {period} & {h} & {lh} & {p:.3f} \\\\")
     body = "\n".join(rows) if rows else "\\multicolumn{5}{l}{(no data)} \\\\"
+    ss = _load_sample_sizes()
+    n_val = ss.get("health_women_total")
+    n_row = ""
+    if n_val:
+        n_row = f"\n\\midrule\n$N$ & \\multicolumn{{4}}{{c}}{{{n_val:,}}} \\\\"
     notes = (
-        "\\\\\n\\bottomrule\n\\end{tabular}\n"
+        f"{n_row}\n\\bottomrule\n\\end{{tabular}}\n"
         "\\\\\n\\multicolumn{5}{l}{\\footnotesize Notes: P(health next period | current health). "
         "Women only. Sample of ages. SOEP.}"
     )
@@ -282,8 +328,13 @@ def task_table_mortality_women(
     )
     rows = [f"{_latex_escape(str(i))} & {v:.4f} \\\\" for i, v in df[col].items()]
     body = "\n".join(rows)
+    ss = _load_sample_sizes()
+    n_val = ss.get("mortality_women_total")
+    n_row = ""
+    if n_val:
+        n_row = f"\n\\midrule\n$N$ & {n_val:,} \\\\"
     notes = (
-        "\\\\\n\\bottomrule\n\\end{tabular}\n"
+        f"{n_row}\n\\bottomrule\n\\end{{tabular}}\n"
         "\\\\\n\\multicolumn{2}{l}{\\footnotesize Notes: Logit P(death). "
         "Baseline life table scaled by health and education dummies. Women only. SOEP.}"
     )
@@ -335,8 +386,13 @@ def task_table_own_wage_women(
                 f"{edu_lab} & {_latex_escape(str(pname))} & {val:.4f} & {se_str} \\\\"
             )
     body = "\n".join(rows) if rows else "\\multicolumn{4}{l}{(no data)} \\\\"
+    ss = _load_sample_sizes()
+    n_val = ss.get("wage_women_total")
+    n_row = ""
+    if n_val:
+        n_row = f"\n\\midrule\n$N$ & \\multicolumn{{2}}{{c}}{{{n_val:,}}} \\\\"
     notes = (
-        "\\\\\n\\bottomrule\n\\end{tabular}\n"
+        f"{n_row}\n\\bottomrule\n\\end{{tabular}}\n"
         "\\\\\n\\multicolumn{4}{l}{\\footnotesize Notes: Panel OLS ln(hourly wage). "
         "Entity and year fixed effects. Women only. SOEP.}"
     )
@@ -440,8 +496,11 @@ def _table_from_inheritance_spec(
     if women_rsq is not None and len(women_rsq):
         r2 = women_rsq.iloc[0]
         rows.append(
-            f"Pseudo R\\textsuperscript{2} & \\multicolumn{{2}}{{c}}{{ {r2:.4f} }} \\\\"
+            f"Pseudo R\\textsuperscript{{2}} & \\multicolumn{{2}}{{c}}{{ {r2:.4f} }} \\\\"
         )
+    n_val = women_row.get("N", np.nan)
+    if pd.notna(n_val):
+        rows.append(f"$N$ & \\multicolumn{{2}}{{c}}{{{int(n_val):,}}} \\\\")
     body = "\n".join(rows)
     notes = (
         "\\\\\n\\bottomrule\n\\end{tabular}\n"
@@ -481,3 +540,174 @@ def task_table_inheritance_amount_women(
         "OLS ln(inheritance amount). Spec 12: care recent, filter parent recent.",
         "Amount",
     )
+
+
+# ---------------------------------------------------------------------------
+# Mother mortality (life table)
+# ---------------------------------------------------------------------------
+
+
+@pytask.mark.tables
+@pytask.mark.stochastic_processes
+@pytask.mark.publication_stochastic_processes
+def task_table_mother_mortality_women(
+    path_to_lifetable: Path = _EST / "death_transition_mat.csv",
+    path_to_save: Annotated[Path, Product] = _OUT / "mother_mortality_women.tex",
+) -> None:
+    """LaTeX table: mother's death probabilities from life table. Women (mothers) only."""
+    path_to_save.parent.mkdir(parents=True, exist_ok=True)
+    df = pd.read_csv(path_to_lifetable)
+    if "sex" in df.columns:
+        df = df.loc[df["sex"].astype(str).str.contains("Women|1", regex=True)].copy()
+    if "age" not in df.columns:
+        df.columns = ["sex", "age", "death_prob"]
+        df = df.loc[df["sex"].astype(str).str.contains("Women|1", regex=True)].copy()
+    df["age"] = df["age"].astype(int)
+    sample_ages = list(range(50, 101, 5))
+    df_sample = df.loc[df["age"].isin(sample_ages)].sort_values("age")
+    header = (
+        "\\begin{tabular}{lc}\n\\toprule\n"
+        "Mother's age & $p_{\\text{death}}$ \\\\\n\\midrule\n"
+    )
+    rows = []
+    for _, r in df_sample.iterrows():
+        rows.append(f"{int(r['age'])} & {r['death_prob']:.6f} \\\\")
+    body = "\n".join(rows) if rows else "\\multicolumn{2}{l}{(no data)} \\\\"
+    notes = (
+        "\\\\\n\\bottomrule\n\\end{tabular}\n"
+        "\\\\\n\\multicolumn{2}{l}{\\footnotesize Notes: Annual death probabilities from "
+        "Federal Statistical Office life tables.}"
+        "\n\\multicolumn{2}{l}{\\footnotesize Selected ages shown. Applied to the mother "
+        "via the mother--daughter age difference.}"
+    )
+    path_to_save.write_text(header + body + notes, encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------
+# Mother ADL transition (multinomial logit on SHARE data)
+# ---------------------------------------------------------------------------
+
+
+@pytask.mark.tables
+@pytask.mark.stochastic_processes
+@pytask.mark.publication_stochastic_processes
+def task_table_mother_adl_transition_women(
+    path_to_params: Path = _EST / "adl_state_params.csv",
+    path_to_save: Annotated[Path, Product] = _OUT / "mother_adl_transition_women.tex",
+) -> None:
+    """LaTeX table: multinomial logit for mother's ADL transitions. Women (mothers) only."""
+    path_to_save.parent.mkdir(parents=True, exist_ok=True)
+    df = pd.read_csv(path_to_params)
+    df = df.loc[df["sex"].astype(str).str.contains("Women", case=False)].copy()
+
+    cat_labels = {1: "Light ADL", 2: "Intensive ADL", 3: "Very Intensive ADL"}
+    param_labels = {
+        "const": "Constant",
+        "age": "Age",
+        "age_sq": "Age$^2$",
+        "age_cubed": "Age$^3$",
+        "adl_cat_1": "Lagged ADL = 1",
+        "adl_cat_2": "Lagged ADL = 2",
+        "adl_cat_3": "Lagged ADL = 3",
+    }
+    param_order = ["const", "age", "age_sq", "age_cubed",
+                   "adl_cat_1", "adl_cat_2", "adl_cat_3"]
+
+    n_cats = len(df)
+    col_spec = "l" + "c" * n_cats
+    cat_header = " & ".join(
+        cat_labels.get(int(row["adl_cat"]), f"Cat.~{int(row['adl_cat'])}")
+        for _, row in df.iterrows()
+    )
+    header = (
+        f"\\begin{{tabular}}{{{col_spec}}}\n\\toprule\n"
+        f"& {cat_header} \\\\\n\\midrule\n"
+    )
+    rows = []
+    for p in param_order:
+        if p not in df.columns:
+            continue
+        label = param_labels.get(p, _latex_escape(p))
+        vals = []
+        for _, row in df.iterrows():
+            v = row.get(p, np.nan)
+            vals.append(f"{v:.4f}" if pd.notna(v) else "--")
+        rows.append(f"{label} & " + " & ".join(vals) + " \\\\")
+    body = "\n".join(rows) if rows else "\\multicolumn{4}{l}{(no data)} \\\\"
+    ss = _load_sample_sizes()
+    n_val = ss.get("adl_women_total")
+    n_row = ""
+    if n_val:
+        n_row = f"\n\\midrule\n$N$ & \\multicolumn{{{n_cats}}}{{c}}{{{n_val:,}}} \\\\"
+    notes = (
+        f"{n_row}\n\\bottomrule\n\\end{{tabular}}\n"
+        f"\\\\\n\\multicolumn{{{1 + n_cats}}}{{l}}{{\\footnotesize Notes: Multinomial logit. "
+        "Dependent variable: mother's ADL category.}}\n"
+        f"\\multicolumn{{{1 + n_cats}}}{{l}}{{\\footnotesize Reference category: No ADL "
+        "(category 0). Estimated on SHARE parent--child data, women (mothers).}}"
+    )
+    path_to_save.write_text(header + body + notes, encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------
+# Exogenous care supply (logit, re-estimated from raw data)
+# ---------------------------------------------------------------------------
+
+
+@pytask.mark.tables
+@pytask.mark.stochastic_processes
+@pytask.mark.publication_stochastic_processes
+def task_table_exog_care_supply_women(
+    path_to_sample: Path = BLD / "data" / "exog_care_estimation_sample.pkl",
+    path_to_save: Annotated[Path, Product] = _OUT / "exog_care_supply_women.tex",
+) -> None:
+    """LaTeX table: exogenous care supply logit parameters. Women only."""
+    import statsmodels.formula.api as smf
+
+    path_to_save.parent.mkdir(parents=True, exist_ok=True)
+    df = pd.read_pickle(path_to_sample)
+    df = df[df["female"] == 1].copy()
+    reg_data = df.loc[
+        df["parent_care_demand"] == 1,
+        ["other_informal_care", "age", "has_sister", "education"],
+    ].dropna()
+    reg_data["age_squared"] = reg_data["age"] ** 2
+
+    model = smf.logit(
+        "other_informal_care ~ age + age_squared + has_sister + education",
+        data=reg_data,
+    ).fit(disp=False)
+
+    param_labels = {
+        "Intercept": "Constant",
+        "age": "Age",
+        "age_squared": "Age$^2$",
+        "has_sister": "Has sister",
+        "education": "Education (high)",
+    }
+
+    header = (
+        "\\begin{tabular}{lcc}\n\\toprule\n"
+        "Parameter & Coefficient & (s.e.) \\\\\n\\midrule\n"
+    )
+    rows = []
+    for pname in model.params.index:
+        coef = model.params[pname]
+        se = model.bse[pname]
+        label = param_labels.get(pname, _latex_escape(pname))
+        rows.append(f"{label} & {coef:.4f} & ({se:.4f}) \\\\")
+
+    pseudo_r2 = model.prsquared
+    n_obs = int(model.nobs)
+    rows.append(f"Pseudo R$^2$ & \\multicolumn{{2}}{{c}}{{ {pseudo_r2:.4f} }} \\\\")
+    rows.append(f"N & \\multicolumn{{2}}{{c}}{{ {n_obs} }} \\\\")
+
+    body = "\n".join(rows)
+    notes = (
+        "\\\\\n\\bottomrule\n\\end{tabular}\n"
+        "\\\\\n\\multicolumn{3}{l}{\\footnotesize Notes: Logit. Dependent variable: "
+        "other family member provides informal care.}\n"
+        "\\multicolumn{3}{l}{\\footnotesize SOEP, women with parental care demand. "
+        "Standard errors in parentheses.}"
+    )
+    path_to_save.write_text(header + body + notes, encoding="utf-8")

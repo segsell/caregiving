@@ -312,6 +312,11 @@ def task_plot_mean_wealth_model_fit(
         (1, "high", path_to_save_high),
     ]
 
+    # First pass: compute empirical/simulated values per education
+    # and collect all values to determine a common y-range.
+    all_values = []
+    results_per_edu = []
+
     for edu_idx, edu_str, path_to_save in edu_configs:
         prefix = f"mean_wealth_{edu_str}_education_adjusted_wealth_age_bin_"
         emp_bins = {}
@@ -333,8 +338,39 @@ def task_plot_mean_wealth_model_fit(
             sub = sim_edu.loc[mask, "assets_begin_of_period"]
             sim_vals.append(sub.mean() if len(sub) > 0 else np.nan)
 
-        bin_labels = [f"{b}\u2013{b + 4}" for b in bin_starts]
+        # Collect values for global y-range (ignore NaNs)
+        for v in emp_vals + sim_vals:
+            if not np.isnan(v):
+                all_values.append(v)
 
+        bin_labels = [f"{b}\u2013{b + 4}" for b in bin_starts]
+        results_per_edu.append(
+            (edu_idx, edu_str, path_to_save, bin_starts, emp_vals, sim_vals, bin_labels)
+        )
+
+    if all_values:
+        y_min = min(all_values)
+        y_max = max(all_values)
+        # Add a small margin so lines do not touch the plot borders.
+        span = y_max - y_min
+        if span <= 0:
+            span = max(abs(y_max), 1.0)
+        margin = 0.05 * span
+        ymin = min(0, y_min - margin)
+        ymax = y_max + margin
+    else:
+        ymin, ymax = 0, 1
+
+    # Second pass: create one figure per education using the common y-range.
+    for (
+        edu_idx,
+        edu_str,
+        path_to_save,
+        bin_starts,
+        emp_vals,
+        sim_vals,
+        bin_labels,
+    ) in results_per_edu:
         fig, ax = plt.subplots(figsize=(_S["figsize"][0], _S["figsize"][1]))
         ax.plot(
             bin_starts, sim_vals, color="0", linestyle="-", linewidth=_S["linewidth"]
@@ -354,4 +390,4 @@ def task_plot_mean_wealth_model_fit(
         xmin = bin_starts[0]
         xmax = bin_starts[-1]
 
-        _finalize(ax, path_to_save, ymin=0, ymax=400, xmin=xmin, xmax=xmax)
+        _finalize(ax, path_to_save, ymin=ymin, ymax=ymax, xmin=xmin, xmax=xmax)

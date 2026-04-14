@@ -1,0 +1,454 @@
+% Counterfactual Analysis Section
+% For inclusion in main thesis: \input{bld/latex/counterfactuals_section}
+% Compile from project root. Required packages: booktabs, graphicx, amsmath.
+% If graphics not found, add: \graphicspath{{bld/figures/publication/selection/}}
+
+\section{Counterfactual Analysis}
+\label{sec:counterfactuals}
+
+This section presents three counterfactual exercises: (i) the career costs of caregiving, measured by comparing the baseline economy to a world without parental care demand; (ii) the labor-market dynamics around caregiving onset and resolution, visualized through conditional means and event studies; and (iii) the behavioral and fiscal effects of five caregiving leave policies.
+
+%==============================================================================
+\subsection{Career Costs of Caregiving: Baseline versus No-Care-Demand}
+\label{subsec:career_costs_methodology}
+%==============================================================================
+
+\subsubsection{The No-Care-Demand Counterfactual}
+
+The no-care-demand counterfactual is a second simulation of the same 100,000 agents under identical stochastic draws for income, health, job offers, and all other exogenous processes---with one exception: care demand is set to zero in every period. Agents never face a choice between formal and informal care because parental care needs do not arise. This design isolates the causal effect of caregiving on lifecycle outcomes: any difference between an agent's baseline outcome and her no-care-demand outcome reflects the impact of care demand on her decisions and accumulated states.
+
+The comparison is restricted to the 41,155 agents who become informal caregivers in the baseline (i.e., who choose light or intensive informal care, choices 8--15, at least once). These ``ever-caregivers'' are tracked in both simulations. Restricting to this group ensures that we measure the career cost for those who actually provide care, rather than diluting the estimate with agents who never face the caregiving margin.
+
+\subsubsection{Net Present Value Computation}
+
+Career costs are computed as the mean over ever-caregivers of
+\begin{equation}
+  \text{NPV care} = 1 - \frac{\text{NPV}_{\text{no care demand}}}{\text{NPV}_{\text{baseline}}},
+\end{equation}
+where each agent's NPV is the discounted sum of income from age 40 to 100:
+\begin{equation}
+  \text{NPV}_i = \sum_{a=40}^{100} \beta^{a-40} \cdot \max(\text{income}_a, 0),
+\end{equation}
+with $\beta = 0.97$. Negative values indicate a career cost: lifetime income is lower with care demand than without.
+
+Two income measures are reported (start age 40, including bequest):
+
+\textbf{Labor and pension only.} This measure uses $\text{own\_income\_after\_ssc} - \text{caregiving\_leave\_top\_up}$ plus bequest. For the baseline, there is no leave top-up, so this equals ``own income only.'' It captures the direct labor-supply effect on own earnings and pension accumulation, excluding all policy transfers (unemployment benefits, child benefits, Pflegegeld, leave top-up).
+
+\textbf{Full income.} This measure adds household unemployment benefits (halved if the agent has a partner), child benefits, and \textit{care\_benefits\_and\_costs} (Pflegegeld minus formal care costs) to own income. It thus includes all transfers that cushion the career cost of caregiving.
+
+\subsubsection{Headline Results}
+
+Table~\ref{tab:career_costs_baseline_ncd} reports the career cost for the baseline versus no-care-demand comparison.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Career costs of caregiving: baseline versus no-care-demand counterfactual (ever-caregivers, start age 40, incl.\ bequest). NPV care mean = mean over agents of $1 - (\text{NPV}_{\text{no care}} / \text{NPV}_{\text{baseline}})$; negative = career cost.}
+  \label{tab:career_costs_baseline_ncd}
+  \begin{tabular}{lcc}
+    \toprule
+    Income measure & NPV care mean & Interpretation \\
+    \midrule
+    Labor and pension only & $-37.1\%$ & Pure labor-supply and pension effect \\
+    Full income & $-15.2\%$ & Including unemployment, child benefits, Pflegegeld \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The 22 percentage-point gap between the two measures reflects the transfer cushion: unemployment benefits, child benefits, and Pflegegeld (care cash benefits for informal caregivers) partially compensate for the labor and pension loss. The flow-level decomposition---a causal employment reduction of 2.48 percentage points and an experience loss of 0.64 years at retirement---is documented in the heterogeneity analysis (Section~3.26).
+
+%==============================================================================
+\subsection{Conditional Means and Event Studies: Baseline versus No-Care-Demand}
+\label{subsec:conditional_means_event_studies}
+%==============================================================================
+
+We visualize the labor-market dynamics of caregiving using two event definitions: distance to first care demand (onset) and distance to mother death (resolution). Together they bracket the caregiving spell. Conditional means plot outcome levels in the baseline and no-care-demand simulations; event studies plot the difference (baseline minus no-care-demand), isolating the causal effect by distance to the event.
+
+\subsubsection{Distance to First Care Demand}
+
+Figures~\ref{fig:cond_means_cd} and~\ref{fig:event_study_cd_all} present monthly gross earnings and employment rate---first as levels (conditional means), then as the baseline--no-care-demand difference (event study)---for all ages. The onset of care demand induces a sharp dip in both outcomes: earnings and employment fall as agents adjust labor supply to accommodate caregiving. The event study confirms that the gap is negligible before care demand arises and widens at and after onset.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/conditional_means_care_demand/monthly_gross_earnings_all_ages}
+    \caption*{Monthly gross earnings}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/conditional_means_care_demand/employment_rate_all_ages}
+    \caption*{Employment rate}
+  \end{minipage}
+  \caption{Conditional means by distance to first care demand (all ages). Baseline (solid) vs.\ no-care-demand (dashed).}
+  \label{fig:cond_means_cd}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/event_study_care_demand/diff_monthly_gross_earnings_all_ages}
+    \caption*{Monthly gross earnings (difference)}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/event_study_care_demand/diff_employment_rate_all_ages}
+    \caption*{Employment rate (difference)}
+  \end{minipage}
+  \caption{Event study: baseline minus no-care-demand by distance to first care demand (all ages).}
+  \label{fig:event_study_cd_all}
+\end{figure}
+
+Figures~\ref{fig:event_study_cd_earnings}--\ref{fig:event_study_cd_pt} decompose the event study by age group (40--49, 50--59, 60--70) for the four outcomes. The career cost of caregiving is concentrated in the peak caregiving ages (50--59), where both earnings and employment show the largest negative gaps. The full-time share declines more sharply than the part-time share, consistent with the finding that caregiving pulls agents out of full-time work into unemployment rather than inducing a symmetric FT-to-PT downshift.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/event_study_care_demand/diff_monthly_gross_earnings_ages_40_49}
+    \caption*{Ages 40--49}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/event_study_care_demand/diff_monthly_gross_earnings_ages_50_59}
+    \caption*{Ages 50--59}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/event_study_care_demand/diff_monthly_gross_earnings_ages_60_70}
+    \caption*{Ages 60--70}
+  \end{minipage}
+  \caption{Event study: monthly gross earnings by age group (distance to first care demand).}
+  \label{fig:event_study_cd_earnings}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/event_study_care_demand/diff_employment_rate_ages_40_49}
+    \caption*{Ages 40--49}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/event_study_care_demand/diff_employment_rate_ages_50_59}
+    \caption*{Ages 50--59}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/event_study_care_demand/diff_employment_rate_ages_60_70}
+    \caption*{Ages 60--70}
+  \end{minipage}
+  \caption{Event study: employment rate by age group (distance to first care demand).}
+  \label{fig:event_study_cd_empl}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/event_study_care_demand/diff_full_time_share_ages_40_49}
+    \caption*{Ages 40--49}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/event_study_care_demand/diff_full_time_share_ages_50_59}
+    \caption*{Ages 50--59}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/event_study_care_demand/diff_full_time_share_ages_60_70}
+    \caption*{Ages 60--70}
+  \end{minipage}
+  \caption{Event study: full-time share by age group (distance to first care demand).}
+  \label{fig:event_study_cd_ft}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/event_study_care_demand/diff_part_time_share_ages_40_49}
+    \caption*{Ages 40--49}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/event_study_care_demand/diff_part_time_share_ages_50_59}
+    \caption*{Ages 50--59}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/event_study_care_demand/diff_part_time_share_ages_60_70}
+    \caption*{Ages 60--70}
+  \end{minipage}
+  \caption{Event study: part-time share by age group (distance to first care demand).}
+  \label{fig:event_study_cd_pt}
+\end{figure}
+
+\subsubsection{Distance to Mother Death}
+
+Mother death marks the resolution of the caregiving spell. Few agents experience mother death before age 50, so we present conditional means and event studies for all ages and for the 50--59 and 60--70 age groups only. The pattern mirrors the care-demand onset: earnings and employment dip during the spell and show a partial recovery after mother death, as the time constraint is lifted.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/conditional_means_mother_death/monthly_gross_earnings_all_ages}
+    \caption*{Monthly gross earnings}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/conditional_means_mother_death/employment_rate_all_ages}
+    \caption*{Employment rate}
+  \end{minipage}
+  \caption{Conditional means by distance to mother death (all ages). Baseline vs.\ no-care-demand.}
+  \label{fig:cond_means_md}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/event_study_mother_death/diff_monthly_gross_earnings_all_ages}
+    \caption*{Monthly gross earnings (difference)}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/event_study_mother_death/diff_employment_rate_all_ages}
+    \caption*{Employment rate (difference)}
+  \end{minipage}
+  \caption{Event study: baseline minus no-care-demand by distance to mother death (all ages).}
+  \label{fig:event_study_md_all}
+\end{figure}
+
+Figures~\ref{fig:event_study_md_earnings}--\ref{fig:event_study_md_pt} present the event study by age group (50--59, 60--70) for the four outcomes. The 60--70 group shows the largest effects, as this is when caregiving spells overlap with the retirement transition and accumulated experience losses are most salient.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/event_study_mother_death/diff_monthly_gross_earnings_ages_50_59}
+    \caption*{Ages 50--59}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/event_study_mother_death/diff_monthly_gross_earnings_ages_60_70}
+    \caption*{Ages 60--70}
+  \end{minipage}
+  \caption{Event study: monthly gross earnings by age group (distance to mother death).}
+  \label{fig:event_study_md_earnings}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/event_study_mother_death/diff_employment_rate_ages_50_59}
+    \caption*{Ages 50--59}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/event_study_mother_death/diff_employment_rate_ages_60_70}
+    \caption*{Ages 60--70}
+  \end{minipage}
+  \caption{Event study: employment rate by age group (distance to mother death).}
+  \label{fig:event_study_md_empl}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/event_study_mother_death/diff_full_time_share_ages_50_59}
+    \caption*{Ages 50--59}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/event_study_mother_death/diff_full_time_share_ages_60_70}
+    \caption*{Ages 60--70}
+  \end{minipage}
+  \caption{Event study: full-time share by age group (distance to mother death).}
+  \label{fig:event_study_md_ft}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/event_study_mother_death/diff_part_time_share_ages_50_59}
+    \caption*{Ages 50--59}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{bld/figures/publication/selection/event_study_mother_death/diff_part_time_share_ages_60_70}
+    \caption*{Ages 60--70}
+  \end{minipage}
+  \caption{Event study: part-time share by age group (distance to mother death).}
+  \label{fig:event_study_md_pt}
+\end{figure}
+
+%==============================================================================
+\subsection{Caregiving Leave Policies: Design and Structure}
+\label{subsec:policy_design}
+%==============================================================================
+
+We evaluate five counterfactual caregiving leave policies against the baseline. All five introduce an earnings-related wage replacement benefit with a job retention guarantee: caregivers who had a job before caregiving onset retain the right to return to employment, and experience accumulation continues during leave (unemployed intensive caregivers receive a pension-point credit of 0.5 per period). The policies differ in the replacement rate, duration caps, eligibility rules, and whether the existing unconditional care cash benefit (\textit{Pflegegeld}) is retained.
+
+\subsubsection{The Beirat Proposal (German Advisory Council)}
+
+The proposed German caregiving leave policy (\textit{Familienpflegegeld}) is modelled after the country's parental leave system. It grants employed individuals up to 36 months of leave per care-dependent person. The policy mandates a split design: a maximum of six months can be utilized as full leave of absence (or working under 15 hours per week); the remaining 30 months must be taken as partial leave requiring at least 15 working hours per week. In our annual model, we simplify the six-month full-leave cap to one year. The wage replacement is calculated as 65\% of prior net income (tax-free, subject to Progressionsvorbehalt). The policy ensures tax-funded pension point compensation for caregivers working up to 32 hours per week.
+
+\textbf{Partial Beirat} restricts eligibility to part-time caregivers with a prior full-time job. Unemployed caregivers receive no earnings-related benefit. \textbf{Full Beirat} extends the design by allowing up to one year of full leave for unemployed caregivers with a prior job. Both variants retain baseline \textit{Pflegegeld} and impose a 3-year total leave cap; job retention applies only while the cap has not been reached.
+
+\subsubsection{The 65\% Leave (No Cap)}
+
+The 65\% leave policy uses the same net-wage replacement (65\%, tax-free) but removes the duration cap and broadens eligibility to all caregivers with a prior job (PT or FT, employed or unemployed). The leave top-up \textit{replaces} \textit{Pflegegeld}---informal caregivers receive the wage replacement instead of the flat care cash benefit. Job retention is unlimited.
+
+\subsubsection{The Norwegian-Style Leave (100\%)}
+
+The Norwegian-style policy provides 100\% gross wage replacement, subject to a 6G annual cap. The benefit is taxable and not subject to social security contributions; when the caregiver is on leave and not working, it replaces unemployment benefits. Eligibility mirrors the 65\% leave: all caregivers with a prior job. We consider two variants: \textbf{without \textit{Pflegegeld}} (the leave benefit is the sole transfer) and \textbf{with \textit{Pflegegeld}} (the flat care cash benefit is retained alongside the 100\% replacement). Both have no duration cap and unlimited job retention.
+
+Table~\ref{tab:policy_design} summarizes the five policies.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Policy design summary}
+  \label{tab:policy_design}
+  \small
+  \begin{tabular}{llllll}
+    \toprule
+    Dimension & Partial Beirat & Full Beirat & 65\% Leave & 100\% no PG & 100\% with PG \\
+    \midrule
+    Replacement rate & 65\% net & 65\% net & 65\% net & 100\% gross & 100\% gross \\
+    Tax treatment & Tax-free & Tax-free & Tax-free & Taxable & Taxable \\
+    Pflegegeld & Yes & Yes & No & No & Yes \\
+    Duration cap & 3 yr total & 3 yr total & None & None & None \\
+    Full leave & No & 1 yr max & Yes & Yes & Yes \\
+    Eligibility & PT w/ prior FT & PT or unemp. w/ prior job & Prior job & Prior job & Prior job \\
+    Job retention & 3 yr & 3 yr & Unlimited & Unlimited & Unlimited \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+%==============================================================================
+\subsection{Policy Effects: Behavioral, Lifecycle, and Fiscal Comparison}
+\label{subsec:policy_effects}
+%==============================================================================
+
+We compare the five policies along six margins: transfer generosity, care provision and formal-informal substitution, labor supply during caregiving, lifecycle outcomes (employment, experience, pension), consumption smoothing, and fiscal costs. \textit{Note:} Fiscal data are available for four of the five policies (Partial Beirat, Full Beirat, Norwegian with and without Pflegegeld). The 65\% leave (no cap) has not been included in the fiscal cost computation; we report behavioral and NPV career cost data where available.
+
+\subsubsection{Transfer Generosity}
+
+Table~\ref{tab:policy_transfers} summarizes average transfers per caregiver. The baseline provides \textit{Pflegegeld} averaging EUR\,4,469/year. The Beirat variants add a modest earnings-related top-up (EUR\,129--883/year), yielding total transfers of EUR\,4,640 (partial) to EUR\,5,405 (full). The Norwegian leave provides a dramatically larger top-up; with \textit{Pflegegeld}, the total reaches EUR\,13,710/year---more than triple the baseline. The 65\% leave (no cap) replaces \textit{Pflegegeld} with the wage replacement; its average transfer depends on take-up and prior earnings.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Transfer generosity (EUR/year, avg.\ per caregiver, ages 40--67)}
+  \label{tab:policy_transfers}
+  \small
+  \begin{tabular}{lrrrrrr}
+    \toprule
+    & Baseline & Partial & Full Beirat & 65\% Leave & 100\% no PG & 100\% with PG \\
+    \midrule
+    Avg.\ total transfer (all CG) & 4,469 & 4,640 & 5,405 & -- & 9,091 & 13,710 \\
+    Avg.\ leave top-up (all CG) & 0 & 129 & 883 & -- & 9,173 & 9,173 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsubsection{Care Provision and Formal-Informal Substitution}
+
+All five policies induce a reallocation from formal to informal care (Table~\ref{tab:policy_care}). The magnitude varies: the Beirat variants raise the informal care share by 7.6\%; the Norwegian leave with \textit{Pflegegeld} by 11.9\%; the Norwegian without \textit{Pflegegeld} by 9.9\%; the 65\% leave by 8.0\%. A key finding is that the full and partial Beirat produce \textit{identical} care provision responses---the additional benefit for unemployed caregivers under the full Beirat does not shift the extensive margin. Formal care declines by 9.8\% (Beirat), 10.2--12.6\% (65\% and Norwegian no PG), and 15.2\% (Norwegian with PG).
+
+\begin{table}[htbp]
+  \centering
+  \caption{Care provision: informal and formal care shares (cond.\ on care demand, ages 40--67)}
+  \label{tab:policy_care}
+  \small
+  \begin{tabular}{lrrrrrr}
+    \toprule
+    & Baseline & Partial & Full Beirat & 65\% Leave & 100\% no PG & 100\% with PG \\
+    \midrule
+    Share informal CG & 42.6\% & 45.9\% & 45.9\% & 46.1\% & 46.9\% & 47.7\% \\
+    $\Delta$ vs.\ baseline (pp) & -- & +3.3 & +3.3 & +3.4 & +4.3 & +5.1 \\
+    $\Delta$ vs.\ baseline (\%) & -- & +7.6 & +7.6 & +8.0 & +9.9 & +11.9 \\
+    Share formal care & 33.4\% & 30.2\% & 30.2\% & 30.0\% & 29.2\% & 28.3\% \\
+    $\Delta$ vs.\ baseline (\%) & -- & $-9.8$ & $-9.8$ & $-10.2$ & $-12.6$ & $-15.2$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsubsection{Labor Supply and Lifecycle Outcomes}
+
+Within-caregiving labor supply drops sharply under all policies (Table~\ref{tab:policy_labor}). Full-time employment among active caregivers falls by 11.8\% (full Beirat) to 22.7\% (Norwegian with PG); the share classified as unemployed (on leave) rises by 25.5--43.3\%. Despite this, aggregate lifetime employment is essentially unchanged ($<$0.2\%). The job retention guarantee prevents temporary exit from becoming permanent: employment at ages 60--67 rises by 1.6--2.0\%, and experience at retirement increases by 1.1--3.4\%. Gross pension income rises by 0.5--1.4\%; retirement age by 0.18--0.22 years.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Labor supply and lifecycle outcomes}
+  \label{tab:policy_labor}
+  \small
+  \begin{tabular}{lrrrrrr}
+    \toprule
+    & Baseline & Partial & Full Beirat & 65\% & 100\% no PG & 100\% with PG \\
+    \midrule
+    Empl.\ rate (60--67) & 41.3\% & 42.0\% & 42.0\% & 42.0\% & 42.0\% & 42.0\% \\
+    $\Delta$ vs.\ baseline (\%) & -- & +1.7 & +1.6 & +1.7 & +1.6 & +2.0 \\
+    Exp.\ years at ret.\ (ever CG) & 24.49 & 24.83 & 24.83 & -- & 25.32 & 25.32 \\
+    $\Delta$ vs.\ baseline (\%) & -- & +1.4 & +1.4 & -- & +3.4 & +3.4 \\
+    Gross pension income (ever CG) & EUR\,10,153 & EUR\,10,369 & EUR\,10,369 & -- & EUR\,10,453 & EUR\,10,453 \\
+    $\Delta$ vs.\ baseline (\%) & -- & +0.6 & +0.6 & -- & +1.4 & +1.4 \\
+    Retirement age (ever CG) & 64.57 & 64.69 & 64.72 & -- & 64.74 & 64.74 \\
+    $\Delta$ vs.\ baseline (yrs) & -- & +0.12 & +0.15 & -- & +0.17 & +0.17 \\
+    Consumption (active CG) & EUR\,33,466 & EUR\,33,799 & EUR\,33,866 & -- & EUR\,34,381 & EUR\,35,049 \\
+    $\Delta$ vs.\ baseline (\%) & -- & +1.0 & +1.2 & -- & +2.7 & +4.7 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsubsection{NPV Career Costs}
+
+Table~\ref{tab:policy_npv} reports the NPV career cost (ever-caregivers, start age 40, incl.\ bequest) for each policy. The baseline labor+pension cost is $-37.1\%$; the full-income cost is $-15.2\%$. All policies reduce the labor+pension cost modestly (1.9--3.5 pp). The leave top-up is the main lever: the gap between own income and labor+pension shows 5.7 pp for the Norwegian variants, 2.4 pp for the 65\% leave, and $\sim$0--1 pp for the Beirat variants. Full leave with \textit{Pflegegeld} achieves the smallest full-income career cost ($-9.3\%$).
+
+\begin{table}[htbp]
+  \centering
+  \caption{NPV career cost: labor+pension and full income (ever-caregivers, start age 40, incl.\ bequest)}
+  \label{tab:policy_npv}
+  \small
+  \begin{tabular}{lrrrrrr}
+    \toprule
+    & Baseline & Partial & Full Beirat & 65\% Leave & 100\% no PG & 100\% with PG \\
+    \midrule
+    Labor+pension (NPV care mean) & $-37.1\%$ & $-35.0\%$ & $-35.2\%$ & $-33.8\%$ & $-34.4\%$ & $-33.6\%$ \\
+    $\Delta$ vs.\ baseline (pp) & -- & +2.1 & +1.9 & +3.3 & +2.7 & +3.5 \\
+    Full income (NPV care mean) & $-15.2\%$ & $-13.8\%$ & $-13.4\%$ & $-15.6\%$ & $-12.9\%$ & $-9.3\%$ \\
+    $\Delta$ vs.\ baseline (pp) & -- & +1.4 & +1.9 & $-0.4$ & +2.4 & +5.9 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsubsection{Fiscal Costs}
+
+Table~\ref{tab:policy_fiscal} reports the fiscal costs for the four policies with available data. The partial Beirat has a net cost of EUR\,2.0 million (EUR\,20 per capita)---effectively budget-neutral. The full Beirat costs EUR\,98.3 million (EUR\,983 per capita). The Norwegian leave is far more expensive: EUR\,933 million with \textit{Pflegegeld} (EUR\,9,326 per capita) and EUR\,907 million without (EUR\,9,074 per capita). Formal care savings (EUR\,119 million for Beirat, EUR\,151--184 million for Norwegian) partially offset gross costs. The net government budget per caregiver falls from EUR\,24,500 (baseline) to EUR\,22,071 (full Beirat), EUR\,18,451 (Norwegian no PG), and EUR\,3,539 (Norwegian with PG). Retaining \textit{Pflegegeld} alongside the Norwegian leave adds EUR\,14,912 per caregiver in net cost.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Fiscal costs (four policies with fiscal data)}
+  \label{tab:policy_fiscal}
+  \small
+  \begin{tabular}{lrrrr}
+    \toprule
+    & Partial Beirat & Full Beirat & 100\% no PG & 100\% with PG \\
+    \midrule
+    Total net cost (EUR M) & 2.0 & 98.3 & 907 & 933 \\
+    Per-capita cost (EUR) & 20 & 983 & 9,074 & 9,326 \\
+    Gov.\ formal care savings (EUR M) & 119 & 119 & 151 & 184 \\
+    Avg.\ net gov.\ budget per caregiver (EUR) & 24,576 & 22,071 & 18,451 & 3,539 \\
+    $\Delta$ vs.\ baseline (EUR) & +76 & $-2,429$ & $-6,049$ & $-20,961$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsubsection{Synthesis}
+
+Three implications stand out. First, the Beirat proposals achieve most of the behavioral gains---reduced formal care, higher late-life employment, modest pension improvements---at a fraction of the fiscal cost of the Norwegian design. Second, the incremental cost of extending the Beirat from partial to full (adding the 1-year full-leave option) buys only marginal improvements; the two variants produce nearly identical care provision and lifecycle outcomes. Third, retaining \textit{Pflegegeld} alongside the Norwegian leave is fiscally expensive but provides substantial consumption insurance and reduces the full-income career cost from $-12.9\%$ to $-9.3\%$. The binding margin for policy design is the earnings-related replacement rate and job retention guarantee; \textit{Pflegegeld} operates primarily on the care-provision and consumption-smoothing margins.

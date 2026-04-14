@@ -1530,7 +1530,11 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
             window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
-            ylabel="Difference in monthly gross earnings (1,000 euros)",
+            ylabel=(
+                "Diff. in monthly gross earnings (1,000 euros)"
+                if age_label != "all_ages"
+                else "Difference in monthly gross earnings (1,000 euros)"
+            ),
             endogenous_ylim=True,
             style=get_publication_plot_style(age_label),
             age_label=age_label,

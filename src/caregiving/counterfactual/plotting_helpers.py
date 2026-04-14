@@ -374,6 +374,7 @@ PUBLICATION_PLOT_STYLE = {
     # Padding so lowest y-tick does not clash with x-axis: margin in data space and figure bottom
     "y_axis_margin_factor": 0.03,  # margin = this * (2 * y_lim) added below -y_lim
     "subplots_adjust_bottom": 0.11,
+    "subplots_adjust_left": 0.14,
     "labelpad": 14,  # extra space between axis label and tick numbers
     "savefig_dpi": 1200,
     "savefig_pad_inches": 0.25,
@@ -623,7 +624,10 @@ def _plot_outcome_difference_by_distance_total_caregiving_impl(  # noqa: PLR0913
         for label in ax.get_yticklabels():
             label.set_fontfamily(font)
     plt.tight_layout()
-    plt.subplots_adjust(bottom=s["subplots_adjust_bottom"])
+    plt.subplots_adjust(
+        bottom=s["subplots_adjust_bottom"],
+        left=s.get("subplots_adjust_left", 0.14),
+    )
     if path_to_plot:
         path_to_plot.parent.mkdir(parents=True, exist_ok=True)
         is_pdf = path_to_plot.suffix.lower() == ".pdf"
