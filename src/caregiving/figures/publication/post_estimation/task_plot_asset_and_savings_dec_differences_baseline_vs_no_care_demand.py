@@ -1009,8 +1009,7 @@ def task_plot_accumulated_total_income_difference_baseline_vs_no_care_demand(  #
 
     merged = avg_inc_baseline.merge(avg_inc_no_care_demand, on="age", how="inner")
     merged["diff_total_income"] = (
-        merged["avg_total_income_baseline"]
-        - merged["avg_total_income_no_care_demand"]
+        merged["avg_total_income_baseline"] - merged["avg_total_income_no_care_demand"]
     )
     merged = merged.sort_values("age").reset_index(drop=True)
     merged["accumulated_diff_total_income"] = merged["diff_total_income"].cumsum()
@@ -1119,8 +1118,7 @@ def task_plot_accumulated_own_income_difference_baseline_vs_no_care_demand(  # n
 
     merged = avg_inc_baseline.merge(avg_inc_no_care_demand, on="age", how="inner")
     merged["diff_own_income"] = (
-        merged["avg_own_income_baseline"]
-        - merged["avg_own_income_no_care_demand"]
+        merged["avg_own_income_baseline"] - merged["avg_own_income_no_care_demand"]
     )
     merged = merged.sort_values("age").reset_index(drop=True)
     merged["accumulated_diff_own_income"] = merged["diff_own_income"].cumsum()
