@@ -113,7 +113,8 @@ for age_min_val, age_max_val, age_label_val in (
             ever_care_demand: If True, filter to agents who ever experienced care demand
             window_low: Years before t=0 (positive int).
             window_high: Years after t=0 (positive int).
-            window_by_age: Optional per-age (window_low, window_high); keys as in age groups.
+            window_by_age: Optional per-age (window_low, window_high); keys as in
+                age groups.
 
         """
         if window_by_age is not None and age_label in window_by_age:
@@ -357,7 +358,8 @@ for age_min_val, age_max_val, age_label_val in (
             ever_care_demand: If True, filter to agents who ever experienced care demand
             window_low: Years before t=0 (positive int).
             window_high: Years after t=0 (positive int).
-            window_by_age: Optional per-age (window_low, window_high); keys as in age groups.
+            window_by_age: Optional per-age (window_low, window_high); keys as in
+                age groups.
 
         """
         if window_by_age is not None and age_label in window_by_age:
@@ -618,7 +620,8 @@ for age_min_val, age_max_val, age_label_val in (
             ever_care_demand: If True, filter to agents who ever experienced care demand
             window_low: Years before t=0 (positive int).
             window_high: Years after t=0 (positive int).
-            window_by_age: Optional per-age (window_low, window_high); keys as in age groups.
+            window_by_age: Optional per-age (window_low, window_high); keys as in
+                age groups.
 
         """
         if window_by_age is not None and age_label in window_by_age:
@@ -879,7 +882,8 @@ for age_min_val, age_max_val, age_label_val in (
             ever_care_demand: If True, filter to agents who ever experienced care demand
             window_low: Years before t=0 (positive int).
             window_high: Years after t=0 (positive int).
-            window_by_age: Optional per-age (window_low, window_high); keys as in age groups.
+            window_by_age: Optional per-age (window_low, window_high); keys as in
+                age groups.
 
         """
         if window_by_age is not None and age_label in window_by_age:

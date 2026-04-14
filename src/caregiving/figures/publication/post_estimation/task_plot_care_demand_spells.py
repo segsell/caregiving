@@ -48,7 +48,8 @@ def _compute_average_care_demand_duration_by_age_at_first(
             columns=["age_at_first_care_demand", "avg_duration", "n_agents"]
         )
 
-    # For each agent with care demand, compute duration from first care until mother dies
+    # For each agent with care demand, compute duration from
+    # first care until mother dies
     results = []
     for agent in first_care["agent"].unique():
         agent_df = df[df["agent"] == agent].sort_values("period")

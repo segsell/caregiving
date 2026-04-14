@@ -444,7 +444,8 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
 
-# ---- Event study outcome differences: full-time, part-time, working hours, labor income (consecutive) ----
+# ---- Event study outcome differences: full-time, part-time,
+# ---- working hours, labor income (consecutive) ----
 def _event_study_consecutive_merged_and_profiles(
     df_o: pd.DataFrame,
     df_c: pd.DataFrame,
@@ -454,8 +455,11 @@ def _event_study_consecutive_merged_and_profiles(
     age_min: int | None,
     age_max: int | None,
 ):
-    """Build merged df with distance_to_first_care and diff=outcome_o - outcome_c; return prof_diff, prof_1..4.
-    df_o, df_c must already be prepared (e.g. via prepare_dataframes_simple). Outcome series align to df_o/df_c.
+    """Build merged df with distance_to_first_care and diff=outcome_o - outcome_c.
+
+    Returns prof_diff, prof_1..4.
+    df_o, df_c must already be prepared (e.g. via prepare_dataframes_simple).
+    Outcome series align to df_o/df_c.
     """
     care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
     o_cols = df_o[["agent", "period", "choice"]].copy()
@@ -554,7 +558,10 @@ for age_min_val, age_max_val, age_label_val in (
         ever_care_demand: bool = False,
         window: int = 20,
     ) -> None:
-        """Event study: full-time share difference by distance to first care spell (1–4 year exact consecutive)."""
+        """Event study: full-time share diff by distance to first care spell.
+
+        1–4 year exact consecutive.
+        """
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
             pd.read_pickle(path_to_no_care_demand_data),
@@ -622,7 +629,10 @@ for age_min_val, age_max_val, age_label_val in (
         ever_care_demand: bool = False,
         window: int = 20,
     ) -> None:
-        """Event study: part-time share difference by distance to first care spell (1–4 year exact consecutive)."""
+        """Event study: part-time share diff by distance to first care spell.
+
+        1–4 year exact consecutive.
+        """
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
             pd.read_pickle(path_to_no_care_demand_data),
@@ -690,7 +700,10 @@ for age_min_val, age_max_val, age_label_val in (
         ever_care_demand: bool = False,
         window: int = 20,
     ) -> None:
-        """Event study: weekly working hours difference by distance to first care spell (1–4 year exact consecutive). Endogenous y scale."""
+        """Event study: weekly working hours diff by distance to first care spell.
+
+        1–4 year exact consecutive. Endogenous y scale.
+        """
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
             pd.read_pickle(path_to_no_care_demand_data),
@@ -767,7 +780,10 @@ for age_min_val, age_max_val, age_label_val in (
         ever_care_demand: bool = False,
         window: int = 20,
     ) -> None:
-        """Event study: monthly gross labor income difference by distance to first care spell (1–4 year exact consecutive). Endogenous y scale."""
+        """Event study: monthly gross labor income diff by distance to first care spell.
+
+        1–4 year exact consecutive. Endogenous y scale.
+        """
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
             pd.read_pickle(path_to_no_care_demand_data),
@@ -1152,7 +1168,7 @@ def plot_employment_rate_difference_by_distance_consecutive(  # noqa: PLR0913
     plt.close()
 
 
-def plot_outcome_difference_by_distance_consecutive(  # noqa: PLR0913
+def plot_outcome_difference_by_distance_consecutive(  # noqa: PLR0912, PLR0913, PLR0915
     prof_diff,
     prof_1_year_diff,
     prof_2_year_diff,
@@ -1168,7 +1184,8 @@ def plot_outcome_difference_by_distance_consecutive(  # noqa: PLR0913
 
     Same layout as employment consecutive: dashed baseline (average caregiver),
     plus 1–4 year exact consecutive caregiving spell(s) groups.
-    When endogenous_ylim is True, y-axis scale is determined by data (no 0-centered symmetric range).
+    When endogenous_ylim is True, y-axis scale is determined by data
+    (no 0-centered symmetric range).
     """
     plt.figure(figsize=(14, 8))
 

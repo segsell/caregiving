@@ -80,7 +80,8 @@ def calculate_simple_outcomes(
 
 
 # Minimal columns needed for event-study pipeline (prepare_dataframes_simple and
-# event_study_total_caregiving_merged_and_profiles). Optional cols (e.g. gross_labor_income)
+# event_study_total_caregiving_merged_and_profiles). Optional cols
+# (e.g. gross_labor_income)
 # are included when present so labor-income event studies keep working.
 _EVENT_STUDY_COLS_DF_O = [
     "agent",
@@ -217,7 +218,10 @@ def add_distance_to_first_care(df_original: pd.DataFrame) -> pd.DataFrame:
 
 
 def add_distance_to_first_care_demand(df_original: pd.DataFrame) -> pd.DataFrame:
-    """Add first_care_demand_period and distance; 0 is first period with care_demand > 0."""
+    """Add first_care_demand_period and distance.
+
+    0 is first period with care_demand > 0.
+    """
     df = df_original.reset_index(drop=True)
     df = ensure_agent_period(df)
     care_demand_mask = df["care_demand"] > 0
@@ -240,7 +244,9 @@ def identify_agents_by_total_caregiving_over_lifecycle(
     end_age_caregiving: int,
     informal_care_choices: list | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Identify agents by total caregiving years over lifecycle up to end_age_caregiving.
+    """Identify agents by total caregiving years over lifecycle.
+
+    Up to end_age_caregiving.
 
     Counts periods with informal caregiving from start until age <= end_age_caregiving.
     Groups: exactly 1, 2, 3, 4, or 5+ total years (not necessarily consecutive).
@@ -252,7 +258,8 @@ def identify_agents_by_total_caregiving_over_lifecycle(
         informal_care_choices: Choice codes for informal care; default INFORMAL_CARE
 
     Returns:
-        Tuple of (agents_1_year, agents_2_year, agents_3_year, agents_4_year, agents_5_year)
+        Tuple of (agents_1_year, agents_2_year, agents_3_year,
+        agents_4_year, agents_5_year)
     """
     if informal_care_choices is None:
         informal_care_choices = np.asarray(INFORMAL_CARE).ravel().tolist()
@@ -353,7 +360,8 @@ AGE_GROUPS_EVENT_STUDY = (
 # Sans-serif fonts used in task_plot_pre_estimation (same standard)
 _SANS_SERIF_FONTS = ("DejaVu Sans", "Liberation Sans", "Arial")
 
-# Shared publication figure style (figsize, fonts, lines, grid) for distance-by-outcome plots
+# Shared publication figure style (figsize, fonts, lines, grid)
+# for distance-by-outcome plots
 PUBLICATION_PLOT_STYLE = {
     "figsize": (14, 12),
     "font_family": "DejaVu Sans",
@@ -371,7 +379,8 @@ PUBLICATION_PLOT_STYLE = {
     "grid_linewidth": 1.15,
     "axvline_linewidth": 1.85,
     "axhline_linewidth": 1.6,
-    # Padding so lowest y-tick does not clash with x-axis: margin in data space and figure bottom
+    # Padding so lowest y-tick does not clash with x-axis:
+    # margin in data space and figure bottom
     "y_axis_margin_factor": 0.03,  # margin = this * (2 * y_lim) added below -y_lim
     "subplots_adjust_bottom": 0.11,
     "subplots_adjust_left": 0.14,
@@ -380,7 +389,8 @@ PUBLICATION_PLOT_STYLE = {
     "savefig_pad_inches": 0.25,
 }
 
-# Overrides for age-subgroup panels (ages_40_49, ages_50_59, ages_60_70) when placed three in a row.
+# Overrides for age-subgroup panels (ages_40_49, ages_50_59,
+# ages_60_70) when placed three in a row.
 # Only font/label/tick sizes; rest inherited from PUBLICATION_PLOT_STYLE.
 PUBLICATION_PLOT_STYLE_AGE_SUBGROUPS = {
     "label_fontsize": 36,
@@ -409,7 +419,7 @@ def get_publication_plot_style(
 
 
 def publication_savefig(path: Path) -> None:
-    """Save current figure with publication defaults (DPI, padding, PDF font embedding)."""
+    """Save figure with publication defaults (DPI, padding, PDF)."""
     path.parent.mkdir(parents=True, exist_ok=True)
     is_pdf = path.suffix.lower() == ".pdf"
     if is_pdf:
@@ -433,12 +443,15 @@ def job_offer_outcome_series(
     df: pd.DataFrame,
     kind: Literal["job_finding", "job_retention"],
 ) -> pd.Series:
-    """Build outcome series for job finding or job retention (conditional on lagged status).
+    """Build outcome series for job finding or job retention.
+
+    Conditional on lagged status.
 
     job_finding: mean(job_offer) among (agent, period) where previous period was
         not working and not retired (unemployed). job_retention: mean(job_offer)
         among (agent, period) where previous period was working (1 - separation).
-    Returns a series with same index as df; NaN where condition not met (excluded from mean).
+    Returns a series with same index as df; NaN where condition
+    not met (excluded from mean).
     """
     if "job_offer" not in df.columns:
         return pd.Series(np.nan, index=df.index)
@@ -465,7 +478,7 @@ def job_offer_outcome_series(
     return outcome
 
 
-def _plot_outcome_difference_by_distance_total_caregiving_impl(  # noqa: PLR0913
+def _plot_outcome_difference_by_distance_total_caregiving_impl(  # noqa: PLR0912, PLR0913, PLR0915
     prof_diff: pd.DataFrame,
     prof_1_year_diff: pd.DataFrame,
     prof_2_year_diff: pd.DataFrame,
@@ -665,7 +678,7 @@ def plot_outcome_difference_by_distance_total_caregiving(  # noqa: PLR0913
     yticks: Optional[list[float]] = None,
     plot_caregivers_mean: bool = True,
 ) -> None:
-    """Plot outcome difference by distance with 5 lines: total care years 1, 2, 3, 4, 5+.
+    """Plot outcome diff by distance with 5 lines: care years 1-5+.
 
     Same layout as event study consecutive: dashed black baseline, horizontal line at 0,
     vertical line at t=-0.5, five subgroup lines (1, 2, 3, 4, 5+ total care years).
@@ -759,7 +772,8 @@ def event_study_total_caregiving_merged_and_profiles(
     Returns (merged, prof_diff, prof_1_year_diff, ..., prof_5_year_diff).
     All profiles have columns EVENT_STUDY_DIST_COL and 'diff'.
 
-    When compare_against_baseline is True, diff = policy − baseline (outcome_c − outcome_o).
+    When compare_against_baseline is True,
+    diff = policy - baseline (outcome_c - outcome_o).
     When False, diff = baseline − policy (outcome_o − outcome_c).
 
     window_low and window_high are positive integers (years before/after t=0);

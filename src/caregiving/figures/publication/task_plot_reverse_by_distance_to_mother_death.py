@@ -1,4 +1,6 @@
-"""Plot outcomes by distance to mother's death, total caregiving years (1–5+) before death.
+"""Plot outcomes by distance to mother's death.
+
+Total caregiving years (1-5+) before death.
 
 New module for reverse event-study plots (t=0 = mother's death) with grouping by
 total caregiving years before death. All specifications compare caregivers with
@@ -107,7 +109,10 @@ def _add_mother_death_distance_and_filter(
     age_min: int | None,
     age_max: int | None,
 ) -> pd.DataFrame:
-    """Add first_death_period, distance_to_mother_death, age_at_death; filter by window and optional age at death.
+    """Add death-distance columns; filter by window and age.
+
+    Add first_death_period, distance_to_mother_death, age_at_death;
+    filter by window and optional age at death.
 
     window_low, window_high are positive integers (years before/after t=0).
     Distance is defined from the baseline only (no-care-demand has fewer stochastic
@@ -145,7 +150,10 @@ def _add_mother_death_distance_and_filter(
 
 
 def _first_care_demand_period_map(df_o: pd.DataFrame) -> pd.DataFrame:
-    """Return DataFrame with agent and first_care_demand_period (first period with care_demand > 0)."""
+    """Return agent and first_care_demand_period.
+
+    First period with care_demand > 0.
+    """
     care_demand_mask = df_o["care_demand"] > 0
     first = (
         df_o.loc[care_demand_mask, ["agent", "period"]]
@@ -161,10 +169,12 @@ def _filter_merged_by_first_care_demand_to_death(
     first_care_demand_map: pd.DataFrame,
     condition: Literal[">=10", "<10", "5_to_10", "<=5"],
 ) -> pd.DataFrame:
-    """Filter merged to agents where years from first care demand to mother death satisfies condition.
+    """Filter to agents where care-demand-to-death gap fits condition.
 
-    years_to_death = first_death_period - first_care_demand_period (positive when care demand before death).
-    >=10: years_to_death >= 10; <10: years_to_death < 10; 5_to_10: 5 < years_to_death <= 10; <=5: years_to_death <= 5.
+    years_to_death = first_death_period - first_care_demand_period
+    (positive when care demand before death).
+    >=10: years_to_death >= 10; <10: years_to_death < 10;
+    5_to_10: 5 < years_to_death <= 10; <=5: years_to_death <= 5.
     """
     m = merged.merge(first_care_demand_map, on="agent", how="inner")
     m = m[m["first_care_demand_period"].notna()].copy()
@@ -215,7 +225,10 @@ for age_min_val, age_max_val, age_label_val in (
         yticks: list[float] | None = [0, 0.2, 0.4, 0.6, 0.8, 1.0],
         plot_caregivers_mean: bool = True,
     ) -> None:
-        """Employment rate by distance to mother's death, total care years 1–5+ before death. Standard data."""
+        """Employment rate by distance to mother's death.
+
+        Total care years 1-5+ before death. Standard data.
+        """
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
             pd.read_pickle(path_to_no_care_demand_data),
@@ -294,7 +307,10 @@ for age_min_val, age_max_val, age_label_val in (
         yticks: list[float] | None = [0, 0.1, 0.2, 0.3, 0.4, 0.5],
         plot_caregivers_mean: bool = True,
     ) -> None:
-        """Full-time share by distance to mother's death, total care years 1–5+ before death. Standard data."""
+        """Full-time share by distance to mother's death.
+
+        Total care years 1-5+ before death. Standard data.
+        """
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
             pd.read_pickle(path_to_no_care_demand_data),
@@ -373,7 +389,10 @@ for age_min_val, age_max_val, age_label_val in (
         yticks: list[float] | None = [0, 0.1, 0.2, 0.3, 0.4, 0.5],
         plot_caregivers_mean: bool = True,
     ) -> None:
-        """Part-time share by distance to mother's death, total care years 1–5+ before death. Standard data."""
+        """Part-time share by distance to mother's death.
+
+        Total care years 1-5+ before death. Standard data.
+        """
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
             pd.read_pickle(path_to_no_care_demand_data),
@@ -457,7 +476,10 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Weekly working hours by distance to mother's death, total care years 1–5+ before death. Standard data."""
+        """Weekly working hours by distance to mother's death.
+
+        Total care years 1-5+ before death. Standard data.
+        """
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
             pd.read_pickle(path_to_no_care_demand_data),
@@ -540,7 +562,10 @@ for age_min_val, age_max_val, age_label_val in (
         yticks: list[float] | None = [0, 0.25, 0.50, 0.75, 1.00, 1.25, 1.50, 1.75],
         plot_caregivers_mean: bool = True,
     ) -> None:
-        """Monthly gross labor income by distance to mother's death, total care years 1–5+ before death. Standard data."""
+        """Monthly gross labor income by distance to mother's death.
+
+        Total care years 1-5+ before death. Standard data.
+        """
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
             pd.read_pickle(path_to_no_care_demand_data),
@@ -638,7 +663,10 @@ for age_min_val, age_max_val, age_label_val in (
         / "employment"
         / "total_caregiving_years"
         / _CARE_CONDITION_1
-        / f"employment_rate_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+        / (
+            f"employment_rate_by_distance_to_mother_death_"
+            f"total_caregiving_{age_label_val}.pdf"
+        ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window_low: int = 20,
@@ -720,7 +748,10 @@ for age_min_val, age_max_val, age_label_val in (
         / "full_time"
         / "total_caregiving_years"
         / _CARE_CONDITION_1
-        / f"full_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+        / (
+            f"full_time_share_by_distance_to_mother_death_"
+            f"total_caregiving_{age_label_val}.pdf"
+        ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window_low: int = 20,
@@ -801,7 +832,7 @@ for age_min_val, age_max_val, age_label_val in (
     #     / "part_time"
     #     / "total_caregiving_years"
     #     / _CARE_CONDITION_1
-    #     / f"part_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+    #     / f"part_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",  # noqa: E501
     #     ever_caregivers: bool = True,
     #     ever_care_demand: bool = False,
     #     window: int = 20,
@@ -858,7 +889,7 @@ for age_min_val, age_max_val, age_label_val in (
     # @pytask.mark.publication_counterfactual
     # @pytask.mark.publication
     # @pytask.task(id=f"{age_label_val}_mother_death_{_CARE_CONDITION_1}_working_hours")
-    # def task_plot_working_hours_by_distance_to_mother_death_care_geq10(  # noqa: PLR0913
+    # def task_plot_working_hours_by_distance_to_mother_death_care_geq10(  # noqa: PLR0913, E501
     #     age_min: int | None = age_min_val,
     #     age_max: int | None = age_max_val,
     #     path_to_original_data: Path = BLD
@@ -875,7 +906,7 @@ for age_min_val, age_max_val, age_label_val in (
     #     / "working_hours"
     #     / "total_caregiving_years"
     #     / _CARE_CONDITION_1
-    #     / f"working_hours_weekly_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+    #     / f"working_hours_weekly_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",  # noqa: E501
     #     ever_caregivers: bool = True,
     #     ever_care_demand: bool = False,
     #     window: int = 20,
@@ -940,7 +971,7 @@ for age_min_val, age_max_val, age_label_val in (
     # @pytask.mark.publication_counterfactual
     # @pytask.mark.publication
     # @pytask.task(id=f"{age_label_val}_mother_death_{_CARE_CONDITION_1}_labor_income")
-    # def task_plot_labor_income_by_distance_to_mother_death_care_geq10(  # noqa: PLR0913
+    # def task_plot_labor_income_by_distance_to_mother_death_care_geq10(  # noqa: PLR0913, E501
     #     age_min: int | None = age_min_val,
     #     age_max: int | None = age_max_val,
     #     path_to_original_data: Path = BLD
@@ -957,7 +988,7 @@ for age_min_val, age_max_val, age_label_val in (
     #     / "labor_income"
     #     / "total_caregiving_years"
     #     / _CARE_CONDITION_1
-    #     / f"monthly_gross_labor_income_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+    #     / f"monthly_gross_labor_income_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",  # noqa: E501
     #     ever_caregivers: bool = True,
     #     ever_care_demand: bool = False,
     #     window: int = 20,
@@ -1055,7 +1086,10 @@ for age_min_val, age_max_val, age_label_val in (
         / "employment"
         / "total_caregiving_years"
         / _CARE_CONDITION_2
-        / f"employment_rate_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+        / (
+            f"employment_rate_by_distance_to_mother_death_"
+            f"total_caregiving_{age_label_val}.pdf"
+        ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window_low: int = 20,
@@ -1137,7 +1171,10 @@ for age_min_val, age_max_val, age_label_val in (
         / "full_time"
         / "total_caregiving_years"
         / _CARE_CONDITION_2
-        / f"full_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+        / (
+            f"full_time_share_by_distance_to_mother_death_"
+            f"total_caregiving_{age_label_val}.pdf"
+        ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window_low: int = 20,
@@ -1218,7 +1255,7 @@ for age_min_val, age_max_val, age_label_val in (
     #     / "part_time"
     #     / "total_caregiving_years"
     #     / _CARE_CONDITION_2
-    #     / f"part_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+    #     / f"part_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",  # noqa: E501
     #     ever_caregivers: bool = True,
     #     ever_care_demand: bool = False,
     #     window: int = 20,
@@ -1275,7 +1312,7 @@ for age_min_val, age_max_val, age_label_val in (
     # @pytask.mark.publication_counterfactual
     # @pytask.mark.publication
     # @pytask.task(id=f"{age_label_val}_mother_death_{_CARE_CONDITION_2}_working_hours")
-    # def task_plot_working_hours_by_distance_to_mother_death_care_less10(  # noqa: PLR0913
+    # def task_plot_working_hours_by_distance_to_mother_death_care_less10(  # noqa: PLR0913, E501
     #     age_min: int | None = age_min_val,
     #     age_max: int | None = age_max_val,
     #     path_to_original_data: Path = BLD
@@ -1292,7 +1329,7 @@ for age_min_val, age_max_val, age_label_val in (
     #     / "working_hours"
     #     / "total_caregiving_years"
     #     / _CARE_CONDITION_2
-    #     / f"working_hours_weekly_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+    #     / f"working_hours_weekly_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",  # noqa: E501
     #     ever_caregivers: bool = True,
     #     ever_care_demand: bool = False,
     #     window: int = 20,
@@ -1357,7 +1394,7 @@ for age_min_val, age_max_val, age_label_val in (
     # @pytask.mark.publication_counterfactual
     # @pytask.mark.publication
     # @pytask.task(id=f"{age_label_val}_mother_death_{_CARE_CONDITION_2}_labor_income")
-    # def task_plot_labor_income_by_distance_to_mother_death_care_less10(  # noqa: PLR0913
+    # def task_plot_labor_income_by_distance_to_mother_death_care_less10(  # noqa: PLR0913, E501
     #     age_min: int | None = age_min_val,
     #     age_max: int | None = age_max_val,
     #     path_to_original_data: Path = BLD
@@ -1374,7 +1411,7 @@ for age_min_val, age_max_val, age_label_val in (
     #     / "labor_income"
     #     / "total_caregiving_years"
     #     / _CARE_CONDITION_2
-    #     / f"monthly_gross_labor_income_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+    #     / f"monthly_gross_labor_income_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",  # noqa: E501
     #     ever_caregivers: bool = True,
     #     ever_care_demand: bool = False,
     #     window: int = 20,
@@ -1472,7 +1509,10 @@ for age_min_val, age_max_val, age_label_val in (
         / "employment"
         / "total_caregiving_years"
         / _CARE_CONDITION_3
-        / f"employment_rate_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+        / (
+            f"employment_rate_by_distance_to_mother_death_"
+            f"total_caregiving_{age_label_val}.pdf"
+        ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window_low: int = 20,
@@ -1554,7 +1594,10 @@ for age_min_val, age_max_val, age_label_val in (
         / "full_time"
         / "total_caregiving_years"
         / _CARE_CONDITION_3
-        / f"full_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+        / (
+            f"full_time_share_by_distance_to_mother_death_"
+            f"total_caregiving_{age_label_val}.pdf"
+        ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window_low: int = 20,
@@ -1635,7 +1678,7 @@ for age_min_val, age_max_val, age_label_val in (
     #     / "part_time"
     #     / "total_caregiving_years"
     #     / _CARE_CONDITION_3
-    #     / f"part_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+    #     / f"part_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",  # noqa: E501
     #     ever_caregivers: bool = True,
     #     ever_care_demand: bool = False,
     #     window: int = 20,
@@ -1692,7 +1735,7 @@ for age_min_val, age_max_val, age_label_val in (
     # @pytask.mark.publication_counterfactual
     # @pytask.mark.publication
     # @pytask.task(id=f"{age_label_val}_mother_death_{_CARE_CONDITION_3}_working_hours")
-    # def task_plot_working_hours_by_distance_to_mother_death_care_5_to_10(  # noqa: PLR0913
+    # def task_plot_working_hours_by_distance_to_mother_death_care_5_to_10(  # noqa: PLR0913, E501
     #     age_min: int | None = age_min_val,
     #     age_max: int | None = age_max_val,
     #     path_to_original_data: Path = BLD
@@ -1709,7 +1752,7 @@ for age_min_val, age_max_val, age_label_val in (
     #     / "working_hours"
     #     / "total_caregiving_years"
     #     / _CARE_CONDITION_3
-    #     / f"working_hours_weekly_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+    #     / f"working_hours_weekly_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",  # noqa: E501
     #     ever_caregivers: bool = True,
     #     ever_care_demand: bool = False,
     #     window: int = 20,
@@ -1774,7 +1817,7 @@ for age_min_val, age_max_val, age_label_val in (
     # @pytask.mark.publication_counterfactual
     # @pytask.mark.publication
     # @pytask.task(id=f"{age_label_val}_mother_death_{_CARE_CONDITION_3}_labor_income")
-    # def task_plot_labor_income_by_distance_to_mother_death_care_5_to_10(  # noqa: PLR0913
+    # def task_plot_labor_income_by_distance_to_mother_death_care_5_to_10(  # noqa: PLR0913, E501
     #     age_min: int | None = age_min_val,
     #     age_max: int | None = age_max_val,
     #     path_to_original_data: Path = BLD
@@ -1791,7 +1834,7 @@ for age_min_val, age_max_val, age_label_val in (
     #     / "labor_income"
     #     / "total_caregiving_years"
     #     / _CARE_CONDITION_3
-    #     / f"monthly_gross_labor_income_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+    #     / f"monthly_gross_labor_income_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",  # noqa: E501
     #     ever_caregivers: bool = True,
     #     ever_care_demand: bool = False,
     #     window: int = 20,
@@ -1889,7 +1932,10 @@ for age_min_val, age_max_val, age_label_val in (
         / "employment"
         / "total_caregiving_years"
         / _CARE_CONDITION_4
-        / f"employment_rate_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+        / (
+            f"employment_rate_by_distance_to_mother_death_"
+            f"total_caregiving_{age_label_val}.pdf"
+        ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window_low: int = 20,
@@ -1971,7 +2017,10 @@ for age_min_val, age_max_val, age_label_val in (
         / "full_time"
         / "total_caregiving_years"
         / _CARE_CONDITION_4
-        / f"full_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+        / (
+            f"full_time_share_by_distance_to_mother_death_"
+            f"total_caregiving_{age_label_val}.pdf"
+        ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window_low: int = 20,
@@ -2052,7 +2101,7 @@ for age_min_val, age_max_val, age_label_val in (
     #     / "part_time"
     #     / "total_caregiving_years"
     #     / _CARE_CONDITION_4
-    #     / f"part_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+    #     / f"part_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",  # noqa: E501
     #     ever_caregivers: bool = True,
     #     ever_care_demand: bool = False,
     #     window: int = 20,
@@ -2109,7 +2158,7 @@ for age_min_val, age_max_val, age_label_val in (
     # @pytask.mark.publication_counterfactual
     # @pytask.mark.publication
     # @pytask.task(id=f"{age_label_val}_mother_death_{_CARE_CONDITION_4}_working_hours")
-    # def task_plot_working_hours_by_distance_to_mother_death_care_leq5(  # noqa: PLR0913
+    # def task_plot_working_hours_by_distance_to_mother_death_care_leq5(  # noqa: PLR0913, E501
     #     age_min: int | None = age_min_val,
     #     age_max: int | None = age_max_val,
     #     path_to_original_data: Path = BLD
@@ -2126,7 +2175,7 @@ for age_min_val, age_max_val, age_label_val in (
     #     / "working_hours"
     #     / "total_caregiving_years"
     #     / _CARE_CONDITION_4
-    #     / f"working_hours_weekly_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+    #     / f"working_hours_weekly_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",  # noqa: E501
     #     ever_caregivers: bool = True,
     #     ever_care_demand: bool = False,
     #     window: int = 20,
@@ -2208,7 +2257,7 @@ for age_min_val, age_max_val, age_label_val in (
     #     / "labor_income"
     #     / "total_caregiving_years"
     #     / _CARE_CONDITION_4
-    #     / f"monthly_gross_labor_income_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+    #     / f"monthly_gross_labor_income_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",  # noqa: E501
     #     ever_caregivers: bool = True,
     #     ever_care_demand: bool = False,
     #     window: int = 20,
@@ -2289,7 +2338,7 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.task(
         id=f"{age_label_val}_mother_death_total_caregiving_back_to_Jan7_employment"
     )
-    def task_plot_employment_rate_by_distance_to_mother_death_total_caregiving_back_to_Jan7(  # noqa: PLR0913
+    def task_plot_employment_rate_by_distance_to_mother_death_total_caregiving_back_to_Jan7(  # noqa: PLR0913, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -2316,7 +2365,10 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Employment rate by distance to mother's death, total care years 1–5+ before death. back_to_Jan7 data."""
+        """Employment rate by distance to mother's death.
+
+        Total care years 1-5+ before death. back_to_Jan7 data.
+        """
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
             pd.read_pickle(path_to_no_care_demand_data),
@@ -2371,7 +2423,7 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.task(
         id=f"{age_label_val}_mother_death_total_caregiving_back_to_Jan7_full_time"
     )
-    def task_plot_full_time_share_by_distance_to_mother_death_total_caregiving_back_to_Jan7(  # noqa: PLR0913
+    def task_plot_full_time_share_by_distance_to_mother_death_total_caregiving_back_to_Jan7(  # noqa: PLR0913, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -2398,7 +2450,10 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Full-time share by distance to mother's death, total care years 1–5+ before death. back_to_Jan7 data."""
+        """Full-time share by distance to mother's death.
+
+        Total care years 1-5+ before death. back_to_Jan7 data.
+        """
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
             pd.read_pickle(path_to_no_care_demand_data),
@@ -2453,7 +2508,7 @@ for age_min_val, age_max_val, age_label_val in (
     # @pytask.task(
     #     id=f"{age_label_val}_mother_death_total_caregiving_back_to_Jan7_part_time"
     # )
-    # def task_plot_part_time_share_by_distance_to_mother_death_total_caregiving_back_to_Jan7(  # noqa: PLR0913
+    # def task_plot_part_time_share_by_distance_to_mother_death_total_caregiving_back_to_Jan7(  # noqa: PLR0913, E501
     #     age_min: int | None = age_min_val,
     #     age_max: int | None = age_max_val,
     #     age_label: str = age_label_val,
@@ -2478,7 +2533,7 @@ for age_min_val, age_max_val, age_label_val in (
     #     ever_care_demand: bool = False,
     #     window: int = 20,
     # ) -> None:
-    #     """Part-time share by distance to mother's death, total care years 1–5+ before death. back_to_Jan7 data."""
+    #     """Part-time share by distance to mother's death, total care years 1–5+ before death. back_to_Jan7 data."""  # noqa: E501
     #     df_o, df_c = prepare_dataframes_simple(
     #         pd.read_pickle(path_to_original_data),
     #         pd.read_pickle(path_to_no_care_demand_data),
@@ -2528,7 +2583,7 @@ for age_min_val, age_max_val, age_label_val in (
     # @pytask.task(
     #     id=f"{age_label_val}_mother_death_total_caregiving_back_to_Jan7_working_hours"
     # )
-    # def task_plot_working_hours_by_distance_to_mother_death_total_caregiving_back_to_Jan7(  # noqa: PLR0913
+    # def task_plot_working_hours_by_distance_to_mother_death_total_caregiving_back_to_Jan7(  # noqa: PLR0913, E501
     #     age_min: int | None = age_min_val,
     #     age_max: int | None = age_max_val,
     #     age_label: str = age_label_val,
@@ -2553,7 +2608,7 @@ for age_min_val, age_max_val, age_label_val in (
     #     ever_care_demand: bool = False,
     #     window: int = 20,
     # ) -> None:
-    #     """Weekly working hours by distance to mother's death, total care years 1–5+ before death. back_to_Jan7 data."""
+    #     """Weekly working hours by distance to mother's death, total care years 1–5+ before death. back_to_Jan7 data."""  # noqa: E501
     #     df_o, df_c = prepare_dataframes_simple(
     #         pd.read_pickle(path_to_original_data),
     #         pd.read_pickle(path_to_no_care_demand_data),
@@ -2611,7 +2666,7 @@ for age_min_val, age_max_val, age_label_val in (
     # @pytask.task(
     #     id=f"{age_label_val}_mother_death_total_caregiving_back_to_Jan7_labor_income"
     # )
-    # def task_plot_labor_income_by_distance_to_mother_death_total_caregiving_back_to_Jan7(  # noqa: PLR0913
+    # def task_plot_labor_income_by_distance_to_mother_death_total_caregiving_back_to_Jan7(  # noqa: PLR0913, E501
     #     age_min: int | None = age_min_val,
     #     age_max: int | None = age_max_val,
     #     age_label: str = age_label_val,
@@ -2636,7 +2691,7 @@ for age_min_val, age_max_val, age_label_val in (
     #     ever_care_demand: bool = False,
     #     window: int = 20,
     # ) -> None:
-    #     """Monthly gross labor income by distance to mother's death, total care years 1–5+ before death. back_to_Jan7 data."""
+    #     """Monthly gross labor income by distance to mother's death, total care years 1–5+ before death. back_to_Jan7 data."""  # noqa: E501
     #     df_o, df_c = prepare_dataframes_simple(
     #         pd.read_pickle(path_to_original_data),
     #         pd.read_pickle(path_to_no_care_demand_data),
@@ -2726,7 +2781,11 @@ for age_min_val, age_max_val, age_label_val in (
         / "employment"
         / "total_caregiving_years"
         / _CARE_CONDITION_1
-        / f"back_to_Jan7_employment_rate_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+        / (
+            f"back_to_Jan7_employment_rate_by_distance"
+            f"_to_mother_death_total_caregiving_"
+            f"{age_label_val}.pdf"
+        ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window_low: int = 20,
@@ -2810,7 +2869,11 @@ for age_min_val, age_max_val, age_label_val in (
         / "full_time"
         / "total_caregiving_years"
         / _CARE_CONDITION_1
-        / f"back_to_Jan7_full_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+        / (
+            f"back_to_Jan7_full_time_share_by_distance"
+            f"_to_mother_death_total_caregiving_"
+            f"{age_label_val}.pdf"
+        ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window_low: int = 20,
@@ -2876,7 +2939,7 @@ for age_min_val, age_max_val, age_label_val in (
     # @pytask.task(
     #     id=f"{age_label_val}_mother_death_back_to_Jan7_{_CARE_CONDITION_1}_part_time"
     # )
-    # def task_plot_part_time_by_distance_to_mother_death_back_to_Jan7_care_geq10(  # noqa: PLR0913
+    # def task_plot_part_time_by_distance_to_mother_death_back_to_Jan7_care_geq10(  # noqa: PLR0913, E501
     #     age_min: int | None = age_min_val,
     #     age_max: int | None = age_max_val,
     #     path_to_original_data: Path = BLD
@@ -2893,7 +2956,7 @@ for age_min_val, age_max_val, age_label_val in (
     #     / "part_time"
     #     / "total_caregiving_years"
     #     / _CARE_CONDITION_1
-    #     / f"back_to_Jan7_part_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+    #     / f"back_to_Jan7_part_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",  # noqa: E501
     #     ever_caregivers: bool = True,
     #     ever_care_demand: bool = False,
     #     window: int = 20,
@@ -2950,9 +3013,9 @@ for age_min_val, age_max_val, age_label_val in (
     # @pytask.mark.publication_counterfactual
     # @pytask.mark.publication
     # @pytask.task(
-    #     id=f"{age_label_val}_mother_death_back_to_Jan7_{_CARE_CONDITION_1}_working_hours"
+    #     id=f"{age_label_val}_mother_death_back_to_Jan7_{_CARE_CONDITION_1}_working_hours"  # noqa: E501
     # )
-    # def task_plot_working_hours_by_distance_to_mother_death_back_to_Jan7_care_geq10(  # noqa: PLR0913
+    # def task_plot_working_hours_by_distance_to_mother_death_back_to_Jan7_care_geq10(  # noqa: PLR0913, E501
     #     age_min: int | None = age_min_val,
     #     age_max: int | None = age_max_val,
     #     path_to_original_data: Path = BLD
@@ -2969,7 +3032,7 @@ for age_min_val, age_max_val, age_label_val in (
     #     / "working_hours"
     #     / "total_caregiving_years"
     #     / _CARE_CONDITION_1
-    #     / f"back_to_Jan7_working_hours_weekly_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+    #     / f"back_to_Jan7_working_hours_weekly_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",  # noqa: E501
     #     ever_caregivers: bool = True,
     #     ever_care_demand: bool = False,
     #     window: int = 20,
@@ -3034,9 +3097,9 @@ for age_min_val, age_max_val, age_label_val in (
     # @pytask.mark.publication_counterfactual
     # @pytask.mark.publication
     # @pytask.task(
-    #     id=f"{age_label_val}_mother_death_back_to_Jan7_{_CARE_CONDITION_1}_labor_income"
+    #     id=f"{age_label_val}_mother_death_back_to_Jan7_{_CARE_CONDITION_1}_labor_income"  # noqa: E501
     # )
-    # def task_plot_labor_income_by_distance_to_mother_death_back_to_Jan7_care_geq10(  # noqa: PLR0913
+    # def task_plot_labor_income_by_distance_to_mother_death_back_to_Jan7_care_geq10(  # noqa: PLR0913, E501
     #     age_min: int | None = age_min_val,
     #     age_max: int | None = age_max_val,
     #     path_to_original_data: Path = BLD
@@ -3053,7 +3116,7 @@ for age_min_val, age_max_val, age_label_val in (
     #     / "labor_income"
     #     / "total_caregiving_years"
     #     / _CARE_CONDITION_1
-    #     / f"back_to_Jan7_monthly_gross_labor_income_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+    #     / f"back_to_Jan7_monthly_gross_labor_income_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",  # noqa: E501
     #     ever_caregivers: bool = True,
     #     ever_care_demand: bool = False,
     #     window: int = 20,
@@ -3152,7 +3215,11 @@ for age_min_val, age_max_val, age_label_val in (
         / "employment"
         / "total_caregiving_years"
         / _CARE_CONDITION_2
-        / f"back_to_Jan7_employment_rate_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+        / (
+            f"back_to_Jan7_employment_rate_by_distance"
+            f"_to_mother_death_total_caregiving_"
+            f"{age_label_val}.pdf"
+        ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window_low: int = 20,
@@ -3236,7 +3303,11 @@ for age_min_val, age_max_val, age_label_val in (
         / "full_time"
         / "total_caregiving_years"
         / _CARE_CONDITION_2
-        / f"back_to_Jan7_full_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+        / (
+            f"back_to_Jan7_full_time_share_by_distance"
+            f"_to_mother_death_total_caregiving_"
+            f"{age_label_val}.pdf"
+        ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window_low: int = 20,
@@ -3299,18 +3370,18 @@ for age_min_val, age_max_val, age_label_val in (
     # @pytask.mark.publication_reverse
     # @pytask.mark.publication_counterfactual
     # @pytask.mark.publication
-    # @pytask.task(id=f"{age_label_val}_mother_death_back_to_Jan7_{_CARE_CONDITION_2}_part_time")
-    # def task_plot_part_time_by_distance_to_mother_death_back_to_Jan7_care_less10(  # noqa: PLR0913
+    # @pytask.task(id=f"{age_label_val}_mother_death_back_to_Jan7_{_CARE_CONDITION_2}_part_time")  # noqa: E501
+    # def task_plot_part_time_by_distance_to_mother_death_back_to_Jan7_care_less10(  # noqa: PLR0913, E501
     #     age_min: int | None = age_min_val,
     #     age_max: int | None = age_max_val,
-    #     path_to_original_data: Path = BLD / "solve_and_simulate" / "simulated_data_estimated_params_back_to_Jan7.pkl",
-    #     path_to_no_care_demand_data: Path = BLD / "solve_and_simulate" / "simulated_data_no_care_demand_back_to_Jan7.pkl",
-    #     path_to_plot: Annotated[Path, Product] = BLD / "figures" / "publication" / "counterfactual" / "reverse_employment" / "part_time" / "total_caregiving_years" / _CARE_CONDITION_2 / f"back_to_Jan7_part_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+    #     path_to_original_data: Path = BLD / "solve_and_simulate" / "simulated_data_estimated_params_back_to_Jan7.pkl",  # noqa: E501
+    #     path_to_no_care_demand_data: Path = BLD / "solve_and_simulate" / "simulated_data_no_care_demand_back_to_Jan7.pkl",  # noqa: E501
+    #     path_to_plot: Annotated[Path, Product] = BLD / "figures" / "publication" / "counterfactual" / "reverse_employment" / "part_time" / "total_caregiving_years" / _CARE_CONDITION_2 / f"back_to_Jan7_part_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",  # noqa: E501
     #     ever_caregivers: bool = True,
     #     ever_care_demand: bool = False,
     #     window: int = 20,
     # ) -> None:
-    #     df_o, df_c = prepare_dataframes_simple(pd.read_pickle(path_to_original_data), pd.read_pickle(path_to_no_care_demand_data), ever_caregivers, ever_care_demand)
+    #     df_o, df_c = prepare_dataframes_simple(pd.read_pickle(path_to_original_data), pd.read_pickle(path_to_no_care_demand_data), ever_caregivers, ever_care_demand)  # noqa: E501
     #     _, _, o_pt = calculate_simple_outcomes(df_o, "original")
     #     _, _, c_pt = calculate_simple_outcomes(df_c, "no_care_demand")
     #     care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
@@ -3320,30 +3391,30 @@ for age_min_val, age_max_val, age_label_val in (
     #     c_cols = df_c[["agent", "period"]].copy()
     #     c_cols["part_time_c"] = c_pt.astype(float)
     #     merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
-    #     merged = merged.merge(df_o[["agent", "period", "mother_dead", "age"]], on=["agent", "period"], how="left")
-    #     merged = _add_mother_death_distance_and_filter(merged, df_o, df_c, window, age_min, age_max)
+    #     merged = merged.merge(df_o[["agent", "period", "mother_dead", "age"]], on=["agent", "period"], how="left")  # noqa: E501
+    #     merged = _add_mother_death_distance_and_filter(merged, df_o, df_c, window, age_min, age_max)  # noqa: E501
     #     first_care_map = _first_care_demand_period_map(df_o)
-    #     merged = _filter_merged_by_first_care_demand_to_death(merged, first_care_map, "<10")
-    #     prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(merged, window, "part_time_o", "part_time_c")
-    #     plot_employment_rate_by_distance(prof=prof, prof_1_year=p1, prof_2_year=p2, prof_3_year=p3, prof_4_year=p4, prof_5_year=p5, window=window, path_to_plot=path_to_plot, xlabel="Year relative to mother's death", outcome_baseline="part_time_o", outcome_counterfactual="part_time_c", ylabel="Part-Time Share", ylim=(-0.025, 1.0), subgroup_labels=TOTAL_LABELS_BEFORE_DEATH, extra_vlines=(-10,))
+    #     merged = _filter_merged_by_first_care_demand_to_death(merged, first_care_map, "<10")  # noqa: E501
+    #     prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(merged, window, "part_time_o", "part_time_c")  # noqa: E501
+    #     plot_employment_rate_by_distance(prof=prof, prof_1_year=p1, prof_2_year=p2, prof_3_year=p3, prof_4_year=p4, prof_5_year=p5, window=window, path_to_plot=path_to_plot, xlabel="Year relative to mother's death", outcome_baseline="part_time_o", outcome_counterfactual="part_time_c", ylabel="Part-Time Share", ylim=(-0.025, 1.0), subgroup_labels=TOTAL_LABELS_BEFORE_DEATH, extra_vlines=(-10,))  # noqa: E501
 
     # @pytask.mark.publication_reverse
     # @pytask.mark.publication_counterfactual
     # @pytask.mark.publication
-    # @pytask.task(id=f"{age_label_val}_mother_death_back_to_Jan7_{_CARE_CONDITION_2}_working_hours")
-    # def task_plot_working_hours_by_distance_to_mother_death_back_to_Jan7_care_less10(  # noqa: PLR0913
+    # @pytask.task(id=f"{age_label_val}_mother_death_back_to_Jan7_{_CARE_CONDITION_2}_working_hours")  # noqa: E501
+    # def task_plot_working_hours_by_distance_to_mother_death_back_to_Jan7_care_less10(  # noqa: PLR0913, E501
     #     age_min: int | None = age_min_val,
     #     age_max: int | None = age_max_val,
-    #     path_to_original_data: Path = BLD / "solve_and_simulate" / "simulated_data_estimated_params_back_to_Jan7.pkl",
-    #     path_to_no_care_demand_data: Path = BLD / "solve_and_simulate" / "simulated_data_no_care_demand_back_to_Jan7.pkl",
-    #     path_to_plot: Annotated[Path, Product] = BLD / "figures" / "publication" / "counterfactual" / "reverse_employment" / "working_hours" / "total_caregiving_years" / _CARE_CONDITION_2 / f"back_to_Jan7_working_hours_weekly_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+    #     path_to_original_data: Path = BLD / "solve_and_simulate" / "simulated_data_estimated_params_back_to_Jan7.pkl",  # noqa: E501
+    #     path_to_no_care_demand_data: Path = BLD / "solve_and_simulate" / "simulated_data_no_care_demand_back_to_Jan7.pkl",  # noqa: E501
+    #     path_to_plot: Annotated[Path, Product] = BLD / "figures" / "publication" / "counterfactual" / "reverse_employment" / "working_hours" / "total_caregiving_years" / _CARE_CONDITION_2 / f"back_to_Jan7_working_hours_weekly_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",  # noqa: E501
     #     ever_caregivers: bool = True,
     #     ever_care_demand: bool = False,
     #     window: int = 20,
     # ) -> None:
-    #     df_o, df_c = prepare_dataframes_simple(pd.read_pickle(path_to_original_data), pd.read_pickle(path_to_no_care_demand_data), ever_caregivers, ever_care_demand)
-    #     wh_o = df_o["working_hours"].astype(float) / 52.0 if "working_hours" in df_o.columns else pd.Series(0.0, index=df_o.index)
-    #     wh_c = df_c["working_hours"].astype(float) / 52.0 if "working_hours" in df_c.columns else pd.Series(0.0, index=df_c.index)
+    #     df_o, df_c = prepare_dataframes_simple(pd.read_pickle(path_to_original_data), pd.read_pickle(path_to_no_care_demand_data), ever_caregivers, ever_care_demand)  # noqa: E501
+    #     wh_o = df_o["working_hours"].astype(float) / 52.0 if "working_hours" in df_o.columns else pd.Series(0.0, index=df_o.index)  # noqa: E501
+    #     wh_c = df_c["working_hours"].astype(float) / 52.0 if "working_hours" in df_c.columns else pd.Series(0.0, index=df_c.index)  # noqa: E501
     #     care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
     #     o_cols = df_o[["agent", "period", "choice"]].copy()
     #     o_cols["working_hours_weekly_o"] = wh_o.values
@@ -3351,30 +3422,30 @@ for age_min_val, age_max_val, age_label_val in (
     #     c_cols = df_c[["agent", "period"]].copy()
     #     c_cols["working_hours_weekly_c"] = wh_c.values
     #     merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
-    #     merged = merged.merge(df_o[["agent", "period", "mother_dead", "age"]], on=["agent", "period"], how="left")
-    #     merged = _add_mother_death_distance_and_filter(merged, df_o, df_c, window, age_min, age_max)
+    #     merged = merged.merge(df_o[["agent", "period", "mother_dead", "age"]], on=["agent", "period"], how="left")  # noqa: E501
+    #     merged = _add_mother_death_distance_and_filter(merged, df_o, df_c, window, age_min, age_max)  # noqa: E501
     #     first_care_map = _first_care_demand_period_map(df_o)
-    #     merged = _filter_merged_by_first_care_demand_to_death(merged, first_care_map, "<10")
-    #     prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(merged, window, "working_hours_weekly_o", "working_hours_weekly_c")
-    #     plot_employment_rate_by_distance(prof=prof, prof_1_year=p1, prof_2_year=p2, prof_3_year=p3, prof_4_year=p4, prof_5_year=p5, window=window, path_to_plot=path_to_plot, xlabel="Year relative to mother's death", outcome_baseline="working_hours_weekly_o", outcome_counterfactual="working_hours_weekly_c", ylabel="Weekly Working Hours", ylim=None, subgroup_labels=TOTAL_LABELS_BEFORE_DEATH, extra_vlines=(-10,))
+    #     merged = _filter_merged_by_first_care_demand_to_death(merged, first_care_map, "<10")  # noqa: E501
+    #     prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(merged, window, "working_hours_weekly_o", "working_hours_weekly_c")  # noqa: E501
+    #     plot_employment_rate_by_distance(prof=prof, prof_1_year=p1, prof_2_year=p2, prof_3_year=p3, prof_4_year=p4, prof_5_year=p5, window=window, path_to_plot=path_to_plot, xlabel="Year relative to mother's death", outcome_baseline="working_hours_weekly_o", outcome_counterfactual="working_hours_weekly_c", ylabel="Weekly Working Hours", ylim=None, subgroup_labels=TOTAL_LABELS_BEFORE_DEATH, extra_vlines=(-10,))  # noqa: E501
 
     # @pytask.mark.publication_reverse
     # @pytask.mark.publication_counterfactual
     # @pytask.mark.publication
-    # @pytask.task(id=f"{age_label_val}_mother_death_back_to_Jan7_{_CARE_CONDITION_2}_labor_income")
-    # def task_plot_labor_income_by_distance_to_mother_death_back_to_Jan7_care_less10(  # noqa: PLR0913
+    # @pytask.task(id=f"{age_label_val}_mother_death_back_to_Jan7_{_CARE_CONDITION_2}_labor_income")  # noqa: E501
+    # def task_plot_labor_income_by_distance_to_mother_death_back_to_Jan7_care_less10(  # noqa: PLR0913, E501
     #     age_min: int | None = age_min_val,
     #     age_max: int | None = age_max_val,
-    #     path_to_original_data: Path = BLD / "solve_and_simulate" / "simulated_data_estimated_params_back_to_Jan7.pkl",
-    #     path_to_no_care_demand_data: Path = BLD / "solve_and_simulate" / "simulated_data_no_care_demand_back_to_Jan7.pkl",
-    #     path_to_plot: Annotated[Path, Product] = BLD / "figures" / "publication" / "counterfactual" / "reverse_employment" / "labor_income" / "total_caregiving_years" / _CARE_CONDITION_2 / f"back_to_Jan7_monthly_gross_labor_income_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+    #     path_to_original_data: Path = BLD / "solve_and_simulate" / "simulated_data_estimated_params_back_to_Jan7.pkl",  # noqa: E501
+    #     path_to_no_care_demand_data: Path = BLD / "solve_and_simulate" / "simulated_data_no_care_demand_back_to_Jan7.pkl",  # noqa: E501
+    #     path_to_plot: Annotated[Path, Product] = BLD / "figures" / "publication" / "counterfactual" / "reverse_employment" / "labor_income" / "total_caregiving_years" / _CARE_CONDITION_2 / f"back_to_Jan7_monthly_gross_labor_income_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",  # noqa: E501
     #     ever_caregivers: bool = True,
     #     ever_care_demand: bool = False,
     #     window: int = 20,
     # ) -> None:
-    #     df_o, df_c = prepare_dataframes_simple(pd.read_pickle(path_to_original_data), pd.read_pickle(path_to_no_care_demand_data), ever_caregivers, ever_care_demand)
-    #     inc_o = df_o["gross_labor_income"].astype(float) / 12.0 if "gross_labor_income" in df_o.columns else pd.Series(0.0, index=df_o.index)
-    #     inc_c = df_c["gross_labor_income"].astype(float) / 12.0 if "gross_labor_income" in df_c.columns else pd.Series(0.0, index=df_c.index)
+    #     df_o, df_c = prepare_dataframes_simple(pd.read_pickle(path_to_original_data), pd.read_pickle(path_to_no_care_demand_data), ever_caregivers, ever_care_demand)  # noqa: E501
+    #     inc_o = df_o["gross_labor_income"].astype(float) / 12.0 if "gross_labor_income" in df_o.columns else pd.Series(0.0, index=df_o.index)  # noqa: E501
+    #     inc_c = df_c["gross_labor_income"].astype(float) / 12.0 if "gross_labor_income" in df_c.columns else pd.Series(0.0, index=df_c.index)  # noqa: E501
     #     care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()
     #     o_cols = df_o[["agent", "period", "choice"]].copy()
     #     o_cols["monthly_gross_labor_income_o"] = inc_o.values
@@ -3382,12 +3453,12 @@ for age_min_val, age_max_val, age_label_val in (
     #     c_cols = df_c[["agent", "period"]].copy()
     #     c_cols["monthly_gross_labor_income_c"] = inc_c.values
     #     merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
-    #     merged = merged.merge(df_o[["agent", "period", "mother_dead", "age"]], on=["agent", "period"], how="left")
-    #     merged = _add_mother_death_distance_and_filter(merged, df_o, df_c, window, age_min, age_max)
+    #     merged = merged.merge(df_o[["agent", "period", "mother_dead", "age"]], on=["agent", "period"], how="left")  # noqa: E501
+    #     merged = _add_mother_death_distance_and_filter(merged, df_o, df_c, window, age_min, age_max)  # noqa: E501
     #     first_care_map = _first_care_demand_period_map(df_o)
-    #     merged = _filter_merged_by_first_care_demand_to_death(merged, first_care_map, "<10")
-    #     prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(merged, window, "monthly_gross_labor_income_o", "monthly_gross_labor_income_c")
-    #     plot_employment_rate_by_distance(prof=prof, prof_1_year=p1, prof_2_year=p2, prof_3_year=p3, prof_4_year=p4, prof_5_year=p5, window=window, path_to_plot=path_to_plot, xlabel="Year relative to mother's death", outcome_baseline="monthly_gross_labor_income_o", outcome_counterfactual="monthly_gross_labor_income_c", ylabel="Monthly Gross Labor Income", ylim=None, subgroup_labels=TOTAL_LABELS_BEFORE_DEATH, extra_vlines=(-10,))
+    #     merged = _filter_merged_by_first_care_demand_to_death(merged, first_care_map, "<10")  # noqa: E501
+    #     prof, p1, p2, p3, p4, p5 = _build_profiles_total_caregiving_before_death(merged, window, "monthly_gross_labor_income_o", "monthly_gross_labor_income_c")  # noqa: E501
+    #     plot_employment_rate_by_distance(prof=prof, prof_1_year=p1, prof_2_year=p2, prof_3_year=p3, prof_4_year=p4, prof_5_year=p5, window=window, path_to_plot=path_to_plot, xlabel="Year relative to mother's death", outcome_baseline="monthly_gross_labor_income_o", outcome_counterfactual="monthly_gross_labor_income_c", ylabel="Monthly Gross Labor Income", ylim=None, subgroup_labels=TOTAL_LABELS_BEFORE_DEATH, extra_vlines=(-10,))  # noqa: E501
 
 
 # ---------------------------------------------------------------------------
@@ -3424,7 +3495,11 @@ for age_min_val, age_max_val, age_label_val in (
         / "employment"
         / "total_caregiving_years"
         / _CARE_CONDITION_3
-        / f"back_to_Jan7_employment_rate_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+        / (
+            f"back_to_Jan7_employment_rate_by_distance"
+            f"_to_mother_death_total_caregiving_"
+            f"{age_label_val}.pdf"
+        ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window_low: int = 20,
@@ -3508,7 +3583,11 @@ for age_min_val, age_max_val, age_label_val in (
         / "full_time"
         / "total_caregiving_years"
         / _CARE_CONDITION_3
-        / f"back_to_Jan7_full_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+        / (
+            f"back_to_Jan7_full_time_share_by_distance"
+            f"_to_mother_death_total_caregiving_"
+            f"{age_label_val}.pdf"
+        ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window_low: int = 20,
@@ -3574,7 +3653,7 @@ for age_min_val, age_max_val, age_label_val in (
     # @pytask.task(
     #     id=f"{age_label_val}_mother_death_back_to_Jan7_{_CARE_CONDITION_3}_part_time"
     # )
-    # def task_plot_part_time_by_distance_to_mother_death_back_to_Jan7_care_5_to_10(  # noqa: PLR0913
+    # def task_plot_part_time_by_distance_to_mother_death_back_to_Jan7_care_5_to_10(  # noqa: PLR0913, E501
     #     age_min: int | None = age_min_val,
     #     age_max: int | None = age_max_val,
     #     path_to_original_data: Path = BLD
@@ -3591,7 +3670,7 @@ for age_min_val, age_max_val, age_label_val in (
     #     / "part_time"
     #     / "total_caregiving_years"
     #     / _CARE_CONDITION_3
-    #     / f"back_to_Jan7_part_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+    #     / f"back_to_Jan7_part_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",  # noqa: E501
     #     ever_caregivers: bool = True,
     #     ever_care_demand: bool = False,
     #     window: int = 20,
@@ -3648,9 +3727,9 @@ for age_min_val, age_max_val, age_label_val in (
     # @pytask.mark.publication_counterfactual
     # @pytask.mark.publication
     # @pytask.task(
-    #     id=f"{age_label_val}_mother_death_back_to_Jan7_{_CARE_CONDITION_3}_working_hours"
+    #     id=f"{age_label_val}_mother_death_back_to_Jan7_{_CARE_CONDITION_3}_working_hours"  # noqa: E501
     # )
-    # def task_plot_working_hours_by_distance_to_mother_death_back_to_Jan7_care_5_to_10(  # noqa: PLR0913
+    # def task_plot_working_hours_by_distance_to_mother_death_back_to_Jan7_care_5_to_10(  # noqa: PLR0913, E501
     #     age_min: int | None = age_min_val,
     #     age_max: int | None = age_max_val,
     #     path_to_original_data: Path = BLD
@@ -3667,7 +3746,7 @@ for age_min_val, age_max_val, age_label_val in (
     #     / "working_hours"
     #     / "total_caregiving_years"
     #     / _CARE_CONDITION_3
-    #     / f"back_to_Jan7_working_hours_weekly_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+    #     / f"back_to_Jan7_working_hours_weekly_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",  # noqa: E501
     #     ever_caregivers: bool = True,
     #     ever_care_demand: bool = False,
     #     window: int = 20,
@@ -3732,9 +3811,9 @@ for age_min_val, age_max_val, age_label_val in (
     # @pytask.mark.publication_counterfactual
     # @pytask.mark.publication
     # @pytask.task(
-    #     id=f"{age_label_val}_mother_death_back_to_Jan7_{_CARE_CONDITION_3}_labor_income"
+    #     id=f"{age_label_val}_mother_death_back_to_Jan7_{_CARE_CONDITION_3}_labor_income"  # noqa: E501
     # )
-    # def task_plot_labor_income_by_distance_to_mother_death_back_to_Jan7_care_5_to_10(  # noqa: PLR0913
+    # def task_plot_labor_income_by_distance_to_mother_death_back_to_Jan7_care_5_to_10(  # noqa: PLR0913, E501
     #     age_min: int | None = age_min_val,
     #     age_max: int | None = age_max_val,
     #     path_to_original_data: Path = BLD
@@ -3751,7 +3830,7 @@ for age_min_val, age_max_val, age_label_val in (
     #     / "labor_income"
     #     / "total_caregiving_years"
     #     / _CARE_CONDITION_3
-    #     / f"back_to_Jan7_monthly_gross_labor_income_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+    #     / f"back_to_Jan7_monthly_gross_labor_income_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",  # noqa: E501
     #     ever_caregivers: bool = True,
     #     ever_care_demand: bool = False,
     #     window: int = 20,
@@ -3850,7 +3929,11 @@ for age_min_val, age_max_val, age_label_val in (
         / "employment"
         / "total_caregiving_years"
         / _CARE_CONDITION_4
-        / f"back_to_Jan7_employment_rate_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+        / (
+            f"back_to_Jan7_employment_rate_by_distance"
+            f"_to_mother_death_total_caregiving_"
+            f"{age_label_val}.pdf"
+        ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window_low: int = 20,
@@ -3934,7 +4017,11 @@ for age_min_val, age_max_val, age_label_val in (
         / "full_time"
         / "total_caregiving_years"
         / _CARE_CONDITION_4
-        / f"back_to_Jan7_full_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+        / (
+            f"back_to_Jan7_full_time_share_by_distance"
+            f"_to_mother_death_total_caregiving_"
+            f"{age_label_val}.pdf"
+        ),
         ever_caregivers: bool = True,
         ever_care_demand: bool = False,
         window_low: int = 20,
@@ -4000,7 +4087,7 @@ for age_min_val, age_max_val, age_label_val in (
     # @pytask.task(
     #     id=f"{age_label_val}_mother_death_back_to_Jan7_{_CARE_CONDITION_4}_part_time"
     # )
-    # def task_plot_part_time_by_distance_to_mother_death_back_to_Jan7_care_leq5(  # noqa: PLR0913
+    # def task_plot_part_time_by_distance_to_mother_death_back_to_Jan7_care_leq5(  # noqa: PLR0913, E501
     #     age_min: int | None = age_min_val,
     #     age_max: int | None = age_max_val,
     #     path_to_original_data: Path = BLD
@@ -4017,7 +4104,7 @@ for age_min_val, age_max_val, age_label_val in (
     #     / "part_time"
     #     / "total_caregiving_years"
     #     / _CARE_CONDITION_4
-    #     / f"back_to_Jan7_part_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+    #     / f"back_to_Jan7_part_time_share_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",  # noqa: E501
     #     ever_caregivers: bool = True,
     #     ever_care_demand: bool = False,
     #     window: int = 20,
@@ -4074,9 +4161,9 @@ for age_min_val, age_max_val, age_label_val in (
     # @pytask.mark.publication_counterfactual
     # @pytask.mark.publication
     # @pytask.task(
-    #     id=f"{age_label_val}_mother_death_back_to_Jan7_{_CARE_CONDITION_4}_working_hours"
+    #     id=f"{age_label_val}_mother_death_back_to_Jan7_{_CARE_CONDITION_4}_working_hours"  # noqa: E501
     # )
-    # def task_plot_working_hours_by_distance_to_mother_death_back_to_Jan7_care_leq5(  # noqa: PLR0913
+    # def task_plot_working_hours_by_distance_to_mother_death_back_to_Jan7_care_leq5(  # noqa: PLR0913, E501
     #     age_min: int | None = age_min_val,
     #     age_max: int | None = age_max_val,
     #     path_to_original_data: Path = BLD
@@ -4093,7 +4180,7 @@ for age_min_val, age_max_val, age_label_val in (
     #     / "working_hours"
     #     / "total_caregiving_years"
     #     / _CARE_CONDITION_4
-    #     / f"back_to_Jan7_working_hours_weekly_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+    #     / f"back_to_Jan7_working_hours_weekly_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",  # noqa: E501
     #     ever_caregivers: bool = True,
     #     ever_care_demand: bool = False,
     #     window: int = 20,
@@ -4158,9 +4245,9 @@ for age_min_val, age_max_val, age_label_val in (
     # @pytask.mark.publication_counterfactual
     # @pytask.mark.publication
     # @pytask.task(
-    #     id=f"{age_label_val}_mother_death_back_to_Jan7_{_CARE_CONDITION_4}_labor_income"
+    #     id=f"{age_label_val}_mother_death_back_to_Jan7_{_CARE_CONDITION_4}_labor_income"  # noqa: E501
     # )
-    # def task_plot_labor_income_by_distance_to_mother_death_back_to_Jan7_care_leq5(  # noqa: PLR0913
+    # def task_plot_labor_income_by_distance_to_mother_death_back_to_Jan7_care_leq5(  # noqa: PLR0913, E501
     #     age_min: int | None = age_min_val,
     #     age_max: int | None = age_max_val,
     #     path_to_original_data: Path = BLD
@@ -4177,7 +4264,7 @@ for age_min_val, age_max_val, age_label_val in (
     #     / "labor_income"
     #     / "total_caregiving_years"
     #     / _CARE_CONDITION_4
-    #     / f"back_to_Jan7_monthly_gross_labor_income_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",
+    #     / f"back_to_Jan7_monthly_gross_labor_income_by_distance_to_mother_death_total_caregiving_{age_label_val}.pdf",  # noqa: E501
     #     ever_caregivers: bool = True,
     #     ever_care_demand: bool = False,
     #     window: int = 20,

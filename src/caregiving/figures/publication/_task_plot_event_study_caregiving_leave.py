@@ -1,4 +1,6 @@
-"""Plot event study (baseline minus caregiving leave 65%) by distance, total caregiving years 1–5+.
+"""Plot event study (baseline minus caregiving leave 65%) by distance.
+
+Total caregiving years 1–5+.
 
 Same structure as task_plot_event_study_total_caregiving_years but compares baseline
 (estimated_params) vs caregiving leave with job retention counterfactual.
@@ -74,7 +76,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         window_high: int = 15,
         compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: employment rate diff (policy − baseline) by distance to first care demand."""
+        """Event study: employment rate diff (policy − baseline).
+
+        By distance to first care demand.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -142,7 +147,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         window_high: int = 20,
         compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: employment rate diff (policy − baseline) by distance to first caregiving spell."""
+        """Event study: employment rate diff (policy − baseline).
+
+        By distance to first caregiving spell.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -208,10 +216,11 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 #         ever_caregivers: bool = True,
 #         ever_care_demand: bool = False,
 #         window_low: int = 20,
-        window_high: int = 20,
+# window_high: int = 20,
 #         compare_against_baseline: bool = True,
 #     ) -> None:
-#         """Event study: full-time rate diff (policy − baseline) by distance to first care demand."""
+#         """Event study: full-time rate diff (policy − baseline)
+#         by distance to first care demand."""
 #         with path_to_specs.open("rb") as f:
 #             specs = pickle.load(f)
 #         start_age = int(specs["start_age"])
@@ -247,12 +256,11 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 #             prof_4_year_diff=p4,
 #             prof_5_year_diff=p5,
 #             window_low=window_low,
-            window_high=window_high,
+#            window_high=window_high,
 #             path_to_plot=path_to_plot,
 #             xlabel="Year relative to start of first care demand",
 #             ylabel="Difference in full-time rate",
 #         )
-
 
 # for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 
@@ -275,10 +283,11 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 #         ever_caregivers: bool = True,
 #         ever_care_demand: bool = False,
 #         window_low: int = 20,
-        window_high: int = 20,
+# window_high: int = 20,
 #         compare_against_baseline: bool = True,
 #     ) -> None:
-#         """Event study: full-time rate diff (policy − baseline) by distance to first caregiving spell."""
+#         """Event study: full-time rate diff (policy − baseline)
+#         by distance to first caregiving spell."""
 #         with path_to_specs.open("rb") as f:
 #             specs = pickle.load(f)
 #         start_age = int(specs["start_age"])
@@ -314,12 +323,11 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 #             prof_4_year_diff=p4,
 #             prof_5_year_diff=p5,
 #             window_low=window_low,
-            window_high=window_high,
+#            window_high=window_high,
 #             path_to_plot=path_to_plot,
 #             xlabel="Year relative to start of first caregiving spell",
 #             ylabel="Difference in full-time rate",
 #         )
-
 
 # # ---------------------------------------------------------------------------
 # # Part-time
@@ -344,10 +352,11 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 #         ever_caregivers: bool = True,
 #         ever_care_demand: bool = False,
 #         window_low: int = 20,
-        window_high: int = 20,
+# window_high: int = 20,
 #         compare_against_baseline: bool = True,
 #     ) -> None:
-#         """Event study: part-time rate diff (policy − baseline) by distance to first care demand."""
+#         """Event study: part-time rate diff (policy − baseline)
+#         by distance to first care demand."""
 #         with path_to_specs.open("rb") as f:
 #             specs = pickle.load(f)
 #         start_age = int(specs["start_age"])
@@ -383,12 +392,11 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 #             prof_4_year_diff=p4,
 #             prof_5_year_diff=p5,
 #             window_low=window_low,
-            window_high=window_high,
+#            window_high=window_high,
 #             path_to_plot=path_to_plot,
 #             xlabel="Year relative to start of first care demand",
 #             ylabel="Difference in part-time rate",
 #         )
-
 
 # for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 
@@ -411,10 +419,11 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 #         ever_caregivers: bool = True,
 #         ever_care_demand: bool = False,
 #         window_low: int = 20,
-        window_high: int = 20,
+# window_high: int = 20,
 #         compare_against_baseline: bool = True,
 #     ) -> None:
-#         """Event study: part-time rate diff (policy − baseline) by distance to first caregiving spell."""
+#         """Event study: part-time rate diff (policy − baseline)
+#         by distance to first caregiving spell."""
 #         with path_to_specs.open("rb") as f:
 #             specs = pickle.load(f)
 #         start_age = int(specs["start_age"])
@@ -450,12 +459,11 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 #             prof_4_year_diff=p4,
 #             prof_5_year_diff=p5,
 #             window_low=window_low,
-            window_high=window_high,
+#            window_high=window_high,
 #             path_to_plot=path_to_plot,
 #             xlabel="Year relative to start of first caregiving spell",
 #             ylabel="Difference in part-time rate",
 #         )
-
 
 # # ---------------------------------------------------------------------------
 # # Working hours
@@ -481,10 +489,11 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 #         ever_caregivers: bool = True,
 #         ever_care_demand: bool = False,
 #         window_low: int = 20,
-        window_high: int = 20,
+# window_high: int = 20,
 #         compare_against_baseline: bool = True,
 #     ) -> None:
-#         """Event study: weekly working hours diff (policy − baseline) by distance to first care demand."""
+#         """Event study: weekly working hours diff (policy − baseline)
+#         by distance to first care demand."""
 #         with path_to_specs.open("rb") as f:
 #             specs = pickle.load(f)
 #         start_age = int(specs["start_age"])
@@ -528,12 +537,11 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 #             prof_4_year_diff=p4,
 #             prof_5_year_diff=p5,
 #             window_low=window_low,
-            window_high=window_high,
+#            window_high=window_high,
 #             path_to_plot=path_to_plot,
 #             xlabel="Year relative to start of first care demand",
 #             ylabel="Difference in weekly working hours",
 #         )
-
 
 # for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 
@@ -556,10 +564,11 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 #         ever_caregivers: bool = True,
 #         ever_care_demand: bool = False,
 #         window_low: int = 20,
-        window_high: int = 20,
+# window_high: int = 20,
 #         compare_against_baseline: bool = True,
 #     ) -> None:
-#         """Event study: weekly working hours diff (policy − baseline) by distance to first caregiving spell."""
+#         """Event study: weekly working hours diff (policy − baseline)
+#         by distance to first caregiving spell."""
 #         with path_to_specs.open("rb") as f:
 #             specs = pickle.load(f)
 #         start_age = int(specs["start_age"])
@@ -603,12 +612,11 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 #             prof_4_year_diff=p4,
 #             prof_5_year_diff=p5,
 #             window_low=window_low,
-            window_high=window_high,
+#            window_high=window_high,
 #             path_to_plot=path_to_plot,
 #             xlabel="Year relative to start of first caregiving spell",
 #             ylabel="Difference in weekly working hours",
 #         )
-
 
 # # ---------------------------------------------------------------------------
 # # Labor income
@@ -617,7 +625,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 
 #     @pytask.mark.publication_event_study_caregiving_leave
 #     @pytask.mark.publication
-#     @pytask.task(id=f"{age_label_val}_labor_income_first_care_demand_{_TASK_ID_SUFFIX}")
+#     @pytask.task(
+#         id=f"{age_label_val}_labor_income_first_care_demand_{_TASK_ID_SUFFIX}"
+#     )
 #     def task_plot_event_study_labor_income_by_distance_to_first_care_demand_caregiving_leave(  # noqa: E501
 #         age_min: int | None = age_min_val,
 #         age_max: int | None = age_max_val,
@@ -626,16 +636,18 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 #         path_to_specs: Path = _PATH_SPECS,
 #         path_to_plot: Annotated[Path, Product] = _path_plot(
 #             "labor_income",
-#             f"event_study_monthly_gross_labor_income_by_distance_to_first_care_demand_"
+#             "event_study_monthly_gross_labor_income"
+#             "_by_distance_to_first_care_demand_"
 #             f"total_caregiving_{age_label_val}.pdf",
 #         ),
 #         ever_caregivers: bool = True,
 #         ever_care_demand: bool = False,
 #         window_low: int = 20,
-        window_high: int = 20,
+# window_high: int = 20,
 #         compare_against_baseline: bool = True,
 #     ) -> None:
-#         """Event study: monthly gross labor income diff (policy − baseline) by distance to first care demand."""
+#         """Event study: monthly gross labor income diff (policy − baseline)
+#         by distance to first care demand."""
 #         with path_to_specs.open("rb") as f:
 #             specs = pickle.load(f)
 #         start_age = int(specs["start_age"])
@@ -679,13 +691,12 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 #             prof_4_year_diff=p4,
 #             prof_5_year_diff=p5,
 #             window_low=window_low,
-            window_high=window_high,
+#            window_high=window_high,
 #             path_to_plot=path_to_plot,
 #             xlabel="Year relative to start of first care demand",
 #             ylabel="Difference in monthly gross labor income",
 #             endogenous_ylim=True,
 #         )
-
 
 # for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 
@@ -702,16 +713,18 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 #         path_to_specs: Path = _PATH_SPECS,
 #         path_to_plot: Annotated[Path, Product] = _path_plot(
 #             "labor_income",
-#             f"event_study_monthly_gross_labor_income_by_distance_to_first_caregiving_spell_"
+#             "event_study_monthly_gross_labor_income"
+#             "_by_distance_to_first_caregiving_spell_"
 #             f"total_caregiving_{age_label_val}.pdf",
 #         ),
 #         ever_caregivers: bool = True,
 #         ever_care_demand: bool = False,
 #         window_low: int = 20,
-        window_high: int = 20,
+# window_high: int = 20,
 #         compare_against_baseline: bool = True,
 #     ) -> None:
-#         """Event study: monthly gross labor income diff (policy − baseline) by distance to first caregiving spell."""
+#         """Event study: monthly gross labor income diff (policy − baseline)
+#         by distance to first caregiving spell."""
 #         with path_to_specs.open("rb") as f:
 #             specs = pickle.load(f)
 #         start_age = int(specs["start_age"])
@@ -755,7 +768,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 #             prof_4_year_diff=p4,
 #             prof_5_year_diff=p5,
 #             window_low=window_low,
-            window_high=window_high,
+#            window_high=window_high,
 #             path_to_plot=path_to_plot,
 #             xlabel="Year relative to start of first caregiving spell",
 #             ylabel="Difference in monthly gross labor income",
@@ -788,7 +801,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         window_high: int = 20,
         compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: job finding rate diff (policy − baseline) by distance to first care demand."""
+        """Event study: job finding rate diff (policy − baseline).
+
+        By distance to first care demand.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -856,7 +872,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         window_high: int = 20,
         compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: job finding rate diff (policy − baseline) by distance to first caregiving spell."""
+        """Event study: job finding rate diff (policy − baseline).
+
+        By distance to first caregiving spell.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -927,7 +946,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         window_high: int = 20,
         compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: job retention rate diff (policy − baseline) by distance to first care demand."""
+        """Event study: job retention rate diff (policy − baseline).
+
+        By distance to first care demand.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -995,7 +1017,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         window_high: int = 20,
         compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: job retention rate diff (policy − baseline) by distance to first caregiving spell."""
+        """Event study: job retention rate diff (policy − baseline).
+
+        By distance to first caregiving spell.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])

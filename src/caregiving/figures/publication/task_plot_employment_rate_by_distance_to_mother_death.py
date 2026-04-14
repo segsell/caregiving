@@ -51,7 +51,7 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_reverse_employment
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_mother_death_exact_caregiving")
-    def task_plot_employment_rate_by_distance_to_mother_death_exact_caregiving(  # noqa: PLR0912, PLR0915
+    def task_plot_employment_rate_by_distance_to_mother_death_exact_caregiving(  # noqa: PLR0912, PLR0915, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -66,7 +66,10 @@ for age_min_val, age_max_val, age_label_val in (
         / "publication"
         / "counterfactual"
         / "reverse_employment"
-        / f"employment_rate_by_distance_to_mother_death_exact_caregiving_{age_label_val}.pdf",
+        / (
+            f"employment_rate_by_distance_to_mother_death_exact_caregiving_"
+            f"{age_label_val}.pdf"
+        ),
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
         window_low: int = 20,
@@ -116,7 +119,8 @@ for age_min_val, age_max_val, age_label_val in (
             ever_care_demand: If True, filter to agents who ever experienced care demand
             window_low: Years before t=0 (positive int).
             window_high: Years after t=0 (positive int).
-            window_by_age: Optional per-age (window_low, window_high); keys as in age groups.
+            window_by_age: Optional per-age (window_low, window_high); keys as in
+                age groups.
 
         """
         if window_by_age is not None and age_label in window_by_age:
@@ -316,7 +320,7 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_reverse_employment
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_mother_death_at_least_caregiving")
-    def task_plot_employment_rate_by_distance_to_mother_death_at_least_caregiving(  # noqa: PLR0912, PLR0915
+    def task_plot_employment_rate_by_distance_to_mother_death_at_least_caregiving(  # noqa: PLR0912, PLR0915, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -382,7 +386,8 @@ for age_min_val, age_max_val, age_label_val in (
             ever_care_demand: If True, filter to agents who ever experienced care demand
             window_low: Years before t=0 (positive int).
             window_high: Years after t=0 (positive int).
-            window_by_age: Optional per-age (window_low, window_high); keys as in age groups.
+            window_by_age: Optional per-age (window_low, window_high); keys as in
+                age groups.
 
         """
         if window_by_age is not None and age_label in window_by_age:
@@ -566,7 +571,7 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_reverse_employment_total_caregiving
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_mother_death_total_caregiving")
-    def task_plot_employment_rate_by_distance_to_mother_death_total(  # noqa: PLR0912, PLR0915
+    def task_plot_employment_rate_by_distance_to_mother_death_total(  # noqa: PLR0912, PLR0915, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -781,7 +786,8 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
 
-# Sixth battery: first care demand timing before mother's death (5 groups: t=-3, -5, -7, -10, 11+)
+# Sixth battery: first care demand timing before mother's death
+# (5 groups: t=-3, -5, -7, -10, 11+)
 # Version A: all agents
 for age_min_val, age_max_val, age_label_val in (
     (None, None, "all_ages"),
@@ -795,7 +801,7 @@ for age_min_val, age_max_val, age_label_val in (
     # @pytask.mark.publication_reverse_employment_care_demand_start
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_mother_death_care_demand_start_all")
-    def task_plot_employment_rate_by_distance_to_mother_death_care_demand_start_all(  # noqa: PLR0912, PLR0915
+    def task_plot_employment_rate_by_distance_to_mother_death_care_demand_start_all(  # noqa: PLR0912, PLR0915, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -821,7 +827,9 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Plot employment rate by distance to mother's death (first care demand timing, all agents).
+        """Plot employment rate by distance to mother's death.
+
+        First care demand timing, all agents.
 
         Five lines: first care demand at t=-3, -5, -7, -10, or 11+ years before death.
         Thin vertical dashed lines at -3, -5, -7, -10, -11. No caregiving_type filter.
@@ -988,7 +996,7 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_reverse_employment_care_demand_start
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_mother_death_care_demand_start_type1")
-    def task_plot_employment_rate_by_distance_to_mother_death_care_demand_start_type1(  # noqa: PLR0912, PLR0915
+    def task_plot_employment_rate_by_distance_to_mother_death_care_demand_start_type1(  # noqa: PLR0912, PLR0915, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -1014,10 +1022,13 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Plot employment rate by distance to mother's death (first care demand timing, type 1).
+        """Plot employment rate by distance to mother's death.
+
+        First care demand timing, type 1.
 
         Five lines: first care demand at t=-3, -5, -7, -10, or 11+ years before death.
-        Restricted to caregiving_type == 1. Thin vertical dashed lines at -3, -5, -7, -10, -11.
+        Restricted to caregiving_type == 1. Thin vertical dashed lines at
+        -3, -5, -7, -10, -11.
         """
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
@@ -1176,8 +1187,10 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
 
-# First care demand <5y before death; 4 lines = exact 1,2,3,4 years caregiving in [-4,-1]
-# No caregiving_type filter (same agents in baseline and counterfactual). One vertical line at -5.
+# First care demand <5y before death; 4 lines = exact 1,2,3,4 years
+# caregiving in [-4,-1]
+# No caregiving_type filter (same agents in baseline and counterfactual).
+# One vertical line at -5.
 for age_min_val, age_max_val, age_label_val in (
     (None, None, "all_ages"),
     (45, 50, "ages_45_50"),
@@ -1194,7 +1207,7 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.task(
         id=f"{age_label_val}_mother_death_first_care_demand_under_5_exact_caregiving"
     )
-    def task_plot_employment_rate_by_distance_to_mother_death_first_caregiving_spell_type1(  # noqa: PLR0912, PLR0915
+    def task_plot_employment_rate_by_distance_to_mother_death_first_caregiving_spell_type1(  # noqa: PLR0912, PLR0915, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -1220,11 +1233,15 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Plot employment rate by distance to mother's death (first care demand <5y, exact caregiving).
+        """Plot employment rate by distance to mother's death.
 
-        Sample: agents whose first care demand is 1-4 years before mother's death (distance in
-        [-4,-1]). No caregiving_type filter: counterfactual uses same agents as baseline.
-        Four lines: exact 1, 2, 3, or 4 years of (informal) caregiving in [-4,-1]. One vertical line at -5.
+        First care demand <5y, exact caregiving.
+
+        Sample: agents whose first care demand is 1-4 years before mother's death
+        (distance in [-4,-1]). No caregiving_type filter: counterfactual uses same
+        agents as baseline.
+        Four lines: exact 1, 2, 3, or 4 years of (informal) caregiving in [-4,-1].
+        One vertical line at -5.
         """
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
@@ -1237,7 +1254,8 @@ for age_min_val, age_max_val, age_label_val in (
             ever_care_demand,
         )
 
-        # Restrict to agents whose first care demand is 1-4 years before death (<5 years before)
+        # Restrict to agents whose first care demand is 1-4 years before death
+        # (<5 years before)
         first_care_demand = (
             df_o[df_o["care_demand"] > 0]
             .groupby("agent", observed=False)["period"]
@@ -1389,7 +1407,8 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
 
-# First care demand in [-9,-5] (5-9y before death); 5 lines = exact 1,2,3,4, 5+ years caregiving in [-9,-5]
+# First care demand in [-9,-5] (5-9y before death); 5 lines = exact 1,2,3,4,
+# 5+ years caregiving in [-9,-5].
 # Age groups: all_ages, ages_60_70 only. Vertical lines at -10, -5.
 for age_min_val, age_max_val, age_label_val in (
     (None, None, "all_ages"),
@@ -1407,7 +1426,7 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.task(
         id=f"{age_label_val}_mother_death_first_care_demand_5_to_9_exact_caregiving"
     )
-    def task_plot_employment_rate_by_distance_to_mother_death_first_care_demand_5_to_9(  # noqa: PLR0912, PLR0915
+    def task_plot_employment_rate_by_distance_to_mother_death_first_care_demand_5_to_9(  # noqa: PLR0912, PLR0915, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -1433,7 +1452,10 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """First care demand 5-9y before death; exact 1,2,3,4, 5+ years caregiving in [-9,-5]. No type filter."""
+        """First care demand 5-9y before death.
+
+        Exact 1,2,3,4, 5+ years caregiving in [-9,-5]. No type filter.
+        """
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
         else:
@@ -1574,7 +1596,8 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
 
-# First care demand <= -10 (10+ years before death); 5 lines = exact 1,2,3,4, 5+ years caregiving in [-window,-1]
+# First care demand <= -10 (10+ years before death); 5 lines = exact 1,2,3,4,
+# 5+ years caregiving in [-window,-1].
 # Age groups: all_ages, ages_60_70 only. Vertical line at -10.
 for age_min_val, age_max_val, age_label_val in (
     (None, None, "all_ages"),
@@ -1592,7 +1615,7 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.task(
         id=f"{age_label_val}_mother_death_first_care_demand_10_plus_exact_caregiving"
     )
-    def task_plot_employment_rate_by_distance_to_mother_death_first_care_demand_10_plus(  # noqa: PLR0912, PLR0915
+    def task_plot_employment_rate_by_distance_to_mother_death_first_care_demand_10_plus(  # noqa: PLR0912, PLR0915, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -1618,7 +1641,10 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """First care demand 10+ years before death; exact 1,2,3,4, 5+ years caregiving in [-window,-1]. No type filter."""
+        """First care demand 10+ years before death.
+
+        Exact 1,2,3,4, 5+ years caregiving in [-window,-1]. No type filter.
+        """
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
         else:
@@ -1960,7 +1986,7 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_reverse_employment
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_mother_death_care_demand_exact")
-    def task_plot_employment_rate_by_distance_to_mother_death_care_demand_exact(  # noqa: PLR0912, PLR0915
+    def task_plot_employment_rate_by_distance_to_mother_death_care_demand_exact(  # noqa: PLR0912, PLR0915, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -2030,7 +2056,8 @@ for age_min_val, age_max_val, age_label_val in (
             ever_care_demand: If True, filter to agents who ever experienced care demand
             window_low: Years before t=0 (positive int).
             window_high: Years after t=0 (positive int).
-            window_by_age: Optional per-age (window_low, window_high); keys as in age groups.
+            window_by_age: Optional per-age (window_low, window_high); keys as in
+                age groups.
 
         """
         if window_by_age is not None and age_label in window_by_age:
@@ -2230,7 +2257,7 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_reverse_employment
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_mother_death_care_demand_at_least")
-    def task_plot_employment_rate_by_distance_to_mother_death_care_demand_at_least(  # noqa: PLR0912, PLR0915
+    def task_plot_employment_rate_by_distance_to_mother_death_care_demand_at_least(  # noqa: PLR0912, PLR0915, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -2299,7 +2326,8 @@ for age_min_val, age_max_val, age_label_val in (
             ever_care_demand: If True, filter to agents who ever experienced care demand
             window_low: Years before t=0 (positive int).
             window_high: Years after t=0 (positive int).
-            window_by_age: Optional per-age (window_low, window_high); keys as in age groups.
+            window_by_age: Optional per-age (window_low, window_high); keys as in
+                age groups.
 
         """
         if window_by_age is not None and age_label in window_by_age:
@@ -2486,7 +2514,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
 
-def plot_employment_rate_by_distance_to_mother_death_care_demand(  # noqa: PLR0912, PLR0913
+def plot_employment_rate_by_distance_to_mother_death_care_demand(  # noqa: PLR0912, PLR0913, E501
     prof,
     prof_1_year,
     prof_2_year,

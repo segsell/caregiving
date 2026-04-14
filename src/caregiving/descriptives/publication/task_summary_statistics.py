@@ -900,9 +900,7 @@ def task_describe_structural_estimation_sample_by_caregiver_v2(  # noqa: PLR0912
     b2 = []
     b2.append(r"\addlinespace")
     b2.append(r"\midrule")
-    b2.append(
-        " & Current non-caregivers & Current caregivers & \\\\"
-    )
+    b2.append(" & Current non-caregivers & Current caregivers & \\\\")
     b2.append(r"\midrule")
     b2.append(
         r"\multicolumn{4}{l}{\textit{Panel B3: Labor market status during"
@@ -961,12 +959,8 @@ def task_describe_structural_estimation_sample_by_caregiver_v2(  # noqa: PLR0912
         f"\\quad Average number of care years & --- "
         f"& {_fmt_ms(mean_cy, std_cy)} & \\\\"
     )
-    b3.append(
-        f"\\quad Share intensive caregiving & --- & {_fmt_p(sh_int)} & \\\\"
-    )
-    b3.append(
-        f"\\quad Share light caregiving & --- & {_fmt_p(sh_lt)} & \\\\"
-    )
+    b3.append(f"\\quad Share intensive caregiving & --- & {_fmt_p(sh_int)} & \\\\")
+    b3.append(f"\\quad Share light caregiving & --- & {_fmt_p(sh_lt)} & \\\\")
 
     # ---- Assemble ----
     header = (

@@ -60,7 +60,10 @@ def task_specify_model_caregiving_leave_full_beirat(
     / "model"
     / "model_caregiving_leave_full_beirat.pkl",
 ):
-    """Build full Beirat caregiving leave model (3-year cap, max 1 year full leave, Pflegegeld kept)."""
+    """Build full Beirat caregiving leave model.
+
+    3-year cap, max 1 year full leave, Pflegegeld kept.
+    """
     model = specify_model_caregiving_leave_full_beirat(
         path_to_derived_specs=path_to_derived_specs,
         path_to_save_model_config=path_to_save_model_config,
@@ -80,9 +83,11 @@ def specify_model_caregiving_leave_full_beirat(
 ):
     """Generate model for full Beirat caregiving leave counterfactual.
 
-    - job_before_caregiving (0/1/2), years_leave_used_total (0..3), full_leave_year_used (0/1)
+    - job_before_caregiving (0/1/2), years_leave_used_total (0..3),
+      full_leave_year_used (0/1)
     - Job retention and 65% leave top-up only when years_leave_used_total < 3
-    - Full-leave benefit (unemployed while caregiving) only when full_leave_year_used == 0
+    - Full-leave benefit (unemployed while caregiving) only when
+      full_leave_year_used == 0
     - Partial leave (PT with prior FT) when years_leave_used_total < 3
     - Baseline Pflegegeld (calc_care_benefits_and_costs) included in budget
     """

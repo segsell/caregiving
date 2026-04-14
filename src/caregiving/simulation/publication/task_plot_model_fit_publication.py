@@ -1,4 +1,7 @@
-"""Publication-style model fit plots: one PDF per labor outcome per sample per education."""
+"""Publication-style model fit plots.
+
+One PDF per labor outcome per sample per education.
+"""
 
 from __future__ import annotations
 
@@ -279,7 +282,7 @@ def task_plot_model_fit_publication(
 
 
 @pytask.mark.publication_model_fit
-def task_plot_mean_wealth_model_fit(
+def task_plot_mean_wealth_model_fit(  # noqa: PLR0915
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_simulated_data: Path = BLD
     / "solve_and_simulate"
@@ -289,7 +292,10 @@ def task_plot_mean_wealth_model_fit(
     path_to_save_high: Annotated[Path, Product] = _MODEL_FIT_DIR
     / "mean_wealth_high.pdf",
 ) -> None:
-    """Mean wealth model fit: simulated vs empirical, by 5-year age bins, per education."""
+    """Mean wealth model fit.
+
+    Simulated vs empirical, by 5-year age bins, per education.
+    """
     from caregiving.model.shared import WEALTH_MOMENTS_SCALE
 
     with open(path_to_specs, "rb") as f:

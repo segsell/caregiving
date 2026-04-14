@@ -809,7 +809,10 @@ def task_load_and_merge_sibling_comparison_sample(
 
 
 def _get_biosib_columns():
-    """Return column list for biosib: pid, sex, gebjahr, and sibling 1..11 (gebsib*, sexsib*)."""
+    """Return column list for biosib.
+
+    Includes pid, sex, gebjahr, and sibling 1..11 (gebsib*, sexsib*).
+    """
     cols = ["pid", "sex", "gebjahr"]
     for i in range(1, 12):
         cols.extend([f"gebsib{i}", f"sexsib{i}"])

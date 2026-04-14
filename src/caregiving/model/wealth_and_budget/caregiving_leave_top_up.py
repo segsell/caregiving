@@ -259,10 +259,12 @@ def calc_caregiving_leave_top_up_beirat(
     years_leave_used_total,
     model_specs,
 ):
-    """65% caregiving leave top-up gated by Beirat limits (max 3 years, partial leave only).
+    """65% caregiving leave top-up gated by Beirat limits.
 
-    No full leave: benefit only when working (PT with prior FT) while caregiving and
-    years_leave_used_total < 3. No Lohnersatzleistung when unemployed during caregiving.
+    Max 3 years, partial leave only. No full leave: benefit only when
+    working (PT with prior FT) while caregiving and
+    years_leave_used_total < 3. No Lohnersatzleistung when unemployed
+    during caregiving.
     """
     raw = calc_caregiving_leave_top_up(
         lagged_choice=lagged_choice,
@@ -296,7 +298,9 @@ def calc_caregiving_leave_top_up_full_beirat(
     full_leave_year_used,
     model_specs,
 ):
-    """65% caregiving leave top-up for full Beirat: max 3 years total, max 1 year full leave.
+    """65% caregiving leave top-up for full Beirat.
+
+    Max 3 years total, max 1 year full leave.
 
     Full leave = unemployed while caregiving with prior job; eligible only when
     full_leave_year_used == 0 and years_leave_used_total < 3.

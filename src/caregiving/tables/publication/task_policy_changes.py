@@ -174,7 +174,10 @@ def task_create_policy_changes_table(
     / "simulated_data_caregiving_leave_with_job_retention_estimated_params.pkl",
     path_to_full_leave_sim: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params_no_pflegegeld.pkl",
+    / (
+        "simulated_data_full_caregiving_leave_with_job_retention_"
+        "estimated_params_no_pflegegeld.pkl"
+    ),
     path_to_save_table: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
@@ -200,10 +203,16 @@ def task_create_policy_changes_table_back_to_jan7(
     / "simulated_data_estimated_params_back_to_Jan7.pkl",
     path_to_normal_leave_sim: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_caregiving_leave_with_job_retention_estimated_params_back_to_Jan7.pkl",
+    / (
+        "simulated_data_caregiving_leave_with_job_retention_"
+        "estimated_params_back_to_Jan7.pkl"
+    ),
     path_to_full_leave_sim: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params_no_pflegegeld_back_to_Jan7.pkl",
+    / (
+        "simulated_data_full_caregiving_leave_with_job_retention_"
+        "estimated_params_no_pflegegeld_back_to_Jan7.pkl"
+    ),
     path_to_save_table: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
@@ -265,7 +274,10 @@ def task_create_policy_changes_table_full_beirat_no_pflegegeld(
     / "simulated_data_caregiving_leave_full_beirat_estimated_params.pkl",
     path_to_full_leave_sim: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params_no_pflegegeld.pkl",
+    / (
+        "simulated_data_full_caregiving_leave_with_job_retention_"
+        "estimated_params_no_pflegegeld.pkl"
+    ),
     path_to_save_table: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
@@ -324,7 +336,10 @@ def task_create_policy_changes_table_full_leave_pflegegeld_comparison(
     / "simulated_data_estimated_params.pkl",
     path_to_normal_leave_sim: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params_no_pflegegeld.pkl",
+    / (
+        "simulated_data_full_caregiving_leave_with_job_retention_"
+        "estimated_params_no_pflegegeld.pkl"
+    ),
     path_to_full_leave_sim: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params.pkl",
@@ -411,7 +426,7 @@ def task_create_baseline_vs_ncd_table(
     )
 
 
-def build_policy_changes_table(
+def build_policy_changes_table(  # noqa: PLR0915
     path_to_specs: Path,
     path_to_baseline_sim: Path,
     path_to_normal_leave_sim: Path,
@@ -636,7 +651,7 @@ def add_cg_metadata(df: pd.DataFrame, end_age_caregiving: int) -> pd.DataFrame:
 
 
 def panel_a_labor(df: pd.DataFrame) -> dict[str, float]:
-    """Share FT / PT / employed / unemployed / retired — outcome first, then age groups."""
+    """Share FT/PT/employed/unemployed/retired (outcome first, then age groups)."""
     rows = {}
     outcomes = [
         ("Share FT", FULL_TIME),
@@ -766,7 +781,9 @@ def panel_d_ever_cg_labor(df: pd.DataFrame) -> dict[str, float]:
     return rows
 
 
-def panel_e_cg_benefits(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]:
+def panel_e_cg_benefits(  # noqa: PLR0912, PLR0913, PLR0915
+    df: pd.DataFrame, wealth_unit: float
+) -> dict[str, float]:
     """Average benefit/top-up while caregiving, conditional on labor state.
 
     For the baseline, reports ``care_benefits_and_costs`` (Pflegegeld).
@@ -895,7 +912,10 @@ def panel_f_economic(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]:
 
 
 def panel_g_retirement(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]:
-    """Retirement outcomes, conditional on agent being retired (choice in RETIREMENT)."""
+    """Retirement outcomes, conditional on agent being retired.
+
+    Choice in RETIREMENT.
+    """
     retired = np.asarray(RETIREMENT).ravel()
     sub = df[df["choice"].isin(retired)]
     rows = {}
@@ -1164,7 +1184,9 @@ def panel_leave_eligibility(df: pd.DataFrame) -> dict[str, float]:
     return rows
 
 
-def panel_leave_takeup(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]:
+def panel_leave_takeup(  # noqa: PLR0912, PLR0913, PLR0915
+    df: pd.DataFrame, wealth_unit: float
+) -> dict[str, float]:
     """Leave take-up decomposition: eligibility, take-up rates, recipient composition.
 
     Answers: who is eligible, who actually receives the leave top-up,
@@ -1458,7 +1480,7 @@ def _classify_entrants(df: pd.DataFrame):
     return df_first, had_job_agents, no_job_agents
 
 
-def panel_care_demand_duration(df: pd.DataFrame) -> dict[str, float]:
+def panel_care_demand_duration(df: pd.DataFrame) -> dict[str, float]:  # noqa: PLR0915
     """Care demand and caregiving duration profile by prior job status.
 
     For CG type 1 entrants (first-time informal caregivers), compares agents

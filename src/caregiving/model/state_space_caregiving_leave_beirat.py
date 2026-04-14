@@ -42,7 +42,9 @@ def create_state_space_functions_full_beirat():
     return {
         "state_specific_choice_set": state_specific_choice_set_with_caregiving,
         "next_period_deterministic_state": next_period_deterministic_state_full_beirat,
-        "next_period_experience": get_next_period_experience_caregiving_leave_full_beirat,
+        "next_period_experience": (
+            get_next_period_experience_caregiving_leave_full_beirat
+        ),
         "sparsity_condition": sparsity_condition_full_beirat,
     }
 
@@ -102,11 +104,13 @@ def next_period_deterministic_state_full_beirat(
     years_leave_used_total,
     full_leave_year_used,
 ):
-    """Update deterministic states for full Beirat: job_before_caregiving + leave counters.
+    """Update deterministic states for full Beirat.
 
+    Updates job_before_caregiving + leave counters.
     years_leave_used_total in {0,1,2,3}; full_leave_year_used in {0,1}.
     Invalid combination (0, 1) excluded by sparsity. Full leave = unemployed with
-    prior job; partial leave = PT with prior FT. At most 1 year full leave, 3 years total.
+    prior job; partial leave = PT with prior FT. At most 1 year full leave,
+    3 years total.
     """
     base = next_period_deterministic_state_with_job_retention(
         period=period,
@@ -173,7 +177,10 @@ def sparsity_condition_beirat(  # noqa: PLR0911, PLR0912
     caregiving_type,
     model_specs,
 ):
-    """Sparsity for Beirat model (partial leave only): same as caregiving leave with job retention."""
+    """Sparsity for Beirat model (partial leave only).
+
+    Same as caregiving leave with job retention.
+    """
     start_age = model_specs["start_age"]
     max_ret_age = model_specs["max_ret_age"]
     min_ret_age_state_space = model_specs["min_ret_age"]
@@ -342,7 +349,10 @@ def sparsity_condition_full_beirat(  # noqa: PLR0911, PLR0912
     caregiving_type,
     model_specs,
 ):
-    """Sparsity for full Beirat model: same as job retention + exclude (total=0, full=1)."""
+    """Sparsity for full Beirat model.
+
+    Same as job retention + exclude (total=0, full=1).
+    """
     start_age = model_specs["start_age"]
     max_ret_age = model_specs["max_ret_age"]
     min_ret_age_state_space = model_specs["min_ret_age"]

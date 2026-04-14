@@ -340,7 +340,8 @@ def _caregiver_tabular(p: dict, se: dict) -> list[str]:  # noqa: PLR0914
 
     L.append(r"\midrule")
 
-    # --- Panel D: Children while caregiving (sign-flipped, no health/intensity split) ---
+    # --- Panel D: Children while caregiving ---
+    # (sign-flipped, no health/intensity split)
     L.append(
         r"\multicolumn{9}{l}{\textit{Panel D:"
         r" Interaction with Number of Children While Caregiving}} \\",

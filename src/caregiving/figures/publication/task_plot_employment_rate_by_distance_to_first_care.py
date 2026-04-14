@@ -240,15 +240,15 @@ def _identify_agents_by_duration(
 # PLOTS OVERVIEW (sample, event, duration, and who we compare)
 # ---------------------------------------------------------------------------
 # WHO WE COMPARE (same for all tasks):
-#   The same individuals (and same agent-periods) are compared in baseline vs no-care-demand.
+#   The same individuals (and same agent-periods) are compared in baseline vs no-care-demand.  # noqa: E501
 #   (1) Sample is defined from the BASELINE (original) data: alive only; then optionally
-#       restricted to ever-caregivers and/or ever-care-demand via prepare_dataframes_simple
+#       restricted to ever-caregivers and/or ever-care-demand via prepare_dataframes_simple  # noqa: E501
 #       (ever_caregivers, ever_care_demand; default False for both).
 #   (2) For type_1_* tasks we further restrict to caregiving_type == 1 (same agent set
 #       in both baseline and no-care-demand).
 #   (3) We merge baseline outcomes and no-care-demand outcomes on (agent, period) with
 #       how="inner", so we keep only agent-periods that exist in BOTH datasets. Thus
-#       no-care-demand data is effectively restricted to the same agents (and to the same
+#       no-care-demand data is effectively restricted to the same agents (and to the same  # noqa: E501
 #       person-periods after the merge) as the baseline sample.
 #
 # Lines in the plot (same for all plot types):
@@ -262,7 +262,7 @@ def _identify_agents_by_duration(
 #
 # EVENT: Two definitions used in this module:
 #   - "First care demand": t=0 = first period with care_demand > 0 (light or intensive).
-#   - "First caregiving spell": t=0 = first period in which the agent provides informal care.
+#   - "First caregiving spell": t=0 = first period in which the agent provides informal care.  # noqa: E501
 #
 # 1) task_plot_employment_rate_by_distance_to_first_care_demand_type_0
 #    Sample: caregiving_type == 0 only. Event: First care demand.
@@ -282,45 +282,45 @@ def _identify_agents_by_duration(
 #
 # 5) task_plot_employment_rate_by_distance_to_first_caregiving_spell_at_least
 #    Sample: ALL agents. Event: First caregiving spell.
-#    Duration: 1–4 = AT LEAST caregiving (overlapping). identify_agents_by_duration_at_least.
+#    Duration: 1–4 = AT LEAST caregiving (overlapping). identify_agents_by_duration_at_least.  # noqa: E501
 #
 # 6) task_plot_employment_rate_by_distance_to_first_caregiving_spell_exact
 #    Sample: ALL agents. Event: First caregiving spell.
 #    Duration: 1–4 = EXACT consecutive caregiving (then stop).
 #
-# 7) task_plot_*_by_distance_to_first_care_demand_total_caregiving [base / _back_to_Jan7]
+# 7) task_plot_*_by_distance_to_first_care_demand_total_caregiving [base / _back_to_Jan7]  # noqa: E501
 #    Employment: base, Jan7, back_to_Jan7 (data in function name and filename).
-#    publication_other_check (full_time, part_time, working_hours, labor_income): two data variants each:
-#    - Standard: estimated_params, no_care_demand; function/filename without suffix/prefix.
-#    - back_to_Jan7: function/filename _back_to_Jan7 and back_to_Jan7_ prefix. Output: .../total_caregiving_years/.
+#    publication_other_check (full_time, part_time, working_hours, labor_income): two data variants each:  # noqa: E501
+#    - Standard: estimated_params, no_care_demand; function/filename without suffix/prefix.  # noqa: E501
+#    - back_to_Jan7: function/filename _back_to_Jan7 and back_to_Jan7_ prefix. Output: .../total_caregiving_years/.  # noqa: E501
 #
-# 8) task_plot_employment_rate_by_distance_to_first_caregiving_spell_total_caregiving [/_Jan7 /_back_to_Jan7]
-#    Sample: ever_caregivers=True. Event: First caregiving spell. Duration: 1–5+ TOTAL care years.
+# 8) task_plot_employment_rate_by_distance_to_first_caregiving_spell_total_caregiving [/_Jan7 /_back_to_Jan7]  # noqa: E501
+#    Sample: ever_caregivers=True. Event: First caregiving spell. Duration: 1–5+ TOTAL care years.  # noqa: E501
 #    Data variant in function name and filename (base, Jan7_, back_to_Jan7_).
 #
-# 9) task_plot_*_by_distance_to_first_caregiving_spell_total_caregiving [base / _back_to_Jan7] (publication_other_check)
-#    (full_time, part_time, working_hours, labor_income). Two data variants each: standard (estimated_params,
-#    no_care_demand; no suffix/prefix) and back_to_Jan7 (_back_to_Jan7 / back_to_Jan7_ prefix).
+# 9) task_plot_*_by_distance_to_first_caregiving_spell_total_caregiving [base / _back_to_Jan7] (publication_other_check)  # noqa: E501
+#    (full_time, part_time, working_hours, labor_income). Two data variants each: standard (estimated_params,  # noqa: E501
+#    no_care_demand; no suffix/prefix) and back_to_Jan7 (_back_to_Jan7 / back_to_Jan7_ prefix).  # noqa: E501
 #
 # ---------------------------------------------------------------------------
-# TASKS WITH publication_counterfactual + publication_employment_check (run with -m publication_employment_check)
+# TASKS WITH publication_counterfactual + publication_employment_check (run with -m publication_employment_check)  # noqa: E501
 # ---------------------------------------------------------------------------
 # All use: original = simulated_data_estimated_params_back_to_Jan7.pkl,
 #          no_care_demand = simulated_data_no_care_demand_back_to_Jan7.pkl.
-# Subsetting: prepare_dataframes_simple (alive; optional ever_caregivers/ever_care_demand) then
+# Subsetting: prepare_dataframes_simple (alive; optional ever_caregivers/ever_care_demand) then  # noqa: E501
 #             restrict to caregiving_type == 1; merge on (agent, period).
 #
-# | Task function (pattern)                    | Event           | Duration        | Output filename pattern (subdir)        |
-# |---------------------------------------------|-----------------|-----------------|----------------------------------------|
-# | ..._care_demand_type_1_cg                   | First care demand | Caregiving (exact 1–4y) | employment/..._care_demand_type_1_caregiving_duration_{age}.pdf |
-# | ..._care_spell_type_1_cd (employment)      | First care demand | Care demand (exact 1–4y) | employment/..._care_spell_type_1_exact_consecutive_caregiving_spells_{age}.pdf |
-# | ..._care_spell_type_1_cd (full_time)      | First care demand | Care demand (exact 1–4y) | full_time/..._care_spell_type_1_exact_consecutive_caregiving_spells_{age}.pdf |
-# | ..._care_spell_type_1_cd (part_time)       | First care demand | Care demand (exact 1–4y) | part_time/..._care_spell_type_1_... |
-# | ..._care_spell_type_1_cd (working_hours)   | First care demand | Care demand (exact 1–4y) | working_hours/..._care_spell_type_1_... |
-# | ..._care_spell_type_1_cd (labor_income)    | First care demand | Care demand (exact 1–4y) | labor_income/..._care_spell_type_1_... |
+# | Task function (pattern)                    | Event           | Duration        | Output filename pattern (subdir)        |  # noqa: E501
+# |---------------------------------------------|-----------------|-----------------|----------------------------------------|  # noqa: E501
+# | ..._care_demand_type_1_cg                   | First care demand | Caregiving (exact 1–4y) | employment/..._care_demand_type_1_caregiving_duration_{age}.pdf |  # noqa: E501
+# | ..._care_spell_type_1_cd (employment)      | First care demand | Care demand (exact 1–4y) | employment/..._care_spell_type_1_exact_consecutive_caregiving_spells_{age}.pdf |  # noqa: E501
+# | ..._care_spell_type_1_cd (full_time)      | First care demand | Care demand (exact 1–4y) | full_time/..._care_spell_type_1_exact_consecutive_caregiving_spells_{age}.pdf |  # noqa: E501
+# | ..._care_spell_type_1_cd (part_time)       | First care demand | Care demand (exact 1–4y) | part_time/..._care_spell_type_1_... |  # noqa: E501
+# | ..._care_spell_type_1_cd (working_hours)   | First care demand | Care demand (exact 1–4y) | working_hours/..._care_spell_type_1_... |  # noqa: E501
+# | ..._care_spell_type_1_cd (labor_income)    | First care demand | Care demand (exact 1–4y) | labor_income/..._care_spell_type_1_... |  # noqa: E501
 #
-# Naming: type_1_cg = "care demand" event + "caregiving duration" in filename. type_1_cd (and outcomes)
-#         = "care spell" + "exact_consecutive_caregiving_spells" in filename (axis label "first care spell").
+# Naming: type_1_cg = "care demand" event + "caregiving duration" in filename. type_1_cd (and outcomes)  # noqa: E501
+#         = "care spell" + "exact_consecutive_caregiving_spells" in filename (axis label "first care spell").  # noqa: E501
 # ---------------------------------------------------------------------------
 
 # Sanity check: Plot for caregiving_type == 0 (agents who cannot provide informal care)
@@ -362,7 +362,8 @@ for age_min_val, age_max_val, age_label_val in (
     ) -> None:
         """Plot employment rate by distance to first care demand (type 0; sanity check).
 
-        Sample: Same agents in baseline and no-care-demand; from baseline (alive, optional
+        Sample: Same agents in baseline and no-care-demand; from baseline (alive,
+        optional
         ever_caregivers/ever_care_demand), restricted to caregiving_type == 0; merge on
         (agent, period). Event: t=0 = first care demand. Type 0 cannot provide care,
         so caregiving duration lines are empty; duration groups use care demand.
@@ -610,7 +611,8 @@ for age_min_val, age_max_val, age_label_val in (
     ) -> None:
         """Plot employment rate by distance to first care demand (all agents).
 
-        Sample: Same agents in baseline and no-care-demand; from baseline (alive, optional
+        Sample: Same agents in baseline and no-care-demand; from baseline (alive,
+        optional
         ever_caregivers/ever_care_demand); merge on (agent, period). Event: t=0 = first
         care demand. Duration: 1–4 year = exact consecutive care demand (then stop).
         Can be filtered by age at first care demand period.
@@ -845,11 +847,15 @@ for age_min_val, age_max_val, age_label_val in (
         window_by_age: dict[str, tuple[int, int]] | None = None,
         caregiving_type_1: bool = True,
     ) -> None:
-        """Plot employment rate by distance to first care demand (type 1, caregiving duration).
+        """Plot employment rate by distance to first care demand (type 1, caregiving
+        duration).
 
-        Sample: Same agents in baseline and no-care-demand; from baseline (alive, optional
-        ever_caregivers/ever_care_demand), optionally restricted to caregiving_type == 1;
-        merge on (agent, period). Event: t=0 = first care demand. Duration: 1–4 year = exact
+        Sample: Same agents in baseline and no-care-demand; from baseline (alive,
+        optional
+        ever_caregivers/ever_care_demand), optionally restricted to caregiving_type ==
+        1;
+        merge on (agent, period). Event: t=0 = first care demand. Duration: 1–4 year =
+        exact
         consecutive informal caregiving (then stop).
         Can be filtered by age at first care demand period.
 
@@ -1070,7 +1076,7 @@ for age_min_val, age_max_val, age_label_val in (
     # @pytask.mark.publication_employment
     # @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_care_demand_type_1_exact_care_demand")
-    def task_plot_employment_rate_by_distance_to_first_care_demand_type_1_exact_care_demand(  # noqa: PLR0912, PLR0915
+    def task_plot_employment_rate_by_distance_to_first_care_demand_type_1_exact_care_demand(  # noqa: PLR0912, PLR0915, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -1096,11 +1102,13 @@ for age_min_val, age_max_val, age_label_val in (
         window_by_age: dict[str, tuple[int, int]] | None = None,
         caregiving_type_1: bool = False,
     ) -> None:
-        """Plot employment rate by distance to first care demand (type 1, exact care demand duration).
+        """Plot employment rate by distance to first care demand (type 1, exact care
+        demand duration).
 
         Sample: Same agents in baseline and no-care-demand; sample defined from baseline
         (alive, optional ever_caregivers/ever_care_demand), optionally restricted to
-        caregiving_type == 1. Merge on (agent, period) keeps only matched person-periods.
+        caregiving_type == 1. Merge on (agent, period) keeps only matched
+        person-periods.
 
         Event: t=0 = first period with care demand > 0 (x-axis: first care demand).
         Duration: 1–4 year lines = exact consecutive care demand (then stop).
@@ -1317,7 +1325,7 @@ for age_min_val, age_max_val, age_label_val in (
 # Data: estimated_params, no_care_demand (standard)
 # ---------------------------------------------------------------------------
 
-# Full-time share by distance to first care demand (standard data; total care years 1–5+)
+# Full-time share by distance to first care demand (standard data; total care years 1–5+)  # noqa: E501
 for age_min_val, age_max_val, age_label_val in (
     (None, None, "all_ages"),
     (40, 49, "ages_40_49"),
@@ -1355,11 +1363,13 @@ for age_min_val, age_max_val, age_label_val in (
         yticks: list[float] | None = [0, 0.1, 0.2, 0.3, 0.4, 0.5],
         plot_caregivers_mean: bool = True,
     ) -> None:
-        """Plot full-time share by distance to first care demand (ever caregivers, total care years 1–5+).
+        """Plot full-time share by distance to first care demand (ever caregivers, total
+        care years 1–5+).
 
         Data: estimated_params, no_care_demand. Event: t=0 = first care demand.
         Duration: 1,2,3,4,5+ = total caregiving years over lifecycle.
-        window_by_age overrides window_low/window_high per age group; keys as in AGE_GROUPS_EVENT_STUDY.
+        window_by_age overrides window_low/window_high per age group; keys as in
+        AGE_GROUPS_EVENT_STUDY.
         """
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
@@ -1487,7 +1497,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
 
-# Part-time share by distance to first care demand (standard data; total care years 1–5+)
+# Part-time share by distance to first care demand (standard data; total care years 1–5+)  # noqa: E501
 for age_min_val, age_max_val, age_label_val in (
     (None, None, "all_ages"),
     (40, 49, "ages_40_49"),
@@ -1525,7 +1535,8 @@ for age_min_val, age_max_val, age_label_val in (
         yticks: list[float] | None = [0, 0.1, 0.2, 0.3, 0.4, 0.5],
         plot_caregivers_mean: bool = True,
     ) -> None:
-        """Plot part-time share by distance to first care demand (ever caregivers, total care years 1–5+).
+        """Plot part-time share by distance to first care demand (ever caregivers, total
+        care years 1–5+).
 
         Data: estimated_params, no_care_demand. Event: t=0 = first care demand.
         Duration: 1,2,3,4,5+ = total caregiving years over lifecycle.
@@ -1656,7 +1667,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
 
-# Weekly working hours by distance to first care demand (standard data; total care years 1–5+)
+# Weekly working hours by distance to first care demand (standard data; total care years 1–5+)  # noqa: E501
 for age_min_val, age_max_val, age_label_val in (
     (None, None, "all_ages"),
     (40, 49, "ages_40_49"),
@@ -1696,7 +1707,8 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Plot weekly working hours by distance to first care demand (ever caregivers, total care years 1–5+).
+        """Plot weekly working hours by distance to first care demand (ever caregivers,
+        total care years 1–5+).
 
         Data: estimated_params, no_care_demand. Event: t=0 = first care demand.
         Duration: 1,2,3,4,5+ = total caregiving years over lifecycle.
@@ -1831,7 +1843,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
 
-# Monthly gross labor income by distance to first care demand (standard data; total care years 1–5+)
+# Monthly gross labor income by distance to first care demand (standard data; total care years 1–5+)  # noqa: E501
 for age_min_val, age_max_val, age_label_val in (
     (None, None, "all_ages"),
     (40, 49, "ages_40_49"),
@@ -1869,7 +1881,8 @@ for age_min_val, age_max_val, age_label_val in (
         yticks: list[float] | None = [0, 0.25, 0.50, 0.75, 1.00, 1.25, 1.50, 1.75],
         plot_caregivers_mean: bool = True,
     ) -> None:
-        """Plot monthly gross labor income by distance to first care demand (ever caregivers, total care years 1–5+).
+        """Plot monthly gross labor income by distance to first care demand (ever
+        caregivers, total care years 1–5+).
 
         Data: estimated_params, no_care_demand. Event: t=0 = first care demand.
         Duration: 1,2,3,4,5+ = total caregiving years over lifecycle.
@@ -2008,7 +2021,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
 
-# Full-time share by distance to first care demand (ever caregivers, total care years 1–5+); data: back_to_Jan7
+# Full-time share by distance to first care demand (ever caregivers, total care years 1–5+); data: back_to_Jan7  # noqa: E501
 for age_min_val, age_max_val, age_label_val in (
     (None, None, "all_ages"),
     (40, 49, "ages_40_49"),
@@ -2023,7 +2036,7 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.task(
         id=f"{age_label_val}_care_demand_total_caregiving_back_to_Jan7_full_time"
     )
-    def task_plot_full_time_share_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915
+    def task_plot_full_time_share_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -2050,9 +2063,11 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Plot full-time share by distance to first care demand (ever caregivers, total care years 1–5+).
+        """Plot full-time share by distance to first care demand (ever caregivers, total
+        care years 1–5+).
 
-        Event: t=0 = first care demand. Duration: 1,2,3,4,5+ = total caregiving years over lifecycle.
+        Event: t=0 = first care demand. Duration: 1,2,3,4,5+ = total caregiving years
+        over lifecycle.
         """
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
@@ -2175,7 +2190,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
 
-# Part-time share by distance to first care demand (ever caregivers, total care years 1–5+)
+# Part-time share by distance to first care demand (ever caregivers, total care years 1–5+)  # noqa: E501
 for age_min_val, age_max_val, age_label_val in (
     (None, None, "all_ages"),
     (40, 49, "ages_40_49"),
@@ -2190,7 +2205,7 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.task(
         id=f"{age_label_val}_care_demand_total_caregiving_back_to_Jan7_part_time"
     )
-    def task_plot_part_time_share_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915
+    def task_plot_part_time_share_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -2217,9 +2232,11 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Plot part-time share by distance to first care demand (ever caregivers, total care years 1–5+).
+        """Plot part-time share by distance to first care demand (ever caregivers, total
+        care years 1–5+).
 
-        Event: t=0 = first care demand. Duration: 1,2,3,4,5+ = total caregiving years over lifecycle.
+        Event: t=0 = first care demand. Duration: 1,2,3,4,5+ = total caregiving years
+        over lifecycle.
         """
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
@@ -2342,7 +2359,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
 
-# Weekly working hours by distance to first care demand (ever caregivers, total care years 1–5+)
+# Weekly working hours by distance to first care demand (ever caregivers, total care years 1–5+)  # noqa: E501
 for age_min_val, age_max_val, age_label_val in (
     (None, None, "all_ages"),
     (40, 49, "ages_40_49"),
@@ -2357,7 +2374,7 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.task(
         id=f"{age_label_val}_care_demand_total_caregiving_back_to_Jan7_working_hours"
     )
-    def task_plot_working_hours_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915
+    def task_plot_working_hours_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -2384,9 +2401,11 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Plot weekly working hours by distance to first care demand (ever caregivers, total care years 1–5+).
+        """Plot weekly working hours by distance to first care demand (ever caregivers,
+        total care years 1–5+).
 
-        Event: t=0 = first care demand. Duration: 1,2,3,4,5+ = total caregiving years over lifecycle.
+        Event: t=0 = first care demand. Duration: 1,2,3,4,5+ = total caregiving years
+        over lifecycle.
         """
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
@@ -2518,7 +2537,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
 
-# Monthly gross labor income by distance to first care demand (ever caregivers, total care years 1–5+)
+# Monthly gross labor income by distance to first care demand (ever caregivers, total care years 1–5+)  # noqa: E501
 for age_min_val, age_max_val, age_label_val in (
     (None, None, "all_ages"),
     (40, 49, "ages_40_49"),
@@ -2533,7 +2552,7 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.task(
         id=f"{age_label_val}_care_demand_total_caregiving_back_to_Jan7_labor_income"
     )
-    def task_plot_labor_income_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915
+    def task_plot_labor_income_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -2560,9 +2579,11 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Plot monthly gross labor income by distance to first care demand (ever caregivers, total care years 1–5+).
+        """Plot monthly gross labor income by distance to first care demand (ever
+        caregivers, total care years 1–5+).
 
-        Event: t=0 = first care demand. Duration: 1,2,3,4,5+ = total caregiving years over lifecycle.
+        Event: t=0 = first care demand. Duration: 1,2,3,4,5+ = total caregiving years
+        over lifecycle.
         """
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
@@ -2701,7 +2722,7 @@ for age_min_val, age_max_val, age_label_val in (
 # Data: estimated_params, no_care_demand (standard)
 # ---------------------------------------------------------------------------
 
-# Full-time share by distance to first caregiving spell (standard data; total care years 1–5+)
+# Full-time share by distance to first caregiving spell (standard data; total care years 1–5+)  # noqa: E501
 for age_min_val, age_max_val, age_label_val in (
     (None, None, "all_ages"),
     (40, 49, "ages_40_49"),
@@ -2714,7 +2735,7 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_full_time
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_caregiving_spell_total_caregiving_full_time")
-    def task_plot_full_time_share_by_distance_to_first_caregiving_spell_total_caregiving(  # noqa: PLR0912, PLR0915
+    def task_plot_full_time_share_by_distance_to_first_caregiving_spell_total_caregiving(  # noqa: PLR0912, PLR0915, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -2741,7 +2762,8 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Plot full-time share by distance to first caregiving spell (ever caregivers, total care years 1–5+).
+        """Plot full-time share by distance to first caregiving spell (ever caregivers,
+        total care years 1–5+).
 
         Data: estimated_params, no_care_demand. Event: t=0 = first caregiving spell.
         Duration: 1,2,3,4,5+ = total caregiving years over lifecycle.
@@ -2882,7 +2904,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
 
-# Part-time share by distance to first caregiving spell (standard data; total care years 1–5+)
+# Part-time share by distance to first caregiving spell (standard data; total care years 1–5+)  # noqa: E501
 for age_min_val, age_max_val, age_label_val in (
     (None, None, "all_ages"),
     (40, 49, "ages_40_49"),
@@ -2895,7 +2917,7 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_part_time
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_caregiving_spell_total_caregiving_part_time")
-    def task_plot_part_time_share_by_distance_to_first_caregiving_spell_total_caregiving(  # noqa: PLR0912, PLR0915
+    def task_plot_part_time_share_by_distance_to_first_caregiving_spell_total_caregiving(  # noqa: PLR0912, PLR0915, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -2922,7 +2944,8 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Plot part-time share by distance to first caregiving spell (ever caregivers, total care years 1–5+).
+        """Plot part-time share by distance to first caregiving spell (ever caregivers,
+        total care years 1–5+).
 
         Data: estimated_params, no_care_demand. Event: t=0 = first caregiving spell.
         Duration: 1,2,3,4,5+ = total caregiving years over lifecycle.
@@ -3063,7 +3086,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
 
-# Weekly working hours by distance to first caregiving spell (standard data; total care years 1–5+)
+# Weekly working hours by distance to first caregiving spell (standard data; total care years 1–5+)  # noqa: E501
 for age_min_val, age_max_val, age_label_val in (
     (None, None, "all_ages"),
     (40, 49, "ages_40_49"),
@@ -3102,7 +3125,8 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Plot weekly working hours by distance to first caregiving spell (ever caregivers, total care years 1–5+).
+        """Plot weekly working hours by distance to first caregiving spell (ever
+        caregivers, total care years 1–5+).
 
         Data: estimated_params, no_care_demand. Event: t=0 = first caregiving spell.
         Duration: 1,2,3,4,5+ = total caregiving years over lifecycle.
@@ -3252,7 +3276,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
 
-# Monthly gross labor income by distance to first caregiving spell (standard data; total care years 1–5+)
+# Monthly gross labor income by distance to first caregiving spell (standard data; total care years 1–5+)  # noqa: E501
 for age_min_val, age_max_val, age_label_val in (
     (None, None, "all_ages"),
     (40, 49, "ages_40_49"),
@@ -3291,7 +3315,8 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Plot monthly gross labor income by distance to first caregiving spell (ever caregivers, total care years 1–5+).
+        """Plot monthly gross labor income by distance to first caregiving spell (ever
+        caregivers, total care years 1–5+).
 
         Data: estimated_params, no_care_demand. Event: t=0 = first caregiving spell.
         Duration: 1,2,3,4,5+ = total caregiving years over lifecycle.
@@ -3441,7 +3466,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
 
-# Full-time share by distance to first caregiving spell (data: back_to_Jan7; total care years 1–5+)
+# Full-time share by distance to first caregiving spell (data: back_to_Jan7; total care years 1–5+)  # noqa: E501
 for age_min_val, age_max_val, age_label_val in (
     (None, None, "all_ages"),
     (40, 49, "ages_40_49"),
@@ -3456,7 +3481,7 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.task(
         id=f"{age_label_val}_caregiving_spell_total_caregiving_back_to_Jan7_full_time"
     )
-    def task_plot_full_time_share_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915
+    def task_plot_full_time_share_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -3483,7 +3508,8 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Plot full-time share by distance to first caregiving spell (ever caregivers, total care years 1–5+)."""
+        """Plot full-time share by distance to first caregiving spell (ever caregivers,
+        total care years 1–5+)."""
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
         else:
@@ -3620,7 +3646,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
 
-# Part-time share by distance to first caregiving spell (ever caregivers, total care years 1–5+)
+# Part-time share by distance to first caregiving spell (ever caregivers, total care years 1–5+)  # noqa: E501
 for age_min_val, age_max_val, age_label_val in (
     (None, None, "all_ages"),
     (40, 49, "ages_40_49"),
@@ -3635,7 +3661,7 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.task(
         id=f"{age_label_val}_caregiving_spell_total_caregiving_back_to_Jan7_part_time"
     )
-    def task_plot_part_time_share_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915
+    def task_plot_part_time_share_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -3662,7 +3688,8 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Plot part-time share by distance to first caregiving spell (ever caregivers, total care years 1–5+)."""
+        """Plot part-time share by distance to first caregiving spell (ever caregivers,
+        total care years 1–5+)."""
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
         else:
@@ -3799,7 +3826,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
 
-# Weekly working hours by distance to first caregiving spell (ever caregivers, total care years 1–5+)
+# Weekly working hours by distance to first caregiving spell (ever caregivers, total care years 1–5+)  # noqa: E501
 for age_min_val, age_max_val, age_label_val in (
     (None, None, "all_ages"),
     (40, 49, "ages_40_49"),
@@ -3814,7 +3841,7 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.task(
         id=f"{age_label_val}_caregiving_spell_total_caregiving_back_to_Jan7_working_hours"
     )
-    def task_plot_working_hours_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915
+    def task_plot_working_hours_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -3840,7 +3867,8 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Plot weekly working hours by distance to first caregiving spell (ever caregivers, total care years 1–5+)."""
+        """Plot weekly working hours by distance to first caregiving spell (ever
+        caregivers, total care years 1–5+)."""
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
         else:
@@ -3986,7 +4014,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
 
-# Monthly gross labor income by distance to first caregiving spell (ever caregivers, total care years 1–5+)
+# Monthly gross labor income by distance to first caregiving spell (ever caregivers, total care years 1–5+)  # noqa: E501
 for age_min_val, age_max_val, age_label_val in (
     (None, None, "all_ages"),
     (40, 49, "ages_40_49"),
@@ -4001,7 +4029,7 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.task(
         id=f"{age_label_val}_caregiving_spell_total_caregiving_back_to_Jan7_labor_income"
     )
-    def task_plot_labor_income_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915
+    def task_plot_labor_income_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -4027,7 +4055,8 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Plot monthly gross labor income by distance to first caregiving spell (ever caregivers, total care years 1–5+)."""
+        """Plot monthly gross labor income by distance to first caregiving spell (ever
+        caregivers, total care years 1–5+)."""
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
         else:
@@ -4209,9 +4238,11 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Plot employment rate by distance to first caregiving spell (at least N years).
+        """Plot employment rate by distance to first caregiving spell (at least N
+        years).
 
-        Sample: Same agents in baseline and no-care-demand; from baseline (alive, optional
+        Sample: Same agents in baseline and no-care-demand; from baseline (alive,
+        optional
         ever_caregivers/ever_care_demand); merge on (agent, period). Event: t=0 = first
         period providing informal care. Duration: 1–4 = at least 1, 2, 3, 4 years
         caregiving (overlapping groups).
@@ -4419,11 +4450,14 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Plot overall employment rate by distance to first caregiving spell (exact caregiving).
+        """Plot overall employment rate by distance to first caregiving spell (exact
+        caregiving).
 
-        Sample: Same agents in baseline and no-care-demand; from baseline (alive, optional
+        Sample: Same agents in baseline and no-care-demand; from baseline (alive,
+        optional
         ever_caregivers/ever_care_demand); merge on (agent, period). Event: t=0 = first
-        period providing informal care. Duration: 1–4 year = exact consecutive caregiving
+        period providing informal care. Duration: 1–4 year = exact consecutive
+        caregiving
         (then stop). Can be filtered by age at first care period.
 
         Steps:
@@ -4673,7 +4707,7 @@ for age_min_val, age_max_val, age_label_val in (
 
 
 # ---------------------------------------------------------------------------
-# Tasks: distance to first care demand + TOTAL caregiving years (1,2,3,4,5+) over lifecycle
+# Tasks: distance to first care demand + TOTAL caregiving years (1,2,3,4,5+) over lifecycle  # noqa: E501
 # Set 1 (base): original = estimated_params, no_care = no_care_demand (no suffix/prefix)
 # ---------------------------------------------------------------------------
 for age_min_val, age_max_val, age_label_val in (
@@ -4713,10 +4747,13 @@ for age_min_val, age_max_val, age_label_val in (
         yticks: list[float] | None = [0, 0.2, 0.4, 0.6, 0.8, 1.0],
         plot_caregivers_mean: bool = True,
     ) -> None:
-        """Plot employment rate by distance to first care demand, grouped by total caregiving years.
+        """Plot employment rate by distance to first care demand, grouped by total
+        caregiving years.
 
-        Sample restricted to ever caregivers (same as 1–5+ total care years). Data: estimated_params, no_care_demand.
-        Event: t=0 = first care demand. Duration: 1,2,3,4,5+ = TOTAL caregiving years over
+        Sample restricted to ever caregivers (same as 1–5+ total care years). Data:
+        estimated_params, no_care_demand.
+        Event: t=0 = first care demand. Duration: 1,2,3,4,5+ = TOTAL caregiving years
+        over
         lifecycle (up to end_age_caregiving from specs), not necessarily consecutive.
         """
         if window_by_age is not None and age_label in window_by_age:
@@ -4855,7 +4892,7 @@ for age_min_val, age_max_val, age_label_val in (
     # @pytask.mark.publication_employment
     # @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_care_demand_total_caregiving_Jan7")
-    def task_plot_employment_rate_by_distance_to_first_care_demand_total_caregiving_Jan7(  # noqa: PLR0912, PLR0915
+    def task_plot_employment_rate_by_distance_to_first_care_demand_total_caregiving_Jan7(  # noqa: PLR0912, PLR0915, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -4882,10 +4919,13 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Plot employment rate by distance to first care demand, grouped by total caregiving years.
+        """Plot employment rate by distance to first care demand, grouped by total
+        caregiving years.
 
-        Sample restricted to ever caregivers. Data: estimated_params_Jan7, no_care_demand_back_to_Jan7.
-        Event: t=0 = first care demand. Duration: 1,2,3,4,5+ = TOTAL caregiving years over
+        Sample restricted to ever caregivers. Data: estimated_params_Jan7,
+        no_care_demand_back_to_Jan7.
+        Event: t=0 = first care demand. Duration: 1,2,3,4,5+ = TOTAL caregiving years
+        over
         lifecycle (up to end_age_caregiving from specs), not necessarily consecutive.
         """
         if window_by_age is not None and age_label in window_by_age:
@@ -5005,7 +5045,7 @@ for age_min_val, age_max_val, age_label_val in (
 
 
 # ---------------------------------------------------------------------------
-# Tasks: distance to first caregiving spell + TOTAL caregiving years (1,2,3,4,5+) over lifecycle
+# Tasks: distance to first caregiving spell + TOTAL caregiving years (1,2,3,4,5+) over lifecycle  # noqa: E501
 # Set 1 (base): original = estimated_params, no_care = no_care_demand (no suffix/prefix)
 # ---------------------------------------------------------------------------
 for age_min_val, age_max_val, age_label_val in (
@@ -5020,7 +5060,7 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_employment_check
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_caregiving_spell_total_caregiving")
-    def task_plot_employment_rate_by_distance_to_first_caregiving_spell_total_caregiving(  # noqa: PLR0912, PLR0915
+    def task_plot_employment_rate_by_distance_to_first_caregiving_spell_total_caregiving(  # noqa: PLR0912, PLR0915, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -5047,11 +5087,14 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Plot employment rate by distance to first caregiving spell, grouped by total caregiving years.
+        """Plot employment rate by distance to first caregiving spell, grouped by total
+        caregiving years.
 
         Sample restricted to ever caregivers. Data: estimated_params, no_care_demand.
-        Event: t=0 = first caregiving spell. Duration: 1,2,3,4,5+ = TOTAL caregiving years
-        over lifecycle (up to end_age_caregiving from specs), not necessarily consecutive.
+        Event: t=0 = first caregiving spell. Duration: 1,2,3,4,5+ = TOTAL caregiving
+        years
+        over lifecycle (up to end_age_caregiving from specs), not necessarily
+        consecutive.
         """
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
@@ -5193,7 +5236,7 @@ for age_min_val, age_max_val, age_label_val in (
     # @pytask.mark.publication_employment
     # @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_caregiving_spell_total_caregiving_Jan7")
-    def task_plot_employment_rate_by_distance_to_first_caregiving_spell_total_caregiving_Jan7(  # noqa: PLR0912, PLR0915
+    def task_plot_employment_rate_by_distance_to_first_caregiving_spell_total_caregiving_Jan7(  # noqa: PLR0912, PLR0915, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -5220,11 +5263,15 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Plot employment rate by distance to first caregiving spell, grouped by total caregiving years.
+        """Plot employment rate by distance to first caregiving spell, grouped by total
+        caregiving years.
 
-        Sample restricted to ever caregivers. Data: estimated_params_Jan7, no_care_demand_back_to_Jan7.
-        Event: t=0 = first caregiving spell. Duration: 1,2,3,4,5+ = TOTAL caregiving years
-        over lifecycle (up to end_age_caregiving from specs), not necessarily consecutive.
+        Sample restricted to ever caregivers. Data: estimated_params_Jan7,
+        no_care_demand_back_to_Jan7.
+        Event: t=0 = first caregiving spell. Duration: 1,2,3,4,5+ = TOTAL caregiving
+        years
+        over lifecycle (up to end_age_caregiving from specs), not necessarily
+        consecutive.
         """
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
@@ -5353,7 +5400,7 @@ for age_min_val, age_max_val, age_label_val in (
 
 
 # ---------------------------------------------------------------------------
-# Set 3 (back_to_Jan7): original = estimated_params_back_to_Jan7, no_care = no_care_demand_back_to_Jan7
+# Set 3 (back_to_Jan7): original = estimated_params_back_to_Jan7, no_care = no_care_demand_back_to_Jan7  # noqa: E501
 # ---------------------------------------------------------------------------
 for age_min_val, age_max_val, age_label_val in (
     (None, None, "all_ages"),
@@ -5367,7 +5414,7 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_employment_check
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_care_demand_total_caregiving_back_to_Jan7")
-    def task_plot_employment_rate_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915
+    def task_plot_employment_rate_by_distance_to_first_care_demand_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -5394,10 +5441,13 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Plot employment rate by distance to first care demand, grouped by total caregiving years.
+        """Plot employment rate by distance to first care demand, grouped by total
+        caregiving years.
 
-        Sample restricted to ever caregivers. Data: estimated_params_back_to_Jan7, no_care_demand_back_to_Jan7.
-        Event: t=0 = first care demand. Duration: 1,2,3,4,5+ = TOTAL caregiving years over
+        Sample restricted to ever caregivers. Data: estimated_params_back_to_Jan7,
+        no_care_demand_back_to_Jan7.
+        Event: t=0 = first care demand. Duration: 1,2,3,4,5+ = TOTAL caregiving years
+        over
         lifecycle (up to end_age_caregiving from specs), not necessarily consecutive.
         """
         if window_by_age is not None and age_label in window_by_age:
@@ -5517,7 +5567,7 @@ for age_min_val, age_max_val, age_label_val in (
 
 
 # ---------------------------------------------------------------------------
-# Set 3 (back_to_Jan7): original = estimated_params_back_to_Jan7, no_care = no_care_demand_back_to_Jan7
+# Set 3 (back_to_Jan7): original = estimated_params_back_to_Jan7, no_care = no_care_demand_back_to_Jan7  # noqa: E501
 # ---------------------------------------------------------------------------
 for age_min_val, age_max_val, age_label_val in (
     (None, None, "all_ages"),
@@ -5531,7 +5581,7 @@ for age_min_val, age_max_val, age_label_val in (
     @pytask.mark.publication_employment_check
     @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_caregiving_spell_total_caregiving_back_to_Jan7")
-    def task_plot_employment_rate_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915
+    def task_plot_employment_rate_by_distance_to_first_caregiving_spell_total_caregiving_back_to_Jan7(  # noqa: PLR0912, PLR0915, E501
         age_min: int | None = age_min_val,
         age_max: int | None = age_max_val,
         age_label: str = age_label_val,
@@ -5558,11 +5608,15 @@ for age_min_val, age_max_val, age_label_val in (
         window_high: int = 20,
         window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
-        """Plot employment rate by distance to first caregiving spell, grouped by total caregiving years.
+        """Plot employment rate by distance to first caregiving spell, grouped by total
+        caregiving years.
 
-        Sample restricted to ever caregivers. Data: estimated_params_back_to_Jan7, no_care_demand_back_to_Jan7.
-        Event: t=0 = first caregiving spell. Duration: 1,2,3,4,5+ = TOTAL caregiving years
-        over lifecycle (up to end_age_caregiving from specs), not necessarily consecutive.
+        Sample restricted to ever caregivers. Data: estimated_params_back_to_Jan7,
+        no_care_demand_back_to_Jan7.
+        Event: t=0 = first caregiving spell. Duration: 1,2,3,4,5+ = TOTAL caregiving
+        years
+        over lifecycle (up to end_age_caregiving from specs), not necessarily
+        consecutive.
         """
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]

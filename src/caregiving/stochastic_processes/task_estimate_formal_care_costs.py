@@ -138,7 +138,8 @@ def task_estimate_formal_care_costs_pooled(
         params.loc["coefficient", var] = results.params[var]
     params.loc["coefficient", "N"] = len(df)
 
-    # Add standard errors and R² for publication tables (read_in_formal_care_costs_by_age uses only "coefficient" row)
+    # Add standard errors and R² for publication tables
+    # (read_in_formal_care_costs_by_age uses only "coefficient" row)
     params.loc["coefficient_se", "const"] = results.bse["const"]
     for var in exog_vars:
         params.loc["coefficient_se", var] = results.bse[var]

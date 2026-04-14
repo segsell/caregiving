@@ -1,4 +1,7 @@
-"""Plot asset and accumulated savings-dec differences (baseline vs no care demand) in one figure."""
+"""Plot asset and accumulated savings-dec differences.
+
+Baseline vs no care demand in one figure.
+"""
 
 import pickle
 from pathlib import Path
@@ -43,7 +46,7 @@ def task_plot_asset_and_accumulated_savings_dec_differences_combined(  # noqa: P
     / "post_estimation"
     / "asset_and_accumulated_savings_dec_differences_baseline_vs_no_care_demand.pdf",
 ) -> None:
-    """Plot asset difference and accumulated savings-dec difference by age in one figure.
+    """Plot asset and savings-dec difference by age in one figure.
 
     Same data as asset_differences_by_age and accumulated_savings_dec_difference_by_age:
     - Black solid line: difference in average assets by age (baseline − no care demand).
@@ -205,7 +208,8 @@ def task_plot_asset_and_accumulated_savings_dec_differences_combined(  # noqa: P
     plt.close(fig)
 
     print(
-        f"Combined asset and accumulated savings-dec differences plot saved to {path_to_plot}"
+        "Combined asset and accumulated savings-dec "
+        f"differences plot saved to {path_to_plot}"
     )
 
 
@@ -226,7 +230,9 @@ def task_plot_savings_rate_difference_baseline_vs_no_care_demand(  # noqa: PLR09
     / "post_estimation"
     / "savings_rate_difference_baseline_vs_no_care_demand.pdf",
 ) -> None:
-    """Plot difference in average savings rate by age (baseline − no care demand), one black line.
+    """Plot savings rate difference by age (baseline - no care demand).
+
+    One black line.
 
     savings_rate = savings_dec / total_income (NaN where total_income <= 0).
     Same style as asset/savings-dec combined plot; only ages up to 89, no legend.
@@ -362,7 +368,9 @@ def task_plot_own_income_difference_baseline_vs_no_care_demand(  # noqa: PLR0915
     / "post_estimation"
     / "own_income_difference_baseline_vs_no_care_demand.pdf",
 ) -> None:
-    """Plot difference in average own income (total_income) by age (baseline − no care demand), one black line.
+    """Plot own income difference by age (baseline - no care demand).
+
+    One black line.
 
     total_income is total own income including labor and pension income.
     Same style as savings rate difference plot; only ages up to 89, no legend.
@@ -479,7 +487,9 @@ def task_plot_accumulated_consumption_difference_baseline_vs_no_care_demand(  # 
     / "post_estimation"
     / "accumulated_consumption_difference_baseline_vs_no_care_demand.pdf",
 ) -> None:
-    """Plot accumulated (cumulative) consumption difference by age (baseline − no care demand), one black line.
+    """Plot accumulated consumption difference by age.
+
+    Baseline - no care demand, one black line.
 
     diff(age) = avg_consumption_baseline(age) - avg_consumption_no_care_demand(age);
     accumulated_diff(age) = sum(diff(age') for age' <= age).
@@ -598,10 +608,13 @@ def task_plot_consumption_rate_difference_baseline_vs_no_care_demand(  # noqa: P
     / "post_estimation"
     / "consumption_rate_difference_baseline_vs_no_care_demand.pdf",
 ) -> None:
-    """Plot difference in average consumption rate by age (baseline − no care demand), one black line.
+    """Plot consumption rate difference by age (baseline - no care demand).
 
-    consumption_rate = consumption / total_income (NaN where total_income <= 0).
-    Same idea as consumption_rate_difference_by_age.png; same style, only ages up to 89, no legend.
+    One black line.
+    consumption_rate = consumption / total_income (NaN where
+    total_income <= 0). Same idea as
+    consumption_rate_difference_by_age.png; same style,
+    only ages up to 89, no legend.
     """
     specs = pickle.load(path_to_specs.open("rb"))
 
@@ -735,7 +748,9 @@ def task_plot_savings_dec_difference_baseline_vs_no_care_demand(  # noqa: PLR091
     / "post_estimation"
     / "savings_dec_difference_baseline_vs_no_care_demand.pdf",
 ) -> None:
-    """Plot difference in average savings decision by age (baseline − no care demand), one black line.
+    """Plot savings decision difference by age (baseline - no care demand).
+
+    One black line.
 
     Period-by-period (current) savings_dec difference, not accumulated.
     Same style as other difference plots; only ages up to 89, no legend.
@@ -852,7 +867,9 @@ def task_plot_consumption_difference_baseline_vs_no_care_demand(  # noqa: PLR091
     / "post_estimation"
     / "consumption_difference_baseline_vs_no_care_demand.pdf",
 ) -> None:
-    """Plot difference in average consumption by age (baseline − no care demand), one black line.
+    """Plot consumption difference by age (baseline - no care demand).
+
+    One black line.
 
     Period-by-period (current) consumption difference, not accumulated.
     Same style as other difference plots; only ages up to 89, no legend.

@@ -62,7 +62,9 @@ def identify_agents_by_duration(
     distance_col: str,
     duration_type: str = "care_demand",
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Identify agents by duration of care demand or caregiving (exact consecutive years).
+    """Identify agents by duration of care demand or caregiving.
+
+    Uses exact consecutive years.
 
     For care_demand: Identifies agents who experience care_demand > 0 for
     1, 2, 3, or 4 years (includes all agents, not just informal caregivers).

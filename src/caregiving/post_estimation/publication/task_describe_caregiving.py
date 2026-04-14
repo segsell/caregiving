@@ -74,7 +74,10 @@ def task_describe_caregiving_back_to_jan7(
     / "publication"
     / "describe_caregiving_back_to_Jan7.tex",
 ):
-    """Describe care demand and caregiving (simulated_data_estimated_params_back_to_Jan7.pkl)."""
+    """Describe care demand and caregiving.
+
+    Uses simulated_data_estimated_params_back_to_Jan7.pkl.
+    """
     run_describe_caregiving(
         path_to_simulated_data=path_to_simulated_data,
         path_to_specs=path_to_specs,
@@ -95,7 +98,10 @@ def task_describe_caregiving_jan7(
     / "publication"
     / "describe_caregiving_Jan7.tex",
 ):
-    """Describe care demand and caregiving (simulated_data_estimated_params_Jan7.pkl)."""
+    """Describe care demand and caregiving.
+
+    Uses simulated_data_estimated_params_Jan7.pkl.
+    """
     run_describe_caregiving(
         path_to_simulated_data=path_to_simulated_data,
         path_to_specs=path_to_specs,
@@ -164,7 +170,10 @@ def _consecutive_spells(
     df: pd.DataFrame,
     condition: pd.Series,
 ) -> pd.DataFrame:
-    """Return one row per spell: agent, spell_length, start_period. Consecutive periods with condition True."""
+    """Return one row per spell: agent, spell_length, start_period.
+
+    Consecutive periods with condition True.
+    """
     sub = df.loc[condition].copy()
     if sub.empty:
         return pd.DataFrame(columns=["agent", "spell_length", "start_period"])
@@ -198,7 +207,10 @@ def care_demand_spells(
 
 
 def caregiving_spells(df: pd.DataFrame) -> pd.DataFrame:
-    """Return consecutive caregiving spells (one row per spell: agent, spell_length, start_period)."""
+    """Return consecutive caregiving spells.
+
+    One row per spell: agent, spell_length, start_period.
+    """
     return _consecutive_spells(df, df["current_caregiving"] == 1)
 
 
@@ -208,7 +220,10 @@ CARE_AGE_BIN_LABELS = ["40--44", "45--49", "50--54", "55--59", "60--64", "65--69
 
 
 def _add_start_age_to_spells(spells: pd.DataFrame, df: pd.DataFrame) -> pd.DataFrame:
-    """Add start_age (agent's age at spell start) to spells. Requires spells to have start_period."""
+    """Add start_age (agent's age at spell start) to spells.
+
+    Requires spells to have start_period.
+    """
     if spells.empty or "start_period" not in spells.columns:
         return spells.copy()
     age_at_period = (
@@ -230,7 +245,10 @@ def _add_start_age_to_spells(spells: pd.DataFrame, df: pd.DataFrame) -> pd.DataF
 
 
 def compute_panel_a(df: pd.DataFrame) -> dict[str, Any]:
-    """Panel A: Care demand – mean/median age when in care demand, age at first care demand."""
+    """Panel A: Care demand.
+
+    Mean/median age when in care demand, age at first care demand.
+    """
     cd = df.loc[df["care_demand"] > 0]
     if cd.empty:
         return {
@@ -262,7 +280,10 @@ def compute_panel_a(df: pd.DataFrame) -> dict[str, Any]:
 
 
 def compute_panel_b(df: pd.DataFrame) -> dict[str, Any]:
-    """Panel B: Informal caregiving – mean/median age when caregiving, age at first spell."""
+    """Panel B: Informal caregiving.
+
+    Mean/median age when caregiving, age at first spell.
+    """
     caregiving = df.loc[df["current_caregiving"] == 1]
     if caregiving.empty:
         return {
@@ -294,7 +315,10 @@ def compute_panel_b(df: pd.DataFrame) -> dict[str, Any]:
 
 
 def compute_panel_c(df: pd.DataFrame) -> dict[str, Any]:
-    """Panel C (total): Distribution of total caregiving years per agent (shares 1/2/3/4/5+, <=2/<=3/<=4/<=5)."""
+    """Panel C (total): Distribution of total caregiving years.
+
+    Per agent (shares 1/2/3/4/5+, <=2/<=3/<=4/<=5).
+    """
     years = (
         df.groupby("agent")["current_caregiving"]
         .sum()
@@ -342,7 +366,10 @@ def compute_panel_c(df: pd.DataFrame) -> dict[str, Any]:
 
 
 def compute_panel_c_consecutive(spells: pd.DataFrame) -> dict[str, Any]:
-    """Panel C (consecutive): Distribution of consecutive caregiving spell lengths (% of spells, cond. on care > 0)."""
+    """Panel C (consecutive): Distribution of consecutive spell lengths.
+
+    Percent of spells, conditional on care > 0.
+    """
     if spells.empty:
         return {
             "avg_caregiving_years": (np.nan, np.nan),
@@ -404,7 +431,10 @@ def compute_panel_d(
     spells_light: pd.DataFrame,
     spells_intensive: pd.DataFrame,
 ) -> dict[str, Any]:
-    """Panel D: Consecutive care demand spell length distribution (all, light, intensive)."""
+    """Panel D: Consecutive care demand spell length distribution.
+
+    Covers all, light, and intensive.
+    """
     return {
         "all": _spell_length_distribution(spells_all),
         "light": _spell_length_distribution(spells_light),
@@ -434,7 +464,10 @@ def _total_years_distribution(years: pd.Series) -> dict[str, float]:
 
 
 def compute_panel_d_total(df: pd.DataFrame) -> dict[str, Any]:
-    """Panel D (total): Distribution of total care demand years per agent (% with 1, 2, ... 5+ years)."""
+    """Panel D (total): Distribution of total care demand years.
+
+    Per agent (% with 1, 2, ... 5+ years).
+    """
     years_all = (
         df.groupby("agent")
         .apply(lambda g: (g["care_demand"] > 0).sum())
@@ -461,7 +494,10 @@ def _avg_spell_length_by_mother_death_age(
     spells: pd.DataFrame,
     df: pd.DataFrame,
 ) -> dict[str, float]:
-    """Average spell length in buckets: mother death before agent age <50, 50-<60, 60-<70."""
+    """Average spell length in buckets.
+
+    Mother death before agent age <50, 50-<60, 60-<70.
+    """
     if spells.empty:
         return {"avg_lt_50": np.nan, "avg_50_60": np.nan, "avg_60_70": np.nan}
     age_death = df.dropna(subset=["age_at_mother_death"]).drop_duplicates("agent")[
@@ -484,7 +520,10 @@ def compute_panel_e_f_g(
     spells_intensive: pd.DataFrame,
     df: pd.DataFrame,
 ) -> dict[str, Any]:
-    """Panel E (all), F (light), G (intensive): avg consecutive spell length by agent age at mother death."""
+    """Panels E/F/G: avg consecutive spell length by mother death age.
+
+    E = all, F = light, G = intensive.
+    """
     return {
         "all": _avg_spell_length_by_mother_death_age(spells_all, df),
         "light": _avg_spell_length_by_mother_death_age(spells_light, df),
@@ -496,7 +535,10 @@ def _avg_total_years_by_mother_death_age(
     agent_total_years: pd.Series,
     df: pd.DataFrame,
 ) -> dict[str, float]:
-    """Average total care demand years per agent in buckets by agent's age at mother's death."""
+    """Average total care demand years per agent.
+
+    Bucketed by agent's age at mother's death.
+    """
     if agent_total_years.empty or agent_total_years.sum() == 0:
         return {"avg_lt_50": np.nan, "avg_50_60": np.nan, "avg_60_70": np.nan}
     age_death = df.dropna(subset=["age_at_mother_death"]).drop_duplicates("agent")[
@@ -518,7 +560,10 @@ def _avg_total_years_by_mother_death_age(
 
 
 def compute_panel_e_f_g_total(df: pd.DataFrame) -> dict[str, Any]:
-    """Avg total care demand years (non-consecutive) by agent age at mother death (all, light, intensive)."""
+    """Avg total care demand years (non-consecutive) by mother death age.
+
+    Covers all, light, and intensive.
+    """
     years_all = df.groupby("agent").apply(lambda g: (g["care_demand"] > 0).sum())
     years_light = df.groupby("agent").apply(
         lambda g: (g["care_demand"] == CARE_DEMAND_LIGHT).sum()
@@ -538,8 +583,11 @@ def compute_panel_h(
     spells_care_demand_all: pd.DataFrame,
     df: pd.DataFrame,
 ) -> dict[str, Any]:
-    """Panel H: Share of caregiving spells (left) and share of care demand spells (right) starting in each age bin.
-    Shares are out of ALL such spells, so each column sums to 100%.
+    """Panel H: Share of spells starting in each age bin.
+
+    Left = caregiving spells, right = care demand spells.
+    Shares are out of ALL such spells, so each column sums
+    to 100%.
     """
     spells_cg = _add_start_age_to_spells(spells_caregiving.copy(), df)
     spells_cd = _add_start_age_to_spells(spells_care_demand_all.copy(), df)
@@ -565,7 +613,12 @@ def compute_panel_i(
     spells_caregiving: pd.DataFrame,
     df: pd.DataFrame,
 ) -> dict[str, Any]:
-    """Panel I: By age bin of spell start: left = avg consecutive caregiving spell length, right = avg total caregiving years (agents whose first spell starts in that bin)."""
+    """Panel I: By age bin of spell start.
+
+    Left = avg consecutive caregiving spell length,
+    right = avg total caregiving years (agents whose first
+    spell starts in that bin).
+    """
     spells_cg = _add_start_age_to_spells(spells_caregiving.copy(), df)
     total_years = df.groupby("agent")["current_caregiving"].sum().rename("total_years")
     first_caregiving_age = (
@@ -597,7 +650,12 @@ def compute_panel_j(
     df: pd.DataFrame,
     spells_caregiving: pd.DataFrame,
 ) -> dict[str, Any]:
-    """Panel J: Same outcomes as Panel I (avg consec caregiving spell length / avg total caregiving years) but grouped by age at start of *first care demand* (not caregiving spell start)."""
+    """Panel J: Like Panel I but grouped by first care demand age.
+
+    Avg consecutive caregiving spell length / avg total
+    caregiving years, grouped by age at start of first care
+    demand (not caregiving spell start).
+    """
     first_care_demand_age = (
         df.loc[df["care_demand"] > 0]
         .sort_values(["agent", "period"])
@@ -615,7 +673,9 @@ def compute_panel_j(
             lo, hi - 1, inclusive="both"
         )
         agents_in_bin = set(agents_with_total.loc[agent_mask, "agent"])
-        # Left: avg consecutive caregiving spell length (over spells of agents whose first care demand is in this bin)
+        # Left: avg consecutive caregiving spell length
+        # (over spells of agents whose first care demand
+        # is in this bin)
         if agents_in_bin:
             spell_mask = spells_caregiving["agent"].isin(agents_in_bin)
             sub = spells_caregiving.loc[spell_mask, "spell_length"]
@@ -632,7 +692,12 @@ def compute_panel_k(
     df: pd.DataFrame,
     spells_caregiving: pd.DataFrame,
 ) -> dict[str, Any]:
-    """Panel K: Same outcomes as Panel J (avg consec caregiving spell length / avg total caregiving years) but grouped by agent's age at mother's death."""
+    """Panel K: Like Panel J but grouped by mother's death age.
+
+    Avg consecutive caregiving spell length / avg total
+    caregiving years, grouped by agent's age at mother's
+    death.
+    """
     age_death = df.dropna(subset=["age_at_mother_death"]).drop_duplicates("agent")[
         ["agent", "age_at_mother_death"]
     ]
@@ -692,7 +757,11 @@ def get_experience_at_retirement_entry(df: pd.DataFrame) -> pd.Series:
 
 
 def compute_panel_l(df: pd.DataFrame) -> dict[str, Any]:
-    """Panel L: By first care demand age bin. Left = avg experience (years) at retirement entry; right = avg total caregiving years. Caregivers only."""
+    """Panel L: By first care demand age bin.
+
+    Left = avg experience (years) at retirement entry;
+    right = avg total caregiving years. Caregivers only.
+    """
     exp_at_ret = get_experience_at_retirement_entry(df)
     if exp_at_ret.empty:
         return {
@@ -724,7 +793,11 @@ def compute_panel_l(df: pd.DataFrame) -> dict[str, Any]:
 
 
 def compute_panel_m(df: pd.DataFrame) -> dict[str, Any]:
-    """Panel M: By mother death age bin. Left = avg experience (years) at retirement entry; right = avg total caregiving years. Caregivers only."""
+    """Panel M: By mother death age bin.
+
+    Left = avg experience (years) at retirement entry;
+    right = avg total caregiving years. Caregivers only.
+    """
     exp_at_ret = get_experience_at_retirement_entry(df)
     if exp_at_ret.empty:
         return {
@@ -758,7 +831,11 @@ def compute_panel_m(df: pd.DataFrame) -> dict[str, Any]:
 
 
 def run_all_panels(df: pd.DataFrame) -> dict[str, Any]:
-    """Compute all panel statistics. df must already be prepared with age, first_* and current_caregiving."""
+    """Compute all panel statistics.
+
+    df must already be prepared with age, first_* and
+    current_caregiving.
+    """
     spells_all, spells_light, spells_intensive = care_demand_spells(df)
     spells_caregiving = caregiving_spells(df)
     return {
@@ -812,7 +889,11 @@ def _fmt_avg(x: float) -> str:
 def build_latex_table(
     stats: dict[str, Any], label: str = "tab:describe_caregiving"
 ) -> str:
-    """Turn panel stats into a single LaTeX table (two data columns: consecutive spells, total care demand years)."""
+    """Turn panel stats into a single LaTeX table.
+
+    Two data columns: consecutive spells, total care demand
+    years.
+    """
     a = stats["panel_a"]
     b = stats["panel_b"]
     c = stats["panel_c"]
@@ -838,137 +919,143 @@ def build_latex_table(
         f"\\label{{{label}}}",
         "\\begin{tabular}{lrr}",
         "\\toprule",
-        " & \\multicolumn{1}{c}{\\textbf{Consecutive}} & \\multicolumn{1}{c}{\\textbf{Total}} \\\\",
-        " & \\multicolumn{1}{c}{\\textbf{spells}} & \\multicolumn{1}{c}{\\textbf{care demand years}} \\\\",
+        " & \\multicolumn{1}{c}{\\textbf{Consecutive}} & \\multicolumn{1}{c}{\\textbf{Total}} \\\\",  # noqa: E501
+        " & \\multicolumn{1}{c}{\\textbf{spells}} & \\multicolumn{1}{c}{\\textbf{care demand years}} \\\\",  # noqa: E501
         "\\midrule",
         "\\textbf{Panel A: Care demand} & & \\\\",
         "\\midrule",
-        f"Mean age (care demand $>0$) & {_fmt_val_sd(a['mean_age_care_demand'][0], a['mean_age_care_demand'][1])} & {empty} \\\\",
-        f"Median age (care demand $>0$) & {_fmt_val_sd(a['median_age_care_demand'][0], a['median_age_care_demand'][1])} & {empty} \\\\",
-        f"Mean age at start of first care demand & {_fmt_val_sd(a['mean_age_first_care_demand'][0], a['mean_age_first_care_demand'][1])} & {empty} \\\\",
-        f"Median age at start of first care demand & {_fmt_val_sd(a['median_age_first_care_demand'][0], a['median_age_first_care_demand'][1])} & {empty} \\\\",
+        f"Mean age (care demand $>0$) & {_fmt_val_sd(a['mean_age_care_demand'][0], a['mean_age_care_demand'][1])} & {empty} \\\\",  # noqa: E501
+        f"Median age (care demand $>0$) & {_fmt_val_sd(a['median_age_care_demand'][0], a['median_age_care_demand'][1])} & {empty} \\\\",  # noqa: E501
+        f"Mean age at start of first care demand & {_fmt_val_sd(a['mean_age_first_care_demand'][0], a['mean_age_first_care_demand'][1])} & {empty} \\\\",  # noqa: E501
+        f"Median age at start of first care demand & {_fmt_val_sd(a['median_age_first_care_demand'][0], a['median_age_first_care_demand'][1])} & {empty} \\\\",  # noqa: E501
         "\\midrule",
         "\\textbf{Panel B: Informal caregiving} & & \\\\",
         "\\midrule",
-        f"Mean age (caregiver) & {_fmt_val_sd(b['mean_age_caregiver'][0], b['mean_age_caregiver'][1])} & {empty} \\\\",
-        f"Median age (caregiver) & {_fmt_val_sd(b['median_age_caregiver'][0], b['median_age_caregiver'][1])} & {empty} \\\\",
-        f"Mean age at start of first caregiving spell & {_fmt_val_sd(b['mean_age_first_caregiving'][0], b['mean_age_first_caregiving'][1])} & {empty} \\\\",
-        f"Median age at start of first caregiving spell & {_fmt_val_sd(b['median_age_first_caregiving'][0], b['median_age_first_caregiving'][1])} & {empty} \\\\",
+        f"Mean age (caregiver) & {_fmt_val_sd(b['mean_age_caregiver'][0], b['mean_age_caregiver'][1])} & {empty} \\\\",  # noqa: E501
+        f"Median age (caregiver) & {_fmt_val_sd(b['median_age_caregiver'][0], b['median_age_caregiver'][1])} & {empty} \\\\",  # noqa: E501
+        f"Mean age at start of first caregiving spell & {_fmt_val_sd(b['mean_age_first_caregiving'][0], b['mean_age_first_caregiving'][1])} & {empty} \\\\",  # noqa: E501
+        f"Median age at start of first caregiving spell & {_fmt_val_sd(b['median_age_first_caregiving'][0], b['median_age_first_caregiving'][1])} & {empty} \\\\",  # noqa: E501
         "\\midrule",
-        "\\textbf{Panel C: Consecutive caregiving years (\\% of spells) / Total caregiving years (\\% of agents, cond. on care $>0$)} & & \\\\",
+        "\\textbf{Panel C: Consecutive caregiving years (\\% of spells) / Total caregiving years (\\% of agents, cond. on care $>0$)} & & \\\\",  # noqa: E501
         "\\midrule",
-        f"Avg. number of informal caregiving years & {_fmt_val_se(c_consec['avg_caregiving_years'][0], c_consec['avg_caregiving_years'][1])} & {_fmt_val_se(c['avg_caregiving_years'][0], c['avg_caregiving_years'][1])} \\\\",
-        f"Median number of informal caregiving years & {_fmt_val_se(c_consec['median_caregiving_years'][0], c_consec['median_caregiving_years'][1])} & {_fmt_val_se(c['median_caregiving_years'][0], c['median_caregiving_years'][1])} \\\\",
-        f"\\% exactly 1 year (cond. on care $>0$) & {_fmt_pct(c_consec['pct_1_year'])} & {_fmt_pct(c['pct_1_year'])} \\\\",
-        f"\\% exactly 2 years (cond. on care $>0$) & {_fmt_pct(c_consec['pct_2_years'])} & {_fmt_pct(c['pct_2_years'])} \\\\",
-        f"\\% exactly 3 years (cond. on care $>0$) & {_fmt_pct(c_consec['pct_3_years'])} & {_fmt_pct(c['pct_3_years'])} \\\\",
-        f"\\% exactly 4 years (cond. on care $>0$) & {_fmt_pct(c_consec['pct_4_years'])} & {_fmt_pct(c['pct_4_years'])} \\\\",
-        f"\\% more than 4 years (cond. on care $>0$) & {_fmt_pct(c_consec['pct_5_plus_years'])} & {_fmt_pct(c['pct_5_plus_years'])} \\\\",
-        f"\\% $\\leq$ 2 years (cond. on care $>0$) & {_fmt_pct(c_consec['pct_le_2_years'])} & {_fmt_pct(c['pct_le_2_years'])} \\\\",
-        f"\\% $\\leq$ 3 years (cond. on care $>0$) & {_fmt_pct(c_consec['pct_le_3_years'])} & {_fmt_pct(c['pct_le_3_years'])} \\\\",
-        f"\\% $\\leq$ 4 years (cond. on care $>0$) & {_fmt_pct(c_consec['pct_le_4_years'])} & {_fmt_pct(c['pct_le_4_years'])} \\\\",
-        f"\\% $\\leq$ 5 years (cond. on care $>0$) & {_fmt_pct(c_consec['pct_le_5_years'])} & {_fmt_pct(c['pct_le_5_years'])} \\\\",
+        f"Avg. number of informal caregiving years & {_fmt_val_se(c_consec['avg_caregiving_years'][0], c_consec['avg_caregiving_years'][1])} & {_fmt_val_se(c['avg_caregiving_years'][0], c['avg_caregiving_years'][1])} \\\\",  # noqa: E501
+        f"Median number of informal caregiving years & {_fmt_val_se(c_consec['median_caregiving_years'][0], c_consec['median_caregiving_years'][1])} & {_fmt_val_se(c['median_caregiving_years'][0], c['median_caregiving_years'][1])} \\\\",  # noqa: E501
+        f"\\% exactly 1 year (cond. on care $>0$) & {_fmt_pct(c_consec['pct_1_year'])} & {_fmt_pct(c['pct_1_year'])} \\\\",  # noqa: E501
+        f"\\% exactly 2 years (cond. on care $>0$) & {_fmt_pct(c_consec['pct_2_years'])} & {_fmt_pct(c['pct_2_years'])} \\\\",  # noqa: E501
+        f"\\% exactly 3 years (cond. on care $>0$) & {_fmt_pct(c_consec['pct_3_years'])} & {_fmt_pct(c['pct_3_years'])} \\\\",  # noqa: E501
+        f"\\% exactly 4 years (cond. on care $>0$) & {_fmt_pct(c_consec['pct_4_years'])} & {_fmt_pct(c['pct_4_years'])} \\\\",  # noqa: E501
+        f"\\% more than 4 years (cond. on care $>0$) & {_fmt_pct(c_consec['pct_5_plus_years'])} & {_fmt_pct(c['pct_5_plus_years'])} \\\\",  # noqa: E501
+        f"\\% $\\leq$ 2 years (cond. on care $>0$) & {_fmt_pct(c_consec['pct_le_2_years'])} & {_fmt_pct(c['pct_le_2_years'])} \\\\",  # noqa: E501
+        f"\\% $\\leq$ 3 years (cond. on care $>0$) & {_fmt_pct(c_consec['pct_le_3_years'])} & {_fmt_pct(c['pct_le_3_years'])} \\\\",  # noqa: E501
+        f"\\% $\\leq$ 4 years (cond. on care $>0$) & {_fmt_pct(c_consec['pct_le_4_years'])} & {_fmt_pct(c['pct_le_4_years'])} \\\\",  # noqa: E501
+        f"\\% $\\leq$ 5 years (cond. on care $>0$) & {_fmt_pct(c_consec['pct_le_5_years'])} & {_fmt_pct(c['pct_le_5_years'])} \\\\",  # noqa: E501
         "\\midrule",
-        "\\textbf{Panel D: Consecutive spell length (\\% of spells) / Total years (\\% of agents with care demand $>0$)} & & \\\\",
+        "\\textbf{Panel D: Consecutive spell length (\\% of spells) / Total years (\\% of agents with care demand $>0$)} & & \\\\",  # noqa: E501
         "\\midrule",
         "\\textit{All care demand} & & \\\\",
-        f"\\quad 1 year & {_fmt_pct(d['all']['share_1'])} & {_fmt_pct(d_tot['all']['share_1'])} \\\\",
-        f"\\quad 2 years & {_fmt_pct(d['all']['share_2'])} & {_fmt_pct(d_tot['all']['share_2'])} \\\\",
-        f"\\quad 3 years & {_fmt_pct(d['all']['share_3'])} & {_fmt_pct(d_tot['all']['share_3'])} \\\\",
-        f"\\quad 4 years & {_fmt_pct(d['all']['share_4'])} & {_fmt_pct(d_tot['all']['share_4'])} \\\\",
-        f"\\quad 5 years and longer & {_fmt_pct(d['all']['share_5plus'])} & {_fmt_pct(d_tot['all']['share_5plus'])} \\\\",
+        f"\\quad 1 year & {_fmt_pct(d['all']['share_1'])} & {_fmt_pct(d_tot['all']['share_1'])} \\\\",  # noqa: E501
+        f"\\quad 2 years & {_fmt_pct(d['all']['share_2'])} & {_fmt_pct(d_tot['all']['share_2'])} \\\\",  # noqa: E501
+        f"\\quad 3 years & {_fmt_pct(d['all']['share_3'])} & {_fmt_pct(d_tot['all']['share_3'])} \\\\",  # noqa: E501
+        f"\\quad 4 years & {_fmt_pct(d['all']['share_4'])} & {_fmt_pct(d_tot['all']['share_4'])} \\\\",  # noqa: E501
+        f"\\quad 5 years and longer & {_fmt_pct(d['all']['share_5plus'])} & {_fmt_pct(d_tot['all']['share_5plus'])} \\\\",  # noqa: E501
         "\\textit{Light care demand only} & & \\\\",
-        f"\\quad 1 year & {_fmt_pct(d['light']['share_1'])} & {_fmt_pct(d_tot['light']['share_1'])} \\\\",
-        f"\\quad 2 years & {_fmt_pct(d['light']['share_2'])} & {_fmt_pct(d_tot['light']['share_2'])} \\\\",
-        f"\\quad 3 years & {_fmt_pct(d['light']['share_3'])} & {_fmt_pct(d_tot['light']['share_3'])} \\\\",
-        f"\\quad 4 years & {_fmt_pct(d['light']['share_4'])} & {_fmt_pct(d_tot['light']['share_4'])} \\\\",
-        f"\\quad 5 years and longer & {_fmt_pct(d['light']['share_5plus'])} & {_fmt_pct(d_tot['light']['share_5plus'])} \\\\",
+        f"\\quad 1 year & {_fmt_pct(d['light']['share_1'])} & {_fmt_pct(d_tot['light']['share_1'])} \\\\",  # noqa: E501
+        f"\\quad 2 years & {_fmt_pct(d['light']['share_2'])} & {_fmt_pct(d_tot['light']['share_2'])} \\\\",  # noqa: E501
+        f"\\quad 3 years & {_fmt_pct(d['light']['share_3'])} & {_fmt_pct(d_tot['light']['share_3'])} \\\\",  # noqa: E501
+        f"\\quad 4 years & {_fmt_pct(d['light']['share_4'])} & {_fmt_pct(d_tot['light']['share_4'])} \\\\",  # noqa: E501
+        f"\\quad 5 years and longer & {_fmt_pct(d['light']['share_5plus'])} & {_fmt_pct(d_tot['light']['share_5plus'])} \\\\",  # noqa: E501
         "\\textit{Intensive care demand only} & & \\\\",
-        f"\\quad 1 year & {_fmt_pct(d['intensive']['share_1'])} & {_fmt_pct(d_tot['intensive']['share_1'])} \\\\",
-        f"\\quad 2 years & {_fmt_pct(d['intensive']['share_2'])} & {_fmt_pct(d_tot['intensive']['share_2'])} \\\\",
-        f"\\quad 3 years & {_fmt_pct(d['intensive']['share_3'])} & {_fmt_pct(d_tot['intensive']['share_3'])} \\\\",
-        f"\\quad 4 years & {_fmt_pct(d['intensive']['share_4'])} & {_fmt_pct(d_tot['intensive']['share_4'])} \\\\",
-        f"\\quad 5 years and longer & {_fmt_pct(d['intensive']['share_5plus'])} & {_fmt_pct(d_tot['intensive']['share_5plus'])} \\\\",
+        f"\\quad 1 year & {_fmt_pct(d['intensive']['share_1'])} & {_fmt_pct(d_tot['intensive']['share_1'])} \\\\",  # noqa: E501
+        f"\\quad 2 years & {_fmt_pct(d['intensive']['share_2'])} & {_fmt_pct(d_tot['intensive']['share_2'])} \\\\",  # noqa: E501
+        f"\\quad 3 years & {_fmt_pct(d['intensive']['share_3'])} & {_fmt_pct(d_tot['intensive']['share_3'])} \\\\",  # noqa: E501
+        f"\\quad 4 years & {_fmt_pct(d['intensive']['share_4'])} & {_fmt_pct(d_tot['intensive']['share_4'])} \\\\",  # noqa: E501
+        f"\\quad 5 years and longer & {_fmt_pct(d['intensive']['share_5plus'])} & {_fmt_pct(d_tot['intensive']['share_5plus'])} \\\\",  # noqa: E501
         "\\midrule",
-        "\\textbf{Panel E: Avg. consecutive spell length / Avg. total years by agent's age at mother's death} & & \\\\",
+        "\\textbf{Panel E: Avg. consecutive spell length / Avg. total years by agent's age at mother's death} & & \\\\",  # noqa: E501
         "\\midrule",
-        f"Mother death before agent age 50 & {_fmt_avg(efg['all']['avg_lt_50'])} & {_fmt_avg(efg_tot['all']['avg_lt_50'])} \\\\",
-        f"Mother death when agent age 50--$<60$ & {_fmt_avg(efg['all']['avg_50_60'])} & {_fmt_avg(efg_tot['all']['avg_50_60'])} \\\\",
-        f"Mother death when agent age 60--$<70$ & {_fmt_avg(efg['all']['avg_60_70'])} & {_fmt_avg(efg_tot['all']['avg_60_70'])} \\\\",
+        f"Mother death before agent age 50 & {_fmt_avg(efg['all']['avg_lt_50'])} & {_fmt_avg(efg_tot['all']['avg_lt_50'])} \\\\",  # noqa: E501
+        f"Mother death when agent age 50--$<60$ & {_fmt_avg(efg['all']['avg_50_60'])} & {_fmt_avg(efg_tot['all']['avg_50_60'])} \\\\",  # noqa: E501
+        f"Mother death when agent age 60--$<70$ & {_fmt_avg(efg['all']['avg_60_70'])} & {_fmt_avg(efg_tot['all']['avg_60_70'])} \\\\",  # noqa: E501
         "\\midrule",
         "\\textbf{Panel F: Same, light care demand only} & & \\\\",
         "\\midrule",
-        f"Mother death before agent age 50 & {_fmt_avg(efg['light']['avg_lt_50'])} & {_fmt_avg(efg_tot['light']['avg_lt_50'])} \\\\",
-        f"Mother death when agent age 50--$<60$ & {_fmt_avg(efg['light']['avg_50_60'])} & {_fmt_avg(efg_tot['light']['avg_50_60'])} \\\\",
-        f"Mother death when agent age 60--$<70$ & {_fmt_avg(efg['light']['avg_60_70'])} & {_fmt_avg(efg_tot['light']['avg_60_70'])} \\\\",
+        f"Mother death before agent age 50 & {_fmt_avg(efg['light']['avg_lt_50'])} & {_fmt_avg(efg_tot['light']['avg_lt_50'])} \\\\",  # noqa: E501
+        f"Mother death when agent age 50--$<60$ & {_fmt_avg(efg['light']['avg_50_60'])} & {_fmt_avg(efg_tot['light']['avg_50_60'])} \\\\",  # noqa: E501
+        f"Mother death when agent age 60--$<70$ & {_fmt_avg(efg['light']['avg_60_70'])} & {_fmt_avg(efg_tot['light']['avg_60_70'])} \\\\",  # noqa: E501
         "\\midrule",
         "\\textbf{Panel G: Same, intensive care demand only} & & \\\\",
         "\\midrule",
-        f"Mother death before agent age 50 & {_fmt_avg(efg['intensive']['avg_lt_50'])} & {_fmt_avg(efg_tot['intensive']['avg_lt_50'])} \\\\",
-        f"Mother death when agent age 50--$<60$ & {_fmt_avg(efg['intensive']['avg_50_60'])} & {_fmt_avg(efg_tot['intensive']['avg_50_60'])} \\\\",
-        f"Mother death when agent age 60--$<70$ & {_fmt_avg(efg['intensive']['avg_60_70'])} & {_fmt_avg(efg_tot['intensive']['avg_60_70'])} \\\\",
+        f"Mother death before agent age 50 & {_fmt_avg(efg['intensive']['avg_lt_50'])} & {_fmt_avg(efg_tot['intensive']['avg_lt_50'])} \\\\",  # noqa: E501
+        f"Mother death when agent age 50--$<60$ & {_fmt_avg(efg['intensive']['avg_50_60'])} & {_fmt_avg(efg_tot['intensive']['avg_50_60'])} \\\\",  # noqa: E501
+        f"Mother death when agent age 60--$<70$ & {_fmt_avg(efg['intensive']['avg_60_70'])} & {_fmt_avg(efg_tot['intensive']['avg_60_70'])} \\\\",  # noqa: E501
         "\\midrule",
-        "\\textbf{Panel H: Share of spells starting in age bucket (\\%; each column sums to 100\\%)} & & \\\\",
+        "\\textbf{Panel H: Share of spells starting in age bucket (\\%; each column sums to 100\\%)} & & \\\\",  # noqa: E501
         "\\midrule",
     ]
     for lab in CARE_AGE_BIN_LABELS:
         lines.append(
-            f"Age {lab} & {_fmt_pct(h['consec_caregiving'][lab])} & {_fmt_pct(h['care_demand'][lab])} \\\\"
+            f"Age {lab} & {_fmt_pct(h['consec_caregiving'][lab])}"  # noqa: E501
+            f" & {_fmt_pct(h['care_demand'][lab])} \\\\"
         )
     lines.extend(
         [
             "\\midrule",
-            "\\textbf{Panel I: Avg. consecutive spell length / Avg. total caregiving years by age at spell start} & & \\\\",
+            "\\textbf{Panel I: Avg. consecutive spell length / Avg. total caregiving years by age at spell start} & & \\\\",  # noqa: E501
             "\\midrule",
         ]
     )
     for lab in CARE_AGE_BIN_LABELS:
         lines.append(
-            f"Spell start age {lab} & {_fmt_avg(panel_i['consec_avg_length'][lab])} & {_fmt_avg(panel_i['total_avg_years'][lab])} \\\\"
+            f"Spell start age {lab} & {_fmt_avg(panel_i['consec_avg_length'][lab])}"  # noqa: E501
+            f" & {_fmt_avg(panel_i['total_avg_years'][lab])} \\\\"
         )
     lines.extend(
         [
             "\\midrule",
-            "\\textbf{Panel J: Avg. consecutive spell length / Avg. total caregiving years by age at \\textit{first care demand} start} & & \\\\",
+            "\\textbf{Panel J: Avg. consecutive spell length / Avg. total caregiving years by age at \\textit{first care demand} start} & & \\\\",  # noqa: E501
             "\\midrule",
         ]
     )
     for lab in CARE_AGE_BIN_LABELS:
         lines.append(
-            f"First care demand age {lab} & {_fmt_avg(panel_j['consec_avg_length'][lab])} & {_fmt_avg(panel_j['total_avg_years'][lab])} \\\\"
+            f"First care demand age {lab} & {_fmt_avg(panel_j['consec_avg_length'][lab])}"  # noqa: E501
+            f" & {_fmt_avg(panel_j['total_avg_years'][lab])} \\\\"
         )
     lines.extend(
         [
             "\\midrule",
-            "\\textbf{Panel K: Avg. consecutive spell length / Avg. total caregiving years by age at mother's death} & & \\\\",
+            "\\textbf{Panel K: Avg. consecutive spell length / Avg. total caregiving years by age at mother's death} & & \\\\",  # noqa: E501
             "\\midrule",
         ]
     )
     for lab in CARE_AGE_BIN_LABELS:
         lines.append(
-            f"Mother death age {lab} & {_fmt_avg(panel_k['consec_avg_length'][lab])} & {_fmt_avg(panel_k['total_avg_years'][lab])} \\\\"
+            f"Mother death age {lab} & {_fmt_avg(panel_k['consec_avg_length'][lab])}"  # noqa: E501
+            f" & {_fmt_avg(panel_k['total_avg_years'][lab])} \\\\"
         )
     lines.extend(
         [
             "\\midrule",
-            "\\textbf{Panel L: Avg. experience (years) at retirement entry / Avg. total caregiving years by age at \\textit{first care demand} start} & & \\\\",
+            "\\textbf{Panel L: Avg. experience (years) at retirement entry / Avg. total caregiving years by age at \\textit{first care demand} start} & & \\\\",  # noqa: E501
             "\\midrule",
         ]
     )
     for lab in CARE_AGE_BIN_LABELS:
         lines.append(
-            f"First care demand age {lab} & {_fmt_avg(panel_l['exp_at_retirement'][lab])} & {_fmt_avg(panel_l['total_avg_years'][lab])} \\\\"
+            f"First care demand age {lab} & {_fmt_avg(panel_l['exp_at_retirement'][lab])}"  # noqa: E501
+            f" & {_fmt_avg(panel_l['total_avg_years'][lab])} \\\\"
         )
     lines.extend(
         [
             "\\midrule",
-            "\\textbf{Panel M: Avg. experience (years) at retirement entry / Avg. total caregiving years by age at mother's death} & & \\\\",
+            "\\textbf{Panel M: Avg. experience (years) at retirement entry / Avg. total caregiving years by age at mother's death} & & \\\\",  # noqa: E501
             "\\midrule",
         ]
     )
     for lab in CARE_AGE_BIN_LABELS:
         lines.append(
-            f"Mother death age {lab} & {_fmt_avg(panel_m['exp_at_retirement'][lab])} & {_fmt_avg(panel_m['total_avg_years'][lab])} \\\\"
+            f"Mother death age {lab} & {_fmt_avg(panel_m['exp_at_retirement'][lab])}"  # noqa: E501
+            f" & {_fmt_avg(panel_m['total_avg_years'][lab])} \\\\"
         )
     lines.extend(
         [

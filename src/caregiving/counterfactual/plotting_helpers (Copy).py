@@ -173,7 +173,10 @@ def add_distance_to_first_care(df_original: pd.DataFrame) -> pd.DataFrame:
 
 
 def add_distance_to_first_care_demand(df_original: pd.DataFrame) -> pd.DataFrame:
-    """Add first_care_demand_period and distance; 0 is first period with care_demand > 0."""
+    """Add first_care_demand_period and distance.
+
+    Zero is the first period with care_demand > 0.
+    """
     df = df_original.reset_index(drop=True)
     df = ensure_agent_period(df)
     care_demand_mask = df["care_demand"] > 0
@@ -196,7 +199,7 @@ def identify_agents_by_total_caregiving_over_lifecycle(
     end_age_caregiving: int,
     informal_care_choices: list | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Identify agents by total caregiving years over lifecycle up to end_age_caregiving.
+    """Identify agents by total caregiving years up to end_age_caregiving.
 
     Counts periods with informal caregiving from start until age <= end_age_caregiving.
     Groups: exactly 1, 2, 3, 4, or 5+ total years (not necessarily consecutive).
@@ -208,7 +211,8 @@ def identify_agents_by_total_caregiving_over_lifecycle(
         informal_care_choices: Choice codes for informal care; default INFORMAL_CARE
 
     Returns:
-        Tuple of (agents_1_year, agents_2_year, agents_3_year, agents_4_year, agents_5_year)
+        Tuple of (agents_1_year, agents_2_year, agents_3_year, agents_4_year,
+        agents_5_year)
     """
     if informal_care_choices is None:
         informal_care_choices = np.asarray(INFORMAL_CARE).ravel().tolist()
@@ -250,12 +254,13 @@ def job_offer_outcome_series(
     df: pd.DataFrame,
     kind: Literal["job_finding", "job_retention"],
 ) -> pd.Series:
-    """Build outcome series for job finding or job retention (conditional on lagged status).
+    """Build outcome series for job finding/retention conditional on lagged status.
 
     job_finding: mean(job_offer) among (agent, period) where previous period was
         not working and not retired (unemployed). job_retention: mean(job_offer)
         among (agent, period) where previous period was working (1 - separation).
-    Returns a series with same index as df; NaN where condition not met (excluded from mean).
+    Returns a series with same index as df; NaN where condition not met
+    (excluded from mean).
     """
     if "job_offer" not in df.columns:
         return pd.Series(np.nan, index=df.index)
@@ -302,7 +307,7 @@ def plot_outcome_difference_by_distance_total_caregiving(  # noqa: PLR0913
     tick_length: float = 8,
     tick_width: float = 1.0,
 ) -> None:
-    """Plot outcome difference by distance with 5 lines: total care years 1, 2, 3, 4, 5+.
+    """Plot outcome difference by distance with 5 lines (total care years 1-5+).
 
     Same layout as event study consecutive: dashed black baseline, horizontal line at 0,
     vertical line at t=-0.5, five subgroup lines (1, 2, 3, 4, 5+ total care years).
@@ -469,7 +474,8 @@ def event_study_total_caregiving_merged_and_profiles(
     Returns (merged, prof_diff, prof_1_year_diff, ..., prof_5_year_diff).
     All profiles have columns EVENT_STUDY_DIST_COL and 'diff'.
 
-    When compare_against_baseline is True, diff = policy − baseline (outcome_c − outcome_o).
+    When compare_against_baseline is True, diff = policy − baseline
+    (outcome_c − outcome_o).
     When False, diff = baseline − policy (outcome_o − outcome_c).
     """
     care_codes = np.asarray(INFORMAL_CARE).ravel().tolist()

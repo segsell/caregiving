@@ -836,7 +836,7 @@ def identify_agents_by_first_caregiving_timing_before_death(
     first_death_period_by_agent: pd.DataFrame,
     informal_care_choices: list,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Identify agents by when first caregiving spell occurred relative to mother's death.
+    """Identify agents by first caregiving spell relative to mother's death.
 
     Groups (mutually exclusive):
     - Group 1: first caregiving 1-4 years before mother death (distance in [-4, -1])

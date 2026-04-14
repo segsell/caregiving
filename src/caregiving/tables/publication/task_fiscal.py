@@ -171,7 +171,8 @@ OUTCOME_COLUMN_LABELS = [
 ]
 
 
-# Policy scenario order: baseline, full Beirat, partial Beirat, normal leave, Norwegian with PG, Norwegian no PG.
+# Policy scenario order: baseline, full Beirat, partial Beirat, normal leave,
+# Norwegian with PG, Norwegian no PG.
 FISCAL_POLICY_LABELS = [
     "Baseline (cash benefits)",
     r"Full Beirat (65\%, 1y full)",
@@ -185,7 +186,7 @@ FISCAL_POLICY_LABELS = [
 @pytask.mark.tables
 @pytask.mark.fiscal_costs
 @pytask.mark.publication
-def task_create_fiscal_costs(
+def task_create_fiscal_costs(  # noqa: PLR0915
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_baseline_sim: Path = BLD
     / "solve_and_simulate"
@@ -204,7 +205,10 @@ def task_create_fiscal_costs(
     / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params.pkl",
     path_to_norwegian_no_pg_sim: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params_no_pflegegeld.pkl",
+    / (
+        "simulated_data_full_caregiving_leave_with_job_retention_"
+        "estimated_params_no_pflegegeld.pkl"
+    ),
     path_to_save_table: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
@@ -526,7 +530,10 @@ def _total_sum_column(df: pd.DataFrame, column: str, wealth_unit: float) -> floa
 
 
 def _total_leave_net_cost_aux(df: pd.DataFrame, wealth_unit: float) -> float:
-    """Total net cost from model aux: full_leave_net_cost if present, else normal_leave_net_cost."""
+    """Total net cost from model aux.
+
+    Uses full_leave_net_cost if present, else normal_leave_net_cost.
+    """
     for col in ("full_leave_net_cost", "normal_leave_net_cost"):
         val = _total_sum_column(df, col, wealth_unit)
         if val == val:  # false for NaN

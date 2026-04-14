@@ -597,7 +597,10 @@ def task_plot_ever_care_demand_by_age_shaded(  # noqa: PLR0912, PLR0915
     / "pre_estimation"
     / "ever_care_demand_by_age_pre_shaded.pdf",
 ):
-    """Plot share of agents who have EVER (up to that age) experienced care demand, with shaded light/intensive. Same style as care demand shaded plot."""
+    """Plot share of agents who have EVER experienced care demand by age.
+
+    Shaded light/intensive, same style as care demand shaded plot.
+    """
 
     with path_to_states.open("rb") as f:
         states = pickle.load(f)
@@ -643,7 +646,8 @@ def task_plot_ever_care_demand_by_age_shaded(  # noqa: PLR0912, PLR0915
         """Share with (e_l or e_i), (e_l and not e_i), (e_i).
         ever_any is truly cumulative (non-decreasing). ever_light_only can decrease
         because agents leave it when they experience intensive care (reclassified into
-        ever_intensive_ever). ever_light_only + ever_intensive_ever = ever_any (disjoint).
+        ever_intensive_ever). ever_light_only + ever_intensive_ever = ever_any
+        (disjoint).
         """
         share_any = 0.0
         share_light_only = 0.0
@@ -869,7 +873,10 @@ def task_plot_mother_alive_share_by_age(  # noqa: PLR0912, PLR0915
     / "pre_estimation"
     / "mother_alive_share_by_age_pre.pdf",
 ):
-    """Plot share of agents with mother alive (mother_dead == 0) by age. Same style as care demand shaded plot."""
+    """Plot share of agents with mother alive (mother_dead == 0) by age.
+
+    Same style as care demand shaded plot.
+    """
 
     with path_to_states.open("rb") as f:
         states = pickle.load(f)

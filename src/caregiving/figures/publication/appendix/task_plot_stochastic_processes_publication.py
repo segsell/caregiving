@@ -640,7 +640,10 @@ def task_plot_own_wage_publication(
     path_to_data: Path = BLD / "data" / "soep_wage_data.csv",
     path_to_save: Annotated[Path, Product] = _OUT / "own_wage_women.pdf",
 ) -> None:
-    """Own (log) wage by age and education. Women only. PanelOLS in-sample prediction."""
+    """Own (log) wage by age and education.
+
+    Women only. PanelOLS in-sample prediction.
+    """
     with path_to_specs.open("rb") as f:
         specs = pkl.load(f)
     start_age = specs["start_age"]
@@ -748,7 +751,9 @@ def task_plot_formal_care_costs_publication(
     )
     ax.set_xlabel("Age", fontsize=_S["label_fontsize"], labelpad=_S["labelpad"])
     ax.set_ylabel(
-        "Formal care costs (in euros)", fontsize=_S["label_fontsize"], labelpad=_S["labelpad"]
+        "Formal care costs (in euros)",
+        fontsize=_S["label_fontsize"],
+        labelpad=_S["labelpad"],
     )
     ax.legend(fontsize=_S["label_fontsize"], frameon=False, loc="best")
     _finalize(ax, path_to_save, xmin=start_age, xmax=end_age)

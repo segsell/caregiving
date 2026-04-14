@@ -6,6 +6,7 @@ standard errors where available, R²/pseudo R² where available, and notes.
 All tables are women-only where the process is estimated by sex.
 """
 
+import json
 from pathlib import Path
 from typing import Annotated
 
@@ -13,8 +14,6 @@ import numpy as np
 import pandas as pd
 import pytask
 from pytask import Product
-
-import json
 
 from caregiving.config import BLD
 
@@ -75,10 +74,14 @@ def task_table_partner_transition_women(
     path_to_partner_transition: Path = _EST / "partner_transition_matrix.csv",
     path_to_save: Annotated[Path, Product] = _OUT / "partner_transition_women.tex",
 ) -> None:
-    """LaTeX table: partner state transition probabilities (women, by education and age bin)."""
+    """LaTeX table: partner state transition probabilities.
+
+    Women, by education and age bin.
+    """
     path_to_save.parent.mkdir(parents=True, exist_ok=True)
     df = pd.read_csv(path_to_partner_transition)
-    # CSV may have index columns: sex, education, age_bin, lagged_partner_state, lead_partner_state
+    # CSV may have index columns: sex, education, age_bin,
+    # lagged_partner_state, lead_partner_state
     # and column proportion (or last column)
     if "sex" not in df.columns and len(df.columns) >= 6:
         df.columns = [
@@ -143,7 +146,9 @@ def task_table_partner_transition_women(
         n_row = f"\n\\midrule\n$N$ & \\multicolumn{{{2 + n_to}}}{{c}}{{{n_val:,}}} \\\\"
     notes = (
         f"{n_row}\n\\bottomrule\n\\end{{tabular}}\n"
-        f"\\\\\n\\multicolumn{{{3 + n_to}}}{{l}}{{\\footnotesize Notes: Non-parametric transition P(partner state next year | lagged state). "
+        f"\\\\\n\\multicolumn{{{3 + n_to}}}{{l}}"
+        "{\\footnotesize Notes: Non-parametric transition "
+        "P(partner state next year | lagged state). "
         "Age bins in 10-year intervals. Women only. SOEP.}}"
     )
     path_to_save.write_text(header + body + notes, encoding="utf-8")
@@ -156,7 +161,10 @@ def task_table_partner_wage_women(
     path_to_params: Path = _EST / "partner_wage_eq_params_women.csv",
     path_to_save: Annotated[Path, Product] = _OUT / "partner_wage_women.tex",
 ) -> None:
-    """LaTeX table: partner (male) wage equation coefficients (OLS by education). Women's partners."""
+    """LaTeX table: partner (male) wage equation coefficients.
+
+    OLS by education. Women's partners.
+    """
     path_to_save.parent.mkdir(parents=True, exist_ok=True)
     df = pd.read_csv(path_to_params, index_col=0)
     df.index = df.index.map(lambda x: _latex_escape(str(x)))
@@ -183,8 +191,10 @@ def task_table_partner_wage_women(
         n_row = f"\n\\midrule\n$N$ & {n_val:,} \\\\"
     notes = (
         f"{n_row}\n\\bottomrule\n\\end{{tabular}}\n"
-        "\\\\\n\\multicolumn{2}{l}{\\footnotesize Notes: OLS monthly gross wage (partner). "
-        "Agents are women; coefficients for male partners. By education. "
+        "\\\\\n\\multicolumn{2}{l}{\\footnotesize Notes: "
+        "OLS monthly gross wage (partner). "
+        "Agents are women; coefficients for male partners. "
+        "By education. "
         "Specification: wage = const + period + period\\_sq. SOEP.}"
     )
     path_to_save.write_text(header + body + notes, encoding="utf-8")
@@ -197,21 +207,29 @@ def task_table_number_of_children_women(
     path_to_params: Path = _EST / "nb_children_estimates.csv",
     path_to_save: Annotated[Path, Product] = _OUT / "number_of_children_women.tex",
 ) -> None:
-    """LaTeX table: number of children in household (OLS by education and partner status). Women only."""
+    """LaTeX table: number of children in household.
+
+    OLS by education and partner status. Women only.
+    """
     path_to_save.parent.mkdir(parents=True, exist_ok=True)
     df = pd.read_csv(path_to_params, index_col=[0, 1, 2])
     df.index.names = ["sex", "education", "has_partner"]
     df = df.loc[(1, slice(None), slice(None)), :].droplevel(0)  # women only
     edu_map = {0: "Low", 1: "High"}
     partner_map = {0: "Single", 1: "Partnered"}
-    header = "\\begin{tabular}{llccc}\n\\toprule\nEducation & Partner & Const & Period & Period² \\\\\n\\midrule\n"
+    header = (
+        "\\begin{tabular}{llccc}\n\\toprule\n"
+        "Education & Partner & Const & Period & Period²"
+        " \\\\\n\\midrule\n"
+    )
     rows = []
     for (edu, has_partner), r in df.iterrows():
         edu_lab = edu_map.get(edu, str(edu))
         part_lab = partner_map.get(has_partner, str(has_partner))
         rows.append(
             f"{edu_lab} & {part_lab} & {r.get('const', r.iloc[0]):.4f} & "
-            f"{r.get('period', r.iloc[1]):.4f} & {r.get('period_sq', r.iloc[2]):.4f} \\\\"
+            f"{r.get('period', r.iloc[1]):.4f} & "
+            f"{r.get('period_sq', r.iloc[2]):.4f} \\\\"
         )
     body = "\n".join(rows)
     ss = _load_sample_sizes()
@@ -225,7 +243,9 @@ def task_table_number_of_children_women(
         n_row = f"\n\\midrule\n$N$ & \\multicolumn{{4}}{{c}}{{{n_total:,}}} \\\\"
     notes = (
         f"{n_row}\n\\bottomrule\n\\end{{tabular}}\n"
-        "\\\\\n\\multicolumn{5}{l}{\\footnotesize Notes: OLS: children = const + period + period\\textsuperscript{2}. "
+        "\\\\\n\\multicolumn{5}{l}{\\footnotesize Notes: "
+        "OLS: children = const + period + "
+        "period\\textsuperscript{2}. "
         "By education and partner status. Women only. SOEP.}"
     )
     path_to_save.write_text(header + body + notes, encoding="utf-8")
@@ -242,7 +262,10 @@ def task_table_job_separation_women(
     path_to_save.parent.mkdir(parents=True, exist_ok=True)
     df = pd.read_csv(path_to_params, index_col=[0, 1])
     df = df.loc[("Women", slice(None)), :].droplevel(0)
-    header = "\\begin{tabular}{lccc}\n\\toprule\nEducation & Const & Age & Age² \\\\\n\\midrule\n"
+    header = (
+        "\\begin{tabular}{lccc}\n\\toprule\n"
+        "Education & Const & Age & Age² \\\\\n\\midrule\n"
+    )
     rows = []
     for edu, r in df.iterrows():
         rows.append(
@@ -270,11 +293,17 @@ def task_table_health_transition_women(
     path_to_health: Path = _EST / "health_transition_matrix.csv",
     path_to_save: Annotated[Path, Product] = _OUT / "health_transition_women.tex",
 ) -> None:
-    """LaTeX table: health transition probabilities (women, by education and age). Sample of ages."""
+    """LaTeX table: health transition probabilities.
+
+    Women, by education and age. Sample of ages.
+    """
     path_to_save.parent.mkdir(parents=True, exist_ok=True)
     if not path_to_health.exists():
         path_to_save.write_text(
-            "% Health transition matrix not found\n\\begin{tabular}{l}\n\\toprule\n(not found)\n\\bottomrule\n\\end{tabular}\n",
+            "% Health transition matrix not found\n"
+            "\\begin{tabular}{l}\n\\toprule\n"
+            "(not found)\n\\bottomrule\n"
+            "\\end{tabular}\n",
             encoding="utf-8",
         )
         return
@@ -286,7 +315,11 @@ def task_table_health_transition_women(
         ].copy()
     # Select key columns: education, period/age, health, lead_health, transition_prob
     prob_col = "transition_prob" if "transition_prob" in df.columns else df.columns[-1]
-    header = "\\begin{tabular}{lllcc}\n\\toprule\nEducation & Age & From health & To health & Probability \\\\\n\\midrule\n"
+    header = (
+        "\\begin{tabular}{lllcc}\n\\toprule\n"
+        "Education & Age & From health & To health "
+        "& Probability \\\\\n\\midrule\n"
+    )
     rows = []
     for _, r in df.head(80).iterrows():  # limit rows for readability
         edu = r.get("education", r.iloc[0])
@@ -304,7 +337,8 @@ def task_table_health_transition_women(
         n_row = f"\n\\midrule\n$N$ & \\multicolumn{{4}}{{c}}{{{n_val:,}}} \\\\"
     notes = (
         f"{n_row}\n\\bottomrule\n\\end{{tabular}}\n"
-        "\\\\\n\\multicolumn{5}{l}{\\footnotesize Notes: P(health next period | current health). "
+        "\\\\\n\\multicolumn{5}{l}{\\footnotesize Notes: "
+        "P(health next period | current health). "
         "Women only. Sample of ages. SOEP.}"
     )
     path_to_save.write_text(header + body + notes, encoding="utf-8")
@@ -364,7 +398,11 @@ def task_table_own_wage_women(
     sex_col = "sex" if "sex" in df.columns else df.columns[1]
     df = df.loc[df[sex_col].astype(str).str.contains("Women", na=False)].copy()
     param_col = "parameter" if "parameter" in df.columns else df.columns[2]
-    header = "\\begin{tabular}{lcc}\n\\toprule\nEducation & Parameter & Coef. & (s.e.) \\\\\n\\midrule\n"
+    header = (
+        "\\begin{tabular}{lcc}\n\\toprule\n"
+        "Education & Parameter & Coef. & (s.e.)"
+        " \\\\\n\\midrule\n"
+    )
     rows = []
     for edu in df["education"].unique():
         sub = df.loc[df["education"] == edu]
@@ -411,7 +449,9 @@ def task_table_formal_care_costs(
     if not path_to_params.exists():
         path_to_save.write_text(
             "% Formal care costs params not found\n\\begin{tabular}{lcc}\n\\toprule\n"
-            "Parameter & Coefficient & (s.e.) \\\\\n\\midrule\n(not found)\n\\bottomrule\n\\end{tabular}\n",
+            "Parameter & Coefficient & (s.e.) \\\\\n"
+            "\\midrule\n(not found)\n\\bottomrule\n"
+            "\\end{tabular}\n",
             encoding="utf-8",
         )
         return
@@ -426,8 +466,16 @@ def task_table_formal_care_costs(
             else None
         )
     param_cols = [c for c in coef_row.index if c != "N" and pd.notna(coef_row.get(c))]
-    param_labels = {"const": "Const", "age": "Age", "age_sq": "Age\\textsuperscript{2}"}
-    header = "\\begin{tabular}{lcc}\n\\toprule\nParameter & Coefficient & (s.e.) \\\\\n\\midrule\n"
+    param_labels = {
+        "const": "Const",
+        "age": "Age",
+        "age_sq": "Age\\textsuperscript{2}",
+    }
+    header = (
+        "\\begin{tabular}{lcc}\n\\toprule\n"
+        "Parameter & Coefficient & (s.e.)"
+        " \\\\\n\\midrule\n"
+    )
     rows = []
     for c in param_cols:
         coef = coef_row.get(c, np.nan)
@@ -445,8 +493,10 @@ def task_table_formal_care_costs(
     body = "\n".join(rows)
     notes = (
         "\\\\\n\\bottomrule\n\\end{tabular}\n"
-        "\\\\\n\\multicolumn{3}{l}{\\footnotesize Notes: OLS formal care costs (monthly). "
-        "Specification: formal\\_care\\_costs $\\sim$ age + age². Pooled (no education). "
+        "\\\\\n\\multicolumn{3}{l}{\\footnotesize Notes: "
+        "OLS formal care costs (monthly). "
+        "Specification: formal\\_care\\_costs "
+        "$\\sim$ age + age². Pooled (no education). "
         "SOEP. Sample age $\\leq$ 70.}"
     )
     path_to_save.write_text(header + body + notes, encoding="utf-8")
@@ -455,13 +505,18 @@ def task_table_formal_care_costs(
 def _table_from_inheritance_spec(
     path_csv: Path, path_save: Path, title: str, spec_type: str
 ) -> None:
-    """Build LaTeX table from inheritance spec CSV (params + _se + _rsq rows). Women only."""
+    """Build LaTeX table from inheritance spec CSV.
+
+    Params + _se + _rsq rows. Women only.
+    """
     path_save.parent.mkdir(parents=True, exist_ok=True)
     if not path_csv.exists():
         path_save.write_text(
-            f"% Table source not found: {path_csv}\n\\begin{{tabular}}{{lcc}}\n\\toprule\n"
+            f"% Table source not found: {path_csv}\n"
+            "\\begin{tabular}{lcc}\n\\toprule\n"
             "Parameter & Coefficient & (s.e.) \\\\\n\\midrule\n"
-            "\\multicolumn{3}{l}{(data not found)} \\\\\n\\bottomrule\n\\end{tabular}\n",
+            "\\multicolumn{3}{l}{(data not found)} \\\\\n"
+            "\\bottomrule\n\\end{tabular}\n",
             encoding="utf-8",
         )
         return
@@ -484,7 +539,10 @@ def _table_from_inheritance_spec(
         for c in women_row.index
         if c != "N" and pd.notna(women_row.get(c)) and str(c) != "nan"
     ]
-    header = "\\begin{tabular}{lcc}\n\\toprule\nParameter & Coefficient & (s.e.) \\\\\n\\midrule\n"
+    header = (
+        "\\begin{tabular}{lcc}\n\\toprule\n"
+        "Parameter & Coefficient & (s.e.) \\\\\n\\midrule\n"
+    )
     rows = []
     for c in param_cols:
         coef = women_row.get(c, np.nan)
@@ -496,7 +554,8 @@ def _table_from_inheritance_spec(
     if women_rsq is not None and len(women_rsq):
         r2 = women_rsq.iloc[0]
         rows.append(
-            f"Pseudo R\\textsuperscript{{2}} & \\multicolumn{{2}}{{c}}{{ {r2:.4f} }} \\\\"
+            "Pseudo R\\textsuperscript{2} & "
+            f"\\multicolumn{{2}}{{c}}{{ {r2:.4f} }} \\\\"
         )
     n_val = women_row.get("N", np.nan)
     if pd.notna(n_val):
@@ -521,7 +580,8 @@ def task_table_inheritance_prob_women(
     _table_from_inheritance_spec(
         path_to_params,
         path_to_save,
-        "Logit P(positive inheritance). Spec 7: any care this year, filter parent this year.",
+        "Logit P(positive inheritance). Spec 7: any care this year, "
+        "filter parent this year.",
         "Probability",
     )
 
@@ -554,7 +614,10 @@ def task_table_mother_mortality_women(
     path_to_lifetable: Path = _EST / "death_transition_mat.csv",
     path_to_save: Annotated[Path, Product] = _OUT / "mother_mortality_women.tex",
 ) -> None:
-    """LaTeX table: mother's death probabilities from life table. Women (mothers) only."""
+    """LaTeX table: mother's death probabilities from life table.
+
+    Women (mothers) only.
+    """
     path_to_save.parent.mkdir(parents=True, exist_ok=True)
     df = pd.read_csv(path_to_lifetable)
     if "sex" in df.columns:
@@ -575,9 +638,11 @@ def task_table_mother_mortality_women(
     body = "\n".join(rows) if rows else "\\multicolumn{2}{l}{(no data)} \\\\"
     notes = (
         "\\\\\n\\bottomrule\n\\end{tabular}\n"
-        "\\\\\n\\multicolumn{2}{l}{\\footnotesize Notes: Annual death probabilities from "
+        "\\\\\n\\multicolumn{2}{l}{\\footnotesize Notes: Annual death "
+        "probabilities from "
         "Federal Statistical Office life tables.}"
-        "\n\\multicolumn{2}{l}{\\footnotesize Selected ages shown. Applied to the mother "
+        "\n\\multicolumn{2}{l}{\\footnotesize Selected ages shown. "
+        "Applied to the mother "
         "via the mother--daughter age difference.}"
     )
     path_to_save.write_text(header + body + notes, encoding="utf-8")
@@ -595,7 +660,10 @@ def task_table_mother_adl_transition_women(
     path_to_params: Path = _EST / "adl_state_params.csv",
     path_to_save: Annotated[Path, Product] = _OUT / "mother_adl_transition_women.tex",
 ) -> None:
-    """LaTeX table: multinomial logit for mother's ADL transitions. Women (mothers) only."""
+    """LaTeX table: multinomial logit for mother's ADL transitions.
+
+    Women (mothers) only.
+    """
     path_to_save.parent.mkdir(parents=True, exist_ok=True)
     df = pd.read_csv(path_to_params)
     df = df.loc[df["sex"].astype(str).str.contains("Women", case=False)].copy()
@@ -610,8 +678,15 @@ def task_table_mother_adl_transition_women(
         "adl_cat_2": "Lagged ADL = 2",
         "adl_cat_3": "Lagged ADL = 3",
     }
-    param_order = ["const", "age", "age_sq", "age_cubed",
-                   "adl_cat_1", "adl_cat_2", "adl_cat_3"]
+    param_order = [
+        "const",
+        "age",
+        "age_sq",
+        "age_cubed",
+        "adl_cat_1",
+        "adl_cat_2",
+        "adl_cat_3",
+    ]
 
     n_cats = len(df)
     col_spec = "l" + "c" * n_cats
@@ -641,9 +716,11 @@ def task_table_mother_adl_transition_women(
         n_row = f"\n\\midrule\n$N$ & \\multicolumn{{{n_cats}}}{{c}}{{{n_val:,}}} \\\\"
     notes = (
         f"{n_row}\n\\bottomrule\n\\end{{tabular}}\n"
-        f"\\\\\n\\multicolumn{{{1 + n_cats}}}{{l}}{{\\footnotesize Notes: Multinomial logit. "
+        f"\\\\\n\\multicolumn{{{1 + n_cats}}}{{l}}"
+        "{\\footnotesize Notes: Multinomial logit. "
         "Dependent variable: mother's ADL category.}}\n"
-        f"\\multicolumn{{{1 + n_cats}}}{{l}}{{\\footnotesize Reference category: No ADL "
+        f"\\multicolumn{{{1 + n_cats}}}{{l}}"
+        "{\\footnotesize Reference category: No ADL "
         "(category 0). Estimated on SHARE parent--child data, women (mothers).}}"
     )
     path_to_save.write_text(header + body + notes, encoding="utf-8")
