@@ -18,6 +18,8 @@ from caregiving.counterfactual.plotting_helpers import (
 from caregiving.counterfactual.plotting_utils import ensure_agent_period
 from caregiving.model.shared import INFORMAL_CARE
 
+MAX_DISTANCE_LABELS = 4
+
 
 def add_distance_to_first_care(df_original: pd.DataFrame) -> pd.DataFrame:
     """Add distance_to_first_care column; 0 is first period providing informal care."""
@@ -678,7 +680,7 @@ def plot_employment_rate_by_distance(  # noqa: PLR0913
         age_label != "ages_60_70"
         and prof_5_year is not None
         and len(prof_5_year) > 0
-        and len(labels) > 4
+        and len(labels) > MAX_DISTANCE_LABELS
     ):
         plt.plot(
             prof_5_year["distance_to_first_care"],

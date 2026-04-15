@@ -6,16 +6,11 @@ Excludes inheritance probability and amount plots.
 """
 
 import pickle as pkl
+from contextlib import suppress
 from pathlib import Path
 from typing import Annotated
 
 import matplotlib
-
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-
-plt.rcParams["font.family"] = "sans-serif"
-plt.rcParams["font.sans-serif"] = ["DejaVu Sans", "Liberation Sans", "Arial"]
 import numpy as np
 import pandas as pd
 import pytask
@@ -28,6 +23,16 @@ from caregiving.counterfactual.plotting_helpers import (
     publication_savefig,
 )
 from caregiving.model.shared import MAX_AGE_SIM
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt  # noqa: E402
+
+plt.rcParams["font.family"] = "sans-serif"
+plt.rcParams["font.sans-serif"] = ["DejaVu Sans", "Liberation Sans", "Arial"]
+
+N_PARTNER_STATES_WITH_DEAD = 3
+ALIVE_SHARE_TOL = 1e-10
+MAX_PLOT_AGE = 90
 
 _OUT = BLD / "figures" / "publication" / "stochastic_processes"
 _EST = BLD / "estimation" / "stochastic_processes"
@@ -129,11 +134,11 @@ def _plot_partner_state_one_panel(specs, df, partner_state_idx, path_to_save):
             p_single = 0.5
         initial_dist[0] = float(p_single)
         initial_dist[1] = 1 - initial_dist[0]
-        if n_partner_states == 3:
+        if n_partner_states == N_PARTNER_STATES_WITH_DEAD:
             initial_dist[2] = 0.0
         trans_probs = trans_mat[sex_var, edu, :n_periods, :, :]
         shares = _markov_simulator(initial_dist, trans_probs, n_periods)
-        try:
+        with suppress(Exception):
             obs_series = grouped.loc[(sex_var, edu, slice(None), partner_state_idx)]
             obs_ages = np.asarray(obs_series.index)
             mask = obs_ages <= _PARTNER_STATE_MAX_AGE
@@ -146,8 +151,6 @@ def _plot_partner_state_one_panel(specs, df, partner_state_idx, path_to_save):
                     label=f"{edu_label} (obs.)",
                     linewidth=_S["linewidth"],
                 )
-        except Exception:
-            pass
         ax.plot(
             ages,
             shares[:, partner_state_idx],
@@ -301,7 +304,7 @@ def _plot_children_one_panel(specs, df, has_partner, path_to_save):
     fig, ax = plt.subplots(figsize=_S["figsize"])
     for edu, edu_label in enumerate(specs["education_labels"]):
         vals = children[sex_var, edu, has_partner, :n_periods]
-        try:
+        with suppress(Exception):
             obs = nb_children_data.loc[(sex_var, edu, has_partner, slice(None))]
             obs_ages = np.asarray(obs.index)
             mask = obs_ages <= _CHILDREN_XMAX
@@ -314,8 +317,6 @@ def _plot_children_one_panel(specs, df, has_partner, path_to_save):
                     label=f"{edu_label} (obs.)",
                     linewidth=_S["linewidth"],
                 )
-        except Exception:
-            pass
         ax.plot(
             ages,
             np.maximum(0, vals),
@@ -404,7 +405,7 @@ def task_plot_job_separation_publication(
     obs_shares = df.groupby(["sex", "education", "age"])["job_sep"].mean()
     fig, ax = plt.subplots(figsize=_S["figsize"])
     for edu, edu_label in enumerate(specs["education_labels"]):
-        try:
+        with suppress(Exception):
             obs = obs_shares.loc[(sex_var, edu, slice(None))]
             obs_ages = np.asarray(obs.index)
             mask = obs_ages <= x_max
@@ -417,8 +418,6 @@ def task_plot_job_separation_publication(
                     label=f"{edu_label} (obs.)",
                     linewidth=_S["linewidth"],
                 )
-        except Exception:
-            pass
         ax.plot(
             working_ages[: probs.shape[1]],
             probs[edu, :],
@@ -456,7 +455,7 @@ def task_plot_survival_women_publication(
     df["survival_prob_year"] = 1 - df["death_prob"]
     df = df.sort_values(["education", "health", "age"])
     df["survival_prob"] = np.nan
-    for (edu, health), g in df.groupby(["education", "health"]):
+    for (_edu, _health), g in df.groupby(["education", "health"]):
         sp = g["survival_prob_year"].cumprod()
         sp = sp.shift(1)
         sp.iloc[0] = 1.0
@@ -465,7 +464,7 @@ def task_plot_survival_women_publication(
     age_max = int(df["age"].max())
     fig, ax = plt.subplots(figsize=_S["figsize"])
     for edu, edu_label in enumerate(specs["education_labels"]):
-        for health in [1, 0]:
+        for health in (1, 0):
             sub = df[(df["education"] == edu) & (df["health"] == health)]
             if len(sub) == 0:
                 continue
@@ -525,10 +524,12 @@ def task_plot_health_probability_healthy_publication(
         trans = health_mat[sex_var, edu, :max_period, :, :]
         shares = _markov_simulator(initial_dist, trans, max_period)
         alive = 1 - shares[:, 2]
-        healthy_cond = np.where(alive > 1e-10, shares[:, 1] / alive, np.nan)
+        healthy_cond = np.where(alive > ALIVE_SHARE_TOL, shares[:, 1] / alive, np.nan)
         obs = (
             df.loc[
-                (df["education"] == edu) & (df["age"] >= start_age) & (df["age"] < 90)
+                (df["education"] == edu)
+                & (df["age"] >= start_age)
+                & (df["age"] < MAX_PLOT_AGE)
             ]
             .groupby("age")["health"]
             .mean()
@@ -595,11 +596,13 @@ def task_plot_health_probability_bad_publication(
         trans = health_mat[sex_var, edu, :max_period, :, :]
         shares = _markov_simulator(initial_dist, trans, max_period)
         alive = 1 - shares[:, 2]
-        bad_cond = np.where(alive > 1e-10, shares[:, 0] / alive, np.nan)
+        bad_cond = np.where(alive > ALIVE_SHARE_TOL, shares[:, 0] / alive, np.nan)
         obs_bad = (
             1
             - df.loc[
-                (df["education"] == edu) & (df["age"] >= start_age) & (df["age"] < 90)
+                (df["education"] == edu)
+                & (df["age"] >= start_age)
+                & (df["age"] < MAX_PLOT_AGE)
             ]
             .groupby("age")["health"]
             .mean()

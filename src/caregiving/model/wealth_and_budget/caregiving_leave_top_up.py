@@ -8,6 +8,7 @@ Normal leave: 65% replacement with bounds (net-based top-up).
 from jax import numpy as jnp
 
 from caregiving.model.shared import (
+    LEAVE_CAP_YEARS,
     had_ft_job_before_caregiving,
     had_no_job_before_caregiving,
     had_pt_job_before_caregiving,
@@ -263,7 +264,7 @@ def calc_caregiving_leave_top_up_beirat(
 
     Max 3 years, partial leave only. No full leave: benefit only when
     working (PT with prior FT) while caregiving and
-    years_leave_used_total < 3. No Lohnersatzleistung when unemployed
+    years_leave_used_total < LEAVE_CAP_YEARS. No Lohnersatzleistung when unemployed
     during caregiving.
     """
     raw = calc_caregiving_leave_top_up(
@@ -282,7 +283,7 @@ def calc_caregiving_leave_top_up_beirat(
         * is_part_time(lagged_choice)
         * had_ft_job_before_caregiving(job_before_caregiving)
     )
-    eligible = on_partial_leave * (years_leave_used_total < 3)
+    eligible = on_partial_leave * (years_leave_used_total < LEAVE_CAP_YEARS)
     return raw * eligible
 
 
@@ -303,8 +304,9 @@ def calc_caregiving_leave_top_up_full_beirat(
     Max 3 years total, max 1 year full leave.
 
     Full leave = unemployed while caregiving with prior job; eligible only when
-    full_leave_year_used == 0 and years_leave_used_total < 3.
-    Partial leave = PT with prior FT; eligible when years_leave_used_total < 3.
+    full_leave_year_used == 0 and years_leave_used_total < LEAVE_CAP_YEARS.
+    Partial leave = PT with prior FT; eligible when
+    years_leave_used_total < LEAVE_CAP_YEARS.
     Same benefit amounts as calc_caregiving_leave_top_up; only eligibility is gated.
     """
     raw = calc_caregiving_leave_top_up(
@@ -338,8 +340,10 @@ def calc_caregiving_leave_top_up_full_beirat(
         * prior_ft
     )
 
-    eligible_full = (years_leave_used_total < 3) * (full_leave_year_used == 0)
-    eligible_partial = years_leave_used_total < 3
+    eligible_full = (years_leave_used_total < LEAVE_CAP_YEARS) * (
+        full_leave_year_used == 0
+    )
+    eligible_partial = years_leave_used_total < LEAVE_CAP_YEARS
 
     eligible = on_full_leave * eligible_full + on_partial_leave * eligible_partial
     return raw * eligible

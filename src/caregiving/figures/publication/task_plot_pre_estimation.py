@@ -19,6 +19,9 @@ from caregiving.model.stochastic_processes.caregiving_transition import (
     care_demand_transition_adl_light_intensive,
 )
 
+N_CARE_DEMAND_STATE_KEYS = 5
+SHARE_TICK_DENSITY_CUTOFF = 0.5
+
 
 def task_plot_care_demand_transition_adl_and_dead_state(  # noqa: PLR0912, PLR0915
     path_to_states: Path = BLD / "model" / "initial_conditions" / "initial_states.pkl",
@@ -622,7 +625,6 @@ def task_plot_ever_care_demand_by_age_shaded(  # noqa: PLR0912, PLR0915
 
     n_edu = specs["n_education_types"]
     n_adl_states = 3
-    n_care_demand_states = 3
 
     n_agents = len(mother_dead_initial)
 
@@ -653,7 +655,7 @@ def task_plot_ever_care_demand_by_age_shaded(  # noqa: PLR0912, PLR0915
         share_light_only = 0.0
         share_intensive = 0.0
         for key, count in sbg.items():
-            if len(key) == 5:
+            if len(key) == N_CARE_DEMAND_STATE_KEYS:
                 _edu, _adl, _dead, e_l, e_i = key
             else:
                 continue
@@ -801,7 +803,9 @@ def task_plot_ever_care_demand_by_age_shaded(  # noqa: PLR0912, PLR0915
     y_max = min(1.0, max(share_any_plot.max() * 1.05, 0.2))
     ax.set_xlim(age_min_plot - 0.5, age_max_plot + 0.5)
     ax.set_ylim(-0.005, y_max)
-    ax.set_yticks(np.arange(0, y_max + 0.01, 0.1 if y_max > 0.5 else 0.05))
+    ax.set_yticks(
+        np.arange(0, y_max + 0.01, 0.1 if y_max > SHARE_TICK_DENSITY_CUTOFF else 0.05)
+    )
 
     light_idx = (
         int(np.argmax(share_light_only_plot)) if share_light_only_plot.max() > 0 else 0

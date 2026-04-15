@@ -65,7 +65,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         path_to_original_data: Path = _PATH_ORIGINAL,
         path_to_leave_data: Path = _PATH_LEAVE,
         path_to_specs: Path = _PATH_SPECS,
-        path_to_plot: Annotated[Path, Product] = _path_plot(
+        path_to_plot: Annotated[Path, Product] = _path_plot(  # noqa: B008
             "employment",
             f"event_study_employment_rate_by_distance_to_first_care_demand_"
             f"total_caregiving_{age_label_val}.pdf",
@@ -136,7 +136,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         path_to_original_data: Path = _PATH_ORIGINAL,
         path_to_leave_data: Path = _PATH_LEAVE,
         path_to_specs: Path = _PATH_SPECS,
-        path_to_plot: Annotated[Path, Product] = _path_plot(
+        path_to_plot: Annotated[Path, Product] = _path_plot(  # noqa: B008
             "employment",
             f"event_study_employment_rate_by_distance_to_first_caregiving_spell_"
             f"total_caregiving_{age_label_val}.pdf",
@@ -790,7 +790,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         path_to_original_data: Path = _PATH_ORIGINAL,
         path_to_leave_data: Path = _PATH_LEAVE,
         path_to_specs: Path = _PATH_SPECS,
-        path_to_plot: Annotated[Path, Product] = _path_plot(
+        path_to_plot: Annotated[Path, Product] = _path_plot(  # noqa: B008
             "job_finding",
             f"event_study_job_finding_rate_by_distance_to_first_care_demand_"
             f"total_caregiving_{age_label_val}.pdf",
@@ -861,7 +861,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         path_to_original_data: Path = _PATH_ORIGINAL,
         path_to_leave_data: Path = _PATH_LEAVE,
         path_to_specs: Path = _PATH_SPECS,
-        path_to_plot: Annotated[Path, Product] = _path_plot(
+        path_to_plot: Annotated[Path, Product] = _path_plot(  # noqa: B008
             "job_finding",
             f"event_study_job_finding_rate_by_distance_to_first_caregiving_spell_"
             f"total_caregiving_{age_label_val}.pdf",
@@ -935,7 +935,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         path_to_original_data: Path = _PATH_ORIGINAL,
         path_to_leave_data: Path = _PATH_LEAVE,
         path_to_specs: Path = _PATH_SPECS,
-        path_to_plot: Annotated[Path, Product] = _path_plot(
+        path_to_plot: Annotated[Path, Product] = _path_plot(  # noqa: B008
             "job_retention",
             f"event_study_job_retention_rate_by_distance_to_first_care_demand_"
             f"total_caregiving_{age_label_val}.pdf",
@@ -1006,7 +1006,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         path_to_original_data: Path = _PATH_ORIGINAL,
         path_to_leave_data: Path = _PATH_LEAVE,
         path_to_specs: Path = _PATH_SPECS,
-        path_to_plot: Annotated[Path, Product] = _path_plot(
+        path_to_plot: Annotated[Path, Product] = _path_plot(  # noqa: B008
             "job_retention",
             f"event_study_job_retention_rate_by_distance_to_first_caregiving_spell_"
             f"total_caregiving_{age_label_val}.pdf",

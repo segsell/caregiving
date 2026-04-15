@@ -24,6 +24,8 @@ from caregiving.model.shared import (
     NPV_START_AGE,
 )
 
+NPV_BASELINE_TOL = 1e-10
+
 # Columns needed for NPV computation and filtering. Restrict loaded data to these to save RAM.
 
 REQUIRED_COLUMNS_NPV = [
@@ -191,7 +193,7 @@ def task_compute_career_costs(
         on="agent",
         suffixes=("_baseline", "_no_care_demand"),
     )
-    merged = merged[merged["career_npv_baseline"] > 1e-10].copy()
+    merged = merged[merged["career_npv_baseline"] > NPV_BASELINE_TOL].copy()
     npv_care = 1 - (merged["career_npv_no_care_demand"] / merged["career_npv_baseline"])
     pd.DataFrame({"agent": merged["agent"], "npv_care_ratio": npv_care}).to_csv(
         path_to_npv_care_ratios, index=False
@@ -301,7 +303,7 @@ def task_compute_career_costs_caregiving_leave_with_job_retention(
         on="agent",
         suffixes=("_baseline", "_no_care_demand"),
     )
-    merged = merged[merged["career_npv_baseline"] > 1e-10].copy()
+    merged = merged[merged["career_npv_baseline"] > NPV_BASELINE_TOL].copy()
     npv_care = 1 - (merged["career_npv_no_care_demand"] / merged["career_npv_baseline"])
     pd.DataFrame({"agent": merged["agent"], "npv_care_ratio": npv_care}).to_csv(
         path_to_npv_care_ratios, index=False
@@ -411,7 +413,7 @@ def task_compute_career_costs_full_caregiving_leave_with_job_retention(
         on="agent",
         suffixes=("_baseline", "_no_care_demand"),
     )
-    merged = merged[merged["career_npv_baseline"] > 1e-10].copy()
+    merged = merged[merged["career_npv_baseline"] > NPV_BASELINE_TOL].copy()
     npv_care = 1 - (merged["career_npv_no_care_demand"] / merged["career_npv_baseline"])
     pd.DataFrame({"agent": merged["agent"], "npv_care_ratio": npv_care}).to_csv(
         path_to_npv_care_ratios, index=False
@@ -519,7 +521,7 @@ def task_compute_career_costs_full_leave_no_pflegegeld(
         on="agent",
         suffixes=("_baseline", "_no_care_demand"),
     )
-    merged = merged[merged["career_npv_baseline"] > 1e-10].copy()
+    merged = merged[merged["career_npv_baseline"] > NPV_BASELINE_TOL].copy()
     npv_care = 1 - (merged["career_npv_no_care_demand"] / merged["career_npv_baseline"])
     pd.DataFrame({"agent": merged["agent"], "npv_care_ratio": npv_care}).to_csv(
         path_to_npv_care_ratios, index=False
@@ -627,7 +629,7 @@ def task_compute_career_costs_full_beirat(
         on="agent",
         suffixes=("_baseline", "_no_care_demand"),
     )
-    merged = merged[merged["career_npv_baseline"] > 1e-10].copy()
+    merged = merged[merged["career_npv_baseline"] > NPV_BASELINE_TOL].copy()
     npv_care = 1 - (merged["career_npv_no_care_demand"] / merged["career_npv_baseline"])
     pd.DataFrame({"agent": merged["agent"], "npv_care_ratio": npv_care}).to_csv(
         path_to_npv_care_ratios, index=False
@@ -735,7 +737,7 @@ def task_compute_career_costs_beirat(
         on="agent",
         suffixes=("_baseline", "_no_care_demand"),
     )
-    merged = merged[merged["career_npv_baseline"] > 1e-10].copy()
+    merged = merged[merged["career_npv_baseline"] > NPV_BASELINE_TOL].copy()
     npv_care = 1 - (merged["career_npv_no_care_demand"] / merged["career_npv_baseline"])
     pd.DataFrame({"agent": merged["agent"], "npv_care_ratio": npv_care}).to_csv(
         path_to_npv_care_ratios, index=False
@@ -858,7 +860,7 @@ def compute_npv_summary_table(
                 on="agent",
                 suffixes=("_baseline", "_no_care_demand"),
             )
-            merged = merged[merged["career_npv_baseline"] > 1e-10].copy()
+            merged = merged[merged["career_npv_baseline"] > NPV_BASELINE_TOL].copy()
             npv_care = 1 - (
                 merged["career_npv_no_care_demand"] / merged["career_npv_baseline"]
             )

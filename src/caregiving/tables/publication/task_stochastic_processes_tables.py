@@ -17,6 +17,9 @@ from pytask import Product
 
 from caregiving.config import BLD
 
+MIN_PARTNER_STATE_COLS = 6
+N_CATEGORICAL_INDEX_COLS = 2
+
 _EST = BLD / "estimation" / "stochastic_processes"
 _OUT = BLD / "tables" / "publication" / "stochastic_processes"
 _SAMPLE_SIZES_PATH = _EST / "sample_sizes.json"
@@ -36,20 +39,20 @@ _PATH_INHERITANCE_AMOUNT_SPEC12 = (
 
 def _load_sample_sizes() -> dict:
     if _SAMPLE_SIZES_PATH.exists():
-        with open(_SAMPLE_SIZES_PATH) as f:
+        with _SAMPLE_SIZES_PATH.open() as f:
             return json.load(f)
     return {}
 
 
 def _latex_escape(s: str) -> str:
     """Escape special LaTeX characters in table content."""
-    for c, r in [
+    for c, r in (
         ("_", "\\_"),
         ("&", "\\&"),
         ("%", "\\%"),
         ("#", "\\#"),
-    ]:
-        s = str(s).replace(c, r)
+    ):
+        s = s.replace(c, r)
     return s
 
 
@@ -83,7 +86,7 @@ def task_table_partner_transition_women(
     # CSV may have index columns: sex, education, age_bin,
     # lagged_partner_state, lead_partner_state
     # and column proportion (or last column)
-    if "sex" not in df.columns and len(df.columns) >= 6:
+    if "sex" not in df.columns and len(df.columns) >= MIN_PARTNER_STATE_COLS:
         df.columns = [
             "sex",
             "education",
@@ -102,7 +105,7 @@ def task_table_partner_transition_women(
         lead_col = [
             c
             for c in df.columns
-            if c not in ["education", "age_bin", "lagged_partner_state", pivot_col]
+            if c not in ("education", "age_bin", "lagged_partner_state", pivot_col)
         ]
         lead_col = lead_col[0] if lead_col else "lead_partner_state"
     df_wide = df.pivot_table(
@@ -118,7 +121,7 @@ def task_table_partner_transition_women(
     to_cols = [
         c
         for c in df_wide.columns
-        if c not in ["education", "age_bin", "lagged_partner_state"]
+        if c not in ("education", "age_bin", "lagged_partner_state")
     ]
     n_to = len(to_cols)
     header = (
@@ -169,7 +172,7 @@ def task_table_partner_wage_women(
     df = pd.read_csv(path_to_params, index_col=0)
     df.index = df.index.map(lambda x: _latex_escape(str(x)))
     coef_cols = [
-        c for c in df.columns if c in ["constant", "period", "period_sq", "const"]
+        c for c in df.columns if c in ("constant", "period", "period_sq", "const")
     ]
     if not coef_cols:
         coef_cols = list(df.columns)
@@ -266,12 +269,11 @@ def task_table_job_separation_women(
         "\\begin{tabular}{lccc}\n\\toprule\n"
         "Education & Const & Age & Age² \\\\\n\\midrule\n"
     )
-    rows = []
-    for edu, r in df.iterrows():
-        rows.append(
-            f"{_latex_escape(str(edu))} & {r.get('const', r.iloc[0]):.4f} & "
-            f"{r.get('age', r.iloc[1]):.4f} & {r.get('age_sq', r.iloc[2]):.4f} \\\\"
-        )
+    rows = [
+        f"{_latex_escape(str(edu))} & {r.get('const', r.iloc[0]):.4f} & "
+        f"{r.get('age', r.iloc[1]):.4f} & {r.get('age_sq', r.iloc[2]):.4f} \\\\"
+        for edu, r in df.iterrows()
+    ]
     body = "\n".join(rows)
     ss = _load_sample_sizes()
     n_val = ss.get("job_sep_women_total")
@@ -387,8 +389,8 @@ def task_table_own_wage_women(
     df = pd.read_csv(path_to_params)
     # Columns may be: education, sex, parameter, value (or index 0,1,2, value)
     if (
-        df.shape[1] == 2
-        and df.columns[0] in ["0", "1", "2"]
+        df.shape[1] == N_CATEGORICAL_INDEX_COLS
+        and df.columns[0] in ("0", "1", "2")
         or "Unnamed" in str(df.columns[0])
     ):
         df = pd.read_csv(path_to_params, index_col=[0, 1, 2])
@@ -412,7 +414,7 @@ def task_table_own_wage_women(
         params = [
             p
             for p in sub[param_col].unique()
-            if p and "_ser" not in str(p) and "ser" != str(p)
+            if p and "_ser" not in str(p) and str(p) != "ser"  # codespell:ignore ser
         ]
         for pname in params:
             r = sub.loc[sub[param_col] == pname]
@@ -632,9 +634,9 @@ def task_table_mother_mortality_women(
         "\\begin{tabular}{lc}\n\\toprule\n"
         "Mother's age & $p_{\\text{death}}$ \\\\\n\\midrule\n"
     )
-    rows = []
-    for _, r in df_sample.iterrows():
-        rows.append(f"{int(r['age'])} & {r['death_prob']:.6f} \\\\")
+    rows = [
+        f"{int(r['age'])} & {r['death_prob']:.6f} \\\\" for _, r in df_sample.iterrows()
+    ]
     body = "\n".join(rows) if rows else "\\multicolumn{2}{l}{(no data)} \\\\"
     notes = (
         "\\\\\n\\bottomrule\n\\end{tabular}\n"
@@ -695,8 +697,7 @@ def task_table_mother_adl_transition_women(
         for _, row in df.iterrows()
     )
     header = (
-        f"\\begin{{tabular}}{{{col_spec}}}\n\\toprule\n"
-        f"& {cat_header} \\\\\n\\midrule\n"
+        f"\\begin{{tabular}}{{{col_spec}}}\n\\toprule\n& {cat_header} \\\\\n\\midrule\n"
     )
     rows = []
     for p in param_order:
@@ -776,8 +777,12 @@ def task_table_exog_care_supply_women(
 
     pseudo_r2 = model.prsquared
     n_obs = int(model.nobs)
-    rows.append(f"Pseudo R$^2$ & \\multicolumn{{2}}{{c}}{{ {pseudo_r2:.4f} }} \\\\")
-    rows.append(f"N & \\multicolumn{{2}}{{c}}{{ {n_obs} }} \\\\")
+    rows.extend(
+        (
+            f"Pseudo R$^2$ & \\multicolumn{{2}}{{c}}{{ {pseudo_r2:.4f} }} \\\\",
+            f"N & \\multicolumn{{2}}{{c}}{{ {n_obs} }} \\\\",
+        )
+    )
 
     body = "\n".join(rows)
     notes = (

@@ -1356,11 +1356,9 @@ for age_min_val, age_max_val, age_label_val in (
         ever_care_demand: bool = False,
         window_low: int = 15,
         window_high: int = 15,
-        window_by_age: dict[str, tuple[int, int]] | None = (
-            {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
-        ),
+        window_by_age: dict[str, tuple[int, int]] | None = None,
         ylim: tuple[float, float] | None = (0, 0.5),
-        yticks: list[float] | None = [0, 0.1, 0.2, 0.3, 0.4, 0.5],
+        yticks: list[float] | None = None,
         plot_caregivers_mean: bool = True,
     ) -> None:
         """Plot full-time share by distance to first care demand (ever caregivers, total
@@ -1371,6 +1369,10 @@ for age_min_val, age_max_val, age_label_val in (
         window_by_age overrides window_low/window_high per age group; keys as in
         AGE_GROUPS_EVENT_STUDY.
         """
+        if window_by_age is None:
+            window_by_age = {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
+        if yticks is None:
+            yticks = [0, 0.1, 0.2, 0.3, 0.4, 0.5]
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
         else:
@@ -1528,11 +1530,9 @@ for age_min_val, age_max_val, age_label_val in (
         ever_care_demand: bool = False,
         window_low: int = 15,
         window_high: int = 15,
-        window_by_age: dict[str, tuple[int, int]] | None = (
-            {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
-        ),
+        window_by_age: dict[str, tuple[int, int]] | None = None,
         ylim: tuple[float, float] | None = (0, 0.5),
-        yticks: list[float] | None = [0, 0.1, 0.2, 0.3, 0.4, 0.5],
+        yticks: list[float] | None = None,
         plot_caregivers_mean: bool = True,
     ) -> None:
         """Plot part-time share by distance to first care demand (ever caregivers, total
@@ -1541,6 +1541,10 @@ for age_min_val, age_max_val, age_label_val in (
         Data: estimated_params, no_care_demand. Event: t=0 = first care demand.
         Duration: 1,2,3,4,5+ = total caregiving years over lifecycle.
         """
+        if window_by_age is None:
+            window_by_age = {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
+        if yticks is None:
+            yticks = [0, 0.1, 0.2, 0.3, 0.4, 0.5]
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
         else:
@@ -1874,11 +1878,9 @@ for age_min_val, age_max_val, age_label_val in (
         ever_care_demand: bool = False,
         window_low: int = 15,
         window_high: int = 15,
-        window_by_age: dict[str, tuple[int, int]] | None = (
-            {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
-        ),
+        window_by_age: dict[str, tuple[int, int]] | None = None,
         ylim: tuple[float, float] | None = (0, 1.8),
-        yticks: list[float] | None = [0, 0.25, 0.50, 0.75, 1.00, 1.25, 1.50, 1.75],
+        yticks: list[float] | None = None,
         plot_caregivers_mean: bool = True,
     ) -> None:
         """Plot monthly gross labor income by distance to first care demand (ever
@@ -1887,6 +1889,10 @@ for age_min_val, age_max_val, age_label_val in (
         Data: estimated_params, no_care_demand. Event: t=0 = first care demand.
         Duration: 1,2,3,4,5+ = total caregiving years over lifecycle.
         """
+        if window_by_age is None:
+            window_by_age = {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
+        if yticks is None:
+            yticks = [0, 0.25, 0.50, 0.75, 1.00, 1.25, 1.50, 1.75]
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
         else:
@@ -4740,11 +4746,9 @@ for age_min_val, age_max_val, age_label_val in (
         ever_care_demand: bool = False,
         window_low: int = 15,
         window_high: int = 15,
-        window_by_age: dict[str, tuple[int, int]] | None = (
-            {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
-        ),
+        window_by_age: dict[str, tuple[int, int]] | None = None,
         ylim: tuple[float, float] | None = (0, 1),
-        yticks: list[float] | None = [0, 0.2, 0.4, 0.6, 0.8, 1.0],
+        yticks: list[float] | None = None,
         plot_caregivers_mean: bool = True,
     ) -> None:
         """Plot employment rate by distance to first care demand, grouped by total
@@ -4756,6 +4760,10 @@ for age_min_val, age_max_val, age_label_val in (
         over
         lifecycle (up to end_age_caregiving from specs), not necessarily consecutive.
         """
+        if window_by_age is None:
+            window_by_age = {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
+        if yticks is None:
+            yticks = [0, 0.2, 0.4, 0.6, 0.8, 1.0]
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
         else:

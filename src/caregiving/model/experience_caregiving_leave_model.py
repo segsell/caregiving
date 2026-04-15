@@ -21,6 +21,7 @@ from caregiving.model.pension_system.experience_stock import (
 from caregiving.model.shared import (
     JOB_RETENTION_FULL_TIME,
     JOB_RETENTION_PART_TIME,
+    LEAVE_CAP_YEARS,
     SEX,
     is_full_time,
     is_informal_care,
@@ -212,7 +213,9 @@ def get_next_period_experience_caregiving_leave_beirat(
     on_partial_leave = (
         currently_caregiver * (1 - retired_this_period) * currently_pt * prior_ft
     )
-    on_caregiving_leave = (on_partial_leave * (years_leave_used_total < 3)) > 0
+    on_caregiving_leave = (
+        on_partial_leave * (years_leave_used_total < LEAVE_CAP_YEARS)
+    ) > 0
 
     exp_update_frozen = (
         prior_ft * 1.0
@@ -312,8 +315,10 @@ def get_next_period_experience_caregiving_leave_full_beirat(
         currently_caregiver * (1 - retired_this_period) * currently_pt * prior_ft
     )
 
-    eligible_full = (years_leave_used_total < 3) * (full_leave_year_used == 0)
-    eligible_partial = years_leave_used_total < 3
+    eligible_full = (years_leave_used_total < LEAVE_CAP_YEARS) * (
+        full_leave_year_used == 0
+    )
+    eligible_partial = years_leave_used_total < LEAVE_CAP_YEARS
 
     on_caregiving_leave = (
         on_full_leave * eligible_full + on_partial_leave * eligible_partial

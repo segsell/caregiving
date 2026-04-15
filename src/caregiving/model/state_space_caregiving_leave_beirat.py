@@ -7,6 +7,7 @@ from caregiving.model.experience_caregiving_leave_model import (
     get_next_period_experience_caregiving_leave_full_beirat,
 )
 from caregiving.model.shared import (
+    LEAVE_CAP_YEARS,
     NO_CARE_DEMAND,
     PARENT_LONGER_DEAD,
     had_ft_job_before_caregiving,
@@ -83,7 +84,7 @@ def next_period_deterministic_state_beirat(
         * is_part_time(choice)
         * had_ft_job_before_caregiving(job_before_caregiving)
     )
-    still_eligible = years_leave_used_total < 3
+    still_eligible = years_leave_used_total < LEAVE_CAP_YEARS
     increment_leave = (on_partial_leave * still_eligible).astype(jnp.int32)
     years_leave_used_total_new = jnp.minimum(
         years_leave_used_total + increment_leave, 3
@@ -138,8 +139,10 @@ def next_period_deterministic_state_full_beirat(
         * had_ft_job_before_caregiving(job_before_caregiving)
     )
 
-    still_eligible_for_full = (years_leave_used_total < 3) * (full_leave_year_used == 0)
-    still_eligible_for_partial = years_leave_used_total < 3
+    still_eligible_for_full = (years_leave_used_total < LEAVE_CAP_YEARS) * (
+        full_leave_year_used == 0
+    )
+    still_eligible_for_partial = years_leave_used_total < LEAVE_CAP_YEARS
 
     actually_on_full_leave = on_full_leave * still_eligible_for_full
     actually_on_partial_leave = on_partial_leave * still_eligible_for_partial

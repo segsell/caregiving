@@ -270,11 +270,12 @@ def identify_agents_by_total_caregiving_over_lifecycle(
     total_care = (
         df.groupby("agent", observed=False)["current_caregiving"].sum().astype(int)
     )
-    agents_1_year = total_care[total_care == 1].index.to_numpy()
-    agents_2_year = total_care[total_care == 2].index.to_numpy()
-    agents_3_year = total_care[total_care == 3].index.to_numpy()
-    agents_4_year = total_care[total_care == 4].index.to_numpy()
-    agents_5_year = total_care[total_care >= 5].index.to_numpy()
+    yrs_1, yrs_2, yrs_3, yrs_4, yrs_5plus = 1, 2, 3, 4, 5
+    agents_1_year = total_care[total_care == yrs_1].index.to_numpy()
+    agents_2_year = total_care[total_care == yrs_2].index.to_numpy()
+    agents_3_year = total_care[total_care == yrs_3].index.to_numpy()
+    agents_4_year = total_care[total_care == yrs_4].index.to_numpy()
+    agents_5_year = total_care[total_care >= yrs_5plus].index.to_numpy()
     return (agents_1_year, agents_2_year, agents_3_year, agents_4_year, agents_5_year)
 
 
@@ -414,7 +415,7 @@ def get_publication_plot_style(
     of *age_label* (useful for mother-death plots that show only two panels).
     """
     if use_subgroup_overrides and age_label in _AGE_SUBGROUP_LABELS:
-        return {**PUBLICATION_PLOT_STYLE, **PUBLICATION_PLOT_STYLE_AGE_SUBGROUPS}
+        return PUBLICATION_PLOT_STYLE | PUBLICATION_PLOT_STYLE_AGE_SUBGROUPS
     return PUBLICATION_PLOT_STYLE.copy()
 
 

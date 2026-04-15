@@ -183,7 +183,7 @@ def task_plot_model_fit_publication(
     products: Annotated[dict[str, Path], Product] = _PRODUCT_PATHS,
 ) -> None:
     """Produce 24 publication PDFs: one per (outcome, sample, education)."""
-    with open(path_to_specs, "rb") as f:
+    with path_to_specs.open("rb") as f:
         specs = pickle.load(f)
 
     start_year = 2001
@@ -298,7 +298,7 @@ def task_plot_mean_wealth_model_fit(  # noqa: PLR0915
     """
     from caregiving.model.shared import WEALTH_MOMENTS_SCALE
 
-    with open(path_to_specs, "rb") as f:
+    with path_to_specs.open("rb") as f:
         specs = pickle.load(f)
 
     start_age = specs["start_age"]
@@ -307,7 +307,7 @@ def task_plot_mean_wealth_model_fit(  # noqa: PLR0915
     plt.rcParams["font.sans-serif"] = ["DejaVu Sans", "Liberation Sans", "Arial"]
 
     moments_df = pd.read_csv(path_to_moments)
-    emp_moments = dict(zip(moments_df["moment"], moments_df["value"]))
+    emp_moments = dict(zip(moments_df["moment"], moments_df["value"], strict=False))
 
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
     df_sim["age"] = df_sim["period"] + start_age
@@ -369,8 +369,8 @@ def task_plot_mean_wealth_model_fit(  # noqa: PLR0915
 
     # Second pass: create one figure per education using the common y-range.
     for (
-        edu_idx,
-        edu_str,
+        _edu_idx,
+        _edu_str,
         path_to_save,
         bin_starts,
         emp_vals,

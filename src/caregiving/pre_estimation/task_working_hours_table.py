@@ -27,17 +27,16 @@ def task_working_hours_table(
     pt = specs["av_annual_hours_pt"][SEX_WOMEN]
     ft = specs["av_annual_hours_ft"][SEX_WOMEN]
 
-    rows = []
-    for i, label in enumerate(edu_labels):
-        rows.append(
-            {
-                "Education": label,
-                "Part-time (annual)": float(pt[i]),
-                "Full-time (annual)": float(ft[i]),
-                "Part-time (weekly)": float(pt[i]) / WEEKS_PER_YEAR,
-                "Full-time (weekly)": float(ft[i]) / WEEKS_PER_YEAR,
-            }
-        )
+    rows = [
+        {
+            "Education": label,
+            "Part-time (annual)": float(pt[i]),
+            "Full-time (annual)": float(ft[i]),
+            "Part-time (weekly)": float(pt[i]) / WEEKS_PER_YEAR,
+            "Full-time (weekly)": float(ft[i]) / WEEKS_PER_YEAR,
+        }
+        for i, label in enumerate(edu_labels)
+    ]
 
     df = pd.DataFrame(rows).set_index("Education")
     latex_str = df.to_latex(float_format="%.1f")

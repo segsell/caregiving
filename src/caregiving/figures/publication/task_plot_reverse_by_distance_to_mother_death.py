@@ -40,6 +40,10 @@ from caregiving.model.shared import (
     PARENT_RECENTLY_DEAD,
 )
 
+YEARS_BEFORE_DEATH_LONG = 10
+YEARS_BEFORE_DEATH_MID_MIN = 5
+YEARS_BEFORE_DEATH_SHORT = 5
+
 # Subgroup labels for total care years *before death* (1–5+)
 TOTAL_LABELS_BEFORE_DEATH = (
     "Baseline (1 total care year before death)",
@@ -180,13 +184,21 @@ def _filter_merged_by_first_care_demand_to_death(
     m = m[m["first_care_demand_period"].notna()].copy()
     years = m["first_death_period"] - m["first_care_demand_period"]
     if condition == ">=10":
-        m = m[years >= 10].drop_duplicates(subset=["agent", "period"])
+        m = m[years >= YEARS_BEFORE_DEATH_LONG].drop_duplicates(
+            subset=["agent", "period"]
+        )
     elif condition == "<10":
-        m = m[years < 10].drop_duplicates(subset=["agent", "period"])
+        m = m[years < YEARS_BEFORE_DEATH_LONG].drop_duplicates(
+            subset=["agent", "period"]
+        )
     elif condition == "5_to_10":
-        m = m[(years > 5) & (years <= 10)].drop_duplicates(subset=["agent", "period"])
+        m = m[
+            (years > YEARS_BEFORE_DEATH_MID_MIN) & (years <= YEARS_BEFORE_DEATH_LONG)
+        ].drop_duplicates(subset=["agent", "period"])
     else:  # <=5
-        m = m[years <= 5].drop_duplicates(subset=["agent", "period"])
+        m = m[years <= YEARS_BEFORE_DEATH_SHORT].drop_duplicates(
+            subset=["agent", "period"]
+        )
     return m
 
 
@@ -220,15 +232,19 @@ for age_min_val, age_max_val, age_label_val in (
         ever_care_demand: bool = False,
         window_low: int = 15,
         window_high: int = 15,
-        window_by_age: dict[str, tuple[int, int]] | None = ({"ages_60_70": (15, 10)}),
+        window_by_age: dict[str, tuple[int, int]] | None = None,
         ylim: tuple[float, float] | None = (0, 1),
-        yticks: list[float] | None = [0, 0.2, 0.4, 0.6, 0.8, 1.0],
+        yticks: list[float] | None = None,
         plot_caregivers_mean: bool = True,
     ) -> None:
         """Employment rate by distance to mother's death.
 
         Total care years 1-5+ before death. Standard data.
         """
+        if window_by_age is None:
+            window_by_age = {"ages_60_70": (15, 10)}
+        if yticks is None:
+            yticks = [0, 0.2, 0.4, 0.6, 0.8, 1.0]
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
             pd.read_pickle(path_to_no_care_demand_data),
@@ -302,15 +318,19 @@ for age_min_val, age_max_val, age_label_val in (
         ever_care_demand: bool = False,
         window_low: int = 15,
         window_high: int = 15,
-        window_by_age: dict[str, tuple[int, int]] | None = ({"ages_60_70": (15, 10)}),
+        window_by_age: dict[str, tuple[int, int]] | None = None,
         ylim: tuple[float, float] | None = (0, 0.5),
-        yticks: list[float] | None = [0, 0.1, 0.2, 0.3, 0.4, 0.5],
+        yticks: list[float] | None = None,
         plot_caregivers_mean: bool = True,
     ) -> None:
         """Full-time share by distance to mother's death.
 
         Total care years 1-5+ before death. Standard data.
         """
+        if window_by_age is None:
+            window_by_age = {"ages_60_70": (15, 10)}
+        if yticks is None:
+            yticks = [0, 0.1, 0.2, 0.3, 0.4, 0.5]
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
             pd.read_pickle(path_to_no_care_demand_data),
@@ -384,15 +404,19 @@ for age_min_val, age_max_val, age_label_val in (
         ever_care_demand: bool = False,
         window_low: int = 15,
         window_high: int = 15,
-        window_by_age: dict[str, tuple[int, int]] | None = ({"ages_60_70": (15, 10)}),
+        window_by_age: dict[str, tuple[int, int]] | None = None,
         ylim: tuple[float, float] | None = (0, 0.5),
-        yticks: list[float] | None = [0, 0.1, 0.2, 0.3, 0.4, 0.5],
+        yticks: list[float] | None = None,
         plot_caregivers_mean: bool = True,
     ) -> None:
         """Part-time share by distance to mother's death.
 
         Total care years 1-5+ before death. Standard data.
         """
+        if window_by_age is None:
+            window_by_age = {"ages_60_70": (15, 10)}
+        if yticks is None:
+            yticks = [0, 0.1, 0.2, 0.3, 0.4, 0.5]
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
             pd.read_pickle(path_to_no_care_demand_data),
@@ -557,15 +581,19 @@ for age_min_val, age_max_val, age_label_val in (
         ever_care_demand: bool = False,
         window_low: int = 15,
         window_high: int = 15,
-        window_by_age: dict[str, tuple[int, int]] | None = ({"ages_60_70": (15, 10)}),
+        window_by_age: dict[str, tuple[int, int]] | None = None,
         ylim: tuple[float, float] | None = (0, 1.8),
-        yticks: list[float] | None = [0, 0.25, 0.50, 0.75, 1.00, 1.25, 1.50, 1.75],
+        yticks: list[float] | None = None,
         plot_caregivers_mean: bool = True,
     ) -> None:
         """Monthly gross labor income by distance to mother's death.
 
         Total care years 1-5+ before death. Standard data.
         """
+        if window_by_age is None:
+            window_by_age = {"ages_60_70": (15, 10)}
+        if yticks is None:
+            yticks = [0, 0.25, 0.50, 0.75, 1.00, 1.25, 1.50, 1.75]
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
             pd.read_pickle(path_to_no_care_demand_data),

@@ -40,6 +40,13 @@ from caregiving.model.shared import (
     PARENT_RECENTLY_DEAD,
 )
 
+DIST_RECENT_MIN = -4
+DIST_RECENT_MAX = -1
+DIST_MID_MIN = -9
+DIST_MID_MAX = -5
+DIST_DISTANT_MAX = -10
+MAX_DISTANCE_LABELS = 4
+
 for age_min_val, age_max_val, age_label_val in (
     (None, None, "all_ages"),
     (40, 49, "ages_40_49"),
@@ -1276,8 +1283,8 @@ for age_min_val, age_max_val, age_label_val in (
             timing["first_care_demand_period"] - timing["first_death_period"]
         )
         agents_sample = timing[
-            (timing["dist_at_first_care_demand"] >= -4)
-            & (timing["dist_at_first_care_demand"] <= -1)
+            (timing["dist_at_first_care_demand"] >= DIST_RECENT_MIN)
+            & (timing["dist_at_first_care_demand"] <= DIST_RECENT_MAX)
         ]["agent"].unique()
 
         df_o = df_o[df_o["agent"].isin(agents_sample)].copy()
@@ -1486,8 +1493,8 @@ for age_min_val, age_max_val, age_label_val in (
             timing["first_care_demand_period"] - timing["first_death_period"]
         )
         agents_sample = timing[
-            (timing["dist_at_first_care_demand"] >= -9)
-            & (timing["dist_at_first_care_demand"] <= -5)
+            (timing["dist_at_first_care_demand"] >= DIST_MID_MIN)
+            & (timing["dist_at_first_care_demand"] <= DIST_MID_MAX)
         ]["agent"].unique()
 
         df_o = df_o[df_o["agent"].isin(agents_sample)].copy()
@@ -1674,7 +1681,7 @@ for age_min_val, age_max_val, age_label_val in (
         timing["dist_at_first_care_demand"] = (
             timing["first_care_demand_period"] - timing["first_death_period"]
         )
-        agents_sample = timing[timing["dist_at_first_care_demand"] <= -10][
+        agents_sample = timing[timing["dist_at_first_care_demand"] <= DIST_DISTANT_MAX][
             "agent"
         ].unique()
 
@@ -1914,7 +1921,11 @@ def plot_employment_rate_by_distance_to_mother_death(  # noqa: PLR0912, PLR0913
         )
 
     # Plot baseline employment rate for 5-year caregivers
-    if prof_5_year is not None and len(prof_5_year) > 0 and len(labels) > 4:
+    if (
+        prof_5_year is not None
+        and len(prof_5_year) > 0
+        and len(labels) > MAX_DISTANCE_LABELS
+    ):
         plt.plot(
             prof_5_year["distance_to_first_care"],
             prof_5_year["work_o"],

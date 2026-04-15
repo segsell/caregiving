@@ -37,7 +37,7 @@ def _load_latest_se() -> dict:
     if not files:
         return {}
     df = pd.read_csv(files[-1])
-    return dict(zip(df["parameter"], df["standard_error"]))
+    return dict(zip(df["parameter"], df["standard_error"], strict=False))
 
 
 def _get_se(se_dict: dict, key: str) -> float:
@@ -67,19 +67,27 @@ _ROWS = [
 
 def _build_care_utility_table(params: dict, se_dict: dict) -> str:
     L: list[str] = []
-    L.append(r"\begin{table}[htbp]")
-    L.append(r"\centering")
-    L.append(r"\caption{Estimated Utility of Caregiving Arrangement}")
-    L.append(r"\label{tab:care_utility_params}")
-    L.append(r"\begin{tabular}{lcccc}")
-    L.append(r"\toprule")
-    L.append(
-        r" & \multicolumn{2}{c}{Low Education}"
-        r" & \multicolumn{2}{c}{High Education} \\"
+    L.extend((r"\begin{table}[htbp]", r"\centering"))
+    L.extend(
+        (
+            r"\caption{Estimated Utility of Caregiving Arrangement}",
+            r"\label{tab:care_utility_params}",
+        )
     )
-    L.append(r"\cmidrule(lr){2-3} \cmidrule(lr){4-5}")
-    L.append(r" & Bad Health & Good Health & Bad Health & Good Health \\")
-    L.append(r" & (1) & (2) & (3) & (4) \\")
+    L.extend((r"\begin{tabular}{lcccc}", r"\toprule"))
+    L.extend(
+        (
+            r" & \multicolumn{2}{c}{Low Education}"
+            r" & \multicolumn{2}{c}{High Education} \\",
+            r"\cmidrule(lr){2-3} \cmidrule(lr){4-5}",
+        )
+    )
+    L.extend(
+        (
+            r" & Bad Health & Good Health & Bad Health & Good Health \\",
+            r" & (1) & (2) & (3) & (4) \\",
+        )
+    )
     L.append(r"\midrule\midrule")
 
     for row_idx, (label, prefix) in enumerate(_ROWS):
@@ -95,10 +103,8 @@ def _build_care_utility_table(params: dict, se_dict: dict) -> str:
         suffix = "" if last else "[2pt]"
         L.append(f" & {cells_s} \\\\{suffix}")
 
-    L.append(r"\bottomrule")
-    L.append(r"\end{tabular}")
-    L.append(r"\end{table}")
-    L.append("")
+    L.extend((r"\bottomrule", r"\end{tabular}"))
+    L.extend((r"\end{table}", ""))
     return "\n".join(L)
 
 
@@ -110,7 +116,7 @@ def task_create_care_utility_params_table(
     / "publication"
     / "care_utility_params.tex",
 ):
-    with open(path_to_params) as f:
+    with path_to_params.open() as f:
         params = yaml.safe_load(f)
     path_to_save.parent.mkdir(parents=True, exist_ok=True)
     path_to_save.write_text(_build_care_utility_table(params, _load_latest_se()))
@@ -124,7 +130,7 @@ def task_create_care_utility_params_table_model_fit(
     / "publication"
     / "care_utility_params_model_fit.tex",
 ):
-    with open(path_to_params) as f:
+    with path_to_params.open() as f:
         params = yaml.safe_load(f)
     path_to_save.parent.mkdir(parents=True, exist_ok=True)
     path_to_save.write_text(_build_care_utility_table(params, {}))

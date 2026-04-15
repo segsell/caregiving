@@ -67,16 +67,18 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 15,
         window_high: int = 15,
-        window_by_age: dict[str, tuple[int, int]] | None = (
-            {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
-        ),
+        window_by_age: dict[str, tuple[int, int]] | None = None,
         ylim: tuple[float, float] | None = (-0.25, 0.15),
-        yticks: list[float] | None = [-0.2, -0.1, 0, 0.1],
+        yticks: list[float] | None = None,
         plot_caregivers_mean: bool = True,
     ) -> None:
         """Event study: employment rate difference by distance to
         first care demand (total care years 1–5+).
         """
+        if window_by_age is None:
+            window_by_age = {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
+        if yticks is None:
+            yticks = [-0.2, -0.1, 0, 0.1]
 
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
@@ -428,16 +430,18 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 15,
         window_high: int = 15,
-        window_by_age: dict[str, tuple[int, int]] | None = (
-            {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
-        ),
+        window_by_age: dict[str, tuple[int, int]] | None = None,
         ylim: tuple[float, float] | None = (-0.25, 0.15),
-        yticks: list[float] | None = [-0.2, -0.1, 0, 0.1],
+        yticks: list[float] | None = None,
         plot_caregivers_mean: bool = True,
     ) -> None:
         """Event study: full-time rate difference by distance to
         first care demand (total care years 1–5+).
         """
+        if window_by_age is None:
+            window_by_age = {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
+        if yticks is None:
+            yticks = [-0.2, -0.1, 0, 0.1]
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
         else:
@@ -780,16 +784,18 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 15,
         window_high: int = 15,
-        window_by_age: dict[str, tuple[int, int]] | None = (
-            {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
-        ),
+        window_by_age: dict[str, tuple[int, int]] | None = None,
         ylim: tuple[float, float] | None = (-0.25, 0.15),
-        yticks: list[float] | None = [-0.2, -0.1, 0, 0.1],
+        yticks: list[float] | None = None,
         plot_caregivers_mean: bool = True,
     ) -> None:
         """Event study: part-time rate difference by distance to
         first care demand (total care years 1–5+).
         """
+        if window_by_age is None:
+            window_by_age = {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
+        if yticks is None:
+            yticks = [-0.2, -0.1, 0, 0.1]
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
         else:
@@ -1514,16 +1520,18 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 15,
         window_high: int = 15,
-        window_by_age: dict[str, tuple[int, int]] | None = (
-            {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
-        ),
+        window_by_age: dict[str, tuple[int, int]] | None = None,
         ylim: tuple[float, float] | None = (-0.5, 0.2),
-        yticks: list[float] | None = [-0.5, -0.4, -0.3, -0.2, -0.1, 0, 0.1, 0.2],
+        yticks: list[float] | None = None,
         plot_caregivers_mean: bool = True,
     ) -> None:
         """Event study: monthly gross labor income difference by
         distance to first care demand (total care years 1–5+).
         """
+        if window_by_age is None:
+            window_by_age = {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
+        if yticks is None:
+            yticks = [-0.5, -0.4, -0.3, -0.2, -0.1, 0, 0.1, 0.2]
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
         else:

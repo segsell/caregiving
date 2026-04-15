@@ -36,6 +36,26 @@ SOEP_MALE = 1
 _MIN_GEBJAHR = 1900
 _MAX_GEBJAHR = 2015
 
+# Age-range sampling bounds
+AGE_MIN_YOUNG = 25
+AGE_MAX_YOUNG = 35
+AGE_MIN_CAREGIVING = 30
+AGE_MAX_CAREGIVING = 70
+
+# p-value thresholds for significance reporting
+P_VALUE_DISPLAY_MIN = 0.001
+P_SIG_10 = 0.10
+P_SIG_05 = 0.05
+P_SIG_01 = 0.01
+
+# Sibling-count thresholds
+N_SIBLINGS_2 = 2
+N_SIBLINGS_3 = 3
+N_DAUGHTERS_2 = 2
+
+# MNLogit index tuples are at least (variable, category)
+MIN_MNLOGIT_INDEX_PARTS = 2
+
 
 def _gebsib_cols(df: pd.DataFrame) -> list[str]:
     """Return gebsib* column names present in df."""
@@ -47,9 +67,9 @@ def _sexsib_cols(df: pd.DataFrame) -> list[str]:
     return [c for c in df.columns if c.startswith("sexsib") and c[6:].isdigit()]
 
 
-def _valid_birth_year(ser: pd.Series) -> pd.Series:
+def _valid_birth_year(series: pd.Series) -> pd.Series:
     """True where birth year is valid (not SOEP missing)."""
-    return ser.notna() & (ser >= _MIN_GEBJAHR) & (ser <= _MAX_GEBJAHR)
+    return series.notna() & (series >= _MIN_GEBJAHR) & (series <= _MAX_GEBJAHR)
 
 
 def _n_siblings(row: pd.Series, gebsib_cols: list[str]) -> int:
@@ -78,7 +98,7 @@ def _birth_order(row: pd.Series, gebjahr_col: str, gebsib_cols: list[str]) -> fl
         y = row[c]
         if pd.notna(y) and _MIN_GEBJAHR <= y <= _MAX_GEBJAHR:
             years.append(int(y))
-    years = sorted(years)
+    years.sort()
     rank = years.index(y_self) + 1
     return float(rank)
 
@@ -116,7 +136,7 @@ def _birth_order_daughters(
         y = row[geb_col]
         if pd.notna(y) and _MIN_GEBJAHR <= y <= _MAX_GEBJAHR:
             female_birth_years.append(int(y))
-    female_birth_years = sorted(female_birth_years)
+    female_birth_years.sort()
     rank = female_birth_years.index(y_self) + 1
     return float(rank)
 
@@ -154,7 +174,7 @@ def task_sibling_comparison_by_education(  # noqa: PLR0912, PLR0915
     """Compare low vs high education women aged 25-35.
 
     Siblings, brothers, sisters, birth order. Reads sibling
-    comparison sample, filters to women with age in [25, 35],
+    comparison sample, filters to women with age in (25, 35),
     keeps one observation per person (first syear in range).
     Builds summary table by education and writes LaTeX to
     bld/descriptives.
@@ -163,7 +183,11 @@ def task_sibling_comparison_by_education(  # noqa: PLR0912, PLR0915
     if "pid" not in df.columns and df.index.names and "pid" in (df.index.names or []):
         df = df.reset_index()
     df["age"] = df["syear"] - df["gebjahr"]
-    df = df[(df["sex"] == SOEP_FEMALE) & (df["age"] >= 25) & (df["age"] <= 35)].copy()
+    df = df[
+        (df["sex"] == SOEP_FEMALE)
+        & (df["age"] >= AGE_MIN_YOUNG)
+        & (df["age"] <= AGE_MAX_YOUNG)
+    ].copy()
     df = df.sort_values(["pid", "syear"]).drop_duplicates(subset="pid", keep="first")
 
     df = create_education_type(df, drop_missing=True)
@@ -285,7 +309,7 @@ def task_sibling_comparison_by_education(  # noqa: PLR0912, PLR0915
         diff, pval = rows_b[i]
         if np.isnan(pval):
             p_str = "n.a."
-        elif pval >= 0.001:
+        elif pval >= P_VALUE_DISPLAY_MIN:
             p_str = f"{pval:.3f}"
         else:
             p_str = "<0.001"
@@ -297,11 +321,11 @@ def task_sibling_comparison_by_education(  # noqa: PLR0912, PLR0915
 
 def _stars(p: float) -> str:
     """Return significance stars for p-value (* 10%, ** 5%, *** 1%)."""
-    if np.isnan(p) or p > 0.10:
+    if np.isnan(p) or p > P_SIG_10:
         return ""
-    if p <= 0.01:
+    if p <= P_SIG_01:
         return "***"
-    if p <= 0.05:
+    if p <= P_SIG_05:
         return "**"
     return "*"
 
@@ -317,7 +341,11 @@ def _get_caregiving_sibling_regression_data(
     if "pid" not in df.columns and df.index.names and "pid" in (df.index.names or []):
         df = df.reset_index()
     df["age"] = df["syear"] - df["gebjahr"]
-    df = df[(df["sex"] == SOEP_FEMALE) & (df["age"] >= 30) & (df["age"] <= 70)].copy()
+    df = df[
+        (df["sex"] == SOEP_FEMALE)
+        & (df["age"] >= AGE_MIN_CAREGIVING)
+        & (df["age"] <= AGE_MAX_CAREGIVING)
+    ].copy()
     df = create_education_type(df, drop_missing=True)
     gebsib_cols = _gebsib_cols(df)
     sexsib_cols = _sexsib_cols(df)
@@ -356,7 +384,7 @@ def _get_caregiving_sibling_regression_data(
     oldest_daughter = (df["birth_order_daughters"] == 1).astype(float)
     second_youngest_daughter = (
         (df["birth_order_daughters"] == df["n_daughters"] - 1)
-        & (df["n_daughters"] >= 2)
+        & (df["n_daughters"] >= N_DAUGHTERS_2)
     ).astype(float)
     df["youngest_only_daughter"] = only_daughter
     df["youngest_more_daughters"] = (
@@ -418,12 +446,12 @@ def task_logit_caregiving_youngest_daughter(  # noqa: PLR0915
     ]
     all_results: list[tuple[str, str, list[tuple[str, float, float, float]], int]] = []
     for out_label, out_col in outcomes:
-        for spec_label, cols in [
+        for spec_label, cols in (
             ("Spec 1: Sibling composition", spec_cols_list[0]),
             ("Spec 2: + Education", spec_cols_list[1]),
             ("Spec 3: + Age, age$^2$", spec_cols_list[2]),
             ("Spec 4: Position $\\times$ type", spec_cols_list[3]),
-        ]:
+        ):
             use = df[[out_col] + cols].dropna()
             n_obs = len(use)
             y = use[out_col].astype(int)
@@ -506,13 +534,13 @@ def task_logit_caregiving_youngest_daughter(  # noqa: PLR0915
         " & ".join([" & \\multicolumn{4}{c}{" + label + "}" for label, _ in outcomes])
         + " \\\\"
     )
-    lines.append(header)
-    lines.append("\\cmidrule(lr){2-5} \\cmidrule(lr){6-9} \\cmidrule(lr){10-13}")
+    lines.extend(
+        (header, "\\cmidrule(lr){2-5} \\cmidrule(lr){6-9} \\cmidrule(lr){10-13}")
+    )
     spec_headers = (
         " & ".join(["Spec 1 & Spec 2 & Spec 3 & Spec 4"] * n_outcomes) + " \\\\"
     )
-    lines.append(spec_headers)
-    lines.append("\\midrule")
+    lines.extend((spec_headers, "\\midrule"))
 
     # Row order for table: Constant, sibling battery, position×type (Spec 4),
     # education/age
@@ -552,8 +580,9 @@ def task_logit_caregiving_youngest_daughter(  # noqa: PLR0915
 
     # N observations row (stored in all_results)
     n_obs_list = [all_results[i][3] for i in range(len(all_results))]
-    lines.append("\\midrule")
-    lines.append("N & " + " & ".join(str(n) for n in n_obs_list) + " \\\\")
+    lines.extend(
+        ("\\midrule", "N & " + " & ".join(str(n) for n in n_obs_list) + " \\\\")
+    )
     lines.extend(["\\bottomrule", "\\end{tabular}", "\\end{table}"])
     path_to_save.write_text("\n".join(lines), encoding="utf-8")
 
@@ -648,12 +677,12 @@ def task_caregiving_sibling_composition_lpm(  # noqa: PLR0912, PLR0915
     ]
     all_results: list[tuple[str, str, list[tuple[str, float, float, float]], int]] = []
     for out_label, out_col in outcomes:
-        for spec_label, cols in [
+        for spec_label, cols in (
             ("Spec 1: Sibling composition", spec_cols_list[0]),
             ("Spec 2: + Education", spec_cols_list[1]),
             ("Spec 3: + Age, age$^2$", spec_cols_list[2]),
             ("Spec 4: Position $\\times$ type", spec_cols_list[3]),
-        ]:
+        ):
             use = df[[out_col] + cols].dropna()
             n_obs = len(use)
             y = use[out_col].astype(float)
@@ -693,12 +722,15 @@ def task_caregiving_sibling_composition_lpm(  # noqa: PLR0912, PLR0915
         " & ".join([" & \\multicolumn{4}{c}{" + label + "}" for label, _ in outcomes])
         + " \\\\"
     )
-    lines.append(header)
-    lines.append("\\cmidrule(lr){2-5} \\cmidrule(lr){6-9} \\cmidrule(lr){10-13}")
-    lines.append(
-        " & ".join(["Spec 1 & Spec 2 & Spec 3 & Spec 4"] * n_outcomes) + " \\\\"
+    lines.extend(
+        (header, "\\cmidrule(lr){2-5} \\cmidrule(lr){6-9} \\cmidrule(lr){10-13}")
     )
-    lines.append("\\midrule")
+    lines.extend(
+        (
+            " & ".join(["Spec 1 & Spec 2 & Spec 3 & Spec 4"] * n_outcomes) + " \\\\",
+            "\\midrule",
+        )
+    )
     for var in _CAREGIVING_TABLE_ROW_ORDER:
         label = _CAREGIVING_TABLE_VAR_LABELS[var]
         cells = []
@@ -717,8 +749,9 @@ def task_caregiving_sibling_composition_lpm(  # noqa: PLR0912, PLR0915
                         cells.append(f"{coef:.3f}{_stars(p)} ({se:.3f})")
         lines.append(" & ".join([label] + cells) + " \\\\")
     n_obs_list = [all_results[i][3] for i in range(len(all_results))]
-    lines.append("\\midrule")
-    lines.append("N & " + " & ".join(str(n) for n in n_obs_list) + " \\\\")
+    lines.extend(
+        ("\\midrule", "N & " + " & ".join(str(n) for n in n_obs_list) + " \\\\")
+    )
     lines.extend(["\\bottomrule", "\\end{tabular}", "\\end{table}"])
     path_to_save.write_text("\n".join(lines), encoding="utf-8")
 
@@ -829,12 +862,12 @@ def task_caregiving_sibling_multinomial_logit(  # noqa: PLR0912, PLR0915
     ]
     path_to_save.parent.mkdir(parents=True, exist_ok=True)
     all_results: list[tuple[str, dict, int]] = []
-    for spec_label, cols in [
+    for spec_label, cols in (
         ("Spec 1", spec_cols_list[0]),
         ("Spec 2", spec_cols_list[1]),
         ("Spec 3", spec_cols_list[2]),
         ("Spec 4", spec_cols_list[3]),
-    ]:
+    ):
         use = df[["care_level"] + cols].dropna()
         use = use[use["care_level"].isin([0, 1, 2])]
         n_obs = len(use)
@@ -863,7 +896,7 @@ def task_caregiving_sibling_multinomial_logit(  # noqa: PLR0912, PLR0915
                     )
         else:
             for idx in params.index:
-                if isinstance(idx, tuple) and len(idx) >= 2:
+                if isinstance(idx, tuple) and len(idx) >= MIN_MNLOGIT_INDEX_PARTS:
                     var, cat = idx[0], idx[1]
                     c = (
                         int(cat)
@@ -877,7 +910,7 @@ def task_caregiving_sibling_multinomial_logit(  # noqa: PLR0912, PLR0915
                     )
                 else:
                     s = str(idx)
-                    if s.endswith("_1") or s.endswith("_2"):
+                    if s.endswith(("_1", "_2")):
                         parts = s.rsplit("_", 1)
                         var_base, cat = parts[0], int(parts[1])
                         coefs[(var_base, cat)] = (
@@ -888,12 +921,12 @@ def task_caregiving_sibling_multinomial_logit(  # noqa: PLR0912, PLR0915
         all_results.append((spec_label, coefs, n_obs))
     # Binary logit any_care (any vs no care) with same specs for the third block
     any_results: list[tuple[str, dict[str, tuple[float, float, float]], int]] = []
-    for spec_label, cols in [
+    for spec_label, cols in (
         ("Spec 1", spec_cols_list[0]),
         ("Spec 2", spec_cols_list[1]),
         ("Spec 3", spec_cols_list[2]),
         ("Spec 4", spec_cols_list[3]),
-    ]:
+    ):
         use = df[["any_care"] + cols].dropna()
         use = use[use["any_care"].isin([0, 1])]
         n_obs = len(use)
@@ -962,9 +995,11 @@ def task_caregiving_sibling_multinomial_logit(  # noqa: PLR0912, PLR0915
                     else:
                         cells.append("")
             lines.append(" & ".join([label, cat_label] + cells) + " \\\\")
-    lines.append("\\midrule")
-    lines.append(
-        "N & & " + " & ".join(str(all_results[i][2]) for i in range(4)) + " \\\\"
+    lines.extend(
+        (
+            "\\midrule",
+            "N & & " + " & ".join(str(all_results[i][2]) for i in range(4)) + " \\\\",
+        )
     )
     lines.extend(["\\bottomrule", "\\end{tabular}", "\\end{table}"])
     path_to_save.write_text("\n".join(lines), encoding="utf-8")
@@ -974,35 +1009,41 @@ def task_caregiving_sibling_multinomial_logit(  # noqa: PLR0912, PLR0915
 _COMPOSITION_SPECS = [
     (
         "Two siblings, other female",
-        lambda df: (df["n_siblings"] == 1)
-        & (df["n_sisters"] == 1)
-        & (df["n_brothers"] == 0),
+        lambda df: (
+            (df["n_siblings"] == 1) & (df["n_sisters"] == 1) & (df["n_brothers"] == 0)
+        ),
     ),
     (
         "Two siblings, other male",
-        lambda df: (df["n_siblings"] == 1)
-        & (df["n_brothers"] == 1)
-        & (df["n_sisters"] == 0),
+        lambda df: (
+            (df["n_siblings"] == 1) & (df["n_brothers"] == 1) & (df["n_sisters"] == 0)
+        ),
     ),
     (
         "Three siblings, 1M 1F",
-        lambda df: (df["n_siblings"] == 2)
-        & (df["n_sisters"] == 1)
-        & (df["n_brothers"] == 1),
+        lambda df: (
+            (df["n_siblings"] == N_SIBLINGS_2)
+            & (df["n_sisters"] == 1)
+            & (df["n_brothers"] == 1)
+        ),
     ),
     (
         "Three siblings, 2M",
-        lambda df: (df["n_siblings"] == 2)
-        & (df["n_brothers"] == 2)
-        & (df["n_sisters"] == 0),
+        lambda df: (
+            (df["n_siblings"] == N_SIBLINGS_2)
+            & (df["n_brothers"] == N_SIBLINGS_2)
+            & (df["n_sisters"] == 0)
+        ),
     ),
     (
         "Three siblings, 2F",
-        lambda df: (df["n_siblings"] == 2)
-        & (df["n_sisters"] == 2)
-        & (df["n_brothers"] == 0),
+        lambda df: (
+            (df["n_siblings"] == N_SIBLINGS_2)
+            & (df["n_sisters"] == N_SIBLINGS_2)
+            & (df["n_brothers"] == 0)
+        ),
     ),
-    ("Four or more siblings", lambda df: df["n_siblings"] >= 3),
+    ("Four or more siblings", lambda df: df["n_siblings"] >= N_SIBLINGS_3),
 ]
 
 
@@ -1079,11 +1120,9 @@ def task_youngest_daughter_by_sibling_composition(
         parts = []
         for coef, se, p, n_obs in cell_list:
             if np.isnan(coef) or np.isnan(se):
-                parts.append("--")
-                parts.append("")
+                parts.extend(("--", ""))
             else:
-                parts.append(f"{coef:.3f}{_stars(p)} ({se:.3f})")
-                parts.append(str(n_obs))
+                parts.extend((f"{coef:.3f}{_stars(p)} ({se:.3f})", str(n_obs)))
         lines.append(" & ".join([label] + parts) + " \\\\")
     lines.extend(["\\bottomrule", "\\end{tabular}", "\\end{table}"])
     path_to_save.write_text("\n".join(lines), encoding="utf-8")

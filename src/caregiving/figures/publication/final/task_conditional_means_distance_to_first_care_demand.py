@@ -336,7 +336,7 @@ def plot_conditional_means_by_distance(
         prof_5_year.rename(columns={"distance_to_first_care_demand": dist_col_plot}),
     ]
 
-    for prof, style in zip(profiles, _GROUP_STYLE):
+    for prof, style in zip(profiles, _GROUP_STYLE, strict=False):
         if len(prof) > 0:
             plt.plot(
                 prof[dist_col_plot],

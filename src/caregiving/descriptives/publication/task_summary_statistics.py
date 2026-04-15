@@ -817,36 +817,43 @@ def task_describe_structural_estimation_sample_by_caregiver_v2(  # noqa: PLR0912
     # ---- Block 1: Never | Ever | All (3 columns) ----
     b1 = []
 
-    b1.append(r"\multicolumn{4}{l}{\textit{Panel A: Sample}} \\")
-    b1.append(
-        f"\\quad Unique individuals & {_fmt_n(s_never['n_individuals'])} "
-        f"& {_fmt_n(s_ever['n_individuals'])} & {_fmt_n(s_all['n_individuals'])} \\\\"
+    b1.extend(
+        (
+            r"\multicolumn{4}{l}{\textit{Panel A: Sample}} \\",
+            f"\\quad Unique individuals & {_fmt_n(s_never['n_individuals'])} "
+            f"& {_fmt_n(s_ever['n_individuals'])} "
+            f"& {_fmt_n(s_all['n_individuals'])} \\\\",
+        )
     )
     b1.append(
         f"\\quad Person-year observations & {_fmt_n(s_never['n_person_years'])} "
         f"& {_fmt_n(s_ever['n_person_years'])} & {_fmt_n(s_all['n_person_years'])} \\\\"
     )
 
-    b1.append(r"\addlinespace")
-    b1.append(
-        r"\multicolumn{4}{l}{\textit{Panel B: Labor market status"
-        r" (all ages, \%)}} \\"
+    b1.extend(
+        (
+            r"\addlinespace",
+            r"\multicolumn{4}{l}{\textit{Panel B: Labor market status"
+            r" (all ages, \%)}} \\",
+        )
     )
-    for label, key in [
+    for label, key in (
         ("Share full-time", "share_ft"),
         ("Share part-time", "share_pt"),
         ("Share non-employed", "share_unemp"),
         ("Share retired", "share_retired"),
-    ]:
+    ):
         b1.append(
             f"\\quad {label} & {_fmt_p(s_never[key])} "
             f"& {_fmt_p(s_ever[key])} & {_fmt_p(s_all[key])} \\\\"
         )
 
-    b1.append(r"\addlinespace")
-    b1.append(
-        r"\multicolumn{4}{l}{\textit{Panel B2: Labor market status"
-        r" by age bin (\%)}} \\"
+    b1.extend(
+        (
+            r"\addlinespace",
+            r"\multicolumn{4}{l}{\textit{Panel B2: Labor market status"
+            r" by age bin (\%)}} \\",
+        )
     )
     for age_lo, age_hi in _age_bins_v2:
         lb_n = _labor_by_bin(never, age_lo, age_hi)
@@ -863,16 +870,17 @@ def task_describe_structural_estimation_sample_by_caregiver_v2(  # noqa: PLR0912
                 f"& {_fmt_p(lb_e[i])} & {_fmt_p(lb_a[i])} \\\\"
             )
 
-    b1.append(r"\addlinespace")
-    b1.append(r"\multicolumn{4}{l}{\textit{Panel C: Demographics}} \\")
-    b1.append(
-        f"\\quad Average age & {_fmt_n(s_never['mean_age'])} "
-        f"& {_fmt_n(s_ever['mean_age'])} & {_fmt_n(s_all['mean_age'])} \\\\"
+    b1.extend(
+        (r"\addlinespace", r"\multicolumn{4}{l}{\textit{Panel C: Demographics}} \\")
     )
-    b1.append(
-        f"\\quad Share good health & {_fmt_p(s_never['share_good_health'])} "
-        f"& {_fmt_p(s_ever['share_good_health'])} "
-        f"& {_fmt_p(s_all['share_good_health'])} \\\\"
+    b1.extend(
+        (
+            f"\\quad Average age & {_fmt_n(s_never['mean_age'])} "
+            f"& {_fmt_n(s_ever['mean_age'])} & {_fmt_n(s_all['mean_age'])} \\\\",
+            f"\\quad Share good health & {_fmt_p(s_never['share_good_health'])} "
+            f"& {_fmt_p(s_ever['share_good_health'])} "
+            f"& {_fmt_p(s_all['share_good_health'])} \\\\",
+        )
     )
     b1.append(
         f"\\quad Share single (no partner) & {_fmt_p(s_never['share_single'])} "
@@ -880,17 +888,21 @@ def task_describe_structural_estimation_sample_by_caregiver_v2(  # noqa: PLR0912
         f"& {_fmt_p(s_all['share_single'])} \\\\"
     )
 
-    b1.append(r"\addlinespace")
-    b1.append(r"\multicolumn{4}{l}{\textit{Panel D: Economic outcomes}} \\")
-    b1.append(
-        f"\\quad Average work experience & {_fmt_n(s_never['mean_experience'])} "
-        f"& {_fmt_n(s_ever['mean_experience'])} "
-        f"& {_fmt_n(s_all['mean_experience'])} \\\\"
+    b1.extend(
+        (
+            r"\addlinespace",
+            r"\multicolumn{4}{l}{\textit{Panel D: Economic outcomes}} \\",
+        )
     )
-    b1.append(
-        f"\\quad Average wealth (1000 EUR) & {_fmt_n(s_never['mean_wealth_1000'])} "
-        f"& {_fmt_n(s_ever['mean_wealth_1000'])} "
-        f"& {_fmt_n(s_all['mean_wealth_1000'])} \\\\"
+    b1.extend(
+        (
+            f"\\quad Average work experience & {_fmt_n(s_never['mean_experience'])} "
+            f"& {_fmt_n(s_ever['mean_experience'])} "
+            f"& {_fmt_n(s_all['mean_experience'])} \\\\",
+            f"\\quad Average wealth (1000 EUR) & {_fmt_n(s_never['mean_wealth_1000'])} "
+            f"& {_fmt_n(s_ever['mean_wealth_1000'])} "
+            f"& {_fmt_n(s_all['mean_wealth_1000'])} \\\\",
+        )
     )
 
     # ---- Block 2: Current non-CG | Current CG (2 columns) ----
@@ -898,10 +910,8 @@ def task_describe_structural_estimation_sample_by_caregiver_v2(  # noqa: PLR0912
     _cur_care = df.loc[df["any_care"] == 1]
 
     b2 = []
-    b2.append(r"\addlinespace")
-    b2.append(r"\midrule")
-    b2.append(" & Current non-caregivers & Current caregivers & \\\\")
-    b2.append(r"\midrule")
+    b2.extend((r"\addlinespace", r"\midrule"))
+    b2.extend((" & Current non-caregivers & Current caregivers & \\\\", r"\midrule"))
     b2.append(
         r"\multicolumn{4}{l}{\textit{Panel B3: Labor market status during"
         r" caregiving by age bin (\%)}} \\"
@@ -916,14 +926,14 @@ def task_describe_structural_estimation_sample_by_caregiver_v2(  # noqa: PLR0912
             labels.append("Share retired")
         for i, lab in enumerate(labels):
             b2.append(
-                f"\\quad \\quad {lab} & {_fmt_p(lb_nc[i])} "
-                f"& {_fmt_p(lb_cc[i])} & \\\\"
+                f"\\quad \\quad {lab} & {_fmt_p(lb_nc[i])} & {_fmt_p(lb_cc[i])} & \\\\"
             )
 
     # ---- Panel E: Caregivers only ----
     b3 = []
-    b3.append(r"\addlinespace")
-    b3.append(r"\multicolumn{4}{l}{\textit{Panel E: Caregivers only}} \\")
+    b3.extend(
+        (r"\addlinespace", r"\multicolumn{4}{l}{\textit{Panel E: Caregivers only}} \\")
+    )
 
     if len(ever) > 0:
         _ever_with_care = ever.loc[ever["any_care"] == 1]
@@ -947,19 +957,21 @@ def task_describe_structural_estimation_sample_by_caregiver_v2(  # noqa: PLR0912
         mean_af = std_af = mean_cy = std_cy = float("nan")
         sh_int = sh_lt = mean_acg = std_acg = float("nan")
 
-    b3.append(
-        f"\\quad Average age at first care spell & --- "
-        f"& {_fmt_ms(mean_af, std_af)} & \\\\"
+    b3.extend(
+        (
+            f"\\quad Average age at first care spell & --- "
+            f"& {_fmt_ms(mean_af, std_af)} & \\\\",
+            f"\\quad Average age (when caregiving) & --- "
+            f"& {_fmt_ms(mean_acg, std_acg)} & \\\\",
+        )
     )
-    b3.append(
-        f"\\quad Average age (when caregiving) & --- "
-        f"& {_fmt_ms(mean_acg, std_acg)} & \\\\"
+    b3.extend(
+        (
+            f"\\quad Average number of care years & --- "
+            f"& {_fmt_ms(mean_cy, std_cy)} & \\\\",
+            f"\\quad Share intensive caregiving & --- & {_fmt_p(sh_int)} & \\\\",
+        )
     )
-    b3.append(
-        f"\\quad Average number of care years & --- "
-        f"& {_fmt_ms(mean_cy, std_cy)} & \\\\"
-    )
-    b3.append(f"\\quad Share intensive caregiving & --- & {_fmt_p(sh_int)} & \\\\")
     b3.append(f"\\quad Share light caregiving & --- & {_fmt_p(sh_lt)} & \\\\")
 
     # ---- Assemble ----

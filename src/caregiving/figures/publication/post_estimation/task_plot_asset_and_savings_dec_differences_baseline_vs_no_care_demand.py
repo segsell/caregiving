@@ -17,6 +17,8 @@ from caregiving.config import BLD
 from caregiving.counterfactual.plotting_helpers import PUBLICATION_PLOT_STYLE
 from caregiving.model.shared import DEAD
 
+MAX_PLOT_AGE = 89
+
 
 def _extract_aux_variable(df_sim: pd.DataFrame, var_name: str) -> pd.Series:
     """Extract a variable from either direct column or aux dictionary."""
@@ -157,7 +159,7 @@ def task_plot_asset_and_accumulated_savings_dec_differences_combined(  # noqa: P
         how="inner",
     )
     combined = combined.sort_values("age").reset_index(drop=True)
-    combined = combined[combined["age"] <= 89]
+    combined = combined[combined["age"] <= MAX_PLOT_AGE]
 
     style = PUBLICATION_PLOT_STYLE
     plt.rcParams["font.family"] = "sans-serif"
@@ -305,7 +307,7 @@ def task_plot_savings_rate_difference_baseline_vs_no_care_demand(  # noqa: PLR09
         merged["avg_savings_rate_baseline"] - merged["avg_savings_rate_no_care_demand"]
     )
     merged = merged.sort_values("age").reset_index(drop=True)
-    merged = merged[merged["age"] <= 89]
+    merged = merged[merged["age"] <= MAX_PLOT_AGE]
 
     style = PUBLICATION_PLOT_STYLE
     plt.rcParams["font.family"] = "sans-serif"
@@ -424,7 +426,7 @@ def task_plot_own_income_difference_baseline_vs_no_care_demand(  # noqa: PLR0915
         merged["avg_own_income_baseline"] - merged["avg_own_income_no_care_demand"]
     )
     merged = merged.sort_values("age").reset_index(drop=True)
-    merged = merged[merged["age"] <= 89]
+    merged = merged[merged["age"] <= MAX_PLOT_AGE]
 
     style = PUBLICATION_PLOT_STYLE
     plt.rcParams["font.family"] = "sans-serif"
@@ -545,7 +547,7 @@ def task_plot_accumulated_consumption_difference_baseline_vs_no_care_demand(  # 
     )
     merged = merged.sort_values("age").reset_index(drop=True)
     merged["accumulated_diff_consumption"] = merged["diff_consumption"].cumsum()
-    merged = merged[merged["age"] <= 89]
+    merged = merged[merged["age"] <= MAX_PLOT_AGE]
 
     style = PUBLICATION_PLOT_STYLE
     plt.rcParams["font.family"] = "sans-serif"
@@ -685,7 +687,7 @@ def task_plot_consumption_rate_difference_baseline_vs_no_care_demand(  # noqa: P
         - merged["avg_consumption_rate_no_care_demand"]
     )
     merged = merged.sort_values("age").reset_index(drop=True)
-    merged = merged[merged["age"] <= 89]
+    merged = merged[merged["age"] <= MAX_PLOT_AGE]
 
     style = PUBLICATION_PLOT_STYLE
     plt.rcParams["font.family"] = "sans-serif"
@@ -804,7 +806,7 @@ def task_plot_savings_dec_difference_baseline_vs_no_care_demand(  # noqa: PLR091
         merged["avg_savings_dec_baseline"] - merged["avg_savings_dec_no_care_demand"]
     )
     merged = merged.sort_values("age").reset_index(drop=True)
-    merged = merged[merged["age"] <= 89]
+    merged = merged[merged["age"] <= MAX_PLOT_AGE]
 
     style = PUBLICATION_PLOT_STYLE
     plt.rcParams["font.family"] = "sans-serif"
@@ -923,7 +925,7 @@ def task_plot_consumption_difference_baseline_vs_no_care_demand(  # noqa: PLR091
         merged["avg_consumption_baseline"] - merged["avg_consumption_no_care_demand"]
     )
     merged = merged.sort_values("age").reset_index(drop=True)
-    merged = merged[merged["age"] <= 89]
+    merged = merged[merged["age"] <= MAX_PLOT_AGE]
 
     style = PUBLICATION_PLOT_STYLE
     plt.rcParams["font.family"] = "sans-serif"
@@ -1030,7 +1032,7 @@ def task_plot_accumulated_total_income_difference_baseline_vs_no_care_demand(  #
     )
     merged = merged.sort_values("age").reset_index(drop=True)
     merged["accumulated_diff_total_income"] = merged["diff_total_income"].cumsum()
-    merged = merged[merged["age"] <= 89]
+    merged = merged[merged["age"] <= MAX_PLOT_AGE]
 
     style = PUBLICATION_PLOT_STYLE
     plt.rcParams["font.family"] = "sans-serif"
@@ -1139,7 +1141,7 @@ def task_plot_accumulated_own_income_difference_baseline_vs_no_care_demand(  # n
     )
     merged = merged.sort_values("age").reset_index(drop=True)
     merged["accumulated_diff_own_income"] = merged["diff_own_income"].cumsum()
-    merged = merged[merged["age"] <= 89]
+    merged = merged[merged["age"] <= MAX_PLOT_AGE]
 
     style = PUBLICATION_PLOT_STYLE
     plt.rcParams["font.family"] = "sans-serif"

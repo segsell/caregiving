@@ -36,6 +36,18 @@ from caregiving.model.shared import (
     RETIREMENT,
 )
 
+# Discrete caregiving-year counts used in distribution panels
+CARE_YEARS_1 = 1
+CARE_YEARS_2 = 2
+CARE_YEARS_3 = 3
+CARE_YEARS_4 = 4
+CARE_YEARS_5_PLUS = 5
+
+# Mother-death age-bucket boundaries (years)
+AGE_BUCKET_50 = 50
+AGE_BUCKET_60 = 60
+AGE_BUCKET_70 = 70
+
 # -----------------------------------------------------------------------------
 # Pytask tasks (same structure, different data path and output path)
 # -----------------------------------------------------------------------------
@@ -341,15 +353,15 @@ def compute_panel_c(df: pd.DataFrame) -> dict[str, Any]:
         median_y = float(with_care.median())
         # approximate SE of median
         se_median = float(1.253 * with_care.std() / np.sqrt(n))
-        p1 = 100 * (with_care == 1).sum() / n
-        p2 = 100 * (with_care == 2).sum() / n
-        p3 = 100 * (with_care == 3).sum() / n
-        p4 = 100 * (with_care == 4).sum() / n
-        p5plus = 100 * (with_care >= 5).sum() / n
-        ple2 = 100 * (with_care <= 2).sum() / n
-        ple3 = 100 * (with_care <= 3).sum() / n
-        ple4 = 100 * (with_care <= 4).sum() / n
-        ple5 = 100 * (with_care <= 5).sum() / n
+        p1 = 100 * (with_care == CARE_YEARS_1).sum() / n
+        p2 = 100 * (with_care == CARE_YEARS_2).sum() / n
+        p3 = 100 * (with_care == CARE_YEARS_3).sum() / n
+        p4 = 100 * (with_care == CARE_YEARS_4).sum() / n
+        p5plus = 100 * (with_care >= CARE_YEARS_5_PLUS).sum() / n
+        ple2 = 100 * (with_care <= CARE_YEARS_2).sum() / n
+        ple3 = 100 * (with_care <= CARE_YEARS_3).sum() / n
+        ple4 = 100 * (with_care <= CARE_YEARS_4).sum() / n
+        ple5 = 100 * (with_care <= CARE_YEARS_5_PLUS).sum() / n
     return {
         "avg_caregiving_years": (mean_y, se_mean),
         "median_caregiving_years": (median_y, se_median),
@@ -393,15 +405,15 @@ def compute_panel_c_consecutive(spells: pd.DataFrame) -> dict[str, Any]:
     return {
         "avg_caregiving_years": (mean_y, se_mean),
         "median_caregiving_years": (median_y, se_median),
-        "pct_1_year": 100 * (s == 1).sum() / n,
-        "pct_2_years": 100 * (s == 2).sum() / n,
-        "pct_3_years": 100 * (s == 3).sum() / n,
-        "pct_4_years": 100 * (s == 4).sum() / n,
-        "pct_5_plus_years": 100 * (s >= 5).sum() / n,
-        "pct_le_2_years": 100 * (s <= 2).sum() / n,
-        "pct_le_3_years": 100 * (s <= 3).sum() / n,
-        "pct_le_4_years": 100 * (s <= 4).sum() / n,
-        "pct_le_5_years": 100 * (s <= 5).sum() / n,
+        "pct_1_year": 100 * (s == CARE_YEARS_1).sum() / n,
+        "pct_2_years": 100 * (s == CARE_YEARS_2).sum() / n,
+        "pct_3_years": 100 * (s == CARE_YEARS_3).sum() / n,
+        "pct_4_years": 100 * (s == CARE_YEARS_4).sum() / n,
+        "pct_5_plus_years": 100 * (s >= CARE_YEARS_5_PLUS).sum() / n,
+        "pct_le_2_years": 100 * (s <= CARE_YEARS_2).sum() / n,
+        "pct_le_3_years": 100 * (s <= CARE_YEARS_3).sum() / n,
+        "pct_le_4_years": 100 * (s <= CARE_YEARS_4).sum() / n,
+        "pct_le_5_years": 100 * (s <= CARE_YEARS_5_PLUS).sum() / n,
     }
 
 
@@ -418,11 +430,11 @@ def _spell_length_distribution(spells: pd.DataFrame) -> dict[str, float]:
     n_spells = len(spells)
     s = spells["spell_length"]
     return {
-        "share_1": 100 * (s == 1).sum() / n_spells,
-        "share_2": 100 * (s == 2).sum() / n_spells,
-        "share_3": 100 * (s == 3).sum() / n_spells,
-        "share_4": 100 * (s == 4).sum() / n_spells,
-        "share_5plus": 100 * (s >= 5).sum() / n_spells,
+        "share_1": 100 * (s == CARE_YEARS_1).sum() / n_spells,
+        "share_2": 100 * (s == CARE_YEARS_2).sum() / n_spells,
+        "share_3": 100 * (s == CARE_YEARS_3).sum() / n_spells,
+        "share_4": 100 * (s == CARE_YEARS_4).sum() / n_spells,
+        "share_5plus": 100 * (s >= CARE_YEARS_5_PLUS).sum() / n_spells,
     }
 
 
@@ -455,11 +467,11 @@ def _total_years_distribution(years: pd.Series) -> dict[str, float]:
         }
     n = len(with_any)
     return {
-        "share_1": 100 * (with_any == 1).sum() / n,
-        "share_2": 100 * (with_any == 2).sum() / n,
-        "share_3": 100 * (with_any == 3).sum() / n,
-        "share_4": 100 * (with_any == 4).sum() / n,
-        "share_5plus": 100 * (with_any >= 5).sum() / n,
+        "share_1": 100 * (with_any == CARE_YEARS_1).sum() / n,
+        "share_2": 100 * (with_any == CARE_YEARS_2).sum() / n,
+        "share_3": 100 * (with_any == CARE_YEARS_3).sum() / n,
+        "share_4": 100 * (with_any == CARE_YEARS_4).sum() / n,
+        "share_5plus": 100 * (with_any >= CARE_YEARS_5_PLUS).sum() / n,
     }
 
 
@@ -508,9 +520,17 @@ def _avg_spell_length_by_mother_death_age(
         return {"avg_lt_50": np.nan, "avg_50_60": np.nan, "avg_60_70": np.nan}
     a = merged["age_at_mother_death"]
     return {
-        "avg_lt_50": float(merged.loc[a < 50, "spell_length"].mean()),
-        "avg_50_60": float(merged.loc[(a >= 50) & (a < 60), "spell_length"].mean()),
-        "avg_60_70": float(merged.loc[(a >= 60) & (a < 70), "spell_length"].mean()),
+        "avg_lt_50": float(merged.loc[a < AGE_BUCKET_50, "spell_length"].mean()),
+        "avg_50_60": float(
+            merged.loc[
+                (a >= AGE_BUCKET_50) & (a < AGE_BUCKET_60), "spell_length"
+            ].mean()
+        ),
+        "avg_60_70": float(
+            merged.loc[
+                (a >= AGE_BUCKET_60) & (a < AGE_BUCKET_70), "spell_length"
+            ].mean()
+        ),
     }
 
 
@@ -553,9 +573,13 @@ def _avg_total_years_by_mother_death_age(
         return {"avg_lt_50": np.nan, "avg_50_60": np.nan, "avg_60_70": np.nan}
     a = merged["age_at_mother_death"]
     return {
-        "avg_lt_50": float(merged.loc[a < 50, "total_years"].mean()),
-        "avg_50_60": float(merged.loc[(a >= 50) & (a < 60), "total_years"].mean()),
-        "avg_60_70": float(merged.loc[(a >= 60) & (a < 70), "total_years"].mean()),
+        "avg_lt_50": float(merged.loc[a < AGE_BUCKET_50, "total_years"].mean()),
+        "avg_50_60": float(
+            merged.loc[(a >= AGE_BUCKET_50) & (a < AGE_BUCKET_60), "total_years"].mean()
+        ),
+        "avg_60_70": float(
+            merged.loc[(a >= AGE_BUCKET_60) & (a < AGE_BUCKET_70), "total_years"].mean()
+        ),
     }
 
 
@@ -595,7 +619,7 @@ def compute_panel_h(
     out_cd = {}
     n_cg = len(spells_cg)
     n_cd = len(spells_cd)
-    for (lo, hi), lab in zip(CARE_AGE_BINS, CARE_AGE_BIN_LABELS):
+    for (lo, hi), lab in zip(CARE_AGE_BINS, CARE_AGE_BIN_LABELS, strict=False):
         mask_cg = spells_cg["start_age"].between(lo, hi - 1, inclusive="both")
         mask_cd = spells_cd["start_age"].between(lo, hi - 1, inclusive="both")
         if n_cg > 0:
@@ -632,7 +656,7 @@ def compute_panel_i(
     )
     out_consec = {}
     out_total = {}
-    for (lo, hi), lab in zip(CARE_AGE_BINS, CARE_AGE_BIN_LABELS):
+    for (lo, hi), lab in zip(CARE_AGE_BINS, CARE_AGE_BIN_LABELS, strict=False):
         # Consecutive: spells that start in this age bin
         mask = spells_cg["start_age"].between(lo, hi - 1, inclusive="both")
         sub = spells_cg.loc[mask, "spell_length"]
@@ -668,7 +692,7 @@ def compute_panel_j(
     )
     out_consec = {}
     out_total = {}
-    for (lo, hi), lab in zip(CARE_AGE_BINS, CARE_AGE_BIN_LABELS):
+    for (lo, hi), lab in zip(CARE_AGE_BINS, CARE_AGE_BIN_LABELS, strict=False):
         agent_mask = agents_with_total["first_care_demand_age"].between(
             lo, hi - 1, inclusive="both"
         )
@@ -707,7 +731,7 @@ def compute_panel_k(
     )
     out_consec = {}
     out_total = {}
-    for (lo, hi), lab in zip(CARE_AGE_BINS, CARE_AGE_BIN_LABELS):
+    for (lo, hi), lab in zip(CARE_AGE_BINS, CARE_AGE_BIN_LABELS, strict=False):
         agent_mask = agents_with_total["age_at_mother_death"].between(
             lo, hi - 1, inclusive="both"
         )
@@ -783,7 +807,7 @@ def compute_panel_l(df: pd.DataFrame) -> dict[str, Any]:
     )
     out_exp = {}
     out_total = {}
-    for (lo, hi), lab in zip(CARE_AGE_BINS, CARE_AGE_BIN_LABELS):
+    for (lo, hi), lab in zip(CARE_AGE_BINS, CARE_AGE_BIN_LABELS, strict=False):
         mask = agents_df["first_care_demand_age"].between(lo, hi - 1, inclusive="both")
         sub = agents_df.loc[mask]
         sub_exp = sub["exp_at_ret"].dropna()
@@ -816,7 +840,7 @@ def compute_panel_m(df: pd.DataFrame) -> dict[str, Any]:
     )
     out_exp = {}
     out_total = {}
-    for (lo, hi), lab in zip(CARE_AGE_BINS, CARE_AGE_BIN_LABELS):
+    for (lo, hi), lab in zip(CARE_AGE_BINS, CARE_AGE_BIN_LABELS, strict=False):
         mask = agents_df["age_at_mother_death"].between(lo, hi - 1, inclusive="both")
         sub = agents_df.loc[mask]
         sub_exp = sub["exp_at_ret"].dropna()
