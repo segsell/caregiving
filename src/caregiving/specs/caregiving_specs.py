@@ -139,7 +139,7 @@ def read_in_adl_transition_specs_binary(adl_trans_df, specs):
 
 
 def read_in_adl_state_transition_specs(
-    adl_state_trans_df, specs, path_to_save: Optional[Path] = None
+    adl_state_trans_df, specs, path_to_save: Path | None = None
 ):
     """
     Build a 4-d transition array
@@ -244,7 +244,7 @@ def read_in_adl_state_transition_specs(
 
 
 def read_in_adl_state_transition_specs_light_intensive(
-    adl_state_trans_df, specs, path_to_save: Optional[Path] = None
+    adl_state_trans_df, specs, path_to_save: Path | None = None
 ):
     """
     Build a 4-d transition array with collapsed ADL categories
@@ -497,9 +497,7 @@ def read_in_survival_by_age_specs(survival_df, specs):
     return jnp.asarray(survival_mat)
 
 
-def read_in_death_transition_specs(
-    death_df, specs, path_to_save: Optional[Path] = None
-):
+def read_in_death_transition_specs(death_df, specs, path_to_save: Path | None = None):
     """
     Build a 2-d array of death probabilities
         [sex, age_index]

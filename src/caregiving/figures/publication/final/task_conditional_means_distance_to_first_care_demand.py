@@ -310,9 +310,9 @@ def plot_conditional_means_by_distance(
     ylabel: str,
     window_low: int = 20,
     window_high: int = 20,
-    path_to_plot: Optional[Path] = None,
-    prof_no_care_demand: Optional[pd.DataFrame] = None,
-    prof_ever_caregiver: Optional[pd.DataFrame] = None,
+    path_to_plot: Path | None = None,
+    prof_no_care_demand: pd.DataFrame | None = None,
+    prof_ever_caregiver: pd.DataFrame | None = None,
 ) -> None:
     """Plot conditional means (5 groups) along distance to first care demand.
 

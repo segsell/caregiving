@@ -101,7 +101,7 @@ def plot_average_care_demand_duration_by_age(
     start_age: int,
     age_min: int = 40,
     age_max: int = 65,
-    path_to_save: Optional[Path] = None,
+    path_to_save: Path | None = None,
 ) -> None:
     """Plot average care demand duration by age at first care demand.
 

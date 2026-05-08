@@ -1800,9 +1800,9 @@ def plot_employment_rate_by_distance_to_mother_death(  # noqa: PLR0912, PLR0913
     prof_5_year=None,
     window_low: int = 20,
     window_high: int = 20,
-    path_to_plot: Optional[Path] = None,
-    subgroup_labels: Optional[tuple[str, ...]] = None,
-    vertical_lines_at: Optional[list[int]] = None,
+    path_to_plot: Path | None = None,
+    subgroup_labels: tuple[str, ...] | None = None,
+    vertical_lines_at: list[int] | None = None,
 ) -> None:
     """Plot employment rate by distance to mother's death.
 
@@ -2534,7 +2534,7 @@ def plot_employment_rate_by_distance_to_mother_death_care_demand(  # noqa: PLR09
     prof_5_year,
     window_low: int = 20,
     window_high: int = 20,
-    path_to_plot: Optional[Path] = None,
+    path_to_plot: Path | None = None,
 ) -> None:
     """Plot employment rate by distance to mother's death (care demand).
 

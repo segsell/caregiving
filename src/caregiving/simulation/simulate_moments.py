@@ -2572,7 +2572,7 @@ def plot_model_fit_labor_moments_pandas_by_education(  # noqa: PLR0915
     moms_emp: pd.Series,
     moms_sim: pd.Series,
     specs: dict,
-    path_to_save_plot: Optional[str] = None,
+    path_to_save_plot: str | None = None,
     include_caregivers: bool = False,
 ) -> None:
     """
@@ -2716,7 +2716,7 @@ def plot_model_fit_labor_moments_pandas_by_education(  # noqa: PLR0915
 
 
 def plot_model_fit_labor_moments_pandas(
-    moms_emp: pd.Series, moms_sim: pd.Series, path_to_save_plot: Optional[str] = None
+    moms_emp: pd.Series, moms_sim: pd.Series, path_to_save_plot: str | None = None
 ) -> None:
     """
     Plots the age specific labor supply shares (choice shares) for four states:
@@ -2781,8 +2781,8 @@ def plot_transition_shares_by_age_bins(
     moms_sim: pd.Series,
     specs: dict,
     states: dict,
-    state_labels: Optional[dict] = None,
-    path_to_save_plot: Optional[str] = None,
+    state_labels: dict | None = None,
+    path_to_save_plot: str | None = None,
     bin_width: int = 5,
 ) -> None:
     """
@@ -2867,7 +2867,7 @@ def plot_model_fit_labor_moments_by_education_pandas_jax(
     moms_emp: pd.Series,
     moms_sim: jnp.ndarray,
     specs: dict,
-    path_to_save_plot: Optional[str] = None,
+    path_to_save_plot: str | None = None,
     include_caregivers: bool = False,
 ) -> None:
     """
@@ -2999,7 +2999,7 @@ def plot_model_fit_labor_moments_by_education_pandas_jax(
 
 
 def plot_model_fit_labor_moments_pandas_jax(
-    moms_emp: pd.Series, moms_sim: jnp.ndarray, path_to_save_plot: Optional[str] = None
+    moms_emp: pd.Series, moms_sim: jnp.ndarray, path_to_save_plot: str | None = None
 ) -> None:
     """
     Plots the age specific labor supply shares (choice shares) for four states:

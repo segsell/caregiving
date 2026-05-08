@@ -4,8 +4,9 @@ On SHARE parent-child sample.
 
 """
 
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Annotated, Mapping, Optional
+from typing import Annotated, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -334,7 +335,7 @@ def plot_adl_shares_by_age(  # noqa: PLR0912, PLR0915
     adl_state_transition_matrix: pd.DataFrame,
     survival_by_age: pd.DataFrame,
     specs: dict,
-    path_to_save_plot: Optional[Path | str] = None,
+    path_to_save_plot: Path | str | None = None,
     start_age: int = 60,
 ) -> plt.Figure:
     """Plot ADL category shares in parent population by age.
@@ -650,10 +651,10 @@ def task_plot_adl_shares_by_age(
 
 
 def _plot_adl_state_transitions_by_origin(
-    df_sample: Optional[pd.DataFrame],
+    df_sample: pd.DataFrame | None,
     adl_state_transition_matrix: pd.DataFrame,
     specs: dict,
-    path_to_save_plot: Optional[Path | str] = None,
+    path_to_save_plot: Path | str | None = None,
 ) -> plt.Figure:
     """
     Plot ADL state transition probabilities in the style of
@@ -809,7 +810,7 @@ def plot_adl_state_transitions_by_lagged_adl(  # noqa: PLR0912, PLR0915
     df_sample: pd.DataFrame,
     adl_state_transition_matrix: pd.DataFrame,
     specs: dict,
-    path_to_save_plot: Optional[str] = None,
+    path_to_save_plot: str | None = None,
 ) -> plt.Figure:
     """
     2 x 4 grid:
@@ -2218,8 +2219,8 @@ def build_health_death_transition_matrix(
     health_trans_df: pd.DataFrame,
     mortality_df: pd.DataFrame,
     *,
-    start_age: Optional[int] = None,
-    max_period: Optional[int] = None,
+    start_age: int | None = None,
+    max_period: int | None = None,
 ) -> pd.DataFrame:
     """
     Combine (i) health-state transition probabilities (without death)
@@ -2361,7 +2362,7 @@ def plot_adl_probabilities_by_health(
     df_sample: pd.DataFrame,
     adl_transition_matrix: pd.DataFrame,
     specs: dict,
-    path_to_save_plot: Optional[str] = None,
+    path_to_save_plot: str | None = None,
 ) -> plt.Figure:
     """
     2 x 3 grid:
