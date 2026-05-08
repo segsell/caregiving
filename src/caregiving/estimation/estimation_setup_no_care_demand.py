@@ -1,8 +1,9 @@
 """Functions for pre and post estimation setup."""
 
 import pickle
+from collections.abc import Callable
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import jax
 import numpy as np
@@ -23,13 +24,13 @@ jax.config.update("jax_enable_x64", True)
 
 
 def estimate_model(
-    model: Dict[str, Any],
-    start_params: Dict[str, Any],
-    model_specs: Dict[str, Any],
+    model: dict[str, Any],
+    start_params: dict[str, Any],
+    model_specs: dict[str, Any],
     algo: str,
-    algo_options: Dict[str, Any],
-    lower_bounds: Dict[str, float],
-    upper_bounds: Dict[str, float],
+    algo_options: dict[str, Any],
+    lower_bounds: dict[str, float],
+    upper_bounds: dict[str, float],
     weighting_method: str = "identity",
     use_cholesky_weights: bool = True,
     relative_deviations: bool = False,
@@ -47,12 +48,12 @@ def estimate_model(
     path_to_save_estimation_result: str = BLD / "estimation" / "result.pkl",
     path_to_save_estimation_params: str = BLD / "estimation" / "estimated_params.csv",
     # last_estimate: Optional[Dict[str, Any]] = None,
-    select_fixed_params: Optional[Callable[[str, Any], bool]] = None,
-    other_constraint: Optional[om.constraints.Constraint] = None,
+    select_fixed_params: Callable[[str, Any], bool] | None = None,
+    other_constraint: om.constraints.Constraint | None = None,
     scaling: bool = False,
-    scaling_options: Optional[Dict[str, Any]] = None,
+    scaling_options: dict[str, Any] | None = None,
     multistart: bool = False,
-    multistart_options: Optional[Dict[str, Any]] = None,
+    multistart_options: dict[str, Any] | None = None,
     random_seed: bool = False,
     error_handling: str = "continue",
 ) -> None:
@@ -246,11 +247,11 @@ def estimate_model(
 
 def simulate_moments(
     params: np.ndarray,
-    initial_states: Dict[str, Any],
-    model_class: Dict[str, Any],
-    model_specs: Dict[str, Any],
-    fixed_seed: Optional[int],
-    seed_generator: Optional[np.random.Generator],
+    initial_states: dict[str, Any],
+    model_class: dict[str, Any],
+    model_specs: dict[str, Any],
+    fixed_seed: int | None,
+    seed_generator: np.random.Generator | None,
     pandas: bool = False,
 ):
     """Solve the model and simulate moments.
@@ -363,7 +364,7 @@ def combine_constraints_and_update_bounds(
     select_fixed_params, other_constraint, start_params, lower_bounds, upper_bounds
 ):
     """Select constraints for the optimization."""
-    constraints_list: List[Any] = []
+    constraints_list: list[Any] = []
 
     if select_fixed_params is not None:
         constraints_list.append(om.FixedConstraint(selector=select_fixed_params))
