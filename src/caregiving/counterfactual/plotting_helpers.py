@@ -334,7 +334,7 @@ def compute_shared_ylim_from_profile_sets(
         ]
     ],
     endogenous_ylim: bool,
-    style: Optional[dict] = None,
+    style: dict | None = None,
 ) -> tuple[float, float]:
     """Compute a single y-axis limit (y_min, y_max) from multiple profile sets.
 
@@ -406,7 +406,7 @@ _AGE_SUBGROUP_LABELS = ("ages_40_49", "ages_50_59", "ages_60_70")
 
 
 def get_publication_plot_style(
-    age_label: Optional[str] = None,
+    age_label: str | None = None,
     use_subgroup_overrides: bool = True,
 ) -> dict:
     """Return publication plot style; optionally enlarge fonts for age-subgroup panels.
@@ -488,15 +488,15 @@ def _plot_outcome_difference_by_distance_total_caregiving_impl(  # noqa: PLR0912
     prof_5_year_diff: pd.DataFrame,
     window_low: int,
     window_high: int,
-    path_to_plot: Optional[Path],
+    path_to_plot: Path | None,
     xlabel: str,
     ylabel: str,
     endogenous_ylim: bool,
-    font_family: Optional[str] = None,
-    style: Optional[dict] = None,
-    age_label: Optional[str] = None,
-    ylim: Optional[tuple[float, float]] = None,
-    yticks: Optional[list[float]] = None,
+    font_family: str | None = None,
+    style: dict | None = None,
+    age_label: str | None = None,
+    ylim: tuple[float, float] | None = None,
+    yticks: list[float] | None = None,
     plot_caregivers_mean: bool = True,
 ) -> None:
     """Implementation: plot outcome difference by distance (total care years 1–5+).
@@ -668,15 +668,15 @@ def plot_outcome_difference_by_distance_total_caregiving(  # noqa: PLR0913
     prof_5_year_diff: pd.DataFrame,
     window_low: int = 20,
     window_high: int = 20,
-    path_to_plot: Optional[Path] = None,
+    path_to_plot: Path | None = None,
     xlabel: str = "Year relative to start of first care spell",
     ylabel: str = "Difference in outcome",
     endogenous_ylim: bool = False,
-    font_family: Optional[str] = None,
-    style: Optional[dict] = None,
-    age_label: Optional[str] = None,
-    ylim: Optional[tuple[float, float]] = None,
-    yticks: Optional[list[float]] = None,
+    font_family: str | None = None,
+    style: dict | None = None,
+    age_label: str | None = None,
+    ylim: tuple[float, float] | None = None,
+    yticks: list[float] | None = None,
     plot_caregivers_mean: bool = True,
 ) -> None:
     """Plot outcome diff by distance with 5 lines: care years 1-5+.

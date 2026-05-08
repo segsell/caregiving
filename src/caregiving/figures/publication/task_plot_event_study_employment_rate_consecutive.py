@@ -831,7 +831,7 @@ def plot_employment_rate_difference_by_distance(  # noqa: PLR0913
     prof_3_year_diff,
     prof_4_year_diff,
     window: int = 20,
-    path_to_plot: Optional[Path] = None,
+    path_to_plot: Path | None = None,
     xlabel: str = "Year relative to start of first care spell",
 ) -> None:
     """Plot employment rate difference by distance to first caregiving spell.
@@ -1003,7 +1003,7 @@ def plot_employment_rate_difference_by_distance_consecutive(  # noqa: PLR0913
     prof_3_year_diff,
     prof_4_year_diff,
     window: int = 20,
-    path_to_plot: Optional[Path] = None,
+    path_to_plot: Path | None = None,
     xlabel: str = "Year relative to start of first care spell",
 ) -> None:
     """Plot employment rate difference by distance (consecutive N years then stop).
@@ -1175,7 +1175,7 @@ def plot_outcome_difference_by_distance_consecutive(  # noqa: PLR0912, PLR0913, 
     prof_3_year_diff,
     prof_4_year_diff,
     window: int = 20,
-    path_to_plot: Optional[Path] = None,
+    path_to_plot: Path | None = None,
     xlabel: str = "Year relative to start of first care spell",
     ylabel: str = "Difference in outcome",
     endogenous_ylim: bool = False,

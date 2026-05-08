@@ -1069,7 +1069,7 @@ def plot_employment_rate_difference_by_distance_to_mother_death(  # noqa: PLR091
     prof_4_year_diff,
     window_low: int = 20,
     window_high: int = 20,
-    path_to_plot: Optional[Path] = None,
+    path_to_plot: Path | None = None,
     xlabel: str = "Year relative to mother's death",
 ) -> None:
     """Plot employment rate difference by distance to mother's death.
@@ -1244,7 +1244,7 @@ def plot_employment_rate_difference_by_distance_to_mother_death_consecutive(  # 
     prof_5_year_diff=None,
     window_low: int = 20,
     window_high: int = 20,
-    path_to_plot: Optional[Path] = None,
+    path_to_plot: Path | None = None,
     xlabel: str = "Year relative to mother's death",
 ) -> None:
     """Plot employment rate difference by distance (exact N years before death).
@@ -1427,7 +1427,7 @@ def plot_employment_rate_difference_by_distance_to_mother_death_care_demand(  # 
     prof_5_year_diff,
     window_low: int = 20,
     window_high: int = 20,
-    path_to_plot: Optional[Path] = None,
+    path_to_plot: Path | None = None,
     xlabel: str = "Year relative to mother's death",
 ) -> None:
     """Plot employment rate difference by distance to mother's death (care demand).

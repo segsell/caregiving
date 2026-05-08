@@ -1,9 +1,10 @@
 """Functions for evaluating the MSM criterion function."""
 
 import pickle
+from collections.abc import Callable
 from functools import partial
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Dict, Optional
 
 import numpy as np
 import pandas as pd
@@ -17,9 +18,9 @@ from caregiving.model.shared import MACHINE_ZERO
 
 
 def evaluate_criterion(
-    params: Dict[str, Any],
-    model_class: Dict[str, Any],
-    model_specs: Dict[str, Any],
+    params: dict[str, Any],
+    model_class: dict[str, Any],
+    model_specs: dict[str, Any],
     simulate_scenario_func: Callable,
     simulate_moments_func: Callable,
     *,

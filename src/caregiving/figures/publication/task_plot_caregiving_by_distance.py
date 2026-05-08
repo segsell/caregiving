@@ -1508,7 +1508,7 @@ def plot_caregiving_rate_by_distance(  # noqa: PLR0913
     prof_4_year,
     window_low: int = 20,
     window_high: int = 20,
-    path_to_plot: Optional[Path] = None,
+    path_to_plot: Path | None = None,
     xlabel: str = "Year relative to start of first care spell",
 ) -> None:
     """Plot caregiving rates by distance to first caregiving spell.

@@ -198,7 +198,7 @@ def _logistic(x: np.ndarray | float) -> np.ndarray | float:
     return 1.0 / (1.0 + np.exp(-x))
 
 
-def _read_offer_params(path: Path) -> Dict[str, float]:
+def _read_offer_params(path: Path) -> dict[str, float]:
     """job_offer_params.csv  →  dict {param_name: value}."""
     df = pd.read_csv(path)
     return dict(zip(df["param"], df["value"], strict=False))
