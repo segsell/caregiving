@@ -226,9 +226,10 @@ should be tackled in a focused, separately-reviewed PR.
    one, the merge will surface a benign "unknown marker" warning and the
    marker can be re-added.
 
-7. **CI doesn't run pre-commit hooks** — `.github/workflows/main.yml` runs
-   pytest only. Adding a `pre-commit run --all-files` step would catch
-   contributors who skip the local hook. One-line addition.
+7. **CI doesn't run pre-commit hooks** ✅ **completed.** Added a parallel
+   `pre-commit` job to `.github/workflows/main.yml` (independent of the
+   existing `run-tests` job, so a hook failure no longer hides a test pass
+   or vice versa). Uses the standard `pre-commit/action@v3.0.1`.
 
 8. **File-manager duplicate files** ✅ **completed.** Deleted in a follow-up
    commit. Both files were untracked and unreferenced:
