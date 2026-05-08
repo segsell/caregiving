@@ -226,9 +226,12 @@ should be tackled in a focused, separately-reviewed PR.
    one, the merge will surface a benign "unknown marker" warning and the
    marker can be re-added.
 
-7. **CI doesn't run pre-commit hooks** — `.github/workflows/main.yml` runs
-   pytest only. Adding a `pre-commit run --all-files` step would catch
-   contributors who skip the local hook. One-line addition.
+7. **CI pre-commit coverage** ✅ **already covered.** The
+   [pre-commit.ci](https://pre-commit.ci/) GitHub App is installed on the
+   repo and auto-runs every hook on PRs without needing any in-repo
+   workflow. No action required. (Initial audit missed this because
+   `.github/workflows/main.yml` runs pytest only and there is no `ci:`
+   block in `.pre-commit-config.yaml` — the App needs neither.)
 
 8. **File-manager duplicate files** ✅ **completed.** Deleted in a follow-up
    commit. Both files were untracked and unreferenced:
