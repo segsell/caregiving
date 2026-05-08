@@ -214,14 +214,17 @@ should be tackled in a focused, separately-reviewed PR.
    ~99% of public functions lack annotations. Annotating the model core is a
    multi-week project; needs scope agreement before starting.
 
-6. **9 unused pytask markers** in `[tool.pytask.ini_options.markers]`:
+6. **9 unused pytask markers** ✅ **completed.** Removed in a follow-up commit
+   from `[tool.pytask.ini_options.markers]`:
    `check`, `counterfactual_differences_full_caregiving_leave_with_job_retention_vs_baseline`,
    `counterfactual_differences_no_care_demand_vs_baseline`,
    `counterfactual_differences_no_cash_benefits_higher_formal_care_costs`,
    `counterfactual_differences_no_cash_benefits_higher_formal_care_costs_age_profiles`,
    `debugging`, `generate_initial_conditions_10k`, `generate_initial_conditions_1m`,
-   `start_params`. Deleting them is safe but only after confirming no in-flight
-   branch still uses them.
+   `start_params`. All confirmed zero `@pytask.mark.<name>` usages anywhere in
+   `src/` or `tests/` on this branch. If an unmerged branch turns out to use
+   one, the merge will surface a benign "unknown marker" warning and the
+   marker can be re-added.
 
 7. **CI doesn't run pre-commit hooks** — `.github/workflows/main.yml` runs
    pytest only. Adding a `pre-commit run --all-files` step would catch
