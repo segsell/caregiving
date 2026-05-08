@@ -215,7 +215,7 @@ line-length = 88
 [tool.ruff]
 target-version = "py311"
 fix = true
-extend-exclude = ["*.ipynb"]
+extend-exclude = ["*.ipynb", "scripts"]
 
 [tool.ruff.lint]
 select = [

@@ -137,9 +137,13 @@ coverage.*
 .ipynb_checkpoints
 .tox
 .vscode
+.cursor
 _build
 __pycache__
 _generated
+
+# Tooling output (e.g. `ruff check --output-format=json > .ruff_errors.json`)
+.ruff_errors.json
 
 *.egg-info
 .eggs
