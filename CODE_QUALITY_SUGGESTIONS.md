@@ -227,13 +227,14 @@ should be tackled in a focused, separately-reviewed PR.
    pytest only. Adding a `pre-commit run --all-files` step would catch
    contributors who skip the local hook. One-line addition.
 
-8. **File-manager duplicate files** with literal `(Copy)` in the name. None
-   are tracked in git. None are referenced from any other file:
-   - `docs/POLICY_EXPERIMENTS_CHAPTER_BLUEPRINT (Copy).md`
-   - `src/caregiving/counterfactual/plotting_helpers (Copy).py` ⚠ inside `src/`
-   The second one was revealed when pyupgrade rewrote it during the C3 bump —
-   so it currently follows the modernization. Worth deleting at user discretion;
-   left in place for now since they are inside live directories.
+8. **File-manager duplicate files** ✅ **completed.** Deleted in a follow-up
+   commit. Both files were untracked and unreferenced:
+   - `docs/POLICY_EXPERIMENTS_CHAPTER_BLUEPRINT (Copy).md` — parallel duplicate
+     of the real `docs/POLICY_EXPERIMENTS_CHAPTER_BLUEPRINT.md`.
+   - `src/caregiving/counterfactual/plotting_helpers (Copy).py` — Python could
+     not import it (filename contains a space, so no `from … import …`
+     statement could resolve to it). The 18 importers of `plotting_helpers`
+     all resolved to the real `plotting_helpers.py`.
 
 9. **`F401` (unused imports) is globally disabled** in `pyproject.toml`. This
    is unusual; was likely set during the recent refactor to avoid noise.
