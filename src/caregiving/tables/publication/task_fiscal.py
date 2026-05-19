@@ -1,6 +1,7 @@
 """Publication: fiscal costs of caregiving policies (LaTeX table)."""
 
 import pickle
+from itertools import starmap
 from pathlib import Path
 from typing import Annotated
 
@@ -171,7 +172,8 @@ OUTCOME_COLUMN_LABELS = [
 ]
 
 
-# Policy scenario order: baseline, full Beirat, partial Beirat, normal leave, Norwegian with PG, Norwegian no PG.
+# Policy scenario order: baseline, full Beirat, partial Beirat, normal leave,
+# Norwegian with PG, Norwegian no PG.
 FISCAL_POLICY_LABELS = [
     "Baseline (cash benefits)",
     r"Full Beirat (65\%, 1y full)",
@@ -185,7 +187,7 @@ FISCAL_POLICY_LABELS = [
 @pytask.mark.tables
 @pytask.mark.fiscal_costs
 @pytask.mark.publication
-def task_create_fiscal_costs(
+def task_create_fiscal_costs(  # noqa: PLR0915
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_baseline_sim: Path = BLD
     / "solve_and_simulate"
@@ -204,7 +206,10 @@ def task_create_fiscal_costs(
     / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params.pkl",
     path_to_norwegian_no_pg_sim: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params_no_pflegegeld.pkl",
+    / (
+        "simulated_data_full_caregiving_leave_with_job_retention_"
+        "estimated_params_no_pflegegeld.pkl"
+    ),
     path_to_save_table: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
@@ -247,7 +252,7 @@ def task_create_fiscal_costs(
             df["age"] = start_age + df["period"]
 
     # Verify period and age
-    for i, (label, df) in enumerate(zip(FISCAL_POLICY_LABELS, policy_dfs, strict=True)):
+    for label, df in zip(FISCAL_POLICY_LABELS, policy_dfs, strict=True):
         if "period" in df.columns and "age" in df.columns:
             assert (
                 df["age"] == start_age + df["period"]
@@ -299,17 +304,17 @@ def task_create_fiscal_costs(
             return np.nan
         return avg_cost / 12.0 / avg_years
 
-    avg_monthly = [
-        _avg_monthly_per_caregiving_month(ac, ay)
-        for ac, ay in zip(avg_costs, avg_years_list, strict=True)
-    ]
+    avg_monthly = list(
+        starmap(
+            _avg_monthly_per_caregiving_month,
+            zip(avg_costs, avg_years_list, strict=True),
+        )
+    )
 
     # --- N total agents, share ever caregiving, per-capita cost ---
     n_totals = [_n_total_agents(df) for df in policy_dfs]
-    share_cg = [
-        _safe_div(n_cg, n_tot) for n_cg, n_tot in zip(n_cgs, n_totals, strict=True)
-    ]
-    percap = [_safe_div(c, n_tot) for c, n_tot in zip(costs, n_totals, strict=True)]
+    share_cg = list(starmap(_safe_div, zip(n_cgs, n_totals, strict=True)))
+    percap = list(starmap(_safe_div, zip(costs, n_totals, strict=True)))
 
     # --- Total gross benefit ---
     gross_benefit_baseline = cost_baseline
@@ -362,19 +367,17 @@ def task_create_fiscal_costs(
     # Build table (each key -> list of 6 values)
     # =====================================================================
     table_dict: dict[str, list] = {
-        "Policy": list(FISCAL_POLICY_LABELS),
+        "Policy": FISCAL_POLICY_LABELS.copy(),
         "Total cost (net)": costs,
         "Total gross benefit": gross_benefits,
         "Total net cost (model)": net_costs_aux,
         "Gov. formal care cost (total)": gov_fc_list,
-        "Avg. gov. formal care cost per caregiver": [
-            _safe_div(gov_fc, n_cg)
-            for gov_fc, n_cg in zip(gov_fc_list, n_cgs, strict=True)
-        ],
-        "Avg. gov. formal care cost per FC user": [
-            _safe_div(gov_fc, n_fc)
-            for gov_fc, n_fc in zip(gov_fc_list, n_fc_list, strict=True)
-        ],
+        "Avg. gov. formal care cost per caregiver": list(
+            starmap(_safe_div, zip(gov_fc_list, n_cgs, strict=True))
+        ),
+        "Avg. gov. formal care cost per FC user": list(
+            starmap(_safe_div, zip(gov_fc_list, n_fc_list, strict=True))
+        ),
         "Avg. gov. FC cost per CG (pct of baseline)": [
             np.nan,
             *[
@@ -397,10 +400,9 @@ def task_create_fiscal_costs(
                 for gov_fc, n_fc in zip(gov_fc_list[1:], n_fc_list[1:], strict=True)
             ],
         ],
-        "Gov. formal care cost per capita": [
-            _safe_div(gov_fc, n_tot)
-            for gov_fc, n_tot in zip(gov_fc_list, n_totals, strict=True)
-        ],
+        "Gov. formal care cost per capita": list(
+            starmap(_safe_div, zip(gov_fc_list, n_totals, strict=True))
+        ),
         "Avg. formal care years": avg_fc_yrs_list,
         "N formal care users": n_fc_list,
         "Gov. combination care cost (total)": [c["total_cost"] for c in combo_list],
@@ -425,14 +427,12 @@ def task_create_fiscal_costs(
             c["n_expected_combo_users"] for c in combo_list
         ],
         "Gov. total care cost": gov_total_care_list,
-        "Gov. total care cost per caregiver": [
-            _safe_div(gtc, n_cg)
-            for gtc, n_cg in zip(gov_total_care_list, n_cgs, strict=True)
-        ],
-        "Gov. total care cost per capita": [
-            _safe_div(gtc, n_tot)
-            for gtc, n_tot in zip(gov_total_care_list, n_totals, strict=True)
-        ],
+        "Gov. total care cost per caregiver": list(
+            starmap(_safe_div, zip(gov_total_care_list, n_cgs, strict=True))
+        ),
+        "Gov. total care cost per capita": list(
+            starmap(_safe_div, zip(gov_total_care_list, n_totals, strict=True))
+        ),
         "N caregivers": n_cgs,
         "N total agents": n_totals,
         "Share ever caregiving": share_cg,
@@ -526,11 +526,14 @@ def _total_sum_column(df: pd.DataFrame, column: str, wealth_unit: float) -> floa
 
 
 def _total_leave_net_cost_aux(df: pd.DataFrame, wealth_unit: float) -> float:
-    """Total net cost from model aux: full_leave_net_cost if present, else normal_leave_net_cost."""
+    """Total net cost from model aux.
+
+    Uses full_leave_net_cost if present, else normal_leave_net_cost.
+    """
     for col in ("full_leave_net_cost", "normal_leave_net_cost"):
         val = _total_sum_column(df, col, wealth_unit)
-        if val == val:  # false for NaN
-            return float(val)
+        if not pd.isna(val):
+            return val
     return np.nan
 
 
@@ -632,7 +635,7 @@ def _formal_care_stats(
 
     # For rows with unknown demand (e.g. first period NaN), use average of the two.
     avg_cost_fallback = (GOV_ANNUAL_FC_COST_LIGHT + GOV_ANNUAL_FC_COST_INTENSIVE) / 2.0
-    total_cost = float(
+    total_cost = (
         n_light * GOV_ANNUAL_FC_COST_LIGHT
         + n_intensive * GOV_ANNUAL_FC_COST_INTENSIVE
         + n_unknown * avg_cost_fallback
@@ -687,14 +690,14 @@ def _combination_care_stats(df: pd.DataFrame) -> dict[str, float]:
         total_cost / n_expected_combo_users if n_expected_combo_users > 0 else np.nan
     )
 
-    result["total_cost"] = float(total_cost)
+    result["total_cost"] = total_cost
     result["n_eligible_agents"] = n_eligible_agents
-    result["n_expected_combo_users"] = float(n_expected_combo_users)
-    result["n_expected_combo_periods"] = float(n_expected_combo_periods)
-    result["avg_combo_years"] = float(avg_combo_years)
-    result["avg_cost_per_eligible"] = float(avg_cost_per_eligible)
-    result["avg_combo_years_per_user"] = float(avg_combo_years_per_user)
-    result["avg_cost_per_combo_user"] = float(avg_cost_per_combo_user)
+    result["n_expected_combo_users"] = n_expected_combo_users
+    result["n_expected_combo_periods"] = n_expected_combo_periods
+    result["avg_combo_years"] = avg_combo_years
+    result["avg_cost_per_eligible"] = avg_cost_per_eligible
+    result["avg_combo_years_per_user"] = avg_combo_years_per_user
+    result["avg_cost_per_combo_user"] = avg_cost_per_combo_user
     return result
 
 

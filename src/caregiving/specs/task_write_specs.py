@@ -213,7 +213,7 @@ def task_write_specs(  # noqa: PLR0915
     / "estimation"
     / "stochastic_processes"
     / "formal_care_costs_params_pooled.csv",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Read in specs and add specs from first-step estimation."""
 
     estimation_sample = pd.read_csv(path_to_sample, index_col=[0])
@@ -442,7 +442,7 @@ def task_write_specs(  # noqa: PLR0915
     return specs
 
 
-def precompute_age_bins(specs: Dict[str, Any]) -> Dict[str, Any]:
+def precompute_age_bins(specs: dict[str, Any]) -> dict[str, Any]:
     """
     Precompute age bins for moment calculation.
 

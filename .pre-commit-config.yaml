@@ -1,4 +1,5 @@
 ---
+exclude: '^scripts/'
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -29,7 +30,7 @@ repos:
     rev: v3.21.2
     hooks:
     -   id: pyupgrade
-        args: [--py37-plus]
+        args: [--py311-plus]
 -   repo: https://github.com/pycqa/isort
     rev: 7.0.0
     hooks:
@@ -89,7 +90,7 @@ repos:
     rev: v2.4.1
     hooks:
     -   id: codespell
-        exclude: ^src/caregiving/moments/_task_care_mix_statistical_office\.py$|^src/sandbox/|^src/caregiving/data_management/soep/merge_data/task_load_and_merge_structural_innovation_samples\.py$
+        exclude: ^src/caregiving/moments/_task_care_mix_statistical_office\.py$|^src/sandbox/|^src/caregiving/data_management/soep/merge_data/task_load_and_merge_structural_innovation_samples\.py$|^docs/analysis/RUFF_ERRORS_OVERVIEW\.md$
 -   repo: meta
     hooks:
     -   id: check-useless-excludes

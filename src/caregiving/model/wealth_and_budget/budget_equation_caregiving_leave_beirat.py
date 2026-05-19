@@ -48,7 +48,7 @@ def budget_constraint(
     params,
     model_specs,
 ):
-    """Beirat budget: baseline Pflegegeld (care_benefits_and_costs) + gated leave top-up."""
+    """Beirat budget: Pflegegeld (care_benefits_and_costs) + gated leave top-up."""
     sex_var = SEX
 
     assets_scaled = asset_end_of_previous_period * model_specs["wealth_unit"]
@@ -100,7 +100,8 @@ def budget_constraint(
         model_specs=model_specs,
     )
 
-    # Gated 65% leave top-up (Beirat: max 3 years, partial leave only; no benefit when unemployed)
+    # Gated 65% leave top-up (Beirat: max 3 years, partial leave only;
+    # no benefit when unemployed)
     caregiving_leave_top_up = calc_caregiving_leave_top_up_beirat(
         lagged_choice=lagged_choice,
         education=education,

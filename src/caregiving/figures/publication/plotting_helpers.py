@@ -4,8 +4,9 @@ This module contains shared helper functions used across multiple
 publication plotting task modules.
 """
 
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,6 +18,8 @@ from caregiving.counterfactual.plotting_helpers import (
 )
 from caregiving.counterfactual.plotting_utils import ensure_agent_period
 from caregiving.model.shared import INFORMAL_CARE
+
+MAX_DISTANCE_LABELS = 4
 
 
 def add_distance_to_first_care(df_original: pd.DataFrame) -> pd.DataFrame:
@@ -62,7 +65,9 @@ def identify_agents_by_duration(
     distance_col: str,
     duration_type: str = "care_demand",
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Identify agents by duration of care demand or caregiving (exact consecutive years).
+    """Identify agents by duration of care demand or caregiving.
+
+    Uses exact consecutive years.
 
     For care_demand: Identifies agents who experience care_demand > 0 for
     1, 2, 3, or 4 years (includes all agents, not just informal caregivers).
@@ -560,17 +565,17 @@ def plot_employment_rate_by_distance(  # noqa: PLR0913
     prof_5_year=None,
     window_low: int = 20,
     window_high: int = 20,
-    path_to_plot: Optional[Path] = None,
+    path_to_plot: Path | None = None,
     xlabel: str = "Year relative to start of first care spell",
     outcome_baseline: str = "work_o",
     outcome_counterfactual: str = "work_c",
     ylabel: str = "Employment Rate",
     ylim: tuple[float, float] | None = (-0.025, 1.0),
-    subgroup_labels: Optional[tuple[str, ...]] = None,
-    extra_vlines: Optional[Iterable[float]] = None,
-    style: Optional[dict] = None,
-    age_label: Optional[str] = None,
-    yticks: Optional[list[float]] = None,
+    subgroup_labels: tuple[str, ...] | None = None,
+    extra_vlines: Iterable[float] | None = None,
+    style: dict | None = None,
+    age_label: str | None = None,
+    yticks: list[float] | None = None,
     plot_caregivers_mean: bool = True,
 ) -> None:
     """Plot employment or full-time rate by distance to first care/care demand.
@@ -676,7 +681,7 @@ def plot_employment_rate_by_distance(  # noqa: PLR0913
         age_label != "ages_60_70"
         and prof_5_year is not None
         and len(prof_5_year) > 0
-        and len(labels) > 4
+        and len(labels) > MAX_DISTANCE_LABELS
     ):
         plt.plot(
             prof_5_year["distance_to_first_care"],

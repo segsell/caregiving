@@ -1,4 +1,6 @@
-"""Plot event study (baseline minus full caregiving leave) by distance, total caregiving years 1–5+.
+"""Plot event study (baseline minus full caregiving leave).
+
+By distance, total caregiving years 1-5+.
 
 Same structure as task_plot_event_study_total_caregiving_years but compares baseline
 (estimated_params) vs full caregiving leave with job retention counterfactual.
@@ -62,7 +64,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         path_to_original_data: Path = _PATH_ORIGINAL,
         path_to_leave_data: Path = _PATH_LEAVE,
         path_to_specs: Path = _PATH_SPECS,
-        path_to_plot: Annotated[Path, Product] = _path_plot(
+        path_to_plot: Annotated[Path, Product] = _path_plot(  # noqa: B008
             "employment",
             f"event_study_employment_rate_by_distance_to_first_care_demand_"
             f"total_caregiving_{age_label_val}.pdf",
@@ -73,7 +75,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         window_high: int = 20,
         compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: employment rate diff (policy − baseline) by distance to first care demand."""
+        """Event study: employment rate diff (policy - baseline).
+
+        By distance to first care demand.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -130,7 +135,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         path_to_original_data: Path = _PATH_ORIGINAL,
         path_to_leave_data: Path = _PATH_LEAVE,
         path_to_specs: Path = _PATH_SPECS,
-        path_to_plot: Annotated[Path, Product] = _path_plot(
+        path_to_plot: Annotated[Path, Product] = _path_plot(  # noqa: B008
             "employment",
             f"event_study_employment_rate_by_distance_to_first_caregiving_spell_"
             f"total_caregiving_{age_label_val}.pdf",
@@ -141,7 +146,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         window_high: int = 20,
         compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: employment rate diff (policy − baseline) by distance to first caregiving spell."""
+        """Event study: employment rate diff (policy - baseline).
+
+        By distance to first caregiving spell.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -199,7 +207,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         path_to_original_data: Path = _PATH_ORIGINAL,
         path_to_leave_data: Path = _PATH_LEAVE,
         path_to_specs: Path = _PATH_SPECS,
-        path_to_plot: Annotated[Path, Product] = _path_plot(
+        path_to_plot: Annotated[Path, Product] = _path_plot(  # noqa: B008
             "full_time",
             f"event_study_full_time_by_distance_to_first_care_demand_"
             f"total_caregiving_{age_label_val}.pdf",
@@ -210,7 +218,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         window_high: int = 20,
         compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: full-time rate diff (policy − baseline) by distance to first care demand."""
+        """Event study: full-time rate diff (policy - baseline).
+
+        By distance to first care demand.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -267,7 +278,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         path_to_original_data: Path = _PATH_ORIGINAL,
         path_to_leave_data: Path = _PATH_LEAVE,
         path_to_specs: Path = _PATH_SPECS,
-        path_to_plot: Annotated[Path, Product] = _path_plot(
+        path_to_plot: Annotated[Path, Product] = _path_plot(  # noqa: B008
             "full_time",
             f"event_study_full_time_by_distance_to_first_caregiving_spell_"
             f"total_caregiving_{age_label_val}.pdf",
@@ -278,7 +289,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         window_high: int = 20,
         compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: full-time rate diff (policy − baseline) by distance to first caregiving spell."""
+        """Event study: full-time rate diff (policy - baseline).
+
+        By distance to first caregiving spell.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -336,7 +350,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         path_to_original_data: Path = _PATH_ORIGINAL,
         path_to_leave_data: Path = _PATH_LEAVE,
         path_to_specs: Path = _PATH_SPECS,
-        path_to_plot: Annotated[Path, Product] = _path_plot(
+        path_to_plot: Annotated[Path, Product] = _path_plot(  # noqa: B008
             "part_time",
             f"event_study_part_time_by_distance_to_first_care_demand_"
             f"total_caregiving_{age_label_val}.pdf",
@@ -347,7 +361,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         window_high: int = 20,
         compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: part-time rate diff (policy − baseline) by distance to first care demand."""
+        """Event study: part-time rate diff (policy - baseline).
+
+        By distance to first care demand.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -404,7 +421,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         path_to_original_data: Path = _PATH_ORIGINAL,
         path_to_leave_data: Path = _PATH_LEAVE,
         path_to_specs: Path = _PATH_SPECS,
-        path_to_plot: Annotated[Path, Product] = _path_plot(
+        path_to_plot: Annotated[Path, Product] = _path_plot(  # noqa: B008
             "part_time",
             f"event_study_part_time_by_distance_to_first_caregiving_spell_"
             f"total_caregiving_{age_label_val}.pdf",
@@ -415,7 +432,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         window_high: int = 20,
         compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: part-time rate diff (policy − baseline) by distance to first caregiving spell."""
+        """Event study: part-time rate diff (policy - baseline).
+
+        By distance to first caregiving spell.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -475,7 +495,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         path_to_original_data: Path = _PATH_ORIGINAL,
         path_to_leave_data: Path = _PATH_LEAVE,
         path_to_specs: Path = _PATH_SPECS,
-        path_to_plot: Annotated[Path, Product] = _path_plot(
+        path_to_plot: Annotated[Path, Product] = _path_plot(  # noqa: B008
             "working_hours",
             f"event_study_working_hours_weekly_by_distance_to_first_care_demand_"
             f"total_caregiving_{age_label_val}.pdf",
@@ -486,7 +506,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         window_high: int = 20,
         compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: weekly working hours diff (policy − baseline) by distance to first care demand."""
+        """Event study: weekly hours diff (policy - baseline).
+
+        By distance to first care demand.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -551,7 +574,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         path_to_original_data: Path = _PATH_ORIGINAL,
         path_to_leave_data: Path = _PATH_LEAVE,
         path_to_specs: Path = _PATH_SPECS,
-        path_to_plot: Annotated[Path, Product] = _path_plot(
+        path_to_plot: Annotated[Path, Product] = _path_plot(  # noqa: B008
             "working_hours",
             f"event_study_working_hours_weekly_by_distance_to_first_caregiving_spell_"
             f"total_caregiving_{age_label_val}.pdf",
@@ -562,7 +585,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         window_high: int = 20,
         compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: weekly working hours diff (policy − baseline) by distance to first caregiving spell."""
+        """Event study: weekly hours diff (policy - baseline).
+
+        By distance to first caregiving spell.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -628,7 +654,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         path_to_original_data: Path = _PATH_ORIGINAL,
         path_to_leave_data: Path = _PATH_LEAVE,
         path_to_specs: Path = _PATH_SPECS,
-        path_to_plot: Annotated[Path, Product] = _path_plot(
+        path_to_plot: Annotated[Path, Product] = _path_plot(  # noqa: B008
             "labor_income",
             f"event_study_monthly_gross_labor_income_by_distance_to_first_care_demand_"
             f"total_caregiving_{age_label_val}.pdf",
@@ -639,7 +665,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         window_high: int = 20,
         compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: monthly gross labor income diff (policy − baseline) by distance to first care demand."""
+        """Event study: gross labor income diff (policy - baseline).
+
+        By distance to first care demand.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -705,7 +734,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         path_to_original_data: Path = _PATH_ORIGINAL,
         path_to_leave_data: Path = _PATH_LEAVE,
         path_to_specs: Path = _PATH_SPECS,
-        path_to_plot: Annotated[Path, Product] = _path_plot(
+        path_to_plot: Annotated[Path, Product] = _path_plot(  # noqa: B008
             "labor_income",
             f"event_study_monthly_gross_labor_income_by_distance_to_first_caregiving_spell_"
             f"total_caregiving_{age_label_val}.pdf",
@@ -716,7 +745,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         window_high: int = 20,
         compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: monthly gross labor income diff (policy − baseline) by distance to first caregiving spell."""
+        """Event study: gross labor income diff (policy - baseline).
+
+        By distance to first caregiving spell.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -783,7 +815,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         path_to_original_data: Path = _PATH_ORIGINAL,
         path_to_leave_data: Path = _PATH_LEAVE,
         path_to_specs: Path = _PATH_SPECS,
-        path_to_plot: Annotated[Path, Product] = _path_plot(
+        path_to_plot: Annotated[Path, Product] = _path_plot(  # noqa: B008
             "job_finding",
             f"event_study_job_finding_rate_by_distance_to_first_care_demand_"
             f"total_caregiving_{age_label_val}.pdf",
@@ -794,7 +826,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         window_high: int = 20,
         compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: job finding rate diff (policy − baseline) by distance to first care demand."""
+        """Event study: job finding rate diff (policy - baseline).
+
+        By distance to first care demand.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -851,7 +886,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         path_to_original_data: Path = _PATH_ORIGINAL,
         path_to_leave_data: Path = _PATH_LEAVE,
         path_to_specs: Path = _PATH_SPECS,
-        path_to_plot: Annotated[Path, Product] = _path_plot(
+        path_to_plot: Annotated[Path, Product] = _path_plot(  # noqa: B008
             "job_finding",
             f"event_study_job_finding_rate_by_distance_to_first_caregiving_spell_"
             f"total_caregiving_{age_label_val}.pdf",
@@ -862,7 +897,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         window_high: int = 20,
         compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: job finding rate diff (policy − baseline) by distance to first caregiving spell."""
+        """Event study: job finding rate diff (policy - baseline).
+
+        By distance to first caregiving spell.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -922,7 +960,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         path_to_original_data: Path = _PATH_ORIGINAL,
         path_to_leave_data: Path = _PATH_LEAVE,
         path_to_specs: Path = _PATH_SPECS,
-        path_to_plot: Annotated[Path, Product] = _path_plot(
+        path_to_plot: Annotated[Path, Product] = _path_plot(  # noqa: B008
             "job_retention",
             f"event_study_job_retention_rate_by_distance_to_first_care_demand_"
             f"total_caregiving_{age_label_val}.pdf",
@@ -933,7 +971,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         window_high: int = 20,
         compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: job retention rate diff (policy − baseline) by distance to first care demand."""
+        """Event study: job retention rate diff (policy - baseline).
+
+        By distance to first care demand.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -990,7 +1031,7 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         path_to_original_data: Path = _PATH_ORIGINAL,
         path_to_leave_data: Path = _PATH_LEAVE,
         path_to_specs: Path = _PATH_SPECS,
-        path_to_plot: Annotated[Path, Product] = _path_plot(
+        path_to_plot: Annotated[Path, Product] = _path_plot(  # noqa: B008
             "job_retention",
             f"event_study_job_retention_rate_by_distance_to_first_caregiving_spell_"
             f"total_caregiving_{age_label_val}.pdf",
@@ -1001,7 +1042,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         window_high: int = 20,
         compare_against_baseline: bool = True,
     ) -> None:
-        """Event study: job retention rate diff (policy − baseline) by distance to first caregiving spell."""
+        """Event study: job retention rate diff (policy - baseline).
+
+        By distance to first caregiving spell.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])

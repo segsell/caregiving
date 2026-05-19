@@ -7,6 +7,7 @@ even when they reduce hours or become unemployed due to caregiving activities.
 import jax.numpy as jnp
 
 from caregiving.model.shared import (
+    LEAVE_CAP_YEARS,
     SEX,
     had_ft_job_before_caregiving,
     had_job_before_caregiving,
@@ -123,7 +124,7 @@ def job_offer_process_transition_beirat(
         period, education, params, model_specs
     )
 
-    leave_entitlement_remaining = years_leave_used_total < 3
+    leave_entitlement_remaining = years_leave_used_total < LEAVE_CAP_YEARS
     caregiver_with_previous_job = (
         employed_before_caregiving & caregiving_choice & leave_entitlement_remaining
     )

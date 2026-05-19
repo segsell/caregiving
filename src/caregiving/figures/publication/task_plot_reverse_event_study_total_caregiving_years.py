@@ -1,19 +1,22 @@
-"""Plot event study (difference) by distance to mother's death, grouped by total caregiving years (1–5+).
+"""Event-study (difference) by distance to mother's death, by total caregiving years.
 
 Reverse event studies (t=0 = mother's death): difference in outcome (baseline minus
 no-care-demand) by distance to mother's death. Grouping by total caregiving years
-over the lifecycle (1, 2, 3, 4, 5+), same as task_plot_event_study_total_caregiving_years.
+over the lifecycle (1, 2, 3, 4, 5+), same as
+task_plot_event_study_total_caregiving_years.
 All outcomes (employment, full_time, part_time, working_hours, labor_income) and two
 data pairs (estimated_params, back_to_Jan7). Outputs to
 event_study_reverse/{outcome}/total_caregiving_years/.
 
 Event definition:
-- t=0 is the period in which the mother dies (first period with mother_dead == PARENT_RECENTLY_DEAD).
-- This event is defined from the baseline simulation; the same (agent, period) timeline is used
-  for both baseline and no-care-demand. Baseline and no-care-demand use the same initial states
-  and mother's death is exogenous (does not depend on care choices), so for each agent the
-  mother dies in the same period in both scenarios. The "event" in the counterfactual is
-  therefore the same calendar event; we use the baseline only to label distance.
+- t=0 is the period in which the mother dies (first period with mother_dead ==
+  PARENT_RECENTLY_DEAD).
+- This event is defined from the baseline simulation; the same (agent, period)
+  timeline is used for both baseline and no-care-demand. Baseline and
+  no-care-demand use the same initial states and mother's death is exogenous
+  (does not depend on care choices), so for each agent the mother dies in the
+  same period in both scenarios. The "event" in the counterfactual is therefore
+  the same calendar event; we use the baseline only to label distance.
 
 Sample: ever_caregivers=True, ever_care_demand=False (aligned with forward module).
 Pytask marks: publication_event_study_reverse, publication_counterfactual, publication.
@@ -46,15 +49,19 @@ from caregiving.model.shared import PARENT_RECENTLY_DEAD
 
 
 def _get_plot_outcome_difference_by_distance_total_caregiving():
-    """Lazy import to avoid loading the forward event-study module at collect time (prevents duplicate task ids)."""
-    from caregiving.figures.publication.task_plot_event_study_total_caregiving_years import (
+    """Lazy import to avoid loading the forward event-study module at collect time.
+
+    Prevents duplicate task ids.
+    """
+    from caregiving.figures.publication.task_plot_event_study_total_caregiving_years import (  # noqa: E501
         plot_outcome_difference_by_distance_total_caregiving,
     )
 
     return plot_outcome_difference_by_distance_total_caregiving
 
 
-# Distance column name in profile DataFrames (must match plot_outcome_difference_by_distance_total_caregiving)
+# Distance column name in profile DataFrames
+# (must match plot_outcome_difference_by_distance_total_caregiving)
 _DIST_COL = "distance_to_first_care"
 
 _AGE_GROUPS = (
@@ -84,10 +91,13 @@ def reverse_event_study_total_caregiving_merged_and_profiles(
     pd.DataFrame,
     pd.DataFrame,
 ]:
-    """Build merged df and profile diffs for reverse event study (mother death, total care years 1–5+).
+    """Build merged df and profile diffs for reverse event study.
+
+    Mother death, total care years 1-5+.
 
     Returns (merged, prof_diff, prof_1_year_diff, ..., prof_5_year_diff).
-    All profiles have columns _DIST_COL and 'diff' for plot_outcome_difference_by_distance_total_caregiving.
+    All profiles have columns _DIST_COL and 'diff' for
+    plot_outcome_difference_by_distance_total_caregiving.
     """
     o_cols = df_o[["agent", "period", "choice"]].copy()
     o_cols["outcome_o"] = np.asarray(outcome_o_series).astype(float)
@@ -172,7 +182,10 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
     @pytask.mark.publication
     @pytask.mark.publication_selection
     @pytask.task(
-        id=f"{age_label_val}_reverse_event_study_mother_death_employment_total_caregiving_estimated_params"
+        id=(
+            f"{age_label_val}_reverse_event_study_mother_death_employment_"
+            f"total_caregiving_estimated_params"
+        )
     )
     def task_plot_event_study_employment_rate_by_distance_to_mother_death_total_caregiving(  # noqa: E501
         age_min: int | None = age_min_val,
@@ -191,12 +204,19 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
         ever_care_demand: bool = False,
         window_low: int = 15,
         window_high: int = 15,
-        window_by_age: dict[str, tuple[int, int]] | None = ({"ages_60_70": (15, 10)}),
+        window_by_age: dict[str, tuple[int, int]] | None = None,
         ylim: tuple[float, float] | None = (-0.25, 0.15),
-        yticks: list[float] | None = [-0.2, -0.1, 0, 0.1],
+        yticks: list[float] | None = None,
         plot_caregivers_mean: bool = True,
     ) -> None:
-        """Event study: employment rate difference by distance to mother's death (total care years 1–5+)."""
+        """Employment rate difference by distance to mother's death.
+
+        Total care years 1-5+.
+        """
+        if window_by_age is None:
+            window_by_age = {"ages_60_70": (15, 10)}
+        if yticks is None:
+            yticks = [-0.2, -0.1, 0, 0.1]
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
         else:
@@ -256,7 +276,10 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
     @pytask.mark.publication_counterfactual
     @pytask.mark.publication
     @pytask.task(
-        id=f"{age_label_val}_reverse_event_study_mother_death_employment_total_caregiving_back_to_Jan7"
+        id=(
+            f"{age_label_val}_reverse_event_study_mother_death_employment_"
+            f"total_caregiving_back_to_Jan7"
+        )
     )
     def task_plot_event_study_employment_rate_by_distance_to_mother_death_total_caregiving_back_to_Jan7(  # noqa: E501
         age_min: int | None = age_min_val,
@@ -283,7 +306,10 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
         ever_care_demand: bool = False,
         window: int = 20,
     ) -> None:
-        """Event study: employment rate difference by distance to mother's death (total care years 1–5+), back_to_Jan7."""
+        """Employment rate difference by distance to mother's death.
+
+        Total care years 1-5+, back_to_Jan7.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -354,12 +380,19 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
         ever_care_demand: bool = False,
         window_low: int = 15,
         window_high: int = 15,
-        window_by_age: dict[str, tuple[int, int]] | None = ({"ages_60_70": (15, 10)}),
+        window_by_age: dict[str, tuple[int, int]] | None = None,
         ylim: tuple[float, float] | None = (-0.25, 0.15),
-        yticks: list[float] | None = [-0.2, -0.1, 0, 0.1],
+        yticks: list[float] | None = None,
         plot_caregivers_mean: bool = True,
     ) -> None:
-        """Event study: full-time rate difference by distance to mother's death (total care years 1–5+)."""
+        """Full-time rate difference by distance to mother's death.
+
+        Total care years 1-5+.
+        """
+        if window_by_age is None:
+            window_by_age = {"ages_60_70": (15, 10)}
+        if yticks is None:
+            yticks = [-0.2, -0.1, 0, 0.1]
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
         else:
@@ -443,7 +476,10 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
         ever_care_demand: bool = False,
         window: int = 20,
     ) -> None:
-        """Event study: full-time rate difference by distance to mother's death (total care years 1–5+), back_to_Jan7."""
+        """Full-time rate difference by distance to mother's death.
+
+        Total care years 1-5+, back_to_Jan7.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -514,12 +550,19 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
         ever_care_demand: bool = False,
         window_low: int = 15,
         window_high: int = 15,
-        window_by_age: dict[str, tuple[int, int]] | None = ({"ages_60_70": (15, 10)}),
+        window_by_age: dict[str, tuple[int, int]] | None = None,
         ylim: tuple[float, float] | None = (-0.25, 0.15),
-        yticks: list[float] | None = [-0.2, -0.1, 0, 0.1],
+        yticks: list[float] | None = None,
         plot_caregivers_mean: bool = True,
     ) -> None:
-        """Event study: part-time rate difference by distance to mother's death (total care years 1–5+)."""
+        """Part-time rate difference by distance to mother's death.
+
+        Total care years 1-5+.
+        """
+        if window_by_age is None:
+            window_by_age = {"ages_60_70": (15, 10)}
+        if yticks is None:
+            yticks = [-0.2, -0.1, 0, 0.1]
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
         else:
@@ -603,7 +646,10 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
         ever_care_demand: bool = False,
         window: int = 20,
     ) -> None:
-        """Event study: part-time rate difference by distance to mother's death (total care years 1–5+), back_to_Jan7."""
+        """Part-time rate difference by distance to mother's death.
+
+        Total care years 1-5+, back_to_Jan7.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -681,7 +727,10 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
         ever_care_demand: bool = False,
         window: int = 20,
     ) -> None:
-        """Event study: weekly working hours difference by distance to mother's death (total care years 1–5+)."""
+        """Weekly working hours difference by distance to mother's death.
+
+        Total care years 1-5+.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -765,7 +814,10 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
         ever_care_demand: bool = False,
         window: int = 20,
     ) -> None:
-        """Event study: weekly working hours difference by distance to mother's death (total care years 1–5+), back_to_Jan7."""
+        """Weekly working hours difference by distance to mother's death.
+
+        Total care years 1-5+, back_to_Jan7.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -845,12 +897,19 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
         ever_care_demand: bool = False,
         window_low: int = 15,
         window_high: int = 15,
-        window_by_age: dict[str, tuple[int, int]] | None = ({"ages_60_70": (15, 10)}),
+        window_by_age: dict[str, tuple[int, int]] | None = None,
         ylim: tuple[float, float] | None = (-0.5, 0.2),
-        yticks: list[float] | None = [-0.5, -0.4, -0.3, -0.2, -0.1, 0, 0.1, 0.2],
+        yticks: list[float] | None = None,
         plot_caregivers_mean: bool = True,
     ) -> None:
-        """Event study: monthly gross labor income difference by distance to mother's death (total care years 1–5+)."""
+        """Monthly gross labor income difference by distance to mother's death.
+
+        Total care years 1-5+.
+        """
+        if window_by_age is None:
+            window_by_age = {"ages_60_70": (15, 10)}
+        if yticks is None:
+            yticks = [-0.5, -0.4, -0.3, -0.2, -0.1, 0, 0.1, 0.2]
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
         else:
@@ -942,7 +1001,10 @@ for age_min_val, age_max_val, age_label_val in _AGE_GROUPS:
         ever_care_demand: bool = False,
         window: int = 20,
     ) -> None:
-        """Event study: monthly gross labor income difference by distance to mother's death (total care years 1–5+), back_to_Jan7."""
+        """Monthly gross labor income difference by distance to mother's death.
+
+        Total care years 1-5+, back_to_Jan7.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])

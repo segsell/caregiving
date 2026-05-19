@@ -3,8 +3,9 @@
 Event study plots in the style of task_plot_event_study_employment_rate_consecutive:
 difference in outcome (baseline minus no-care-demand) by distance to event (t=0).
 Setup from task_plot_employment_rate_by_distance_to_first_care tasks with
-publication_employment_check and publication_other_check: total care years 1, 2, 3, 4, 5+
-over lifecycle; event = first care demand or first caregiving spell; data = estimated_params
+publication_employment_check and publication_other_check: total care
+years 1, 2, 3, 4, 5+ over lifecycle; event = first care demand or
+first caregiving spell; data = estimated_params
 or back_to_Jan7. Outputs go into event_study/{outcome}/total_caregiving_years/ with
 dataset and event in function names and filenames.
 """
@@ -66,14 +67,18 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 15,
         window_high: int = 15,
-        window_by_age: dict[str, tuple[int, int]] | None = (
-            {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
-        ),
+        window_by_age: dict[str, tuple[int, int]] | None = None,
         ylim: tuple[float, float] | None = (-0.25, 0.15),
-        yticks: list[float] | None = [-0.2, -0.1, 0, 0.1],
+        yticks: list[float] | None = None,
         plot_caregivers_mean: bool = True,
     ) -> None:
-        """Event study: employment rate difference by distance to first care demand (total care years 1–5+)."""
+        """Event study: employment rate difference by distance to
+        first care demand (total care years 1–5+).
+        """
+        if window_by_age is None:
+            window_by_age = {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
+        if yticks is None:
+            yticks = [-0.2, -0.1, 0, 0.1]
 
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
@@ -168,7 +173,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ylim_all_ages: tuple[float, float] | None = None,
         ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
-        """Event study: employment rate difference by distance to first care demand (total care years 1–5+), back_to_Jan7 data."""
+        """Event study: employment rate difference by distance to
+        first care demand (total care years 1–5+),
+        back_to_Jan7 data.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -256,7 +264,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ylim_all_ages: tuple[float, float] | None = None,
         ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
-        """Event study: employment rate difference by distance to first caregiving spell (total care years 1–5+)."""
+        """Event study: employment rate difference by distance to
+        first caregiving spell (total care years 1–5+).
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -342,7 +352,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ylim_all_ages: tuple[float, float] | None = None,
         ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
-        """Event study: employment rate difference by distance to first caregiving spell (total care years 1–5+), back_to_Jan7 data."""
+        """Event study: employment rate difference by distance to
+        first caregiving spell (total care years 1–5+),
+        back_to_Jan7 data.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -417,14 +430,18 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 15,
         window_high: int = 15,
-        window_by_age: dict[str, tuple[int, int]] | None = (
-            {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
-        ),
+        window_by_age: dict[str, tuple[int, int]] | None = None,
         ylim: tuple[float, float] | None = (-0.25, 0.15),
-        yticks: list[float] | None = [-0.2, -0.1, 0, 0.1],
+        yticks: list[float] | None = None,
         plot_caregivers_mean: bool = True,
     ) -> None:
-        """Event study: full-time rate difference by distance to first care demand (total care years 1–5+)."""
+        """Event study: full-time rate difference by distance to
+        first care demand (total care years 1–5+).
+        """
+        if window_by_age is None:
+            window_by_age = {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
+        if yticks is None:
+            yticks = [-0.2, -0.1, 0, 0.1]
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
         else:
@@ -513,7 +530,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ylim_all_ages: tuple[float, float] | None = None,
         ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
-        """Event study: full-time rate difference by distance to first care demand (total care years 1–5+), back_to_Jan7."""
+        """Event study: full-time rate difference by distance to
+        first care demand (total care years 1–5+),
+        back_to_Jan7.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -599,7 +619,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ylim_all_ages: tuple[float, float] | None = None,
         ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
-        """Event study: full-time rate difference by distance to first caregiving spell (total care years 1–5+)."""
+        """Event study: full-time rate difference by distance to
+        first caregiving spell (total care years 1–5+).
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -683,7 +705,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ylim_all_ages: tuple[float, float] | None = None,
         ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
-        """Event study: full-time rate difference by distance to first caregiving spell (total care years 1–5+), back_to_Jan7."""
+        """Event study: full-time rate difference by distance to
+        first caregiving spell (total care years 1–5+),
+        back_to_Jan7.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -732,7 +757,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 
 
 # ---------------------------------------------------------------------------
-# Part-time event study: first care demand (standard), back_to_Jan7, caregiving spell (standard), caregiving spell back_to_Jan7
+# Part-time event study: first care demand (standard), back_to_Jan7,
+# caregiving spell (standard), caregiving spell back_to_Jan7
 # ---------------------------------------------------------------------------
 for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 
@@ -758,14 +784,18 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 15,
         window_high: int = 15,
-        window_by_age: dict[str, tuple[int, int]] | None = (
-            {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
-        ),
+        window_by_age: dict[str, tuple[int, int]] | None = None,
         ylim: tuple[float, float] | None = (-0.25, 0.15),
-        yticks: list[float] | None = [-0.2, -0.1, 0, 0.1],
+        yticks: list[float] | None = None,
         plot_caregivers_mean: bool = True,
     ) -> None:
-        """Event study: part-time rate difference by distance to first care demand (total care years 1–5+)."""
+        """Event study: part-time rate difference by distance to
+        first care demand (total care years 1–5+).
+        """
+        if window_by_age is None:
+            window_by_age = {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
+        if yticks is None:
+            yticks = [-0.2, -0.1, 0, 0.1]
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
         else:
@@ -853,7 +883,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ylim_all_ages: tuple[float, float] | None = None,
         ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
-        """Event study: part-time rate difference by distance to first care demand (total care years 1–5+), back_to_Jan7."""
+        """Event study: part-time rate difference by distance to
+        first care demand (total care years 1–5+),
+        back_to_Jan7.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -938,7 +971,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ylim_all_ages: tuple[float, float] | None = None,
         ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
-        """Event study: part-time rate difference by distance to first caregiving spell (total care years 1–5+)."""
+        """Event study: part-time rate difference by distance to
+        first caregiving spell (total care years 1–5+).
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -1021,7 +1056,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ylim_all_ages: tuple[float, float] | None = None,
         ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
-        """Event study: part-time rate difference by distance to first caregiving spell (total care years 1–5+), back_to_Jan7."""
+        """Event study: part-time rate difference by distance to
+        first caregiving spell (total care years 1–5+),
+        back_to_Jan7.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -1070,7 +1108,8 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 
 
 # ---------------------------------------------------------------------------
-# Working hours event study: 4 variants (care_demand standard/back_to_Jan7, caregiving_spell standard/back_to_Jan7)
+# Working hours event study: 4 variants
+# (care_demand standard/back_to_Jan7, caregiving_spell standard/back_to_Jan7)
 # ---------------------------------------------------------------------------
 for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
 
@@ -1107,7 +1146,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ylim_all_ages: tuple[float, float] | None = None,
         ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
-        """Event study: weekly working hours difference by distance to first care demand (total care years 1–5+)."""
+        """Event study: weekly working hours difference by distance
+        to first care demand (total care years 1–5+).
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -1199,7 +1240,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ylim_all_ages: tuple[float, float] | None = None,
         ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
-        """Event study: weekly working hours difference by distance to first care demand (total care years 1–5+), back_to_Jan7."""
+        """Event study: weekly working hours difference by distance
+        to first care demand (total care years 1–5+),
+        back_to_Jan7.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -1293,7 +1337,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ylim_all_ages: tuple[float, float] | None = None,
         ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
-        """Event study: weekly working hours difference by distance to first caregiving spell (total care years 1–5+)."""
+        """Event study: weekly working hours difference by distance
+        to first caregiving spell (total care years 1–5+).
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -1387,7 +1433,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ylim_all_ages: tuple[float, float] | None = None,
         ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
-        """Event study: weekly working hours difference by distance to first caregiving spell (total care years 1–5+), back_to_Jan7."""
+        """Event study: weekly working hours difference by distance
+        to first caregiving spell (total care years 1–5+),
+        back_to_Jan7.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -1471,14 +1520,18 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ever_care_demand: bool = False,
         window_low: int = 15,
         window_high: int = 15,
-        window_by_age: dict[str, tuple[int, int]] | None = (
-            {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
-        ),
+        window_by_age: dict[str, tuple[int, int]] | None = None,
         ylim: tuple[float, float] | None = (-0.5, 0.2),
-        yticks: list[float] | None = [-0.5, -0.4, -0.3, -0.2, -0.1, 0, 0.1, 0.2],
+        yticks: list[float] | None = None,
         plot_caregivers_mean: bool = True,
     ) -> None:
-        """Event study: monthly gross labor income difference by distance to first care demand (total care years 1–5+)."""
+        """Event study: monthly gross labor income difference by
+        distance to first care demand (total care years 1–5+).
+        """
+        if window_by_age is None:
+            window_by_age = {"ages_40_49": (10, 15), "ages_60_70": (15, 10)}
+        if yticks is None:
+            yticks = [-0.5, -0.4, -0.3, -0.2, -0.1, 0, 0.1, 0.2]
         if window_by_age is not None and age_label in window_by_age:
             w_low, w_high = window_by_age[age_label]
         else:
@@ -1579,7 +1632,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ylim_all_ages: tuple[float, float] | None = None,
         ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
-        """Event study: monthly gross labor income difference by distance to first care demand (total care years 1–5+), back_to_Jan7."""
+        """Event study: monthly gross labor income difference by
+        distance to first care demand (total care years 1–5+),
+        back_to_Jan7.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -1673,7 +1729,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ylim_all_ages: tuple[float, float] | None = None,
         ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
-        """Event study: monthly gross labor income difference by distance to first caregiving spell (total care years 1–5+)."""
+        """Event study: monthly gross labor income difference by
+        distance to first caregiving spell
+        (total care years 1–5+).
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -1765,7 +1824,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ylim_all_ages: tuple[float, float] | None = None,
         ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
-        """Event study: monthly gross labor income difference by distance to first caregiving spell (total care years 1–5+), back_to_Jan7."""
+        """Event study: monthly gross labor income difference by
+        distance to first caregiving spell
+        (total care years 1–5+), back_to_Jan7.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -1861,7 +1923,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ylim_all_ages: tuple[float, float] | None = None,
         ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
-        """Event study: job finding rate difference by distance to first care demand (total care years 1–5+). Conditional on previously not working, not retired."""
+        """Event study: job finding rate difference by distance to
+        first care demand (total care years 1–5+). Conditional
+        on previously not working, not retired.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -1945,7 +2010,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ylim_all_ages: tuple[float, float] | None = None,
         ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
-        """Event study: job finding rate difference by distance to first care demand (total care years 1–5+), back_to_Jan7."""
+        """Event study: job finding rate difference by distance to
+        first care demand (total care years 1–5+),
+        back_to_Jan7.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -2031,7 +2099,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ylim_all_ages: tuple[float, float] | None = None,
         ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
-        """Event study: job finding rate difference by distance to first caregiving spell (total care years 1–5+)."""
+        """Event study: job finding rate difference by distance to
+        first caregiving spell (total care years 1–5+).
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -2115,7 +2185,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ylim_all_ages: tuple[float, float] | None = None,
         ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
-        """Event study: job finding rate difference by distance to first caregiving spell (total care years 1–5+), back_to_Jan7."""
+        """Event study: job finding rate difference by distance to
+        first caregiving spell (total care years 1–5+),
+        back_to_Jan7.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -2202,7 +2275,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ylim_all_ages: tuple[float, float] | None = None,
         ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
-        """Event study: job retention rate (1 - separation) difference by distance to first care demand (total care years 1–5+). Conditional on previously working."""
+        """Event study: job retention rate (1 - separation) difference
+        by distance to first care demand (total care years 1–5+).
+        Conditional on previously working.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -2286,7 +2362,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ylim_all_ages: tuple[float, float] | None = None,
         ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
-        """Event study: job retention rate difference by distance to first care demand (total care years 1–5+), back_to_Jan7."""
+        """Event study: job retention rate difference by distance to
+        first care demand (total care years 1–5+),
+        back_to_Jan7.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -2372,7 +2451,9 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ylim_all_ages: tuple[float, float] | None = None,
         ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
-        """Event study: job retention rate difference by distance to first caregiving spell (total care years 1–5+)."""
+        """Event study: job retention rate difference by distance to
+        first caregiving spell (total care years 1–5+).
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])
@@ -2458,7 +2539,10 @@ for age_min_val, age_max_val, age_label_val in AGE_GROUPS_EVENT_STUDY:
         ylim_all_ages: tuple[float, float] | None = None,
         ylim_age_bins: tuple[float, float] | None = None,
     ) -> None:
-        """Event study: job retention rate difference by distance to first caregiving spell (total care years 1–5+), back_to_Jan7."""
+        """Event study: job retention rate difference by distance to
+        first caregiving spell (total care years 1–5+),
+        back_to_Jan7.
+        """
         with path_to_specs.open("rb") as f:
             specs = pickle.load(f)
         start_age = int(specs["start_age"])

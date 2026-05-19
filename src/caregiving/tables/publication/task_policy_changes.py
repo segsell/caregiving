@@ -49,6 +49,7 @@ from caregiving.model.shared import (
     FULL_TIME,
     INFORMAL_CARE,
     INTENSIVE_INFORMAL_CARE,
+    LEAVE_CAP_YEARS,
     LIGHT_INFORMAL_CARE,
     NO_CARE,
     NO_CARE_DEMAND,
@@ -57,6 +58,21 @@ from caregiving.model.shared import (
     UNEMPLOYED,
 )
 from caregiving.tables.publication.task_fiscal import IN_KIND_BENEFITS_UTILIZATION_RATE
+
+# Age thresholds used across panel definitions
+EARLY_RETIREMENT_AGE = 63
+STATUTORY_RETIREMENT_AGE = 67
+WORKING_AGE_MIN = 30
+
+# job_before_caregiving codes: 0 = none, 1 = part-time, 2 = full-time
+JOB_NONE = 0
+JOB_PT = 1
+JOB_FT = 2
+
+# years_leave_used_total values reported in leave take-up panel
+LEAVE_YEARS_0 = 0
+LEAVE_YEARS_1 = 1
+LEAVE_YEARS_2 = 2
 
 AGE_GROUPS_LABOR = [
     ("30--39", 30, 39),
@@ -174,7 +190,10 @@ def task_create_policy_changes_table(
     / "simulated_data_caregiving_leave_with_job_retention_estimated_params.pkl",
     path_to_full_leave_sim: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params_no_pflegegeld.pkl",
+    / (
+        "simulated_data_full_caregiving_leave_with_job_retention_"
+        "estimated_params_no_pflegegeld.pkl"
+    ),
     path_to_save_table: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
@@ -200,10 +219,16 @@ def task_create_policy_changes_table_back_to_jan7(
     / "simulated_data_estimated_params_back_to_Jan7.pkl",
     path_to_normal_leave_sim: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_caregiving_leave_with_job_retention_estimated_params_back_to_Jan7.pkl",
+    / (
+        "simulated_data_caregiving_leave_with_job_retention_"
+        "estimated_params_back_to_Jan7.pkl"
+    ),
     path_to_full_leave_sim: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params_no_pflegegeld_back_to_Jan7.pkl",
+    / (
+        "simulated_data_full_caregiving_leave_with_job_retention_"
+        "estimated_params_no_pflegegeld_back_to_Jan7.pkl"
+    ),
     path_to_save_table: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
@@ -265,7 +290,10 @@ def task_create_policy_changes_table_full_beirat_no_pflegegeld(
     / "simulated_data_caregiving_leave_full_beirat_estimated_params.pkl",
     path_to_full_leave_sim: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params_no_pflegegeld.pkl",
+    / (
+        "simulated_data_full_caregiving_leave_with_job_retention_"
+        "estimated_params_no_pflegegeld.pkl"
+    ),
     path_to_save_table: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
@@ -324,7 +352,10 @@ def task_create_policy_changes_table_full_leave_pflegegeld_comparison(
     / "simulated_data_estimated_params.pkl",
     path_to_normal_leave_sim: Path = BLD
     / "solve_and_simulate"
-    / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params_no_pflegegeld.pkl",
+    / (
+        "simulated_data_full_caregiving_leave_with_job_retention_"
+        "estimated_params_no_pflegegeld.pkl"
+    ),
     path_to_full_leave_sim: Path = BLD
     / "solve_and_simulate"
     / "simulated_data_full_caregiving_leave_with_job_retention_estimated_params.pkl",
@@ -411,7 +442,7 @@ def task_create_baseline_vs_ncd_table(
     )
 
 
-def build_policy_changes_table(
+def build_policy_changes_table(  # noqa: PLR0915
     path_to_specs: Path,
     path_to_baseline_sim: Path,
     path_to_normal_leave_sim: Path,
@@ -636,7 +667,7 @@ def add_cg_metadata(df: pd.DataFrame, end_age_caregiving: int) -> pd.DataFrame:
 
 
 def panel_a_labor(df: pd.DataFrame) -> dict[str, float]:
-    """Share FT / PT / employed / unemployed / retired — outcome first, then age groups."""
+    """Share FT/PT/employed/unemployed/retired (outcome first, then age groups)."""
     rows = {}
     outcomes = [
         ("Share FT", FULL_TIME),
@@ -676,7 +707,7 @@ def panel_b_caregiving(df: pd.DataFrame) -> dict[str, float]:
         ("Share informal CG", lambda wd: _care_share(wd, informal)),
         ("Share light CG", lambda wd: _care_share(wd, light)),
         ("Share intensive CG", lambda wd: _care_share(wd, intensive)),
-        ("Share combination care", lambda wd: _combo_share(wd)),
+        ("Share combination care", _combo_share),
         ("Share formal care", lambda wd: _care_share(wd, formal)),
     ]
 
@@ -766,7 +797,9 @@ def panel_d_ever_cg_labor(df: pd.DataFrame) -> dict[str, float]:
     return rows
 
 
-def panel_e_cg_benefits(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]:
+def panel_e_cg_benefits(  # noqa: PLR0912, PLR0913, PLR0915
+    df: pd.DataFrame, wealth_unit: float
+) -> dict[str, float]:
     """Average benefit/top-up while caregiving, conditional on labor state.
 
     For the baseline, reports ``care_benefits_and_costs`` (Pflegegeld).
@@ -857,7 +890,7 @@ def panel_e_cg_benefits(df: pd.DataFrame, wealth_unit: float) -> dict[str, float
 
 def panel_f_economic(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]:
     """Economic outcomes for agents with age < 63."""
-    sub = df[df["age"] < 63]
+    sub = df[df["age"] < EARLY_RETIREMENT_AGE]
     rows = {}
 
     sav_col = "savings_dec" if "savings_dec" in sub.columns else "savings"
@@ -895,7 +928,10 @@ def panel_f_economic(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]:
 
 
 def panel_g_retirement(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]:
-    """Retirement outcomes, conditional on agent being retired (choice in RETIREMENT)."""
+    """Retirement outcomes, conditional on agent being retired.
+
+    Choice in RETIREMENT.
+    """
     retired = np.asarray(RETIREMENT).ravel()
     sub = df[df["choice"].isin(retired)]
     rows = {}
@@ -1150,9 +1186,9 @@ def panel_leave_eligibility(df: pd.DataFrame) -> dict[str, float]:
             rows[f"Share prior FT (CG) [{label}]"] = np.nan
         else:
             jbc = edu_cg["job_before_caregiving"]
-            rows[f"Share no prior job (CG) [{label}]"] = float((jbc == 0).mean())
-            rows[f"Share prior PT (CG) [{label}]"] = float((jbc == 1).mean())
-            rows[f"Share prior FT (CG) [{label}]"] = float((jbc == 2).mean())
+            rows[f"Share no prior job (CG) [{label}]"] = float((jbc == JOB_NONE).mean())
+            rows[f"Share prior PT (CG) [{label}]"] = float((jbc == JOB_PT).mean())
+            rows[f"Share prior FT (CG) [{label}]"] = float((jbc == JOB_FT).mean())
 
     if cg_df.empty:
         rows["Share no prior job (CG) [All]"] = np.nan
@@ -1164,7 +1200,9 @@ def panel_leave_eligibility(df: pd.DataFrame) -> dict[str, float]:
     return rows
 
 
-def panel_leave_takeup(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]:
+def panel_leave_takeup(  # noqa: PLR0912, PLR0913, PLR0915
+    df: pd.DataFrame, wealth_unit: float
+) -> dict[str, float]:
     """Leave take-up decomposition: eligibility, take-up rates, recipient composition.
 
     Answers: who is eligible, who actually receives the leave top-up,
@@ -1197,16 +1235,16 @@ def panel_leave_takeup(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]
     # -- B) Prior-job eligibility structure --
     if has_jbc:
         jbc = cg["job_before_caregiving"]
-        rows["Share no prior job (all CG)"] = float((jbc == 0).mean())
-        rows["Share prior PT (all CG)"] = float((jbc == 1).mean())
-        rows["Share prior FT (all CG)"] = float((jbc == 2).mean())
-        rows["Share any prior job (all CG)"] = float((jbc > 0).mean())
+        rows["Share no prior job (all CG)"] = float((jbc == JOB_NONE).mean())
+        rows["Share prior PT (all CG)"] = float((jbc == JOB_PT).mean())
+        rows["Share prior FT (all CG)"] = float((jbc == JOB_FT).mean())
+        rows["Share any prior job (all CG)"] = float((jbc > JOB_NONE).mean())
 
         # Eligibility uses lagged_choice (budget equation trigger)
         lag_pt = cg["lagged_choice"].isin(CG_PT)
         lag_unemp = cg["lagged_choice"].isin(CG_UNEMPLOYED)
-        prior_ft = jbc == 2
-        prior_any = jbc > 0
+        prior_ft = jbc == JOB_FT
+        prior_any = jbc > JOB_NONE
 
         n_pt_prior_ft = int((lag_pt & prior_ft).sum())
         n_unemp_prior_job = int((lag_unemp & prior_any).sum())
@@ -1220,18 +1258,18 @@ def panel_leave_takeup(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]
             edu_cg = cg[cg["education"] == edu_level]
             ne = len(edu_cg)
             if ne == 0:
-                for k in [
+                for k in (
                     f"Share no prior job [{label}]",
                     f"Share prior FT [{label}]",
                     f"Share leave-eligible [{label}]",
-                ]:
+                ):
                     rows[k] = np.nan
                 continue
             ejbc = edu_cg["job_before_caregiving"]
-            rows[f"Share no prior job [{label}]"] = float((ejbc == 0).mean())
-            rows[f"Share prior FT [{label}]"] = float((ejbc == 2).mean())
-            ept = edu_cg["lagged_choice"].isin(CG_PT) & (ejbc == 2)
-            eun = edu_cg["lagged_choice"].isin(CG_UNEMPLOYED) & (ejbc > 0)
+            rows[f"Share no prior job [{label}]"] = float((ejbc == JOB_NONE).mean())
+            rows[f"Share prior FT [{label}]"] = float((ejbc == JOB_FT).mean())
+            ept = edu_cg["lagged_choice"].isin(CG_PT) & (ejbc == JOB_FT)
+            eun = edu_cg["lagged_choice"].isin(CG_UNEMPLOYED) & (ejbc > JOB_NONE)
             rows[f"Share leave-eligible [{label}]"] = float((ept | eun).sum() / ne)
 
     # -- C) Take-up rates --
@@ -1246,8 +1284,8 @@ def panel_leave_takeup(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]
         if has_jbc:
             lag_pt = cg["lagged_choice"].isin(CG_PT)
             lag_unemp = cg["lagged_choice"].isin(CG_UNEMPLOYED)
-            prior_ft = cg["job_before_caregiving"] == 2
-            prior_any = cg["job_before_caregiving"] > 0
+            prior_ft = cg["job_before_caregiving"] == JOB_FT
+            prior_any = cg["job_before_caregiving"] > JOB_NONE
             eligible_mask = (lag_pt & prior_ft) | (lag_unemp & prior_any)
             n_eligible = int(eligible_mask.sum())
             rows["N effectively eligible"] = float(n_eligible)
@@ -1311,9 +1349,9 @@ def panel_leave_takeup(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]
 
             if has_jbc:
                 rjbc = recv_df["job_before_caregiving"]
-                rows["Recv: Share prior FT"] = float((rjbc == 2).mean())
-                rows["Recv: Share prior PT"] = float((rjbc == 1).mean())
-                rows["Recv: Share no prior job"] = float((rjbc == 0).mean())
+                rows["Recv: Share prior FT"] = float((rjbc == JOB_FT).mean())
+                rows["Recv: Share prior PT"] = float((rjbc == JOB_PT).mean())
+                rows["Recv: Share no prior job"] = float((rjbc == JOB_NONE).mean())
 
             for edu_level, label in EDU_LABELS.items():
                 rows[f"Recv: Share [{label}]"] = float(
@@ -1323,10 +1361,12 @@ def panel_leave_takeup(df: pd.DataFrame, wealth_unit: float) -> dict[str, float]
     # -- E) Beirat cap usage (if available) --
     if has_ylu:
         ylu = cg["years_leave_used_total"]
-        rows["Share 0 leave years used"] = float((ylu == 0).mean())
-        rows["Share 1 leave year used"] = float((ylu == 1).mean())
-        rows["Share 2 leave years used"] = float((ylu == 2).mean())
-        rows["Share 3 leave years used (capped)"] = float((ylu >= 3).mean())
+        rows["Share 0 leave years used"] = float((ylu == LEAVE_YEARS_0).mean())
+        rows["Share 1 leave year used"] = float((ylu == LEAVE_YEARS_1).mean())
+        rows["Share 2 leave years used"] = float((ylu == LEAVE_YEARS_2).mean())
+        rows["Share 3 leave years used (capped)"] = float(
+            (ylu >= LEAVE_CAP_YEARS).mean()
+        )
 
     return rows
 
@@ -1359,7 +1399,7 @@ def panel_prior_state_at_cg_entry(df: pd.DataFrame) -> dict[str, float]:
     first_cg_per = df.loc[cg_mask].groupby("agent")["period"].min()
     df_first = (
         df.set_index(["agent", "period"])
-        .loc[list(zip(first_cg_per.index, first_cg_per.values))]
+        .loc[list(zip(first_cg_per.index, first_cg_per.values, strict=False))]
         .reset_index()
     )
 
@@ -1377,7 +1417,7 @@ def panel_prior_state_at_cg_entry(df: pd.DataFrame) -> dict[str, float]:
             rows[f"{prefix}Share prior FT ({age_label})"] = np.nan
             rows[f"{prefix}Share prior PT ({age_label})"] = np.nan
             rows[f"{prefix}Share prior unemp ({age_label})"] = np.nan
-            if hi >= 63:
+            if hi >= EARLY_RETIREMENT_AGE:
                 rows[f"{prefix}Share prior retired ({age_label})"] = np.nan
             rows[f"{prefix}Share had job ({age_label})"] = np.nan
             rows[f"{prefix}Share no prior job ({age_label})"] = np.nan
@@ -1391,7 +1431,7 @@ def panel_prior_state_at_cg_entry(df: pd.DataFrame) -> dict[str, float]:
         rows[f"{prefix}Share prior unemp ({age_label})"] = float(
             lag.isin(unemp_arr).mean()
         )
-        if hi >= 63:
+        if hi >= EARLY_RETIREMENT_AGE:
             rows[f"{prefix}Share prior retired ({age_label})"] = float(
                 lag.isin(ret_arr).mean()
             )
@@ -1446,7 +1486,7 @@ def _classify_entrants(df: pd.DataFrame):
     first_cg_per = df.loc[cg_mask].groupby("agent")["period"].min()
     df_first = (
         df.set_index(["agent", "period"])
-        .loc[list(zip(first_cg_per.index, first_cg_per.values))]
+        .loc[list(zip(first_cg_per.index, first_cg_per.values, strict=False))]
         .reset_index()
     )
     if df_first.empty:
@@ -1458,7 +1498,7 @@ def _classify_entrants(df: pd.DataFrame):
     return df_first, had_job_agents, no_job_agents
 
 
-def panel_care_demand_duration(df: pd.DataFrame) -> dict[str, float]:
+def panel_care_demand_duration(df: pd.DataFrame) -> dict[str, float]:  # noqa: PLR0915
     """Care demand and caregiving duration profile by prior job status.
 
     For CG type 1 entrants (first-time informal caregivers), compares agents
@@ -1468,7 +1508,6 @@ def panel_care_demand_duration(df: pd.DataFrame) -> dict[str, float]:
     """
     informal = np.asarray(INFORMAL_CARE).ravel()
     light_inf = np.asarray(LIGHT_INFORMAL_CARE).ravel()
-    intensive_inf = np.asarray(INTENSIVE_INFORMAL_CARE).ravel()
     formal = np.asarray(FORMAL_CARE).ravel()
 
     rows: dict[str, float] = {}
@@ -1560,7 +1599,7 @@ def panel_care_demand_duration(df: pd.DataFrame) -> dict[str, float]:
         edu_first = df_first[df_first["education"] == edu_level]
         edu_had = had_job_agents & set(edu_first["agent"])
         edu_no = no_job_agents & set(edu_first["agent"])
-        for label, agent_set in [("Had job", edu_had), ("No prior job", edu_no)]:
+        for label, agent_set in (("Had job", edu_had), ("No prior job", edu_no)):
             _emit(f"AA [{edu_label}, {label}]: ", agent_set)
 
     for age_label, lo, hi in CARE_DEMAND_AGE_BINS:
@@ -1570,11 +1609,11 @@ def panel_care_demand_duration(df: pd.DataFrame) -> dict[str, float]:
         bin_agents = set(demand_in_bin.index) & all_entrant_agents
         bin_had = bin_agents & had_job_agents
         bin_no = bin_agents & no_job_agents
-        for label, agent_set in [
+        for label, agent_set in (
             ("All", bin_agents),
             ("Had job", bin_had),
             ("No prior job", bin_no),
-        ]:
+        ):
             _emit(f"AA [1st demand {age_label}, {label}]: ", agent_set)
 
     return rows
@@ -1612,8 +1651,8 @@ def panel_care_arrangements(df: pd.DataFrame) -> dict[str, float]:
         intens_demand = sub[sub["care_demand"] == CARE_DEMAND_INTENSIVE]
 
         rows[f"{prefix}N person-periods (demand>0)"] = float(n)
-        rows[f"{prefix}Share light demand"] = float(len(light_demand) / n)
-        rows[f"{prefix}Share intens. demand"] = float(len(intens_demand) / n)
+        rows[f"{prefix}Share light demand"] = len(light_demand) / n
+        rows[f"{prefix}Share intens. demand"] = len(intens_demand) / n
 
         nl = len(light_demand)
         if nl > 0:
@@ -1646,10 +1685,10 @@ def panel_care_arrangements(df: pd.DataFrame) -> dict[str, float]:
         _care_shares(sub, f"BB [{label}]: ")
 
     for edu_level, edu_label in EDU_LABELS.items():
-        for label, agent_set in [
+        for label, agent_set in (
             ("Had job", had_job_agents),
             ("No prior job", no_job_agents),
-        ]:
+        ):
             edu_sub = entrant_demand[
                 entrant_demand["agent"].isin(agent_set)
                 & (entrant_demand["education"] == edu_level)
@@ -1660,11 +1699,11 @@ def panel_care_arrangements(df: pd.DataFrame) -> dict[str, float]:
         age_sub = entrant_demand[
             (entrant_demand["age"] >= lo) & (entrant_demand["age"] <= hi)
         ]
-        for label, agent_set in [
+        for label, agent_set in (
             ("All entrants", all_entrant_agents),
             ("Had job", had_job_agents),
             ("No prior job", no_job_agents),
-        ]:
+        ):
             sub = age_sub[age_sub["agent"].isin(agent_set)]
             _care_shares(sub, f"BB [{age_label}, {label}]: ")
 
@@ -1699,10 +1738,9 @@ def panel_care_demand_onset(df: pd.DataFrame) -> dict[str, float]:
         type1_became_cg = type1_demand & ever_cg
         n_type1 = len(type1_demand)
         if n_type1 > 0:
-            rows["CC: Type 1 — share became CG"] = float(len(type1_became_cg) / n_type1)
-            rows["CC: Type 1 — share only formal"] = float(
-                1.0 - len(type1_became_cg) / n_type1
-            )
+            rows["CC: Type 1 — share became CG"] = len(type1_became_cg) / n_type1
+            share_only_formal = 1.0 - len(type1_became_cg) / n_type1
+            rows["CC: Type 1 — share only formal"] = share_only_formal
 
     first_demand_per = df.loc[df["care_demand"] > 0].groupby("agent")["period"].min()
     if "age" in df.columns and not first_demand_per.empty:
@@ -1732,8 +1770,8 @@ def panel_care_demand_onset(df: pd.DataFrame) -> dict[str, float]:
                 type1_edu = set(edu_types[edu_types == 1].index)
                 type1_edu_cg = type1_edu & ever_cg
                 if type1_edu:
-                    rows[f"CC [{label}]: Type 1 became CG"] = float(
-                        len(type1_edu_cg) / len(type1_edu)
+                    rows[f"CC [{label}]: Type 1 became CG"] = len(type1_edu_cg) / len(
+                        type1_edu
                     )
 
     return rows
@@ -1849,7 +1887,10 @@ def panel_lifecycle_by_edu(
             rows[k] = np.nan
         return rows
 
-    working_age = ever_cg[(ever_cg["age"] >= 30) & (ever_cg["age"] <= 67)]
+    working_age = ever_cg[
+        (ever_cg["age"] >= WORKING_AGE_MIN)
+        & (ever_cg["age"] <= STATUTORY_RETIREMENT_AGE)
+    ]
     rows[f"Avg. gross labor inc. (ever CG, 30--67) [{label}]"] = (
         safe_mean(working_age["gross_labor_income"]) * wealth_unit
         if "gross_labor_income" in working_age.columns
@@ -1890,7 +1931,7 @@ def panel_lifecycle_by_edu(
         rows[f"Avg. Pflegegeld per CG period [{label}]"] = np.nan
         rows[f"Avg. total transfer per CG period [{label}]"] = np.nan
 
-    under63 = ever_cg[ever_cg["age"] < 63]
+    under63 = ever_cg[ever_cg["age"] < EARLY_RETIREMENT_AGE]
     rows[f"Avg. consumption (ever CG, <63) [{label}]"] = (
         safe_mean(under63["consumption"]) * wealth_unit if has_cons else np.nan
     )
@@ -1901,11 +1942,11 @@ def panel_lifecycle_by_edu(
         else np.nan
     )
 
-    for bin_label, lo, hi in [
+    for bin_label, lo, hi in (
         ("30--39", 30, 39),
         ("40--49", 40, 49),
         ("50--59", 50, 59),
-    ]:
+    ):
         age_bin = ever_cg[(ever_cg["age"] >= lo) & (ever_cg["age"] <= hi)]
         rows[f"Avg. consumption (ever CG, {bin_label}) [{label}]"] = (
             safe_mean(age_bin["consumption"]) * wealth_unit

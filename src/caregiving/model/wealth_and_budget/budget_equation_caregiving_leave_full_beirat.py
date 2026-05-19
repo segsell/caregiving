@@ -1,4 +1,7 @@
-"""Budget for full Beirat caregiving leave: Pflegegeld + gated 65% top-up (max 3 years, max 1 full leave)."""
+"""Full Beirat caregiving leave budget.
+
+Pflegegeld + gated 65% top-up (max 3 years, max 1 full leave).
+"""
 
 from jax import numpy as jnp
 
@@ -49,7 +52,10 @@ def budget_constraint(
     params,
     model_specs,
 ):
-    """Full Beirat budget: Pflegegeld + gated 65% top-up (max 3 years, max 1 year full leave)."""
+    """Full Beirat budget: Pflegegeld + gated 65% top-up.
+
+    Max 3 years, max 1 year full leave.
+    """
     sex_var = SEX
 
     assets_scaled = asset_end_of_previous_period * model_specs["wealth_unit"]

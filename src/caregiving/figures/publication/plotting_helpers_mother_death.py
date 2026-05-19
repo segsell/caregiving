@@ -10,6 +10,24 @@ import pandas as pd
 from caregiving.counterfactual.plotting_helpers import ensure_agent_period
 from caregiving.model.shared import PARENT_RECENTLY_DEAD
 
+CARE_YEARS_1 = 1
+CARE_YEARS_2 = 2
+CARE_YEARS_3 = 3
+CARE_YEARS_4 = 4
+CARE_YEARS_5_PLUS = 5
+DIST_AT_CARE_3 = -3
+DIST_AT_CARE_5 = -5
+DIST_AT_CARE_7 = -7
+DIST_AT_CARE_10 = -10
+DIST_AT_CARE_11_PLUS = -11
+DIST_AT_CG_1_4_MIN = -4
+DIST_AT_CG_1_4_MAX = -1
+DIST_AT_CG_5_9_MIN = -9
+DIST_AT_CG_5_9_MAX = -5
+DIST_AT_CG_10_14_MIN = -14
+DIST_AT_CG_10_14_MAX = -10
+DIST_AT_CG_15_PLUS = -15
+
 
 def add_distance_to_mother_death(df_original: pd.DataFrame) -> pd.DataFrame:
     """Add distance_to_mother_death column.
@@ -766,11 +784,11 @@ def identify_agents_by_total_caregiving_before_death(
         .sum()
         .astype(int)
     )
-    agents_1_year = total_care[total_care == 1].index.to_numpy()
-    agents_2_year = total_care[total_care == 2].index.to_numpy()
-    agents_3_year = total_care[total_care == 3].index.to_numpy()
-    agents_4_year = total_care[total_care == 4].index.to_numpy()
-    agents_5_year = total_care[total_care >= 5].index.to_numpy()
+    agents_1_year = total_care[total_care == CARE_YEARS_1].index.to_numpy()
+    agents_2_year = total_care[total_care == CARE_YEARS_2].index.to_numpy()
+    agents_3_year = total_care[total_care == CARE_YEARS_3].index.to_numpy()
+    agents_4_year = total_care[total_care == CARE_YEARS_4].index.to_numpy()
+    agents_5_year = total_care[total_care >= CARE_YEARS_5_PLUS].index.to_numpy()
     return (
         agents_1_year,
         agents_2_year,
@@ -821,13 +839,21 @@ def identify_agents_by_first_care_demand_timing_before_death(
     combined["distance_at_first_care"] = (
         combined["first_care_demand_period"] - combined["first_death_period"]
     )
-    agents_3 = combined[combined["distance_at_first_care"] == -3]["agent"].to_numpy()
-    agents_5 = combined[combined["distance_at_first_care"] == -5]["agent"].to_numpy()
-    agents_7 = combined[combined["distance_at_first_care"] == -7]["agent"].to_numpy()
-    agents_10 = combined[combined["distance_at_first_care"] == -10]["agent"].to_numpy()
-    agents_11_plus = combined[combined["distance_at_first_care"] <= -11][
+    agents_3 = combined[combined["distance_at_first_care"] == DIST_AT_CARE_3][
         "agent"
     ].to_numpy()
+    agents_5 = combined[combined["distance_at_first_care"] == DIST_AT_CARE_5][
+        "agent"
+    ].to_numpy()
+    agents_7 = combined[combined["distance_at_first_care"] == DIST_AT_CARE_7][
+        "agent"
+    ].to_numpy()
+    agents_10 = combined[combined["distance_at_first_care"] == DIST_AT_CARE_10][
+        "agent"
+    ].to_numpy()
+    agents_11_plus = combined[
+        combined["distance_at_first_care"] <= DIST_AT_CARE_11_PLUS
+    ]["agent"].to_numpy()
     return (agents_3, agents_5, agents_7, agents_10, agents_11_plus)
 
 
@@ -836,7 +862,7 @@ def identify_agents_by_first_caregiving_timing_before_death(
     first_death_period_by_agent: pd.DataFrame,
     informal_care_choices: list,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Identify agents by when first caregiving spell occurred relative to mother's death.
+    """Identify agents by first caregiving spell relative to mother's death.
 
     Groups (mutually exclusive):
     - Group 1: first caregiving 1-4 years before mother death (distance in [-4, -1])
@@ -873,20 +899,20 @@ def identify_agents_by_first_caregiving_timing_before_death(
         combined["first_caregiving_period"] - combined["first_death_period"]
     )
     agents_1_4 = combined[
-        (combined["distance_at_first_caregiving"] >= -4)
-        & (combined["distance_at_first_caregiving"] <= -1)
+        (combined["distance_at_first_caregiving"] >= DIST_AT_CG_1_4_MIN)
+        & (combined["distance_at_first_caregiving"] <= DIST_AT_CG_1_4_MAX)
     ]["agent"].to_numpy()
     agents_5_9 = combined[
-        (combined["distance_at_first_caregiving"] >= -9)
-        & (combined["distance_at_first_caregiving"] <= -5)
+        (combined["distance_at_first_caregiving"] >= DIST_AT_CG_5_9_MIN)
+        & (combined["distance_at_first_caregiving"] <= DIST_AT_CG_5_9_MAX)
     ]["agent"].to_numpy()
     agents_10_14 = combined[
-        (combined["distance_at_first_caregiving"] >= -14)
-        & (combined["distance_at_first_caregiving"] <= -10)
+        (combined["distance_at_first_caregiving"] >= DIST_AT_CG_10_14_MIN)
+        & (combined["distance_at_first_caregiving"] <= DIST_AT_CG_10_14_MAX)
     ]["agent"].to_numpy()
-    agents_15_plus = combined[combined["distance_at_first_caregiving"] <= -15][
-        "agent"
-    ].to_numpy()
+    agents_15_plus = combined[
+        combined["distance_at_first_caregiving"] <= DIST_AT_CG_15_PLUS
+    ]["agent"].to_numpy()
     return (agents_1_4, agents_5_9, agents_10_14, agents_15_plus)
 
 
@@ -927,11 +953,11 @@ def identify_agents_by_exact_caregiving_years_in_window(
         .sum()
         .astype(int)
     )
-    agents_1 = total_care[total_care == 1].index.to_numpy()
-    agents_2 = total_care[total_care == 2].index.to_numpy()
-    agents_3 = total_care[total_care == 3].index.to_numpy()
-    agents_4 = total_care[total_care == 4].index.to_numpy()
+    agents_1 = total_care[total_care == CARE_YEARS_1].index.to_numpy()
+    agents_2 = total_care[total_care == CARE_YEARS_2].index.to_numpy()
+    agents_3 = total_care[total_care == CARE_YEARS_3].index.to_numpy()
+    agents_4 = total_care[total_care == CARE_YEARS_4].index.to_numpy()
     if include_5_plus:
-        agents_5_plus = total_care[total_care >= 5].index.to_numpy()
+        agents_5_plus = total_care[total_care >= CARE_YEARS_5_PLUS].index.to_numpy()
         return (agents_1, agents_2, agents_3, agents_4, agents_5_plus)
     return (agents_1, agents_2, agents_3, agents_4)

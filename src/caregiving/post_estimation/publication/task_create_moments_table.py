@@ -16,6 +16,8 @@ from pytask import Product
 
 from caregiving.config import BLD
 
+AGE_BIN_SPAN_THRESHOLD = 10
+
 # ---------------------------------------------------------------------------
 # Moment group definitions
 # ---------------------------------------------------------------------------
@@ -97,9 +99,7 @@ _GROUPS: list[dict] = [
         "patterns": [rf"^share_{_LS}_intensive_caregivers_age_bin_\d+_\d+$"],
     },
     {
-        "label": (
-            "Intensive caregiver labor supply by 3-year age bin" " and education"
-        ),
+        "label": ("Intensive caregiver labor supply by 3-year age bin and education"),
         "dataset": "GSOEP",
         "patterns": [
             rf"^share_{_LS}_intensive_caregivers_(low|high)_education_age_bin_\d+_\d+$",
@@ -118,7 +118,7 @@ _GROUPS: list[dict] = [
     {
         "panel": "Panel E: Transitions",
         "label": (
-            "Year-to-year labor supply transitions" " by 5-year age bin and education"
+            "Year-to-year labor supply transitions by 5-year age bin and education"
         ),
         "dataset": "GSOEP",
         "patterns": [
@@ -189,7 +189,7 @@ def _count_and_ages(
             if pair_idx + 1 < len(nums):
                 lo, hi = int(nums[pair_idx]), int(nums[pair_idx + 1])
                 ages.extend([lo, hi])
-                if hi - lo < 10:
+                if hi - lo < AGE_BIN_SPAN_THRESHOLD:
                     is_bin = True
             else:
                 ages.append(int(nums[pair_idx]))
@@ -234,34 +234,31 @@ def _build_rows(moments: list[str]) -> list[dict]:
 def _build_latex(rows: list[dict]) -> str:
     L: list[str] = []
 
-    L.append(r"\begin{table}[htbp]")
-    L.append(r"\centering")
-    L.append(r"\caption{Overview of Estimation Moments}")
-    L.append(r"\label{tab:moments_overview}")
-    L.append(r"\begin{tabular}{llcc}")
-    L.append(r"\toprule")
-    L.append(r"Moments & Data Set & Ages & $N$ \\")
-    L.append(r"\midrule\midrule")
+    L.extend((r"\begin{table}[htbp]", r"\centering"))
+    L.extend(
+        (r"\caption{Overview of Estimation Moments}", r"\label{tab:moments_overview}")
+    )
+    L.extend((r"\begin{tabular}{llcc}", r"\toprule"))
+    L.extend((r"Moments & Data Set & Ages & $N$ \\", r"\midrule\midrule"))
 
     for row in rows:
         if row["label"] == "__total__":
             continue
         if row.get("panel"):
-            L.append(
-                rf"\multicolumn{{4}}{{l}}{{\textit{{{row['panel']}}}}} \\",
+            L.extend(
+                (
+                    rf"\multicolumn{{4}}{{l}}{{\textit{{{row['panel']}}}}} \\",
+                    r"\midrule",
+                )
             )
-            L.append(r"\midrule")
 
         L.append(
-            f"{row['label']} & {row['dataset']}" f" & {row['ages']} & {row['n']} \\\\",
+            f"{row['label']} & {row['dataset']} & {row['ages']} & {row['n']} \\\\",
         )
 
     gt = rows[-1]["grand_total"]
-    L.append(r"\midrule")
-    L.append(f"Total & & & {gt} \\\\")
+    L.extend((r"\midrule", f"Total & & & {gt} \\\\"))
 
-    L.append(r"\bottomrule")
-    L.append(r"\end{tabular}")
-    L.append(r"\end{table}")
-    L.append("")
+    L.extend((r"\bottomrule", r"\end{tabular}"))
+    L.extend((r"\end{table}", ""))
     return "\n".join(L)

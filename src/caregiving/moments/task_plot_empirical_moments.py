@@ -1045,8 +1045,8 @@ def plot_choice_shares_by_education_emp(
 def plot_choice_shares_by_education_age_bins_emp(  # noqa: PLR0912, PLR0915
     data_emp,
     specs,
-    age_min: Optional[int] = None,
-    age_max: Optional[int] = None,
+    age_min: int | None = None,
+    age_max: int | None = None,
     bin_width: int = 5,
     path_to_save_plot: str | None = None,
 ):

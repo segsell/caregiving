@@ -103,7 +103,9 @@ def _prepare_merged_type1(
     ever_caregivers: bool = False,
     ever_care_demand: bool = False,
 ) -> pd.DataFrame:
-    """Load baseline data, restrict to caregiving_type==1, add distance_to_first_care_demand.
+    """Load baseline data, restrict to caregiving_type==1.
+
+    Add distance_to_first_care_demand.
 
     If ever_caregivers (ever_care_demand) is True, restrict to agents who ever
     provided informal care (ever experienced care demand).
@@ -151,7 +153,10 @@ def _compute_no_care_demand_profile(
     ever_caregivers: bool = False,
     ever_care_demand: bool = False,
 ) -> pd.DataFrame:
-    """Mean outcome by distance in no-care-demand data (same agents, aligned by original first care demand)."""
+    """Mean outcome by distance in no-care-demand data.
+
+    Same agents, aligned by original first care demand.
+    """
     df_o = pd.read_pickle(path_to_original_data)
     df_c = pd.read_pickle(path_to_no_care_demand_data)
     df_o = df_o[df_o["health"] != DEAD].copy()
@@ -223,7 +228,7 @@ def _compute_ever_caregiver_profile(
 
 
 def _add_outcome_columns(merged: pd.DataFrame) -> pd.DataFrame:
-    """Add work, pt, ft, working_hours_weekly (annual/52), monthly_gross_labor_income."""
+    """Add work, pt, ft, working_hours_weekly, monthly income."""
     work, ft, pt = calculate_simple_outcomes(merged, "original")
     merged = merged.copy()
     merged["work"] = work.astype(float)
@@ -245,7 +250,7 @@ def _add_outcome_columns(merged: pd.DataFrame) -> pd.DataFrame:
 
 
 def _add_outcome_columns_no_care_demand(merged: pd.DataFrame) -> pd.DataFrame:
-    """Add work, pt, ft, working_hours_weekly, monthly_gross_labor_income from no_care_demand."""
+    """Add work, pt, ft, hours, income from no_care_demand."""
     work, ft, pt = calculate_simple_outcomes(merged, "no_care_demand")
     merged = merged.copy()
     merged["work"] = work.astype(float)
@@ -305,9 +310,9 @@ def plot_conditional_means_by_distance(
     ylabel: str,
     window_low: int = 20,
     window_high: int = 20,
-    path_to_plot: Optional[Path] = None,
-    prof_no_care_demand: Optional[pd.DataFrame] = None,
-    prof_ever_caregiver: Optional[pd.DataFrame] = None,
+    path_to_plot: Path | None = None,
+    prof_no_care_demand: pd.DataFrame | None = None,
+    prof_ever_caregiver: pd.DataFrame | None = None,
 ) -> None:
     """Plot conditional means (5 groups) along distance to first care demand.
 
@@ -331,7 +336,7 @@ def plot_conditional_means_by_distance(
         prof_5_year.rename(columns={"distance_to_first_care_demand": dist_col_plot}),
     ]
 
-    for prof, style in zip(profiles, _GROUP_STYLE):
+    for prof, style in zip(profiles, _GROUP_STYLE, strict=False):
         if len(prof) > 0:
             plt.plot(
                 prof[dist_col_plot],
@@ -421,7 +426,7 @@ def task_conditional_means_employment_rate(
     ever_caregivers: bool = False,
     ever_care_demand: bool = False,
 ) -> None:
-    """Conditional mean employment rate by distance to first care demand (caregiving_type==1)."""
+    """Conditional mean employment rate by distance to first care demand."""
     merged = _prepare_merged_type1(
         path_to_original_data,
         window_low,
@@ -483,7 +488,7 @@ def task_conditional_means_part_time_rate(
     ever_caregivers: bool = False,
     ever_care_demand: bool = False,
 ) -> None:
-    """Conditional mean part-time rate by distance to first care demand (caregiving_type==1)."""
+    """Conditional mean part-time rate by distance to first care demand."""
     merged = _prepare_merged_type1(
         path_to_original_data,
         window_low,
@@ -545,7 +550,7 @@ def task_conditional_means_full_time_rate(
     ever_caregivers: bool = False,
     ever_care_demand: bool = False,
 ) -> None:
-    """Conditional mean full-time rate by distance to first care demand (caregiving_type==1)."""
+    """Conditional mean full-time rate by distance to first care demand."""
     merged = _prepare_merged_type1(
         path_to_original_data,
         window_low,
@@ -607,7 +612,7 @@ def task_conditional_means_working_hours_weekly(
     ever_caregivers: bool = False,
     ever_care_demand: bool = False,
 ) -> None:
-    """Conditional mean working hours (weekly) by distance to first care demand (caregiving_type==1)."""
+    """Conditional mean weekly working hours by distance to first care demand."""
     merged = _prepare_merged_type1(
         path_to_original_data,
         window_low,
@@ -669,7 +674,7 @@ def task_conditional_means_monthly_gross_labor_income(
     ever_caregivers: bool = False,
     ever_care_demand: bool = False,
 ) -> None:
-    """Conditional mean monthly gross labor income by distance to first care demand (caregiving_type==1)."""
+    """Conditional mean gross labor income by distance to first care demand."""
     merged = _prepare_merged_type1(
         path_to_original_data,
         window_low,

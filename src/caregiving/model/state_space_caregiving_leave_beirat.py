@@ -7,6 +7,7 @@ from caregiving.model.experience_caregiving_leave_model import (
     get_next_period_experience_caregiving_leave_full_beirat,
 )
 from caregiving.model.shared import (
+    LEAVE_CAP_YEARS,
     NO_CARE_DEMAND,
     PARENT_LONGER_DEAD,
     had_ft_job_before_caregiving,
@@ -42,7 +43,9 @@ def create_state_space_functions_full_beirat():
     return {
         "state_specific_choice_set": state_specific_choice_set_with_caregiving,
         "next_period_deterministic_state": next_period_deterministic_state_full_beirat,
-        "next_period_experience": get_next_period_experience_caregiving_leave_full_beirat,
+        "next_period_experience": (
+            get_next_period_experience_caregiving_leave_full_beirat
+        ),
         "sparsity_condition": sparsity_condition_full_beirat,
     }
 
@@ -81,7 +84,7 @@ def next_period_deterministic_state_beirat(
         * is_part_time(choice)
         * had_ft_job_before_caregiving(job_before_caregiving)
     )
-    still_eligible = years_leave_used_total < 3
+    still_eligible = years_leave_used_total < LEAVE_CAP_YEARS
     increment_leave = (on_partial_leave * still_eligible).astype(jnp.int32)
     years_leave_used_total_new = jnp.minimum(
         years_leave_used_total + increment_leave, 3
@@ -102,11 +105,13 @@ def next_period_deterministic_state_full_beirat(
     years_leave_used_total,
     full_leave_year_used,
 ):
-    """Update deterministic states for full Beirat: job_before_caregiving + leave counters.
+    """Update deterministic states for full Beirat.
 
+    Updates job_before_caregiving + leave counters.
     years_leave_used_total in {0,1,2,3}; full_leave_year_used in {0,1}.
     Invalid combination (0, 1) excluded by sparsity. Full leave = unemployed with
-    prior job; partial leave = PT with prior FT. At most 1 year full leave, 3 years total.
+    prior job; partial leave = PT with prior FT. At most 1 year full leave,
+    3 years total.
     """
     base = next_period_deterministic_state_with_job_retention(
         period=period,
@@ -134,8 +139,10 @@ def next_period_deterministic_state_full_beirat(
         * had_ft_job_before_caregiving(job_before_caregiving)
     )
 
-    still_eligible_for_full = (years_leave_used_total < 3) * (full_leave_year_used == 0)
-    still_eligible_for_partial = years_leave_used_total < 3
+    still_eligible_for_full = (years_leave_used_total < LEAVE_CAP_YEARS) * (
+        full_leave_year_used == 0
+    )
+    still_eligible_for_partial = years_leave_used_total < LEAVE_CAP_YEARS
 
     actually_on_full_leave = on_full_leave * still_eligible_for_full
     actually_on_partial_leave = on_partial_leave * still_eligible_for_partial
@@ -173,7 +180,10 @@ def sparsity_condition_beirat(  # noqa: PLR0911, PLR0912
     caregiving_type,
     model_specs,
 ):
-    """Sparsity for Beirat model (partial leave only): same as caregiving leave with job retention."""
+    """Sparsity for Beirat model (partial leave only).
+
+    Same as caregiving leave with job retention.
+    """
     start_age = model_specs["start_age"]
     max_ret_age = model_specs["max_ret_age"]
     min_ret_age_state_space = model_specs["min_ret_age"]
@@ -342,7 +352,10 @@ def sparsity_condition_full_beirat(  # noqa: PLR0911, PLR0912
     caregiving_type,
     model_specs,
 ):
-    """Sparsity for full Beirat model: same as job retention + exclude (total=0, full=1)."""
+    """Sparsity for full Beirat model.
+
+    Same as job retention + exclude (total=0, full=1).
+    """
     start_age = model_specs["start_age"]
     max_ret_age = model_specs["max_ret_age"]
     min_ret_age_state_space = model_specs["min_ret_age"]

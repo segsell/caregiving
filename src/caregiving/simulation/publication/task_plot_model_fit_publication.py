@@ -1,4 +1,7 @@
-"""Publication-style model fit plots: one PDF per labor outcome per sample per education."""
+"""Publication-style model fit plots.
+
+One PDF per labor outcome per sample per education.
+"""
 
 from __future__ import annotations
 
@@ -180,7 +183,7 @@ def task_plot_model_fit_publication(
     products: Annotated[dict[str, Path], Product] = _PRODUCT_PATHS,
 ) -> None:
     """Produce 24 publication PDFs: one per (outcome, sample, education)."""
-    with open(path_to_specs, "rb") as f:
+    with path_to_specs.open("rb") as f:
         specs = pickle.load(f)
 
     start_year = 2001
@@ -279,7 +282,7 @@ def task_plot_model_fit_publication(
 
 
 @pytask.mark.publication_model_fit
-def task_plot_mean_wealth_model_fit(
+def task_plot_mean_wealth_model_fit(  # noqa: PLR0915
     path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
     path_to_simulated_data: Path = BLD
     / "solve_and_simulate"
@@ -289,10 +292,13 @@ def task_plot_mean_wealth_model_fit(
     path_to_save_high: Annotated[Path, Product] = _MODEL_FIT_DIR
     / "mean_wealth_high.pdf",
 ) -> None:
-    """Mean wealth model fit: simulated vs empirical, by 5-year age bins, per education."""
+    """Mean wealth model fit.
+
+    Simulated vs empirical, by 5-year age bins, per education.
+    """
     from caregiving.model.shared import WEALTH_MOMENTS_SCALE
 
-    with open(path_to_specs, "rb") as f:
+    with path_to_specs.open("rb") as f:
         specs = pickle.load(f)
 
     start_age = specs["start_age"]
@@ -301,7 +307,7 @@ def task_plot_mean_wealth_model_fit(
     plt.rcParams["font.sans-serif"] = ["DejaVu Sans", "Liberation Sans", "Arial"]
 
     moments_df = pd.read_csv(path_to_moments)
-    emp_moments = dict(zip(moments_df["moment"], moments_df["value"]))
+    emp_moments = dict(zip(moments_df["moment"], moments_df["value"], strict=False))
 
     df_sim = pd.read_pickle(path_to_simulated_data).reset_index()
     df_sim["age"] = df_sim["period"] + start_age
@@ -363,8 +369,8 @@ def task_plot_mean_wealth_model_fit(
 
     # Second pass: create one figure per education using the common y-range.
     for (
-        edu_idx,
-        edu_str,
+        _edu_idx,
+        _edu_str,
         path_to_save,
         bin_starts,
         emp_vals,

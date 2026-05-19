@@ -113,7 +113,8 @@ for age_min_val, age_max_val, age_label_val in (
             ever_care_demand: If True, filter to agents who ever experienced care demand
             window_low: Years before t=0 (positive int).
             window_high: Years after t=0 (positive int).
-            window_by_age: Optional per-age (window_low, window_high); keys as in age groups.
+            window_by_age: Optional per-age (window_low, window_high); keys as in
+                age groups.
 
         """
         if window_by_age is not None and age_label in window_by_age:
@@ -357,7 +358,8 @@ for age_min_val, age_max_val, age_label_val in (
             ever_care_demand: If True, filter to agents who ever experienced care demand
             window_low: Years before t=0 (positive int).
             window_high: Years after t=0 (positive int).
-            window_by_age: Optional per-age (window_low, window_high); keys as in age groups.
+            window_by_age: Optional per-age (window_low, window_high); keys as in
+                age groups.
 
         """
         if window_by_age is not None and age_label in window_by_age:
@@ -618,7 +620,8 @@ for age_min_val, age_max_val, age_label_val in (
             ever_care_demand: If True, filter to agents who ever experienced care demand
             window_low: Years before t=0 (positive int).
             window_high: Years after t=0 (positive int).
-            window_by_age: Optional per-age (window_low, window_high); keys as in age groups.
+            window_by_age: Optional per-age (window_low, window_high); keys as in
+                age groups.
 
         """
         if window_by_age is not None and age_label in window_by_age:
@@ -879,7 +882,8 @@ for age_min_val, age_max_val, age_label_val in (
             ever_care_demand: If True, filter to agents who ever experienced care demand
             window_low: Years before t=0 (positive int).
             window_high: Years after t=0 (positive int).
-            window_by_age: Optional per-age (window_low, window_high); keys as in age groups.
+            window_by_age: Optional per-age (window_low, window_high); keys as in
+                age groups.
 
         """
         if window_by_age is not None and age_label in window_by_age:
@@ -1065,7 +1069,7 @@ def plot_employment_rate_difference_by_distance_to_mother_death(  # noqa: PLR091
     prof_4_year_diff,
     window_low: int = 20,
     window_high: int = 20,
-    path_to_plot: Optional[Path] = None,
+    path_to_plot: Path | None = None,
     xlabel: str = "Year relative to mother's death",
 ) -> None:
     """Plot employment rate difference by distance to mother's death.
@@ -1240,7 +1244,7 @@ def plot_employment_rate_difference_by_distance_to_mother_death_consecutive(  # 
     prof_5_year_diff=None,
     window_low: int = 20,
     window_high: int = 20,
-    path_to_plot: Optional[Path] = None,
+    path_to_plot: Path | None = None,
     xlabel: str = "Year relative to mother's death",
 ) -> None:
     """Plot employment rate difference by distance (exact N years before death).
@@ -1423,7 +1427,7 @@ def plot_employment_rate_difference_by_distance_to_mother_death_care_demand(  # 
     prof_5_year_diff,
     window_low: int = 20,
     window_high: int = 20,
-    path_to_plot: Optional[Path] = None,
+    path_to_plot: Path | None = None,
     xlabel: str = "Year relative to mother's death",
 ) -> None:
     """Plot employment rate difference by distance to mother's death (care demand).

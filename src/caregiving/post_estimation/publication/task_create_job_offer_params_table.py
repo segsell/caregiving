@@ -45,7 +45,7 @@ def _load_latest_se() -> dict:
     if not files:
         return {}
     df = pd.read_csv(files[-1])
-    return dict(zip(df["parameter"], df["standard_error"]))
+    return dict(zip(df["parameter"], df["standard_error"], strict=False))
 
 
 def _get_se(se_dict: dict, key: str) -> float:
@@ -61,14 +61,12 @@ def _get_se(se_dict: dict, key: str) -> float:
 
 def _build_job_offer_table(params: dict, se_dict: dict) -> str:
     L: list[str] = []
-    L.append(r"\begin{table}[htbp]")
-    L.append(r"\centering")
-    L.append(r"\caption{Estimated Job-Finding Parameters}")
-    L.append(r"\label{tab:job_offer_params}")
-    L.append(r"\begin{tabular}{lc}")
-    L.append(r"\toprule")
-    L.append(r" & Estimate \\")
-    L.append(r"\midrule\midrule")
+    L.extend((r"\begin{table}[htbp]", r"\centering"))
+    L.extend(
+        (r"\caption{Estimated Job-Finding Parameters}", r"\label{tab:job_offer_params}")
+    )
+    L.extend((r"\begin{tabular}{lc}", r"\toprule"))
+    L.extend((r" & Estimate \\", r"\midrule\midrule"))
 
     for label, key in _PARAMS:
         val = params[key]
@@ -78,10 +76,8 @@ def _build_job_offer_table(params: dict, se_dict: dict) -> str:
         suffix = "" if last else "[2pt]"
         L.append(f" & {_s(se)} \\\\{suffix}")
 
-    L.append(r"\bottomrule")
-    L.append(r"\end{tabular}")
-    L.append(r"\end{table}")
-    L.append("")
+    L.extend((r"\bottomrule", r"\end{tabular}"))
+    L.extend((r"\end{table}", ""))
     return "\n".join(L)
 
 
@@ -93,7 +89,7 @@ def task_create_job_offer_params_table(
     / "publication"
     / "job_offer_params.tex",
 ):
-    with open(path_to_params) as f:
+    with path_to_params.open() as f:
         params = yaml.safe_load(f)
     path_to_save.parent.mkdir(parents=True, exist_ok=True)
     path_to_save.write_text(_build_job_offer_table(params, _load_latest_se()))
@@ -107,7 +103,7 @@ def task_create_job_offer_params_table_model_fit(
     / "publication"
     / "job_offer_params_model_fit.tex",
 ):
-    with open(path_to_params) as f:
+    with path_to_params.open() as f:
         params = yaml.safe_load(f)
     path_to_save.parent.mkdir(parents=True, exist_ok=True)
     path_to_save.write_text(_build_job_offer_table(params, {}))

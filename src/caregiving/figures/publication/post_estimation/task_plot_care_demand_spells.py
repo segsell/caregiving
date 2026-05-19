@@ -48,7 +48,8 @@ def _compute_average_care_demand_duration_by_age_at_first(
             columns=["age_at_first_care_demand", "avg_duration", "n_agents"]
         )
 
-    # For each agent with care demand, compute duration from first care until mother dies
+    # For each agent with care demand, compute duration from
+    # first care until mother dies
     results = []
     for agent in first_care["agent"].unique():
         agent_df = df[df["agent"] == agent].sort_values("period")
@@ -100,7 +101,7 @@ def plot_average_care_demand_duration_by_age(
     start_age: int,
     age_min: int = 40,
     age_max: int = 65,
-    path_to_save: Optional[Path] = None,
+    path_to_save: Path | None = None,
 ) -> None:
     """Plot average care demand duration by age at first care demand.
 

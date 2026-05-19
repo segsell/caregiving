@@ -9,7 +9,7 @@ import pandas as pd
 
 
 def read_in_inheritance_prob_specs(  # noqa: PLR0912
-    specs, path_to_save: Optional[Path] = None
+    specs, path_to_save: Path | None = None
 ):
     """Precompute inheritance probability matrix by age, education, and care type.
 
@@ -163,7 +163,7 @@ def read_in_inheritance_prob_specs(  # noqa: PLR0912
 
 
 def read_in_inheritance_amount_specs(  # noqa: PLR0912, PLR0915
-    specs, path_to_save: Optional[Path] = None
+    specs, path_to_save: Path | None = None
 ):
     """Precompute inheritance amount matrix by age, education, and care type.
 

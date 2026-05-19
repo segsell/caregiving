@@ -60,7 +60,10 @@ def task_specify_model_caregiving_leave_beirat(
     / "model"
     / "model_caregiving_leave_beirat.pkl",
 ):
-    """Build Beirat caregiving leave model (3-year cap, partial leave only, Pflegegeld kept)."""
+    """Build Beirat caregiving leave model.
+
+    3-year cap, partial leave only, Pflegegeld kept.
+    """
     model = specify_model_caregiving_leave_beirat(
         path_to_derived_specs=path_to_derived_specs,
         path_to_save_model_config=path_to_save_model_config,
