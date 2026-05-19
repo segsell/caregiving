@@ -15,6 +15,8 @@ from pytask import Product
 
 from caregiving.config import BLD
 from caregiving.counterfactual.plotting_helpers import (
+    add_distance_to_first_care,
+    add_distance_to_first_care_demand,
     calculate_simple_outcomes,
     get_age_at_first_event,
     get_distinct_colors,
@@ -29,12 +31,6 @@ from caregiving.counterfactual.plotting_utils import (
     create_outcome_columns,
     ensure_agent_period,
     prepare_dataframes_for_comparison,
-)
-from caregiving.counterfactual.task_plot_labor_supply_differences import (
-    _add_distance_to_first_care,
-)
-from caregiving.counterfactual.task_plot_labor_supply_differences_no_care_demand import (  # noqa: E501
-    _add_distance_to_first_care_demand,
 )
 from caregiving.model.shared import DEAD, INFORMAL_CARE
 
@@ -113,7 +109,7 @@ def task_plot_matched_differences_by_distance_higher_ret_age(  # noqa: PLR0915, 
 
     # Distance to first care: use helper from baseline counterfactual module
 
-    df_hr_dist = _add_distance_to_first_care(df_hr)
+    df_hr_dist = add_distance_to_first_care(df_hr)
     dist_map = (
         df_hr_dist.groupby("agent", observed=False)["first_care_period"]
         .first()
@@ -255,7 +251,7 @@ def task_plot_matched_differences_by_age_at_first_care_higher_ret_age_vs_baselin
 
     # Distance and age at first care from higher-ret-age simulation
 
-    df_hr_dist = _add_distance_to_first_care(df_hr)
+    df_hr_dist = add_distance_to_first_care(df_hr)
     dist_map = (
         df_hr_dist.groupby("agent", observed=False)["first_care_period"]
         .first()
@@ -471,7 +467,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_higher_ret_age_vs_ba
             merged[f"{outcome_name}_o"] - merged[f"{outcome_name}_c"]
         )
 
-    df_hr_dist = _add_distance_to_first_care(df_hr)
+    df_hr_dist = add_distance_to_first_care(df_hr)
     dist_map = (
         df_hr_dist.groupby("agent", observed=False)["first_care_period"]
         .first()
@@ -717,7 +713,7 @@ def task_plot_matched_differences_by_age_at_first_care_demand_higher_ret_age_vs_
             merged[f"{outcome_name}_o"] - merged[f"{outcome_name}_c"]
         )
 
-    df_hr_dist = _add_distance_to_first_care_demand(df_hr)
+    df_hr_dist = add_distance_to_first_care_demand(df_hr)
     dist_map = (
         df_hr_dist.groupby("agent", observed=False)["first_care_demand_period"]
         .first()

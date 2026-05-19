@@ -16,6 +16,8 @@ from pytask import Product
 
 from caregiving.config import BLD, JET_COLOR_MAP
 from caregiving.counterfactual.plotting_helpers import (
+    add_distance_to_first_care,
+    add_distance_to_first_care_demand,
     get_age_at_first_event,
     get_distinct_colors,
     plot_multi_line_differences_by_group,
@@ -29,9 +31,6 @@ from caregiving.counterfactual.plotting_utils import (
     ensure_agent_period,
     merge_and_compute_differences,
     prepare_dataframes_for_comparison,
-)
-from caregiving.counterfactual.task_plot_labor_supply_differences import (
-    _add_distance_to_first_care,
 )
 from caregiving.model.shared import DEAD, INFORMAL_CARE
 
@@ -109,7 +108,7 @@ def task_plot_matched_differences_by_distance(  # noqa: PLR0915, E501
     merged["diff_savings_rate"] = merged["savings_rate_o"] - merged["savings_rate_c"]
 
     # Compute distance in full caregiving leave and attach
-    df_cg_dist = _add_distance_to_first_care(df_cg)
+    df_cg_dist = add_distance_to_first_care(df_cg)
     dist_map = (
         df_cg_dist.groupby("agent", observed=False)["first_care_period"]
         .first()
@@ -219,7 +218,7 @@ def _process_data_for_age_at_first_care(
         raise ValueError(f"Unknown outcome_name: {outcome_name}")
 
     # Compute distance and age at first care from original (before merging)
-    df_o_dist = _add_distance_to_first_care(df_o)
+    df_o_dist = add_distance_to_first_care(df_o)
     dist_map = (
         df_o_dist.groupby("agent", observed=False)["first_care_period"]
         .first()
@@ -1287,7 +1286,7 @@ def _process_data_for_age_bins_at_first_care(
         raise ValueError(f"Unknown outcome_name: {outcome_name}")
 
     # Compute distance and age at first care from original (before merging)
-    df_o_dist = _add_distance_to_first_care(df_o)
+    df_o_dist = add_distance_to_first_care(df_o)
     dist_map = (
         df_o_dist.groupby("agent", observed=False)["first_care_period"]
         .first()
@@ -2459,29 +2458,6 @@ def task_plot_first_care_start_by_age(
     plt.close()
 
 
-def _add_distance_to_first_care_demand(df_original: pd.DataFrame) -> pd.DataFrame:
-    """Add distance_to_first_care_demand column.
-
-    Sets 0 as first time care_demand > 0.
-    """
-    # Flatten any existing index to avoid column/index name ambiguity
-    df = df_original.reset_index(drop=True)
-    df = ensure_agent_period(df)
-    # Find first period where care_demand > 0
-    care_demand_mask = df["care_demand"] > 0
-    first_care_demand = (
-        df.loc[care_demand_mask, ["agent", "period"]]
-        .sort_values(["agent", "period"])
-        .drop_duplicates("agent")
-        .rename(columns={"period": "first_care_demand_period"})
-    )
-    out = df.merge(first_care_demand, on="agent", how="left")
-    out["distance_to_first_care_demand"] = (
-        out["period"] - out["first_care_demand_period"]
-    )
-    return out
-
-
 @pytask.mark.counterfactual_differences
 @pytask.mark.counterfactual_differences_full_caregiving_leave_vs_baseline
 def task_plot_matched_differences_by_distance_by_care_demand(  # noqa: PLR0915, E501
@@ -2565,7 +2541,7 @@ def task_plot_matched_differences_by_distance_by_care_demand(  # noqa: PLR0915, 
     merged = merge_and_compute_differences(o_cols, c_cols, outcome_names)
 
     # Compute distance to first care demand in original and attach
-    df_o_dist = _add_distance_to_first_care_demand(df_o)
+    df_o_dist = add_distance_to_first_care_demand(df_o)
     dist_map = (
         df_o_dist.groupby("agent", observed=False)["first_care_demand_period"]
         .first()
@@ -2771,7 +2747,7 @@ def _process_data_for_age_at_first_care_demand(
         raise ValueError(f"Unknown outcome_name: {outcome_name}")
 
     # Compute distance and age at first care demand from original (before merging)
-    df_o_dist = _add_distance_to_first_care_demand(df_o)
+    df_o_dist = add_distance_to_first_care_demand(df_o)
     dist_map = (
         df_o_dist.groupby("agent", observed=False)["first_care_demand_period"]
         .first()
@@ -2959,7 +2935,7 @@ def _process_data_for_age_bins_at_first_care_demand(
         raise ValueError(f"Unknown outcome_name: {outcome_name}")
 
     # Compute distance and age at first care demand from original (before merging)
-    df_o_dist = _add_distance_to_first_care_demand(df_o)
+    df_o_dist = add_distance_to_first_care_demand(df_o)
     dist_map = (
         df_o_dist.groupby("agent", observed=False)["first_care_demand_period"]
         .first()

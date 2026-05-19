@@ -11,6 +11,7 @@ from caregiving.model.shared import (
     is_intensive_informal_care,
     is_part_time,
     is_retired,
+    is_unemployed,
 )
 
 
@@ -92,6 +93,74 @@ def get_next_period_experience(
     )
 
     # Now scale between 0 and 1
+    exp_scaled = scale_experience_years(
+        experience_years=exp_years_this_period,
+        period=period,
+        is_retired=retired_this_period,
+        model_specs=model_specs,
+    )
+
+    return exp_scaled
+
+
+def get_next_period_experience_care_pension_credit(
+    period,
+    lagged_choice,
+    already_retired,
+    partner_state,
+    education,
+    experience,
+    model_specs,
+):
+    """Like baseline, but unemployed intensive caregivers get +0.5 (capped at 1.0).
+
+    This implements a standalone care pension credit: unemployed agents providing
+    intensive informal care receive 0.5 pension-point credit per period on top of
+    whatever baseline credit they would get (which is 0 for unemployed). The total
+    is capped at 1.0 to match the maximum for full-time workers.
+    """
+    sex = SEX
+
+    retired_this_period = is_retired(lagged_choice)
+    fresh_retired = (already_retired == 0) & retired_this_period
+
+    last_period = period - 1
+    last_period = last_period * (period != 0) + (period == 0) * (-1)
+
+    exp_years_last_period = construct_experience_years(
+        float_experience=experience,
+        period=last_period,
+        is_retired=already_retired,
+        model_specs=model_specs,
+    )
+
+    intensive_care = is_intensive_informal_care(lagged_choice)
+    exp_update = jnp.minimum(
+        is_full_time(lagged_choice)
+        + is_part_time(lagged_choice)
+        * (
+            model_specs["exp_increase_part_time"] * (1 - intensive_care)
+            + intensive_care
+        )
+        + is_unemployed(lagged_choice) * intensive_care * 0.5,
+        1.0,
+    )
+
+    exp_years_this_period = exp_years_last_period + exp_update
+
+    pension_points = calc_pension_points_for_experience(
+        period=period,
+        experience_years=exp_years_last_period,
+        sex=sex,
+        partner_state=partner_state,
+        education=education,
+        model_specs=model_specs,
+    )
+
+    exp_years_this_period = jax.lax.select(
+        fresh_retired, on_true=pension_points, on_false=exp_years_this_period
+    )
+
     exp_scaled = scale_experience_years(
         experience_years=exp_years_this_period,
         period=period,

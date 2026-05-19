@@ -18,9 +18,11 @@ from pytask import Product
 
 from caregiving.config import BLD
 from caregiving.counterfactual.plotting_helpers import (
+    PUBLICATION_PLOT_STYLE,
     calculate_simple_outcomes,
     ensure_agent_period,
     prepare_dataframes_simple,
+    publication_savefig,
 )
 from caregiving.figures.publication.plotting_helpers_mother_death import (
     add_distance_to_mother_death,
@@ -41,8 +43,9 @@ for age_min_val, age_max_val, age_label_val in (
     (60, 70, "ages_60_70"),
 ):
 
-    @pytask.mark.publication_event_study_reverse
-    @pytask.mark.publication
+    # @pytask.mark.publication_counterfactual
+    # @pytask.mark.publication_event_study_reverse
+    # @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_mother_death_at_least")
     def task_plot_event_study_employment_rate_mother_death(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,
@@ -57,6 +60,7 @@ for age_min_val, age_max_val, age_label_val in (
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
+        / "counterfactual"
         / "event_study_reverse"
         / "employment"
         / (
@@ -65,7 +69,9 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Plot event study of employment rate differences by distance to death.
 
@@ -105,9 +111,16 @@ for age_min_val, age_max_val, age_label_val in (
             path_to_plot: Path to save the plot (constructed from age_label)
             ever_caregivers: If True, filter to agents who ever provided care
             ever_care_demand: If True, filter to agents who ever experienced care demand
-            window: Window size around event (e.g., 20 = -20 to +20 periods)
+            window_low: Years before t=0 (positive int).
+            window_high: Years after t=0 (positive int).
+            window_by_age: Optional per-age (window_low, window_high); keys as in
+                age groups.
 
         """
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         # Load and prepare data
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -170,8 +183,8 @@ for age_min_val, age_max_val, age_label_val in (
         # and trim to window
         merged = merged[
             merged["first_death_period"].notna()
-            & (merged["distance_to_mother_death"] >= -window)
-            & (merged["distance_to_mother_death"] <= window)
+            & (merged["distance_to_mother_death"] >= -w_low)
+            & (merged["distance_to_mother_death"] <= w_high)
         ]
 
         # Filter by age at mother's death period if specified
@@ -259,7 +272,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_2_year_diff=prof_2_year_diff,
             prof_3_year_diff=prof_3_year_diff,
             prof_4_year_diff=prof_4_year_diff,
-            window=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
         )
 
@@ -271,8 +285,9 @@ for age_min_val, age_max_val, age_label_val in (
     (60, 70, "ages_60_70"),
 ):
 
-    @pytask.mark.publication_event_study_reverse
-    @pytask.mark.publication
+    # @pytask.mark.publication_counterfactual
+    # @pytask.mark.publication_event_study_reverse
+    # @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_mother_death_consecutive")
     def task_plot_event_study_employment_rate_mother_death_consecutive(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,
@@ -287,6 +302,7 @@ for age_min_val, age_max_val, age_label_val in (
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
+        / "counterfactual"
         / "event_study_reverse"
         / "employment"
         / (
@@ -295,7 +311,9 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Plot event study of employment rate differences
         (consecutive N years before death).
@@ -338,9 +356,16 @@ for age_min_val, age_max_val, age_label_val in (
             path_to_plot: Path to save the plot (constructed from age_label)
             ever_caregivers: If True, filter to agents who ever provided care
             ever_care_demand: If True, filter to agents who ever experienced care demand
-            window: Window size around event (e.g., 20 = -20 to +20 periods)
+            window_low: Years before t=0 (positive int).
+            window_high: Years after t=0 (positive int).
+            window_by_age: Optional per-age (window_low, window_high); keys as in
+                age groups.
 
         """
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         # Load and prepare data
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -403,8 +428,8 @@ for age_min_val, age_max_val, age_label_val in (
         # and trim to window
         merged = merged[
             merged["first_death_period"].notna()
-            & (merged["distance_to_mother_death"] >= -window)
-            & (merged["distance_to_mother_death"] <= window)
+            & (merged["distance_to_mother_death"] >= -w_low)
+            & (merged["distance_to_mother_death"] <= w_high)
         ]
 
         # Filter by age at mother's death period if specified
@@ -507,7 +532,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year_diff=prof_3_year_diff,
             prof_4_year_diff=prof_4_year_diff,
             prof_5_year_diff=prof_5_year_diff,
-            window=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
         )
 
@@ -520,8 +546,9 @@ for age_min_val, age_max_val, age_label_val in (
     (60, 70, "ages_60_70"),
 ):
 
-    @pytask.mark.publication_event_study_reverse
-    @pytask.mark.publication
+    # @pytask.mark.publication_counterfactual
+    # @pytask.mark.publication_event_study_reverse
+    # @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_mother_death_care_demand_exact")
     def task_plot_event_study_employment_rate_mother_death_care_demand_exact(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,
@@ -536,6 +563,7 @@ for age_min_val, age_max_val, age_label_val in (
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
+        / "counterfactual"
         / "event_study_reverse"
         / "employment"
         / (
@@ -544,7 +572,9 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Plot event study of employment rate differences (exact care demand duration).
 
@@ -588,9 +618,16 @@ for age_min_val, age_max_val, age_label_val in (
             path_to_plot: Path to save the plot (constructed from age_label)
             ever_caregivers: If True, filter to agents who ever provided care
             ever_care_demand: If True, filter to agents who ever experienced care demand
-            window: Window size around event (e.g., 20 = -20 to +20 periods)
+            window_low: Years before t=0 (positive int).
+            window_high: Years after t=0 (positive int).
+            window_by_age: Optional per-age (window_low, window_high); keys as in
+                age groups.
 
         """
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         # Load and prepare data
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -658,8 +695,8 @@ for age_min_val, age_max_val, age_label_val in (
         # and trim to window
         merged = merged[
             merged["first_death_period"].notna()
-            & (merged["distance_to_mother_death"] >= -window)
-            & (merged["distance_to_mother_death"] <= window)
+            & (merged["distance_to_mother_death"] >= -w_low)
+            & (merged["distance_to_mother_death"] <= w_high)
         ]
 
         # Filter by age at mother's death period if specified
@@ -758,7 +795,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year_diff=prof_3_year_diff,
             prof_4_year_diff=prof_4_year_diff,
             prof_5_year_diff=prof_5_year_diff,
-            window=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
         )
 
@@ -770,8 +808,9 @@ for age_min_val, age_max_val, age_label_val in (
     (60, 70, "ages_60_70"),
 ):
 
-    @pytask.mark.publication_event_study_reverse
-    @pytask.mark.publication
+    # @pytask.mark.publication_counterfactual
+    # @pytask.mark.publication_event_study_reverse
+    # @pytask.mark.publication
     @pytask.task(id=f"{age_label_val}_mother_death_care_demand_at_least")
     def task_plot_event_study_employment_rate_mother_death_care_demand_at_least(  # noqa: PLR0912, PLR0915
         age_min: int | None = age_min_val,
@@ -786,6 +825,7 @@ for age_min_val, age_max_val, age_label_val in (
         path_to_plot: Annotated[Path, Product] = BLD
         / "figures"
         / "publication"
+        / "counterfactual"
         / "event_study_reverse"
         / "employment"
         / (
@@ -794,7 +834,9 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Plot event study of employment rate differences
         (at least care demand duration).
@@ -838,9 +880,16 @@ for age_min_val, age_max_val, age_label_val in (
             path_to_plot: Path to save the plot (constructed from age_label)
             ever_caregivers: If True, filter to agents who ever provided care
             ever_care_demand: If True, filter to agents who ever experienced care demand
-            window: Window size around event (e.g., 20 = -20 to +20 periods)
+            window_low: Years before t=0 (positive int).
+            window_high: Years after t=0 (positive int).
+            window_by_age: Optional per-age (window_low, window_high); keys as in
+                age groups.
 
         """
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         # Load and prepare data
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -908,8 +957,8 @@ for age_min_val, age_max_val, age_label_val in (
         # and trim to window
         merged = merged[
             merged["first_death_period"].notna()
-            & (merged["distance_to_mother_death"] >= -window)
-            & (merged["distance_to_mother_death"] <= window)
+            & (merged["distance_to_mother_death"] >= -w_low)
+            & (merged["distance_to_mother_death"] <= w_high)
         ]
 
         # Filter by age at mother's death period if specified
@@ -1006,7 +1055,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_3_year_diff=prof_3_year_diff,
             prof_4_year_diff=prof_4_year_diff,
             prof_5_year_diff=prof_5_year_diff,
-            window=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
         )
 
@@ -1017,8 +1067,9 @@ def plot_employment_rate_difference_by_distance_to_mother_death(  # noqa: PLR091
     prof_2_year_diff,
     prof_3_year_diff,
     prof_4_year_diff,
-    window: int = 20,
-    path_to_plot: Optional[Path] = None,
+    window_low: int = 20,
+    window_high: int = 20,
+    path_to_plot: Path | None = None,
     xlabel: str = "Year relative to mother's death",
 ) -> None:
     """Plot employment rate difference by distance to mother's death.
@@ -1034,13 +1085,13 @@ def plot_employment_rate_difference_by_distance_to_mother_death(  # noqa: PLR091
         prof_2_year_diff: DataFrame for at least 2-year caregivers
         prof_3_year_diff: DataFrame for at least 3-year caregivers
         prof_4_year_diff: DataFrame for at least 4-year caregivers
-        window: Window size around event (e.g., 20 = -20 to +20 periods)
+        window_low: Years before t=0 (positive int).
+        window_high: Years after t=0 (positive int).
         path_to_plot: Optional path to save the plot. If None, plot is not saved.
         xlabel: Label for x-axis (default: "Year relative to mother's death")
     """
-    # Plot
-    # Increased figure size to maintain visual balance with thinner lines/text
-    plt.figure(figsize=(14, 8))
+    S = PUBLICATION_PLOT_STYLE
+    plt.figure(figsize=S["figsize"])
 
     # Plot overall baseline difference (entire baseline sample) - dashed black line
     plt.plot(
@@ -1048,13 +1099,15 @@ def plot_employment_rate_difference_by_distance_to_mother_death(  # noqa: PLR091
         prof_diff["diff"],
         label="Baseline",
         color="black",
-        linewidth=2.0,
+        linewidth=S["linewidth"],
         linestyle="--",
         marker=None,
     )
 
     # Plot horizontal line at y=0 for reference
-    plt.axhline(y=0, color="k", linestyle="-", linewidth=0.8, alpha=0.5)
+    plt.axhline(
+        y=0, color="k", linestyle="-", linewidth=S["axhline_linewidth"], alpha=0.5
+    )
 
     # Plot difference for at least 1-year caregivers
     if len(prof_1_year_diff) > 0:
@@ -1063,13 +1116,13 @@ def plot_employment_rate_difference_by_distance_to_mother_death(  # noqa: PLR091
             prof_1_year_diff["diff"],
             label="At Least 1-Year Caregivers",
             color="0.8",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="8",  # Octagon
-            markersize=5,
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
 
     # Plot difference for at least 2-year caregivers
@@ -1079,13 +1132,13 @@ def plot_employment_rate_difference_by_distance_to_mother_death(  # noqa: PLR091
             prof_2_year_diff["diff"],
             label="At Least 2-Year Caregivers",
             color="0.6",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="^",
-            markersize=5,
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
 
     # Plot difference for at least 3-year caregivers
@@ -1095,13 +1148,13 @@ def plot_employment_rate_difference_by_distance_to_mother_death(  # noqa: PLR091
             prof_3_year_diff["diff"],
             label="At Least 3-Year Caregivers",
             color="0.4",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="D",  # Diamond
-            markersize=5,
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
 
     # Plot difference for at least 4-year caregivers
@@ -1111,13 +1164,13 @@ def plot_employment_rate_difference_by_distance_to_mother_death(  # noqa: PLR091
             prof_4_year_diff["diff"],
             label="At Least 4-Year Caregivers",
             color="0.2",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="s",  # Hollow square
-            markersize=5,
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
 
     # Add vertical line at t=0 (mother's death)
@@ -1129,14 +1182,18 @@ def plot_employment_rate_difference_by_distance_to_mother_death(  # noqa: PLR091
             0,
             (7, 7),
         ),  # Custom dash pattern: 7 points on, 7 points off (2/3 of 10)
-        linewidth=1.0,
+        linewidth=S["axvline_linewidth"],
     )
 
     # Formatting
-    plt.xlabel(xlabel, fontsize=14)
-    plt.ylabel("Difference in employment rate", fontsize=14)
-    # Add padding: x-axis extends beyond -window and window
-    plt.xlim(-window - 0.5, window + 0.5)
+    plt.xlabel(xlabel, fontsize=S["label_fontsize"], labelpad=S.get("labelpad", 14))
+    plt.ylabel(
+        "Difference in employment rate",
+        fontsize=S["label_fontsize"],
+        labelpad=S.get("labelpad", 14),
+    )
+    # Add padding: x-axis extends beyond -window_low and window_high
+    plt.xlim(-window_low - 0.5, window_high + 0.5)
     # Y-axis range: adjust based on typical differences (can be negative or positive)
     # Use symmetric range around 0, with some padding
     # Collect all differences from all series
@@ -1162,23 +1219,19 @@ def plot_employment_rate_difference_by_distance_to_mother_death(  # noqa: PLR091
     else:
         y_lim = 0.1  # Default range if no data
     plt.ylim(-y_lim, y_lim)
-    plt.grid(True, axis="y", alpha=0.3, linewidth=0.8)  # Only horizontal grid lines
-    # Set ticks to original range (no ticks in padding area)
-    plt.xticks(range(-window, window + 1, 5), fontsize=12)
-    plt.yticks(fontsize=12)
-    # plt.legend(loc="best", prop={"size": 12}, framealpha=0.9)  # Temporarily hidden
+    plt.grid(True, axis="y", alpha=S["grid_alpha"], linewidth=S["grid_linewidth"])
+    plt.xticks(range(-window_low, window_high + 1, 5), fontsize=S["xtick_fontsize"])
+    plt.yticks(fontsize=S["ytick_fontsize"])
 
     # Remove top and right spines (box lines)
     ax = plt.gca()
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-
-    # Make tick marks longer
-    ax.tick_params(axis="both", length=8)
+    ax.tick_params(axis="both", length=S["tick_length"], width=S["tick_width"])
 
     plt.tight_layout()
     if path_to_plot:
-        plt.savefig(path_to_plot, dpi=1200, bbox_inches="tight")
+        publication_savefig(path_to_plot)
     plt.close()
 
 
@@ -1189,8 +1242,9 @@ def plot_employment_rate_difference_by_distance_to_mother_death_consecutive(  # 
     prof_3_year_diff,
     prof_4_year_diff,
     prof_5_year_diff=None,
-    window: int = 20,
-    path_to_plot: Optional[Path] = None,
+    window_low: int = 20,
+    window_high: int = 20,
+    path_to_plot: Path | None = None,
     xlabel: str = "Year relative to mother's death",
 ) -> None:
     """Plot employment rate difference by distance (exact N years before death).
@@ -1207,13 +1261,13 @@ def plot_employment_rate_difference_by_distance_to_mother_death_consecutive(  # 
         prof_3_year_diff: DataFrame for 3-year caregivers
         prof_4_year_diff: DataFrame for 4-year caregivers
         prof_5_year_diff: Optional DataFrame for 5-year caregivers
-        window: Window size around event (e.g., 20 = -20 to +20 periods)
+        window_low: Years before t=0 (positive int).
+        window_high: Years after t=0 (positive int).
         path_to_plot: Optional path to save the plot. If None, plot is not saved.
         xlabel: Label for x-axis (default: "Year relative to mother's death")
     """
-    # Plot
-    # Increased figure size to maintain visual balance with thinner lines/text
-    plt.figure(figsize=(14, 8))
+    S = PUBLICATION_PLOT_STYLE
+    plt.figure(figsize=S["figsize"])
 
     # Plot overall baseline difference (entire baseline sample) - dashed black line
     plt.plot(
@@ -1221,13 +1275,15 @@ def plot_employment_rate_difference_by_distance_to_mother_death_consecutive(  # 
         prof_diff["diff"],
         label="Baseline",
         color="black",
-        linewidth=2.0,
+        linewidth=S["linewidth"],
         linestyle="--",
         marker=None,
     )
 
     # Plot horizontal line at y=0 for reference
-    plt.axhline(y=0, color="k", linestyle="-", linewidth=0.8, alpha=0.5)
+    plt.axhline(
+        y=0, color="k", linestyle="-", linewidth=S["axhline_linewidth"], alpha=0.5
+    )
 
     # Plot difference for 1-year caregivers
     if len(prof_1_year_diff) > 0:
@@ -1236,13 +1292,13 @@ def plot_employment_rate_difference_by_distance_to_mother_death_consecutive(  # 
             prof_1_year_diff["diff"],
             label="1-Year Caregivers",
             color="0.8",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="8",  # Octagon
-            markersize=5,
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
 
     # Plot difference for 2-year caregivers
@@ -1252,13 +1308,13 @@ def plot_employment_rate_difference_by_distance_to_mother_death_consecutive(  # 
             prof_2_year_diff["diff"],
             label="2-Year Caregivers",
             color="0.6",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="^",
-            markersize=5,
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
 
     # Plot difference for 3-year caregivers
@@ -1268,13 +1324,13 @@ def plot_employment_rate_difference_by_distance_to_mother_death_consecutive(  # 
             prof_3_year_diff["diff"],
             label="3-Year Caregivers",
             color="0.4",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="D",  # Diamond
-            markersize=5,
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
 
     # Plot difference for 4-year consecutive caregivers
@@ -1284,13 +1340,13 @@ def plot_employment_rate_difference_by_distance_to_mother_death_consecutive(  # 
             prof_4_year_diff["diff"],
             label="4-Year Caregivers",
             color="0.2",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="s",  # Hollow square
-            markersize=5,
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
 
     # Plot difference for 5-year consecutive caregivers
@@ -1300,34 +1356,31 @@ def plot_employment_rate_difference_by_distance_to_mother_death_consecutive(  # 
             prof_5_year_diff["diff"],
             label="5-Year Caregivers",
             color="black",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="*",  # Star
-            markersize=6,
+            markersize=S["markersize_star"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth_star"],
         )
 
     # Add vertical line at t=0 (mother's death)
-    # Position at -0.5 with spaced-out dashes
     plt.axvline(
         x=-0.5,
         color="k",
-        linestyle=(
-            0,
-            (7, 7),
-        ),  # Custom dash pattern: 7 points on, 7 points off (2/3 of 10)
-        linewidth=1.0,
+        linestyle=(0, (7, 7)),
+        linewidth=S["axvline_linewidth"],
     )
 
     # Formatting
-    plt.xlabel(xlabel, fontsize=14)
-    plt.ylabel("Difference in employment rate", fontsize=14)
-    # Add padding: x-axis extends beyond -window and window
-    plt.xlim(-window - 0.5, window + 0.5)
-    # Y-axis range: adjust based on typical differences (can be negative or positive)
-    # Use symmetric range around 0, with some padding
+    plt.xlabel(xlabel, fontsize=S["label_fontsize"], labelpad=S.get("labelpad", 14))
+    plt.ylabel(
+        "Difference in employment rate",
+        fontsize=S["label_fontsize"],
+        labelpad=S.get("labelpad", 14),
+    )
+    plt.xlim(-window_low - 0.5, window_high + 0.5)
     # Collect all differences from all series
     all_diffs = []
     if len(prof_diff) > 0:
@@ -1345,31 +1398,23 @@ def plot_employment_rate_difference_by_distance_to_mother_death_consecutive(  # 
 
     if all_diffs:
         y_max = max(abs(min(all_diffs)), abs(max(all_diffs)))
-        # Add 10% padding and round up to nearest 0.05
-        # (since values are between -1 and 1)
         y_lim = (int(y_max * 1.1 / 0.05) + 1) * 0.05
-        # Ensure minimum range of 0.1 for visibility
         y_lim = max(y_lim, 0.05)
     else:
-        y_lim = 0.1  # Default range if no data
+        y_lim = 0.1
     plt.ylim(-y_lim, y_lim)
-    plt.grid(True, axis="y", alpha=0.3, linewidth=0.8)  # Only horizontal grid lines
-    # Set ticks to original range (no ticks in padding area)
-    plt.xticks(range(-window, window + 1, 5), fontsize=12)
-    plt.yticks(fontsize=12)
-    # plt.legend(loc="best", prop={"size": 12}, framealpha=0.9)  # Temporarily hidden
+    plt.grid(True, axis="y", alpha=S["grid_alpha"], linewidth=S["grid_linewidth"])
+    plt.xticks(range(-window_low, window_high + 1, 5), fontsize=S["xtick_fontsize"])
+    plt.yticks(fontsize=S["ytick_fontsize"])
 
-    # Remove top and right spines (box lines)
     ax = plt.gca()
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-
-    # Make tick marks longer
-    ax.tick_params(axis="both", length=8)
+    ax.tick_params(axis="both", length=S["tick_length"], width=S["tick_width"])
 
     plt.tight_layout()
     if path_to_plot:
-        plt.savefig(path_to_plot, dpi=1200, bbox_inches="tight")
+        publication_savefig(path_to_plot)
     plt.close()
 
 
@@ -1380,8 +1425,9 @@ def plot_employment_rate_difference_by_distance_to_mother_death_care_demand(  # 
     prof_3_year_diff,
     prof_4_year_diff,
     prof_5_year_diff,
-    window: int = 20,
-    path_to_plot: Optional[Path] = None,
+    window_low: int = 20,
+    window_high: int = 20,
+    path_to_plot: Path | None = None,
     xlabel: str = "Year relative to mother's death",
 ) -> None:
     """Plot employment rate difference by distance to mother's death (care demand).
@@ -1398,13 +1444,13 @@ def plot_employment_rate_difference_by_distance_to_mother_death_care_demand(  # 
         prof_3_year_diff: DataFrame for 3-year care demand group
         prof_4_year_diff: DataFrame for 4-year care demand group
         prof_5_year_diff: DataFrame for 5-year care demand group
-        window: Window size around event (e.g., 20 = -20 to +20 periods)
+        window_low: Years before t=0 (positive int).
+        window_high: Years after t=0 (positive int).
         path_to_plot: Optional path to save the plot. If None, plot is not saved.
         xlabel: Label for x-axis (default: "Year relative to mother's death")
     """
-    # Plot
-    # Increased figure size to maintain visual balance with thinner lines/text
-    plt.figure(figsize=(14, 8))
+    S = PUBLICATION_PLOT_STYLE
+    plt.figure(figsize=S["figsize"])
 
     # Plot overall baseline difference (entire baseline sample) - dashed black line
     plt.plot(
@@ -1412,13 +1458,15 @@ def plot_employment_rate_difference_by_distance_to_mother_death_care_demand(  # 
         prof_diff["diff"],
         label="Baseline",
         color="black",
-        linewidth=2.0,
+        linewidth=S["linewidth"],
         linestyle="--",
         marker=None,
     )
 
     # Plot horizontal line at y=0 for reference
-    plt.axhline(y=0, color="k", linestyle="-", linewidth=0.8, alpha=0.5)
+    plt.axhline(
+        y=0, color="k", linestyle="-", linewidth=S["axhline_linewidth"], alpha=0.5
+    )
 
     # Plot difference for 1-year care demand group
     if len(prof_1_year_diff) > 0:
@@ -1427,13 +1475,13 @@ def plot_employment_rate_difference_by_distance_to_mother_death_care_demand(  # 
             prof_1_year_diff["diff"],
             label="1-Year Care Demand",
             color="0.8",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="8",  # Octagon
-            markersize=5,
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
 
     # Plot difference for 2-year care demand group
@@ -1443,13 +1491,13 @@ def plot_employment_rate_difference_by_distance_to_mother_death_care_demand(  # 
             prof_2_year_diff["diff"],
             label="2-Year Care Demand",
             color="0.6",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="^",
-            markersize=5,
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
 
     # Plot difference for 3-year care demand group
@@ -1459,13 +1507,13 @@ def plot_employment_rate_difference_by_distance_to_mother_death_care_demand(  # 
             prof_3_year_diff["diff"],
             label="3-Year Care Demand",
             color="0.4",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="D",  # Diamond
-            markersize=5,
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
 
     # Plot difference for 4-year care demand group
@@ -1475,13 +1523,13 @@ def plot_employment_rate_difference_by_distance_to_mother_death_care_demand(  # 
             prof_4_year_diff["diff"],
             label="4-Year Care Demand",
             color="0.2",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="s",  # Hollow square
-            markersize=5,
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
 
     # Plot difference for 5-year care demand group
@@ -1491,35 +1539,31 @@ def plot_employment_rate_difference_by_distance_to_mother_death_care_demand(  # 
             prof_5_year_diff["diff"],
             label="5+ Year Care Demand",
             color="black",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="*",  # Star
-            markersize=6,
+            markersize=S["markersize_star"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth_star"],
         )
 
     # Add vertical line at t=0 (mother's death)
-    # Position at -0.5 with spaced-out dashes
     plt.axvline(
         x=-0.5,
         color="k",
-        linestyle=(
-            0,
-            (7, 7),
-        ),  # Custom dash pattern: 7 points on, 7 points off (2/3 of 10)
-        linewidth=1.0,
+        linestyle=(0, (7, 7)),
+        linewidth=S["axvline_linewidth"],
     )
 
     # Formatting
-    plt.xlabel(xlabel, fontsize=14)
-    plt.ylabel("Difference in employment rate", fontsize=14)
-    # Add padding: x-axis extends beyond -window and window
-    plt.xlim(-window - 0.5, window + 0.5)
-    # Y-axis range: adjust based on typical differences (can be negative or positive)
-    # Use symmetric range around 0, with some padding
-    # Collect all differences from all series
+    plt.xlabel(xlabel, fontsize=S["label_fontsize"], labelpad=S.get("labelpad", 14))
+    plt.ylabel(
+        "Difference in employment rate",
+        fontsize=S["label_fontsize"],
+        labelpad=S.get("labelpad", 14),
+    )
+    plt.xlim(-window_low - 0.5, window_high + 0.5)
     all_diffs = []
     if len(prof_diff) > 0:
         all_diffs.extend(prof_diff["diff"].tolist())
@@ -1536,29 +1580,21 @@ def plot_employment_rate_difference_by_distance_to_mother_death_care_demand(  # 
 
     if all_diffs:
         y_max = max(abs(min(all_diffs)), abs(max(all_diffs)))
-        # Add 10% padding and round up to nearest 0.05
-        # (since values are between -1 and 1)
         y_lim = (int(y_max * 1.1 / 0.05) + 1) * 0.05
-        # Ensure minimum range of 0.1 for visibility
         y_lim = max(y_lim, 0.05)
     else:
-        y_lim = 0.1  # Default range if no data
+        y_lim = 0.1
     plt.ylim(-y_lim, y_lim)
-    plt.grid(True, axis="y", alpha=0.3, linewidth=0.8)  # Only horizontal grid lines
-    # Set ticks to original range (no ticks in padding area)
-    plt.xticks(range(-window, window + 1, 5), fontsize=12)
-    plt.yticks(fontsize=12)
-    # plt.legend(loc="best", prop={"size": 12}, framealpha=0.9)  # Temporarily hidden
+    plt.grid(True, axis="y", alpha=S["grid_alpha"], linewidth=S["grid_linewidth"])
+    plt.xticks(range(-window_low, window_high + 1, 5), fontsize=S["xtick_fontsize"])
+    plt.yticks(fontsize=S["ytick_fontsize"])
 
-    # Remove top and right spines (box lines)
     ax = plt.gca()
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-
-    # Make tick marks longer
-    ax.tick_params(axis="both", length=8)
+    ax.tick_params(axis="both", length=S["tick_length"], width=S["tick_width"])
 
     plt.tight_layout()
     if path_to_plot:
-        plt.savefig(path_to_plot, dpi=1200, bbox_inches="tight")
+        publication_savefig(path_to_plot)
     plt.close()

@@ -24,6 +24,7 @@ dependencies:
   - numba
   - networkx
   - pandas
+  - pyarrow
   - plotly
   - scipy
   - seaborn

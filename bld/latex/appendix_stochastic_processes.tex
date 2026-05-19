@@ -1,0 +1,794 @@
+% ===========================================================================
+%  Appendix: Stochastic Processes and Income
+%
+%  Usage: Place after \appendix in the main document, then
+%         \input{appendix_stochastic_processes}
+%
+%  Assumes booktabs, amsmath, amssymb, graphicx are loaded.
+%  Table paths: CareerCosts/tables/publication/stochastic_processes/
+%  Figure paths: CareerCosts/figures/stochastic_processes/
+% ===========================================================================
+
+% Helper command for figure notes
+\providecommand{\figurenotes}[1]{%
+  \par\vspace{0.4em}%
+  \begin{minipage}{\linewidth}%
+    \footnotesize\textit{Notes:}\ #1%
+  \end{minipage}%
+}
+
+
+% ===================================================================
+\section{Variable Overview}
+\label{sec:variable_overview}
+% ===================================================================
+
+Table~\ref{tab:variable_overview} summarises the state variables, decision
+variables, and continuous states of the life-cycle model.  Agents are women
+who enter the model at age~30 and can live up to age~100.  Each period
+corresponds to one calendar year.
+
+\begin{table}[htbp]
+\centering
+\caption{Variable Overview}
+\label{tab:variable_overview}
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Variable Name} & \textbf{Symbol} & \textbf{Possible Values} \\
+\midrule
+\multicolumn{3}{l}{\textbf{Decisions}} \\
+\addlinespace
+Labor Supply        & $d_t$           & \{0: Retired, 1: Unemployed, \\
+                    &                 & \phantom{\{} 2: Part-Time, 3: Full-Time\} \\
+Care Arrangement    & $c_t$           & \{0: No Care, 1: Light Informal Care, \\
+                    &                 & \phantom{\{} 2: Intensive Informal Care, \\
+                    &                 & \phantom{\{} 3: Combination Care, 4: Formal Care\} \\
+Consumption         & $\tilde{c}_t$   & $[0,\, a_t]$ \\
+\addlinespace
+\midrule
+\multicolumn{3}{l}{\textbf{Discrete States}} \\
+\addlinespace
+Age                 & $t$             & $30,\ldots,100$ \\
+Education Type      & $\tau$          & \{Low, High\} \\
+Caregiving Type     &                 & \{A: Not Potential Caregiver, \\
+                    &                 & \phantom{\{} B: Potential Caregiver\} \\
+Already Retired     &                 & \{0, 1\} \\
+Partner State       & $p_t$           & \{0: Single, 1: Working-Age Partner, \\
+                    &                 & \phantom{\{} 2: Retired Partner\} \\
+Health State        & $h_t$           & \{0: Good Health, 1: Bad Health, 2: Dead\} \\
+Job Offer           & $o_t$           & \{0: No Offer, 1: Job Offer\} \\
+Mother Alive        & $m_t$           & \{0: Alive, 1: Recently Dead, 2: Dead\} \\
+Mother ADL          &                 & \{0: No ADL, 1: Light, 2: Intensive\} \\
+Care Demand         &                 & \{0: None, 1: Light, 2: Intensive\} \\
+\addlinespace
+\midrule
+\multicolumn{3}{l}{\textbf{Continuous States}} \\
+\addlinespace
+Assets              & $a_t$           & $\mathbb{R}_{\geq 0}$ \\
+Work Experience     & $e_t$           & Projection to interval $[0,\,1]$ \\
+Taste Shock         & $\epsilon_t(d_t)$ & GEV i.i.d.\ taste shocks \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.5em}
+\begin{minipage}{\linewidth}
+\footnotesize\textit{Notes:}
+Key derived variables include pension points $PP(x_t)$, the consumption
+equivalence scale $n_t(x_t)$, number of children in the household,
+hourly wage $w_t(x_t)$, partner income $y^p_t(x_t)$, total household
+income $Y_t(x_t, d_t)$, government benefits $B(x_t, d_t)$, and taxes
+$T(x_t, d_t)$---all of which are deterministic functions of the state
+variables listed above.
+\end{minipage}
+\end{table}
+
+
+% ===================================================================
+\section{Auxiliary Markov Processes}
+\label{sec:auxiliary_markov}
+% ===================================================================
+
+All transition processes in this section are estimated on SOEP-Core panel
+data, restricted to the structural estimation sample (2010--2017), unless
+noted otherwise.  Estimations are performed separately by education type.
+
+
+% -------------------------------------------------------------------
+\subsection{Partner Transitions}
+\label{sec:partner_transitions}
+% -------------------------------------------------------------------
+
+The partner state $p_t$ evolves stochastically with transition probabilities
+that depend on education, age, and the current partner state---none of which
+the agent controls directly.  We impose several restrictions that are
+informed by the data and simplify the estimation.  First, agents cannot
+transition directly from being single to having a retired partner.  Second,
+the probability of becoming single is independent of whether the partner is
+currently of working age or retired; that is, separation rates are the same
+for both partnered states.  Third, there is no transition from a retired
+partner back to a working-age partner, reflecting the absorbing nature of
+retirement.  Fourth, all partners are assumed to be retired by age~75;
+beyond that age, single agents remain single and partnered agents remain
+partnered.  This last assumption proxies for the empirical observation that
+most late-life partner-state transitions are attributable to spousal death,
+which we capture via the widow pension.
+
+Formally, the transition of the partner state is given by:
+\begin{equation}
+  \pi(p_{t+1} \mid x_t) \;=\; \Lambda_p\!\bigl(Z_p(x_t)'\,\phi_p\bigr),
+  \label{eq:partner_transition}
+\end{equation}
+where $\Lambda_p$ is the multinomial logistic distribution function,
+providing transition probabilities over the three partner states.  The
+characteristics in $Z_p(x_t)$ are education, age, and the current partner
+state.  We follow a two-step estimation strategy: first, we estimate
+marriage and separation probabilities, and second, we estimate the
+transition of the partner into retirement.  We estimate partner transitions
+separately for each of the two education types.
+
+Table~\ref{tab:partner_transition} reports the estimated transition
+probabilities.  Figures~\ref{fig:partner_state_no_partner}--\ref{fig:partner_state_retired}
+illustrate the model fit by comparing simulated shares with the empirical
+counterparts.
+
+\begin{table}[htbp]
+\centering
+\caption{Partner Transition Probabilities}
+\label{tab:partner_transition}
+\input{CareerCosts/tables/publication/stochastic_processes/partner_transition_women}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{CareerCosts/figures/stochastic_processes/partner_state_no_partner_women}
+\caption{Share of Women Without a Partner}
+\label{fig:partner_state_no_partner}
+\figurenotes{Observed shares (dashed) and estimated shares (solid) by age
+and education type.  Estimation on SOEP-Core, women only.}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{CareerCosts/figures/stochastic_processes/partner_state_working_partner_women}
+\caption{Share of Women With a Working-Age Partner}
+\label{fig:partner_state_working}
+\figurenotes{Observed shares (dashed) and estimated shares (solid) by age
+and education type.  Estimation on SOEP-Core, women only.}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{CareerCosts/figures/stochastic_processes/partner_state_retired_partner_women}
+\caption{Share of Women With a Retired Partner}
+\label{fig:partner_state_retired}
+\figurenotes{Observed shares (dashed) and estimated shares (solid) by age
+and education type.  Estimation on SOEP-Core, women only.}
+\end{figure}
+
+
+% -------------------------------------------------------------------
+\subsection{Number of Children in Household}
+\label{sec:children}
+% -------------------------------------------------------------------
+
+The agent's partner state, together with age and education type, determines
+the number of children living in the household.  The number of children
+directly enters the construction of the consumption equivalence scale and,
+conditional on the agent being employed, affects utility through the
+preference parameters for children.  We approximate the number of children
+in the household via OLS, estimating the following specification separately
+by education type and partner status:
+\begin{equation}
+  n_{t}^{\text{child}} \;=\; \alpha_{0} + \alpha_{1}\,\text{period}_{t}
+  + \alpha_{2}\,\text{period}_{t}^{2} + u_{t},
+  \label{eq:children}
+\end{equation}
+where $\text{period}_{t} = t - 30$ denotes model age.
+
+Table~\ref{tab:children} presents the OLS estimates.
+Figures~\ref{fig:children_single} and~\ref{fig:children_partnered}
+show the estimation fit for single and partnered women, respectively.
+
+\begin{table}[htbp]
+\centering
+\caption{Number of Children in Household --- OLS Parameters}
+\label{tab:children}
+\input{CareerCosts/tables/publication/stochastic_processes/number_of_children_women}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{CareerCosts/figures/stochastic_processes/children_single_women}
+\caption{Number of Children --- Single Women}
+\label{fig:children_single}
+\figurenotes{Observed (dashed) and estimated (solid) mean number of children
+in the household by age and education.  SOEP-Core, single women.}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{CareerCosts/figures/stochastic_processes/children_partnered_women}
+\caption{Number of Children --- Partnered Women}
+\label{fig:children_partnered}
+\figurenotes{Observed (dashed) and estimated (solid) mean number of children
+in the household by age and education.  SOEP-Core, partnered women.}
+\end{figure}
+
+
+% -------------------------------------------------------------------
+\subsection{Job Offer and Separation}
+\label{sec:job_offer_separation}
+% -------------------------------------------------------------------
+
+The job-offer state $o_t$ governs the agent's ability to choose
+employment; the agent can work part-time or full-time only if $o_t = 1$.
+If the job-offer state equals zero and the agent has not yet retired, she
+is forced into unemployment in the current period.  We incorporate two
+independent processes into the job-offer state: job destruction for those
+currently employed and job offers for those currently non-employed.
+
+Job destruction probabilities can be directly identified from the SOEP
+using the question on the reason for job departure.  We classify
+individuals in job-offer state~0 who did not voluntarily leave their
+jobs as having experienced an involuntary separation.  The transition
+probability for job separation conditional on current employment is given
+by:
+\begin{equation}
+  \pi(o_{t+1} = 0 \mid x_t,\, d_t \in \{2,3\})
+  \;=\; \Lambda_{\text{sep}}\!\bigl(Z_{\text{sep}}'\,\phi_{\text{sep}}\bigr),
+  \label{eq:job_separation}
+\end{equation}
+where $\Lambda_{\text{sep}}$ is the logistic distribution function and
+$Z_{\text{sep}}$ includes education, age, and a constant.  We separately
+estimate separation probabilities by education type.  We restrict the
+estimation sample to ages~30--65 to ensure sufficient observational power
+and assume that job separation rates remain constant after age~65 until the
+mandatory retirement age.
+
+Table~\ref{tab:job_separation} reports the logit estimates and
+Figure~\ref{fig:job_separation} shows the predicted separation
+probabilities against the observed rates.
+
+\begin{table}[htbp]
+\centering
+\caption{Job Separation --- Logit Parameters}
+\label{tab:job_separation}
+\input{CareerCosts/tables/publication/stochastic_processes/job_separation_women}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{CareerCosts/figures/stochastic_processes/job_separation_women}
+\caption{Job Separation Probabilities}
+\label{fig:job_separation}
+\figurenotes{Observed (dashed) and estimated (solid) job separation
+probabilities by age and education.  Logit estimation using the
+\textit{plb0304\_h} variable from the pl sample in the SOEP.}
+\end{figure}
+
+The job-offer process for non-employed agents is estimated internally via
+the Method of Simulated Moments (MSM).  If the agent chooses non-employment
+during a given period, the job-offer process determines the probability of
+having an employment choice available in the next period ($o_{t+1} = 1$).
+
+
+% -------------------------------------------------------------------
+\subsection{Health and Death}
+\label{sec:health_death}
+% -------------------------------------------------------------------
+
+The health process $h_t$ tracks two living states---Good Health and Bad
+Health---together with Death.  Survival probabilities are type-specific and
+depend on health and age.  This motivates the use of a joint Markov process
+to model the stochastic transitions of health and survival simultaneously.
+
+We use the SOEP-Core question on self-reported health to classify
+individuals into good and bad health and estimate the probabilities of
+transitioning between the two.  Specifically, we use a logistic regression
+to estimate the probability of being in bad health in the next period:
+\begin{equation}
+  \pi(h_{t+1} \mid x_t)
+  \;=\; \Lambda_h\!\bigl(Z_h'\,\phi_h\bigr),
+  \label{eq:health_transition}
+\end{equation}
+where $Z_h$ includes the current health state and age.  We estimate the
+parameters for each education type separately.  We use the estimated
+parameters to predict transition rates and simulate with them from the
+initial share of healthy individuals.
+
+Table~\ref{tab:health_transition} documents the estimated parameters.
+Figures~\ref{fig:health_good} and~\ref{fig:health_bad} show the predicted
+and observed shares of women in good and bad health, respectively.
+
+\begin{table}[htbp]
+\centering
+\caption{Health Transition Parameters}
+\label{tab:health_transition}
+\input{CareerCosts/tables/publication/stochastic_processes/health_transition_women}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{CareerCosts/figures/stochastic_processes/health_prob_healthy_women}
+\caption{Share of Women in Good Health}
+\label{fig:health_good}
+\figurenotes{Observed (dashed) and estimated (solid) share of women in good
+health by age and education.  SOEP-Core.}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{CareerCosts/figures/stochastic_processes/health_prob_bad_women}
+\caption{Share of Women in Bad Health}
+\label{fig:health_bad}
+\figurenotes{Observed (dashed) and estimated (solid) share of women in bad
+health by age and education.  SOEP-Core.}
+\end{figure}
+
+Death is modeled jointly within the health Markov process $h_t$.  In the
+event of death, the agent bequeaths all remaining wealth and receives
+bequest utility.  The probability of dying depends on the agent's health
+state and education type.  We estimate a logistic specification that scales
+federal life-table death probabilities by health--education interaction
+terms:
+\begin{equation}
+  p_{\text{death}}(t, h_t, \tau)
+  \;=\; p^{\text{LT}}_{\text{death}}(t)\;\cdot\;\exp\!\bigl(\beta_{h_t,\tau}\bigr),
+  \label{eq:mortality}
+\end{equation}
+where $p^{\text{LT}}_{\text{death}}(t)$ is the baseline death probability
+from the Federal Statistical Office life table at age~$t$ and
+$\beta_{h_t,\tau}$ is the estimated coefficient for health state $h_t$ and
+education type~$\tau$.
+
+Table~\ref{tab:mortality} reports the logit estimates and
+Figure~\ref{fig:survival} displays the predicted survival probabilities by
+health and education.
+
+\begin{table}[htbp]
+\centering
+\caption{Mortality --- Logit Parameters}
+\label{tab:mortality}
+\input{CareerCosts/tables/publication/stochastic_processes/mortality_women}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{CareerCosts/figures/stochastic_processes/survival_probabilities_women}
+\caption{Share of Women Alive}
+\label{fig:survival}
+\figurenotes{Estimated survival probabilities by health state and education
+type.  Good health (solid) and bad health (dotted).  Life-table baseline
+adjusted via logit.  SOEP-Core.}
+\end{figure}
+
+
+% ===================================================================
+\section{Parental Health and Care Demand}
+\label{sec:parental_health_care}
+% ===================================================================
+
+The agent's caregiving decisions depend on her mother's health and care
+needs.  We model three interconnected processes: the mother's mortality
+(Section~\ref{sec:mother_mortality}), the mother's functional limitations
+measured by ADL categories (Section~\ref{sec:mother_adl}), and the
+resulting care demand (Section~\ref{sec:care_demand}).  The caregiving type
+(A or B) determines whether the agent is a potential informal caregiver;
+type-A agents cannot provide informal care themselves, while type-B agents
+face the choice between informal and formal care arrangements when care is
+demanded.
+
+Additionally, we estimate the probability that another family member
+provides informal care when the agent's caregiving type is~A
+(Section~\ref{sec:exog_care_supply}).
+
+
+% -------------------------------------------------------------------
+\subsection{Mother's Mortality}
+\label{sec:mother_mortality}
+% -------------------------------------------------------------------
+
+The mother's survival is modeled via age-specific death probabilities drawn
+from federal life tables published by the Federal Statistical Office.  The
+mother's age is inferred from the agent's age and the mean
+mother--daughter age difference, which we compute by education type from
+the SOEP structural sample:
+\begin{equation}
+  \text{age}^{\text{mother}}_{t}
+  \;=\; t + \overline{\Delta}_{\tau}^{\text{mother}} + \delta,
+  \label{eq:mother_age}
+\end{equation}
+where $\overline{\Delta}_{\tau}^{\text{mother}}$ is the mean
+mother--daughter age difference for education type~$\tau$ and $\delta$ is a
+fixed offset.
+
+The mother's alive/dead state $m_t$ follows a three-state process: Alive
+($m_t = 0$), Recently Dead ($m_t = 1$), and Dead ($m_t = 2$).  The
+Recently Dead state persists for exactly one period and triggers the
+inheritance process (see Section~\ref{sec:inheritance_prob}).  Transitions
+are:
+\begin{equation}
+  P(m_{t+1} \mid m_t) =
+  \begin{cases}
+    \bigl[1 - p^{\text{LT}}_{\text{death}}(\text{age}^{\text{mother}}_t),\;
+           p^{\text{LT}}_{\text{death}}(\text{age}^{\text{mother}}_t),\; 0\bigr]
+    & \text{if } m_t = 0, \\[4pt]
+    [0,\; 0,\; 1] & \text{if } m_t = 1, \\[4pt]
+    [0,\; 0,\; 1] & \text{if } m_t = 2.
+  \end{cases}
+  \label{eq:mother_death_transition}
+\end{equation}
+
+Table~\ref{tab:mother_mortality} reports the life-table parameters used
+for the mother's mortality.
+
+\begin{table}[htbp]
+\centering
+\caption{Mother's Mortality --- Life-Table Parameters}
+\label{tab:mother_mortality}
+\input{CareerCosts/tables/publication/stochastic_processes/mother_mortality_women}
+\end{table}
+
+
+% -------------------------------------------------------------------
+\subsection{Mother's ADL States}
+\label{sec:mother_adl}
+% -------------------------------------------------------------------
+
+The mother's functional limitations are tracked via Activities of Daily
+Living (ADL) categories, which we collapse into three states: No~ADL
+(category~0), Light (category~1), and Intensive (categories~2 and~3
+combined).  We estimate a multinomial logistic regression on the Survey of
+Health, Ageing and Retirement in Europe (SHARE) parent--child data, using
+the mother's lagged ADL category and a cubic polynomial in the mother's
+age:
+\begin{equation}
+  P\!\bigl(\text{ADL}_{t+1} = c \mid \text{ADL}_{t},\,\text{age}^{\text{mother}}_t\bigr)
+  \;=\;
+  \frac{\exp\!\bigl(X_t'\,\beta_c\bigr)}
+       {\sum_{j=0}^{C}\exp\!\bigl(X_t'\,\beta_j\bigr)},
+  \label{eq:adl_multinomial}
+\end{equation}
+where $X_t = \bigl(1,\;\text{age},\;\text{age}^2,\;\text{age}^3,\;
+\mathbb{1}[\text{ADL}_t = 1],\;\mathbb{1}[\text{ADL}_t = 2],\;
+\mathbb{1}[\text{ADL}_t = 3]\bigr)'$
+and the reference category is No~ADL ($c = 0$, normalised to
+$\beta_0 = 0$).  The model is estimated separately by sex; we use the
+female coefficients for the mother.
+
+Table~\ref{tab:mother_adl} reports the multinomial logit estimates.
+
+\begin{table}[htbp]
+\centering
+\caption{Mother's ADL Transition --- Multinomial Logit Parameters}
+\label{tab:mother_adl}
+\input{CareerCosts/tables/publication/stochastic_processes/mother_adl_transition_women}
+\end{table}
+
+
+% -------------------------------------------------------------------
+\subsection{Care Demand}
+\label{sec:care_demand}
+% -------------------------------------------------------------------
+
+Care demand is derived deterministically from the mother's ADL state, the
+mother's alive/dead status, and a caregiving age window.  Care can only be
+demanded while the mother is alive and the agent's age falls within the
+caregiving window (ages~40--70).  Outside this window, or when the mother is
+dead, care demand is set to zero regardless of the mother's ADL state.
+
+The care demand probabilities are:
+\begin{align}
+  p_{\text{none}} &= p_{\text{ADL}_0}
+    + \bigl(1 - \mathbb{1}_{\text{window}}\bigr)
+    \cdot \bigl(p_{\text{ADL}_1} + p_{\text{ADL}_2}\bigr),
+  \label{eq:care_demand_none} \\[2pt]
+  p_{\text{light}} &= p_{\text{ADL}_1}
+    \cdot \mathbb{1}_{\text{window}},
+  \label{eq:care_demand_light} \\[2pt]
+  p_{\text{intensive}} &= p_{\text{ADL}_2}
+    \cdot \mathbb{1}_{\text{window}},
+  \label{eq:care_demand_intensive}
+\end{align}
+where $p_{\text{ADL}_c}$ are the ADL transition probabilities from
+equation~\eqref{eq:adl_multinomial} and the indicator
+$\mathbb{1}_{\text{window}}$ equals one if and only if the mother is alive
+($m_t = 0$) and the agent's age~$t$ lies in $[40,\,70)$.
+
+Since care demand is fully determined by the mother's ADL process and the
+caregiving window, no separate estimation is required.
+
+
+% -------------------------------------------------------------------
+\subsection{Exogenous Care Supply}
+\label{sec:exog_care_supply}
+% -------------------------------------------------------------------
+
+When care is demanded and the agent's caregiving type is~A (not a potential
+informal caregiver), another family member may step in to provide informal
+care.  We estimate the probability of receiving such informal care from
+other family members via a logistic regression on SOEP data:
+\begin{equation}
+  P(\text{other informal care} = 1)
+  \;=\; \Lambda\!\bigl(\gamma_0 + \gamma_1\,\text{age}
+  + \gamma_2\,\text{age}^2
+  + \gamma_3\,\text{has\_sister}
+  + \gamma_4\,\text{education}\bigr),
+  \label{eq:exog_care_supply}
+\end{equation}
+where the sample is restricted to women whose parent has a care demand.
+
+Table~\ref{tab:exog_care_supply} reports the logit estimates.
+
+\begin{table}[htbp]
+\centering
+\caption{Exogenous Care Supply --- Logit Parameters}
+\label{tab:exog_care_supply}
+\input{CareerCosts/tables/publication/stochastic_processes/exog_care_supply_women}
+\end{table}
+
+
+% ===================================================================
+\section{Income Processes}
+\label{sec:income_processes}
+% ===================================================================
+
+
+% -------------------------------------------------------------------
+\subsection{Pension Calculation}
+\label{sec:pension}
+% -------------------------------------------------------------------
+
+The formula for calculating pension claims in Germany consists of three
+parts.  First, there is the pension point value, for which we use the
+population-weighted average of East and West German pension point values in
+2010.  Second, the pension points accumulated over the working life.  Third,
+the deduction factor if the individual retired early.  We track the latter
+two through the experience stock $e_t$.
+
+Each individual receives pension points in the ratio of her yearly income
+compared to the overall mean wage of all working individuals.  Let $w_m$ be
+the mean wage and $h_t$ be the agent's work hours (part-time or full-time).
+The pension points earned in any given year are:
+\begin{equation}
+  \text{PP earned}_t \;=\; \frac{w_t \cdot h_t}{w_m}.
+  \label{eq:pension_points_earned}
+\end{equation}
+Accumulated pension points are the sum over all working years.  We
+approximate the cumulative pension points by using the mean experience per
+type at age~30 and assuming the agent worked full-time thereafter.
+
+If an agent retires at the statutory retirement age (SRA), she receives the
+full pension.  The monthly gross pension is:
+\begin{equation}
+  y_t(x_t, 0) \;=\; PP(x_t) \times PPV,
+  \label{eq:pension_gross}
+\end{equation}
+where $PPV$ is the pension point value (the 2010 population-weighted
+East-West average).
+
+If the agent retires before the SRA, an early-retirement penalty of 3.6\%
+per year of early retirement applies:
+\begin{equation}
+  y_t(x_t, 0) \;=\; PP(x_t) \times PPV \times
+  \bigl(1 - 0.036 \times \Delta_{\text{age}}\bigr),
+  \label{eq:pension_early_retirement}
+\end{equation}
+where $\Delta_{\text{age}}$ is the number of years between the actual
+retirement age and the SRA.  We track the deduction through the experience
+stock: the reduced pension corresponds to an adjusted experience level
+$e_t'$ such that the early-retirement penalty is embedded in the state
+without explicitly tracking the retirement age.
+
+
+% -------------------------------------------------------------------
+\subsection{Own Wage Process}
+\label{sec:own_wage}
+% -------------------------------------------------------------------
+
+In the model, agents invest in their human capital by working full-time or
+part-time.  We estimate the returns to experience using two-way
+fixed-effects regressions on SOEP-Core panel data.  The estimation sample
+consists of women over age~30 who work full-time or part-time throughout the
+estimation period 2010--2017.  Since time fixed effects absorb aggregate
+income growth and inflation, all monetary quantities are expressed in 2010
+euros.
+
+We estimate the following equation for each education type~$\tau$ using
+observations of wages and experience for each individual~$i$ and time~$t$:
+\begin{equation}
+  \ln(w_{it})
+  \;=\; \gamma_{0,\tau} + \gamma_{\ln,\tau}\,\ln(e_{it} + 1)
+  + \xi_i + \mu_t + \varepsilon_{it},
+  \label{eq:wage}
+\end{equation}
+where $\xi_i$ denotes individual fixed effects, $\mu_t$ time fixed effects,
+and $\varepsilon_{it}$ is the idiosyncratic wage shock.  Our estimates of
+$\gamma_{0,\tau}$ and $\gamma_{\ln,\tau}$ directly correspond to the
+structural parameters used in the model.  We cluster standard errors across
+individuals and time and estimate the wage process's variance
+$\sigma_w^2$.
+
+Table~\ref{tab:own_wage} reports the estimates and
+Figure~\ref{fig:own_wage} shows the fit of the predicted wages.
+
+\begin{table}[htbp]
+\centering
+\caption{Own Wage --- Panel OLS Parameters}
+\label{tab:own_wage}
+\input{CareerCosts/tables/publication/stochastic_processes/own_wage_women}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{CareerCosts/figures/stochastic_processes/own_wage_women}
+\caption{Own Wage Fit}
+\label{fig:own_wage}
+\figurenotes{Observed mean log hourly wages (dashed) and predicted values
+(solid) by age and education.  Panel OLS with entity and time fixed
+effects.  SOEP-Core, women, 2010--2017.}
+\end{figure}
+
+
+% -------------------------------------------------------------------
+\subsection{Partner Income Process}
+\label{sec:partner_income}
+% -------------------------------------------------------------------
+
+We approximate the partner's income through the agent's own state
+variables.  If the agent is single ($p_t = 0$), there is no partner income.
+When the agent has a working-age partner ($p_t = 1$), we approximate the
+partner's monthly gross wage by OLS of wages onto the agent's age and age
+squared.  Unemployed partners are assigned a wage of zero.  The partner
+income is therefore a combination of the wages of employed partners and the
+zero wages of unemployed partners.  We estimate the approximation separately
+by education type.
+
+The specification is:
+\begin{equation}
+  y^p_t \;=\; \alpha_0 + \alpha_1\,\text{age}_t
+  + \alpha_2\,\text{age}_t^2 + u_t.
+  \label{eq:partner_wage}
+\end{equation}
+
+For retired partners ($p_t = 2$), we use the mean income from the
+working-age period and apply a replacement rate of 48\% to obtain the
+partner's pension income:
+\begin{equation}
+  y^{p,\text{ret}}_t
+  \;=\; 0.48 \times \overline{y^p}.
+  \label{eq:partner_pension}
+\end{equation}
+
+Table~\ref{tab:partner_wage} presents the OLS estimates and
+Figure~\ref{fig:partner_wage} shows the fit of the approximation during the
+partner's working life.
+
+\begin{table}[htbp]
+\centering
+\caption{Partner Wage --- OLS Parameters}
+\label{tab:partner_wage}
+\input{CareerCosts/tables/publication/stochastic_processes/partner_wage_women}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{CareerCosts/figures/stochastic_processes/partner_wage_women}
+\caption{Partner Wage Fit}
+\label{fig:partner_wage}
+\figurenotes{Observed mean monthly gross partner wage (dashed) and OLS
+prediction (solid) by age and education.  SOEP-Core, male partners of
+women.}
+\end{figure}
+
+
+% ===================================================================
+\section{Parental Bequests and Formal Care Costs}
+\label{sec:bequests_care_costs}
+% ===================================================================
+
+
+% -------------------------------------------------------------------
+\subsection{Inheritance Probability}
+\label{sec:inheritance_prob}
+% -------------------------------------------------------------------
+
+We model the probability of receiving a positive inheritance conditional
+on the mother's recent death ($m_t = 1$).  The inheritance probability
+depends on the agent's age, education type, and the care arrangement in
+the period of death.  We estimate the following logistic specification:
+\begin{equation}
+  P(\text{inheritance} > 0)
+  \;=\; \Lambda\!\bigl(\beta_0
+  + \beta_{\text{age}}\,\text{age}
+  + \beta_{\text{age}^2}\,\text{age}^2
+  + \beta_{\text{care}}
+  + \beta_{\text{edu}}\,\text{education}\bigr),
+  \label{eq:inheritance_prob}
+\end{equation}
+where $\beta_{\text{care}}$ captures the effect of the care arrangement
+(no care, formal care, or informal care) on the probability of receiving a
+bequest.
+
+Table~\ref{tab:inheritance_prob} reports the logit estimates.
+
+\begin{table}[htbp]
+\centering
+\caption{Inheritance Probability --- Logit Parameters}
+\label{tab:inheritance_prob}
+\input{CareerCosts/tables/publication/stochastic_processes/inheritance_probability_women}
+\end{table}
+
+
+% -------------------------------------------------------------------
+\subsection{Inheritance Amount}
+\label{sec:inheritance_amount}
+% -------------------------------------------------------------------
+
+Conditional on receiving a positive inheritance, we model the amount via a
+log-linear OLS regression:
+\begin{equation}
+  \ln(\text{amount})
+  \;=\; \beta_0
+  + \beta_{\text{age}}\,\text{age}
+  + \beta_{\text{age}^2}\,\text{age}^2
+  + \beta_{\text{care}}
+  + \beta_{\text{edu}}\,\text{education}
+  + \varepsilon,
+  \label{eq:inheritance_amount}
+\end{equation}
+where the care-type coefficients distinguish between light informal care,
+intensive informal care, and formal care (no care is the reference).
+
+Table~\ref{tab:inheritance_amount} reports the estimates.
+
+\begin{table}[htbp]
+\centering
+\caption{Inheritance Amount --- OLS Parameters}
+\label{tab:inheritance_amount}
+\input{CareerCosts/tables/publication/stochastic_processes/inheritance_amount_women}
+\end{table}
+
+
+% -------------------------------------------------------------------
+\subsection{Formal Care Costs}
+\label{sec:formal_care_costs}
+% -------------------------------------------------------------------
+
+When the agent arranges formal care for her parent, she incurs a financial
+cost representing her contribution to the parent's care arrangement.  We
+estimate the agent's monthly out-of-pocket contribution to formal care
+costs using the SOEP Innovation Sample (SOEP-IS), which contains detailed
+information on care arrangements and associated expenditures.
+
+We estimate the following OLS specification, pooled across education
+types to avoid selection bias---since selection into formal care is likely
+correlated with education, conditioning on education would bias the
+estimated costs:
+\begin{equation}
+  \text{costs}_t
+  \;=\; \alpha_0 + \alpha_1\,\text{age}_t
+  + \alpha_2\,\text{age}_t^2 + \varepsilon_t.
+  \label{eq:formal_care_costs}
+\end{equation}
+
+Table~\ref{tab:formal_care_costs} reports the OLS estimates and
+Figure~\ref{fig:formal_care_costs} shows the predicted costs by age.
+
+\begin{table}[htbp]
+\centering
+\caption{Formal Care Costs --- OLS Parameters}
+\label{tab:formal_care_costs}
+\input{CareerCosts/tables/publication/stochastic_processes/formal_care_costs}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{CareerCosts/figures/stochastic_processes/formal_care_costs_women}
+\caption{Formal Care Costs by Age}
+\label{fig:formal_care_costs}
+\figurenotes{Observed mean monthly contribution to formal care costs
+(dashed) and OLS prediction (solid) by age.  SOEP-IS.  Pooled across
+education levels.}
+\end{figure}

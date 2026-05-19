@@ -1,0 +1,608 @@
+% ============================================================================
+% Estimation and Results
+% Fragment — to be \input'd into the main document.
+% Assumes: graphicx, booktabs, amsmath, subcaption (or subfig) loaded.
+% ============================================================================
+
+
+% ============================================================================
+\section{Estimation}
+\label{sec:estimation}
+% ============================================================================
+
+\subsection{Method of Simulated Moments}
+\label{sec:msm}
+
+We estimate the structural parameters of the life-cycle model using the Method
+of Simulated Moments (MSM).  Let $\omega$ denote the vector of preference and
+job-finding parameters to be estimated in the second stage, after
+pre-estimating the stochastic processes that govern health, mortality, partner
+status, wages, job separations, and care demand from auxiliary data.  The MSM
+estimator chooses $\omega$ to minimize the weighted distance between moments
+computed from the data and the corresponding moments computed from a sample
+simulated under the model:
+%
+\begin{equation}
+\label{eq:msm}
+  \hat\omega
+  \;=\;
+  \arg\min_{\omega}\;
+  \bigl[\hat\psi - \psi(\omega)\bigr]^{\!\top}
+  \,\Sigma\,
+  \bigl[\hat\psi - \psi(\omega)\bigr],
+\end{equation}
+%
+where $\hat\psi$ is the vector of empirical moments, $\psi(\omega)$ collects
+the simulated counterparts obtained by solving and simulating the life-cycle
+model at parameter values~$\omega$, and $\Sigma$ is a diagonal weighting
+matrix.  The diagonal elements of~$\Sigma$ are set to the inverse of the
+estimated variances of the empirical moments, so that moments measured with
+greater precision receive proportionally more weight in the criterion
+function.\footnote{Using a diagonal weighting matrix avoids estimating the
+full covariance structure of the moments, which is infeasible given the
+large moment vector.  The resulting estimator is consistent, and inference
+is based on a sandwich-type variance estimator that accounts for the
+diagonal approximation.}
+
+The parameter vector~$\omega$ comprises the disutility-of-work parameters
+(by employment type, education, health, and caregiving status), the utility
+of the caregiving arrangement (informal versus formal care, by education
+and health), the job-finding probability parameters, the CRRA and bequest
+preference parameters, as well as the scale of taste shocks and the
+distribution of unobserved types.  Discount factor, interest rate, wage
+equation coefficients, and all stochastic-process parameters are held fixed
+at their pre-estimated values.
+
+We solve the model by backward induction on a discretized state space and
+simulate 10{,}000 life-cycle histories for each candidate~$\omega$.  The
+criterion function~\eqref{eq:msm} is minimized using a derivative-free
+optimizer.
+
+
+\subsection{Moments Used in Estimation}
+\label{sec:moments}
+
+Table~\ref{tab:moments_overview} provides an overview of the 969~moments
+that enter the MSM criterion.  The moments are organized into five panels.
+
+\textit{Panel~A} contains labor supply shares---retirement, non-employment,
+part-time, and full-time---by single year of age from 30 to~70, both pooled
+and by education.  These 492~moments pin down the age profile of labor
+market participation and its education gradient, forming the backbone of
+identification for the disutility-of-work parameters.
+
+\textit{Panel~B} conditions on caregiving status.  We match labor supply
+shares of caregivers (all, light, and intensive) in three-year age bins from
+40 to~70, both pooled and by education, yielding 360~moments.  These moments
+are central to identifying the additional disutility associated with the
+double burden of work and caregiving, as they capture how labor supply
+behavior shifts when women take on informal care responsibilities.
+
+\textit{Panel~C} targets the caregiving arrangement.  We match the age
+profile of informal-care provision (any, light, and intensive) in five-year
+age bins from age~40 to~70, separately by education.  Because the German
+Socio-Economic Panel (GSOEP) records whether a respondent provides daily
+care but does not identify the care recipient, we adjust the observed
+caregiving shares using information from the Survey of Health, Ageing and
+Retirement in Europe (SHARE).  Specifically, SHARE asks adult daughters
+who report providing daily care to identify the recipient, allowing us to
+estimate the fraction of informal care directed toward an elderly mother
+in each age bin.  We use these age-specific fractions to downweight the
+GSOEP caregiving shares so that the resulting moments reflect care
+provision to a mother---the relevant margin in our model---rather than
+caregiving to any recipient.  We additionally match the share of pure
+formal care by care intensity and education, drawn from the GSOEP Innovation
+Sample, and the overall share of caregivers with high education.  These
+59~moments identify the utility parameters associated with different
+caregiving arrangements.
+
+\textit{Panel~D} matches mean household wealth by five-year age bin and
+education from the GSOEP, covering ages~30 to~90.  These 24~wealth moments
+discipline the consumption--savings margin and the bequest parameters.
+
+\textit{Panel~E} targets dynamic behavior.  We include year-to-year
+labor-supply persistence rates (working-to-working and
+not-working-to-not-working) by five-year age bin and education, as well as
+caregiving persistence rates by education.  These 34~transition moments help
+identify the job-finding probabilities and the taste-shock scale parameter
+that governs the degree of idiosyncratic preference heterogeneity in the
+model.
+
+\input{../publication/moments_overview.tex}
+
+
+% ============================================================================
+\section{Results}
+\label{sec:results}
+% ============================================================================
+
+This section presents the estimated structural parameters and evaluates the
+model's ability to replicate the empirical moments.  We first discuss the
+preference parameters---the disutility of labor supply, the interaction
+between labor supply and children, the additional disutility incurred when
+combining work with informal caregiving, the job-finding process, the
+utility derived from different caregiving arrangements, and the auxiliary
+preference parameters---before turning to the model fit.
+
+
+% --------------------------------------------------------------------------
+\subsection{Disutility of Labor}
+\label{sec:results_disutil}
+% --------------------------------------------------------------------------
+
+Table~\ref{tab:disutil_params} reports the estimated disutility parameters.
+Panel~A displays the parameters governing the disutility of work and
+unemployment in the absence of caregiving responsibilities.
+
+The most striking pattern is the health gradient of full-time employment.
+For highly educated women in bad health, the disutility of full-time work
+reaches~4.61---roughly seven times the corresponding estimate of~0.63 for
+women in good health.  Among the less educated, the gradient is
+qualitatively similar but less extreme, rising from~0.21 in good health
+to~1.66 in bad health.  Poor health thus constitutes a powerful deterrent
+to full-time employment, consistent with the empirical regularity that
+health shocks precipitate labor market exit, especially among older workers.
+
+Part-time employment exhibits a distinct pattern.  In good health,
+part-time work carries a higher disutility than full-time work for both
+education groups (0.67~versus~0.21 for the less educated; 1.73~versus~0.63
+for the highly educated).  This ordering reflects the fact that healthy
+workers who choose part-time forgo substantial income relative to full-time
+employment; the model rationalizes their part-time choice through the
+combination of household composition effects and taste heterogeneity
+rather than through a low disutility of part-time hours per~se.  In bad
+health, the ordering reverses: part-time becomes far less costly than
+full-time (0.12~versus~1.66 for the less educated; 0.37~versus~4.61 for
+the highly educated), consistent with part-time serving as a
+health-compatible mode of labor force participation.
+
+The disutility of unemployment is moderate and somewhat higher for the
+highly educated (0.59~versus~0.37), reflecting the stronger labor market
+attachment and higher opportunity cost of non-employment in this group.
+
+
+% --------------------------------------------------------------------------
+\subsection{Interaction of Labor Supply and Children}
+\label{sec:results_children}
+% --------------------------------------------------------------------------
+
+Panel~B of Table~\ref{tab:disutil_params} reports the interaction between
+labor supply and the number of children.  The estimates reveal a clear
+work--family trade-off.  For highly educated women, children substantially
+increase the disutility of full-time work ($-0.50$ per child), while
+reducing the disutility of part-time work ($0.24$).  The pattern for
+less-educated women is qualitatively similar but attenuated: full-time
+disutility rises modestly with children ($-0.06$), and part-time becomes
+slightly more attractive ($0.06$).  These estimates are consistent with
+children shifting preferences toward part-time schedules that offer
+greater temporal flexibility for child-rearing, an effect that is
+particularly pronounced among highly educated women who face a steeper
+income--time trade-off.
+
+
+% --------------------------------------------------------------------------
+\subsection{Disutility of Labor While Caregiving}
+\label{sec:results_disutil_care}
+% --------------------------------------------------------------------------
+
+Panel~C of Table~\ref{tab:disutil_params} extends the analysis to women
+who simultaneously provide informal care to a parent.  The columns
+distinguish the intensity of care provision (light versus intensive) and
+the caregiver's own health status.
+
+For women in good health, combining full-time work with caregiving entails
+substantially larger disutility than full-time work alone.  Among highly
+educated women, the disutility of full-time work while providing light
+care is~2.55, roughly four times the non-caregiving counterpart of~0.63.
+Under intensive care, the figure is~2.43.  For the less educated, the
+disutility of full-time work combined with light care~(1.37) far exceeds
+the non-caregiving baseline~(0.21).  These estimates quantify the double
+burden that empirical studies consistently document: working full-time
+while also providing hands-on care to a frail parent is a profoundly
+costly combination for women in good health, who constitute the majority
+of caregivers.
+
+For women in bad health, the absolute disutility of full-time work is
+large in all cases, but the incremental effect of caregiving is less
+clear-cut.  The disutility of full-time work without caregiving is already
+very high for this group (4.61 for the highly educated, 1.66 for the less
+educated), and the corresponding caregiving values are somewhat lower
+(3.30 and~0.91 for light care, respectively).  This pattern reflects the
+strong selection at work: very few bad-health women choose to combine
+full-time work with caregiving, and those who do are a highly selected
+group.  The parameters should therefore be interpreted as capturing the
+average disutility among the small fraction of women who make this choice,
+rather than as implying that caregiving \emph{reduces} the burden of
+full-time work.
+
+Part-time work while caregiving likewise carries elevated disutility
+relative to the non-caregiving case across most cells, though the
+increase is generally less pronounced than for full-time employment.
+This is consistent with part-time schedules being more compatible with
+caregiving obligations.
+
+The disutility of unemployment while caregiving is modestly higher than
+in the non-caregiving case for both education groups (0.64~versus~0.37
+for the less educated; 0.63~versus~0.59 for the highly educated).  A
+notable feature is that the education gradient in unemployment disutility
+nearly vanishes under caregiving: both groups converge to approximately
+0.64, suggesting that caregiving responsibilities equalize the
+non-employment experience across education levels.
+
+
+% --------------------------------------------------------------------------
+\subsection{Interaction of Labor Supply and Children While Caregiving}
+\label{sec:results_children_care}
+% --------------------------------------------------------------------------
+
+Panel~D reports the corresponding children interactions for caregiving
+women.  The magnitudes are substantially smaller than in Panel~B,
+indicating that children play a more muted role in labor supply decisions
+when a caregiving obligation is already present.  For full-time work, the
+per-child effect is~$-0.08$ (less educated) and~$-0.10$ (highly educated),
+compared to~$-0.06$ and~$-0.50$ in the non-caregiving case.  The
+attenuation is consistent with caregiving responsibilities dominating the
+time-allocation calculus, leaving less scope for children to differentially
+affect the work--non-work margin.
+
+\input{../publication/disutility_of_work_params_hybrid.tex}
+
+
+% --------------------------------------------------------------------------
+\subsection{Job-Finding Parameters}
+\label{sec:results_job_finding}
+% --------------------------------------------------------------------------
+
+Table~\ref{tab:job_offer_params} reports the estimated parameters of
+the job-finding probability, specified as a logistic function of a
+cubic polynomial in age (scaled by~10) and an indicator for high
+education.
+
+The negative linear coefficient on age ($-0.19$) implies that the
+probability of receiving a job offer declines over the life cycle, an
+effect partially offset by the positive quadratic term.  The cubic
+term is small and negative, producing a job-finding probability that
+decreases gradually in mid-life and more steeply after age~55.  The
+positive coefficient on high education ($0.09$) implies a modest
+advantage in job-finding for the more educated, consistent with the
+higher employability associated with greater human capital.
+
+\input{../publication/job_offer_params_hybrid.tex}
+
+
+% --------------------------------------------------------------------------
+\subsection{Utility of Caregiving Arrangement}
+\label{sec:results_care_utility}
+% --------------------------------------------------------------------------
+
+Table~\ref{tab:care_utility_params} presents the estimated utility
+associated with the three caregiving arrangements available when a
+parent has a care demand: light informal care (provided by the agent),
+intensive informal care, and formal care.  The reference category is
+``no care''---the case in which another family member provides
+informal care.  All parameters are expressed as a function of the
+agent's own health and education.
+
+The estimates reveal a pronounced preference for informal care
+provision when the caregiver is in good health.  Among the highly
+educated, light informal care generates a utility of~1.00, the
+largest single entry in the table, reflecting a strong intrinsic
+motivation to care personally for a parent with moderate needs.
+Less-educated women in good health also derive substantial utility
+from intensive informal care~(0.85), suggesting that direct hands-on
+involvement with a parent in need is experienced positively when the
+caregiver's own health permits.
+
+As the caregiver's own health deteriorates, the utility of informal
+care drops sharply.  For highly educated women in bad health, the
+utility of light informal care falls to~$-0.01$---effectively
+zero---while intensive informal care yields only~0.02.  Among
+less-educated women, the decline is less dramatic but still large:
+light informal care utility falls from~0.35 to~0.06, and intensive
+from~0.85 to~0.09.  The caregiver's own health status thus acts as a
+powerful moderator of the willingness to provide hands-on care.
+
+Formal care, by contrast, is consistently associated with negative
+utility for healthy caregivers ($-0.34$ for the less educated, $-0.22$
+for the highly educated), indicating a revealed preference against
+delegating care to professional providers.  When the caregiver is in
+bad health, however, formal care utility rises to a small positive
+value of approximately~0.04 for both education groups.  The gap
+between informal and formal care therefore narrows substantially as
+the caregiver's health declines: healthy women strongly prefer
+providing care themselves, but as their own capacity diminishes,
+formal care becomes a relatively more acceptable alternative.  This
+pattern is consistent with a model in which intrinsic motivation and
+filial obligation drive informal care provision under favorable health
+conditions, while pragmatic considerations---notably the physical
+demands of caregiving---shift preferences toward formal arrangements
+when the caregiver's own health is compromised.
+
+\input{../publication/care_utility_params_hybrid.tex}
+
+
+% --------------------------------------------------------------------------
+\subsection{Auxiliary Parameters}
+\label{sec:results_auxiliary}
+% --------------------------------------------------------------------------
+
+Table~\ref{tab:auxiliary_params} reports the remaining structural
+parameters that govern intertemporal preferences, bequest motives,
+and unobserved heterogeneity.
+
+\paragraph{Consumption utility.}
+The CRRA coefficient is substantially higher for less-educated women
+(2.01) than for the highly educated~(0.87), implying greater risk
+aversion and a stronger consumption-smoothing motive in the former
+group.  This is consistent with less-educated women facing tighter
+budget constraints and more volatile income streams, making them
+more sensitive to consumption fluctuations.
+
+\paragraph{Bequest utility.}
+The bequest motive exhibits a stark education gradient.  Highly
+educated women have a bequest scale of~0.34, roughly ten times the
+estimate for the less educated~(0.04), indicating a substantially
+stronger preference for leaving wealth to heirs.  The bequest
+curvature parameter reinforces this pattern: the highly educated
+display pronounced curvature~(0.77), while the less educated are near
+zero~(0.01).  Together, these estimates imply that bequest
+considerations are a first-order driver of savings behavior among
+highly educated women---who accumulate more wealth over the life
+cycle---but play a negligible role for the less educated.
+
+\paragraph{Preference heterogeneity.}
+The taste-shock scale is estimated at~1.00, indicating a substantial
+role for unobserved preference heterogeneity in rationalizing the
+observed choice patterns.  The share of the reference unobserved type
+is approximately~0.73 in both education groups, suggesting that the
+distribution of latent types is similar across education levels.
+
+\input{../publication/auxiliary_params_hybrid.tex}
+
+
+% --------------------------------------------------------------------------
+\subsection{Model Fit}
+\label{sec:results_model_fit}
+% --------------------------------------------------------------------------
+
+We evaluate the model's external validity by comparing the simulated
+moments to their empirical counterparts.  The figures below plot
+simulated (solid) and observed (dashed) profiles for the key targeted
+outcomes.
+
+\subsubsection{Labor Supply: Full Sample}
+
+Figures~\ref{fig:fit_retired_all}--\ref{fig:fit_pt_all} display the
+age profiles of retirement, non-employment, full-time, and part-time
+shares for the full sample (pooling caregivers and non-caregivers),
+separately for low-educated (left panels) and high-educated (right
+panels) women.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{../../figures/model_fit/share_retired_all_low.pdf}
+    \caption{Low education}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{../../figures/model_fit/share_retired_all_high.pdf}
+    \caption{High education}
+  \end{subfigure}
+  \caption{Model fit: retirement share (full sample).}
+  \label{fig:fit_retired_all}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{../../figures/model_fit/share_non_employed_all_low.pdf}
+    \caption{Low education}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{../../figures/model_fit/share_non_employed_all_high.pdf}
+    \caption{High education}
+  \end{subfigure}
+  \caption{Model fit: non-employment share (full sample).}
+  \label{fig:fit_nonemp_all}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{../../figures/model_fit/share_full_time_all_low.pdf}
+    \caption{Low education}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{../../figures/model_fit/share_full_time_all_high.pdf}
+    \caption{High education}
+  \end{subfigure}
+  \caption{Model fit: full-time share (full sample).}
+  \label{fig:fit_ft_all}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{../../figures/model_fit/share_part_time_all_low.pdf}
+    \caption{Low education}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{../../figures/model_fit/share_part_time_all_high.pdf}
+    \caption{High education}
+  \end{subfigure}
+  \caption{Model fit: part-time share (full sample).}
+  \label{fig:fit_pt_all}
+\end{figure}
+
+
+\subsubsection{Wealth}
+
+Figure~\ref{fig:fit_wealth} shows the mean wealth profile by five-year
+age bin and education.  The model tracks the hump-shaped wealth
+accumulation pattern over the life cycle and captures the level
+difference between education groups.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{../../figures/model_fit/mean_wealth_empirical_low.pdf}
+    \caption{Low education}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{../../figures/model_fit/mean_wealth_empirical_high.pdf}
+    \caption{High education}
+  \end{subfigure}
+  \caption{Model fit: mean wealth by five-year age bin.}
+  \label{fig:fit_wealth}
+\end{figure}
+
+
+\subsubsection{Caregiving Arrangements}
+
+Figures~\ref{fig:fit_care_any}--\ref{fig:fit_care_intensive} display
+the model fit for the share of women providing informal care by
+five-year age bin and education.  The empirical moments reflect
+care provision to an elderly mother, adjusted from the GSOEP using
+SHARE-based recipient weights as described in Section~\ref{sec:moments}.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{../../figures/model_fit/share_informal_care_any_low.pdf}
+    \caption{Low education}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{../../figures/model_fit/share_informal_care_any_high.pdf}
+    \caption{High education}
+  \end{subfigure}
+  \caption{Model fit: share providing any informal care by age bin.}
+  \label{fig:fit_care_any}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{../../figures/model_fit/share_informal_care_light_low.pdf}
+    \caption{Low education}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{../../figures/model_fit/share_informal_care_light_high.pdf}
+    \caption{High education}
+  \end{subfigure}
+  \caption{Model fit: share providing light informal care by age bin.}
+  \label{fig:fit_care_light}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{../../figures/model_fit/share_informal_care_intensive_low.pdf}
+    \caption{Low education}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{../../figures/model_fit/share_informal_care_intensive_high.pdf}
+    \caption{High education}
+  \end{subfigure}
+  \caption{Model fit: share providing intensive informal care by age bin.}
+  \label{fig:fit_care_intensive}
+\end{figure}
+
+
+\subsubsection{Labor Supply: Caregivers}
+
+Figures~\ref{fig:fit_retired_cg}--\ref{fig:fit_pt_cg} repeat the
+labor supply comparison for the subsample of informal caregivers.
+These moments are critical for identification of the double-burden
+parameters reported in Panel~C of Table~\ref{tab:disutil_params}.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{../../figures/model_fit/share_retired_caregiver_low.pdf}
+    \caption{Low education}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{../../figures/model_fit/share_retired_caregiver_high.pdf}
+    \caption{High education}
+  \end{subfigure}
+  \caption{Model fit: retirement share (caregivers).}
+  \label{fig:fit_retired_cg}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{../../figures/model_fit/share_non_employed_caregiver_low.pdf}
+    \caption{Low education}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{../../figures/model_fit/share_non_employed_caregiver_high.pdf}
+    \caption{High education}
+  \end{subfigure}
+  \caption{Model fit: non-employment share (caregivers).}
+  \label{fig:fit_nonemp_cg}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{../../figures/model_fit/share_full_time_caregiver_low.pdf}
+    \caption{Low education}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{../../figures/model_fit/share_full_time_caregiver_high.pdf}
+    \caption{High education}
+  \end{subfigure}
+  \caption{Model fit: full-time share (caregivers).}
+  \label{fig:fit_ft_cg}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{../../figures/model_fit/share_part_time_caregiver_low.pdf}
+    \caption{Low education}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{../../figures/model_fit/share_part_time_caregiver_high.pdf}
+    \caption{High education}
+  \end{subfigure}
+  \caption{Model fit: part-time share (caregivers).}
+  \label{fig:fit_pt_cg}
+\end{figure}

@@ -49,6 +49,7 @@ def task_specify_model_no_care_demand(
         path_to_save_model_config=path_to_save_model_config,
         path_to_save_model=path_to_save_model,
     )
+
     return model
 
 
@@ -104,7 +105,6 @@ def specify_model_no_care_demand(
             "mother_dead": np.arange(
                 3, dtype=int
             ),  # Needed for inheritance calculation
-            # No mother_adl or care_demand in counterfactual
         },
         "continuous_states": {
             "assets_end_of_period": savings_grid / specs["wealth_unit"],
@@ -132,13 +132,11 @@ def specify_model_no_care_demand(
 def create_stochastic_states_transitions():
     """Create stochastic state transitions for no care demand counterfactual.
 
-    Excludes care_demand and mother_adl transitions, but includes mother_dead for inheritance.  # noqa: E501
-
+    Order matches baseline up to mother_dead (4th draw) so RNG aligns.
     """
     return {
         "job_offer": job_offer_process_transition,
         "partner_state": partner_transition,
         "health": health_transition,
-        "mother_dead": death_transition,  # Needed for inheritance calculation
-        # No mother_adl or care_demand in counterfactual
+        "mother_dead": death_transition,  # 4th draw, same as baseline
     }

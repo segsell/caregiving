@@ -16,11 +16,9 @@ from pytask import Product
 
 from caregiving.config import BLD
 from caregiving.counterfactual.plotting_helpers import (
+    add_distance_to_first_care,
     calculate_simple_outcomes,
     prepare_dataframes_simple,
-)
-from caregiving.counterfactual.task_plot_labor_supply_differences import (
-    _add_distance_to_first_care,
 )
 from caregiving.model.shared import (
     INFORMAL_CARE,
@@ -98,7 +96,7 @@ def task_plot_employment_rate_by_distance_to_first_care(  # noqa: PLR0912, PLR09
     merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
 
     # Compute distance to first care in baseline and attach
-    df_o_dist = _add_distance_to_first_care(df_o)
+    df_o_dist = add_distance_to_first_care(df_o)
     dist_map = (
         df_o_dist.groupby("agent", observed=False)["first_care_period"]
         .first()
@@ -660,7 +658,7 @@ def task_plot_employment_rate_by_intensity_and_distance(
     merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
 
     # Compute distance to first care in baseline and attach
-    df_o_dist = _add_distance_to_first_care(df_o)
+    df_o_dist = add_distance_to_first_care(df_o)
     dist_map = (
         df_o_dist.groupby("agent", observed=False)["first_care_period"]
         .first()

@@ -145,10 +145,12 @@ def task_caregiving_leave_top_up_by_age_full_vs_normal(
     path_to_save_plot_levels: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
+    / "budget_plots"
     / "caregiving_leave_top_up_by_age_levels.pdf",
     path_to_save_plot_difference: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
+    / "budget_plots"
     / "caregiving_leave_top_up_by_age_difference.pdf",
     only_caregivers: bool = True,
     monthly: bool = False,
@@ -255,10 +257,12 @@ def task_net_caregiving_leave_top_up_by_age_full_vs_normal(
     path_to_save_plot_levels: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
+    / "budget_plots"
     / "caregiving_leave_net_top_up_by_age_levels.pdf",
     path_to_save_plot_difference: Annotated[Path, Product] = BLD
     / "tables"
     / "publication"
+    / "budget_plots"
     / "caregiving_leave_net_top_up_by_age_difference.pdf",
     only_caregivers: bool = True,
     monthly: bool = False,

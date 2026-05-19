@@ -14,6 +14,8 @@ WEALTH_END_YEAR = 2020
 
 PERIOD_SCALE = 10  # to rescale age in utility functions
 
+LEAVE_CAP_YEARS = 3  # maximum cumulative years of caregiving leave
+
 PARENT_WEIGHTS_SHARE = {
     # "40_44": 0.303030,  # make smaller
     "45_49": 0.303030,

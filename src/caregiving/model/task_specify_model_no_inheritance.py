@@ -145,11 +145,12 @@ def specify_model_no_inheritance(
 
 
 def create_stochastic_states_transitions():
+    """Stochastic transition order: mother_dead 4th to align RNG with no-care-demand."""
     return {
         "job_offer": job_offer_process_transition,
         "partner_state": partner_transition,
         "health": health_transition,
+        "mother_dead": death_transition,
         "mother_adl": limitations_with_adl_transition,
         "care_demand": care_demand_transition_adl_light_intensive,
-        "mother_dead": death_transition,
     }

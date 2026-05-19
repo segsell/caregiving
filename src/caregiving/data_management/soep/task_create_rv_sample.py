@@ -14,7 +14,7 @@ MONTHS_WORK_THRESHOLD = 6
 MONTHS_CARE_THRESHOLD = 6
 
 
-# @pytask.mark.event_study_sample
+@pytask.mark.event_study_sample
 def task_create_rv_sample(
     path_to_rv_data: Path = BLD / "data" / "rv_raw.csv",
     path_to_save: Annotated[Path, Product] = BLD / "data" / "rv_sample.csv",

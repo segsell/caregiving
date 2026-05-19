@@ -691,3 +691,299 @@ def task_describe_structural_estimation_sample_by_caregiver(  # noqa: PLR0912, P
     latex = header + "\n".join(body) + "\n"
     path_to_save_table.parent.mkdir(parents=True, exist_ok=True)
     path_to_save_table.write_text(latex, encoding="utf-8")
+
+
+@pytask.mark.descriptives
+@pytask.mark.summary_statistics
+def task_describe_structural_estimation_sample_by_caregiver_v2(  # noqa: PLR0912, PLR0915
+    path_to_specs: Path = BLD / "model" / "specs" / "specs_full.pkl",
+    path_to_data: Path = BLD / "data" / "soep_structural_estimation_sample.csv",
+    path_to_save_table: Annotated[Path, Product] = BLD
+    / "tables"
+    / "publication"
+    / "descriptives"
+    / "structural_estimation_sample_summary_by_caregiver_v2.tex",
+    restrict_to_all_observed: bool = False,
+) -> None:
+    """Restructured descriptive table: never/ever/all block, then non-CG/CG block."""
+    specs = pickle.load(path_to_specs.open("rb"))
+    df_full = pd.read_csv(path_to_data, index_col=[0])
+
+    df = create_df_with_caregivers(
+        df_full=df_full,
+        specs=specs,
+        start_year=2001,
+        end_year=2019,
+        end_age=specs["end_age_msm"],
+    )
+    df = df.loc[df["sex"] == SEX].copy()
+
+    cols_used = [
+        "pid",
+        "choice",
+        "education",
+        "health",
+        "partner_state",
+        "experience",
+        "wealth",
+        "any_care",
+        "light_care",
+        "intensive_care",
+    ]
+    if restrict_to_all_observed:
+        df = df.dropna(subset=[c for c in cols_used if c in df.columns])
+
+    df["care_ever"] = _care_ever_structural_sample(df)
+
+    def _stats_v2(_df: pd.DataFrame) -> dict:
+        if len(_df) == 0:
+            return {
+                "n_individuals": 0,
+                "n_person_years": 0,
+                "share_ft": float("nan"),
+                "share_pt": float("nan"),
+                "share_unemp": float("nan"),
+                "share_retired": float("nan"),
+                "mean_age": float("nan"),
+                "share_good_health": float("nan"),
+                "share_single": float("nan"),
+                "mean_experience": float("nan"),
+                "mean_wealth_1000": float("nan"),
+            }
+        return {
+            "n_individuals": _df["pid"].nunique(),
+            "n_person_years": len(_df),
+            "share_ft": (_df["choice"] == FULL_TIME).mean(),
+            "share_pt": (_df["choice"] == PART_TIME).mean(),
+            "share_unemp": (_df["choice"] == UNEMPLOYED).mean(),
+            "share_retired": (_df["choice"] == RETIRED).mean(),
+            "mean_age": _df["age"].mean(),
+            "share_good_health": (_df["health"] == GOOD_HEALTH).mean(),
+            "share_single": (_df["partner_state"] == 0).mean(),
+            "mean_experience": _df["experience"].mean(),
+            "mean_wealth_1000": _df["wealth"].mean() / 1_000.0,
+        }
+
+    _labor_choices_v2 = (PART_TIME, FULL_TIME, UNEMPLOYED)
+    _age_bins_v2 = [(30, 40), (40, 50), (50, 60), (60, 70)]
+
+    def _labor_by_bin(_df: pd.DataFrame, age_lo: int, age_hi: int) -> tuple:
+        sub = _df[(_df["age"] >= age_lo) & (_df["age"] < age_hi)]
+        if (age_lo, age_hi) == (60, 70):
+            if len(sub) == 0:
+                return (float("nan"),) * 4
+            return (
+                (sub["choice"] == FULL_TIME).mean(),
+                (sub["choice"] == PART_TIME).mean(),
+                (sub["choice"] == UNEMPLOYED).mean(),
+                (sub["choice"] == RETIRED).mean(),
+            )
+        sub = sub[sub["choice"].isin(_labor_choices_v2)]
+        if len(sub) == 0:
+            return (float("nan"),) * 3
+        return (
+            (sub["choice"] == FULL_TIME).mean(),
+            (sub["choice"] == PART_TIME).mean(),
+            (sub["choice"] == UNEMPLOYED).mean(),
+        )
+
+    def _fmt_n(x, decimals=2):
+        if isinstance(x, (int, float)) and pd.isna(x):
+            return "---"
+        if isinstance(x, int):
+            return f"{x:,}"
+        if isinstance(x, float):
+            if x == int(x):
+                return f"{int(x):,}"
+            return f"{x:.{decimals}f}"
+        return str(x)
+
+    def _fmt_p(x):
+        if isinstance(x, (int, float)) and pd.isna(x):
+            return "---"
+        return f"{100 * x:.1f}"
+
+    def _fmt_ms(mean_val, std_val, decimals=1):
+        if pd.isna(mean_val) or pd.isna(std_val):
+            return "---"
+        return f"{mean_val:.{decimals}f} ({std_val:.{decimals}f})"
+
+    never = df.loc[~df["care_ever"]]
+    ever = df.loc[df["care_ever"]]
+    s_never = _stats_v2(never)
+    s_ever = _stats_v2(ever)
+    s_all = _stats_v2(df)
+
+    # ---- Block 1: Never | Ever | All (3 columns) ----
+    b1 = []
+
+    b1.extend(
+        (
+            r"\multicolumn{4}{l}{\textit{Panel A: Sample}} \\",
+            f"\\quad Unique individuals & {_fmt_n(s_never['n_individuals'])} "
+            f"& {_fmt_n(s_ever['n_individuals'])} "
+            f"& {_fmt_n(s_all['n_individuals'])} \\\\",
+        )
+    )
+    b1.append(
+        f"\\quad Person-year observations & {_fmt_n(s_never['n_person_years'])} "
+        f"& {_fmt_n(s_ever['n_person_years'])} & {_fmt_n(s_all['n_person_years'])} \\\\"
+    )
+
+    b1.extend(
+        (
+            r"\addlinespace",
+            r"\multicolumn{4}{l}{\textit{Panel B: Labor market status"
+            r" (all ages, \%)}} \\",
+        )
+    )
+    for label, key in (
+        ("Share full-time", "share_ft"),
+        ("Share part-time", "share_pt"),
+        ("Share non-employed", "share_unemp"),
+        ("Share retired", "share_retired"),
+    ):
+        b1.append(
+            f"\\quad {label} & {_fmt_p(s_never[key])} "
+            f"& {_fmt_p(s_ever[key])} & {_fmt_p(s_all[key])} \\\\"
+        )
+
+    b1.extend(
+        (
+            r"\addlinespace",
+            r"\multicolumn{4}{l}{\textit{Panel B2: Labor market status"
+            r" by age bin (\%)}} \\",
+        )
+    )
+    for age_lo, age_hi in _age_bins_v2:
+        lb_n = _labor_by_bin(never, age_lo, age_hi)
+        lb_e = _labor_by_bin(ever, age_lo, age_hi)
+        lb_a = _labor_by_bin(df, age_lo, age_hi)
+        b1.append(f"\\quad Age {age_lo}--{age_hi - 1} & & & \\\\")
+        incl_ret = (age_lo, age_hi) == (60, 70)
+        labels = ["Share full-time", "Share part-time", "Share non-employed"]
+        if incl_ret:
+            labels.append("Share retired")
+        for i, lab in enumerate(labels):
+            b1.append(
+                f"\\quad \\quad {lab} & {_fmt_p(lb_n[i])} "
+                f"& {_fmt_p(lb_e[i])} & {_fmt_p(lb_a[i])} \\\\"
+            )
+
+    b1.extend(
+        (r"\addlinespace", r"\multicolumn{4}{l}{\textit{Panel C: Demographics}} \\")
+    )
+    b1.extend(
+        (
+            f"\\quad Average age & {_fmt_n(s_never['mean_age'])} "
+            f"& {_fmt_n(s_ever['mean_age'])} & {_fmt_n(s_all['mean_age'])} \\\\",
+            f"\\quad Share good health & {_fmt_p(s_never['share_good_health'])} "
+            f"& {_fmt_p(s_ever['share_good_health'])} "
+            f"& {_fmt_p(s_all['share_good_health'])} \\\\",
+        )
+    )
+    b1.append(
+        f"\\quad Share single (no partner) & {_fmt_p(s_never['share_single'])} "
+        f"& {_fmt_p(s_ever['share_single'])} "
+        f"& {_fmt_p(s_all['share_single'])} \\\\"
+    )
+
+    b1.extend(
+        (
+            r"\addlinespace",
+            r"\multicolumn{4}{l}{\textit{Panel D: Economic outcomes}} \\",
+        )
+    )
+    b1.extend(
+        (
+            f"\\quad Average work experience & {_fmt_n(s_never['mean_experience'])} "
+            f"& {_fmt_n(s_ever['mean_experience'])} "
+            f"& {_fmt_n(s_all['mean_experience'])} \\\\",
+            f"\\quad Average wealth (1000 EUR) & {_fmt_n(s_never['mean_wealth_1000'])} "
+            f"& {_fmt_n(s_ever['mean_wealth_1000'])} "
+            f"& {_fmt_n(s_all['mean_wealth_1000'])} \\\\",
+        )
+    )
+
+    # ---- Block 2: Current non-CG | Current CG (2 columns) ----
+    _non_care = df.loc[df["any_care"] == 0]
+    _cur_care = df.loc[df["any_care"] == 1]
+
+    b2 = []
+    b2.extend((r"\addlinespace", r"\midrule"))
+    b2.extend((" & Current non-caregivers & Current caregivers & \\\\", r"\midrule"))
+    b2.append(
+        r"\multicolumn{4}{l}{\textit{Panel B3: Labor market status during"
+        r" caregiving by age bin (\%)}} \\"
+    )
+    for age_lo, age_hi in _age_bins_v2:
+        lb_nc = _labor_by_bin(_non_care, age_lo, age_hi)
+        lb_cc = _labor_by_bin(_cur_care, age_lo, age_hi)
+        b2.append(f"\\quad Age {age_lo}--{age_hi - 1} & & & \\\\")
+        incl_ret = (age_lo, age_hi) == (60, 70)
+        labels = ["Share full-time", "Share part-time", "Share non-employed"]
+        if incl_ret:
+            labels.append("Share retired")
+        for i, lab in enumerate(labels):
+            b2.append(
+                f"\\quad \\quad {lab} & {_fmt_p(lb_nc[i])} & {_fmt_p(lb_cc[i])} & \\\\"
+            )
+
+    # ---- Panel E: Caregivers only ----
+    b3 = []
+    b3.extend(
+        (r"\addlinespace", r"\multicolumn{4}{l}{\textit{Panel E: Caregivers only}} \\")
+    )
+
+    if len(ever) > 0:
+        _ever_with_care = ever.loc[ever["any_care"] == 1]
+        if len(_ever_with_care) > 0:
+            _age_first = _ever_with_care.groupby("pid")["age"].min()
+        else:
+            _age_first = pd.Series(dtype=float)
+        _care_yrs = ever.groupby("pid")["any_care"].sum()
+        mean_af = _age_first.mean() if len(_age_first) > 0 else float("nan")
+        std_af = _age_first.std() if len(_age_first) > 0 else float("nan")
+        mean_cy = _care_yrs.mean()
+        std_cy = _care_yrs.std()
+        if len(_ever_with_care) > 0:
+            sh_int = (_ever_with_care["intensive_care"] == 1).mean()
+            sh_lt = (_ever_with_care["light_care"] == 1).mean()
+            mean_acg = _ever_with_care["age"].mean()
+            std_acg = _ever_with_care["age"].std()
+        else:
+            sh_int = sh_lt = mean_acg = std_acg = float("nan")
+    else:
+        mean_af = std_af = mean_cy = std_cy = float("nan")
+        sh_int = sh_lt = mean_acg = std_acg = float("nan")
+
+    b3.extend(
+        (
+            f"\\quad Average age at first care spell & --- "
+            f"& {_fmt_ms(mean_af, std_af)} & \\\\",
+            f"\\quad Average age (when caregiving) & --- "
+            f"& {_fmt_ms(mean_acg, std_acg)} & \\\\",
+        )
+    )
+    b3.extend(
+        (
+            f"\\quad Average number of care years & --- "
+            f"& {_fmt_ms(mean_cy, std_cy)} & \\\\",
+            f"\\quad Share intensive caregiving & --- & {_fmt_p(sh_int)} & \\\\",
+        )
+    )
+    b3.append(f"\\quad Share light caregiving & --- & {_fmt_p(sh_lt)} & \\\\")
+
+    # ---- Assemble ----
+    header = (
+        "\\begin{tabular}{lccc}\n"
+        "\\toprule\n"
+        " & Never caregivers & Ever caregivers & All \\\\\n"
+        "\\midrule\n"
+    )
+    footer = "\\bottomrule\n\\end{tabular}\n"
+
+    body = "\n".join(b1 + b2 + b3)
+    latex = header + body + "\n" + footer
+    path_to_save_table.parent.mkdir(parents=True, exist_ok=True)
+    path_to_save_table.write_text(latex, encoding="utf-8")

@@ -18,6 +18,7 @@ import pandas as pd
 
 from caregiving.config import BLD
 from caregiving.counterfactual.plotting_helpers import (
+    add_distance_to_first_care_demand,
     get_age_at_first_event,
 )
 from caregiving.counterfactual.plotting_utils import (
@@ -26,9 +27,6 @@ from caregiving.counterfactual.plotting_utils import (
     create_outcome_columns,
     merge_and_compute_differences,
     prepare_dataframes_for_comparison,
-)
-from caregiving.counterfactual.task_plot_labor_supply_differences_no_care_demand import (  # noqa: E501
-    _add_distance_to_first_care_demand,
 )
 
 # ============================================================================
@@ -82,7 +80,7 @@ def load_plot_data():
     merged = merge_and_compute_differences(o_cols, c_cols, outcome_names)
 
     # Compute distance and age at first care demand from original
-    df_o_dist = _add_distance_to_first_care_demand(df_o)
+    df_o_dist = add_distance_to_first_care_demand(df_o)
 
     # Get first care demand period for each agent
     dist_map = (

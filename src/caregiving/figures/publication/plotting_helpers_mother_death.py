@@ -10,6 +10,24 @@ import pandas as pd
 from caregiving.counterfactual.plotting_helpers import ensure_agent_period
 from caregiving.model.shared import PARENT_RECENTLY_DEAD
 
+CARE_YEARS_1 = 1
+CARE_YEARS_2 = 2
+CARE_YEARS_3 = 3
+CARE_YEARS_4 = 4
+CARE_YEARS_5_PLUS = 5
+DIST_AT_CARE_3 = -3
+DIST_AT_CARE_5 = -5
+DIST_AT_CARE_7 = -7
+DIST_AT_CARE_10 = -10
+DIST_AT_CARE_11_PLUS = -11
+DIST_AT_CG_1_4_MIN = -4
+DIST_AT_CG_1_4_MAX = -1
+DIST_AT_CG_5_9_MIN = -9
+DIST_AT_CG_5_9_MAX = -5
+DIST_AT_CG_10_14_MIN = -14
+DIST_AT_CG_10_14_MAX = -10
+DIST_AT_CG_15_PLUS = -15
+
 
 def add_distance_to_mother_death(df_original: pd.DataFrame) -> pd.DataFrame:
     """Add distance_to_mother_death column.
@@ -725,3 +743,221 @@ def identify_agents_by_caregiving_before_death_at_least(
         np.array(agents_4_year),
         None,
     )
+
+
+def identify_agents_by_total_caregiving_before_death(
+    merged: pd.DataFrame,
+    distance_col: str,
+    window: int,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Identify agents by total (cumulative) caregiving years before mother's death.
+
+    Counts how many periods with caregiving in the window before death
+    (distance in [-window, -1]). Groups are mutually exclusive:
+    - 1-year: exactly 1 total period with caregiving before death
+    - 2-year: exactly 2 total periods
+    - 3-year: exactly 3 total periods
+    - 4-year: exactly 4 total periods
+    - 5-year: 5 or more total periods (5+)
+
+    Not consecutive: periods can be any time in the window (e.g. t=-1 and t=-10).
+
+    Args:
+        merged: DataFrame with agent, distance_col, and current_caregiving columns
+        distance_col: Name of distance column (e.g., "distance_to_mother_death")
+        window: Window size (e.g. 20); uses periods with distance in [-window, -1]
+
+    Returns:
+        Tuple of (agents_1_year, agents_2_year, agents_3_year, agents_4_year,
+        agents_5_year) as numpy arrays of agent IDs. agents_5_year is 5+ total years.
+    """
+    if "current_caregiving" not in merged.columns:
+        raise ValueError(
+            "current_caregiving column not found. "
+            "Cannot identify total caregiving before death."
+        )
+    before_death = merged[
+        (merged[distance_col] >= -window) & (merged[distance_col] <= -1)
+    ].copy()
+    total_care = (
+        before_death.groupby("agent", observed=False)["current_caregiving"]
+        .sum()
+        .astype(int)
+    )
+    agents_1_year = total_care[total_care == CARE_YEARS_1].index.to_numpy()
+    agents_2_year = total_care[total_care == CARE_YEARS_2].index.to_numpy()
+    agents_3_year = total_care[total_care == CARE_YEARS_3].index.to_numpy()
+    agents_4_year = total_care[total_care == CARE_YEARS_4].index.to_numpy()
+    agents_5_year = total_care[total_care >= CARE_YEARS_5_PLUS].index.to_numpy()
+    return (
+        agents_1_year,
+        agents_2_year,
+        agents_3_year,
+        agents_4_year,
+        agents_5_year,
+    )
+
+
+def identify_agents_by_first_care_demand_timing_before_death(
+    df_o: pd.DataFrame,
+    first_death_period_by_agent: pd.DataFrame,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Identify agents by when first care demand occurred relative to mother's death.
+
+    Groups (mutually exclusive):
+    - Group 1: first care demand 3 years before mother death (t=-3)
+    - Group 2: first care demand 5 years before (t=-5)
+    - Group 3: first care demand 7 years before (t=-7)
+    - Group 4: first care demand 10 years before (t=-10)
+    - Group 5: first care demand 11 years or longer before (t <= -11)
+
+    Args:
+        df_o: Baseline DataFrame with agent, period, care_demand columns
+        first_death_period_by_agent: DataFrame with columns agent, first_death_period
+
+    Returns:
+        Tuple of (agents_3, agents_5, agents_7, agents_10, agents_11_plus) as numpy
+        arrays of agent IDs.
+    """
+    if "care_demand" not in df_o.columns:
+        raise ValueError(
+            "care_demand column not found in data. "
+            "Cannot identify first care demand timing."
+        )
+    first_care = (
+        df_o[df_o["care_demand"] > 0]
+        .groupby("agent", observed=False)["period"]
+        .min()
+        .reset_index()
+        .rename(columns={"period": "first_care_demand_period"})
+    )
+    combined = first_care.merge(
+        first_death_period_by_agent[["agent", "first_death_period"]],
+        on="agent",
+        how="inner",
+    )
+    combined["distance_at_first_care"] = (
+        combined["first_care_demand_period"] - combined["first_death_period"]
+    )
+    agents_3 = combined[combined["distance_at_first_care"] == DIST_AT_CARE_3][
+        "agent"
+    ].to_numpy()
+    agents_5 = combined[combined["distance_at_first_care"] == DIST_AT_CARE_5][
+        "agent"
+    ].to_numpy()
+    agents_7 = combined[combined["distance_at_first_care"] == DIST_AT_CARE_7][
+        "agent"
+    ].to_numpy()
+    agents_10 = combined[combined["distance_at_first_care"] == DIST_AT_CARE_10][
+        "agent"
+    ].to_numpy()
+    agents_11_plus = combined[
+        combined["distance_at_first_care"] <= DIST_AT_CARE_11_PLUS
+    ]["agent"].to_numpy()
+    return (agents_3, agents_5, agents_7, agents_10, agents_11_plus)
+
+
+def identify_agents_by_first_caregiving_timing_before_death(
+    df_o: pd.DataFrame,
+    first_death_period_by_agent: pd.DataFrame,
+    informal_care_choices: list,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Identify agents by first caregiving spell relative to mother's death.
+
+    Groups (mutually exclusive):
+    - Group 1: first caregiving 1-4 years before mother death (distance in [-4, -1])
+    - Group 2: first caregiving 5-9 years before (distance in [-9, -5])
+    - Group 3: first caregiving 10-14 years before (distance in [-14, -10])
+    - Group 4: first caregiving 15+ years before (distance <= -15)
+
+    Args:
+        df_o: Baseline DataFrame with agent, period, choice columns
+        first_death_period_by_agent: DataFrame with columns agent, first_death_period
+        informal_care_choices: List of choice codes that count as informal caregiving
+
+    Returns:
+        Tuple of (agents_1_4, agents_5_9, agents_10_14, agents_15_plus) as numpy arrays.
+    """
+    if "choice" not in df_o.columns:
+        raise ValueError(
+            "choice column not found in data. "
+            "Cannot identify first caregiving spell."
+        )
+    first_care = (
+        df_o[df_o["choice"].isin(informal_care_choices)]
+        .groupby("agent", observed=False)["period"]
+        .min()
+        .reset_index()
+        .rename(columns={"period": "first_caregiving_period"})
+    )
+    combined = first_care.merge(
+        first_death_period_by_agent[["agent", "first_death_period"]],
+        on="agent",
+        how="inner",
+    )
+    combined["distance_at_first_caregiving"] = (
+        combined["first_caregiving_period"] - combined["first_death_period"]
+    )
+    agents_1_4 = combined[
+        (combined["distance_at_first_caregiving"] >= DIST_AT_CG_1_4_MIN)
+        & (combined["distance_at_first_caregiving"] <= DIST_AT_CG_1_4_MAX)
+    ]["agent"].to_numpy()
+    agents_5_9 = combined[
+        (combined["distance_at_first_caregiving"] >= DIST_AT_CG_5_9_MIN)
+        & (combined["distance_at_first_caregiving"] <= DIST_AT_CG_5_9_MAX)
+    ]["agent"].to_numpy()
+    agents_10_14 = combined[
+        (combined["distance_at_first_caregiving"] >= DIST_AT_CG_10_14_MIN)
+        & (combined["distance_at_first_caregiving"] <= DIST_AT_CG_10_14_MAX)
+    ]["agent"].to_numpy()
+    agents_15_plus = combined[
+        combined["distance_at_first_caregiving"] <= DIST_AT_CG_15_PLUS
+    ]["agent"].to_numpy()
+    return (agents_1_4, agents_5_9, agents_10_14, agents_15_plus)
+
+
+def identify_agents_by_exact_caregiving_years_in_window(
+    merged: pd.DataFrame,
+    distance_col: str,
+    window_start: int,
+    window_end: int,
+    include_5_plus: bool = False,
+) -> tuple[np.ndarray, ...]:
+    """Identify agents by exact number of caregiving years in a distance window.
+
+    Counts periods with current_caregiving==1 where distance_col is in
+    [window_start, window_end]. Returns mutually exclusive groups:
+    exactly 1, 2, 3, 4 years; optionally a fifth group with >=5 years.
+
+    Args:
+        merged: DataFrame with agent, distance_col, and current_caregiving
+        distance_col: Name of distance column (e.g. distance_to_mother_death)
+        window_start: Inclusive lower bound (e.g. -4)
+        window_end: Inclusive upper bound (e.g. -1)
+        include_5_plus: If True, return fifth group (agents with >=5 years in window)
+
+    Returns:
+        (agents_1_year, agents_2_year, agents_3_year, agents_4_year) or
+        (agents_1_year, ..., agents_5_plus) if include_5_plus.
+    """
+    if "current_caregiving" not in merged.columns:
+        raise ValueError(
+            "current_caregiving column not found. "
+            "Cannot identify exact caregiving years in window."
+        )
+    in_window = merged[
+        (merged[distance_col] >= window_start) & (merged[distance_col] <= window_end)
+    ].copy()
+    total_care = (
+        in_window.groupby("agent", observed=False)["current_caregiving"]
+        .sum()
+        .astype(int)
+    )
+    agents_1 = total_care[total_care == CARE_YEARS_1].index.to_numpy()
+    agents_2 = total_care[total_care == CARE_YEARS_2].index.to_numpy()
+    agents_3 = total_care[total_care == CARE_YEARS_3].index.to_numpy()
+    agents_4 = total_care[total_care == CARE_YEARS_4].index.to_numpy()
+    if include_5_plus:
+        agents_5_plus = total_care[total_care >= CARE_YEARS_5_PLUS].index.to_numpy()
+        return (agents_1, agents_2, agents_3, agents_4, agents_5_plus)
+    return (agents_1, agents_2, agents_3, agents_4)

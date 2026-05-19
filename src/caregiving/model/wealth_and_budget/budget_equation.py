@@ -134,9 +134,15 @@ def budget_constraint(
         model_specs=model_specs,
     )
 
+    household_net_income_before_floor = total_net_household_income + child_benefits
     total_income = jnp.maximum(
-        total_net_household_income + child_benefits,
+        household_net_income_before_floor,
         household_unemployment_benefits,
+    )
+
+    unemployment_transfer_paid = jnp.maximum(
+        0.0,
+        household_unemployment_benefits - household_net_income_before_floor,
     )
 
     # Only compute inheritance if mother recently died this period (state 1)
@@ -206,10 +212,21 @@ def budget_constraint(
         "gets_inheritance": gets_inheritance,
         "income_shock_previous_period": income_shock_previous_period,
         "income_shock_for_labor": income_shock_for_labor,
+        "labor_income_after_ssc": labor_income_after_ssc / model_specs["wealth_unit"],
+        "retirement_income_after_ssc": retirement_income_after_ssc
+        / model_specs["wealth_unit"],
         "own_income_after_ssc": own_income_after_ssc / model_specs["wealth_unit"],
+        "partner_income_after_ssc": partner_income_after_ssc
+        / model_specs["wealth_unit"],
+        "total_net_household_income": total_net_household_income
+        / model_specs["wealth_unit"],
+        "household_net_income_before_floor": household_net_income_before_floor
+        / model_specs["wealth_unit"],
         "care_benefits_and_costs": care_benfits_and_costs / model_specs["wealth_unit"],
         "child_benefits": child_benefits / model_specs["wealth_unit"],
         "household_unemployment_benefits": household_unemployment_benefits
+        / model_specs["wealth_unit"],
+        "unemployment_transfer_paid": unemployment_transfer_paid
         / model_specs["wealth_unit"],
         # Government budget components
         "income_tax": income_tax_total / model_specs["wealth_unit"],

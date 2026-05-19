@@ -1,7 +1,8 @@
 """Functions for computing analytical standard errors."""
 
+from collections.abc import Callable
 from functools import partial
-from typing import Any, Callable, Dict
+from typing import Any, Dict
 
 import jax.numpy as jnp
 import numpy as np
@@ -13,13 +14,13 @@ from caregiving.simulation.simulate_moments import simulate_moments_pandas
 
 
 def get_analytical_standard_errors(
-    params: Dict[str, float],
-    options: Dict[str, Any],
+    params: dict[str, float],
+    options: dict[str, Any],
     emp_moments: jnp.ndarray,
     emp_var: jnp.ndarray,
-    model_loaded: Dict[str, Any],
+    model_loaded: dict[str, Any],
     solve_func: Callable,
-    initial_states: Dict[str, jnp.ndarray],
+    initial_states: dict[str, jnp.ndarray],
     wealth_agents: jnp.ndarray,
 ):
     """Get analytical standard errors using asymptotic distribution theory.
@@ -105,12 +106,12 @@ def get_analytical_standard_errors(
 
 
 def get_moment_error_vec(
-    params: Dict[str, float],
-    options: Dict[str, Any],
-    model_loaded: Dict[str, Any],
+    params: dict[str, float],
+    options: dict[str, Any],
+    model_loaded: dict[str, Any],
     emp_moments: jnp.ndarray,
     solve_func: Callable,
-    initial_states: Dict[str, jnp.ndarray],
+    initial_states: dict[str, jnp.ndarray],
     wealth_agents: jnp.ndarray,
 ) -> jnp.ndarray:
     """Compute moment error vector for a given set of parameters.

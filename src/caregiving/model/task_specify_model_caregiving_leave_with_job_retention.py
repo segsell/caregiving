@@ -145,9 +145,9 @@ def specify_model_caregiving_leave_with_job_retention(
 
 
 def create_stochastic_states_transitions():
-    """Create stochastic state transitions for job retention counterfactual.
+    """Stochastic state transitions for job retention counterfactual.
 
-    Uses mother_adl and mother_dead like the baseline.
+    Order: mother_dead 4th to align RNG with no-care-demand (same as baseline).
     """
     return {
         "job_offer": job_offer_process_transition_leave_with_job_retention,

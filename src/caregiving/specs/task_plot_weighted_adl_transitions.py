@@ -47,8 +47,8 @@ def task_plot_weighted_adl_transitions(
 
 def plot_weighted_adl_transitions_and_shares(  # noqa: PLR0912, PLR0915
     specs: dict,
-    df_sample: Optional[pd.DataFrame] = None,
-    path_to_save_plot: Optional[Path | str] = None,
+    df_sample: pd.DataFrame | None = None,
+    path_to_save_plot: Path | str | None = None,
     start_age: int = 60,
 ) -> plt.Figure:
     """Plot weighted ADL transitions and shares by age for women.
@@ -361,8 +361,8 @@ def task_plot_light_intensive_adl_transitions(
 
 def plot_light_intensive_adl_transitions_and_shares(  # noqa: PLR0912, PLR0915
     specs: dict,
-    df_sample: Optional[pd.DataFrame] = None,
-    path_to_save_plot: Optional[Path | str] = None,
+    df_sample: pd.DataFrame | None = None,
+    path_to_save_plot: Path | str | None = None,
     start_age: int = 60,
 ) -> plt.Figure:
     """Plot light/intensive ADL transitions and shares by age for women.

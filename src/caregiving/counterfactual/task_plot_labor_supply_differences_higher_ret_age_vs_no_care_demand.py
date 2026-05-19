@@ -16,6 +16,8 @@ from pytask import Product
 
 from caregiving.config import BLD
 from caregiving.counterfactual.plotting_helpers import (
+    add_distance_to_first_care,
+    add_distance_to_first_care_demand,
     calculate_simple_outcomes,
     get_age_at_first_event,
     get_distinct_colors,
@@ -31,12 +33,6 @@ from caregiving.counterfactual.plotting_utils import (
     create_outcome_columns,
     merge_and_compute_differences,
     prepare_dataframes_for_comparison,
-)
-from caregiving.counterfactual.task_plot_labor_supply_differences import (
-    _add_distance_to_first_care,
-)
-from caregiving.counterfactual.task_plot_labor_supply_differences_no_care_demand import (  # noqa: E501
-    _add_distance_to_first_care_demand,
 )
 from caregiving.model.shared import INFORMAL_CARE
 
@@ -121,7 +117,7 @@ def task_plot_matched_differences_by_distance_higher_ret_age_vs_no_care_demand(
     merged["diff_savings_rate"] = merged["savings_rate_hr"] - merged["savings_rate_ncd"]
 
     # Compute distance in higher-ret-age and attach
-    df_hr_dist = _add_distance_to_first_care(df_hr)
+    df_hr_dist = add_distance_to_first_care(df_hr)
     dist_map = (
         df_hr_dist.groupby("agent", observed=False)["first_care_period"]
         .first()
@@ -275,7 +271,7 @@ def task_plot_matched_differences_by_age_at_first_care_higher_ret_age_vs_no_care
     merged = merge_and_compute_differences(hr_cols, ncd_cols, outcome_names)
 
     # Compute distance and age at first care from higher-ret-age
-    df_hr_dist = _add_distance_to_first_care(df_hr)
+    df_hr_dist = add_distance_to_first_care(df_hr)
 
     # Get first care period for each agent
     dist_map = (
@@ -510,7 +506,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_higher_ret_age_vs_no
     merged = merge_and_compute_differences(hr_cols, ncd_cols, outcome_names)
 
     # Compute distance and age at first care from higher-ret-age
-    df_hr_dist = _add_distance_to_first_care(df_hr)
+    df_hr_dist = add_distance_to_first_care(df_hr)
 
     # Get first care period for each agent
     dist_map = (
@@ -735,7 +731,7 @@ def task_plot_matched_differences_by_distance_by_care_demand_higher_ret_age_vs_n
     merged = merge_and_compute_differences(hr_cols, ncd_cols, outcome_names)
 
     # Compute distance to first care demand in higher-ret-age and attach
-    df_hr_dist = _add_distance_to_first_care_demand(df_hr)
+    df_hr_dist = add_distance_to_first_care_demand(df_hr)
     dist_map = (
         df_hr_dist.groupby("agent", observed=False)["first_care_demand_period"]
         .first()
@@ -930,7 +926,7 @@ def task_plot_matched_differences_by_age_at_first_care_demand_higher_ret_age_vs_
     merged = merge_and_compute_differences(hr_cols, ncd_cols, outcome_names)
 
     # Compute distance and age at first care demand from higher-ret-age
-    df_hr_dist = _add_distance_to_first_care_demand(df_hr)
+    df_hr_dist = add_distance_to_first_care_demand(df_hr)
 
     # Get first care demand period for each agent
     dist_map = (
@@ -1196,7 +1192,7 @@ def task_plot_matched_differences_by_age_bins_at_first_care_demand_higher_ret_ag
     merged = merge_and_compute_differences(hr_cols, ncd_cols, outcome_names)
 
     # Compute distance and age at first care demand from higher-ret-age
-    df_hr_dist = _add_distance_to_first_care_demand(df_hr)
+    df_hr_dist = add_distance_to_first_care_demand(df_hr)
 
     # Get first care demand period for each agent
     dist_map = (

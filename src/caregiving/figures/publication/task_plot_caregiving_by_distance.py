@@ -16,19 +16,21 @@ from pytask import Product
 
 from caregiving.config import BLD
 from caregiving.counterfactual.plotting_helpers import (
+    PUBLICATION_PLOT_STYLE,
     ensure_agent_period,
     get_age_at_first_event,
     prepare_dataframes_simple,
+    publication_savefig,
 )
-from caregiving.counterfactual.task_plot_labor_supply_differences import (
-    _add_distance_to_first_care,
+from caregiving.figures.publication.plotting_helpers import (
+    add_distance_to_first_care,
 )
 from caregiving.model.shared import (
     INFORMAL_CARE,
 )
 
 
-def _add_distance_to_first_care_demand(df_original: pd.DataFrame) -> pd.DataFrame:
+def add_distance_to_first_care_demand(df_original: pd.DataFrame) -> pd.DataFrame:
     """Add distance_to_first_care_demand column.
 
     Sets 0 as first time care_demand > 0 (light or intensive care demand).
@@ -261,7 +263,9 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Plot caregiving rates by distance to first care demand spell.
 
@@ -299,6 +303,10 @@ for age_min_val, age_max_val, age_label_val in (
             window: Window size around event (e.g., 20 = -20 to +20 periods)
 
         """
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         # Load and prepare data
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -348,7 +356,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
         # Compute distance to first care demand in baseline and attach
-        df_o_dist = _add_distance_to_first_care_demand(df_o)
+        df_o_dist = add_distance_to_first_care_demand(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_demand_period"]
             .first()
@@ -370,8 +378,8 @@ for age_min_val, age_max_val, age_label_val in (
         # and trim to window
         merged = merged[
             merged["first_care_demand_period"].notna()
-            & (merged["distance_to_first_care_demand"] >= -window)
-            & (merged["distance_to_first_care_demand"] <= window)
+            & (merged["distance_to_first_care_demand"] >= -w_low)
+            & (merged["distance_to_first_care_demand"] <= w_high)
         ]
 
         # Filter by age at first care demand period if specified
@@ -467,7 +475,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_2_year=prof_2_year,
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
-            window=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
         )
@@ -500,7 +509,9 @@ for age_min_val, age_max_val, age_label_val in (
         / f"caregiving_rate_by_distance_to_first_care_demand_all_{age_label_val}.pdf",
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Plot caregiving rates by distance to first care demand spell (all agents).
 
@@ -534,6 +545,10 @@ for age_min_val, age_max_val, age_label_val in (
             window: Window size around event (e.g., 20 = -20 to +20 periods)
 
         """
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         # Load and prepare data
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -572,7 +587,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
         # Compute distance to first care demand in baseline and attach
-        df_o_dist = _add_distance_to_first_care_demand(df_o)
+        df_o_dist = add_distance_to_first_care_demand(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_demand_period"]
             .first()
@@ -594,8 +609,8 @@ for age_min_val, age_max_val, age_label_val in (
         # and trim to window
         merged = merged[
             merged["first_care_demand_period"].notna()
-            & (merged["distance_to_first_care_demand"] >= -window)
-            & (merged["distance_to_first_care_demand"] <= window)
+            & (merged["distance_to_first_care_demand"] >= -w_low)
+            & (merged["distance_to_first_care_demand"] <= w_high)
         ]
 
         # Filter by age at first care demand period if specified
@@ -691,7 +706,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_2_year=prof_2_year,
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
-            window=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
         )
@@ -727,7 +743,9 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Plot caregiving rates by distance to first care demand spell.
 
@@ -765,6 +783,10 @@ for age_min_val, age_max_val, age_label_val in (
             window: Window size around event (e.g., 20 = -20 to +20 periods)
 
         """
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         # Load and prepare data
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -811,7 +833,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
         # Compute distance to first care demand in baseline and attach
-        df_o_dist = _add_distance_to_first_care_demand(df_o)
+        df_o_dist = add_distance_to_first_care_demand(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_demand_period"]
             .first()
@@ -833,8 +855,8 @@ for age_min_val, age_max_val, age_label_val in (
         # and trim to window
         merged = merged[
             merged["first_care_demand_period"].notna()
-            & (merged["distance_to_first_care_demand"] >= -window)
-            & (merged["distance_to_first_care_demand"] <= window)
+            & (merged["distance_to_first_care_demand"] >= -w_low)
+            & (merged["distance_to_first_care_demand"] <= w_high)
         ]
 
         # Filter by age at first care demand period if specified
@@ -930,7 +952,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_2_year=prof_2_year,
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
-            window=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
         )
@@ -966,7 +989,9 @@ for age_min_val, age_max_val, age_label_val in (
         ),
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Plot caregiving rates by distance to first care demand spell.
 
@@ -1004,6 +1029,10 @@ for age_min_val, age_max_val, age_label_val in (
             window: Window size around event (e.g., 20 = -20 to +20 periods)
 
         """
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         # Load and prepare data
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -1050,7 +1079,7 @@ for age_min_val, age_max_val, age_label_val in (
         )
 
         # Compute distance to first care demand in baseline and attach
-        df_o_dist = _add_distance_to_first_care_demand(df_o)
+        df_o_dist = add_distance_to_first_care_demand(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_demand_period"]
             .first()
@@ -1072,8 +1101,8 @@ for age_min_val, age_max_val, age_label_val in (
         # and trim to window
         merged = merged[
             merged["first_care_demand_period"].notna()
-            & (merged["distance_to_first_care_demand"] >= -window)
-            & (merged["distance_to_first_care_demand"] <= window)
+            & (merged["distance_to_first_care_demand"] >= -w_low)
+            & (merged["distance_to_first_care_demand"] <= w_high)
         ]
 
         # Filter by age at first care demand period if specified
@@ -1169,7 +1198,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_2_year=prof_2_year,
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
-            window=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
             xlabel="Year relative to start of first care demand",
         )
@@ -1202,7 +1232,9 @@ for age_min_val, age_max_val, age_label_val in (
         / f"caregiving_rate_by_distance_to_first_care_{age_label_val}.pdf",
         ever_caregivers: bool = False,
         ever_care_demand: bool = False,
-        window: int = 20,
+        window_low: int = 20,
+        window_high: int = 20,
+        window_by_age: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         """Plot overall caregiving rates by distance to first caregiving spell.
 
@@ -1235,6 +1267,10 @@ for age_min_val, age_max_val, age_label_val in (
             window: Window size around event (e.g., 20 = -20 to +20 periods)
 
         """
+        if window_by_age is not None and age_label in window_by_age:
+            w_low, w_high = window_by_age[age_label]
+        else:
+            w_low, w_high = window_low, window_high
         # Load and prepare data
         df_o, df_c = prepare_dataframes_simple(
             pd.read_pickle(path_to_original_data),
@@ -1263,7 +1299,7 @@ for age_min_val, age_max_val, age_label_val in (
         merged = o_cols.merge(c_cols, on=["agent", "period"], how="inner")
 
         # Compute distance to first care in baseline and attach
-        df_o_dist = _add_distance_to_first_care(df_o)
+        df_o_dist = add_distance_to_first_care(df_o)
         dist_map = (
             df_o_dist.groupby("agent", observed=False)["first_care_period"]
             .first()
@@ -1286,8 +1322,8 @@ for age_min_val, age_max_val, age_label_val in (
         # and trim to window
         merged = merged[
             merged["first_care_period"].notna()
-            & (merged["distance_to_first_care"] >= -window)
-            & (merged["distance_to_first_care"] <= window)
+            & (merged["distance_to_first_care"] >= -w_low)
+            & (merged["distance_to_first_care"] <= w_high)
         ]
 
         # Filter by age at first care period if specified
@@ -1458,7 +1494,8 @@ for age_min_val, age_max_val, age_label_val in (
             prof_2_year=prof_2_year,
             prof_3_year=prof_3_year,
             prof_4_year=prof_4_year,
-            window=window,
+            window_low=w_low,
+            window_high=w_high,
             path_to_plot=path_to_plot,
         )
 
@@ -1469,14 +1506,15 @@ def plot_caregiving_rate_by_distance(  # noqa: PLR0913
     prof_2_year,
     prof_3_year,
     prof_4_year,
-    window: int = 20,
-    path_to_plot: Optional[Path] = None,
+    window_low: int = 20,
+    window_high: int = 20,
+    path_to_plot: Path | None = None,
     xlabel: str = "Year relative to start of first care spell",
 ) -> None:
     """Plot caregiving rates by distance to first caregiving spell.
 
-    Creates an event study plot comparing baseline vs no-care-demand caregiving
-    rates, with separate lines for different caregiving durations.
+    window_low and window_high are positive integers (years before/after t=0);
+    internally window_low is negated for the axis range.
 
     Args:
         prof: DataFrame with columns 'distance_to_first_care', 'caregiving_o',
@@ -1485,136 +1523,111 @@ def plot_caregiving_rate_by_distance(  # noqa: PLR0913
         prof_2_year: DataFrame for 2-year caregivers
         prof_3_year: DataFrame for 3-year caregivers
         prof_4_year: DataFrame for 4-year caregivers
-        window: Window size around event (e.g., 20 = -20 to +20 periods)
+        window_low: Years before t=0 (positive int).
+        window_high: Years after t=0 (positive int).
         path_to_plot: Optional path to save the plot. If None, plot is not saved.
         xlabel: Label for x-axis (default: "Year relative to start of first care spell")
     """
-    # Plot
-    # Increased figure size to maintain visual balance with thinner lines/text
-    plt.figure(figsize=(14, 8))
+    w_low = -window_low
+    S = PUBLICATION_PLOT_STYLE
+    plt.figure(figsize=S["figsize"])
 
-    # Plot overall baseline caregiving rate (entire baseline sample) - dashed black line
     plt.plot(
         prof["distance_to_first_care"],
         prof["caregiving_o"],
         label="Baseline",
         color="black",
-        linewidth=2.0,
+        linewidth=S["linewidth"],
         linestyle="--",
         marker=None,
     )
-
-    # Plot no-care-demand caregiving rate
     plt.plot(
         prof["distance_to_first_care"],
         prof["caregiving_c"],
         label="No Care Demand",
         color="black",
-        linewidth=2.0,
+        linewidth=S["linewidth"],
         linestyle="-",
         marker=None,
     )
 
-    # Plot baseline caregiving rates for 1-year caregivers (care at t=0 only, then stop)
     if len(prof_1_year) > 0:
         plt.plot(
             prof_1_year["distance_to_first_care"],
             prof_1_year["caregiving_o"],
             label="Baseline (1-Year Caregivers: t=0)",
             color="0.8",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
-            marker="8",  # Octagon
-            markersize=5,
+            marker="8",
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
-
-    # # Plot baseline caregiving rates for 2-year caregivers (care at t=0 and t=1,
-    #  then stop)
     if len(prof_2_year) > 0:
         plt.plot(
             prof_2_year["distance_to_first_care"],
             prof_2_year["caregiving_o"],
             label="Baseline (2-Year Caregivers: t=0, t=1)",
             color="0.6",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
             marker="^",
-            markersize=5,
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
-
-    # # Plot baseline caregiving rates for 3-year caregivers (care at t=0, t=1, t=
-    # 2, then stop)
     if len(prof_3_year) > 0:
         plt.plot(
             prof_3_year["distance_to_first_care"],
             prof_3_year["caregiving_o"],
             label="Baseline (3-Year Caregivers: t=0, t=1, t=2)",
             color="0.4",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
-            marker="D",  # Diamond
-            markersize=5,
+            marker="D",
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
-
-    # # Plot baseline caregiving rates for 4-year caregivers (care at t=0, t=1, t=
-    # 2, t=3, then stop)
     if len(prof_4_year) > 0:
         plt.plot(
             prof_4_year["distance_to_first_care"],
             prof_4_year["caregiving_o"],
             label="Baseline (4-Year Caregivers: t=0, t=1, t=2, t=3)",
             color="0.2",
-            linewidth=2.0,
+            linewidth=S["linewidth"],
             linestyle="-",
-            marker="s",  # Hollow square
-            markersize=5,
+            marker="s",
+            markersize=S["markersize"],
             markevery=1,
             markerfacecolor="none",
-            markeredgewidth=1.5,
+            markeredgewidth=S["markeredgewidth"],
         )
 
-    # Add vertical line at t=0 (start of first caregiving spell)
-    # Position at -0.5 with spaced-out dashes
     plt.axvline(
         x=-0.5,
         color="k",
-        linestyle=(
-            0,
-            (7, 7),
-        ),  # Custom dash pattern: 7 points on, 7 points off (2/3 of 10)
-        linewidth=1.0,
+        linestyle=(0, (7, 7)),
+        linewidth=S["axvline_linewidth"],
     )
-
-    # Formatting
-    plt.xlabel(xlabel, fontsize=14)
-    plt.ylabel("Caregiving Rate", fontsize=14)
-    # Add padding: x-axis extends beyond -window and window, y-axis extends below 0
-    plt.xlim(-window - 0.5, window + 0.5)
-    plt.ylim(-0.025, 1.0)  # Caregiving rate is between 0 and 1, with padding below
-    plt.grid(True, axis="y", alpha=0.3, linewidth=0.8)  # Only horizontal grid lines
-    # Set ticks to original range (no ticks in padding area)
-    plt.xticks(range(-window, window + 1, 5), fontsize=12)
-    plt.yticks(fontsize=12)
-    # plt.legend(loc="best", prop={"size": 12}, framealpha=0.9)  # Temporarily hidden
-
-    # Remove top and right spines (box lines)
+    plt.xlabel(xlabel, fontsize=S["label_fontsize"], labelpad=S.get("labelpad", 14))
+    plt.ylabel(
+        "Caregiving Rate", fontsize=S["label_fontsize"], labelpad=S.get("labelpad", 14)
+    )
+    plt.xlim(w_low - 0.5, window_high + 0.5)
+    plt.ylim(-0.025, 1.0)
+    plt.grid(True, axis="y", alpha=S["grid_alpha"], linewidth=S["grid_linewidth"])
+    plt.xticks(range(w_low, window_high + 1, 5), fontsize=S["xtick_fontsize"])
+    plt.yticks(fontsize=S["ytick_fontsize"])
     ax = plt.gca()
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-
-    # Make tick marks longer
-    ax.tick_params(axis="both", length=8)
-
+    ax.tick_params(axis="both", length=S["tick_length"], width=S["tick_width"])
     plt.tight_layout()
     if path_to_plot:
-        plt.savefig(path_to_plot, dpi=1200, bbox_inches="tight")
+        publication_savefig(path_to_plot)
     plt.close()
