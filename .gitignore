@@ -149,6 +149,7 @@ _generated
 .eggs
 
 .pytask.sqlite3
+pytask.lock
 
 build
 dist
@@ -212,3 +213,7 @@ tests/temp/
 tests/temp_figs/
 tests/debug/
 tests/test_moments_shape_comparison.py
+
+scripts/*
+docs/*
+dcegm (Copy)/*

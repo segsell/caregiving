@@ -38,6 +38,7 @@ no_care_demand_model_no_inheritance = "No care demand counterfactual model witho
 caregiving_leave_with_job_retention_model = "Caregiving leave with job retention counterfactual model tasks"
 caregiving_leave_beirat_model = "Caregiving leave Beirat model specification tasks"
 caregiving_leave_full_beirat_model = "Full caregiving leave Beirat model specification tasks"
+caregiving_leave_full_beirat_no_total_cap_model = "Full Beirat caregiving leave model with 3-year total cap removed (1-year full-leave cap kept) specification tasks"
 full_caregiving_leave_with_job_retention_model = "Full caregiving leave with job retention counterfactual model tasks"
 care_pension_credit_model = "Care pension credit model specification tasks"
 specs = "Specs tasks"
