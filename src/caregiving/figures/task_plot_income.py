@@ -20,7 +20,7 @@ from caregiving.model.shared import (
 )
 from caregiving.model.wealth_and_budget.budget_equation import budget_constraint
 from caregiving.model.wealth_and_budget.caregiving_leave_top_up import (  # noqa: E501
-    calc_full_caregiving_leave_top_up,
+    calc_caregiving_leave_top_up,
 )
 from caregiving.model.wealth_and_budget.pension_payments import (
     calc_gross_pension_income,
@@ -65,9 +65,13 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
     # Experience years grid
     exp_levels = np.arange(0, 51)
 
-    # Representative caregiving choices (with informal care)
-    choice_unemp_care = int(UNEMPLOYED_CARE[0])
-    choice_pt_care = int(PART_TIME_CARE[0])
+    # Representative caregiving choices (with informal care).
+    # UNEMPLOYED_CARE/PART_TIME_CARE include FORMAL-care codes at index 0
+    # (5, 6); informal-care codes start at index 1 (9, 10 for light informal).
+    # is_informal_care(5) and is_informal_care(6) are False, so passing index 0
+    # would gate the top-up to zero and silently mis-render this figure.
+    choice_unemp_care = int(UNEMPLOYED_CARE[1])  # 9: unemp + light informal
+    choice_pt_care = int(PART_TIME_CARE[1])  # 10: PT + light informal
     # Representative non-caregiving work choices
     choice_pt_noncg = int(PART_TIME[0])
     choice_ft_noncg = int(FULL_TIME[0])
@@ -82,8 +86,10 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
         experience_years = float(exp)
         income_shock = 0.0
 
-        # Labor income for PT caregiving (used for FT→PT gap)
-        labor_income_pt_care = calc_labor_income_after_ssc(
+        # Labor income for PT caregiving (used for FT->PT gap).
+        # calc_labor_income_after_ssc returns (after_ssc, gross); only the
+        # after-SSC value enters the 65% top-up formula.
+        labor_income_pt_care, _ = calc_labor_income_after_ssc(
             lagged_choice=choice_pt_care,
             experience_years=experience_years,
             education=edu_var,
@@ -94,7 +100,7 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
 
         # Prior none (0), now unemployed caregiver
         topup_prior_none_unemp[i] = float(
-            calc_full_caregiving_leave_top_up(
+            calc_caregiving_leave_top_up(
                 lagged_choice=choice_unemp_care,
                 education=edu_var,
                 job_before_caregiving=0,
@@ -108,7 +114,7 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
 
         # Prior PT (1), now unemployed caregiver
         topup_prior_pt_unemp[i] = float(
-            calc_full_caregiving_leave_top_up(
+            calc_caregiving_leave_top_up(
                 lagged_choice=choice_unemp_care,
                 education=edu_var,
                 job_before_caregiving=1,
@@ -122,7 +128,7 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
 
         # Prior FT (2), now unemployed caregiver
         topup_prior_ft_unemp[i] = float(
-            calc_full_caregiving_leave_top_up(
+            calc_caregiving_leave_top_up(
                 lagged_choice=choice_unemp_care,
                 education=edu_var,
                 job_before_caregiving=2,
@@ -136,7 +142,7 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
 
         # Prior FT (2), now PT caregiver
         topup_prior_ft_pt[i] = float(
-            calc_full_caregiving_leave_top_up(
+            calc_caregiving_leave_top_up(
                 lagged_choice=choice_pt_care,
                 education=edu_var,
                 job_before_caregiving=2,
@@ -159,8 +165,9 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
         income_shock = 0.0
 
         # Labor income for unemployed caregiver
-        # (should be zero but computed for clarity)
-        labor_unemp_care = calc_labor_income_after_ssc(
+        # (should be zero but computed for clarity).
+        # calc_labor_income_after_ssc returns (after_ssc, gross).
+        labor_unemp_care, _ = calc_labor_income_after_ssc(
             lagged_choice=choice_unemp_care,
             experience_years=experience_years,
             education=edu_var,
@@ -169,7 +176,7 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
             model_specs=specs,
         )
 
-        labor_pt_care = calc_labor_income_after_ssc(
+        labor_pt_care, _ = calc_labor_income_after_ssc(
             lagged_choice=choice_pt_care,
             experience_years=experience_years,
             education=edu_var,
@@ -191,7 +198,8 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
         experience_years = float(exp)
         income_shock = 0.0
 
-        wage_pt_noncg[i] = calc_labor_income_after_ssc(
+        # calc_labor_income_after_ssc returns (after_ssc, gross); take after_ssc.
+        wage_pt_noncg_val, _ = calc_labor_income_after_ssc(
             lagged_choice=choice_pt_noncg,
             experience_years=experience_years,
             education=edu_var,
@@ -199,8 +207,9 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
             income_shock=income_shock,
             model_specs=specs,
         )
+        wage_pt_noncg[i] = float(wage_pt_noncg_val)
 
-        wage_ft_noncg[i] = calc_labor_income_after_ssc(
+        wage_ft_noncg_val, _ = calc_labor_income_after_ssc(
             lagged_choice=choice_ft_noncg,
             experience_years=experience_years,
             education=edu_var,
@@ -208,6 +217,7 @@ def task_plot_caregiving_leave_top_ups(  # noqa: PLR0915
             income_shock=income_shock,
             model_specs=specs,
         )
+        wage_ft_noncg[i] = float(wage_ft_noncg_val)
 
     # Combined income = labor income + top-up
     total_prior_none_unemp = labor_prior_none_unemp + topup_prior_none_unemp
@@ -575,7 +585,7 @@ def task_plot_incomes(
                     income_shock=0,
                     model_specs=specs,
                 )
-                after_ssc_pt_wages[i] = calc_labor_income_after_ssc(
+                after_ssc_pt_val, _ = calc_labor_income_after_ssc(
                     lagged_choice=2,
                     experience_years=exp,
                     education=edu_var,
@@ -583,6 +593,7 @@ def task_plot_incomes(
                     income_shock=0,
                     model_specs=specs,
                 )
+                after_ssc_pt_wages[i] = float(after_ssc_pt_val)
 
                 gross_ft_wages[i] = calculate_gross_labor_income(
                     lagged_choice=3,
@@ -592,7 +603,7 @@ def task_plot_incomes(
                     income_shock=0,
                     model_specs=specs,
                 )
-                after_ssc_ft_wages[i] = calc_labor_income_after_ssc(
+                after_ssc_ft_val, _ = calc_labor_income_after_ssc(
                     lagged_choice=3,
                     experience_years=exp,
                     education=edu_var,
@@ -600,25 +611,28 @@ def task_plot_incomes(
                     income_shock=0,
                     model_specs=specs,
                 )
+                after_ssc_ft_wages[i] = float(after_ssc_ft_val)
 
-                gross_pensions[i] = np.maximum(
-                    calc_gross_pension_income(
-                        experience_years=exp,
-                        education=edu_var,
-                        sex=sex_var,
-                        model_specs=specs,
-                    ),
-                    annual_unemployment,
+                # Pension API takes pre-computed pension_points; the production
+                # convention (see budget_equation.py, tests/test_budget_constraint.py)
+                # is to pass experience_years directly as pension_points.
+                # calc_pensions_after_ssc returns (after_ssc, gross).
+                gross_pensions[i] = float(
+                    np.maximum(
+                        calc_gross_pension_income(
+                            pension_points=exp,
+                            model_specs=specs,
+                        ),
+                        annual_unemployment,
+                    )
                 )
 
-                net_pensions[i] = np.maximum(
-                    calc_pensions_after_ssc(
-                        experience_years=exp,
-                        education=edu_var,
-                        sex=sex_var,
-                        model_specs=specs,
-                    ),
-                    annual_unemployment,
+                net_pension_val, _ = calc_pensions_after_ssc(
+                    pension_points=exp,
+                    model_specs=specs,
+                )
+                net_pensions[i] = float(
+                    np.maximum(net_pension_val, annual_unemployment)
                 )
 
             ax.plot(
