@@ -5,6 +5,9 @@ by loading the baseline initial states and adding the job_before_caregiving vari
 For the Beirat leave model it also adds years_leave_used_total (partial leave only).
 For the full Beirat model (max 1 year full leave) it adds years_leave_used_total
 and full_leave_year_used.
+For the Full-Beirat-no-total-cap variant it adds job_before_caregiving and
+full_leave_year_used (the 3-year total cap is dropped, so years_leave_used_total
+is NOT added).
 """
 
 import pickle
@@ -113,6 +116,40 @@ def task_generate_start_states_for_solution_full_beirat(
         states["experience"], dtype=jnp.uint8
     )
     states["years_leave_used_total"] = jnp.zeros_like(
+        states["experience"], dtype=jnp.uint8
+    )
+    states["full_leave_year_used"] = jnp.zeros_like(
+        states["experience"], dtype=jnp.uint8
+    )
+
+    with path_to_save_updated_states.open("wb") as f:
+        pickle.dump(states, f)
+
+
+@pytask.mark.initial_conditions
+@pytask.mark.initial_conditions_full_beirat_no_total_cap
+def task_generate_start_states_for_solution_full_beirat_no_total_cap(
+    path_to_baseline_states: Path = BLD
+    / "model"
+    / "initial_conditions"
+    / "initial_states.pkl",
+    path_to_save_updated_states: Annotated[Path, Product] = BLD
+    / "model"
+    / "initial_conditions"
+    / "initial_states_full_beirat_no_total_cap.pkl",
+) -> None:
+    """Generate initial conditions for Full-Beirat-no-total-cap leave simulation.
+
+    Loads the baseline initial states and adds job_before_caregiving and
+    full_leave_year_used (1-year full-leave sub-cap retained), initialized to
+    zeros. ``years_leave_used_total`` is intentionally NOT added because the
+    new variant drops the 3-year cumulative cap and no longer carries that
+    state. See task_specify_model_caregiving_leave_full_beirat_no_total_cap.
+    """
+    with path_to_baseline_states.open("rb") as f:
+        states = pickle.load(f)
+
+    states["job_before_caregiving"] = jnp.zeros_like(
         states["experience"], dtype=jnp.uint8
     )
     states["full_leave_year_used"] = jnp.zeros_like(
