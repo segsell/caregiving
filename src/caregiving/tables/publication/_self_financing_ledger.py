@@ -426,6 +426,13 @@ def build_ledger(  # noqa: PLR0915
     discount_factor = np.power(DISCOUNT, period)
 
     mask_care_demand = df["care_demand"].values > 0
+    # Lagged care demand (care demand in the previous period). Needed by the
+    # intersection mask for the active-caregiving perspective, which is itself
+    # defined on the LAGGED choice; intersecting it with contemporaneous care
+    # demand would spuriously drop spell-boundary cells (care ended this period).
+    mask_care_demand_lagged = (
+        np.nan_to_num(df["lagged_care_demand"].values, nan=0.0) > 0
+    )
     mask_active_caregiving = is_informal_lag
     mask_all = np.ones(len(df), dtype=bool)
 
@@ -467,6 +474,7 @@ def build_ledger(  # noqa: PLR0915
             * wealth_unit,
             "discount_factor": discount_factor,
             "mask_care_demand": mask_care_demand,
+            "mask_care_demand_lagged": mask_care_demand_lagged,
             "mask_active_caregiving": mask_active_caregiving,
             "mask_all": mask_all,
         }

@@ -74,7 +74,28 @@ from caregiving.tables.publication._self_financing_ledger import (
 )
 
 PERSPECTIVES: tuple[str, ...] = ("care_demand", "active_caregiving", "all_periods")
-DISCOUNTINGS: tuple[str, ...] = ("discounted", "undiscounted")
+
+# Government discount rate sweep. Each label maps to an annual real rate; the
+# per-period weight is (1/(1+rate))**period (rate 0 == undiscounted face value).
+# Computed in a single aggregation pass. ``disc2p25`` (the model's own
+# ``interest_rate``) is the internally-consistent primary headline; ``disc1`` is
+# the legacy Stuermer-Heiber 1% convention; ``disc3`` is a conventional social
+# discount rate.
+DISCOUNT_RATES: dict[str, float] = {
+    "undiscounted": 0.0,
+    "disc1": 0.01,
+    "disc2p25": 0.0225,
+    "disc3": 0.03,
+}
+DISCOUNTINGS: tuple[str, ...] = tuple(DISCOUNT_RATES)
+PRIMARY_DISCOUNTING: str = "disc2p25"
+LEGACY_DISCOUNTING: str = "disc1"
+DISCOUNTING_LABELS: dict[str, str] = {
+    "undiscounted": "undiscounted",
+    "disc1": "discounted (1\\%)",
+    "disc2p25": "discounted (2.25\\%, model $r$)",
+    "disc3": "discounted (3\\%)",
+}
 MASK_CHOICES: tuple[str, ...] = ("v1", "intersection")
 
 CONFIG_ORDER: tuple[str, ...] = ("i", "iii", "iv", "v")
@@ -169,9 +190,9 @@ def _attach_baseline_care_demand_single(
     intersection-mask variant.
     """
     merged = ledger.merge(base_cd, on=["agent", "period"], how="left")
-    merged["mask_baseline_care_demand"] = (
-        merged["mask_baseline_care_demand"].fillna(False).astype(bool)
-    )
+    for col in ("mask_baseline_care_demand", "mask_baseline_care_demand_lagged"):
+        if col in merged.columns:
+            merged[col] = merged[col].fillna(False).astype(bool)
     return merged
 
 
@@ -188,6 +209,23 @@ def _attach_active_mask_single(
     return merged
 
 
+def _attach_care_demand_mask_single(
+    ledger: pd.DataFrame, cf_mask: pd.DataFrame, cf: str
+) -> pd.DataFrame:
+    """Broadcast one counterfactual's care-demand mask onto a ledger.
+
+    ``cf_mask`` is the small frame ``[agent, period, mask_<cf>_care_demand]``.
+    Used so the BASELINE column can be clipped by the counterfactual's care
+    demand for the Chapter-3 symmetric care-demand intersection (Option B).
+    Cells with no matching source row become False.
+    """
+    merged = ledger.merge(cf_mask, on=["agent", "period"], how="left")
+    merged[f"mask_{cf}_care_demand"] = (
+        merged[f"mask_{cf}_care_demand"].fillna(False).astype(bool)
+    )
+    return merged
+
+
 def _row_mask(
     ledger: pd.DataFrame,
     perspective: str,
@@ -196,7 +234,17 @@ def _row_mask(
 ) -> np.ndarray:
     """Return the boolean per-row mask for the given combo."""
     if perspective == "care_demand":
-        m = ledger["mask_care_demand"].values.astype(bool)
+        # "self" = the ledger's own care-demand state (Chapter 2 per-arm, and
+        # the policy column under intersection); a policy key = that
+        # counterfactual's care-demand state broadcast onto this ledger (used so
+        # the BASELINE column can be clipped by the counterfactual's care demand
+        # -> Chapter 3 symmetric intersection, Option B).
+        col = (
+            "mask_care_demand"
+            if mask_source == "self"
+            else f"mask_{mask_source}_care_demand"
+        )
+        m = ledger[col].values.astype(bool)
     elif perspective == "all_periods":
         m = ledger["mask_all"].values.astype(bool)
     elif perspective == "active_caregiving":
@@ -213,7 +261,25 @@ def _row_mask(
         raise ValueError(f"Unknown perspective: {perspective}")
 
     if mask_choice == "intersection":
-        m = m & ledger["mask_baseline_care_demand"].values.astype(bool)
+        # All-periods is the lifecycle measure; survival is policy-invariant
+        # (verified), so the survival-aligned common support IS the full
+        # lifecycle -> do NOT clip it by baseline care demand.
+        if perspective == "all_periods":
+            return m
+        # Care-demand and active-caregiving rows are clipped by the baseline
+        # care-demand state. The active-caregiving mask is defined on the LAGGED
+        # choice (the agent gave informal care last period), so it must be
+        # intersected with the LAGGED baseline care demand; contemporaneous would
+        # spuriously drop spell-boundary cells (verified: contemporaneous drops
+        # ~46% of active cells, ~42 pp pure timing; lagged drops only the ~3.7%
+        # genuinely care-demand-non-invariant cells). The care-demand row is a
+        # contemporaneous quantity and keeps the contemporaneous baseline mask.
+        base_col = (
+            "mask_baseline_care_demand_lagged"
+            if perspective == "active_caregiving"
+            else "mask_baseline_care_demand"
+        )
+        m = m & ledger[base_col].values.astype(bool)
     return m
 
 
@@ -295,7 +361,12 @@ def _aggregate_for_policy(
     """
     subgroup_masks = _build_subgroup_row_masks(ledger, sg)
     ever_provider = _ever_caregiver_per_agent(ledger)
-    discount_factor = ledger["discount_factor"].values
+    period = ledger["period"].values.astype(float)
+    # Per-rate discount weights computed once: (1/(1+rate))**period; rate 0 == 1.
+    discount_weights = {
+        label: np.power(1.0 / (1.0 + rate), period)
+        for label, rate in DISCOUNT_RATES.items()
+    }
     component_arrays = {col: ledger[col].values for col in COMPONENT_COLS}
 
     records: list[dict] = []
@@ -305,16 +376,13 @@ def _aggregate_for_policy(
                 row_mask = _row_mask(ledger, perspective, mask_choice, mask_source)
                 row_mask_f = row_mask.astype(float)
                 for discounting in DISCOUNTINGS:
-                    weight = discount_factor if discounting == "discounted" else None
+                    weight = discount_weights[discounting]
                     for (education, age_bin), (
                         row_in_sg,
                         n_total_in_subgroup,
                         sg_agent_index,
                     ) in subgroup_masks.items():
-                        if weight is None:
-                            weights_here = row_mask_f * row_in_sg.astype(float)
-                        else:
-                            weights_here = weight * row_mask_f * row_in_sg.astype(float)
+                        weights_here = weight * row_mask_f * row_in_sg.astype(float)
                         provider_in_sg = ever_provider.reindex(sg_agent_index).fillna(
                             False
                         )
@@ -405,12 +473,19 @@ def _ms_by_perspective(policy: str) -> dict[str, tuple[str, ...]]:
     """
     if policy == "baseline":
         return {
-            "care_demand": ("self",),
+            # ``self`` feeds Chapter 2 (per-arm care demand) and Config (v); the
+            # counterfactual sources feed the Chapter-3 symmetric care-demand
+            # intersection (Option B), where the baseline is clipped by each
+            # counterfactual's care demand.
+            "care_demand": ("self", *COUNTERFACTUALS),
             "active_caregiving": ("self", *COUNTERFACTUALS),
             "all_periods": ("self",),
         }
     return {
-        "care_demand": ("self",),
+        # ``self`` = Chapter 2 (own care demand); ``policy`` = Chapter 3
+        # intersection (own care demand, looked up under the policy's own key so
+        # the symmetric pair shares a mask source).
+        "care_demand": ("self", policy),
         "active_caregiving": (policy,),
         "all_periods": ("self",),
     }
@@ -431,13 +506,19 @@ def _build_aggregate_long_incremental(
     """
     import gc
 
-    base_cd = baseline_ledger[["agent", "period", "mask_care_demand"]].rename(
-        columns={"mask_care_demand": "mask_baseline_care_demand"}
+    base_cd = baseline_ledger[
+        ["agent", "period", "mask_care_demand", "mask_care_demand_lagged"]
+    ].rename(
+        columns={
+            "mask_care_demand": "mask_baseline_care_demand",
+            "mask_care_demand_lagged": "mask_baseline_care_demand_lagged",
+        }
     )
 
     rows: list[dict] = []
     partner_sums: dict[str, tuple[float, float]] = {}
     cf_active_masks: dict[str, pd.DataFrame] = {}
+    cf_care_demand_masks: dict[str, pd.DataFrame] = {}
 
     for cf in COUNTERFACTUALS:
         slim = load_slim(PATHS_BY_KEY[cf])
@@ -446,8 +527,11 @@ def _build_aggregate_long_incremental(
         gc.collect()
 
         ledger = _attach_baseline_care_demand_single(ledger, base_cd)
-        # The counterfactual's own active mask, addressed as mask_active_<cf>.
+        # The counterfactual's own active + care-demand masks, addressed under
+        # the counterfactual's own key (so the symmetric-intersection pair shares
+        # a mask source with the broadcast baseline row).
         ledger[f"mask_active_{cf}"] = ledger["mask_active_caregiving"]
+        ledger[f"mask_{cf}_care_demand"] = ledger["mask_care_demand"]
 
         rows.extend(
             _aggregate_for_policy(
@@ -464,17 +548,24 @@ def _build_aggregate_long_incremental(
         cf_active_masks[cf] = ledger[
             ["agent", "period", "mask_active_caregiving"]
         ].rename(columns={"mask_active_caregiving": f"mask_active_{cf}"})
+        cf_care_demand_masks[cf] = ledger[
+            ["agent", "period", "mask_care_demand"]
+        ].rename(columns={"mask_care_demand": f"mask_{cf}_care_demand"})
         del ledger
         gc.collect()
 
     # Baseline last: it needs its own care-demand column and every
-    # counterfactual's active mask broadcast onto it.
+    # counterfactual's active + care-demand masks broadcast onto it.
     baseline_ledger = _attach_baseline_care_demand_single(baseline_ledger, base_cd)
     for cf in COUNTERFACTUALS:
         baseline_ledger = _attach_active_mask_single(
             baseline_ledger, cf_active_masks[cf], cf
         )
+        baseline_ledger = _attach_care_demand_mask_single(
+            baseline_ledger, cf_care_demand_masks[cf], cf
+        )
         del cf_active_masks[cf]
+        del cf_care_demand_masks[cf]
     gc.collect()
 
     rows.extend(
@@ -507,12 +598,23 @@ def _build_aggregate_long(
     OOM-safe on the full ~3.9 GB pickles. Both paths produce identical
     output.
     """
-    base_cd = ledgers["baseline"][["agent", "period", "mask_care_demand"]].rename(
-        columns={"mask_care_demand": "mask_baseline_care_demand"}
+    base_cd = ledgers["baseline"][
+        ["agent", "period", "mask_care_demand", "mask_care_demand_lagged"]
+    ].rename(
+        columns={
+            "mask_care_demand": "mask_baseline_care_demand",
+            "mask_care_demand_lagged": "mask_baseline_care_demand_lagged",
+        }
     )
     cf_active_masks = {
         cf: ledgers[cf][["agent", "period", "mask_active_caregiving"]].rename(
             columns={"mask_active_caregiving": f"mask_active_{cf}"}
+        )
+        for cf in COUNTERFACTUALS
+    }
+    cf_care_demand_masks = {
+        cf: ledgers[cf][["agent", "period", "mask_care_demand"]].rename(
+            columns={"mask_care_demand": f"mask_{cf}_care_demand"}
         )
         for cf in COUNTERFACTUALS
     }
@@ -524,8 +626,12 @@ def _build_aggregate_long(
         if policy == "baseline":
             for cf in COUNTERFACTUALS:
                 ledger = _attach_active_mask_single(ledger, cf_active_masks[cf], cf)
+                ledger = _attach_care_demand_mask_single(
+                    ledger, cf_care_demand_masks[cf], cf
+                )
         else:
             ledger[f"mask_active_{policy}"] = ledger["mask_active_caregiving"]
+            ledger[f"mask_{policy}_care_demand"] = ledger["mask_care_demand"]
         rows.extend(
             _aggregate_for_policy(
                 ledger,
@@ -866,10 +972,20 @@ def _select_row(
     return sub.iloc[0]
 
 
-def _baseline_mask_source(perspective: str, counterfactual: str) -> str:
+def _baseline_mask_source(
+    perspective: str, counterfactual: str, mask_choice: str
+) -> str:
     """Mask source under which the baseline aggregate is stored, for a
-    given (perspective, counterfactual) comparison pair."""
+    given (perspective, counterfactual, mask_choice) comparison pair.
+
+    Active caregiving always uses the counterfactual's mask (symmetric
+    treatment-on-treated). Care demand uses the counterfactual's mask only
+    under the intersection mask (Chapter 3 symmetric, Option B); under the
+    headline mask it stays per-arm (``self``). All-periods is always ``self``.
+    """
     if perspective == "active_caregiving":
+        return counterfactual
+    if perspective == "care_demand" and mask_choice == "intersection":
         return counterfactual
     return "self"
 
@@ -921,7 +1037,7 @@ def _compute_cell(
             education=education,
             age_bin=age_bin,
         )
-    baseline_ms = _baseline_mask_source(perspective, policy)
+    baseline_ms = _baseline_mask_source(perspective, policy, mask_choice)
     pol_row = _select_row(
         df,
         policy=policy,
@@ -1041,7 +1157,7 @@ def _check_back_comparability_iv(df: pd.DataFrame, mask_choice: str = "v1") -> s
         df,
         config="iv",
         policy="full_beirat",
-        discounting="discounted",
+        discounting=LEGACY_DISCOUNTING,
         perspective="all_periods",
         education="all",
         age_bin="all",
@@ -1120,7 +1236,7 @@ def _format_panel_header(config: str, discounting: str) -> str:
     body compiles standalone outside any enclosing tabular.
     """
     config_label = CONFIG_LABELS[config]
-    disc_label = "discounted" if discounting == "discounted" else "undiscounted"
+    disc_label = DISCOUNTING_LABELS.get(discounting, discounting)
     return (
         rf"\par\medskip\noindent\textbf{{{config_label} -- {disc_label}}}"
         r"\par\nopagebreak\smallskip"
@@ -1249,9 +1365,19 @@ MASK_CAPTION: dict[str, str] = {
         "symmetrically to the baseline; all-periods uses no row mask."
     ),
     "intersection": (
-        r"Robustness mask: row mask AND \(\mathrm{baseline\_care\_demand} > 0\). "
-        "Drops the small set of cells where mortality-timing divergences "
-        "misalign baseline and counterfactual care-demand states."
+        r"Robustness mask. Care-demand row: \emph{symmetric} intersection -- "
+        r"both the policy and baseline columns are restricted to "
+        r"\(\mathrm{policy\_care\_demand}>0 \wedge "
+        r"\mathrm{baseline\_care\_demand}>0\) (contemporaneous). "
+        r"Active-caregiving row: each counterfactual's lagged-choice mask "
+        r"(applied symmetrically) AND the \emph{lagged} baseline care demand, "
+        r"to match the lagged-choice definition. All-periods row: \emph{not} "
+        r"restricted -- survival is verified identical across arms, so the "
+        r"survival-aligned support is the full lifecycle. The care-demand/active "
+        r"restrictions drop only the small (\(\sim\)3.7\%) set of cells where "
+        r"care demand differs across arms (care demand is meant to be "
+        r"policy-invariant; the residual mismatch is care-demand non-invariance "
+        r"\textemdash{} likely a simulation RNG artefact, not mortality timing)."
     ),
 }
 
@@ -1290,8 +1416,10 @@ _NOTES_COMMON = (
     r"\textit{Subgroups:} education and age at first parental care demand, "
     r"both fixed from the baseline simulation; agents whose parent never "
     r"requires care appear only in the Total column. "
-    r"\textit{Discounting:} discounted panels apply the model discount "
-    r"factor to age 40. "
+    r"\textit{Discounting:} the discounted panel uses the primary government "
+    r"discount rate of 2.25\% (the model's own \texttt{interest\_rate}); the "
+    r"1\% and 3\% sweep variants are in the compact discount-rate sensitivity "
+    r"table. Per-period weight \((1+r)^{-\text{period}}\). "
     rf"\textit{{Flags:}} cells with fewer than {MIN_CELL_N} ever-caregivers "
     r"print ``--''; $^{\dagger}$ marks cells whose per-caregiver gross "
     rf"outlay $G$ is below EUR {MIN_OUTLAY_EUR:.0f}, where the SF ratio is "
@@ -1385,10 +1513,14 @@ def _format_notes_block(config: str, mask_choice: str) -> list[str]:
 def _format_config_table(df: pd.DataFrame, *, config: str, mask_choice: str) -> str:
     """One .tex file: a single config, one table float per discounting panel.
 
-    Discounted and undiscounted panels are emitted as separate ``table``
-    environments separated by ``\\clearpage`` so each fits on one PDF page.
+    To keep the compendium readable, the per-config files show the PRIMARY
+    (2.25%, model r) discounted panel and the undiscounted panel; the other
+    sweep rates (1%, 3%) live in the aggregator and the compact discount-rate
+    sensitivity table. Panels are separate ``table`` environments separated by
+    ``\\clearpage`` so each fits on one PDF page.
     """
     mask_label = "headline mask" if mask_choice == "v1" else "intersection mask"
+    panel_discountings = (PRIMARY_DISCOUNTING, "undiscounted")
     lines: list[str] = []
     lines.extend(
         (
@@ -1397,9 +1529,9 @@ def _format_config_table(df: pd.DataFrame, *, config: str, mask_choice: str) -> 
             "",
         )
     )
-    for idx, discounting in enumerate(DISCOUNTINGS):
-        disc_label = "discounted" if discounting == "discounted" else "undiscounted"
-        disc_suffix = "disc" if discounting == "discounted" else "undisc"
+    for idx, discounting in enumerate(panel_discountings):
+        disc_label = DISCOUNTING_LABELS.get(discounting, discounting)
+        disc_suffix = discounting
         lines.extend((r"\begin{table}[htbp]", r"  \centering"))
         lines.append(
             rf"  \caption{{Self-financing heterogeneity -- {CONFIG_LABELS[config]} "
@@ -1422,7 +1554,7 @@ def _format_config_table(df: pd.DataFrame, *, config: str, mask_choice: str) -> 
         )
         lines.extend(_format_notes_block(config, mask_choice))
         lines.extend((r"\end{table}", ""))
-        if idx < len(DISCOUNTINGS) - 1:
+        if idx < len(panel_discountings) - 1:
             lines.extend((r"\clearpage", ""))
     return "\n".join(lines)
 
@@ -1535,7 +1667,7 @@ def _compact_degrees_body(df: pd.DataFrame) -> str:
     lines.extend(
         (
             r"  \caption{Self-financing degrees -- compact overview "
-            r"(Total population, discounted, headline mask).}",
+            r"(Total population, discounted at 2.25\% [model $r$], headline mask).}",
             r"  \label{tab:sf_compact_degrees}",
             r"  \small",
             r"  \begin{tabular}{ll" + "r" * n_pol + "}",
@@ -1558,7 +1690,7 @@ def _compact_degrees_body(df: pd.DataFrame) -> str:
                     df,
                     config=config,
                     policy=policy,
-                    discounting="discounted",
+                    discounting=PRIMARY_DISCOUNTING,
                     perspective=perspective,
                     education="all",
                     age_bin="all",
@@ -1624,7 +1756,7 @@ def _compact_decomposition_body(df: pd.DataFrame) -> str:
             df,
             config="i",
             policy=policy,
-            discounting="discounted",
+            discounting=PRIMARY_DISCOUNTING,
             perspective="all_periods",
             education="all",
             age_bin="all",
@@ -1693,8 +1825,8 @@ def _compact_decomposition_body(df: pd.DataFrame) -> str:
     )
     lines.append(
         r"  \caption{Fiscal decomposition of the headline self-financing "
-        r"degree -- Config (i), all periods, discounted, headline mask "
-        r"(EUR per baseline ever-caregiver).}"
+        r"degree -- Config (i), all periods, discounted at 2.25\% (model $r$), "
+        r"headline mask (EUR per baseline ever-caregiver).}"
     )
     lines.extend(
         (
@@ -1756,6 +1888,83 @@ def _compact_decomposition_body(df: pd.DataFrame) -> str:
     return "\n".join(lines)
 
 
+SWEEP_DISCOUNTINGS: tuple[str, ...] = ("undiscounted", "disc1", "disc2p25", "disc3")
+SWEEP_RATE_HEADERS: dict[str, str] = {
+    "undiscounted": "Undisc.",
+    "disc1": "1\\%",
+    "disc2p25": "2.25\\%",
+    "disc3": "3\\%",
+}
+
+
+def _compact_discount_sensitivity_body(df: pd.DataFrame) -> str:
+    """Discount-rate sensitivity of the headline degree.
+
+    Config (i), all-periods, Total, headline mask. Rows = the six reform
+    variants; columns = the discount-rate sweep {undiscounted, 1, 2.25, 3}%.
+    Shows how the headline self-financing degree moves with the government
+    discount rate (2.25% = model r is the primary headline).
+    """
+    n_rate = len(SWEEP_DISCOUNTINGS)
+    lines: list[str] = []
+    lines.extend(
+        (
+            r"% Auto-generated by task_self_financing_heterogeneity.py.",
+            r"% Do not edit by hand.",
+            "",
+            r"\begin{table}[htbp]",
+            r"  \centering",
+            r"  \caption{Discount-rate sensitivity of the headline "
+            r"self-financing degree -- Config (i) MVPF-honest, all periods, "
+            r"Total population, headline mask. Primary = 2.25\% (model $r$).}",
+            r"  \label{tab:sf_discount_sensitivity}",
+            r"  \small",
+            r"  \begin{tabular}{l" + "r" * n_rate + "}",
+            r"  \toprule",
+        )
+    )
+    header = " & ".join(SWEEP_RATE_HEADERS[d] for d in SWEEP_DISCOUNTINGS)
+    lines.extend((rf"  Reform variant & {header} \\", r"  \midrule"))
+    for policy in COUNTERFACTUALS:
+        cells = []
+        for disc in SWEEP_DISCOUNTINGS:
+            res = _compute_cell(
+                df,
+                config="i",
+                policy=policy,
+                discounting=disc,
+                perspective="all_periods",
+                education="all",
+                age_bin="all",
+                mask_choice="v1",
+            )
+            cells.append(_format_pct(res.sf, dagger=res.small_outlay))
+        lines.append(f"  {POLICY_LABELS_SHORT[policy]} & " + " & ".join(cells) + r" \\")
+    lines.extend(
+        (
+            r"  \bottomrule",
+            r"  \end{tabular}",
+            r"  \vspace{0.5em}",
+            r"  \begin{minipage}{\textwidth}",
+            r"  \scriptsize",
+            r"  \textbf{Notes.} Government discount rate swept over "
+            r"$\{0, 1, 2.25, 3\}\%$ real (per-period weight "
+            r"$(1+r)^{-\text{period}}$). 2.25\% equals the model's own "
+            r"\texttt{interest\_rate} and is the internally-consistent primary "
+            r"headline; 1\% is the legacy Stuermer-Heiber convention; 3\% a "
+            r"conventional social discount rate. Raising the rate lifts Config "
+            r"(i) (it down-weights the far-future pension-payout cost $E$) and "
+            r"lowers the pension-excluded configs -- the degree's sensitivity to "
+            r"the rate and to the pension-channel treatment is the honest result. "
+            rf"$^{{\dagger}}$ = per-caregiver outlay below EUR {MIN_OUTLAY_EUR:.0f}.",
+            r"  \end{minipage}",
+            r"\end{table}",
+            "",
+        )
+    )
+    return "\n".join(lines)
+
+
 @pytask.task(id="write_self_financing_compact_tables")
 def task_write_self_financing_compact_tables(
     path_to_aggregates: Path = BLD
@@ -1765,14 +1974,19 @@ def task_write_self_financing_compact_tables(
     / "sf_compact_degrees.tex",
     path_to_decomposition_tex: Annotated[Path, Product] = SF_HET_DIR
     / "sf_compact_decomposition.tex",
+    path_to_discount_sensitivity_tex: Annotated[Path, Product] = SF_HET_DIR
+    / "sf_discount_sensitivity.tex",
 ) -> None:
-    """Emit the two compact lead tables (degrees overview + Config (i)
-    decomposition with memo and EUR rows)."""
+    """Emit the compact lead tables (degrees overview + Config (i)
+    decomposition with memo and EUR rows + discount-rate sensitivity)."""
     df = pd.read_pickle(path_to_aggregates)
     path_to_degrees_tex.parent.mkdir(parents=True, exist_ok=True)
     path_to_degrees_tex.write_text(_compact_degrees_body(df), encoding="utf-8")
     path_to_decomposition_tex.write_text(
         _compact_decomposition_body(df), encoding="utf-8"
+    )
+    path_to_discount_sensitivity_tex.write_text(
+        _compact_discount_sensitivity_body(df), encoding="utf-8"
     )
 
 
@@ -1819,6 +2033,7 @@ def _report_section(title: str, tex_paths: list[Path]) -> str:
 def task_compile_self_financing_report(
     path_to_degrees_tex: Path = SF_HET_DIR / "sf_compact_degrees.tex",
     path_to_decomposition_tex: Path = SF_HET_DIR / "sf_compact_decomposition.tex",
+    path_to_discount_sensitivity_tex: Path = SF_HET_DIR / "sf_discount_sensitivity.tex",
     paths_to_het_headline: dict[str, Path] = HET_TEX_PATHS_HEADLINE,
     paths_to_het_intersection: dict[str, Path] = HET_TEX_PATHS_INTERSECTION,
     path_to_legacy_degree: Path = BLD
@@ -1842,7 +2057,11 @@ def task_compile_self_financing_report(
         (
             _report_section(
                 "Compact overview (lead tables)",
-                [path_to_degrees_tex, path_to_decomposition_tex],
+                [
+                    path_to_degrees_tex,
+                    path_to_decomposition_tex,
+                    path_to_discount_sensitivity_tex,
+                ],
             ),
         )
     )
