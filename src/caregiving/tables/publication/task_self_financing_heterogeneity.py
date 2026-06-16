@@ -2034,6 +2034,11 @@ def task_compile_self_financing_report(
     path_to_degrees_tex: Path = SF_HET_DIR / "sf_compact_degrees.tex",
     path_to_decomposition_tex: Path = SF_HET_DIR / "sf_compact_decomposition.tex",
     path_to_discount_sensitivity_tex: Path = SF_HET_DIR / "sf_discount_sensitivity.tex",
+    path_to_cc_compact: Path = SF_HET_DIR / "cc_compact.tex",
+    path_to_cc_heterogeneity: Path = SF_HET_DIR / "cc_heterogeneity.tex",
+    path_to_cc_heterogeneity_basefixed: Path = SF_HET_DIR
+    / "cc_heterogeneity_baseline_fixed.tex",
+    path_to_cc_discount: Path = SF_HET_DIR / "cc_discount_sensitivity.tex",
     paths_to_het_headline: dict[str, Path] = HET_TEX_PATHS_HEADLINE,
     paths_to_het_intersection: dict[str, Path] = HET_TEX_PATHS_INTERSECTION,
     path_to_legacy_degree: Path = BLD
@@ -2077,6 +2082,20 @@ def task_compile_self_financing_report(
             ),
         )
     )
+    cc_paths = [
+        p
+        for p in (
+            path_to_cc_compact,
+            path_to_cc_heterogeneity,
+            path_to_cc_discount,
+            path_to_cc_heterogeneity_basefixed,
+        )
+        if p.exists()
+    ]
+    if cc_paths:
+        sections.append(
+            _report_section("Agent side: career costs of caregiving", cc_paths)
+        )
     legacy = [
         p for p in (path_to_legacy_degree, path_to_legacy_decomposition) if p.exists()
     ]
