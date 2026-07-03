@@ -347,3 +347,58 @@ def calc_caregiving_leave_top_up_full_beirat(
 
     eligible = on_full_leave * eligible_full + on_partial_leave * eligible_partial
     return raw * eligible
+
+
+def calc_caregiving_leave_top_up_full_beirat_no_total_cap(
+    lagged_choice,
+    education,
+    job_before_caregiving,
+    experience_years,
+    income_shock_previous_period,
+    sex,
+    labor_income_after_ssc,
+    full_leave_year_used,
+    model_specs,
+):
+    """65% caregiving leave top-up for the Full-Beirat-no-total-cap variant.
+
+    Same Pflegebeirat eligibility structure as ``_full_beirat``; the 3-year
+    cumulative cap is removed (``years_leave_used_total`` state variable
+    dropped). The 1-year cap on full leave (unemployed-while-caregiving with
+    prior job) is kept via ``full_leave_year_used``. Partial leave (PT with
+    prior FT) is uncapped.
+    """
+    raw = calc_caregiving_leave_top_up(
+        lagged_choice=lagged_choice,
+        education=education,
+        job_before_caregiving=job_before_caregiving,
+        experience_years=experience_years,
+        income_shock_previous_period=income_shock_previous_period,
+        sex=sex,
+        labor_income_after_ssc=labor_income_after_ssc,
+        model_specs=model_specs,
+    )
+    currently_caregiver = is_informal_care(lagged_choice)
+    currently_unemployed = is_unemployed(lagged_choice)
+    currently_part_time = is_part_time(lagged_choice)
+    had_job = had_pt_job_before_caregiving(
+        job_before_caregiving
+    ) | had_ft_job_before_caregiving(job_before_caregiving)
+    prior_ft = had_ft_job_before_caregiving(job_before_caregiving)
+
+    on_full_leave = (
+        currently_caregiver
+        * (1 - is_retired(lagged_choice))
+        * currently_unemployed
+        * had_job
+    )
+    on_partial_leave = (
+        currently_caregiver
+        * (1 - is_retired(lagged_choice))
+        * currently_part_time
+        * prior_ft
+    )
+
+    eligible_full = full_leave_year_used == 0
+    eligible = on_full_leave * eligible_full + on_partial_leave
+    return raw * eligible

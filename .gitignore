@@ -149,6 +149,7 @@ _generated
 .eggs
 
 .pytask.sqlite3
+pytask.lock
 
 build
 dist
@@ -182,6 +183,7 @@ bld/model/model_higher_ret_age.pkl
 bld/model/model_lower_ret_age.pkl
 bld/model/model_caregiving_leave_with_job_retention.pkl
 bld/model/model_no_cash_benefits_higher_formal_care_costs.pkl
+bld/model/initial_conditions/initial_states_full_beirat_no_total_cap.pkl
 
 bld/model/model*
 
@@ -198,9 +200,7 @@ bld/model/model*
 
 data
 
-!src/sandbox/
-!src/sandbox/data/
-!src/sandbox/data/**
+src/sandbox/*
 
 submodules
 
@@ -212,3 +212,7 @@ tests/temp/
 tests/temp_figs/
 tests/debug/
 tests/test_moments_shape_comparison.py
+
+scripts/*
+docs/*
+dcegm (Copy)/*

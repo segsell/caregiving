@@ -27,10 +27,19 @@ PARENT_WEIGHTS_SHARE = {
 }
 SHARE_CARE_TO_MOTHER = 0.7  # 0.8
 
+# Raw SOEP / SHARE gender codes (data-ingestion convention: 1=male, 2=female).
+# Used only to filter or recode the raw `gender` column in data-management,
+# parent-data, and SHARE pipelines (e.g. `df["gender"] == FEMALE`,
+# `df["sex"].map({MALE: 0, FEMALE: 1})`). NOT model state values.
 MALE = 1
 FEMALE = 2
+
+# Model state value (recoded convention: 0=men, 1=women, per
+# `sex_labels = ["Men", "Women"]` in specs.yaml). SEX = 1 therefore pins
+# evaluation to women. Different number space from MALE/FEMALE above.
 SEX = 1
-MOTHER = 1
+
+MOTHER = 1  # Raw SOEP/SHARE gender code, matches FEMALE — used to filter mother rows.
 
 MIN_AGE_SIM = 40
 MAX_AGE_SIM = 70
